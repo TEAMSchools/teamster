@@ -1,0 +1,2332 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>Branching Minds Intervention Episodes Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.57a0d79d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#branching-minds-intervention-episodes-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Branching Minds Intervention Episodes Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/launch-page-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Launch Page
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube-access-individual-exceptions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube Access - Individual Exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/tableau-permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tableau Permissions (People Data)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/csgf-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSGF Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/crdc-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CRDC Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ddi-stack-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDI Stack Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/hs-early-warning-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HS Early Warning Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/dibels-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIBELS Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/stat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/njdoe-universal-screener-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NJDOE Universal Screener Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/athletic-eligibility-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Athletic Eligibility Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/academic-health-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic Health Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/grad-plan-tracking-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Grad Plan Tracking Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ignite-r2i-extract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IGNITE R2I Extract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#global-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global Constraints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#review-focus" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Review Focus
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Review Focus">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-1-the-rollup-model-its-properties-and-unit-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: The rollup model, its properties, and unit tests
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-2-rewire-is_sipps-on-the-enrollments-hub" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: Rewire is_sipps on the enrollments hub
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-3-push-and-open-the-pr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: Push and open the PR
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-11-04-branchingminds-intervention-episodes.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="branching-minds-intervention-episodes-implementation-plan">Branching Minds Intervention Episodes Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> One row per student, intervention, academic year, and continuous
+assignment span from Branching Minds plans, with <code>is_current</code>, and <code>is_sipps</code> on
+the enrollments hub rewired to read it.</p>
+<p><strong>Architecture:</strong> A source intermediate
+<code>int_branchingminds__intervention_plans_rollup</code> splits each plan at the July 1
+fiscal boundary, then collapses overlapping or back-to-back plans per student,
+intervention, and year into episodes with a gaps-and-islands window pass.
+<code>int_extracts__student_enrollments</code> drops its PowerSchool course join for
+<code>is_sipps</code> and left-joins a distinct student-year projection of the rollup.</p>
+<p><strong>Tech Stack:</strong> dbt (kipptaf project), BigQuery, dbt unit tests, trunk
+(sqlfluff, yamllint, markdownlint).</p>
+<p><strong>Spec:</strong>
+<code>docs/superpowers/specs/2026-11-04-branchingminds-intervention-episodes-design.md</code></p>
+<h2 id="global-constraints">Global Constraints</h2>
+<ul>
+<li>Worktree:
+  <code>/workspaces/teamster/.claude/worktrees/anthonygwalters/feat/claude-branchingminds-intervention-episodes</code>.
+  Every path below is relative to it. Every <code>uv run dbt</code> call passes
+  <code>--project-dir src/dbt/kipptaf</code> from the worktree root.</li>
+<li><code>--state</code> is absolute: <code>/workspaces/teamster/src/dbt/kipptaf/target/prod</code>.</li>
+<li>Model name <code>int_branchingminds__intervention_plans_rollup</code> (A3 reshape
+  suffix). Folder <code>src/dbt/kipptaf/models/branchingminds/intermediate/</code>.</li>
+<li>Grain: <code>student_number</code>, <code>intervention_name</code>, <code>academic_year</code>,
+  <code>episode_start</code>. <code>academic_year</code> is the fiscal year's start year
+  (<code>date_to_fiscal_year(..., start_month=7, year_source="start")</code>), matching the
+  enrollment models.</li>
+<li>Two plans merge when the later one starts at most 1 day after the running max
+  end of the earlier ones. A null end date is open-ended and keeps the episode
+  open.</li>
+<li><code>is_current</code> uses <code>current_date('{{ var("local_timezone") }}')</code>.</li>
+<li><code>is_sipps</code> counts <code>intervention_name like 'SIPPS%'</code> (SIPPS and SIPPS
+  Challenge), any episode in the year.</li>
+<li>No <code>qualify</code> (S1); no <code>group by 1, 2</code> (S2); the window pass is a CTE plus a
+  <code>where</code>. Tests at <code>severity: error</code>. <code>config.meta.contains_pii: true</code> on the
+  rollup.</li>
+<li>Unit-test fixtures use <code>format: sql</code> (the staging relation has no prod copy
+  for dict-format introspection); <code>expect</code> dict scalars unquoted; every <code>expect</code>
+  row lists the same columns.</li>
+<li>Commit messages are conventional commits ending with the
+  <code>Co-Authored-By: Claude Fable 5.1 &lt;noreply@anthropic.com&gt;</code> line. Never push to
+  <code>main</code>.</li>
+<li>Before pushing, lint changed files:
+  <code>/workspaces/teamster/.trunk/tools/trunk check --force --no-fix &lt;files&gt; &lt;/dev/null</code>
+  from the worktree root. Formatting findings are the commit hook's.</li>
+</ul>
+<h2 id="review-focus">Review Focus</h2>
+<ol>
+<li>A plan whose end date is before its start date (BrM data error): the row must
+   not crash the window pass; it yields an episode with
+   <code>episode_end &lt; episode_start</code> and <code>is_current = false</code>. Test in Task 1.</li>
+<li>The same plan id exported twice with identical dates (staging dedupes on plan
+   id, so this only arrives as 2 distinct ids with the same dates): 1 episode
+   with <code>plans_in_episode = 2</code>. Test in Task 1.</li>
+<li>A plan with a null end that started in a prior school year: 1 row per year
+   from its start year through the current school year, the last one open. Test
+   in Task 1.</li>
+<li>A SIPPS Challenge plan with no plain SIPPS plan sets <code>is_sipps</code>. Test in Task
+   2 (dev build check, since the hub has no unit test harness).</li>
+<li>Two overlapping plans at 2 different BrM schools: 1 episode, <code>school_id</code> from
+   the later-starting plan. Test in Task 1.</li>
+</ol>
+<hr />
+<h3 id="task-1-the-rollup-model-its-properties-and-unit-tests">Task 1: The rollup model, its properties, and unit tests</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create:
+  <code>src/dbt/kipptaf/models/branchingminds/intermediate/int_branchingminds__intervention_plans_rollup.sql</code></li>
+<li>Create:
+  <code>src/dbt/kipptaf/models/branchingminds/intermediate/properties/int_branchingminds__intervention_plans_rollup.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>ref("stg_branchingminds__intervention_plans")</code> columns
+  <code>intervention_plan_id int64</code>, <code>student_number int64</code>,
+  <code>intervention_name string</code>, <code>intervention_subject_area string</code>,
+  <code>district string</code>, <code>school_id int64</code>, <code>intervention_start_date date</code>,
+  <code>intervention_end_date date</code>.</li>
+<li>
+<p>Produces: <code>int_branchingminds__intervention_plans_rollup</code> with columns
+  <code>intervention_episode_key string</code>, <code>student_number int64</code>,
+  <code>intervention_name string</code>, <code>intervention_subject_area string</code>,
+  <code>district string</code>, <code>school_id int64</code>, <code>academic_year int64</code>,
+  <code>episode_start date</code>, <code>episode_end date</code> (null when open),
+  <code>plans_in_episode int64</code>, <code>intervention_plan_ids array&lt;int64&gt;</code>,
+  <code>is_current bool</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the properties file with the unit tests</strong></p>
+</li>
+</ul>
+<p>Model block: description per the spec (grain, merge rule, planned-end limit in
+plain words), <code>config.meta.contains_pii: true</code>, model-level
+<code>dbt_utils.unique_combination_of_columns</code> on the 4 grain columns at <code>error</code>,
+then columns with tests first: <code>intervention_episode_key</code> (<code>unique</code>, error),
+<code>student_number</code>, <code>intervention_name</code>, <code>episode_start</code> (<code>not_null</code>, error), then
+the rest with descriptions.</p>
+<p>Unit tests, each <code>model: int_branchingminds__intervention_plans_rollup</code>, each
+<code>given</code> an <code>input: ref("stg_branchingminds__intervention_plans")</code> with
+<code>format: sql</code> rows that select the 8 consumed columns (cast dates with
+<code>cast('YYYY-MM-DD' as date)</code>; <code>cast(null as date)</code> for a null end), each
+<code>expect</code> row listing <code>student_number</code>, <code>intervention_name</code>, <code>academic_year</code>,
+<code>episode_start</code>, <code>episode_end</code>, <code>plans_in_episode</code>, <code>school_id</code>:</p>
+<ul class="task-list">
+<li><code>test_rollup_merges_overlapping_plans</code>: plans 1 (2026-09-14 to 2026-10-27,
+  school 2) and 2 (2026-10-01 to 2026-12-15, school 3), same student and
+  intervention. Expect 1 row: start 2026-09-14, end 2026-12-15,
+  <code>plans_in_episode</code> 2, <code>school_id</code> 3, <code>academic_year</code> 2026.</li>
+<li><code>test_rollup_merges_adjacent_plans</code>: plan 1 ends 2026-10-27, plan 2 starts
+  2026-10-28. Expect 1 row, end = plan 2's end.</li>
+<li><code>test_rollup_splits_on_gap</code>: plan 1 ends 2026-10-27, plan 2 starts 2026-10-29.
+  Expect 2 rows with <code>plans_in_episode</code> 1 each.</li>
+<li><code>test_rollup_null_end_keeps_episode_open</code>: plan 1 (2026-09-14, null end), plan
+  2 (2026-11-01 to 2026-11-30). Expect 1 row, <code>episode_end</code> null,
+  <code>plans_in_episode</code> 2.</li>
+<li><code>test_rollup_splits_at_fiscal_year</code>: 1 plan 2026-06-15 to 2026-09-30. Expect 2
+  rows: (<code>academic_year</code> 2025, start 2026-06-15, end 2026-06-30) and
+  (<code>academic_year</code> 2026, start 2026-07-01, end 2026-09-30), each
+  <code>plans_in_episode</code> 1.</li>
+<li><code>test_rollup_null_end_spans_to_current_year</code>: 1 plan starting 2025-09-01, null
+  end. Expect rows for 2025 (end 2026-06-30) and 2026 (end null). Pin the
+  current-year count by asserting on these 2 rows only; this fixture breaks on
+  2027-07-01, and that is the intended reminder to revisit.</li>
+<li><code>test_rollup_end_before_start_does_not_merge_or_crash</code>: 1 plan 2026-10-01 to
+  2026-09-01. Expect 1 row with those dates unchanged and <code>plans_in_episode</code> 1.</li>
+<li><code>test_rollup_two_ids_same_dates_count_twice</code>: plan ids 1 and 2 with identical
+  dates. Expect 1 row, <code>plans_in_episode</code> 2.</li>
+<li>
+<p><code>test_rollup_separates_interventions</code>: same student, plan <code>SIPPS</code> and plan
+  <code>UFLI Foundations (Ongoing)</code> overlapping. Expect 2 rows.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run the unit tests to verify they fail</strong></p>
+</li>
+</ul>
+<p>Run:
+<code>uv run dbt test --project-dir src/dbt/kipptaf --select int_branchingminds__intervention_plans_rollup,test_type:unit --target dev --defer --state /workspaces/teamster/src/dbt/kipptaf/target/prod 2&gt;&amp;1 | tail -n 30</code></p>
+<p>Expected: a compilation error naming the missing model (no SQL file yet).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Write the model SQL</strong></li>
+</ul>
+<p>CTEs, in order:</p>
+<ol>
+<li><code>plans</code>: from <code>ref("stg_branchingminds__intervention_plans")</code>, the 8 consumed
+   columns, plus <code>start_academic_year</code> and <code>end_academic_year</code> via
+   <code>date_to_fiscal_year</code> on start and on <code>coalesce(end, current_date(tz))</code>;
+   <code>where intervention_start_date is not null</code>.</li>
+<li><code>plan_years</code>: cross join
+   <code>unnest(generate_array(start_academic_year, end_academic_year)) as academic_year</code>;
+   <code>year_start</code> = <code>greatest(start, date(academic_year, 7, 1))</code>; <code>year_end</code> =
+   <code>least(end, date(academic_year + 1, 6, 30))</code> when end is not null, else
+   <code>date(academic_year + 1, 6, 30)</code> when <code>academic_year &lt; end_academic_year</code>,
+   else null; <code>year_end_or_max</code> =
+   <code>coalesce(year_end, cast('9999-12-31' as date))</code> for the window.</li>
+<li><code>plans_ranked</code>:
+   <code>max(year_end_or_max) over (partition by student_number, intervention_name, academic_year order by year_start, year_end_or_max rows between unbounded preceding and 1 preceding) as prior_max_end</code>.</li>
+<li><code>plans_flagged</code>:
+   <code>if(prior_max_end is null or year_start &gt; date_add(prior_max_end, interval 1 day), 1, 0) as is_new_episode</code>.</li>
+<li><code>plans_numbered</code>:
+   <code>sum(is_new_episode) over (partition by student_number, intervention_name, academic_year order by year_start, year_end_or_max rows between unbounded preceding and current row) as episode_number</code>,
+   plus
+   <code>row_number() over (same partition and episode_number order by year_start desc, intervention_plan_id desc) as rn_latest</code>
+   for the attribute pick.</li>
+<li><code>episodes</code>: group by <code>student_number</code>, <code>intervention_name</code>, <code>academic_year</code>,
+   <code>episode_number</code>: <code>min(year_start) as episode_start</code>,
+   <code>max(year_end_or_max) as episode_end_or_max</code>, <code>count(*) as plans_in_episode</code>,
+   <code>array_agg(intervention_plan_id order by intervention_plan_id) as intervention_plan_ids</code>,
+   and <code>max(if(rn_latest = 1, school_id, null))</code>, same for <code>district</code> and
+   <code>intervention_subject_area</code>.</li>
+</ol>
+<p>Final select: the grain columns, attributes,
+<code>if(episode_end_or_max = '9999-12-31', null, episode_end_or_max) as episode_end</code>,
+<code>is_current</code> as
+<code>current_date(tz) &gt;= episode_start and current_date(tz) &lt;= episode_end_or_max</code>,
+and
+<code>{{ dbt_utils.generate_surrogate_key(["student_number", "intervention_name", "academic_year", "episode_start"]) }} as intervention_episode_key</code>.
+Put a 1-line comment on the sentinel literal (S20) and on the 1-day adjacency
+literal.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run the unit tests to verify they pass</strong></li>
+</ul>
+<p>Same command as Step 2. Expected: <code>PASS=9</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Stage the BrM externals into your dev schema and build the
+      chain</strong></li>
+</ul>
+<p>Run (personal schema, no consent needed):
+<code>uv run dbt run-operation stage_external_sources --project-dir src/dbt/kipptaf --args "select: branchingminds.src_branchingminds__intervention_plans" --vars '{cloud_storage_uri_base: gs://teamster-test/dagster/kipptaf, ext_full_refresh: true}' --target dev 2&gt;&amp;1 | tail -n 10</code></p>
+<p>Then:
+<code>uv run dbt build --project-dir src/dbt/kipptaf --select stg_branchingminds__intervention_plans int_branchingminds__intervention_plans_rollup --target dev --defer --favor-state --state /workspaces/teamster/src/dbt/kipptaf/target/prod 2&gt;&amp;1 | tail -n 30</code></p>
+<p>Expected: 2 models build, 3 tests on the rollup pass, 9 unit tests pass.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Validate against the known snapshot</strong></li>
+</ul>
+<p>Query via the BigQuery MCP against <code>zz_&lt;user&gt;_kipptaf_branchingminds</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="n">countif</span><span class="p">(</span><span class="n">intervention_name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'SIPPS'</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">sipps_episodes</span><span class="p">,</span>
+<span class="w">    </span><span class="n">countif</span><span class="p">(</span><span class="n">intervention_name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'SIPPS'</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">is_current</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">sipps_current</span><span class="p">,</span>
+<span class="w">    </span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="k">if</span><span class="p">(</span><span class="n">intervention_name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'SIPPS'</span><span class="p">,</span><span class="w"> </span><span class="n">student_number</span><span class="p">,</span><span class="w"> </span><span class="k">null</span><span class="p">))</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">sipps_students</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_</span><span class="o">&lt;</span><span class="k">user</span><span class="o">&gt;</span><span class="n">_kipptaf_branchingminds</span><span class="p">.</span><span class="n">int_branchingminds__intervention_plans_rollup</span><span class="o">`</span>
+</code></pre></div>
+<p>Expected on the 2026-10-22 snapshot: <code>sipps_episodes</code> 381, <code>sipps_students</code> 381,
+<code>sipps_current</code> 185 (Camden plans end 2027-01-05; Newark and Paterson ended
+2026-10-27). A different <code>sipps_current</code> means the snapshot in
+<code>gs://teamster-test</code> moved or the date rule drifted; check the episode end dates
+before changing code.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Lint and commit</strong></li>
+</ul>
+<p>Run trunk check on the 2 files (Global Constraints). Then:</p>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>src/dbt/kipptaf/models/branchingminds/intermediate/
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"feat(dbt): add Branching Minds intervention episodes rollup</span>
+
+<span class="s2">Refs #6269</span>
+
+<span class="s2">Co-Authored-By: Claude Fable 5.1 &lt;noreply@anthropic.com&gt;"</span>
+</code></pre></div>
+<hr />
+<h3 id="task-2-rewire-is_sipps-on-the-enrollments-hub">Task 2: Rewire <code>is_sipps</code> on the enrollments hub</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/students/intermediate/int_extracts__student_enrollments.sql</code>
+  (line 366 <code>is_sipps</code> expression; lines 586-593 the <code>sip</code> join; a new CTE at
+  the top of the <code>with</code> block)</li>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/students/intermediate/properties/int_extracts__student_enrollments.yml</code>
+  (the <code>is_sipps</code> column entry near line 991)</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: Task 1's rollup, columns <code>student_number</code>, <code>academic_year</code>,
+  <code>intervention_name</code>.</li>
+<li>
+<p>Produces: <code>int_extracts__student_enrollments.is_sipps bool</code>, unchanged name
+  and type, same grain.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Add the projection CTE</strong></p>
+</li>
+</ul>
+<p>In the <code>with</code> block, after <code>school_year_start</code>, add:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">sipps</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="c1">-- grain projection, not dup-masking: 1 row per student and year</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="k">distinct</span><span class="w"> </span><span class="n">student_number</span><span class="p">,</span><span class="w"> </span><span class="n">academic_year</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"int_branchingminds__intervention_plans_rollup"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">intervention_name</span><span class="w"> </span><span class="k">like</span><span class="w"> </span><span class="s1">'SIPPS%'</span>
+<span class="w">    </span><span class="p">),</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Swap the join and the expression</strong></li>
+</ul>
+<p>Replace the
+<code>left join {{ ref("base_powerschool__course_enrollments") }} as sip ... and not sip.is_dropped_section</code>
+block with:</p>
+<div class="highlight"><pre><span></span><code><span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">    </span><span class="n">sipps</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">sip</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">student_number</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sip</span><span class="p">.</span><span class="n">student_number</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sip</span><span class="p">.</span><span class="n">academic_year</span>
+</code></pre></div>
+<p>Change line 366 to
+<code>if(sip.student_number is not null, true, false) as is_sipps,</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Update the column description</strong></li>
+</ul>
+<p>Replace <code>description: Conditional on students_student_number.</code> on <code>is_sipps</code>
+with a description saying the student held a SIPPS or SIPPS Challenge plan in
+Branching Minds at any point in the academic year, per
+<code>int_branchingminds__intervention_plans_rollup</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Compile and column-check the hub against dev</strong></li>
+</ul>
+<p>Run:
+<code>uv run dbt build --project-dir src/dbt/kipptaf --select int_extracts__student_enrollments --target dev --defer --favor-state --state /workspaces/teamster/src/dbt/kipptaf/target/prod --empty 2&gt;&amp;1 | tail -n 20</code></p>
+<p>Expected: the model builds (columns resolve; <code>--empty</code> leaves the dev relation
+with 0 rows, which is fine here). <code>--favor-state</code> resolves the rollup to the dev
+copy Task 1 built, since prod has none; if it errors on a missing rollup
+relation, add <code>int_branchingminds__intervention_plans_rollup</code> to <code>--select</code> and
+drop <code>--empty</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Value-check <code>is_sipps</code> with a prod-shaped query</strong></li>
+</ul>
+<p>Via the BigQuery MCP, reproduce the join on prod enrollment rows and the dev
+rollup:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">_dbt_source_project</span><span class="p">,</span><span class="w"> </span><span class="n">countif</span><span class="p">(</span><span class="n">s</span><span class="p">.</span><span class="n">student_number</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">sipps_students</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_extracts</span><span class="p">.</span><span class="n">int_extracts__student_enrollments</span><span class="o">`</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">e</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="k">distinct</span><span class="w"> </span><span class="n">student_number</span><span class="p">,</span><span class="w"> </span><span class="n">academic_year</span><span class="p">,</span>
+<span class="w">    </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_</span><span class="o">&lt;</span><span class="k">user</span><span class="o">&gt;</span><span class="n">_kipptaf_branchingminds</span><span class="p">.</span><span class="n">int_branchingminds__intervention_plans_rollup</span><span class="o">`</span>
+<span class="w">    </span><span class="k">where</span><span class="w"> </span><span class="n">intervention_name</span><span class="w"> </span><span class="k">like</span><span class="w"> </span><span class="s1">'SIPPS%'</span>
+<span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">s</span>
+<span class="k">on</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">student_number</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">student_number</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">academic_year</span>
+<span class="k">where</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2026</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">rn_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">_dbt_source_project</span>
+</code></pre></div>
+<p>Expected on the 2026-10-22 snapshot: Camden 184, Newark 205, Paterson 33 (422
+total, Challenge included). Review Focus 4: the Paterson count is 33 only
+because SIPPS Challenge counts; a plain <code>= 'SIPPS'</code> would drop Paterson Prep
+Middle to 0.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Lint and commit</strong></li>
+</ul>
+<p>Run trunk check on the 2 files. Then:</p>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>src/dbt/kipptaf/models/students/intermediate/int_extracts__student_enrollments.sql<span class="w"> </span>src/dbt/kipptaf/models/students/intermediate/properties/int_extracts__student_enrollments.yml
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"feat(dbt): read is_sipps from Branching Minds episodes</span>
+
+<span class="s2">Replaces the PowerSchool SEM01099G1 course join, which carried rows only</span>
+<span class="s2">for Camden in AY2025.</span>
+
+<span class="s2">Refs #6269</span>
+
+<span class="s2">Co-Authored-By: Claude Fable 5.1 &lt;noreply@anthropic.com&gt;"</span>
+</code></pre></div>
+<hr />
+<h3 id="task-3-push-and-open-the-pr">Task 3: Push and open the PR</h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Read: <code>.github/pull_request_template.md</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Push the branch</strong></p>
+</li>
+</ul>
+<p><code>git push origin HEAD</code> from the worktree.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Open the PR with <code>mcp__github__create_pull_request</code></strong></li>
+</ul>
+<p>Base <code>main</code>, head
+<code>anthonygwalters/feat/claude-branchingminds-intervention-episodes</code>, title
+<code>feat(dbt): Branching Minds intervention episodes and is_sipps cutover</code>. Body
+from the template. Summary: what the rollup is, the <code>is_sipps</code> cutover, the
+AY2025 Camden history loss as a decision. Reviewer Notes: the planned-end
+semantics of <code>is_current</code>; the 1-day adjacency rule; <code>--favor-state</code> dev
+validation numbers (381 episodes, 185 current, 422 <code>is_sipps</code> students). For
+Claude fold-out: spec and plan paths; prerequisite that the BrM sensor
+<code>kipptaf__branchingminds__sftp_sensor</code> is started and the 9 BrM assets run in
+prod before the models carry data; that dbt Cloud CI reads the
+<code>zz_stg_kipptaf_branchingminds</code> externals from the 2026-10-22 branch deployment.
+<code>Closes #6269</code>. End with the
+<code>🤖 Generated with [Claude Code](https://claude.com/claude-code)</code> line.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Confirm the returned title and body match intent</strong>, then offer
+      to watch CI and to respond to <code>claude-review</code> (invoke <code>pr-ci-review</code> on a
+      yes).</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+    
+  </body>
+</html>

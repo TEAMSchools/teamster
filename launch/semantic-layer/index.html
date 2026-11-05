@@ -1,0 +1,1658 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Same as the launch page: reachable by link, not surfaced in search. -->
+    <meta name="robots" content="noindex, nofollow" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%88%3C/text%3E%3C/svg%3E"
+    />
+    <title>Semantic layer build status — KIPP NJ | Miami</title>
+    <style>
+      /* Tokens and type stacks copied from docs/launch/template.html so the
+         two pages read as one site. Keep them in step if that file changes. */
+      :root {
+        --kipp-indigo: #001e62;
+        --kipp-orange: #f9a21a;
+        --indigo-700: #0a2f7e;
+        --indigo-600: #1a44a0;
+        --indigo-200: #b9caf0;
+        --indigo-100: #dde6fa;
+        --indigo-50: #eef3fc;
+        --neutral-0: #fff;
+        --neutral-25: #fafbfc;
+        --neutral-100: #e9edf3;
+        --neutral-200: #d6dde7;
+        --neutral-300: #b6c0cf;
+        --neutral-400: #8d99ab;
+        --neutral-600: #5a6675;
+        --neutral-800: #2a3340;
+        --surface-page: var(--neutral-25);
+        --surface-card: var(--neutral-0);
+        --surface-muted: var(--neutral-100);
+        --text-body: var(--neutral-800);
+        --text-muted: var(--neutral-600);
+        --text-subtle: var(--neutral-400);
+        --text-link: var(--indigo-600);
+        --border-subtle: var(--neutral-200);
+        --border-default: var(--neutral-300);
+        --focus-ring: #57c0e9;
+        --good: #1f7a1f;
+        --warn: #9a5b00;
+        /* Readiness scale: one hue, darker = closer to done. */
+        --s-ready: #001e62;
+        --s-cube_work: #9fb3e6;
+        --s-data_work: #d3ddf6;
+        --s-unknown: #b6c0cf;
+        --font-display:
+          "Whitney SSm A", "Whitney", -apple-system, BlinkMacSystemFont,
+          "Segoe UI", Roboto, Calibri, "Helvetica Neue", Arial, sans-serif;
+        --font-brand:
+          "Whitney SSm A", -apple-system, BlinkMacSystemFont, "Segoe UI",
+          Roboto, Calibri, "Helvetica Neue", Arial, sans-serif;
+        --font-mono:
+          "JetBrains Mono", "Cascadia Mono", Consolas, ui-monospace, "SF Mono",
+          Menlo, "Roboto Mono", monospace;
+      }
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+      }
+      body {
+        background: var(--surface-page);
+        font-family: var(--font-brand);
+        color: var(--text-body);
+        -webkit-font-smoothing: antialiased;
+      }
+      a {
+        color: var(--text-link);
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+      button {
+        font: inherit;
+        color: inherit;
+      }
+      :focus-visible {
+        outline: 2px solid var(--focus-ring);
+        outline-offset: 2px;
+      }
+
+      /* masthead (as on the launch page) */
+      .mast {
+        background: var(--kipp-indigo);
+        padding: 16px 28px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        flex-wrap: wrap;
+      }
+      .mast .brand {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .wordmark {
+        font: 800 17px/1 var(--font-display);
+        letter-spacing: 0.02em;
+        color: #fff;
+      }
+      .wordmark span {
+        font-weight: 300;
+        opacity: 0.75;
+      }
+      .rule {
+        width: 1px;
+        height: 26px;
+        background: rgba(255, 255, 255, 0.28);
+      }
+      .mast .kicker {
+        font: 600 15px/1 var(--font-brand);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #fff;
+      }
+      .mast .kicker:hover {
+        text-decoration: underline;
+      }
+      .mast .meta {
+        font: 400 12.5px/1 var(--font-brand);
+        color: rgba(255, 255, 255, 0.62);
+      }
+
+      /* header block */
+      .head {
+        padding: 18px 28px 22px;
+        background: var(--surface-card);
+        border-bottom: 1px solid var(--border-subtle);
+      }
+      .back {
+        display: inline-block;
+        font: 600 13px/1 var(--font-brand);
+        margin-bottom: 14px;
+      }
+      .head h1 {
+        font: 700 26px/1.2 var(--font-display);
+        color: var(--kipp-indigo);
+        margin: 0 0 4px;
+      }
+      .head p.sub {
+        font: 400 14px/1.5 var(--font-brand);
+        color: var(--text-muted);
+        margin: 0;
+        max-width: 68ch;
+      }
+      .eyebrow {
+        display: block;
+        font: 700 11px/1 var(--font-brand);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--text-muted);
+        margin-bottom: 9px;
+      }
+
+      /* how to read: two flows */
+      .flows {
+        margin-top: 16px;
+        display: grid;
+        gap: 10px;
+      }
+      .flow {
+        display: grid;
+        grid-template-columns: 150px 1fr;
+        gap: 12px;
+        align-items: center;
+      }
+      .flow-label {
+        font: 700 11px/1.3 var(--font-brand);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--text-muted);
+      }
+      .flow-steps {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 0;
+      }
+      .flow-steps li {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-height: 40px;
+        padding: 5px 12px 5px 13px;
+        margin-right: 16px;
+        background: var(--indigo-50);
+        border: 1px solid var(--indigo-100);
+        border-radius: 5px;
+      }
+      .flow-steps li::after {
+        content: "→";
+        position: absolute;
+        right: -13px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-subtle);
+        font-size: 13px;
+      }
+      .flow-steps li:last-child::after {
+        content: none;
+      }
+      .flow-steps li.end {
+        background: linear-gradient(
+          135deg,
+          var(--kipp-indigo),
+          var(--indigo-600)
+        );
+        border-color: var(--kipp-indigo);
+        padding-right: 16px;
+        box-shadow: 0 3px 10px rgba(0, 30, 98, 0.25);
+      }
+      .flow-steps li.end b {
+        color: #fff;
+      }
+      .flow-steps li.end > span {
+        color: rgba(255, 255, 255, 0.78);
+      }
+      .flow-steps .badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: var(--kipp-orange);
+        color: var(--kipp-indigo);
+        font: 800 11px/1 var(--font-brand);
+      }
+      .flow-steps b {
+        font: 600 13px/1.25 var(--font-brand);
+        color: var(--kipp-indigo);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .flow-steps span {
+        font: 400 12px/1.3 var(--font-brand);
+        color: var(--text-muted);
+      }
+      .flow-steps i {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 5px;
+        border-radius: 4px 0 0 4px;
+      }
+      .flow-steps .n {
+        font: 500 11px/1 var(--font-mono);
+        color: var(--text-subtle);
+      }
+      .flow-note {
+        margin: 2px 0 0 162px;
+        font: 400 12.5px/1.4 var(--font-brand);
+        color: var(--text-muted);
+      }
+      .flow-note b {
+        color: var(--kipp-indigo);
+      }
+      @media (max-width: 760px) {
+        .flow {
+          grid-template-columns: 1fr;
+          gap: 6px;
+        }
+        .flow-note {
+          margin-left: 0;
+        }
+      }
+
+      /* KPI tiles */
+      .kpis {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        gap: 10px;
+        margin-top: 18px;
+      }
+      .kpi {
+        padding: 12px 14px;
+        background: var(--indigo-50);
+        border: 1px solid var(--indigo-100);
+        border-radius: 5px;
+      }
+      .kpi-value {
+        font: 700 28px/1.15 var(--font-display);
+        color: var(--kipp-indigo);
+      }
+      .kpi-value small {
+        font: 400 14px/1 var(--font-brand);
+        color: var(--text-muted);
+      }
+      .kpi-ms {
+        font: 600 15px/1.3 var(--font-brand);
+        color: var(--kipp-indigo);
+      }
+      .kpi-foot {
+        font: 400 12px/1.4 var(--font-brand);
+        color: var(--text-muted);
+        margin-top: 6px;
+      }
+      .kpi .bar {
+        margin-top: 9px;
+      }
+
+      /* stacked readiness bar */
+      .bar {
+        display: flex;
+        gap: 2px;
+        height: 8px;
+        width: 100%;
+        min-width: 90px;
+        background: var(--surface-muted);
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .bar span {
+        display: block;
+        height: 100%;
+      }
+      .sw-ready {
+        background: var(--s-ready);
+      }
+      .sw-cube_work {
+        background: var(--s-cube_work);
+      }
+      .sw-data_work {
+        background: var(--s-data_work);
+      }
+      .sw-unset,
+      .sw-unknown {
+        background: repeating-linear-gradient(
+          45deg,
+          var(--s-unknown) 0 2px,
+          transparent 2px 5px
+        );
+      }
+      .sw-tableau_only {
+        background: transparent;
+        border: 1px dashed var(--text-subtle);
+      }
+
+      /* controls + legend */
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px 18px;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 28px;
+        background: var(--surface-card);
+        border-bottom: 1px solid var(--border-subtle);
+      }
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 16px;
+        font: 400 12.5px/1.4 var(--font-brand);
+        color: var(--text-muted);
+      }
+      .legend i {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 3px;
+        vertical-align: -2px;
+        margin-right: 6px;
+      }
+      .controls {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .field {
+        height: 40px;
+        border: 1px solid var(--border-default);
+        border-radius: 6px;
+        background: var(--surface-card);
+        font: 400 14px/1 var(--font-brand);
+        color: var(--text-body);
+        padding: 0 12px;
+      }
+      .field::placeholder {
+        color: var(--text-subtle);
+      }
+      #q {
+        width: 260px;
+      }
+
+      /* main */
+      .main {
+        padding: 8px 28px 40px;
+      }
+      .grouphead {
+        padding: 22px 0 6px;
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+      }
+      .grouphead h2 {
+        font: 700 12px/1 var(--font-brand);
+        text-transform: uppercase;
+        letter-spacing: 0.11em;
+        color: var(--kipp-indigo);
+        margin: 0;
+      }
+      .grouphead .fill {
+        flex: 1;
+        height: 1px;
+        background: var(--border-subtle);
+      }
+      .grouphead .n {
+        font: 500 12px/1 var(--font-mono);
+        color: var(--text-subtle);
+      }
+      .section-note {
+        font: 400 13.5px/1.5 var(--font-brand);
+        color: var(--text-muted);
+        margin: 0 0 12px;
+      }
+
+      /* dashboard table */
+      .table-wrap {
+        overflow-x: auto;
+        background: var(--surface-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: 6px;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        min-width: 820px;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 10px 14px;
+        vertical-align: middle;
+      }
+      thead th {
+        font: 700 11px/1 var(--font-brand);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--text-muted);
+        border-bottom: 1px solid var(--border-subtle);
+        padding-block: 12px;
+      }
+      tr.domain th {
+        font: 700 18px/1.2 var(--font-brand);
+        color: var(--kipp-indigo);
+        background: var(--surface-muted);
+        padding: 14px 12px 12px;
+        border-top: 12px solid var(--surface-card);
+        border-bottom: 1px solid var(--border-default);
+      }
+      tr.domain .dom-sum {
+        font: 400 13px/1 var(--font-brand);
+        color: var(--text-muted);
+        margin-left: 10px;
+      }
+      tr.domain td {
+        padding-top: 20px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--border-subtle);
+        vertical-align: bottom;
+      }
+      tr.dash td {
+        border-bottom: 1px solid var(--border-subtle);
+      }
+      tr.dash:hover td {
+        background: var(--indigo-50);
+      }
+      .col-name {
+        width: 36%;
+      }
+      .col-bar {
+        width: 25%;
+      }
+      .col-due {
+        width: 14%;
+        white-space: nowrap;
+      }
+      .name-btn {
+        background: none;
+        border: 0;
+        padding: 0;
+        text-align: left;
+        cursor: pointer;
+        font: 600 15px/1.35 var(--font-brand);
+        color: var(--kipp-indigo);
+        display: flex;
+        gap: 8px;
+        align-items: baseline;
+      }
+      .name-btn .chev {
+        color: var(--text-subtle);
+        font-size: 10px;
+        transition: transform 0.15s;
+        display: inline-block;
+        width: 10px;
+      }
+      .name-btn[aria-expanded="true"] .chev {
+        transform: rotate(90deg);
+      }
+      .match-hint {
+        display: block;
+        font: 400 12px/1.4 var(--font-brand);
+        color: var(--text-subtle);
+        margin-left: 18px;
+      }
+      .cell-bar {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+      .count {
+        font: 400 13px/1 var(--font-brand);
+        color: var(--text-muted);
+        font-variant-numeric: tabular-nums;
+      }
+      .count b {
+        color: var(--text-body);
+      }
+      .muted {
+        color: var(--text-subtle);
+      }
+      .due {
+        font: 400 13.5px/1 var(--font-brand);
+      }
+
+      /* pilot calendar: a plain grid for stakeholders; the month cell spans
+         its domains, a reached status fills orange like a done step */
+      .pilot-wrap {
+        margin-bottom: 28px;
+      }
+      table.pilot th[scope="rowgroup"] {
+        font: 600 14px/1.3 var(--font-brand);
+        color: var(--kipp-indigo);
+        vertical-align: top;
+        text-align: left;
+        background: var(--surface-muted);
+      }
+      table.pilot tr.month-start > * {
+        border-top: 2px solid var(--border-default);
+      }
+      table.pilot td {
+        border-bottom: 1px solid var(--border-subtle);
+      }
+      .yn {
+        display: inline-block;
+        white-space: nowrap;
+        font: 600 12.5px/1 var(--font-brand);
+        padding: 4px 8px;
+        border-radius: 999px;
+      }
+      .yn.yes {
+        background: var(--kipp-orange);
+        color: var(--kipp-indigo);
+      }
+      .yn.no {
+        border: 1px solid var(--border-default);
+        color: var(--text-muted);
+      }
+
+      /* domain stage: a stepper across the shaded domain header row, one
+         labeled segment per step; only done steps are filled, in orange */
+      .stepper {
+        list-style: none;
+        margin: 12px 0 0;
+        padding: 0;
+        text-transform: none;
+        letter-spacing: 0;
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 6px;
+      }
+      .stepper li {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        font: 400 12.5px/1.2 var(--font-brand);
+        color: var(--text-muted);
+      }
+      .stepper .seg {
+        height: 8px;
+        border-radius: 4px;
+        background: var(--surface-card);
+      }
+      .stepper li.on .seg {
+        background: var(--kipp-orange);
+      }
+      .stepper b {
+        font-weight: 600;
+        color: var(--text-body);
+      }
+      .stepper .d {
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* detail drawer */
+      tr.detail td {
+        background: var(--surface-page);
+        border-bottom: 1px solid var(--border-subtle);
+        padding: 16px 18px 20px 36px;
+      }
+      .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 22px;
+      }
+      .detail h3 {
+        font: 700 11px/1 var(--font-brand);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--text-muted);
+        margin: 0 0 10px;
+      }
+      .grp {
+        margin-bottom: 12px;
+      }
+      .grp-h {
+        font: 600 13px/1.3 var(--font-brand);
+        color: var(--kipp-indigo);
+        margin-bottom: 4px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .grp-h i {
+        width: 10px;
+        height: 10px;
+        border-radius: 3px;
+        display: inline-block;
+      }
+      .grp ul {
+        margin: 0;
+        padding-left: 16px;
+        font: 400 13.5px/1.45 var(--font-brand);
+      }
+      .grp li {
+        margin: 2px 0;
+      }
+      .grp li .use {
+        color: var(--text-subtle);
+      }
+      .asana-link {
+        font: 600 12.5px/1 var(--font-brand);
+      }
+
+      /* timeline */
+      .tl {
+        background: var(--surface-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: 6px;
+        padding: 14px 16px 10px;
+        overflow-x: auto;
+      }
+      .tl-inner {
+        min-width: 720px;
+      }
+      .tl-row {
+        display: grid;
+        grid-template-columns: 180px 1fr;
+        gap: 14px;
+        align-items: start;
+        padding: 8px 0;
+        border-top: 1px solid var(--border-subtle);
+      }
+      .tl-row:first-of-type {
+        border-top: 0;
+      }
+      .tl-label {
+        font: 600 13.5px/1.3 var(--font-brand);
+        color: var(--kipp-indigo);
+        padding-top: 4px;
+      }
+      .tl-label small {
+        display: block;
+        font: 400 12px/1.4 var(--font-brand);
+        color: var(--text-subtle);
+      }
+      .tl-track {
+        position: relative;
+        height: 30px;
+      }
+      .tl-track::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 14px;
+        border-top: 1px solid var(--border-subtle);
+      }
+      .tl-axis {
+        position: relative;
+        height: 20px;
+        margin-left: 194px;
+        font: 400 11.5px/1 var(--font-brand);
+        color: var(--text-subtle);
+      }
+      .tl-axis span {
+        position: absolute;
+        top: 0;
+        padding-left: 4px;
+        border-left: 1px solid var(--border-subtle);
+        height: 20px;
+        white-space: nowrap;
+      }
+      .tl-today {
+        position: absolute;
+        top: -4px;
+        bottom: -4px;
+        border-left: 2px solid var(--kipp-orange);
+      }
+      .tl-mark {
+        position: absolute;
+        top: 4px;
+        width: 22px;
+        height: 22px;
+        margin-left: -11px;
+        border: 0;
+        background: none;
+        padding: 0;
+        cursor: default;
+      }
+      .tl-mark::before {
+        content: "";
+        position: absolute;
+        left: 5px;
+        top: 5px;
+        width: 12px;
+        height: 12px;
+        transform: rotate(45deg);
+        background: var(--surface-card);
+        border: 2px solid var(--kipp-indigo);
+        border-radius: 2px;
+      }
+      .tl-mark.done::before {
+        background: var(--kipp-indigo);
+      }
+      .tl-mark.dash::before {
+        transform: none;
+        border-radius: 50%;
+      }
+      /* domain plan: one row per domain, a line from Building in Cube to
+         Launched, the Verified diamond emphasized */
+      .tl-axis small {
+        display: block;
+        margin-top: 3px;
+        font-weight: 600;
+        color: var(--kipp-indigo);
+      }
+      .tl-axis.months {
+        height: 34px;
+      }
+      .tl-row.dom {
+        padding: 2px 0;
+        border-top: 0;
+        align-items: center;
+      }
+      .tl-row.dom .tl-label {
+        padding-top: 0;
+        font-weight: 500;
+      }
+      .tl-row.dom .tl-label small {
+        display: inline;
+        margin-left: 6px;
+      }
+      .tl-row.dom-first {
+        border-top: 1px solid var(--border-subtle);
+        padding-top: 8px;
+      }
+      .tl-row.dom-last {
+        padding-bottom: 8px;
+      }
+      .tl-span {
+        position: absolute;
+        top: 14px;
+        border-top: 3px solid var(--border-default);
+      }
+      .tl-mark.built::before {
+        transform: none;
+        border-radius: 50%;
+        width: 8px;
+        height: 8px;
+        left: 7px;
+        top: 7px;
+      }
+      .tl-mark.verified::before {
+        width: 14px;
+        height: 14px;
+        left: 4px;
+        top: 4px;
+        border-color: var(--kipp-orange);
+      }
+      .tl-mark.verified.done::before {
+        background: var(--kipp-orange);
+      }
+      .tl-mark.launch::before {
+        transform: none;
+        border-radius: 50%;
+      }
+      /* done fills orange, as in the domain stepper */
+      .tl-mark.built.done::before,
+      .tl-mark.launch.done::before {
+        background: var(--kipp-orange);
+      }
+      .tl-unsched {
+        font: 400 12px/1.6 var(--font-brand);
+        color: var(--text-subtle);
+        margin-top: 2px;
+      }
+      .chip {
+        display: inline-block;
+        font: 500 11px/1 var(--font-mono);
+        padding: 3px 7px;
+        border-radius: 999px;
+        background: var(--surface-muted);
+        color: var(--text-muted);
+        margin: 2px 3px 0 0;
+      }
+      .chip.done {
+        text-decoration: line-through;
+      }
+      .tl-key {
+        display: flex;
+        gap: 18px;
+        flex-wrap: wrap;
+        font: 400 12px/1.4 var(--font-brand);
+        color: var(--text-muted);
+        margin-top: 8px;
+      }
+      .tl-key i {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        margin-right: 6px;
+        vertical-align: -1px;
+      }
+      .empty {
+        padding: 40px 12px;
+        text-align: center;
+        font: 400 13.5px/1.5 var(--font-brand);
+        color: var(--text-muted);
+      }
+      .empty b {
+        display: block;
+        font: 600 16px/1.4 var(--font-brand);
+        color: var(--kipp-indigo);
+        margin-bottom: 6px;
+      }
+      .foot {
+        padding: 18px 28px 28px;
+        font: 400 12px/1.5 var(--font-brand);
+        color: var(--text-subtle);
+        border-top: 1px solid var(--border-subtle);
+      }
+
+      /* tooltip */
+      #tip {
+        position: fixed;
+        z-index: 50;
+        pointer-events: none;
+        background: var(--neutral-800);
+        color: #fff;
+        font: 400 12.5px/1.45 var(--font-brand);
+        padding: 8px 10px;
+        border-radius: 5px;
+        max-width: 300px;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+      }
+      #tip .tr {
+        display: flex;
+        justify-content: space-between;
+        gap: 14px;
+      }
+      [hidden] {
+        display: none !important;
+      }
+
+      @media (max-width: 900px) {
+        #q,
+        .controls,
+        .controls .field {
+          width: 100%;
+        }
+      }
+      @media (max-width: 640px) {
+        .mast,
+        .head,
+        .toolbar,
+        .main,
+        .foot {
+          padding-left: 16px;
+          padding-right: 16px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="mast">
+      <div class="brand">
+        <span class="wordmark">KIPP NJ <span>|</span> Miami</span>
+        <span class="rule"></span>
+        <a class="kicker" href="../">Data tools</a>
+      </div>
+      <span class="meta" id="mastmeta"></span>
+    </header>
+
+    <div class="head">
+      <a class="back" href="../">← All data tools</a>
+      <h1>Semantic layer build status</h1>
+      <p class="sub">
+        Where each core Tableau dashboard stands in its move to the Cube
+        semantic layer.
+      </p>
+      <div class="flows" aria-label="How to read this page">
+        <div class="flow">
+          <span class="flow-label">Each metric and dimension</span>
+          <ol class="flow-steps">
+            <li>
+              <i class="sw-data_work"></i><b>Needs data work first</b
+              ><span>Build it in dbt</span>
+            </li>
+            <li>
+              <i class="sw-cube_work"></i><b>Needs Cube work</b
+              ><span>Build or edit in Cube</span>
+            </li>
+            <li class="end">
+              <b><span class="badge" aria-hidden="true">✓</span>Ready in Cube</b
+              ><span>Claude can query it</span>
+            </li>
+          </ol>
+        </div>
+        <div class="flow">
+          <span class="flow-label">Each domain</span>
+          <ol class="flow-steps" id="flow-steps"></ol>
+        </div>
+        <p class="flow-note">
+          Progress is tracked per domain. <b>Verified</b> = Cube matches every
+          dashboard in the domain.
+        </p>
+      </div>
+      <div class="kpis" id="kpis"></div>
+    </div>
+
+    <div class="toolbar">
+      <div class="legend" id="legend"></div>
+      <div class="controls">
+        <input
+          id="q"
+          class="field"
+          type="search"
+          placeholder="Search dashboards or metrics"
+          aria-label="Search dashboards, metrics and dimensions"
+        />
+        <select id="f-domain" class="field" aria-label="Domain">
+          <option value="">All domains</option>
+        </select>
+        <select id="f-stage" class="field" aria-label="Domain stage">
+          <option value="">All stages</option>
+          <option value="not">Not started</option>
+          <option value="prog">In progress</option>
+          <option value="verified">Verified</option>
+          <option value="launched">Launched</option>
+        </select>
+      </div>
+    </div>
+
+    <main class="main" id="main">
+      <div class="grouphead">
+        <h2>Dashboards</h2>
+        <span class="fill"></span><span class="n" id="dash-n"></span>
+      </div>
+      <p class="section-note">
+        Each domain row shows where the domain stands. Select a dashboard to see
+        its metrics and dimensions.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <colgroup>
+            <col class="col-name" />
+            <col class="col-bar" />
+            <col class="col-bar" />
+            <col class="col-due" />
+          </colgroup>
+          <tbody id="dash-body"></tbody>
+        </table>
+      </div>
+      <div class="empty" id="empty-note" hidden>
+        <b>No dashboard matches that</b>Try a different search or clear the
+        filters.
+      </div>
+
+      <div class="grouphead">
+        <h2>Timeline</h2>
+        <span class="fill"></span>
+      </div>
+      <p class="section-note">
+        Month by month: when each domain starts building in Cube, is verified
+        (at a month end) and launches.
+      </p>
+      <div class="tl"><div class="tl-inner" id="timeline"></div></div>
+      <div class="tl-key">
+        <span
+          ><i
+            style="
+              border: 2px solid var(--kipp-indigo);
+              border-radius: 50%;
+              width: 6px;
+              height: 6px;
+            "
+          ></i
+          >Building in Cube</span
+        >
+        <span
+          ><i
+            style="
+              border: 2px solid var(--kipp-orange);
+              transform: rotate(45deg);
+              border-radius: 2px;
+            "
+          ></i
+          >Verified (filled orange when done)</span
+        >
+        <span
+          ><i
+            style="border: 2px solid var(--kipp-indigo); border-radius: 50%"
+          ></i
+          >Launched</span
+        >
+        <span
+          ><i style="border-left: 2px solid var(--kipp-orange); width: 2px"></i
+          >Today</span
+        >
+      </div>
+
+      <div id="pilot-section">
+        <div class="grouphead">
+          <h2>Pilot calendar</h2>
+          <span class="fill"></span>
+        </div>
+        <p class="section-note">
+          When each domain's pilot runs, and how far its pilot group is set up.
+        </p>
+        <div class="table-wrap pilot-wrap">
+          <table class="pilot">
+            <thead>
+              <tr>
+                <th>Month</th>
+                <th>Domain</th>
+                <th>Pilot date</th>
+                <th>Pilot group status</th>
+              </tr>
+            </thead>
+            <tbody id="pilot-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="pl-section">
+        <div class="grouphead">
+          <h2>Not in this year's plan</h2>
+          <span class="fill"></span><span class="n" id="pl-n"></span>
+        </div>
+        <p class="section-note">
+          Due in 2027-28, or stretch work for this year. Shown for reference,
+          not counted in the totals above.
+        </p>
+        <div class="table-wrap">
+          <table>
+            <colgroup>
+              <col class="col-name" />
+              <col class="col-bar" />
+              <col class="col-bar" />
+              <col class="col-due" />
+            </colgroup>
+            <tbody id="pl-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+
+    <footer class="foot">
+      Read from the Asana project “Data Marts + Semantic Layer” every 4 hours.
+      Shows names, counts and statuses only.
+    </footer>
+
+    <div id="tip" role="tooltip" hidden></div>
+
+    <!-- Data is refreshed every 4 hours by a GitHub Action in
+         cristinabaldor/semantic-layer-dashboard, which reads Asana. Moving that
+         refresh into this repo is tracked in TEAMSchools/teamster#5794. -->
+    <script type="module">
+      // data.js is `const DATA = {...};`. Fetch it as text and parse the object
+      // as JSON so nothing in a file from outside this repo runs on this site.
+      // The generator must keep writing a single JSON object literal.
+      const DATA_URL =
+        "https://cristinabaldor.github.io/semantic-layer-dashboard/data.js";
+
+      try {
+        const res = await fetch(DATA_URL);
+        if (!res.ok) throw new Error(`data.js returned HTTP ${res.status}`);
+        const text = await res.text();
+        render(
+          JSON.parse(text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1)),
+        );
+      } catch (err) {
+        console.error(err);
+        document
+          .querySelectorAll(".flows, #kpis, .toolbar")
+          .forEach((el) => (el.hidden = true));
+        document.getElementById("mastmeta").textContent = "";
+        document.getElementById("main").innerHTML =
+          '<div class="empty"><b>The status data didn’t load</b>Try again in a few minutes.</div>';
+      }
+
+      function render(DATA) {
+        const STATUS = {
+          ready: "Ready in Cube",
+          cube_work: "Needs Cube work",
+          data_work: "Needs data work first",
+          unset: "Status not set",
+          unknown: "Status unclear",
+          tableau_only: "Stays in Tableau",
+        };
+        const ORDER = ["ready", "cube_work", "data_work", "unset", "unknown"];
+        const PHASES = {
+          0: "Governance",
+          1: "Domain delivery",
+          2: "Enablement and support",
+          3: "Delivery platform",
+          4: "Team capacity",
+          5: "Sustainment",
+        };
+        // Data from before the generator sent domains shows no domain stage.
+        // The first step is the page's own: "Building in Cube" is filled once
+        // a metric on one of the domain's dashboards is ready, which the
+        // Asana sync ticks only when its members are on a public view. The
+        // Asana facts task keeps only its due date here.
+        const STEPS = (DATA.domain_steps || []).map((s, i) =>
+          i === 0 ? "Building in Cube" : s,
+        );
+        const onView = (name) =>
+          DATA.dashboards.some(
+            (d) =>
+              d.domain === name && d.measures.some((m) => m.status === "ready"),
+          );
+        const DOMAINS = (DATA.domains || []).map((dom) => {
+          const steps = dom.steps.map((s, i) =>
+            i === 0 ? { ...s, done: onView(dom.name) } : s,
+          );
+          const stage = steps.reduce((n, s, i) => (s.done ? i + 1 : n), 0);
+          return { ...dom, steps, stage };
+        });
+        // "Partly in Cube" is counted as "Needs Cube work".
+        [...DATA.dashboards, ...DATA.parking_lot].forEach((d) =>
+          [...d.measures, ...d.dimensions].forEach((x) => {
+            if (x.status === "partial") x.status = "cube_work";
+          }),
+        );
+
+        const $ = (s) => document.querySelector(s);
+        const esc = (s) =>
+          String(s ?? "").replace(
+            /[&<>"']/g,
+            (c) =>
+              ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#39;",
+              })[c],
+          );
+        const parseDate = (s) => {
+          const [y, m, d] = s.split("-").map(Number);
+          return new Date(y, m - 1, d);
+        };
+        const fmtDate = (s) =>
+          s
+            ? parseDate(s).toLocaleDateString(undefined, {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })
+            : "";
+
+        // ── Derived numbers ──────────────────────────────────────────
+        function tally(items) {
+          const c = {};
+          ORDER.forEach((k) => (c[k] = 0));
+          let total = 0;
+          items.forEach((it) => {
+            if (it.status === "tableau_only") return;
+            c[it.status] = (c[it.status] || 0) + 1;
+            total++;
+          });
+          return { c, total, ready: c.ready };
+        }
+        // steps follow STEPS: Building in Cube, Verified, Security
+        // review, Pilot run, Launched.
+        function stageInfo(dom) {
+          if (dom.steps[4].done)
+            return { key: "launched", label: "Launched ✓", cls: "done" };
+          const verified = dom.steps[1].done;
+          // stage = furthest step ticked, so name it as done.
+          if (dom.stage > 0)
+            return {
+              key: verified ? "verified" : "prog",
+              label: `${STEPS[dom.stage - 1]} ✓`,
+              cls: verified ? "done" : "",
+            };
+          return { key: "not", label: "Not started", cls: "" };
+        }
+
+        // ── Building blocks ──────────────────────────────────────────
+        function bar(t, kind) {
+          if (!t.total) return '<div class="bar" aria-hidden="true"></div>';
+          const shown = ORDER.filter((k) => t.c[k]);
+          const segs = shown
+            .map(
+              (k) =>
+                `<span class="sw-${k}" style="width:${(t.c[k] / t.total) * 100}%"></span>`,
+            )
+            .join("");
+          const rows = shown.map((k) => `${STATUS[k]}|${t.c[k]}`).join(";");
+          return `<div class="bar" tabindex="0" data-tip="${esc(kind)}" data-rows="${esc(rows)}" aria-label="${t.ready} of ${t.total} ${kind} ready">${segs}</div>`;
+        }
+        function countText(t, noun) {
+          if (!t.total)
+            return `<span class="count muted">No ${noun} listed</span>`;
+          return `<span class="count"><b>${t.ready}</b> of ${t.total} ${noun}</span>`;
+        }
+        // The domain's 5 steps with due dates, across the domain header row.
+        function domainStage(dom) {
+          const segs = dom.steps
+            .map(
+              (s, i) =>
+                `<li class="${s.done ? "on" : ""}"><span class="seg"></span><b>${esc(STEPS[i] || s.name)}</b><span class="d">${s.due ? parseDate(s.due).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "No date"}${s.done ? " ✓" : ""}</span></li>`,
+            )
+            .join("");
+          return `<ol class="stepper" aria-label="${esc(dom.name)} steps">${segs}</ol>`;
+        }
+        const msName = (m) => (m.code ? `${m.code} ${m.name}` : m.name);
+        // Domain milestones carry a phase and no code; numbered ones from
+        // older data carry only a code. data.js comes from outside this repo,
+        // and the phase lands in HTML, so anything but an integer is 0.
+        const phaseOf = (m) => {
+          const n = Number(m.phase ?? m.code?.slice(1).split(".")[0]);
+          return Number.isInteger(n) ? n : 0;
+        };
+        function grouped(items, isDim) {
+          return (
+            [...ORDER, "tableau_only"]
+              .filter((k) => items.some((i) => i.status === k))
+              .map((k) => {
+                const these = items.filter((i) => i.status === k);
+                const list = these
+                  .map(
+                    (i) =>
+                      `<li>${esc(i.name)}${isDim && i.use ? ` <span class="use">· ${esc(i.use)}</span>` : ""}</li>`,
+                  )
+                  .join("");
+                return `<div class="grp"><div class="grp-h"><i class="sw-${k}"></i>${STATUS[k]} (${these.length})</div><ul>${list}</ul></div>`;
+              })
+              .join("") || '<p class="muted" style="margin:0">None listed.</p>'
+          );
+        }
+        function detail(d) {
+          return `<div class="detail-grid">
+            <div class="detail"><h3>Metrics</h3>${grouped(d.measures, false)}</div>
+            <div class="detail"><h3>Dimensions</h3>${grouped(d.dimensions, true)}
+              <a class="asana-link" href="https://app.asana.com/0/0/${esc(d.gid)}" target="_blank" rel="noopener">Open in Asana ↗</a></div>
+          </div>`;
+        }
+        function row(d, hint) {
+          const m = tally(d.measures),
+            dm = tally(d.dimensions);
+          const cols = 4;
+          return `<tr class="dash">
+            <td><button class="name-btn" aria-expanded="false" aria-controls="det-${esc(d.gid)}"><span class="chev">▶</span><span>${esc(d.name)}</span></button>${hint ? `<span class="match-hint">${esc(hint)}</span>` : ""}</td>
+            <td><div class="cell-bar">${bar(m, "metrics")}${countText(m, "metrics")}</div></td>
+            <td><div class="cell-bar">${bar(dm, "dimensions")}${countText(dm, "dimensions")}</div></td>
+            <td class="due">${d.due ? fmtDate(d.due) : '<span class="muted">Not set</span>'}</td>
+          </tr>
+          <tr class="detail" id="det-${esc(d.gid)}" hidden><td colspan="${cols}">${detail(d)}</td></tr>`;
+        }
+
+        // One metric or dimension row can serve several dashboards: totals
+        // count each name once.
+        const uniq = (rows) => [
+          ...new Map(rows.map((x) => [x.name, x])).values(),
+        ];
+
+        // ── KPIs ─────────────────────────────────────────────────────
+        function renderKpis() {
+          const ds = DATA.dashboards;
+          const m = tally(uniq(ds.flatMap((d) => d.measures)));
+          const dm = tally(uniq(ds.flatMap((d) => d.dimensions)));
+          const keys = DOMAINS.map((dom) => stageInfo(dom).key);
+          const launched = keys.filter((k) => k === "launched").length;
+          const verified =
+            launched + keys.filter((k) => k === "verified").length;
+          const started = keys.filter((k) => k === "prog").length;
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          // Next milestone features build milestones only: phase 1, which is
+          // each domain's verified and launched milestones plus the M1 ones.
+          const build = DATA.milestones.filter((x) => phaseOf(x) === 1);
+          const next = build
+            .filter((x) => !x.done && x.due && parseDate(x.due) >= today)
+            .sort((a, b) => a.due.localeCompare(b.due))[0];
+          const unsched = build.filter((x) => !x.done && !x.due).length;
+          $("#kpis").innerHTML = `
+            <div class="kpi"><span class="eyebrow">Domains verified</span>
+              <div class="kpi-value">${verified} <small>of ${DOMAINS.length} domains</small></div>
+              <div class="kpi-foot">${launched} launched · ${started} in progress · ${DOMAINS.length - verified - started} not started</div></div>
+            <div class="kpi"><span class="eyebrow">Metrics ready in Cube</span>
+              <div class="kpi-value">${m.ready} <small>of ${m.total}</small></div>
+              ${bar(m, "metrics")}<div class="kpi-foot">A number a dashboard calculates, like attendance rate or % proficient. Counted once, however many dashboards use it.</div></div>
+            <div class="kpi"><span class="eyebrow">Dimensions ready in Cube</span>
+              <div class="kpi-value">${dm.ready} <small>of ${dm.total}</small></div>
+              ${bar(dm, "dimensions")}<div class="kpi-foot">What you filter or slice a metric by, like school or grade level. Counted once, however many dashboards use it.</div></div>
+            <div class="kpi"><span class="eyebrow">Next milestone</span>
+              ${next ? `<div class="kpi-ms">${esc(msName(next))}</div><div class="kpi-foot">Due ${fmtDate(next.due)}</div>` : `<div class="kpi-ms muted">None scheduled</div>`}
+              <div class="kpi-foot">${unsched} open milestones have no due date yet</div></div>`;
+        }
+
+        // ── Dashboard table ──────────────────────────────────────────
+        function matchHint(d, q) {
+          if (!q) return { ok: true, hint: "" };
+          if (
+            d.name.toLowerCase().includes(q) ||
+            d.domain.toLowerCase().includes(q)
+          )
+            return { ok: true, hint: "" };
+          const mm = d.measures.filter((x) =>
+            x.name.toLowerCase().includes(q),
+          ).length;
+          const dd = d.dimensions.filter((x) =>
+            x.name.toLowerCase().includes(q),
+          ).length;
+          if (!mm && !dd) return { ok: false };
+          const parts = [];
+          if (mm) parts.push(`${mm} metric${mm > 1 ? "s" : ""}`);
+          if (dd) parts.push(`${dd} dimension${dd > 1 ? "s" : ""}`);
+          return { ok: true, hint: `Matches ${parts.join(" and ")}` };
+        }
+        function renderTable() {
+          const q = $("#q").value.trim().toLowerCase();
+          const fd = $("#f-domain").value,
+            fs = $("#f-stage").value;
+          const domains = [...new Set(DATA.dashboards.map((d) => d.domain))];
+          let html = "",
+            shown = 0;
+          domains.forEach((dom) => {
+            if (fd && fd !== dom) return;
+            const rec = DOMAINS.find((x) => x.name === dom);
+            if (fs && (!rec || stageInfo(rec).key !== fs)) return;
+            const all = DATA.dashboards.filter((d) => d.domain === dom);
+            const rows = all
+              .map((d) => ({ d, mh: matchHint(d, q) }))
+              .filter(({ mh }) => mh.ok);
+            if (!rows.length) return;
+            shown += rows.length;
+            const m = tally(uniq(all.flatMap((d) => d.measures)));
+            html += `<tr class="domain"><th colspan="4">${esc(dom)}<span class="dom-sum">${all.length} dashboard${all.length > 1 ? "s" : ""} · ${m.ready} of ${m.total} metrics ready</span>${rec ? domainStage(rec) : ""}</th></tr>`;
+            html += rows.map(({ d, mh }) => row(d, mh.hint)).join("");
+          });
+          $("#dash-body").innerHTML = html;
+          $("#empty-note").hidden = shown > 0;
+          $(".table-wrap").hidden = shown === 0;
+          $("#dash-n").textContent = shown;
+        }
+
+        // ── Pilot calendar ───────────────────────────────────────────
+        // One row per domain in pilot-date order; the month cell spans its
+        // domains. Data without domains hides the section.
+        function renderPilots() {
+          if (!DOMAINS.length) {
+            $("#pilot-section").hidden = true;
+            return;
+          }
+          const rows = DOMAINS.map((dom) => ({
+            name: dom.name,
+            due: dom.steps[3].due,
+            done: dom.steps[3].done,
+            // the last ticked subtask of the domain's Pilot run task
+            status: dom.pilot_status || "",
+          })).sort((a, b) => (a.due || "9").localeCompare(b.due || "9"));
+          const month = (r) =>
+            r.due
+              ? parseDate(r.due).toLocaleDateString(undefined, {
+                  month: "long",
+                  year: "numeric",
+                })
+              : "No date yet";
+          $("#pilot-body").innerHTML = rows
+            .map((r, i) => {
+              const m = month(r);
+              const first = i === 0 || month(rows[i - 1]) !== m;
+              const span = rows.filter((x) => month(x) === m).length;
+              return `<tr class="${first ? "month-start" : ""}">
+                ${first ? `<th scope="rowgroup" rowspan="${span}">${esc(m)}</th>` : ""}
+                <td>${esc(r.name)}</td>
+                <td class="due">${r.due ? fmtDate(r.due) : '<span class="muted">Not set</span>'}${r.done ? " ✓" : ""}</td>
+                <td>${r.status ? `<span class="yn yes">${esc(r.status)} ✓</span>` : '<span class="yn no">Not started</span>'}</td>
+              </tr>`;
+            })
+            .join("");
+        }
+
+        // ── Timeline ─────────────────────────────────────────────────
+        function renderTimeline() {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const dashDated = DATA.dashboards.filter((d) => d.due);
+          const domSteps = DOMAINS.flatMap((dom) => dom.steps);
+          const dates = [
+            ...DATA.milestones
+              .filter((m) => m.due)
+              .map((m) => parseDate(m.due)),
+            ...dashDated.map((d) => parseDate(d.due)),
+            ...domSteps.filter((s) => s.due).map((s) => parseDate(s.due)),
+          ];
+          let start = new Date(Math.min(today, ...dates));
+          start = new Date(start.getFullYear(), start.getMonth(), 1);
+          let end = new Date(Math.max(+today + 180 * 864e5, ...dates));
+          end = new Date(end.getFullYear(), end.getMonth() + 1, 1);
+          const pct = (dt) => ((dt - start) / (end - start)) * 100;
+
+          // Each month's label carries how many domains are verified in it.
+          const verifiedIn = (d) =>
+            DOMAINS.filter((dom) => {
+              const v = dom.steps[1].due && parseDate(dom.steps[1].due);
+              return (
+                v &&
+                v.getFullYear() === d.getFullYear() &&
+                v.getMonth() === d.getMonth()
+              );
+            }).length;
+          let axis = "";
+          for (let d = new Date(start); d < end; d.setMonth(d.getMonth() + 1)) {
+            const opts =
+              d.getMonth() === 0 || +d === +start
+                ? { month: "short", year: "numeric" }
+                : { month: "short" };
+            const n = verifiedIn(d);
+            axis += `<span style="left:${pct(d)}%">${d.toLocaleDateString(undefined, opts)}${n ? `<small>${n} verified</small>` : ""}</span>`;
+          }
+          const todayLine = `<div class="tl-today" style="left:${pct(today)}%" title="Today"></div>`;
+          const mark = (cls, date, text, label) =>
+            `<button class="tl-mark ${cls}" style="left:${pct(parseDate(date))}%" data-tip="ms" data-text="${esc(text)}" aria-label="${esc(label)}"></button>`;
+
+          // The domain plan: one row per domain, in verified-date order.
+          const STEP_CLS = ["built", "verified", "", "", "launch"];
+          const SHOWN = [0, 1, 4];
+          const byVerified = [...DOMAINS].sort((a, b) =>
+            (a.steps[1].due || "9").localeCompare(b.steps[1].due || "9"),
+          );
+          const domRows = byVerified.map((dom, i) => {
+            const s = dom.steps;
+            const span =
+              s[0].due && s[4].due
+                ? `<div class="tl-span" style="left:${pct(parseDate(s[0].due))}%;width:${pct(parseDate(s[4].due)) - pct(parseDate(s[0].due))}%"></div>`
+                : "";
+            // Only Building in Cube, Verified and Launched are drawn.
+            const marks = s
+              .map((st, k) =>
+                st.due && SHOWN.includes(k)
+                  ? mark(
+                      `${STEP_CLS[k]}${st.done ? " done" : ""}`,
+                      st.due,
+                      `${dom.name}: ${STEPS[k] || st.name}|Due ${fmtDate(st.due)}${st.done ? " · done" : ""}`,
+                      `${dom.name}, ${STEPS[k] || st.name}, due ${fmtDate(st.due)}`,
+                    )
+                  : "",
+              )
+              .join("");
+            const cls = `${i === 0 ? " dom-first" : ""}${i === byVerified.length - 1 ? " dom-last" : ""}`;
+            const v = s[1].due
+              ? `<small>${parseDate(s[1].due).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</small>`
+              : "";
+            return `<div class="tl-row dom${cls}"><div class="tl-label">${esc(dom.name)}${v}</div>
+              <div><div class="tl-track">${todayLine}${span}${marks}</div></div></div>`;
+          });
+          // Older data only: milestone rows, minus domain step milestones.
+          const stepNames = new Set(domSteps.map((s) => s.name));
+          const groups = {};
+          DATA.milestones.forEach((m) => {
+            if (!m.code && stepNames.has(m.name)) return;
+            const p = phaseOf(m);
+            (groups[p] = groups[p] || []).push(m);
+          });
+          const rows = Object.keys(groups)
+            .sort((a, b) => a - b)
+            .map((p) => {
+              const ms = groups[p];
+              const marks = ms
+                .filter((m) => m.due)
+                .map((m) =>
+                  mark(
+                    m.done ? "done" : "",
+                    m.due,
+                    `${msName(m)}|Due ${fmtDate(m.due)}${m.done ? " · done" : ""}`,
+                    `${msName(m)}, due ${fmtDate(m.due)}`,
+                  ),
+                )
+                .join("");
+              const und = ms.filter((m) => !m.due);
+              const chips = und.length
+                ? `<div class="tl-unsched">No date yet: ${und.map((m) => `<span class="chip ${m.done ? "done" : ""}" title="${esc(m.name)}">${esc(m.code || m.name)}</span>`).join("")}</div>`
+                : "";
+              return `<div class="tl-row"><div class="tl-label">${esc(PHASES[p] || "Phase " + p)}<small>M${p} · ${ms.filter((m) => m.done).length} of ${ms.length} done</small></div>
+                <div><div class="tl-track">${todayLine}${marks}</div>${chips}</div></div>`;
+            });
+          const dmarks = dashDated
+            .map((d) =>
+              mark(
+                "dash",
+                d.due,
+                `${d.name}|Target ${fmtDate(d.due)}`,
+                `${d.name}, target ${fmtDate(d.due)}`,
+              ),
+            )
+            .join("");
+          // With domains, the timeline shows only the domain plan. Older data
+          // without domains falls back to milestone rows and a
+          // dashboard-targets row.
+          if (!DOMAINS.length)
+            rows.push(
+              `<div class="tl-row"><div class="tl-label">Dashboard targets<small>${dashDated.length} dated</small></div><div><div class="tl-track">${todayLine}${dmarks}</div><div class="tl-unsched">${DATA.dashboards.length - dashDated.length} of ${DATA.dashboards.length} dashboards have no target date yet</div></div></div>`,
+            );
+          else rows.length = 0;
+          $("#timeline").innerHTML =
+            `<div class="tl-axis${DOMAINS.length ? " months" : ""}">${axis}</div>` +
+            domRows.join("") +
+            rows.join("");
+        }
+
+        // ── Tooltip ──────────────────────────────────────────────────
+        const tip = $("#tip");
+        function showTip(el, x, y) {
+          if (el.dataset.tip === "ms") {
+            const [a, b] = el.dataset.text.split("|");
+            tip.innerHTML = `<b>${esc(a)}</b><br>${esc(b)}`;
+          } else {
+            const kind = el.dataset.tip;
+            tip.innerHTML =
+              `<b>${esc(kind[0].toUpperCase() + kind.slice(1))}</b>` +
+              el.dataset.rows
+                .split(";")
+                .map((r) => r.split("|"))
+                .map(
+                  ([k, v]) =>
+                    `<div class="tr"><span>${esc(k)}</span><span>${esc(v)}</span></div>`,
+                )
+                .join("");
+          }
+          tip.hidden = false;
+          const r = tip.getBoundingClientRect();
+          tip.style.left =
+            Math.min(x + 12, window.innerWidth - r.width - 8) + "px";
+          tip.style.top =
+            (y + 16 + r.height > window.innerHeight
+              ? y - r.height - 10
+              : y + 16) + "px";
+        }
+        document.addEventListener("mousemove", (e) => {
+          const el = e.target.closest("[data-tip]");
+          if (el) showTip(el, e.clientX, e.clientY);
+          else tip.hidden = true;
+        });
+        document.addEventListener("focusin", (e) => {
+          const el = e.target.closest("[data-tip]");
+          if (el) {
+            const r = el.getBoundingClientRect();
+            showTip(el, r.left, r.bottom);
+          }
+        });
+        document.addEventListener("focusout", () => (tip.hidden = true));
+
+        // ── Expand / collapse ────────────────────────────────────────
+        document.addEventListener("click", (e) => {
+          const btn = e.target.closest(".name-btn");
+          if (!btn) return;
+          const open = btn.getAttribute("aria-expanded") !== "true";
+          btn.setAttribute("aria-expanded", String(open));
+          document.getElementById(btn.getAttribute("aria-controls")).hidden =
+            !open;
+        });
+
+        // ── Init ─────────────────────────────────────────────────────
+        $("#mastmeta").textContent =
+          "Updated " +
+          new Date(DATA.updated).toLocaleString(undefined, {
+            month: "short",
+            day: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+          });
+        $("#legend").innerHTML = [
+          "ready",
+          "cube_work",
+          "data_work",
+          "unset",
+          "tableau_only",
+        ]
+          .map((k) => `<span><i class="sw-${k}"></i>${STATUS[k]}</span>`)
+          .join("");
+        const STEP_NOTE = {
+          "Building in Cube": "1+ metric on a Cube view",
+          Verified: "Cube matches its dashboards",
+          Launched: "Staff use it through Claude",
+        };
+        $("#flow-steps").innerHTML = STEPS.map((s, i) => {
+          const note = STEP_NOTE[s] ? `<span>${STEP_NOTE[s]}</span>` : "";
+          return i === STEPS.length - 1
+            ? `<li class="end"><b><span class="badge" aria-hidden="true">✓</span>${esc(s)}</b>${note}</li>`
+            : `<li><b><span class="n">${i + 1}</span>${esc(s)}</b>${note}</li>`;
+        }).join("");
+        [...new Set(DATA.dashboards.map((d) => d.domain))].forEach((d) =>
+          $("#f-domain").insertAdjacentHTML(
+            "beforeend",
+            `<option>${esc(d)}</option>`,
+          ),
+        );
+        ["#q", "#f-domain", "#f-stage"].forEach((s) =>
+          $(s).addEventListener("input", renderTable),
+        );
+
+        renderKpis();
+        renderPilots();
+        renderTable();
+        renderTimeline();
+        if (DATA.parking_lot.length) {
+          $("#pl-body").innerHTML = DATA.parking_lot
+            .map((d) => row(d, ""))
+            .join("");
+          $("#pl-n").textContent = DATA.parking_lot.length;
+        } else {
+          $("#pl-section").hidden = true;
+        }
+      }
+    </script>
+  </body>
+</html>

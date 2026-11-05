@@ -1,0 +1,3815 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>Drain the assessment project knowledge into Cube descriptions and MCP docstrings - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.57a0d79d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#drain-the-assessment-project-knowledge-into-cube-descriptions-and-mcp-docstrings" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Drain the assessment project knowledge into Cube descriptions and MCP docstrings
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/launch-page-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Launch Page
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube-access-individual-exceptions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube Access - Individual Exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/tableau-permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tableau Permissions (People Data)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/csgf-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSGF Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/crdc-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CRDC Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ddi-stack-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDI Stack Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/hs-early-warning-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HS Early Warning Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/dibels-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIBELS Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/stat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/njdoe-universal-screener-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NJDOE Universal Screener Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/athletic-eligibility-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Athletic Eligibility Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/academic-health-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic Health Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/grad-plan-tracking-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Grad Plan Tracking Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ignite-r2i-extract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IGNITE R2I Extract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#problem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Problem
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#starting-point" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Starting point
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decision" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decision
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#why-these-channels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why these channels
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Why these channels">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-supported-agent-path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The supported agent path
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#metaai_context-reaches-the-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        meta.ai_context reaches the model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-authoring-rule-changes-in-the-same-pr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The authoring rule changes in the same PR
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cube-and-dbt-descriptions-are-separate-strings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cube and dbt descriptions are separate strings
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#placement-procedure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Placement procedure
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#per-member-drafts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Per-member drafts
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Per-member drafts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#scores-cube-student_assessment_scores" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scores cube (student_assessment_scores)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#assessments-cube-student_assessments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Assessments cube (student_assessments)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#administrations-cube-student_assessment_administrations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Administrations cube (student_assessment_administrations)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shared-cubes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Shared cubes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-view-student_assessment_scores_view" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The view (student_assessment_scores_view)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#everything-that-does-not-land-on-a-member" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Everything that does not land on a member
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stays-in-the-markdown" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stays in the markdown
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#open-questions-for-the-network" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open questions for the network
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#yaml-description-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        YAML description changes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="YAML description changes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#schema-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Schema tests
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#server-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Server changes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Server changes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#docstrings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Docstrings
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#an-empty-result-note-on-load" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        An empty-result note on load
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tests-and-deploy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tests and deploy
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#model-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Model changes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Model changes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#in-this-pr-count_assessments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        In this PR: count_assessments
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#moved-to-their-own-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Moved to their own issues
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#eval-extension" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Eval extension
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/specs/2026-09-10-cube-project-knowledge-drain-design.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="drain-the-assessment-project-knowledge-into-cube-descriptions-and-mcp-docstrings">Drain the assessment project knowledge into Cube descriptions and MCP docstrings</h1>
+<p>Design for #5236, built in #5495. Every warehouse figure in this document is
+dated. Re-measure each one before building on it. No figure in this document
+goes into a YAML description.</p>
+<h2 id="problem">Problem</h2>
+<p>The Claude + Cube working group runs on 2 markdown files that someone uploads by
+hand to a claude.ai Project:</p>
+<ul>
+<li><code>src/cube/mcp/project_knowledge/assessment-cube-reference.md</code>: data-usage
+  conventions for <code>student_assessment_scores_view</code>, about 50 facts about how the
+  view behaves.</li>
+<li><code>src/cube/mcp/project_knowledge/assessment-cube-orchestrator.md</code>: the session
+  protocol.</li>
+</ul>
+<p>Those facts reach the model only inside that Project. Claude Code, other
+connectors, and the planned org-level skill query the same Cube MCP without
+them.</p>
+<h2 id="starting-point">Starting point</h2>
+<p>What <code>main</code> carries as of 2026-09-28, so this design does not redo it:</p>
+<ul>
+<li><strong>Counts and rates.</strong> 3 nested counts: <code>count_assigned</code> (every row),
+  <code>count_taken</code> (<code>response_type != 'not_taken'</code>) and <code>count_scored</code>
+  (<code>is_mastery IS NOT NULL</code>). <code>pct_proficient</code> divides by <code>count_scored</code>.
+  <code>pct_taken</code> is the participation rate, and it means something only for
+  Illuminate. All of these carry descriptions.</li>
+<li><strong><code>response_type</code>.</strong> Never null. Its description lists the 4 values:
+  <code>overall</code>, <code>standard</code>, <code>group</code>, <code>not_taken</code>.</li>
+<li><strong>Instructions inside definitions.</strong> Those new descriptions include
+  instructions ("filter it explicitly", "Filter assessment_type to illuminate",
+  "Pair it with count_scored"). This design moves each instruction to
+  <code>ai_context</code>.</li>
+<li><strong>No <code>ai_context</code> anywhere</strong> in <code>src/cube/model/</code>.</li>
+<li><strong>The <code>load</code> docstring</strong> lists <code>set</code> / <code>notSet</code> among the filter operators. It
+  does not say that <code>equals "null"</code> matches the literal string.</li>
+<li><strong><code>.claude/rules/cube-authoring.md</code></strong> says <code>meta.*</code> keys other than <code>folders</code>
+  do not reach the model. That is wrong for our MCP path; see below.</li>
+</ul>
+<h2 id="decision">Decision</h2>
+<p>Move each fact to the one channel every surface reads. The narrowness of the
+fact picks the channel:</p>
+<table>
+<thead>
+<tr>
+<th>Fact is about</th>
+<th>Destination</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>what one measure or dimension <em>is</em></td>
+<td>that member's <code>description:</code> in the cube YAML</td>
+</tr>
+<tr>
+<td>how to <em>use</em> one measure or dimension</td>
+<td>that member's <code>meta.ai_context:</code> in the cube YAML</td>
+</tr>
+<tr>
+<td>the whole view</td>
+<td>the view <code>description:</code> in <code>student_assessment_scores_view.yml</code></td>
+</tr>
+<tr>
+<td>how to use the whole view</td>
+<td>the view's <code>meta.ai_context:</code></td>
+</tr>
+<tr>
+<td>any view (query mechanics)</td>
+<td>the <code>load</code> or <code>meta</code> docstring in <code>src/cube/mcp/server.py</code></td>
+</tr>
+<tr>
+<td>session process or unratified policy</td>
+<td>stays in the markdown, shaped for the later skill</td>
+</tr>
+</tbody>
+</table>
+<p>Rules for the PR:</p>
+<ul>
+<li><strong>One home per fact.</strong> The change that lands a fact in Cube deletes it from
+  the markdown in the same commit.</li>
+<li><strong>No point-in-time numbers in YAML.</strong> Score volumes, percentages and year
+  ranges go stale silently. Descriptions say "about a third" or "the majority",
+  or say how to measure it.</li>
+<li><strong>Coverage specifics are deleted, not moved.</strong> Which region has which source
+  in which years is a live query. The view says coverage is uneven and how to
+  check it.</li>
+<li><strong>Load-bearing guidance goes in tool docstrings, never <code>instructions=</code></strong>
+  (#4473).</li>
+</ul>
+<p>1 model change ships with the text: the <code>count_assessments</code> measure. 3 others
+became their own issues; see <em>Model changes</em>.</p>
+<h2 id="why-these-channels">Why these channels</h2>
+<p>Cube views inherit each included member's <code>description:</code> from its cube, and the
+<code>meta</code> tool returns those descriptions per view. The <code>load</code> docstring already
+carries the academic-year crosswalk for the same reason: the claude.ai connector
+drops <code>instructions=</code> and Claude Code truncates it, while tool descriptions
+reach the model on every surface.</p>
+<p>Rejected: serving the reference file as an MCP tool or resource. The model has
+to choose to call it, resources do not reliably surface through claude.ai
+connectors, and it duplicates the planned skill.</p>
+<h3 id="the-supported-agent-path">The supported agent path</h3>
+<p>Everything in this spec assumes agents reach Cube through our Cube MCP server,
+which calls the REST API. That path carries member and view <code>description</code>,
+<code>meta.ai_context</code>, the <code>load</code> and <code>meta</code> docstrings, and the empty-result note.
+The SQL API is the BI path (Superset): Cube serves <code>description</code> text there as
+Postgres column comments (<code>pg_catalog.pg_description</code>), and nothing in its code
+reads <code>ai_context</code>, the docstrings or the note. An agent that needs the SQL API
+is a new design question; its guidance would come from its own prompt or skill.</p>
+<h3 id="metaai_context-reaches-the-model"><code>meta.ai_context</code> reaches the model</h3>
+<p>Cube Cloud's UI renders only <code>meta.folders</code>. The <code>/meta</code> payload carries every
+<code>meta</code> key, and the payload is what our MCP server returns.</p>
+<p>Measured 2026-09-22 against Cube 1.7.43 on the local dev server. A throwaway
+<code>meta.ai_context</code> and a throwaway arbitrary key went on 1 view and 1 cube
+measure, then were reverted:</p>
+<table>
+<thead>
+<tr>
+<th>Placement</th>
+<th>In REST <code>/meta</code></th>
+<th>Via our <code>meta</code> tool</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>meta.ai_context</code> on the view</td>
+<td>yes</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>meta.ai_context</code> on a cube measure</td>
+<td>yes</td>
+<td>yes, inherited onto the view</td>
+</tr>
+<tr>
+<td>an arbitrary <code>meta.&lt;other&gt;</code> key</td>
+<td>yes</td>
+<td>yes</td>
+</tr>
+</tbody>
+</table>
+<p>3 consequences:</p>
+<ul>
+<li><strong>The view member inherits member-level <code>meta</code> from the cube.</strong> So
+  <code>ai_context</code> goes on the cube YAML member and the view picks it up. No new
+  file and no new routing rule.</li>
+<li><strong>Our MCP server does no field filtering.</strong> <code>meta</code> returns each cube dict
+  verbatim (<code>src/cube/mcp/server.py</code>).</li>
+<li><strong><code>ai_context</code> gets no special weight on our path.</strong> It arrives as one more
+  JSON key beside <code>description</code>. Open-source Cube does nothing with it either;
+  only Cube Cloud's hosted agent reads it (see <em>Step 0</em>). The gain is
+  separation: <code>description:</code> holds what is true of the data and stays equal to
+  its dbt twin, while Cube-specific usage lives in <code>ai_context:</code>.</li>
+</ul>
+<p>Cube's constraints: <code>ai_context</code> goes on views and members only, never at cube
+level. The cap is 2,000 characters: Cube's docs say a longer value "is silently
+truncated before it reaches the agent", meaning Cube's own agent. Whether the
+<code>/meta</code> payload our server reads is truncated too is untested; the length guard
+below makes the answer irrelevant.</p>
+<p>3 guards follow from those constraints:</p>
+<ul>
+<li><strong>Length.</strong> The schema test asserts that every <code>ai_context</code> in
+  <code>src/cube/model/</code> is 2,000 characters or less, so a value that grows past the
+  cap fails the test instead of being cut off.</li>
+<li><strong>Response size.</strong> The <code>meta</code> docstring already says the full catalog nears a
+  response-size budget, and every <code>ai_context</code> adds to it. The <code>dates</code> values
+  also repeat on every view that includes <code>dates</code>. Step 0 records the size of
+  the full-catalog and assessment-view <code>meta</code> responses before and after.</li>
+<li><strong>REST check on the branch.</strong> Before merge, a local Cube server on the
+  branch's model confirms over REST <code>/meta</code> that every <code>ai_context</code> comes back:
+  member-level and view-level as <code>ai_context</code>, the 2 view overrides as
+  <code>aiContext</code>. REST is the path our MCP server and other clients use.</li>
+</ul>
+<h3 id="the-authoring-rule-changes-in-the-same-pr">The authoring rule changes in the same PR</h3>
+<p><code>.claude/rules/cube-authoring.md</code> currently says:</p>
+<blockquote>
+<p><strong><code>meta.folders</code> is the only Cube-rendered <code>meta.*</code> key.</strong> Put guidance in
+<code>description:</code>, not <code>meta.usage</code> / <code>meta.synonyms</code> / etc. — those land in
+<code>/v1/meta</code> but Cube Cloud and the chat agent don't read them.</p>
+</blockquote>
+<p>Left alone, that rule tells the next author to undo this work. The replacement
+says 3 things:</p>
+<ul>
+<li><code>meta.folders</code> is the only key Cube Cloud <strong>renders</strong>.</li>
+<li>Every <code>meta.*</code> key reaches the model, because our MCP server returns each
+  cube's <code>/meta</code> entry unchanged. Use <code>ai_context</code>, because Cube documents it
+  and Cube Cloud's own agent reads it. Do not invent other keys.</li>
+<li><code>description:</code> says what a member is: text that holds against the raw dbt
+  column, kept equal to its dbt twin. <code>meta.ai_context:</code> says how to use the
+  member in Cube, within 2,000 characters.</li>
+</ul>
+<p>It drops the <code>meta.usage</code> / <code>meta.synonyms</code> examples. Neither key appears
+anywhere in the model, and naming them invites someone to use them. <code>usage</code>
+would duplicate <code>ai_context</code>, and only our server would read either key; Cube's
+own agent reads <code>ai_context</code> alone. Synonyms and acronyms go inside
+<code>ai_context</code>, which is where Cube's docs put them.</p>
+<p>The rule file also gains 2 conventions from this spec. Future authors never read
+this spec, but the rule loads on every Cube file they open:</p>
+<ul>
+<li><strong>The dbt twin rule</strong> from <em>Cube and dbt descriptions are separate strings</em>,
+  so an author whose edit fails the equality test knows why.</li>
+<li><strong>The placement procedure</strong> from <em>Placement procedure</em>, in about 10 lines: the
+  7 steps and the tie-breaker.</li>
+<li><strong>View-level overrides for shared members:</strong> to give a member guidance in one
+  view only, override its <code>ai_context</code> in that view's <code>includes:</code> entry. The
+  override replaces the member's whole <code>meta</code> in that view, and REST <code>/meta</code>
+  returns it as <code>aiContext</code>. Use it for view-specific guidance on members of
+  shared cubes (<code>staff</code>, <code>locations</code>, <code>courses</code>, <code>dates</code>). If the cube member
+  also carries an <code>ai_context</code>, the override must restate it; a schema test
+  fails otherwise.</li>
+</ul>
+<h3 id="cube-and-dbt-descriptions-are-separate-strings">Cube and dbt descriptions are separate strings</h3>
+<p>A column of <code>fct_assessment_scores_enrollment_scoped</code> has 2 descriptions: the
+dbt one in its properties YAML, and the Cube one on the cube member that reads
+it. Nothing copies one into the other. The Cube YAML does not read the dbt
+manifest, and kipptaf sets no <code>persist_docs</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Reads it</th>
+<th>dbt <code>description:</code></th>
+<th>Cube <code>description:</code></th>
+<th>Cube <code>meta.ai_context:</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>the model, through our Cube MCP <code>meta</code> tool</td>
+<td>no</td>
+<td>yes</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>an analyst in Cube Cloud</td>
+<td>no</td>
+<td>yes</td>
+<td>no</td>
+</tr>
+<tr>
+<td>an engineer in dbt docs or through the dbt MCP server</td>
+<td>yes</td>
+<td>no</td>
+<td>no</td>
+</tr>
+</tbody>
+</table>
+<p>The 2 have already drifted. On <code>response_type_code</code>, dbt states which rows carry
+the code and Cube says only "Null for state". The model reads the stale copy.</p>
+<p>The rule: when the PR changes the <code>description:</code> of a Cube member that reads one
+column directly (<code>sql: &lt;column&gt;</code>), it sets that column's dbt <code>description:</code> to
+the same text. Measures, view text and <code>ai_context</code> have no dbt column, so they
+are Cube-only. A schema test asserts each pair is equal, so a later edit to one
+side fails the test instead of drifting.</p>
+<h2 id="placement-procedure">Placement procedure</h2>
+<p>The per-member drafts below record about 50 decisions. This procedure produced
+them. It is written down so the PR does not re-decide each one by taste, and so
+a fact added later lands in the same place. <strong>Work down the list and stop at the
+first match.</strong></p>
+<ol>
+<li><strong>Is it a point-in-time number?</strong> Score volumes, percentages, year ranges.
+   Delete it, or restate it qualitatively. This step runs first because it
+   removes content whatever channel would take it. Configuration is not a
+   point-in-time number even though it can change: a band set's cut points say
+   what the data means, not how much of it there is. Configuration that no
+   member carries needs a model change, and stays in the markdown, corrected,
+   until that change ships.</li>
+<li><strong>Is it process or unratified policy?</strong> It stays in the markdown. Cube text
+   may say that a decision is open, but never states a default for it. This step
+   runs before the instruction step because an unratified default is usually
+   worded as an instruction ("keep the most recent sitting"), and would
+   otherwise land in Cube as if it were settled.</li>
+<li><strong>Is it derivable live?</strong> Which region has which source in which years is a
+   query. Delete the specifics; say that coverage is uneven and how to check.</li>
+<li><strong>Does it hold for more than one view?</strong> <code>notSet</code> versus <code>equals "null"</code>, and
+   the de-duplicating dimension-only pull, are Cube mechanics. They go in the
+   <code>load</code> or <code>meta</code> docstring.</li>
+<li><strong>Is it about the answer, and not tied to one member?</strong> Examples: a
+   cross-instrument gap is a calibration artifact; totals do not reconcile to
+   vendor reports; a missing current-year state result is a release lag. The
+   query is correct and the reading is at risk. These go in the view's
+   <code>ai_context</code>. Answer-level guidance about one member, such as "tier-movement
+   rates are not comparable across instruments" on <code>proficiency_level</code>, goes to
+   that member's <code>ai_context</code> under step 7.</li>
+<li><strong>Is it a definition?</strong> What a value means, which values exist, what is null
+   and when. That member's <code>description:</code>.</li>
+<li><strong>Is it an instruction?</strong> Do this, do not do that, use X instead. That
+   member's <code>ai_context:</code>.</li>
+</ol>
+<p>Most rows split rather than move, because of steps 6 and 7. A bullet in the
+reference file usually carries a definition and an instruction together. So it
+matches both and gets cut in 2: the member keeps what it is and sheds what to do
+about it.</p>
+<p><strong>Tie-breaker when steps 6 and 7 both fit.</strong> Ask whether the sentence would be
+true and useful against the raw dbt column. If it would, it goes in
+<code>description:</code>, which is twinned with dbt, even when it reads like a warning
+("not comparable across assessments"). If it depends on Cube (members, measures,
+the view) or tells the agent what to do, it goes in <code>ai_context:</code>. For
+<code>count_students</code>, "distinct students per student-year" is the definition, while
+"heavy at fine grain, fall back to count_taken" only makes sense in Cube.</p>
+<p>The analysts-and-tooltips rationale for the split no longer applies: KTAF is not
+buying Cube Cloud seats for analysts, and agents are the audience. The split
+stays because it keeps the dbt twin rule a plain equality: <code>description:</code> holds
+what is true of the data, and <code>ai_context:</code> holds how to use it in Cube.</p>
+<p>2 things hold the placement in place. The schema test asserts one key phrase per
+moved fact, keyed by member name, so a later edit cannot silently drop one. The
+eval is the empirical check: if the routing is wrong, arm B does not beat arm A.</p>
+<h2 id="per-member-drafts">Per-member drafts</h2>
+<p>One row per Cube member: the reference-file text that feeds it, and the drafted
+value for each channel. The source column names the reference file's section and
+the bolded lead phrase of the bullet, which survive edits better than line
+numbers. "Present" means the shipped text already says it. Review may reword a
+value, but moving a sentence to the other channel needs a sieve step that says
+why.</p>
+<p>Every draft follows 2 wording conventions:</p>
+<ul>
+<li><strong>Name the population a member covers, not what it excludes.</strong> "Illuminate
+  only; null for every other source" stays true when a source is added; "null
+  for state and vendor rows" does not.</li>
+<li><strong>Never write a bare "vendor".</strong> Illuminate is a vendor platform too. Write
+  "vendor diagnostic (i-Ready, DIBELS, STAR)" on first use in a string, or name
+  the sources.</li>
+</ul>
+<p>Measured 2026-09-28, behind the <code>performance_band_label_number</code> draft: on
+Illuminate, the band number is set on every row and null everywhere else. Within
+one assessment, a band number carries exactly one <code>proficiency_level</code> label on
+<code>overall</code> rows, but a few bands carry 2 or more spellings on <code>standard</code> and
+<code>group</code> rows, and most assessments label the same band number differently on
+<code>standard</code>/<code>group</code> rows than on <code>overall</code> rows. That suggests standard-level
+scores use a different band scale; the labels were measured, not the cut points.</p>
+<p>Measured 2026-09-28, behind the <code>proficiency_level</code> and count drafts: DIBELS
+carries a fifth value, <code>Tested Out</code>, on <code>group</code> (subtest) rows only, and
+<code>is_mastery</code> is null on every one of them. They are nearly all of the DIBELS
+rows with no proficiency verdict, so <code>pct_proficient</code> leaves them out. The
+shipped <code>count_taken</code> and <code>count_scored</code> descriptions attribute those rows to
+"the DIBELS K-2 phonics subtests have no benchmark level set upstream"; the PR
+corrects that wording. Whether a student who tested out of a subtest should
+count as proficient is a policy question. It goes on the orchestrator's <em>Flag,
+don't invent</em> list, and Cube text says only that it is open.</p>
+<p>Checked 2026-09-28, behind the <code>module_type</code> draft: <code>module_type</code> is entered by
+hand in a Google AppSheet app
+(<code>stg_google_appsheet__illuminate_assessments_extension</code>), and nothing documents
+its codes. UA is Unit Assessment, per <code>rpt_deanslist__mod_assessment.yml</code>. The
+assessment titles suggested ET is Exit Ticket, TP is Test Prep, and WPP is a
+Literacy writing task. Answered in review on 2026-10-06: TP is Test Prep Quiz,
+ET is Exit Ticket, and WPP is Writing Process Piece. <code>module_type</code> now says so,
+and the question is off the orchestrator's list.</p>
+<p>Re-measure before building, beyond the dated figures:</p>
+<ul>
+<li>Whether Illuminate <code>group</code> rows carry whitespace variants of the same
+  <code>response_type_description</code>. The variants were measured on <code>standard</code> rows
+  only, and the <code>response_type_code</code> draft tells the agent to group Illuminate
+  <code>group</code> rows by this label. Result, 2026-10-06, on Illuminate labels: 43
+  standard codes carry more than 1 label, and collapsing whitespace within a
+  code merges none of them, while lowercasing and stripping punctuation
+  merges 24. Across distinct labels, whitespace collapsing merges 6 of 1,515
+  <code>standard</code> labels and 10 of 870 <code>group</code> labels; lowercasing and stripping
+  punctuation merges 40 and 68. So both row types carry punctuation,
+  capitalization and spacing variants, and <code>response_type_description</code> says so.</li>
+</ul>
+<h3 id="scores-cube-student_assessment_scores">Scores cube (<code>student_assessment_scores</code>)</h3>
+<table>
+<thead>
+<tr>
+<th>Member</th>
+<th>Reference text</th>
+<th><code>description:</code></th>
+<th><code>meta.ai_context:</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>response_type</code></td>
+<td>Shared, "<code>response_type</code> — always filter it explicitly"; Illuminate, "<code>response_type</code>"</td>
+<td>The shipped value list, minus its instruction: never null; overall (every source), group (Illuminate, i-Ready and DIBELS), standard and not_taken (Illuminate only). not_taken marks an assessment a student was assigned and never sat. Not additive across values.</td>
+<td>Filter it on every query; default to overall unless a standard or group breakdown is asked for.</td>
+</tr>
+<tr>
+<td><code>response_type_code</code></td>
+<td>Illuminate, "Normalize standard codes before any standards-level rollup"</td>
+<td>Breakdown identifier — the standard code on Illuminate standard rows, the domain on i-Ready group rows, the subtest on DIBELS group rows. Null on Illuminate group rows and on every overall and not_taken row. Some CCSS Math standards carry 2 spellings (8.EE.C.8.b and 8.EE.C.8b), and a small share of older rows have an empty code (an empty string, not null).</td>
+<td>For a standards rollup, merge the 2 spellings first: remove a dot only when it sits right before a trailing lowercase letter. Then recompute the rate from the merged counts (pct_proficient × count_scored, summed, over summed count_scored); never average the 2 reported rates. For an Illuminate group-level cut, group on response_type_description — this code is null there, so keying on it drops every Illuminate group row and keeps i-Ready and DIBELS.</td>
+</tr>
+<tr>
+<td><code>response_type_description</code></td>
+<td>Illuminate, "Normalize standard codes" (the <code>y = mx + b</code> variants)</td>
+<td>Human-readable breakdown label. Populated on standard rows and every group row; null on overall and not_taken. A few standards carry whitespace variants of the same label.</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>response_type_root_description</code></td>
+<td>Shared, "Domain rollup"; Illuminate, "<code>response_type_root_description</code> … is reliable here"; FL, last bullet</td>
+<td>CCSS domain the standard rolls up to. Populated on Illuminate standard rows only. Unreliable for Illuminate content aligned to Florida's own standards, whose codes do not fit the CCSS hierarchy.</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>performance_band_label_number</code></td>
+<td>Shared, "Performance bands are Illuminate-only"; Illuminate, "Bands"</td>
+<td>Position of the score's band within the performance band set it was scored against. Illuminate only; null for every other source. Band sets differ in cut points, in band count, and in which band starts mastery, so band 5 is not always the top. Not comparable across assessments, or across response types within one assessment: standard and group rows can carry different band labels than the assessment's overall rows.</td>
+<td>Compare band numbers within one assessment and one response_type. There, prefer this number to proficiency_level text for grouping and ordering; on standard and group rows a few bands carry more than one label spelling.</td>
+</tr>
+<tr>
+<td><code>proficiency_level</code></td>
+<td>i-Ready, "Proficiency"; DIBELS, "Proficiency" and "Tier-movement rates are not comparable"; STAR, NJ and FL, "Proficiency"</td>
+<td>Proficiency label; the vocabulary is per source. i-Ready: 3 or More Grade Levels Below, 2 Grade Levels Below, 1 Grade Level Below, Early On Grade Level, Mid or Above Grade Level. DIBELS: Well Below Benchmark, Below Benchmark, At Benchmark, Above Benchmark, and Tested Out on some subtest (group) rows. STAR and FL state: Level 1 to Level 5; STAR is null on a share of rows. NJSLA and NJSLA Science: Did Not Yet Meet Expectations, Partially Met Expectations, Approached Expectations, Met Expectations, Exceeded Expectations. NJGPA: Graduation Ready, Not Yet Graduation Ready. Illuminate: the performance band label. Tier-movement rates are not comparable across instruments: fewer, wider tiers mechanically raise the stayed-the-same rate.</td>
+<td>On Illuminate standard and group rows, a band can carry more than one label spelling; group by performance_band_label_number there.</td>
+</tr>
+<tr>
+<td><code>is_mastery</code></td>
+<td>Shared, "Headline metric"; Shared, "Performance bands" (the mastery bar); i-Ready, "Proficiency cutoff"; FL, "Proficiency"</td>
+<td>Per-row proficient flag that pct_proficient is built from. The bar is per source: i-Ready, Early On Grade Level and Mid or Above Grade Level — Early On is a looser bar than at or above grade level; DIBELS, At and Above Benchmark; STAR and FL, Level 3 and up; NJSLA, Met and Exceeded Expectations; NJGPA, Graduation Ready; Illuminate, set by each assessment's band set, so an Illuminate rate mixes different bars. Null where the source gives no verdict: Illuminate not_taken rows, DIBELS Tested Out subtests, and STAR rows with no level.</td>
+<td>For i-Ready at or above grade level, filter proficiency_level to Mid or Above Grade Level instead. When reporting an Illuminate rate, say which assessments it covers.</td>
+</tr>
+<tr>
+<td><code>scale_score</code></td>
+<td>i-Ready, "Growth is not in the model, and scale scores do not normalize across grade bands"</td>
+<td>Scale score achieved. Every source except Illuminate, which reports percent_correct instead. Scales differ by source and are not comparable across sources or subjects; within i-Ready the scale also compresses at higher grades, so a change in score is not comparable between elementary and middle grades.</td>
+<td>Report a scale-score change separately for elementary and middle grades, and as a point difference, not a percent of the BOY score. Do not label a computed change with i-Ready's growth-measure names; those norms are not in this view.</td>
+</tr>
+<tr>
+<td><code>enrollment_resolution</code></td>
+<td>Shared, "Section/teacher rollups"</td>
+<td>How the section enrollment was resolved: subject_section or homeroom.</td>
+<td>Filter to subject_section for course- and section-level rollups.</td>
+</tr>
+<tr>
+<td><code>date_taken</code></td>
+<td>Shared, "Time"</td>
+<td>Date the assessment was taken (completion date). Every source; null or wrong on a small share of Illuminate rows.</td>
+<td>A standalone date, not joined to the calendar. For year and calendar rollups use dates_date_day and academic_year, which read the administration date for Illuminate and college and the test date for state tests and vendor diagnostics (i-Ready, DIBELS, STAR).</td>
+</tr>
+<tr>
+<td><code>count_students</code></td>
+<td>Shared, "Grain"</td>
+<td>Distinct students (per student-year) with a score in the filtered slice. The shipped note about switching to count_distinct_approx moves to a YAML comment.</td>
+<td>Heavier than the plain counts, and has timed out at standard grain; use count_taken there.</td>
+</tr>
+<tr>
+<td><code>count_assigned</code></td>
+<td>Shared, "Three nested counts"</td>
+<td>Every assessment row, including the Illuminate not_taken rows where a student was assigned an assessment and never sat it. The widest of 3 nested counts: assigned contains taken contains scored.</td>
+<td>For assessments actually sat use count_taken; for the population pct_proficient is computed over use count_scored.</td>
+</tr>
+<tr>
+<td><code>count_taken</code></td>
+<td>Shared, "Three nested counts"; DIBELS and STAR, "Proficiency"</td>
+<td>Assessments a student actually sat: every row except the Illuminate not_taken placeholders. Only Illuminate records non-participation, so for every other source this equals count_assigned. Wider than count_scored, because a sat assessment can carry no proficiency verdict: STAR rows with no level, and DIBELS Tested Out subtests.</td>
+<td>Use this for "how many assessments were taken".</td>
+</tr>
+<tr>
+<td><code>count_scored</code></td>
+<td>Shared, "Headline metric" and "Three nested counts"</td>
+<td>Assessments carrying a proficiency verdict (is_mastery set). The narrowest count, and the denominator of pct_proficient.</td>
+<td>Report it alongside pct_proficient whenever the rate carries weight; it is the n the rate rests on.</td>
+</tr>
+<tr>
+<td><code>pct_taken</code></td>
+<td>Shared, "Three nested counts"; Illuminate, "Measures — <code>pct_taken</code> is meaningful here and nowhere else"</td>
+<td>Grain: meaningful only within Illuminate; pooling across sources is a silent-failure trap. Participation rate: assessments sat / assessments assigned. Every other source reads 100% by construction.</td>
+<td>Filter assessment_type to illuminate before reporting it.</td>
+</tr>
+<tr>
+<td><code>pct_proficient</code></td>
+<td>Shared, "Headline metric"</td>
+<td>Proficiency rate: proficient scores / scores carrying a verdict (count_scored). The headline metric, and the only score measure comparable across sources' incompatible scales.</td>
+<td>Pair it with count_scored; never multiply it by count_assigned to get a proficient count.</td>
+</tr>
+<tr>
+<td><code>count_assessments</code> (new)</td>
+<td>Illuminate, "How many times was this standard assessed"</td>
+<td>Distinct Illuminate assessments in the filtered set — not sittings, not scored responses. Illuminate only: every other source has no source_assessment_id, so it reads 0 there.</td>
+<td>Use this for "how many times was this assessed". A standard resting on 1 assessment is a thin base for a trend; say so rather than trending it.</td>
+</tr>
+<tr>
+<td><code>avg_scale_score</code>, <code>avg_percent_correct</code></td>
+<td>Shared, "Headline metric" ("scope-bound")</td>
+<td>Present. The leading <code>Grain:</code> clause stays in <code>description:</code> under the #4476 convention: pooling across sources is meaningless in the data itself.</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>pct_proficient_formative</code></td>
+<td>Illuminate, "Measures — <code>pct_proficient_formative</code> does not cover all formative work"</td>
+<td>Proficiency rate across the QA, MQQ and CRQ module types only; excludes TP, UA, ET and WPP, about a third of module-coded Illuminate scores. CRQ is also available alone as pct_proficient_crq.</td>
+<td>Not "all internal checkpoints". For that, build the rollup from the intended module types and flag the pooling choice as an open decision.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="assessments-cube-student_assessments">Assessments cube (<code>student_assessments</code>)</h3>
+<table>
+<thead>
+<tr>
+<th>Member</th>
+<th>Reference text</th>
+<th><code>description:</code></th>
+<th><code>meta.ai_context:</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>assessment_type</code></td>
+<td>Shared, "Pick the source with <code>assessment_type</code>" (value list, "Treat this list as current, not closed"); NJ, "Spring 2026 onward"</td>
+<td>Present value list, plus: From spring 2026, NJSLA and NJGPA are computer-adaptive, and no field separates adaptive from fixed-form scores. NJSLA Science did not change.</td>
+<td>Use this member to select a source. Flag any NJSLA or NJGPA comparison that crosses spring 2026 as possibly comparing 2 scales; never present that trend as settled.</td>
+</tr>
+<tr>
+<td><code>is_internal_assessment</code></td>
+<td>Shared, "Pick the source with <code>assessment_type</code>, not <code>is_internal_assessment</code>"</td>
+<td>TRUE for Illuminate (KIPP-authored interims) only; FALSE for every other source, including the i-Ready, DIBELS and STAR diagnostics KIPP administers itself.</td>
+<td>Do not select a source with this flag; it groups vendor diagnostics with state tests. Filter assessment_type instead.</td>
+</tr>
+<tr>
+<td><code>module_type</code></td>
+<td>Illuminate, "Module types: there are seven, not three"</td>
+<td>Illuminate module type. An open list: QA (Quick Assessments), MQQ (Multiple-Choice Quick Questions), CRQ (Constructed Response Questions), UA (Unit Assessment), TP, ET, WPP, and older types. What TP, ET and WPP stand for is not documented. Illuminate only; null for every other source.</td>
+<td>Do not expand TP, ET or WPP. pct_proficient_formative covers only QA, MQQ and CRQ.</td>
+</tr>
+<tr>
+<td><code>module_code</code></td>
+<td>Illuminate, "Which module codes exist varies by subject, grade, AND region", "not in chronological order by name", "not a subject filter"</td>
+<td>Code identifying the assessment within its source. Illuminate: the checkpoint code within a module type (for example QA1, MQQ2); one code spans every subject assessed in that round, and a small share of Illuminate assessments have none. State tests: subject and grade (for example ELA05, MAT08, ALG01; ELAGP and MATGP for NJGPA). i-Ready and STAR: the subject. DIBELS: Composite.</td>
+<td>Not a subject filter on its own for Illuminate, where one code spans every subject in its round. Always pair it with academic_subject. Which Illuminate codes exist varies by subject, grade and region, so check the exact slice before pooling across checkpoints. Illuminate code names are not chronological; order by median date_taken.</td>
+</tr>
+<tr>
+<td><code>academic_subject</code></td>
+<td>Shared, "Two different subject fields, and <code>academic_subject</code> values are source-dependent"</td>
+<td>Subject tested; the vocabulary is per source. State tests: English Language Arts, Mathematics, Science, and course names for end-of-course tests (Algebra I, Geometry, Civics). i-Ready and STAR: Math and Reading, plus Early Literacy for STAR. DIBELS: Reading. Illuminate: course-level names, with no English Language Arts value; its ELA equivalent is Text Study, alongside Writing, English 100–400, CCR and AP courses, and math appears as Mathematics and course names such as Algebra I and Geometry. Distinct from the course's discipline.</td>
+<td>Check this member's values for the source before filtering; a wrong label returns zero rows with no error. Which labels count as 'math' or 'ELA' across sources is an open decision; say which labels you included.</td>
+</tr>
+<tr>
+<td><code>grade_level_tested</code></td>
+<td>Shared, "Three different grade fields"; the i-Ready, DIBELS and STAR "Grade field" bullets</td>
+<td>Grade the assessment targets; 0 is kindergarten. Illuminate and state tests only; null for every other source, for the NJSLA end-of-course tests (Algebra I, Geometry, Algebra II), and for a small share of Illuminate assessments.</td>
+<td>For a vendor diagnostic (i-Ready, DIBELS, STAR) or an NJSLA end-of-course test, filter grade_level instead; this member returns zero rows with no error. Where both are populated they answer different questions, and which one grade-band reporting should use is an open decision; say which you used.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="administrations-cube-student_assessment_administrations">Administrations cube (<code>student_assessment_administrations</code>)</h3>
+<table>
+<thead>
+<tr>
+<th>Member</th>
+<th>Reference text</th>
+<th><code>description:</code></th>
+<th><code>meta.ai_context:</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>administration_period</code></td>
+<td>Shared, "<code>administration_period</code> is populated for every source except Illuminate"; i-Ready, "Administrations", "Resolving 'the most recent diagnostic'", "EOY is administered <em>after</em> NJSLA"; each source's "Administrations" or "Time" bullet; NJ, "A Fall NJGPA slice"</td>
+<td>Window within the academic year; the vocabulary is per source. i-Ready and DIBELS: BOY, MOY, EOY, plus Outside Round for i-Ready sittings outside the 3 windows. STAR: Fall, Winter, Spring. NJGPA: Fall (the routine retake window) and Spring. NJSLA and NJSLA Science: Spring. FL FAST: PM1 to PM3; FL end-of-course and science: PM3. College: the College Board round. Every source except Illuminate. i-Ready and DIBELS EOY falls after spring state testing; MOY is the last named round before it.</td>
+<td>Only meaningful with assessment_type scoped. A BOY/MOY/EOY filter drops Outside Round, so say which windows you used. "Most recent diagnostic" is the latest named round in the latest academic_year_label, not the max date_taken. An EOY-versus-state comparison in one year is concurrent, not predictive; use MOY.</td>
+</tr>
+<tr>
+<td><code>source_assessment_id</code></td>
+<td>Illuminate, "How many times was this standard assessed"</td>
+<td>Illuminate assessment id at the administration grain (the canonical id). Illuminate only; null for every other source.</td>
+<td>"How many times was this assessed" is a distinct count of this, not a row count; count_assessments is that count.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="shared-cubes">Shared cubes</h3>
+<table>
+<thead>
+<tr>
+<th>Member</th>
+<th>Reference text</th>
+<th><code>description:</code></th>
+<th><code>meta.ai_context:</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>locations.grade_band</code></td>
+<td>Shared, "Three different grade fields"</td>
+<td>Grade band the school serves (ES, MS, HS): a school attribute, not a student's grade.</td>
+<td>A grade_band filter is a school filter. For a student's grade, use grade_level.</td>
+</tr>
+<tr>
+<td><code>courses.discipline</code></td>
+<td>Shared, "Two different subject fields"</td>
+<td>Present</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>courses.is_foundations</code></td>
+<td>Shared, "<code>is_foundations</code> marks intervention courses"</td>
+<td>TRUE when the section is a Foundations (intervention) course, per the course-subject crosswalk.</td>
+<td>Treat it as course enrollment, not a record of intervention services delivered. The assessment view overrides this to add its view-specific sentence; see below.</td>
+</tr>
+<tr>
+<td><code>students</code> identifiers</td>
+<td>NJ, "Student identifier"</td>
+<td>Present on <code>lea_student_identifier</code>, <code>district_student_identifier</code> and <code>state_student_identifier</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>staff.full_name</code></td>
+<td>Shared, "Resolve staff names against <code>staff_directory</code>"</td>
+<td>Present</td>
+<td>— the advice goes to an override on the assessment view; see below</td>
+</tr>
+</tbody>
+</table>
+<p><code>staff_lead_teacher</code> has no members of its own: it <code>extends: staff</code>. An
+<code>ai_context</code> on <code>staff.full_name</code> would therefore also reach <code>staff_directory</code>,
+where "resolve against <code>staff_directory</code> first" is circular.</p>
+<p>Cube lets a view give one included member its own <code>meta.ai_context</code>
+(<code>- name: full_name</code> with a <code>meta:</code> block under <code>includes:</code>). Tested 2026-09-29
+on a local Cube 1.7.43, first with its schema compiler and then over REST
+<code>/meta</code>:</p>
+<ul>
+<li>The override lands on that member in that view only, not on its sibling fields
+  and not on <code>staff_directory.full_name</code>.</li>
+<li>It replaces the member's whole <code>meta</code> in that view; a cube-level <code>ai_context</code>
+  on the same member disappears there and survives in other views.</li>
+<li>REST <code>/meta</code> returns it as <code>aiContext</code>, while member-level and view-level
+  values keep <code>ai_context</code>. Cube's YAML loader camel-cases the include entry,
+  and its <code>meta</code> with it.</li>
+</ul>
+<p>The assessment view uses 2 overrides:</p>
+<table>
+<thead>
+<tr>
+<th>View member</th>
+<th>Override <code>ai_context</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>staff_lead_teacher_full_name</code></td>
+<td>Stored Last, First. Resolve a name against staff_directory before filtering; a zero-row result is not proof the teacher has no students.</td>
+</tr>
+<tr>
+<td><code>is_foundations</code></td>
+<td>The only intervention signal on this view; there is no program- or MTSS-tracking dimension. Treat it as course enrollment, not a record of intervention services delivered.</td>
+</tr>
+</tbody>
+</table>
+<p>The <code>is_foundations</code> override restates the cube-level <code>ai_context</code>, because the
+override replaces it. Guards:</p>
+<ul>
+<li>The <code>meta</code> pointer names both spellings (see <em>Server changes</em>).</li>
+<li>The length test checks both <code>ai_context</code> and <code>aiContext</code>.</li>
+<li>A schema test fails when a view override sits on a member whose cube-level
+  <code>ai_context</code> it does not contain, so a later cube-level addition cannot be
+  hidden silently.</li>
+</ul>
+<h3 id="the-view-student_assessment_scores_view">The view (<code>student_assessment_scores_view</code>)</h3>
+<p>Views have no dbt twin, so the split is: <code>description:</code> says what the view is,
+and <code>ai_context:</code> says how to read results from it. The shipped description is
+corrected: <code>group</code> rows are not Illuminate-only, and bare "vendor" is replaced.</p>
+<p><code>description:</code> (863 characters):</p>
+<blockquote>
+<p>Assessment scores across Illuminate interims, NJ and FL state tests, and
+vendor diagnostics (i-Ready, DIBELS, STAR), one row per student x assessment x
+administration x response type. Enrollment-scoped: a score appears only if it
+resolves to a section enrollment. pct_proficient is the source-agnostic
+headline; scale_score is null for Illuminate rows and percent_correct is null
+for every other source. response_type splits scores into overall, standard and
+group rows: standard is Illuminate only, and group covers Illuminate, i-Ready
+and DIBELS. There is no growth measure. The Date members resolve for every
+source but read different dates: the administration date for Illuminate and
+college, the test date for state tests and vendor diagnostics, so a cross-
+source date cut mixes the two. Contains direct student identifiers; see
+access_policy for PII gating.</p>
+</blockquote>
+<p><code>ai_context:</code> (1,050 of 2,000 characters):</p>
+<blockquote>
+<p>Totals will not reconcile to vendor-diagnostic or state reports, because of
+enrollment scoping; i-Ready Outside Round sittings lose the most, so treat
+those counts as a floor. Coverage is uneven by region, source and year, and a
+source's first year can be partial; check volume by region and year before
+calling a narrow result a failure or trending across a boundary. A gap between
+two instruments on the same students is a calibration difference until shown
+otherwise: report both rates side by side and flag it rather than presenting
+an achievement gap. Any growth figure is analyst-built; say so. Students can
+sit a diagnostic more than once in a window, mostly i-Ready; de-duplicate
+repeat sittings before any student-level count, and since which sitting counts
+is an open decision, say which you kept. A missing current-year state result
+is a release lag, not a defect. Query this view, not upstream i-Ready tables,
+which carry re-pull duplicates. A CCSS code's own grade can differ from
+grade_level_tested; that is spiral review, not an error.</p>
+</blockquote>
+<p>The lead-teacher and <code>is_foundations</code> sentences live in view overrides (above).</p>
+<p>Measured 2026-09-28, behind the repeat-sittings sentence: student-windows with
+more than one test date are 2.6% on i-Ready, 0.4% on STAR, and 7 of about 61,000
+on DIBELS.</p>
+<p>Sources in the reference file:</p>
+<ul>
+<li>Shared: "A cross-instrument gap is a calibration artifact", "There is no
+  growth measure", "The view is enrollment-scoped", "Region coverage is uneven",
+  "Resolve staff names".</li>
+<li>Illuminate: "Sanity-check watch-out" (calibration), "A CCSS code's own grade
+  can differ" (sieve step 5).</li>
+<li>i-Ready: "<code>Outside Round</code> is also the least complete round", "<code>is_replacement</code>
+  is Illuminate-only by design" (repeat sittings), "Query this view, not the
+  upstream i-Ready model".</li>
+<li>DIBELS and STAR: "Coverage starts in 2023-24".</li>
+<li>NJ: "A missing current-year NJSLA is a release lag".</li>
+</ul>
+<h3 id="everything-that-does-not-land-on-a-member">Everything that does not land on a member</h3>
+<table>
+<thead>
+<tr>
+<th>Reference text</th>
+<th>Goes to</th>
+<th>Sieve step</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Shared, "Filter a genuinely nullable field with <code>set</code> / <code>notSet</code>, never <code>equals "null"</code>"</td>
+<td><code>load</code> docstring</td>
+<td>4</td>
+</tr>
+<tr>
+<td>Shared, "A dimension-only pull silently de-duplicates"</td>
+<td><code>load</code> docstring</td>
+<td>4</td>
+</tr>
+<tr>
+<td>Shared, "Section/teacher rollups" ("force-refresh <code>meta</code> if the lead-teacher fields appear to be missing")</td>
+<td><code>meta</code> docstring</td>
+<td>4</td>
+</tr>
+<tr>
+<td>Shared, "Time" ("use <code>academic_year_label</code> as the canonical year filter")</td>
+<td>present in the shipped <code>dates</code> descriptions and the <code>load</code> crosswalk; the markdown line is deleted. No <code>ai_context</code> is written on <code>dates</code>: Step 0 placed guidance there only for the test, and the crosswalk's one home stays the <code>load</code> docstring</td>
+<td>4</td>
+</tr>
+<tr>
+<td>Shared, "Performance bands" — the band-set table</td>
+<td>stays, corrected and without volumes, until #5573 ships band-set members; it notes that the table describes <code>overall</code> rows, and <code>standard</code> and <code>group</code> rows may use a different band scale</td>
+<td>1</td>
+</tr>
+<tr>
+<td>Point-in-time figures: Text Study's score volume; the Outside Round and Newark loss shares; QA3's subject count; the median test dates; the repeat-sitting rate; the Fall NJGPA counts; STAR's yearly volume; the adaptive window dates</td>
+<td>deleted; the qualitative claim stays in its row</td>
+<td>1</td>
+</tr>
+<tr>
+<td>Coverage specifics: Paterson's sources and years; i-Ready's regions; DIBELS and STAR start years; the Newark 2025-26 module-code example; FL is Miami</td>
+<td>deleted; the view says coverage is uneven</td>
+<td>3</td>
+</tr>
+<tr>
+<td>Shared, "Two different subject fields" — "At K-2, <code>Text Study</code> is the <em>only</em> ELA-equivalent subject present"</td>
+<td>stays; evidence for the open ELA decision</td>
+<td>2</td>
+</tr>
+<tr>
+<td>Shared, "Open decisions"; i-Ready, which sitting is authoritative; NJ, whether NJDOE reset the adaptive cut scores</td>
+<td>stays, and gains the question this review added, whether a DIBELS Tested Out subtest counts as proficient (see <em>Open questions for the network</em>); what TP, ET and WPP stand for was answered in review</td>
+<td>2</td>
+</tr>
+<tr>
+<td>The i-Ready, DIBELS and STAR provenance notes ("Documented from the live schema …")</td>
+<td>stays</td>
+<td>2</td>
+</tr>
+</tbody>
+</table>
+<h3 id="stays-in-the-markdown">Stays in the markdown</h3>
+<p>The standing protocol, calibration gate, session log and Drive filing, PII
+delivery rules, the open-decision list, and the modeling and deliverables rules.
+The routing section shrinks to the assessment-family hints and a pointer to
+<code>meta</code>, since the per-source sections it routes to no longer exist.</p>
+<h2 id="open-questions-for-the-network">Open questions for the network</h2>
+<p>Policy and definition questions this review turned up. None is decided here.
+Cube text says each one is open and never states a default (placement step 2).
+Each also goes on the orchestrator's <em>Flag, don't invent</em> list
+(<code>assessment-cube-orchestrator.md</code>), so the working group sees it.</p>
+<table>
+<thead>
+<tr>
+<th>Question</th>
+<th>Evidence</th>
+<th>Who can answer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Which <code>academic_subject</code> labels count as "math" and which as "ELA"? Already on the orchestrator's list.</td>
+<td>Labels differ by source: state uses English Language Arts and Mathematics, i-Ready and STAR use Math and Reading, DIBELS uses Reading, Illuminate uses Text Study and course names. At K-2, Text Study is the only ELA-equivalent Illuminate subject.</td>
+<td>Teaching &amp; Learning</td>
+</tr>
+<tr>
+<td>What is the default grain for a count or share question: assessment records or distinct students? Restored to the orchestrator's list in review; the reference file carried it on <code>main</code>.</td>
+<td><code>count_taken</code> and <code>count_students</code> answer different questions, and the view's description routes to each without choosing a default.</td>
+<td>Teaching &amp; Learning</td>
+</tr>
+<tr>
+<td>Does "top performing" mean the highest level or the most movement? Restored to the orchestrator's list in review; the reference file carried it on <code>main</code>.</td>
+<td>Level and movement rank schools differently, and neither is ratified.</td>
+<td>Teaching &amp; Learning</td>
+</tr>
+<tr>
+<td>Should a DIBELS subtest a student tested out of count as proficient?</td>
+<td><code>Tested Out</code> rows carry no <code>is_mastery</code>, so <code>pct_proficient</code> leaves them out of the denominator entirely.</td>
+<td>Teaching &amp; Learning</td>
+</tr>
+<tr>
+<td>Should grade-band reporting key on the student's <code>grade_level</code> or the assessment's <code>grade_level_tested</code>? Already on the orchestrator's list.</td>
+<td>The 2 disagree where both are populated, and <code>grade_level_tested</code> is null for vendor diagnostics and NJSLA end-of-course tests, so the choice changes results and coverage.</td>
+<td>Teaching &amp; Learning</td>
+</tr>
+<tr>
+<td>When a student sits the same diagnostic more than once in a window, which sitting counts? Already on the orchestrator's list; most recent by date is the working convention, not ratified policy.</td>
+<td>Repeat sittings are 2.6% of i-Ready student-windows, rare on STAR and DIBELS. Skipping the de-duplication inflates student-level counts and growth figures.</td>
+<td>Teaching &amp; Learning</td>
+</tr>
+</tbody>
+</table>
+<h2 id="yaml-description-changes">YAML description changes</h2>
+<p>The per-member drafts are the single source of the new wording. This section
+lists what is wrong in the shipped text today, so a reviewer can see why each
+member changes. Checked against <code>main</code> on 2026-09-28 and 2026-09-29.</p>
+<p>Shipped text that is wrong or incomplete:</p>
+<ul>
+<li><code>module_type</code>: "e.g., QA, CR". The values are an open list of about 28; see
+  the <code>module_type</code> draft.</li>
+<li><code>module_code</code>: "e.g., QA1, ELA05, sat_total_score". The code means something
+  different per source; see the <code>module_code</code> draft.</li>
+<li><code>is_internal_assessment</code>: "FALSE for state and college". It is FALSE for the
+  i-Ready, DIBELS and STAR diagnostics too.</li>
+<li><code>grade_level_tested</code>: "Null for college-entrance assessments". It is null for
+  every vendor diagnostic and for the NJSLA end-of-course tests.</li>
+<li><code>administration_period</code>: omits every vendor value, and the reference file
+  gives NJ as Fall, Winter and Spring, where NJSLA is Spring only.</li>
+<li><code>academic_subject</code>: lists English Language Arts as a plain example. Illuminate
+  has no such value, and i-Ready, STAR and DIBELS use Math and Reading.</li>
+<li><code>response_type_code</code>, <code>response_type_description</code> and
+  <code>response_type_root_description</code>: each says only "Null for state". Each is
+  null across a different and much larger slice (table below).</li>
+<li><code>performance_band_label_number</code>: "Null for state assessments". It is
+  Illuminate only, and not comparable across assessments or response types.</li>
+<li><code>count_taken</code> and <code>count_scored</code>: attribute the DIBELS rows with no verdict to
+  "K-2 phonics subtests have no benchmark level set upstream". They are the
+  <code>Tested Out</code> rows.</li>
+<li><code>date_taken</code>: says "internal" and "vendor" where it means Illuminate and the
+  named diagnostics.</li>
+<li>The view description: "response_type / response_type_code carry the
+  standard/skill breakdown (Illuminate only)". i-Ready and DIBELS carry <code>group</code>
+  rows too.</li>
+<li>The instructions #5508 wrote into <code>description:</code> on <code>response_type</code>, the 3
+  counts, <code>pct_taken</code> and <code>pct_proficient</code> move to <code>ai_context</code>.</li>
+</ul>
+<p>Where the 3 <code>response_type_*</code> members are populated, measured 2026-09-23:</p>
+<table>
+<thead>
+<tr>
+<th>Member</th>
+<th>Populated on</th>
+<th>Null on</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>response_type_code</code></td>
+<td><code>standard</code>, plus <code>group</code> for i-Ready and DIBELS</td>
+<td>every Illuminate <code>group</code> row, and all <code>overall</code> / <code>not_taken</code></td>
+</tr>
+<tr>
+<td><code>response_type_description</code></td>
+<td><code>standard</code> and every <code>group</code></td>
+<td>all <code>overall</code> / <code>not_taken</code></td>
+</tr>
+<tr>
+<td><code>response_type_root_description</code></td>
+<td>Illuminate <code>standard</code> only</td>
+<td>every i-Ready, DIBELS, STAR and state row</td>
+</tr>
+</tbody>
+</table>
+<p><code>response_type_code</code> is null on all 2,797,958 Illuminate <code>group</code> rows while
+<code>response_type_description</code> is populated on them, so a standards-cluster cut
+keyed on the code silently drops every Illuminate group row.</p>
+<h3 id="schema-tests">Schema tests</h3>
+<p><code>tests/cube/test_cube_schema.py</code> loads the YAML and asserts 4 things:</p>
+<ol>
+<li>One key phrase per moved fact, keyed by member name, so a later edit cannot
+   drop a fact silently.</li>
+<li>Each Cube member that reads one column directly has a <code>description:</code> equal to
+   that column's dbt <code>description:</code>.</li>
+<li>Every <code>ai_context</code> in <code>src/cube/model/</code>, including view overrides, is 2,000
+   characters or less.</li>
+<li>No view override hides a cube-level <code>ai_context</code>: an override on a member
+   whose cube member carries <code>ai_context</code> must contain that text.</li>
+</ol>
+<p>A local Cube server compiles the branch's model and serves it over REST before
+merge; the <code>ai_context</code> check above runs against it.</p>
+<h2 id="server-changes">Server changes</h2>
+<h3 id="docstrings">Docstrings</h3>
+<p>The quoted sentences are the docstring text. Everything else in this subsection
+is the reason for it and stays in the spec: docstrings are resent on every tool
+call, so they carry the instruction only.</p>
+<p><code>load</code> gains 3 sentences, each added to an existing paragraph:</p>
+<ul>
+<li><strong>Filter operators paragraph:</strong> "<code>equals "null"</code> matches the literal string
+  and returns zero rows; filter a null with <code>notSet</code>." The same mechanic also
+  sits in <code>proficiency_level</code>'s <code>ai_context</code>, a deliberate second home against
+  #5236's one-home rule. The docstring sentence landed first (<code>92bcae9e5f</code>), and
+  in the first family 4 run Haiku arm B still filtered <code>equals "null"</code>. After
+  <code>5e0a9d5dd1</code> added the member sentence, arm B fell for it 0 of 3 times, while
+  arm A, with neither sentence, still fell for it 3 of 3 on the same stub. The
+  evidence is 3 tries per arm, but it points at the member text.</li>
+<li><strong>Grain paragraph:</strong> "A query with no measure groups by its dimensions, so
+  identical rows collapse into one; add a count or the primary key to see every
+  row." A Cube query with only dimensions works like <code>SELECT DISTINCT</code>, so a
+  student with 2 identical sittings comes back as 1 row and nothing says rows
+  were merged. The <code>count_students</code> fallback lives in that member's
+  <code>ai_context</code>, not here. During the build, check whether Cube's <code>ungrouped</code>
+  query option works on these views; if it does, name it as a third fix. Checked
+  2026-10-06 through the live connector: a dimension-only query on
+  <code>student_assessment_scores_view</code> with <code>ungrouped: true</code> and no primary key
+  returned repeated identical rows, so it works, and the grain paragraph names
+  it.</li>
+<li><strong>PII paragraph:</strong> "Student views return only the schools the user can access;
+  before describing a result as network-wide, check which regions or schools it
+  covers." The row-level filter is silent, so a school- or region-scoped user
+  asking a network question gets real, non-empty numbers for their own slice,
+  and nothing else in the response says so.</li>
+</ul>
+<p><code>meta</code> gains 2 sentences:</p>
+<ul>
+<li>"Refresh before concluding a member is missing."</li>
+<li>"Members may carry <code>meta.ai_context</code> (<code>aiContext</code> on some view-specific
+  members): usage rules written for you. Read and follow a member's <code>ai_context</code>
+  before building a query that uses it." This is the pointer tested in <em>Step 0</em>,
+  added as a judgment call; the second spelling covers view overrides.</li>
+</ul>
+<h3 id="an-empty-result-note-on-load">An empty-result note on <code>load</code></h3>
+<p>When <code>load</code> returns an empty result, the server adds a note to the response.
+Empty means <code>data: []</code>, or, for a query with no dimension and no time grain, the
+1 row of null or zero measures Cube returns instead; review found that
+measure-only case is the commoner one. The shipped text is <code>EMPTY_RESULT_NOTE</code>
+in <code>src/cube/mcp/server.py</code>; it opens "Empty result: no rows, or one row of null
+or zero measures" and tells the agent to re-run without the narrowing filter,
+grouped by region or school.</p>
+<p>Why a server note rather than more text: text only makes the check more likely.
+The note fires every time, at the moment of risk. It also covers every trap in
+this spec whose symptom is zero rows with no error: a wrong <code>academic_subject</code>
+label, <code>grade_level_tested</code> on a vendor diagnostic, <code>equals "null"</code>, and a
+region that does not carry the source.</p>
+<p>Limits:</p>
+<ul>
+<li>It cannot catch a partial result, such as a network-wide answer that silently
+  covers 3 regions. The view's <code>ai_context</code> and the access-scope sentence carry
+  that case.</li>
+<li>The wording stays neutral, because some zero-row answers are real.</li>
+<li>Before building, check whether Cube's <code>/load</code> response says when row-level
+  access removed rows. If it does, the note names the cause instead of offering
+  both.</li>
+<li>The eval cannot test the access case: its <code>META_STUB</code> carries no access rules.</li>
+</ul>
+<p><code>load</code> returns Cube's response unchanged today (<code>src/cube/mcp/server.py</code>), so
+the note is one check on the length of <code>data</code>.</p>
+<h3 id="tests-and-deploy">Tests and deploy</h3>
+<p>A test in <code>tests/cube/test_mcp_server.py</code> asserts the docstring anchor phrases,
+the same way the crosswalk is anchored today, and that the note appears on an
+empty <code>data</code> array and not on a non-empty one. Redeploy and connector refresh
+follow the existing procedure in <code>src/cube/mcp/CLAUDE.md</code>.</p>
+<h2 id="model-changes">Model changes</h2>
+<h3 id="in-this-pr-count_assessments">In this PR: <code>count_assessments</code></h3>
+<p>Finding. "How many times was this standard assessed" is a distinct count of
+<code>source_assessment_id</code>, not a row count. Measured 2026-09-22: per standard per
+year, the distinct assessment count has quartiles 1, 1, 2, 3 and a maximum of
+52, across 6,729 standard-years. 43.4% of standard-years rest on one assessment.
+Distinct <code>assessment_administration_key</code> differs in 84.6% of standard-years,
+because that key includes region and administered date, so it counts sittings.</p>
+<p>Chosen. Add <code>count_assessments</code> to the scores cube: <code>count_distinct</code> on
+<code>{student_assessment_administrations.source_assessment_id}</code>, public, exposed on
+the view. <code>source_assessment_id</code> is null outside Illuminate, so the description
+says the count covers Illuminate only. It is not added to <code>proficiency_rollup</code>,
+so this PR does not touch the rollup. Cube only; no dbt change.</p>
+<p>Alternative. Text only, on <code>count_taken</code> and <code>source_assessment_id</code>.</p>
+<h3 id="moved-to-their-own-issues">Moved to their own issues</h3>
+<table>
+<thead>
+<tr>
+<th>Change</th>
+<th>Issue</th>
+<th>Why it left this PR</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Band-set columns on <code>dim_assessments</code> (set name, band count, mastery band, cut)</td>
+<td>#5573</td>
+<td>A dbt model change with open naming and unit questions; it ships on its own.</td>
+</tr>
+<tr>
+<td><code>assessment_family</code> on <code>dim_assessments</code> (<code>internal</code>, <code>vendor</code>, <code>state</code>, …)</td>
+<td>#5574</td>
+<td>A dbt model change; the text on <code>is_internal_assessment</code> covers the trap in the meantime.</td>
+</tr>
+<tr>
+<td><code>response_type_code_canonical</code> on the fact, added to <code>proficiency_rollup</code></td>
+<td>#5575</td>
+<td>Rebuilds the 15M-row fact and edits the rollup block that #5557 is reworking, so it waits for #5557.</td>
+</tr>
+</tbody>
+</table>
+<p>Each issue carries its finding, its design and its validation. The drafts above
+use the text-only fallback for each one, and each issue says which text to
+repoint when it ships.</p>
+<h2 id="eval-extension">Eval extension</h2>
+<p><code>src/cube/mcp/eval</code> today measures one thing, the academic-year crosswalk, with
+a hand-written <code>META_STUB</code>. This adds a second family without disturbing it.</p>
+<ul>
+<li><code>prompts.yaml</code> gains family 4, assessment traps. Each prompt names the trap it
+  must avoid. 6 are checked on the captured <code>load</code> query:</li>
+<li>an i-Ready question by grade: must filter <code>grade_level</code>, not
+    <code>grade_level_tested</code></li>
+<li>"how many STAR scores have no proficiency level?": must filter with
+    <code>notSet</code>, not <code>equals "null"</code></li>
+<li>a "QA3 math" question: must pair <code>module_code</code> with a subject filter</li>
+<li>a "vendor diagnostics" question: must not select on <code>is_internal_assessment</code></li>
+<li>an "all internal checkpoints" question: must not use
+    <code>pct_proficient_formative</code> alone</li>
+<li>a "most recent diagnostic" question: must scope to a named round</li>
+<li>1 is checked on the answer text, and labeled as the only answer-scored trap: a
+  Paterson i-Ready question must report coverage, not zero as a failure. The
+  <code>load</code> stub returns 0 rows for it, and in arm B only it returns the server's
+  empty-result note too, so the eval exercises the note.</li>
+<li><code>scorer.py</code> reports a trap rate per arm with Wilson intervals, as today.</li>
+<li>Both arms' catalogs come from the same Cube-compiler script used in the
+  override test: arm A compiles <code>origin/main</code>'s YAML from before the PR's first
+  description change, and arm B compiles the branch. The output is committed as
+  <code>eval/fixtures/meta_pre_drain.json</code> and regenerated for arm B on each run.
+  Both arms use the real <code>server.py</code> docstrings; arm A substitutes the pre-drain
+  <code>load</code> paragraphs by anchor, the same mechanism the crosswalk arm uses.</li>
+<li>The stub's canned <code>load</code> rows take the assessment view's shape; today they are
+  attendance-shaped.</li>
+<li>The runner stays hermetic per <code>eval/README.md</code>, and runs on Haiku only, the
+  weaker model and the one where Step 0 found headroom.</li>
+</ul>
+<p>Every run records, per conversation, what the Agent SDK's <code>ResultMessage</code>
+reports and the runner discards today: tokens in and out (with cache),
+<code>total_cost_usd</code>, <code>num_turns</code> and <code>duration_ms</code>, beside the tool calls already
+captured. The report gives each arm its median tokens, cost per conversation,
+turns and tool calls, and also the character size of the full-catalog and
+assessment-view <code>meta</code> responses before and after. Eval timing is not production
+timing, because Cube is stubbed; #5613 measures real latency.</p>
+<p>A third arm sizes the planned org-level skill without building it: <strong>arm C</strong> is
+arm B plus the trimmed orchestrator as the system prompt. The gap between B and
+C shows what process and recipes add beyond Cube text, and the traps C wins are
+the recipes worth writing. Arm C reports; it does not gate.</p>
+<p>The gate runs on Haiku. The before/after report adds one small Sonnet run of
+family 4, arms A and B only: 7 prompts, 3 reps, 42 conversations.</p>
+<p>The eval runs once the descriptions, docstrings and <code>count_assessments</code> are all
+on the branch. Rules, written before any run:</p>
+<ol>
+<li>Arm B passes when its pooled family 4 trap rate is lower than arm A's.</li>
+<li>If it does not, revise the description text and rerun, at most 2 rounds.</li>
+<li>After 2 rounds, record the result. Merge only if arm B is no worse than arm
+   A, and open an issue for each trap arm B still fails.</li>
+</ol>
+<p>A standards-rollup trap (must group on the canonical code) needs the member from</p>
+<h1 id="5575-so-that-issue-adds-it">5575, so that issue adds it.</h1>
+<h3 id="step-0-does-the-field-matter">Step 0: does the field matter?</h3>
+<p>Open-source Cube does nothing with <code>ai_context</code>. In <code>cube-js/cube</code> the key
+appears only in documentation, which names Cube Cloud's hosted agent as its
+reader, and our MCP server returns it as one more JSON key beside <code>description</code>.
+An agent treats <code>ai_context</code> specially only if a prompt tells it to. The one
+third-party Cube MCP server that mentions the key works that way. So the
+question is not whether <code>ai_context</code> reaches the model, but whether putting
+guidance there, with or without a pointer, changes behavior compared with the
+same text in <code>description:</code>.</p>
+<p>The first design compared no text against text in <code>ai_context</code>, which cannot
+separate the field from the extra text. It is replaced by 4 placement arms, run
+on the crosswalk prompts (families 1 to 3). Their code left <code>arms.py</code> in
+<code>836b1fa810</code> once this result was recorded; it is at <code>958b822639</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Arm</th>
+<th>Guidance lives in</th>
+<th>Isolates</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>F0_none</code></td>
+<td>nowhere; plain definitions only</td>
+<td>floor: is there headroom?</td>
+</tr>
+<tr>
+<td><code>F1_desc</code></td>
+<td>appended to the year members' <code>description</code></td>
+<td>description-only</td>
+</tr>
+<tr>
+<td><code>F2_ctx</code></td>
+<td>the same members' <code>meta.ai_context</code></td>
+<td>does the field alone matter?</td>
+</tr>
+<tr>
+<td><code>F3_ctx_ptr</code></td>
+<td><code>ai_context</code>, plus a <code>meta</code> docstring line to use it</td>
+<td>does a pointer matter?</td>
+</tr>
+</tbody>
+</table>
+<p>Every arm uses the <code>load</code> docstring without its crosswalk paragraph, and the
+guidance is that paragraph lifted verbatim, so the words are identical across
+arms. Run 2026-09-29 on Haiku only, 3 reps, 288 conversations. Haiku is the
+weaker model, so it is where placement is most likely to matter; a Sonnet run
+was stopped after 35 conversations to save Agent SDK credit.</p>
+<p>Decision rules, written before the results. The primary metric is the wrong-year
+rate on the determinate prompts (families 1 and 2), with Wilson 95% intervals;
+the family 3 disambiguation rate is secondary.</p>
+<p>Amended 2026-09-29, while the run was in progress and before any result was
+read: the user chose the <code>description:</code>/<code>ai_context:</code> split on simplicity
+grounds, because it keeps the dbt twin test a plain equality. The run no longer
+picks the design. It guards against <code>ai_context</code> doing worse than <code>description:</code>
+and decides whether the <code>meta</code> docstring needs the pointer.</p>
+<ol>
+<li><strong>No headroom.</strong> If <code>F0_none</code> is near zero and inside <code>F1_desc</code>'s interval,
+   the run cannot tell placements apart. Keep the split, without the pointer.</li>
+<li><strong>No difference.</strong> If <code>F2_ctx</code> and <code>F3_ctx_ptr</code> fall inside <code>F1_desc</code>'s
+   interval, keep the split without the pointer.</li>
+<li><strong>The pointer helps.</strong> If <code>F3_ctx_ptr</code> beats <code>F2_ctx</code> with non-overlapping
+   intervals, add the pointer to the <code>meta</code> docstring.</li>
+<li><strong><code>ai_context</code> hurts.</strong> If <code>F2_ctx</code> and <code>F3_ctx_ptr</code> are both worse than
+   <code>F1_desc</code> with non-overlapping intervals, reopen the split: usage text moves
+   to <code>description:</code> and the twin test changes to a prefix match.</li>
+</ol>
+<p>A null or negative result is kept and written down, not rerun until it passes.</p>
+<p><strong>Result, 2026-09-29 (Haiku, 288 conversations, 60 determinate per arm).</strong> Rule
+2 fires: keep the split. The 3 placements are indistinguishable at this sample
+size (0 of 60 wrong against 1 of 60; Fisher exact p = 1.0).</p>
+<p><strong>Decision, 2026-09-29: add the pointer anyway, as a judgment call.</strong> This
+overrides rule 2's "without the pointer"; the eval did not show the pointer
+helps. The reasons are not in the data. The pointer costs one sentence. It is
+the only mechanism that gives <code>ai_context</code> meaning to an agent, the same one the
+third-party Cube MCP server uses. And the real <code>ai_context</code> values carry
+instructions that matter more than this test's crosswalk. The local REST check
+before merge confirms the pointer's key names match what <code>/meta</code> returns.</p>
+<table>
+<thead>
+<tr>
+<th>Arm</th>
+<th>Wrong year (95% interval)</th>
+<th>Correct</th>
+<th>No query</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>F0_none</code></td>
+<td>28.3% [16–45]</td>
+<td>71.7%</td>
+<td>0%</td>
+</tr>
+<tr>
+<td><code>F1_desc</code></td>
+<td>0.0% [0–7]</td>
+<td>100%</td>
+<td>0%</td>
+</tr>
+<tr>
+<td><code>F2_ctx</code></td>
+<td>1.7% [0–10]</td>
+<td>96.7%</td>
+<td>1.7%</td>
+</tr>
+<tr>
+<td><code>F3_ctx_ptr</code></td>
+<td>0.0% [0–7]</td>
+<td>96.7%</td>
+<td>3.3%</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>There is headroom: with no guidance, Haiku gets the year wrong 28% of the
+  time. Guidance in any of the 3 placements takes that to about zero, and the 3
+  intervals overlap.</li>
+<li><code>F2_ctx</code>'s one wrong answer is the family 2 trap: it filtered <code>2026-2027</code> for
+  an SY26 question.</li>
+<li>Every arm surfaced its interpretation on all family 3 (ambiguous) prompts.</li>
+<li>9 conversations hit the 12-turn limit, all on "by school" prompts, spread
+  across the 4 arms (4 in <code>F3_ctx_ptr</code>). The stub returns no school breakdown,
+  so the model retries; this is a harness artifact, not a placement effect.</li>
+<li>A Sonnet run was stopped after 35 conversations. Those records are not part of
+  this result.</li>
+</ul>
+<p>Raw records: <code>src/cube/mcp/eval/out/placement_2026-09-29_haiku.jsonl</code>
+(gitignored, local only).</p>
+<p>The local REST check ran 2026-09-29 on Cube 1.7.43. The 2 overrides come back as
+<code>aiContext</code> on their view members only, and 25 members carry <code>ai_context</code>. The
+full <code>meta</code> catalog grows from 305,495 to 321,857 bytes (+5.4%), and the
+assessment view's entry from 47,216 to 55,652 (+17.9%). These figures predate
+<code>351164b225</code>, which moved the <code>grade_band</code> pointer off the <code>locations</code> cube
+member into overrides on 4 student views: <code>student_assessment_scores_view</code>,
+<code>student_attendance_enrollment_daily_view</code>,
+<code>student_attendance_enrollment_periods_view</code> and
+<code>student_section_enrollments_view</code>. <code>staff_directory</code> shares <code>locations</code> but has
+no <code>grade_level</code>, so the pointer there sent the agent at nothing. The model now
+carries 6 overrides on 4 views, and <code>test_model_compiles_with_cube</code> checks that
+each reaches <code>/meta</code> as <code>aiContext</code>.</p>
+<h3 id="family-4-result">Family 4 result</h3>
+<p>Arm B passes rule 1 on both models. The current result is the 2026-10-07 re-run
+below. It measures the text as shipped after the second review round, on a
+harness that review corrected. The 2026-09-29 run and its revisions follow it as
+history.</p>
+<p>Re-run 2026-10-06 and 2026-10-07: 7 prompts, 3 reps, 21 conversations per arm
+and model, jobs interleaved across arms. Trap rate over all 7 traps, Wilson 95%
+intervals clustered on prompt, and the median cost per conversation:</p>
+<table>
+<thead>
+<tr>
+<th>Arm</th>
+<th>Haiku</th>
+<th>Sonnet</th>
+<th>Median cost, Haiku / Sonnet</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>A4_pre</code></td>
+<td>19.0% [3–62]</td>
+<td>9.5% [1–49]</td>
+<td>$0.039 / $0.040</td>
+</tr>
+<tr>
+<td><code>B4_post</code></td>
+<td>4.8% [1–30]</td>
+<td>0.0% [0–22]</td>
+<td>$0.055 / $0.049</td>
+</tr>
+<tr>
+<td><code>C4_skill</code></td>
+<td>0.0% [0–26]</td>
+<td>0.0% [0–22]</td>
+<td>$0.041 / $0.043</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>What B still misses.</strong> Haiku arm B falls for <code>most_recent_not_named_round</code>
+  once: it lists all 3 rounds of 2025-26 instead of picking the latest. Arm A's
+  fires are <code>most_recent_not_named_round</code> (Haiku 3, Sonnet 2) and
+  <code>null_via_equals</code> (Haiku 1, which filtered with <code>isNull</code>, not a Cube
+  operator).</li>
+<li><strong>Arm C.</strong> It scores 0% on both models, against B's 4.8% on Haiku. The
+  intervals overlap, so C is no worse than B and possibly better; the first
+  run's "C adds nothing" rested on a Paterson verdict that was a scoring error.</li>
+<li><strong>The eval cannot show whether the empty-result note helps, because no model
+  fell for the Paterson trap.</strong> Across every run and both models, no answer read
+  Paterson's empty result as a 0% rate, including arm A, which gets no note.
+  That is what "no headroom" means here: the eval worked, and the baseline was
+  already at 0%, so the note had nothing left to fix on this question. The note
+  stays because it fires on every empty result and costs one sentence, not
+  because the eval shows it helps.</li>
+<li><strong>Sonnet changed between runs.</strong> The <code>sonnet</code> alias now costs about a third as
+  much per conversation, and its arm A no longer falls for
+  <code>grade_filter_on_vendor</code> (3 of 3 before, 0 now). The records do not store the
+  model id, so the alias likely points to a newer model, unconfirmed. Compare
+  arms within one run, not across runs.</li>
+<li><strong>1 error.</strong> One Haiku arm C conversation hit the 12-turn limit; it still
+  scores, because its queries were captured.</li>
+</ul>
+<p>What the re-run changed in the harness, each after reading the records that
+scored wrong:</p>
+<ul>
+<li><strong>The stub follows Cube on an empty slice:</strong> <code>[]</code> for a grouped query, 1 row
+  of null measures for an ungrouped one (review finding).</li>
+<li><strong>The stub gives academic year 2026-27 only its BOY round.</strong> The re-run fell
+  on October 2026. B and C, following <code>administration_period</code>'s "latest named
+  round that has data in the latest academic_year_label", queried 2026-27, and
+  the stub returned MOY and EOY rows that cannot exist yet. Sonnet flagged them
+  as impossible and stopped, which scored as the trap on 5 conversations. Only
+  <code>f4_most_recent</code> queried 2026-27, so that prompt alone was re-run on the
+  corrected stub (18 conversations, <code>family4_r2_most_recent.jsonl</code>). There,
+  Sonnet B and C filter 2026-27 BOY, the right answer.</li>
+<li><strong><code>paterson_zero_as_failure</code> fires only on a zero presented as a result</strong>
+  ("0%", "zero percent", "no students reached …") with no gap report. Firing
+  whenever no gap phrasing matched scored 6 correct "Paterson has no data"
+  answers as trapped in the re-run, on wording such as "not yet populated" and
+  "there is no Paterson region". Across all 69 Paterson answers in every run,
+  none reads the empty result as a rate.</li>
+<li><strong><code>formative_alone</code> does not fire when <code>pct_proficient</code> sits in the same
+  query.</strong> That query compares the formative rate with the all-types rate; it
+  does not substitute one for the other. 2 conversations did this and named the
+  excluded module types.</li>
+<li><strong>Arms are compared only over prompts every arm completed,</strong> and jobs run
+  interleaved, so a usage cutoff no longer drops one arm's prompts (review
+  finding). No prompt was dropped in the re-run.</li>
+</ul>
+<p>Raw records: <code>src/cube/mcp/eval/out/family4_r2.jsonl</code> and
+<code>family4_r2_most_recent.jsonl</code> (gitignored, local only).</p>
+<h4 id="first-run-2026-09-29-superseded">First run, 2026-09-29 (superseded)</h4>
+<p>Arm B passed rule 1 on Haiku after 1 revision round, and the Sonnet report run
+agreed. 7 prompts, 3 reps, 21 conversations per arm.</p>
+<p>Trap rate over all 7 traps, with Wilson 95% intervals clustered on prompt (see
+the 2026-10-01 revision below):</p>
+<table>
+<thead>
+<tr>
+<th>Arm</th>
+<th>Haiku</th>
+<th>Sonnet</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>A4_pre</code></td>
+<td>28.6% [6–73]</td>
+<td>23.8% [5–67]</td>
+</tr>
+<tr>
+<td><code>B4_post</code></td>
+<td>4.8% [1–30]</td>
+<td>0.0% [0–22]</td>
+</tr>
+<tr>
+<td><code>C4_skill</code></td>
+<td>10.0% [2–36], n = 20</td>
+<td>0.0% [0–76], n = 6</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>What B fixed.</strong> On Haiku, <code>null_via_equals</code> went from 3 of 3 to 0 and
+  <code>most_recent_not_named_round</code> from 3 of 3 to 1. On Sonnet,
+  <code>grade_filter_on_vendor</code> went from 3 of 3 to 0 and <code>most_recent</code> from 2 of 3
+  to 0.</li>
+<li><strong>What B still misses.</strong> Haiku's 1 remaining fire is <code>most_recent</code>. On its
+  first query, B still trips a trap 17% of the time on both models, then
+  corrects itself after reading <code>meta</code>.</li>
+<li><strong>Arm C adds nothing measurable.</strong> On Haiku it fires the Paterson trap 1 of 3
+  times, where B fires it 0 times; that one conversation asked which benchmark
+  window was meant and never reached the empty result. The 2026-10-07 predicate
+  scores it as not trapped: it never claimed a zero rate. On Sonnet, 15 of C's
+  21 conversations hit the account's session limit and are not scored, so its 6
+  scored conversations settle nothing.</li>
+<li><strong>Cost.</strong> B reads more <code>meta</code> text, and costs about the same per conversation.
+  Median per conversation: Haiku A $0.042 and B $0.048; Sonnet A $0.143 and B
+  $0.141. B's cache-read tokens are higher (Haiku 11,768 to 28,634; Sonnet
+  76,647 to 106,495) because cached input is cheap.</li>
+</ul>
+<p>Round 1 changed 2 things at once, so its effect is not attributed to either:</p>
+<ul>
+<li><strong>The stub.</strong> The first run's <code>load</code> stub returned the same fixed row for
+  every query. Models noticed the fake data and probed with other filters, which
+  tripped traps the text had avoided. That run scored Haiku A 33.3% against B
+  44.4% on the 6 query traps, and Sonnet A 42.9% against B 19.0% on all 7. The
+  stub now shapes its rows from the query.</li>
+<li><strong>The text.</strong> <code>proficiency_level</code>, <code>administration_period</code> and <code>date_taken</code>
+  gained the <code>notSet</code> and "latest named round" wording.</li>
+</ul>
+<p>The scorer was amended twice after the Sonnet run, before these numbers were
+written. Neither change moves arm A or B:</p>
+<ul>
+<li>A conversation the harness cut off with an error, other than the 12-turn
+  limit, is left out of the trap rate. This drops 15 of arm C's Sonnet
+  conversations. Conversations that hit the turn limit still score, because
+  their queries were captured (2 in A and 3 in B on Sonnet).</li>
+<li>A query-scored trap on a conversation that never queried the view is left out.
+  With no query, 4 of the 6 query predicates read a pass and 2 a fire, so the
+  outcome means nothing. This drops 1 of arm C's Haiku conversations. Every A
+  and B conversation queried the view on both models.</li>
+</ul>
+<p>The final code review then found the round-1 <code>proficiency_level</code> sentence wrong
+for DIBELS: DIBELS rows with no verdict carry <code>Tested Out</code>, not null, so
+<code>notSet</code> finds almost none of them. The sentence now scopes <code>notSet</code> to STAR and
+sends "no verdict" to <code>is_mastery</code>. The run above measured the text before that
+fix; the <code>null_via_equals</code> prompt asks about STAR, so its trap reads the same
+guidance either way.</p>
+<p>Revised 2026-09-30, after the <code>claude-review</code> pass tightened 3 predicates:
+<code>null_via_equals</code> also accepts <code>is_mastery</code> <code>notSet</code>;
+<code>most_recent_not_named_round</code> needs <code>equals</code> on exactly 1 named round; and
+<code>paterson_zero_as_failure</code> no longer passes on a bare "coverage", but does pass
+an answer saying Paterson is absent from the data. Re-scoring the saved records
+moves 1 cell: Haiku arm C drops from 15.0% [5–36] to 10.0% [3–30]. The old
+predicate fired on a conversation that reported Paterson "not present in the
+current assessment scores view", a phrasing none of its patterns matched. Arms A
+and B are unchanged on both models.</p>
+<p>Raw records: <code>src/cube/mcp/eval/out/family4_{haiku,sonnet}_r1.jsonl</code>
+(gitignored, local only).</p>
+<p>Revised 2026-10-01: the intervals in both tables above are now clustered on
+prompt. The old Wilson interval pooled every rep of every prompt as an
+independent trial, but reps of one prompt are correlated, so it was too narrow.
+<code>scorer.py</code> now uses the Korn-Graubard effective sample size and a Student-t
+critical value with <code>prompts - 1</code> degrees of freedom, ported from Inspect AI's
+<code>ci_wilson(cluster=...)</code>. Recomputed from the saved records, not rerun. Point
+rates are unchanged, and so are both decisions: placement rule 2 still fires,
+and the family 4 pass rule compares point rates. With 7 trap prompts the family
+4 intervals are wide, and arm A's and arm B's overlap on both models. Earlier
+intervals quoted in the revision notes above are the pooled ones.</p>
+<h3 id="why-family-4-is-small">Why family 4 is small</h3>
+<p>7 traps against about 50 facts looks like a sample. It is closer to the whole
+set. A trap is a predicate over a captured query, so a fact can become one only
+when the query alone proves the violation. The Paterson trap is the one
+exception: it checks the answer text for a coverage statement, a narrow phrase
+check rather than a judgment of the answer. The facts split 3 ways:</p>
+<ul>
+<li><strong>Malformed query: checkable.</strong> For example, <code>is_internal_assessment</code> used to
+  select a source, <code>equals "null"</code> where <code>notSet</code> was meant, or <code>module_code</code>
+  with no subject filter. Family 4 draws from these.</li>
+<li><strong>Correct query, misread answer: never checkable.</strong> The calibration-artifact
+  rule, totals not reconciling to vendor or state reports, a missing
+  current-year state result being a release lag, uneven coverage, scale scores
+  compressing at higher grades. Nothing in the query is wrong, so no predicate
+  over query shape can fire. This limit is permanent, and it is why step 5 of
+  the placement procedure routes these facts to prose.</li>
+<li><strong>Definitions: nothing to violate.</strong> Value lists, FL's Level 3 mastery bar,
+  <code>module_type</code>'s open list.</li>
+</ul>
+<p>So the eval measures the checkable third and the descriptions carry the rest.
+Each extra trap costs a written prompt and 2 arms of model-in-the-loop runtime,
+against a gate that already blocks the PR.</p>
+<h3 id="pointing-the-trap-checks-at-production-deferred">Pointing the trap checks at production, deferred</h3>
+<p><code>scorer.py</code> inspects the captured <code>load</code> query, not the answer text, so the same
+predicate could run against a real logged query. That is deliberately <strong>not</strong> in
+scope here.</p>
+<p>Measured 2026-09-22: every Cube query reaches BigQuery under one service
+account, and the only job label is <code>cube_request_id</code>, a UUID. That was 369 jobs
+on the assessment fact over 7 days, 227 distinct ids, with no surface, user or
+application field. An agent's query and a dashboard refresh look the same, so a
+trap <strong>rate</strong> computed from <code>JOBS_BY_PROJECT</code> would put every human dashboard
+load in the denominator. Only compiled SQL survives, not the Cube query JSON,
+and the question that prompted it is nowhere.</p>
+<p>What is available today is the crude form: regex the compiled SQL for a member
+reference and count. It answers whether a shape occurs in production, not how
+often an agent falls into a trap. #5557's rollup measurement uses the same
+technique, with the same limits.</p>
+<p>The real dependency is <strong>attribution and question text</strong>, which #5613 provides:
+one logged row per Cube MCP call, with <code>staff_key</code>, <code>question</code>, <code>query_json</code>,
+<code>members_referenced</code>, outcome and <code>server_sha</code>. Its phase 1 (PII-free, no
+question text) is unblocked; phase 2 adds <code>question</code> and <code>query_json</code> after a
+retention decision. Once <code>query_json</code> is logged, each trap becomes a standing
+detector instead of a pre-merge gate. That matters because the eval proves the
+descriptions work on 7 written prompts, not on what people actually ask or on
+whether they still work in November.</p>
+<p>The Paterson trap cannot move to production this way: it is answer-scored, and</p>
+<h1 id="5613-does-not-log-answers-it-stays-an-eval-only-check">5613 does not log answers. It stays an eval-only check.</h1>
+<p>The only obligation this spec takes on is keeping the trap predicates importable
+rather than inlined in the scorer's main loop.</p>
+<p>Once those monitors exist, each checkable fact has a definition of done: its
+trap stops firing. That holds only for the malformed-query third. A correct
+query that is misread leaves nothing to detect, so those facts stay
+documentation.</p>
+<h2 id="project-knowledge-trim">Project-knowledge trim</h2>
+<p>The open decisions have one home: the orchestrator's <em>Flag, don't invent</em> list
+(<code>assessment-cube-orchestrator.md</code>, 15 items). The reference file's shorter
+"Open decisions" bullet repeats 7 of them and is deleted.</p>
+<ul>
+<li><strong><code>assessment-cube-reference.md</code>.</strong> The PR deletes every fact it moved. The
+  K-2 <code>Text Study</code> evidence moves to the orchestrator, beside its open ELA
+  decision, and the 3 provenance notes go with their facts. What remains is the
+  corrected band-set table, with its <code>overall</code>-rows caveat. #5573 deletes that
+  table, and the file with it, leaving the Project on one file.</li>
+<li><strong><code>assessment-cube-orchestrator.md</code>.</strong></li>
+<li><em>Flag, don't invent</em> gains the question this review added: whether a DIBELS
+    <code>Tested Out</code> subtest counts as proficient. A second, what TP, ET and WPP
+    stand for, was answered in review and went into <code>module_type</code> instead.</li>
+<li>Protocol step 3 changes from "filter <code>response_type</code> explicitly" to "confirm
+    <code>response_type</code> from <code>meta</code>".</li>
+<li>Every pointer into the reference file becomes "see the member's description
+    in <code>meta</code>": step 3's "(Shared conventions)", the NJSLA item's "(NJ state)",
+    and "called out inline in <code>assessment-cube-reference.md</code>".</li>
+<li><em>Routing</em> keeps the region hint, the assessment-family hint and "ask before
+    querying". The 7-section map goes, since those sections no longer exist.</li>
+<li>The session-log and Drive-filing protocol stays untouched. #5613's server
+    log retires most of it once its phase 2 ships; that issue lists which parts
+    go and which judgments (confidence, inference flags) it keeps.</li>
+<li><strong><code>README.md</code> in that folder</strong> gains a step: after the PR merges, re-upload
+  the changed files to the Project. Its update loop says a field fact goes to
+  the Cube YAML, a query mechanic goes to <code>server.py</code>, and only protocol or
+  policy goes to these files.</li>
+</ul>
+<h2 id="pr-and-validation">PR and validation</h2>
+<h1 id="5495-carries-all-of-it-this-spec-included-and-refers-to-5236-without-closing">5495 carries all of it, this spec included, and refers to #5236 without closing</h1>
+<p>it: #5236's done-when includes the Project re-upload, which happens after merge,
+so #5236 is closed by hand then. Validation runs against our own path: the MCP
+server and Cube's REST API, on a local Cube server at the pinned version for
+anything the model serves.</p>
+<table>
+<thead>
+<tr>
+<th>Change</th>
+<th>Validation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Step 0</td>
+<td>done 2026-09-29; result recorded under <em>Step 0</em></td>
+</tr>
+<tr>
+<td>Descriptions and their dbt twins, <code>ai_context</code>, the authoring rule</td>
+<td><code>uv run pytest tests/cube/</code> (the 4 schema tests); dbt Cloud CI passes</td>
+</tr>
+<tr>
+<td>The 6 view overrides on 4 views</td>
+<td>schema test 4; <code>test_model_compiles_with_cube</code> shows each as <code>aiContext</code> on its view member only</td>
+</tr>
+<tr>
+<td><code>ai_context</code> reach and size</td>
+<td>the local REST check; <code>meta</code> response sizes recorded before and after</td>
+</tr>
+<tr>
+<td><code>load</code> and <code>meta</code> docstrings, empty-result note</td>
+<td><code>uv run pytest tests/cube/</code></td>
+</tr>
+<tr>
+<td><code>count_assessments</code></td>
+<td>per standard-year in BigQuery: quartiles 1, 1, 2, 3, maximum 56, 43% on 1 assessment (6,505 standard-years, re-measured 2026-10-06)</td>
+</tr>
+<tr>
+<td>Reference and orchestrator trim</td>
+<td>every deleted fact has a home in the diff; the 2 new questions are on <em>Flag, don't invent</em>; no pointer into a deleted section survives (<code>grep</code>)</td>
+</tr>
+<tr>
+<td>All of it</td>
+<td>eval family 4 passes per its rules, at most 2 revision rounds; arm C and the Sonnet report run are recorded but do not gate</td>
+</tr>
+</tbody>
+</table>
+<p>The PR body carries the markdown lines it deleted, so a reviewer can see each
+fact beside its new wording.</p>
+<h2 id="out-of-scope">Out of scope</h2>
+<ul>
+<li>Band-set columns: #5573.</li>
+<li><code>assessment_family</code>: #5574.</li>
+<li>The canonical standard code: #5575. Fixing the upstream standards crosswalk
+  instead is a separate issue, noted there.</li>
+<li>Partitioning <code>fct_assessment_scores_enrollment_scoped</code>, and finding why
+  <code>proficiency_rollup</code> serves nothing: #5557.</li>
+<li>Building the org-level claude.ai skill. The trimmed orchestrator is its first
+  draft, and eval arm C sizes what it would add; the skill itself is later work.</li>
+<li>The Cube MCP call log, and retiring the Project's session-log protocol: #5613.</li>
+<li>Answering the open questions under <em>Open questions for the network</em>: Teaching
+  &amp; Learning.</li>
+<li>Agents that query Cube through the SQL API; see <em>The supported agent path</em>.</li>
+<li><code>pct_proficient_formative</code> semantics. Whether to widen it or add a
+  module-coded rollup is a pooling decision on the open-policy list.</li>
+<li>Any change to <code>int_assessments__response_rollup</code> or the reports that read it.</li>
+</ul>
+<h2 id="revision-2026-10-16-the-note-after-the-cube-mcp-rest-coverage-work">Revision, 2026-10-16: the note after the Cube MCP REST coverage work</h2>
+<p>The Cube MCP REST coverage work merged into this branch after this spec was
+written. It added <code>cubesql</code>, which sends SQL API queries over REST <code>/cubesql</code>,
+and documented <code>responseFormat</code> on <code>load</code>. Review changed the note in 3 ways:</p>
+<ul>
+<li><strong>Every response format.</strong> <code>compact</code> and <code>columnar</code> results put rows under
+  <code>data.dataset</code> and <code>data.columns</code>, not a <code>data</code> list. The empty check reads
+  rows in all 3 formats.</li>
+<li><strong><code>cubesql</code> is on the supported agent path.</strong> An agent using it discovers
+  members through <code>meta</code>, so <code>ai_context</code> reaches it. <code>cubesql</code> gets the note on
+  zero rows only, because grouping is not visible in a SQL string. Its docstring
+  gains the access-scope sentence from <code>load</code>.</li>
+<li><strong>The note points at <code>sql</code> for full denial.</strong> A fully denied query compiles
+  with <code>rlsAccessDenied</code>, which answers the open question under <em>Limits</em> for
+  that case. A partial-scope result still cannot be told apart.</li>
+</ul>
+<p>The grain sentence now refers to the <code>ungrouped</code> field in the <code>load</code> field list
+instead of restating it. The eval was not re-run for that wording change; the
+meaning is unchanged.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+    
+  </body>
+</html>

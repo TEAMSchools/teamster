@@ -1,0 +1,2755 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>Enrollment week exit-date boundary Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.57a0d79d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#enrollment-week-exit-date-boundary-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Enrollment week exit-date boundary Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/launch-page-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Launch Page
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube-access-individual-exceptions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube Access - Individual Exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/tableau-permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tableau Permissions (People Data)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/csgf-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSGF Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/crdc-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CRDC Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ddi-stack-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDI Stack Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/hs-early-warning-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HS Early Warning Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/dibels-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIBELS Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/stat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/njdoe-universal-screener-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NJDOE Universal Screener Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/athletic-eligibility-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Athletic Eligibility Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/academic-health-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic Health Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/grad-plan-tracking-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Grad Plan Tracking Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ignite-r2i-extract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IGNITE R2I Extract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#global-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global Constraints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deviation-from-the-spec" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deviation from the spec
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#review-focus" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Review Focus
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Review Focus">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-1-last_enrolled_date-at-the-sis-union" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: last_enrolled_date at the SIS union
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-2-the-two-spines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: The two spines
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-3-consumers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: Consumers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-4-whole-consumer-build-impact-numbers-pr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: Whole-consumer build, impact numbers, PR
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-09-23-enrollment-week-exit-boundary.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="enrollment-week-exit-date-boundary-implementation-plan">Enrollment week exit-date boundary Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Make the weekly enrollment spines count a stint's enrolled days
+correctly per SIS, give <code>_subjects_weeks</code> one row per student-week-discipline,
+and simplify the six consumers that worked around the old behavior.</p>
+<p><strong>Architecture:</strong> One new column, <code>last_enrolled_date</code>, is defined at the
+PowerSchool/Focus union in <code>int_students__student_enrollments</code> and flows down
+the existing <code>select *</code> chain. Both spines compute their flags from it;
+<code>_subjects_weeks</code> also joins on it and dedups with the pick the topline models
+already use. Consumers drop their own dedup or filter.</p>
+<p><strong>Tech Stack:</strong> dbt (BigQuery), <code>dbt_utils.deduplicate</code>,
+<code>dbt_utils.unique_combination_of_columns</code>, <code>dbt_utils.expression_is_true</code>.</p>
+<p><strong>Spec:</strong>
+<code>docs/superpowers/specs/2026-09-23-enrollment-week-exit-boundary-design.md</code></p>
+<h2 id="global-constraints">Global Constraints</h2>
+<ul>
+<li>Worktree:
+  <code>/workspaces/teamster/.worktrees/cbini/fix/claude-enrollment-week-exit-boundary</code>
+  (below, <code>$wt</code>). Every git call is <code>git -C $wt</code>; every file path is under
+  <code>$wt</code>.</li>
+<li>Every dbt call is <code>uv run dbt ... --project-dir $wt/src/dbt/kipptaf</code>. Run
+  <code>uv run dbt deps --project-dir $wt/src/dbt/kipptaf</code> once, in its own Bash
+  call, before the first build.</li>
+<li>Local builds go to <code>--target dev</code> only, with
+  <code>--defer --favor-state --state /workspaces/teamster/src/dbt/kipptaf/target/prod</code>.
+  Every changed model must be inside <code>--select</code>: <code>--favor-state</code> resolves any
+  unselected upstream to prod, which would hide the change.</li>
+<li>No warehouse DDL or DML. The BigQuery MCP is SELECT-only.</li>
+<li>PowerSchool rule: <code>last_enrolled_date = date_sub(exitdate, interval 1 day)</code>.
+  Focus rule: <code>last_enrolled_date = exitdate</code>. No region <code>if</code> anywhere.</li>
+<li><code>_subjects_weeks</code> dedup:
+  <code>partition_by="student_number, academic_year, week_start_monday, discipline"</code>,
+  <code>order_by="is_enrolled_week desc, entrydate desc"</code>. No <code>_dbt_source_project</code>
+  in the partition.</li>
+<li><code>exitdate</code> keeps its meaning everywhere. Do not touch <code>days_enrolled</code> or any
+  other <code>exitdate</code> use outside the files listed here.</li>
+<li>No student numbers, names or other row values in commits, the PR body or PR
+  comments. Counts only.</li>
+<li>Before pushing SQL, YAML or markdown:
+  <code>/workspaces/teamster/.trunk/tools/trunk check --force --no-fix &lt;files&gt; &lt;/dev/null</code>
+  with cwd <code>$wt</code>.</li>
+</ul>
+<h2 id="deviation-from-the-spec">Deviation from the spec</h2>
+<p>The spec's Testing section asks for a dbt unit test on
+<code>int_extracts__student_enrollments_subjects_weeks</code>. This plan replaces it with
+two model-level <code>dbt_utils.expression_is_true</code> tests plus the grain test, for
+this reason: the model's upstream gains <code>last_enrolled_date</code> in this same PR,
+and the repo's unit-test rule (<code>.claude/rules/dbt-yaml.md</code>, <em>dbt unit-test
+fixtures</em>) says a same-PR column add fails dict fixtures in CI. The
+<code>format: sql</code> fallback would have to spell out all ~300 columns of
+<code>int_extracts__student_enrollments_subjects</code>. The data tests assert the same
+three behaviors on real rows at every build.</p>
+<h2 id="review-focus">Review Focus</h2>
+<ol>
+<li>Miami one-day stints (<code>entrydate = exitdate</code>) must still produce their week
+   row, flagged when the day is a Monday. Checked in Task 2 Step 6, query D.</li>
+<li>Miami stints trimmed to nothing (<code>exitdate &lt; entrydate</code>) must produce no week
+   rows, as today. Checked in Task 2 Step 6, query D.</li>
+<li>Graduate placeholders (null <code>exitdate</code>, grade 99) must produce no week rows,
+   as today. Checked in Task 1 Step 5 and Task 2 Step 6, query D.</li>
+<li>A week whose Monday is a holiday: an NJ stint exiting on the Tuesday (the
+   week's first school day) gets no row, and a stint entering that Tuesday gets
+   exactly one row with <code>is_enrolled_week</code> false. Checked in Task 2 Step 6,
+   query B, and Task 3 Step 6.</li>
+<li>A student who moves between two regions mid-week gets one row that week, not
+   one per region. Covered by the grain test in Task 2 (it omits
+   <code>_dbt_source_project</code>).</li>
+</ol>
+<hr />
+<h3 id="task-1-last_enrolled_date-at-the-sis-union">Task 1: <code>last_enrolled_date</code> at the SIS union</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify:
+  <code>$wt/src/dbt/kipptaf/models/students/intermediate/int_students__student_enrollments.sql</code>
+  (<code>focus_conformed</code> CTE near line 107, <code>powerschool_conformed</code> CTE near line
+  287, both branches of <code>with_region</code> near lines 306 and 397)</li>
+<li>Modify:
+  <code>$wt/src/dbt/kipptaf/models/students/intermediate/properties/int_students__student_enrollments.yml</code></li>
+<li>Modify:
+  <code>$wt/src/dbt/kipptaf/models/students/intermediate/properties/int_extracts__student_enrollments.yml</code></li>
+<li>Modify:
+  <code>$wt/src/dbt/kipptaf/models/students/intermediate/properties/int_extracts__student_enrollments_subjects.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>
+<p>Produces: column <code>last_enrolled_date</code> (DATE) on
+  <code>int_students__student_enrollments</code>, reaching
+  <code>base_powerschool__student_enrollments</code>, <code>int_extracts__student_enrollments</code>,
+  <code>int_extracts__student_enrollments_subjects</code> and
+  <code>int_extracts__student_enrollments_weeks</code> through their existing <code>select *</code> /
+  <code>co.*</code>. Null exactly where <code>exitdate</code> is null.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing check</strong></p>
+</li>
+</ul>
+<p>Save this query as <code>&lt;scratchpad&gt;/t1_check.sql</code>. The <code>&lt;scratchpad&gt;</code> is the
+session scratchpad path from the system prompt. The dev dataset is
+<code>zz_cbini_extracts</code>; confirm with
+<code>select schema_name from teamster-332318.region-us.INFORMATION_SCHEMA.SCHEMATA where schema_name like 'zz_cbini%'</code>.</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="n">_dbt_source_project</span><span class="p">,</span>
+<span class="w">    </span><span class="n">countif</span><span class="p">(</span><span class="n">last_enrolled_date</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">date_sub</span><span class="p">(</span><span class="n">exitdate</span><span class="p">,</span><span class="w"> </span><span class="nb">interval</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">day</span><span class="p">))</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">ps_rule</span><span class="p">,</span>
+<span class="w">    </span><span class="n">countif</span><span class="p">(</span><span class="n">last_enrolled_date</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">exitdate</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">focus_rule</span><span class="p">,</span>
+<span class="w">    </span><span class="n">countif</span><span class="p">(</span><span class="n">last_enrolled_date</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">exitdate</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">both_null</span><span class="p">,</span>
+<span class="w">    </span><span class="n">countif</span><span class="p">(</span>
+<span class="w">        </span><span class="p">(</span><span class="n">last_enrolled_date</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="p">(</span><span class="n">exitdate</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="p">)</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">null_mismatch</span><span class="p">,</span>
+<span class="w">    </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_cbini_extracts</span><span class="p">.</span><span class="n">int_extracts__student_enrollments</span><span class="o">`</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">_dbt_source_project</span>
+</code></pre></div>
+<p>Run it with the BigQuery MCP <code>execute_sql</code>. Expected now: FAIL with
+<code>Unrecognized name: last_enrolled_date</code>, or <code>Not found</code> if the dev table does
+not exist yet.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Add the column in the Focus branch</strong></li>
+</ul>
+<p>In <code>focus_conformed</code>, directly after <code>enr.exitdate,</code> (line 107), add:</p>
+<div class="highlight"><pre><span></span><code><span class="w">            </span><span class="n">enr</span><span class="p">.</span><span class="n">exitdate</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">last_enrolled_date</span><span class="p">,</span>
+</code></pre></div>
+<p>It stays in the <code>enr</code> plain-column group, so ST06 ordering is unchanged. The
+roster trims each stint to the day before the next one starts, so <code>exitdate</code> is
+already the inclusive last day.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Add the column in the PowerSchool branch</strong></li>
+</ul>
+<p>In <code>powerschool_conformed</code>, between the <code>_dbt_source_project</code> line and the
+<code>initcap(...)</code> line, add the simple function (it must come before the nested
+<code>initcap(regexp_extract(...))</code> for ST06):</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">powerschool_conformed</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="o">*</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">regexp_extract</span><span class="p">(</span><span class="n">_dbt_source_relation</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="s1">'(kipp\w+)_'</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">_dbt_source_project</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">date_sub</span><span class="p">(</span><span class="n">exitdate</span><span class="p">,</span><span class="w"> </span><span class="nb">interval</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">day</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">last_enrolled_date</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">initcap</span><span class="p">(</span><span class="n">regexp_extract</span><span class="p">(</span><span class="n">_dbt_source_relation</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="s1">'kipp(\w+)_'</span><span class="p">))</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">region</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">union_relations</span>
+<span class="w">    </span><span class="p">),</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: List the column in both <code>with_region</code> branches</strong></li>
+</ul>
+<p><code>with_region</code> is a <code>union all corresponding</code>, which matches by name and errors
+if the lists differ. In BOTH branches, directly after <code>exitdate,</code> (lines 306 and
+397), add:</p>
+<div class="highlight"><pre><span></span><code><span class="w">            </span><span class="n">last_enrolled_date</span><span class="p">,</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Document the column in three properties files</strong></li>
+</ul>
+<p>In each of <code>int_students__student_enrollments.yml</code>,
+<code>int_extracts__student_enrollments.yml</code> and
+<code>int_extracts__student_enrollments_subjects.yml</code>, insert this entry directly
+before the <code>- name:</code> entry that follows <code>- name: exitdate</code>. Match the file's
+existing indentation (6 spaces before <code>- name</code>):</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">last_enrolled_date</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">date</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">Inclusive last day the student was enrolled in this stint. PowerSchool</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">records exitdate as the first day the student is no longer enrolled, so</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">PowerSchool stints use the day before exitdate; Focus trims each stint to</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">the day before the next one starts, so Focus stints use exitdate unchanged.</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">Null for graduate placeholder rows, which carry no exit date. Use this</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">column, not exitdate, for any "enrolled on date X" test.</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Build the chain into dev</strong></li>
+</ul>
+<p>Run (its own Bash call):</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>deps<span class="w"> </span>--project-dir<span class="w"> </span><span class="nv">$wt</span>/src/dbt/kipptaf
+</code></pre></div>
+<p>Then:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span>int_students__student_enrollments<span class="w"> </span>base_powerschool__student_enrollments<span class="w"> </span>int_extracts__student_enrollments<span class="w"> </span>int_extracts__student_enrollments_subjects<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span><span class="nv">$wt</span>/src/dbt/kipptaf<span class="w"> </span>--target<span class="w"> </span>dev<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--defer<span class="w"> </span>--favor-state<span class="w"> </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kipptaf/target/prod<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tail<span class="w"> </span>-n<span class="w"> </span><span class="m">30</span>
+</code></pre></div>
+<p>Expected: <code>ERROR=0</code>. Warnings that also fire on main are acceptable; note them.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Run the check and confirm it passes</strong></li>
+</ul>
+<p>Run <code>&lt;scratchpad&gt;/t1_check.sql</code> again. Expected:</p>
+<ul class="task-list">
+<li>kippnewark, kippcamden, kipppaterson: <code>ps_rule + both_null = n</code>,
+  <code>null_mismatch = 0</code>.</li>
+<li>
+<p>kippmiami: <code>focus_rule = n</code>, <code>both_null = 0</code>, <code>null_mismatch = 0</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 8: Lint and commit</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span><span class="nv">$wt</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>--no-fix<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/students/intermediate/int_students__student_enrollments.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/students/intermediate/properties/int_students__student_enrollments.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/students/intermediate/properties/int_extracts__student_enrollments.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/students/intermediate/properties/int_extracts__student_enrollments_subjects.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>&lt;/dev/null<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tail<span class="w"> </span>-n<span class="w"> </span><span class="m">20</span>
+git<span class="w"> </span>-C<span class="w"> </span><span class="nv">$wt</span><span class="w"> </span>add<span class="w"> </span>-u
+git<span class="w"> </span>-C<span class="w"> </span><span class="nv">$wt</span><span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"fix(dbt): add last_enrolled_date at the SIS union</span>
+
+<span class="s2">PowerSchool exitdate is the first day not enrolled; Focus exitdate is</span>
+<span class="s2">the last enrolled day. Each branch now states its own convention.</span>
+
+<span class="s2">Refs #5504</span>
+
+<span class="s2">Co-Authored-By: Claude Opus 5.5 &lt;noreply@anthropic.com&gt;"</span>
+</code></pre></div>
+<hr />
+<h3 id="task-2-the-two-spines">Task 2: The two spines</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify:
+  <code>$wt/src/dbt/kipptaf/models/students/intermediate/int_extracts__student_enrollments_subjects_weeks.sql</code>
+  (whole file; select list is lines 1-317, join lines 318-324)</li>
+<li>Modify:
+  <code>$wt/src/dbt/kipptaf/models/students/intermediate/int_extracts__student_enrollments_weeks.sql</code>
+  (lines 17-23 and 35)</li>
+<li>Modify:
+  <code>$wt/src/dbt/kipptaf/models/students/intermediate/properties/int_extracts__student_enrollments_subjects_weeks.yml</code></li>
+<li>Modify:
+  <code>$wt/src/dbt/kipptaf/models/students/intermediate/properties/int_extracts__student_enrollments_weeks.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>last_enrolled_date</code> from Task 1 on
+  <code>int_extracts__student_enrollments_subjects</code> and
+  <code>int_extracts__student_enrollments</code>.</li>
+<li>
+<p>Produces: <code>int_extracts__student_enrollments_subjects_weeks</code> at one row per
+  (<code>student_number</code>, <code>academic_year</code>, <code>week_start_monday</code>, <code>discipline</code>), with a
+  new <code>last_enrolled_date</code> column. <code>is_enrolled_week</code> and <code>is_enrolled_week_end</code>
+  on both spines are computed from <code>last_enrolled_date</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Add the tests to <code>_subjects_weeks</code> (they fail on the current
+      SQL)</strong></p>
+</li>
+</ul>
+<p>In <code>int_extracts__student_enrollments_subjects_weeks.yml</code>, replace the model
+<code>description:</code> block (lines 3-10) and add a <code>data_tests:</code> block between
+<code>config:</code> and <code>columns:</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int_extracts__student_enrollments_subjects_weeks</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">One row per student, academic year, school week and discipline, built by</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">expanding int_extracts__student_enrollments_subjects across the in-session</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">weeks each stint covers. A stint covers a week when it starts on or before</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">the week's last school day and its last_enrolled_date falls on or after the</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">week's first school day. When two stints cover the same week (a mid-week</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">transfer or re-entry), the row kept is the stint enrolled on the Monday, and</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">otherwise the later stint.</span>
+<span class="w">  </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">schema</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">extracts</span>
+<span class="w">  </span><span class="nt">data_tests</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">dbt_utils.unique_combination_of_columns</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">arguments</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">combination_of_columns</span><span class="p">:</span>
+<span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">student_number</span>
+<span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">academic_year</span>
+<span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">week_start_monday</span>
+<span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">discipline</span>
+<span class="w">        </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">severity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">error</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">dbt_utils.expression_is_true</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">arguments</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">expression</span><span class="p">:</span>
+<span class="w">            </span><span class="s">"not</span><span class="nv"> </span><span class="s">(_dbt_source_project</span><span class="nv"> </span><span class="s">!=</span><span class="nv"> </span><span class="s">'kippmiami'</span><span class="nv"> </span><span class="s">and</span><span class="nv"> </span><span class="s">is_enrolled_week</span><span class="nv"> </span><span class="s">and</span>
+<span class="w">            </span><span class="s">exitdate</span><span class="nv"> </span><span class="s">=</span><span class="nv"> </span><span class="s">week_start_monday)"</span>
+<span class="w">        </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">severity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">error</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">dbt_utils.expression_is_true</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">arguments</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">expression</span><span class="p">:</span>
+<span class="w">            </span><span class="s">"not</span><span class="nv"> </span><span class="s">(_dbt_source_project</span><span class="nv"> </span><span class="s">!=</span><span class="nv"> </span><span class="s">'kippmiami'</span><span class="nv"> </span><span class="s">and</span><span class="nv"> </span><span class="s">exitdate</span><span class="nv"> </span><span class="s">=</span>
+<span class="w">            </span><span class="s">school_week_start_date)"</span>
+<span class="w">        </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">severity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">error</span>
+<span class="w">  </span><span class="nt">columns</span><span class="p">:</span>
+</code></pre></div>
+<p>Replace the <code>is_enrolled_week</code> column entry (lines 440-445) with:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">is_enrolled_week</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">boolean</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">True when the student was enrolled in this stint on the week's Monday,</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">meaning week_start_monday falls between entrydate and last_enrolled_date.</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">is_enrolled_week_end</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">boolean</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">True when the student was enrolled in this stint on the week's Sunday,</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">meaning week_end_sunday falls between entrydate and last_enrolled_date.</span>
+</code></pre></div>
+<p>Directly before the <code>- name: region</code> entry that follows <code>- name: exitdate</code>,
+insert the <code>last_enrolled_date</code> entry, same text as Task 1 Step 5.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run the tests against prod and confirm they fail</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span><span class="nb">test</span><span class="w"> </span>--select<span class="w"> </span>int_extracts__student_enrollments_subjects_weeks<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span><span class="nv">$wt</span>/src/dbt/kipptaf<span class="w"> </span>--target<span class="w"> </span>dev<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--defer<span class="w"> </span>--favor-state<span class="w"> </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kipptaf/target/prod<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tail<span class="w"> </span>-n<span class="w"> </span><span class="m">30</span>
+</code></pre></div>
+<p>Expected: 3 FAIL, against the deferred prod view. The grain test fails on the
+duplicate keys (74 measured on 2026-09-22 for AY2025+, more across all years).
+The first expression test fails on the NJ Monday rows (206 measured for
+AY2025+). The second fails on the exit-day rows (296 measured for AY2025+).
+Record each count for the PR body.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Rewrite <code>_subjects_weeks</code></strong></li>
+</ul>
+<p>Wrap the existing select in a CTE named <code>student_weeks</code> and dedup it, following
+the pattern already used in <code>int_extracts__student_enrollments_weeks.sql</code>. The
+full file becomes:</p>
+<div class="highlight"><pre><span></span><code><span class="k">with</span>
+<span class="w">    </span><span class="n">student_weeks</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">co</span><span class="p">.</span><span class="n">_dbt_source_relation</span><span class="p">,</span>
+<span class="w">            </span><span class="c1">-- ...every existing co.* column line, unchanged, in the same order,</span>
+<span class="w">            </span><span class="c1">-- with ONE addition directly after `co.exitdate,`:</span>
+<span class="w">            </span><span class="n">co</span><span class="p">.</span><span class="n">last_enrolled_date</span><span class="p">,</span>
+<span class="w">            </span><span class="c1">-- ...</span>
+<span class="w">            </span><span class="n">co</span><span class="p">.</span><span class="n">_dbt_source_project</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">cw</span><span class="p">.</span><span class="n">week_start_monday</span><span class="p">,</span>
+<span class="w">            </span><span class="n">cw</span><span class="p">.</span><span class="n">week_end_sunday</span><span class="p">,</span>
+<span class="w">            </span><span class="n">cw</span><span class="p">.</span><span class="n">quarter</span><span class="p">,</span>
+<span class="w">            </span><span class="n">cw</span><span class="p">.</span><span class="n">semester</span><span class="p">,</span>
+<span class="w">            </span><span class="n">cw</span><span class="p">.</span><span class="n">school_week_start_date</span><span class="p">,</span>
+<span class="w">            </span><span class="n">cw</span><span class="p">.</span><span class="n">school_week_end_date</span><span class="p">,</span>
+<span class="w">            </span><span class="n">cw</span><span class="p">.</span><span class="n">week_number_academic_year</span><span class="p">,</span>
+<span class="w">            </span><span class="n">cw</span><span class="p">.</span><span class="n">week_number_quarter</span><span class="p">,</span>
+<span class="w">            </span><span class="n">cw</span><span class="p">.</span><span class="n">is_current_week_mon_sun</span><span class="p">,</span>
+<span class="w">            </span><span class="n">cw</span><span class="p">.</span><span class="n">date_count</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">if</span><span class="p">(</span>
+<span class="w">                </span><span class="n">cw</span><span class="p">.</span><span class="n">week_start_monday</span><span class="w"> </span><span class="k">between</span><span class="w"> </span><span class="n">co</span><span class="p">.</span><span class="n">entrydate</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">co</span><span class="p">.</span><span class="n">last_enrolled_date</span><span class="p">,</span>
+<span class="w">                </span><span class="k">true</span><span class="p">,</span>
+<span class="w">                </span><span class="k">false</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_enrolled_week</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">if</span><span class="p">(</span>
+<span class="w">                </span><span class="n">cw</span><span class="p">.</span><span class="n">week_end_sunday</span><span class="w"> </span><span class="k">between</span><span class="w"> </span><span class="n">co</span><span class="p">.</span><span class="n">entrydate</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">co</span><span class="p">.</span><span class="n">last_enrolled_date</span><span class="p">,</span>
+<span class="w">                </span><span class="k">true</span><span class="p">,</span>
+<span class="w">                </span><span class="k">false</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_enrolled_week_end</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"int_extracts__student_enrollments_subjects"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">co</span>
+<span class="w">        </span><span class="k">inner</span><span class="w"> </span><span class="k">join</span>
+<span class="w">            </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"int_students__calendar_week"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">cw</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="n">co</span><span class="p">.</span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cw</span><span class="p">.</span><span class="n">academic_year</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">co</span><span class="p">.</span><span class="n">schoolid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cw</span><span class="p">.</span><span class="n">schoolid</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">co</span><span class="p">.</span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cw</span><span class="p">.</span><span class="n">_dbt_source_project</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">co</span><span class="p">.</span><span class="n">entrydate</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="n">cw</span><span class="p">.</span><span class="n">school_week_end_date</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">co</span><span class="p">.</span><span class="n">last_enrolled_date</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="n">cw</span><span class="p">.</span><span class="n">school_week_start_date</span>
+<span class="w">    </span><span class="p">)</span>
+
+<span class="w">    </span><span class="err">{{</span>
+<span class="w">        </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">deduplicate</span><span class="p">(</span>
+<span class="w">            </span><span class="n">relation</span><span class="o">=</span><span class="ss">"student_weeks"</span><span class="p">,</span>
+<span class="w">            </span><span class="n">partition_by</span><span class="o">=</span><span class="ss">"student_number, academic_year, week_start_monday, discipline"</span><span class="p">,</span>
+<span class="w">            </span><span class="n">order_by</span><span class="o">=</span><span class="ss">"is_enrolled_week desc, entrydate desc"</span><span class="p">,</span>
+<span class="w">        </span><span class="p">)</span>
+<span class="w">    </span><span class="err">}}</span>
+</code></pre></div>
+<p>The <code>-- ...</code> lines above stand for the ~290 existing <code>co.&lt;column&gt;,</code> lines, lines
+2-297 of the current file. Move them into the CTE unchanged; the only edits
+inside the list are the one added line and re-indenting by 8 spaces. Do not keep
+those <code>-- ...</code> comments in the file. Do not otherwise reorder or drop columns.
+If sqlfluff flags ST03 on <code>student_weeks</code>, add
+<code># trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below</code>
+above the CTE, as the rule file describes; <code>_weeks</code> currently passes without it,
+so it is probably not needed.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Fix the flags and the tie-break in <code>_weeks</code></strong></li>
+</ul>
+<p>In <code>int_extracts__student_enrollments_weeks.sql</code>, change both flags (lines
+17-23) to:</p>
+<div class="highlight"><pre><span></span><code><span class="w">            </span><span class="k">if</span><span class="p">(</span>
+<span class="w">                </span><span class="n">cw</span><span class="p">.</span><span class="n">week_start_monday</span><span class="w"> </span><span class="k">between</span><span class="w"> </span><span class="n">co</span><span class="p">.</span><span class="n">entrydate</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">co</span><span class="p">.</span><span class="n">last_enrolled_date</span><span class="p">,</span>
+<span class="w">                </span><span class="k">true</span><span class="p">,</span>
+<span class="w">                </span><span class="k">false</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_enrolled_week</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">if</span><span class="p">(</span>
+<span class="w">                </span><span class="n">cw</span><span class="p">.</span><span class="n">week_end_sunday</span><span class="w"> </span><span class="k">between</span><span class="w"> </span><span class="n">co</span><span class="p">.</span><span class="n">entrydate</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">co</span><span class="p">.</span><span class="n">last_enrolled_date</span><span class="p">,</span>
+<span class="w">                </span><span class="k">true</span><span class="p">,</span>
+<span class="w">                </span><span class="k">false</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_enrolled_week_end</span><span class="p">,</span>
+</code></pre></div>
+<p>and the dedup <code>order_by</code> (line 35) to:</p>
+<div class="highlight"><pre><span></span><code><span class="w">            </span><span class="n">order_by</span><span class="o">=</span><span class="ss">"is_enrolled_week desc, entrydate desc"</span><span class="p">,</span>
+</code></pre></div>
+<p>The join (academic_year + schoolid, no date bound) stays as it is: attrition and
+the enrollment denominator need rows for the weeks after a student exits.</p>
+<p>In <code>int_extracts__student_enrollments_weeks.yml</code>, insert the
+<code>last_enrolled_date</code> entry (same text as Task 1 Step 5) directly before the
+<code>- name: exitcode</code> entry.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Build both spines into dev and run the tests</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span>int_students__student_enrollments<span class="w"> </span>base_powerschool__student_enrollments<span class="w"> </span>int_extracts__student_enrollments<span class="w"> </span>int_extracts__student_enrollments_subjects<span class="w"> </span>int_extracts__student_enrollments_subjects_weeks<span class="w"> </span>int_extracts__student_enrollments_weeks<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span><span class="nv">$wt</span>/src/dbt/kipptaf<span class="w"> </span>--target<span class="w"> </span>dev<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--defer<span class="w"> </span>--favor-state<span class="w"> </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kipptaf/target/prod<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tail<span class="w"> </span>-n<span class="w"> </span><span class="m">30</span>
+</code></pre></div>
+<p>Expected: <code>ERROR=0</code>. All three <code>_subjects_weeks</code> tests PASS, and the <code>_weeks</code>
+grain test PASSES.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Check the edge cases against the dev views</strong></li>
+</ul>
+<p>Run each query with the BigQuery MCP. <code>dev</code> =
+<code>teamster-332318.zz_cbini_extracts</code>, <code>prod</code> =
+<code>teamster-332318.kipptaf_extracts</code>.</p>
+<p>A. The issue's "fixed means", AY2025+, on dev:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="n">countif</span><span class="p">(</span>
+<span class="w">        </span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="s1">'kippmiami'</span>
+<span class="w">        </span><span class="k">and</span><span class="w"> </span><span class="n">exitdate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">week_start_monday</span>
+<span class="w">        </span><span class="k">and</span><span class="w"> </span><span class="n">is_enrolled_week</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">nj_exit_monday_flagged</span><span class="p">,</span>
+<span class="w">    </span><span class="n">countif</span><span class="p">(</span>
+<span class="w">        </span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="s1">'kippmiami'</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">exitdate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">school_week_start_date</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">ps_exit_on_first_school_day</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_cbini_extracts</span><span class="p">.</span><span class="n">int_extracts__student_enrollments_subjects_weeks</span><span class="o">`</span>
+<span class="k">where</span><span class="w"> </span><span class="n">academic_year</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">2025</span>
+</code></pre></div>
+<p>Expected: both 0.</p>
+<p>B. Holiday-Monday weeks (Review Focus 4). Stints entering on a week's first
+school day when that day is not the Monday:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="n">countif</span><span class="p">(</span><span class="n">is_enrolled_week</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">flagged</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_cbini_extracts</span><span class="p">.</span><span class="n">int_extracts__student_enrollments_subjects_weeks</span><span class="o">`</span>
+<span class="k">where</span>
+<span class="w">    </span><span class="n">academic_year</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">2025</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">entrydate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">school_week_start_date</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">school_week_start_date</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">week_start_monday</span>
+</code></pre></div>
+<p>Expected: <code>n &gt; 0</code> and <code>flagged = 0</code>.</p>
+<p>C. Miami is unchanged. Row count and flag count per academic year, dev against
+prod, Miami only:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="s1">'dev'</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">side</span><span class="p">,</span><span class="w"> </span><span class="n">academic_year</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n</span><span class="p">,</span><span class="w"> </span><span class="n">countif</span><span class="p">(</span><span class="n">is_enrolled_week</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">f</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_cbini_extracts</span><span class="p">.</span><span class="n">int_extracts__student_enrollments_subjects_weeks</span><span class="o">`</span>
+<span class="k">where</span><span class="w"> </span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'kippmiami'</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">academic_year</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">2025</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">academic_year</span>
+<span class="k">union</span><span class="w"> </span><span class="k">all</span>
+<span class="k">select</span><span class="w"> </span><span class="s1">'prod'</span><span class="p">,</span><span class="w"> </span><span class="n">academic_year</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">),</span><span class="w"> </span><span class="n">countif</span><span class="p">(</span><span class="n">is_enrolled_week</span><span class="p">),</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_extracts</span><span class="p">.</span><span class="n">int_extracts__student_enrollments_subjects_weeks</span><span class="o">`</span>
+<span class="k">where</span><span class="w"> </span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'kippmiami'</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">academic_year</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">2025</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">academic_year</span>
+</code></pre></div>
+<p>Expected: dev <code>n</code> is at most prod <code>n</code>. The only drop is Miami's own two-stint
+keys (a Miami transfer week keeps one row now). Dev <code>f</code> equals prod <code>f</code> minus at
+most that drop. Any other difference is a bug.</p>
+<p>D. Edge stints produce the right number of rows (Review Focus 1-3):</p>
+<div class="highlight"><pre><span></span><code><span class="k">with</span>
+<span class="w">    </span><span class="n">stints</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="n">student_number</span><span class="p">,</span><span class="w"> </span><span class="n">entrydate</span><span class="p">,</span><span class="w"> </span><span class="n">exitdate</span><span class="p">,</span><span class="w"> </span><span class="n">grade_level</span><span class="p">,</span><span class="w"> </span><span class="n">_dbt_source_project</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_cbini_extracts</span><span class="p">.</span><span class="n">int_extracts__student_enrollments</span><span class="o">`</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">academic_year</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">2025</span>
+<span class="w">    </span><span class="p">),</span>
+
+<span class="w">    </span><span class="n">week_rows</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="n">student_number</span><span class="p">,</span><span class="w"> </span><span class="n">entrydate</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n_weeks</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_cbini_extracts</span><span class="p">.</span><span class="n">int_extracts__student_enrollments_subjects_weeks</span><span class="o">`</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">academic_year</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">2025</span>
+<span class="w">        </span><span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">student_number</span><span class="p">,</span><span class="w"> </span><span class="n">entrydate</span>
+<span class="w">    </span><span class="p">)</span>
+
+<span class="k">select</span>
+<span class="w">    </span><span class="n">countif</span><span class="p">(</span>
+<span class="w">        </span><span class="n">s</span><span class="p">.</span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'kippmiami'</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">entrydate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">exitdate</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">w</span><span class="p">.</span><span class="n">n_weeks</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">miami_one_day_missing</span><span class="p">,</span>
+<span class="w">    </span><span class="n">countif</span><span class="p">(</span>
+<span class="w">        </span><span class="n">s</span><span class="p">.</span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'kippmiami'</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">exitdate</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">entrydate</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">w</span><span class="p">.</span><span class="n">n_weeks</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">miami_trimmed_present</span><span class="p">,</span>
+<span class="w">    </span><span class="n">countif</span><span class="p">(</span><span class="n">s</span><span class="p">.</span><span class="n">exitdate</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">w</span><span class="p">.</span><span class="n">n_weeks</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">placeholder_present</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="n">stints</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">s</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">    </span><span class="n">week_rows</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">w</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">student_number</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">w</span><span class="p">.</span><span class="n">student_number</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">entrydate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">w</span><span class="p">.</span><span class="n">entrydate</span>
+</code></pre></div>
+<p>Expected: <code>miami_trimmed_present = 0</code> and <code>placeholder_present = 0</code>.
+<code>miami_one_day_missing</code> counts one-day stints on a non-school day or lost to a
+same-week pick. Compare it with the same query against prod. The two numbers
+must match, since Miami logic did not change.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Lint and commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span><span class="nv">$wt</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>--no-fix<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/students/intermediate/int_extracts__student_enrollments_subjects_weeks.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/students/intermediate/int_extracts__student_enrollments_weeks.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/students/intermediate/properties/int_extracts__student_enrollments_subjects_weeks.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/students/intermediate/properties/int_extracts__student_enrollments_weeks.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>&lt;/dev/null<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tail<span class="w"> </span>-n<span class="w"> </span><span class="m">20</span>
+git<span class="w"> </span>-C<span class="w"> </span><span class="nv">$wt</span><span class="w"> </span>add<span class="w"> </span>-u
+git<span class="w"> </span>-C<span class="w"> </span><span class="nv">$wt</span><span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"fix(dbt): count enrolled weeks from last_enrolled_date</span>
+
+<span class="s2">Both spines flag a week from last_enrolled_date, and the subjects spine</span>
+<span class="s2">joins on it and keeps one row per student-week-discipline. The weeks</span>
+<span class="s2">spine dedup gets an entrydate tie-break.</span>
+
+<span class="s2">Refs #5504</span>
+
+<span class="s2">Co-Authored-By: Claude Opus 5.5 &lt;noreply@anthropic.com&gt;"</span>
+</code></pre></div>
+<hr />
+<h3 id="task-3-consumers">Task 3: Consumers</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify:
+  <code>$wt/src/dbt/kipptaf/models/topline/intermediate/int_topline__iready_diagnostic_weekly.sql</code>
+  (lines 39-47 CTE, line 70 <code>from</code>)</li>
+<li>Modify:
+  <code>$wt/src/dbt/kipptaf/models/topline/intermediate/int_topline__iready_lessons_weekly.sql</code>
+  (lines 16-24 CTE, line 35 <code>from</code>)</li>
+<li>Modify:
+  <code>$wt/src/dbt/kipptaf/models/topline/intermediate/int_topline__state_assessments_weekly.sql</code>
+  (lines 20-28 CTE, lines 41 and 69 <code>from</code>)</li>
+<li>Modify:
+  <code>$wt/src/dbt/kipptaf/models/topline/intermediate/int_topline__star_assessment_weekly.sql</code>
+  (lines 18-26 CTE, line 61 <code>from</code>)</li>
+<li>Modify:
+  <code>$wt/src/dbt/kipptaf/models/topline/intermediate/int_topline__formative_assessment_weekly.sql</code>
+  (lines 46-48 <code>where</code>)</li>
+<li>Modify:
+  <code>$wt/src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__student_attrition_over_time.sql</code>
+  (line 38)</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>_subjects_weeks</code> at one row per student-week-discipline (Task 2);
+  <code>_weeks.is_enrolled_week</code> computed from <code>last_enrolled_date</code> (Task 2).</li>
+<li>
+<p>Produces: no new columns. Each model's output columns and grain test are
+  unchanged.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Record the baseline for the check</strong></p>
+</li>
+</ul>
+<p>Before editing, run against prod and save the counts in the scratchpad:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="s1">'formative'</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">m</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_topline</span><span class="p">.</span><span class="n">int_topline__formative_assessment_weekly</span><span class="o">`</span>
+<span class="k">union</span><span class="w"> </span><span class="k">all</span>
+<span class="k">select</span><span class="w"> </span><span class="s1">'iready_diagnostic'</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">),</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_topline</span><span class="p">.</span><span class="n">int_topline__iready_diagnostic_weekly</span><span class="o">`</span>
+<span class="k">union</span><span class="w"> </span><span class="k">all</span>
+<span class="k">select</span><span class="w"> </span><span class="s1">'iready_lessons'</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">),</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_topline</span><span class="p">.</span><span class="n">int_topline__iready_lessons_weekly</span><span class="o">`</span>
+<span class="k">union</span><span class="w"> </span><span class="k">all</span>
+<span class="k">select</span><span class="w"> </span><span class="s1">'state_assessments'</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">),</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_topline</span><span class="p">.</span><span class="n">int_topline__state_assessments_weekly</span><span class="o">`</span>
+<span class="k">union</span><span class="w"> </span><span class="k">all</span>
+<span class="k">select</span><span class="w"> </span><span class="s1">'star'</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">),</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_topline</span><span class="p">.</span><span class="n">int_topline__star_assessment_weekly</span><span class="o">`</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Drop the dedup CTE from the four topline models</strong></li>
+</ul>
+<p>In each of the four files, delete the whole <code>subject_weeks_deduplicate as (...)</code>
+CTE together with the comma that ends the <code>subject_weeks</code> CTE before it. Then
+change every <code>from subject_weeks_deduplicate as &lt;alias&gt;</code> to
+<code>from subject_weeks as &lt;alias&gt;</code>, keeping the alias. After the edit, in
+<code>int_topline__iready_lessons_weekly.sql</code> the top of the file reads:</p>
+<div class="highlight"><pre><span></span><code><span class="k">with</span>
+<span class="w">    </span><span class="n">subject_weeks</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">student_number</span><span class="p">,</span>
+<span class="w">            </span><span class="n">academic_year</span><span class="p">,</span>
+<span class="w">            </span><span class="n">week_start_monday</span><span class="p">,</span>
+<span class="w">            </span><span class="n">week_end_sunday</span><span class="p">,</span>
+<span class="w">            </span><span class="n">discipline</span><span class="p">,</span>
+<span class="w">            </span><span class="n">iready_subject</span><span class="p">,</span>
+<span class="w">            </span><span class="n">entrydate</span><span class="p">,</span>
+<span class="w">            </span><span class="n">is_enrolled_week</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"int_extracts__student_enrollments_subjects_weeks"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">academic_year</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="n">var</span><span class="p">(</span><span class="ss">"current_academic_year"</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">    </span><span class="p">)</span>
+</code></pre></div>
+<p>and its main query reads <code>from subject_weeks as co</code>. In
+<code>int_topline__iready_diagnostic_weekly.sql</code>,
+<code>int_topline__state_assessments_weekly.sql</code> and
+<code>int_topline__star_assessment_weekly.sql</code>, <code>subject_weeks</code> is followed by other
+CTEs, so its closing <code>),</code> keeps its comma there. Remove only the deleted CTE's
+text.</p>
+<p><code>entrydate</code> and <code>is_enrolled_week</code> stay in each <code>subject_weeks</code> select list only
+if something else in the file reads them. Check with
+<code>grep -n 'entrydate\|is_enrolled_week' &lt;file&gt;</code>. If the dedup was their only
+reader, remove them from the list.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Drop the flag filter from formative</strong></li>
+</ul>
+<p>In <code>int_topline__formative_assessment_weekly.sql</code>, replace:</p>
+<div class="highlight"><pre><span></span><code><span class="w">        </span><span class="k">where</span>
+<span class="w">            </span><span class="n">sw</span><span class="p">.</span><span class="n">is_enrolled_week</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">sw</span><span class="p">.</span><span class="n">academic_year</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="n">var</span><span class="p">(</span><span class="ss">"current_academic_year"</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="err">}}</span>
+</code></pre></div>
+<p>with:</p>
+<div class="highlight"><pre><span></span><code><span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">sw</span><span class="p">.</span><span class="n">academic_year</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="n">var</span><span class="p">(</span><span class="ss">"current_academic_year"</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="err">}}</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Reuse the flag in the attrition model</strong></li>
+</ul>
+<p>In <code>rpt_tableau__student_attrition_over_time.sql</code>, replace line 38:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="k">if</span><span class="p">(</span><span class="n">co</span><span class="p">.</span><span class="n">week_start_monday</span><span class="w"> </span><span class="k">between</span><span class="w"> </span><span class="n">co</span><span class="p">.</span><span class="n">entrydate</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">co</span><span class="p">.</span><span class="n">exitdate</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_attrition</span><span class="p">,</span>
+</code></pre></div>
+<p>with:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="k">if</span><span class="p">(</span><span class="n">co</span><span class="p">.</span><span class="n">is_enrolled_week</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_attrition</span><span class="p">,</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Build the consumers into dev</strong></li>
+</ul>
+<p>Include every changed upstream so <code>--favor-state</code> does not read prod for them:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span>int_students__student_enrollments<span class="w"> </span>base_powerschool__student_enrollments<span class="w"> </span>int_extracts__student_enrollments<span class="w"> </span>int_extracts__student_enrollments_subjects<span class="w"> </span>int_extracts__student_enrollments_subjects_weeks<span class="w"> </span>int_extracts__student_enrollments_weeks<span class="w"> </span>int_topline__iready_diagnostic_weekly<span class="w"> </span>int_topline__iready_lessons_weekly<span class="w"> </span>int_topline__state_assessments_weekly<span class="w"> </span>int_topline__star_assessment_weekly<span class="w"> </span>int_topline__formative_assessment_weekly<span class="w"> </span>rpt_tableau__student_attrition_over_time<span class="w"> </span>rpt_tableau__iready_apm<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span><span class="nv">$wt</span>/src/dbt/kipptaf<span class="w"> </span>--target<span class="w"> </span>dev<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--defer<span class="w"> </span>--favor-state<span class="w"> </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kipptaf/target/prod<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tail<span class="w"> </span>-n<span class="w"> </span><span class="m">30</span>
+</code></pre></div>
+<p>Expected: <code>ERROR=0</code>, and every grain test on these models passes.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Check formative against prod</strong></li>
+</ul>
+<p><code>zz_cbini_topline</code> is the dev dataset for topline models; confirm it with the
+SCHEMATA query from Task 1 Step 1.</p>
+<div class="highlight"><pre><span></span><code><span class="k">with</span>
+<span class="w">    </span><span class="n">dev</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_cbini_topline</span><span class="p">.</span><span class="n">int_topline__formative_assessment_weekly</span><span class="o">`</span>
+<span class="w">    </span><span class="p">),</span>
+
+<span class="w">    </span><span class="n">prod</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_topline</span><span class="p">.</span><span class="n">int_topline__formative_assessment_weekly</span><span class="o">`</span>
+<span class="w">    </span><span class="p">)</span>
+
+<span class="k">select</span>
+<span class="w">    </span><span class="n">countif</span><span class="p">(</span><span class="n">dev</span><span class="p">.</span><span class="n">student_number</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">prod_keys_lost</span><span class="p">,</span>
+<span class="w">    </span><span class="n">countif</span><span class="p">(</span><span class="n">prod</span><span class="p">.</span><span class="n">student_number</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">new_keys</span><span class="p">,</span>
+<span class="w">    </span><span class="n">countif</span><span class="p">(</span>
+<span class="w">        </span><span class="n">dev</span><span class="p">.</span><span class="n">student_number</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">        </span><span class="k">and</span><span class="w"> </span><span class="n">prod</span><span class="p">.</span><span class="n">student_number</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">        </span><span class="k">and</span><span class="w"> </span><span class="n">dev</span><span class="p">.</span><span class="n">is_mastery_running_int</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">distinct</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">prod</span><span class="p">.</span><span class="n">is_mastery_running_int</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">value_changes</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="n">dev</span>
+<span class="k">full</span><span class="w"> </span><span class="k">join</span>
+<span class="w">    </span><span class="n">prod</span>
+<span class="w">    </span><span class="k">using</span><span class="w"> </span><span class="p">(</span><span class="n">student_number</span><span class="p">,</span><span class="w"> </span><span class="n">academic_year</span><span class="p">,</span><span class="w"> </span><span class="n">week_start_monday</span><span class="p">,</span><span class="w"> </span><span class="n">discipline</span><span class="p">,</span><span class="w"> </span><span class="n">formative_strategy</span><span class="p">)</span>
+</code></pre></div>
+<p>With <code>using</code>, the <code>student_number</code> null checks need the side-qualified columns.
+If BigQuery rejects <code>dev.student_number</code> under <code>using</code>, switch to an explicit
+<code>on</code> over the five columns.</p>
+<p>Expected: <code>new_keys</code> is several thousand (about 7,000, Miami the largest share).
+<code>prod_keys_lost</code> is 0 or limited to the NJ boundary weeks the fix removes.
+<code>value_changes</code> is 0 or explained by prod table age. Rebuild times differ, so
+spot-check any nonzero count against <code>administered_at</code>. Then confirm the new
+keys are mid-week entries:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="n">countif</span><span class="p">(</span><span class="n">sw</span><span class="p">.</span><span class="n">is_enrolled_week</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">new_keys_flagged</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">new_keys</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_cbini_topline</span><span class="p">.</span><span class="n">int_topline__formative_assessment_weekly</span><span class="o">`</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">d</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">    </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_topline</span><span class="p">.</span><span class="n">int_topline__formative_assessment_weekly</span><span class="o">`</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">p</span>
+<span class="w">    </span><span class="k">using</span><span class="w"> </span><span class="p">(</span><span class="n">student_number</span><span class="p">,</span><span class="w"> </span><span class="n">academic_year</span><span class="p">,</span><span class="w"> </span><span class="n">week_start_monday</span><span class="p">,</span><span class="w"> </span><span class="n">discipline</span><span class="p">,</span><span class="w"> </span><span class="n">formative_strategy</span><span class="p">)</span>
+<span class="k">inner</span><span class="w"> </span><span class="k">join</span>
+<span class="w">    </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_cbini_extracts</span><span class="p">.</span><span class="n">int_extracts__student_enrollments_subjects_weeks</span><span class="o">`</span>
+<span class="w">    </span><span class="k">as</span><span class="w"> </span><span class="n">sw</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">d</span><span class="p">.</span><span class="n">student_number</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sw</span><span class="p">.</span><span class="n">student_number</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">d</span><span class="p">.</span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sw</span><span class="p">.</span><span class="n">academic_year</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">d</span><span class="p">.</span><span class="n">week_start_monday</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sw</span><span class="p">.</span><span class="n">week_start_monday</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">d</span><span class="p">.</span><span class="n">discipline</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sw</span><span class="p">.</span><span class="n">discipline</span>
+<span class="k">where</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">is_mastery_running_int</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">week_end_sunday</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span>
+</code></pre></div>
+<p>Expected: <code>new_keys_flagged = 0</code>. Every new key is a week the student was not
+enrolled on the Monday.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Row diff for the other four toplines</strong></li>
+</ul>
+<p>Run Step 1's query against <code>zz_cbini_topline</code> and compare with the baseline.
+Expected: each changes by a small amount, about the NJ boundary rows. Record the
+four deltas for the PR body.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 8: Lint and commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span><span class="nv">$wt</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>--no-fix<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/topline/intermediate/int_topline__iready_diagnostic_weekly.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/topline/intermediate/int_topline__iready_lessons_weekly.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/topline/intermediate/int_topline__state_assessments_weekly.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/topline/intermediate/int_topline__star_assessment_weekly.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/topline/intermediate/int_topline__formative_assessment_weekly.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__student_attrition_over_time.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>&lt;/dev/null<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tail<span class="w"> </span>-n<span class="w"> </span><span class="m">20</span>
+git<span class="w"> </span>-C<span class="w"> </span><span class="nv">$wt</span><span class="w"> </span>add<span class="w"> </span>-u
+git<span class="w"> </span>-C<span class="w"> </span><span class="nv">$wt</span><span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"fix(dbt): read the deduped subjects spine in topline models</span>
+
+<span class="s2">Four topline models drop their own stint pick, formative stops dropping</span>
+<span class="s2">mid-week-entry weeks, and attrition reuses the corrected flag.</span>
+
+<span class="s2">Refs #5504</span>
+
+<span class="s2">Co-Authored-By: Claude Opus 5.5 &lt;noreply@anthropic.com&gt;"</span>
+</code></pre></div>
+<hr />
+<h3 id="task-4-whole-consumer-build-impact-numbers-pr">Task 4: Whole-consumer build, impact numbers, PR</h3>
+<p><strong>Files:</strong> none changed. Produces the PR.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Build every remaining consumer</strong></li>
+</ul>
+<p>The models the spec lists under "No code change, values shift for NJ":</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span>int_students__student_enrollments<span class="w"> </span>base_powerschool__student_enrollments<span class="w"> </span>int_extracts__student_enrollments<span class="w"> </span>int_extracts__student_enrollments_subjects<span class="w"> </span>int_extracts__student_enrollments_subjects_weeks<span class="w"> </span>int_extracts__student_enrollments_weeks<span class="w"> </span>rpt_gsheets__school_metrics_extract<span class="w"> </span>rpt_tableau__ddi_dashboard<span class="w"> </span>rpt_tableau__okrts_behavior<span class="w"> </span>int_topline__attendance_contacts<span class="w"> </span>int_topline__attendance_contacts_weekly<span class="w"> </span>int_topline__attendance_interventions_weekly<span class="w"> </span>int_topline__college_entrance_exams_weekly<span class="w"> </span>int_topline__college_matriculation_weekly<span class="w"> </span>int_topline__deanslist_incentives_weekly<span class="w"> </span>int_topline__gpa_cumulative_weekly<span class="w"> </span>int_topline__gpa_term_weekly<span class="w"> </span>int_topline__student_metrics<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span><span class="nv">$wt</span>/src/dbt/kipptaf<span class="w"> </span>--target<span class="w"> </span>dev<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--defer<span class="w"> </span>--favor-state<span class="w"> </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kipptaf/target/prod<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tail<span class="w"> </span>-n<span class="w"> </span><span class="m">30</span>
+</code></pre></div>
+<p>Expected: <code>ERROR=0</code>. For any warning, check whether it fires against prod too
+(<code>dbt test --select &lt;model&gt; --target dev --defer --state ...</code>) before treating
+it as caused by this change.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Measure Total Enrollment and attrition impact</strong></li>
+</ul>
+<p>Find the Total Enrollment rows in <code>int_topline__student_metrics</code>. Read the model
+near lines 277 and 295 for its indicator column and value, then compare
+<code>sum(metric_value)</code> per region for the current academic year, dev against prod.
+For attrition, compare <code>sum(is_attrition)</code> per region and academic year in
+<code>rpt_tableau__student_attrition_over_time</code>, dev against prod. Record both tables
+for the PR body, as aggregates per region with no student rows.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Push and open the PR</strong></li>
+</ul>
+<p>Invoke <code>pr-ci-review</code> first. Write the body to <code>&lt;scratchpad&gt;/pr-body.md</code> from
+<code>.github/pull_request_template.md</code>, one line per paragraph with no hard wraps.
+It must include:</p>
+<ul>
+<li><code>Closes #5504</code>.</li>
+<li>The before/after counts from Task 2 Step 2 and Step 6.</li>
+<li>The formative, topline, Total Enrollment and attrition numbers.</li>
+<li>The membership evidence summary, with a link to the spec.</li>
+<li>A note that the change reverses #5386's per-stint grain on purpose, and why.</li>
+<li>The test deviation from the spec.</li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span><span class="nv">$wt</span><span class="w"> </span>push
+</code></pre></div>
+<p>Then create the PR with <code>mcp__github__create_pull_request</code> (base <code>main</code>, head
+<code>cbini/fix/claude-enrollment-week-exit-boundary</code>), and read back the title and
+body to confirm they match.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+    
+  </body>
+</html>

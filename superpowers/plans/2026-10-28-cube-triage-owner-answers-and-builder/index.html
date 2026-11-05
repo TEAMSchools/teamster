@@ -1,0 +1,3076 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>Cube triage, owner answers, and the builder Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.57a0d79d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#cube-triage-owner-answers-and-the-builder-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Cube triage, owner answers, and the builder Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/launch-page-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Launch Page
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube-access-individual-exceptions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube Access - Individual Exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/tableau-permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tableau Permissions (People Data)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/csgf-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSGF Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/crdc-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CRDC Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ddi-stack-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDI Stack Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/hs-early-warning-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HS Early Warning Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/dibels-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIBELS Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/stat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/njdoe-universal-screener-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NJDOE Universal Screener Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/athletic-eligibility-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Athletic Eligibility Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/academic-health-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic Health Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/grad-plan-tracking-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Grad Plan Tracking Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ignite-r2i-extract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IGNITE R2I Extract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#global-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global Constraints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#review-focus" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Review Focus
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#file-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File Structure
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#execution-order" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Execution order
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#live-checks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Live checks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-a-context-checked-triage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part A: context-checked triage
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part A: context-checked triage">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-1-cube-member-docs-from-meta" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: Cube member docs from /meta
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-2-prove-records-why-a-filter-filters-nothing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: Prove records why a filter filters nothing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-3-evidence-and-suggested-calls" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: Evidence and suggested calls
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-4-value-checks-and-the-triage-command" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: Value checks and the triage command
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-b-owner-answers-in-chat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part B: owner answers in chat
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part B: owner answers in chat">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-5-fix_source-the-tasks-block-and-the-footnote" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 5: fix_source, the tasks: block, and the footnote
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-6-run-saves-what-the-hand-checks-need" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 6: run saves what the hand checks need
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-7-example-cell-and-pinned-hand-checks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 7: Example cell and pinned hand checks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-8-review-questions-as-json-in-the-issue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 8: Review questions as JSON in the issue
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-9-the-decision-writer-add-decisions-and-record-answers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 9: The decision writer, add-decisions and record-answers
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-c-the-builder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part C: the builder
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part C: the builder">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-10-local-cube-and-a-dev-builds-moment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 10: Local Cube and a dev build's moment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-11-cube-members-and-the-duplicate-check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 11: Cube members and the duplicate check
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-12-workbook-re-inventory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 12: Workbook re-inventory
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-13-the-3-source-inventory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 13: The 3-source inventory
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-d-the-runbooks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part D: the runbooks
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part D: the runbooks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-14-skills" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 14: Skills
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#after-the-last-task" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        After the last task
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rulings-made-while-planning" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rulings made while planning
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-10-28-cube-triage-owner-answers-and-builder.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="cube-triage-owner-answers-and-the-builder-implementation-plan">Cube triage, owner answers, and the builder Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Add context-checked triage, owner answers in chat, and the Cube
+builder's commands and runbooks to the validator in PR #6160.</p>
+<p><strong>Architecture:</strong> New logic goes in new modules beside the validator
+(<code>triage.py</code>, <code>answers.py</code>, <code>builder.py</code>), because <code>pipeline.py</code> is already
+1,895 lines; <code>pipeline.py</code> and <code>cli.py</code> only gain thin call sites. Every
+judgment step (reading docs against a result, choosing tiers, sorting fields) is
+a skill step; every deterministic step is a command with offline tests. The tool
+still posts nothing: Claude posts what the analyst or owner approved.</p>
+<p><strong>Tech Stack:</strong> Python 3.12, PyYAML, <code>google-cloud-bigquery</code> through the
+validator's <code>Warehouse</code>, Cube REST through <code>cube_client.Cube</code>, pytest with the
+fakes in <code>tests/scripts/cube_validation/</code>.</p>
+<p><strong>Spec:</strong>
+<code>docs/superpowers/specs/2026-10-28-cube-triage-owner-answers-and-builder-design.md</code>
+(builds on
+<code>docs/superpowers/specs/2026-10-26-cube-validation-and-build-skill-design.md</code>).</p>
+<h2 id="global-constraints">Global Constraints</h2>
+<ul>
+<li>Worktree:
+  <code>/workspaces/teamster/.claude/worktrees/cristinabaldor/feat/claude-cube-validation-and-build-skill</code>.
+  Run every command from it; <code>git -C &lt;worktree&gt;</code> for git.</li>
+<li>Tests: <code>uv run pytest tests/scripts/cube_validation -q</code> (never bare
+  <code>uv run pytest</code>: the rest of <code>tests/</code> is live integration tests).</li>
+<li>Stage files by name; write each commit message to a file in the session
+  scratchpad and <code>git commit -F &lt;file&gt;</code>. End every message with
+  <code>Co-Authored-By: Claude Opus 5.5 &lt;noreply@anthropic.com&gt;</code> and <code>Refs #6150</code>
+  (builder tasks: <code>Refs #6157</code>).</li>
+<li>The tool posts nothing and never calls GitHub or Asana. Claude posts only what
+  the analyst or the owner approved.</li>
+<li>Nothing about one student or one staff member reaches GitHub, git, or a
+  decision. A value prints only for a column in <code>report._SHOWN_COLUMNS</code>, and
+  only for a group of <code>report.MASK_BELOW</code> (10) or more students; counts under 10
+  print as <code>&lt;10</code> (<code>report.mask</code>). Every other column is an identifier and fails
+  closed (<code>report._is_identifier</code>).</li>
+<li>Every BigQuery query goes through <code>bq.Warehouse</code> (priced first, run cap, daily
+  cap <code>--max-usd-per-day</code>, view cache). No new <code>bigquery.Client</code> use.</li>
+<li>Cube is reached over <code>https</code> only, except <code>http</code> to <code>localhost</code> or <code>127.0.0.1</code>
+  (Task 10).</li>
+<li>Time travel reaches 7 days: a hand check pinned to a moment older than that
+  cannot run.</li>
+<li>Docstrings and comments follow <code>.claude/rules/comments.md</code>: the constraint and
+  the why, no measurements or history.</li>
+<li><code>count_students</code> means the enrollment headcount only (#6176); the builder
+  never proposes another meaning under that name.</li>
+</ul>
+<h2 id="review-focus">Review Focus</h2>
+<ol>
+<li>A triage value check on an identifier column (a student number captioned
+   "ID", a name, an email) must neither compare nor print values; Task 4 pins it
+   with <code>test_value_check_skips_identifier_and_high_cardinality_columns</code>.</li>
+<li>An owner's answers comment edited by hand, malformed, or naming decision ids
+   that changed since <code>review</code> must write nothing at all; Task 9 pins it with
+   <code>test_record_answers_refuses_whole_comment_on_any_mismatch</code>.</li>
+<li>An owner note with an email address or a long number must be refused before
+   anything is written; Task 9 pins it with
+   <code>test_record_answers_refuses_email_and_number_runs_in_notes</code>.</li>
+<li>A run whose moment is more than 7 days old reaches <code>review</code>: the questions
+   JSON must say the pinned checks have expired instead of offering SQL that
+   fails; Task 7 pins it with <code>test_hand_checks_expire_after_7_days</code>.</li>
+<li>A local Cube URL that only looks local (<code>http://localhost.evil.com</code>,
+   <code>http://127.0.0.1@evil.com</code>) must be refused; Task 10 pins it with
+   <code>test_http_allowed_only_for_loopback_hosts</code>.</li>
+</ol>
+<hr />
+<h2 id="file-structure">File Structure</h2>
+<ul>
+<li>Create <code>scripts/cube_validation/triage.py</code>: evidence and suggested calls for
+  open items (Part A).</li>
+<li>Create <code>scripts/cube_validation/answers.py</code>: example cells, pinned hand-check
+  SQL, the review questions JSON, and parsing the owner's answers (Part B).</li>
+<li>Create <code>scripts/cube_validation/builder.py</code>: Cube member listing, duplicate
+  check, workbook re-inventory, gap-catalog parsing and the 3-source inventory
+  (Part C).</li>
+<li>Modify <code>cube_client.py</code> (meta, loopback http), <code>config.py</code> (<code>fix_source</code>,
+  <code>tasks:</code>, filter notes, decision writer), <code>pipeline.py</code> (prove records filter
+  notes; run saves hand-check material; review adds JSON), <code>report.py</code>
+  (footnote, JSON block), <code>moment.py</code> and <code>cli.py</code> (dev-build dataset, new
+  commands).</li>
+<li>Create <code>.claude/skills/cube-validation-answers/SKILL.md</code> (owner) and
+  <code>.claude/skills/cube-builder/SKILL.md</code>; modify
+  <code>.claude/skills/cube-validation/SKILL.md</code>.</li>
+<li>Tests: one new file per new module (<code>test_triage.py</code>, <code>test_answers.py</code>,
+  <code>test_builder.py</code>) plus additions to existing test files.</li>
+</ul>
+<h2 id="execution-order">Execution order</h2>
+<p>The analyst tests the builder on DDI Suite's student tier buckets on 2026-10-29
+at 1pm, so the builder goes first. Run the tasks in this order:</p>
+<ol>
+<li>Task 1, then Tasks 11, 12, 13, 10.</li>
+<li>Task 14 Step 3 (the <code>cube-builder</code> runbook) with its lint and its own commit
+   (<code>docs(cube): builder runbook</code>, <code>Refs #6157</code>).</li>
+<li>Tasks 2 to 9.</li>
+<li>Task 14 Steps 1, 2 and 4 to 5 (the other 2 runbooks).</li>
+</ol>
+<h2 id="live-checks">Live checks</h2>
+<p>The controller runs these after the named task's review passes, never the
+implementer. They run under a throwaway <code>tests/test_zz_*.py</code> in the main
+checkout (the pytest fixture loads the Cube secret), pointed at this worktree's
+package, and are deleted afterwards. A failure is a defect in that task.</p>
+<ul>
+<li>Task 11: <code>members</code> against Cube Cloud. Expect every public measure listed with
+  compiled SQL, and 4 <code>count_students</code> from <code>same_name</code>. No BigQuery.</li>
+<li>Task 12: <code>inventory-workbook</code> on
+  <code>/workspaces/teamster/.claude/scratch/ddi-twb/ddi_suite.twb</code>. Expect the
+  Student Tier field as a cut or filter on many sheets, and parameters marked
+  presentation.</li>
+<li>Task 13: <code>inventory</code> on the <code>ddi_suite</code> section of
+  <code>docs/superpowers/plans/2026-10-02-cube-gap-catalog-assessments.md</code>, with Task
+  12's output as the review and an empty Asana list. Expect a Student Tier row
+  with no member.</li>
+<li>Task 10, Task 4 and Task 8 need a DDI validation file and a local Cube server;
+  they run during or after the 2026-10-29 test, on the DDI branch's file, not in
+  this run.</li>
+</ul>
+<hr />
+<h2 id="part-a-context-checked-triage">Part A: context-checked triage</h2>
+<h3 id="task-1-cube-member-docs-from-meta">Task 1: Cube member docs from <code>/meta</code></h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>scripts/cube_validation/cube_client.py</code> (class <code>Cube</code>)</li>
+<li>Test: <code>tests/scripts/cube_validation/test_cube_client.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>
+<p>Produces: <code>Cube.meta() -&gt; dict</code> (GET <code>/meta</code>, raw JSON); <code>MemberDoc</code> frozen
+  dataclass
+  <code>(name: str, title: str, description: str, ai_context: str, kind: str)</code> with
+  <code>kind</code> in <code>measure</code>, <code>dimension</code>, <code>segment</code>;
+  <code>member_docs(meta: dict, view: str) -&gt; dict[str, MemberDoc]</code> keyed by the bare
+  member name (no <code>view.</code> prefix).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing tests</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_meta_calls_meta_endpoint</span><span class="p">():</span>
+    <span class="n">calls</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">cube</span> <span class="o">=</span> <span class="n">Cube</span><span class="p">(</span><span class="s2">"https://c/cubejs-api/v1"</span><span class="p">,</span> <span class="s2">"s"</span><span class="p">,</span> <span class="s2">"e@x"</span><span class="p">,</span> <span class="n">fetch</span><span class="o">=</span><span class="k">lambda</span> <span class="n">m</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="n">calls</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">m</span><span class="p">,</span> <span class="n">u</span><span class="p">))</span> <span class="ow">or</span> <span class="p">{</span><span class="s2">"cubes"</span><span class="p">:</span> <span class="p">[]})</span>
+    <span class="k">assert</span> <span class="n">cube</span><span class="o">.</span><span class="n">meta</span><span class="p">()</span> <span class="o">==</span> <span class="p">{</span><span class="s2">"cubes"</span><span class="p">:</span> <span class="p">[]}</span>
+    <span class="k">assert</span> <span class="n">calls</span> <span class="o">==</span> <span class="p">[(</span><span class="s2">"GET"</span><span class="p">,</span> <span class="s2">"https://c/cubejs-api/v1/meta"</span><span class="p">)]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_member_docs_reads_description_and_ai_context_for_one_view</span><span class="p">():</span>
+    <span class="n">meta</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"cubes"</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"v"</span><span class="p">,</span> <span class="s2">"measures"</span><span class="p">:</span> <span class="p">[{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"v.pct_tardy"</span><span class="p">,</span> <span class="s2">"title"</span><span class="p">:</span> <span class="s2">"Pct Tardy"</span><span class="p">,</span> <span class="s2">"description"</span><span class="p">:</span> <span class="s2">"Share tardy."</span><span class="p">,</span> <span class="s2">"meta"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"ai_context"</span><span class="p">:</span> <span class="s2">"Codes T*."</span><span class="p">}}],</span>
+         <span class="s2">"dimensions"</span><span class="p">:</span> <span class="p">[{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"v.grade_level"</span><span class="p">,</span> <span class="s2">"title"</span><span class="p">:</span> <span class="s2">"Grade"</span><span class="p">,</span> <span class="s2">"description"</span><span class="p">:</span> <span class="s2">"Grade."</span><span class="p">}],</span> <span class="s2">"segments"</span><span class="p">:</span> <span class="p">[]},</span>
+        <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"other"</span><span class="p">,</span> <span class="s2">"measures"</span><span class="p">:</span> <span class="p">[{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"other.x"</span><span class="p">}],</span> <span class="s2">"dimensions"</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">"segments"</span><span class="p">:</span> <span class="p">[]},</span>
+    <span class="p">]}</span>
+    <span class="n">docs</span> <span class="o">=</span> <span class="n">member_docs</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="s2">"v"</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">set</span><span class="p">(</span><span class="n">docs</span><span class="p">)</span> <span class="o">==</span> <span class="p">{</span><span class="s2">"pct_tardy"</span><span class="p">,</span> <span class="s2">"grade_level"</span><span class="p">}</span>
+    <span class="k">assert</span> <span class="n">docs</span><span class="p">[</span><span class="s2">"pct_tardy"</span><span class="p">]</span><span class="o">.</span><span class="n">ai_context</span> <span class="o">==</span> <span class="s2">"Codes T*."</span>
+    <span class="k">assert</span> <span class="n">docs</span><span class="p">[</span><span class="s2">"grade_level"</span><span class="p">]</span><span class="o">.</span><span class="n">ai_context</span> <span class="o">==</span> <span class="s2">""</span>
+    <span class="k">assert</span> <span class="n">docs</span><span class="p">[</span><span class="s2">"grade_level"</span><span class="p">]</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s2">"dimension"</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2:</strong> Run
+      <code>uv run pytest tests/scripts/cube_validation/test_cube_client.py -q</code>.
+      Expected: FAIL (<code>meta</code>, <code>member_docs</code> undefined).</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3:</strong> Implement <code>Cube.meta</code> with <code>self._call("GET", "/meta")</code> and
+      <code>member_docs</code>; missing <code>description</code> or <code>meta.ai_context</code> read as <code>""</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4:</strong> Run the same command. Expected: PASS.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5:</strong> Commit <code>cube_client.py</code> and its test:
+      <code>feat(cube): read member docs from Cube meta</code>.</li>
+</ul>
+<h3 id="task-2-prove-records-why-a-filter-filters-nothing">Task 2: Prove records why a filter filters nothing</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>scripts/cube_validation/pipeline.py</code> (<code>SheetGaps</code>, <code>sheet_gaps</code>, the
+  <code>prove</code> call that builds the proof dict)</li>
+<li>Modify: <code>scripts/cube_validation/config.py</code> (<code>Proof</code>, its loader)</li>
+<li>Test: <code>tests/scripts/cube_validation/test_sheet_shape.py</code> (or the file that
+  tests <code>sheet_gaps</code> today), <code>tests/scripts/cube_validation/test_config.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>
+<p>Produces: <code>SheetGaps.notes: dict[str, str]</code> and
+  <code>Proof.filter_notes: dict[str, str] | None</code> (caption to note),
+  <code>SheetGaps.columns: dict[str, str]</code> and
+  <code>Proof.missing_columns: dict[str, str] | None</code> (caption to the datasource
+  column name, only for a plain column, never a calculation). The notes are
+  exact strings: <code>copy of &lt;mapped caption&gt;</code> for a calculation whose whole
+  formula is one reference to a field the comparison maps, and
+  <code>display switch on &lt;parameter caption&gt;</code> for a calculation whose formula reads
+  a <code>[Parameters].</code> field. <code>None</code> means the proof predates them, as for
+  <code>missing_cuts</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing tests</strong> against a fixture <code>.twb</code> built in the
+      test (follow the existing <code>sheet_gaps</code> tests' fixture style): one filter
+      on <code>[Grade Copy]</code> whose formula is <code>[grade_level]</code> with <code>grade_level</code>
+      mapped, one on <code>[Show Rate]</code> whose formula reads <code>[Parameters].[Metric]</code>,
+      one plain column <code>[enroll_status]</code> unmapped.</p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_sheet_gaps_notes_copies_and_display_switches</span><span class="p">():</span>
+    <span class="n">gaps</span> <span class="o">=</span> <span class="n">sheet_gaps</span><span class="p">(</span><span class="n">TWB</span><span class="p">,</span> <span class="n">comparison</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">gaps</span><span class="o">.</span><span class="n">notes</span> <span class="o">==</span> <span class="p">{</span><span class="s2">"Grade Copy"</span><span class="p">:</span> <span class="s2">"copy of Grade"</span><span class="p">,</span> <span class="s2">"Show Rate"</span><span class="p">:</span> <span class="s2">"display switch on Metric"</span><span class="p">}</span>
+    <span class="k">assert</span> <span class="n">gaps</span><span class="o">.</span><span class="n">columns</span> <span class="o">==</span> <span class="p">{</span><span class="s2">"Enroll Status"</span><span class="p">:</span> <span class="s2">"enroll_status"</span><span class="p">}</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_proof_loads_without_filter_notes_as_none</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">):</span>
+    <span class="n">cfg</span> <span class="o">=</span> <span class="n">load_view_config</span><span class="p">(</span><span class="n">_write</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">,</span> <span class="n">proof_without_notes</span><span class="p">))</span>
+    <span class="k">assert</span> <span class="n">cfg</span><span class="o">.</span><span class="n">comparisons</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">proof</span><span class="o">.</span><span class="n">filter_notes</span> <span class="ow">is</span> <span class="kc">None</span>
+    <span class="k">assert</span> <span class="n">cfg</span><span class="o">.</span><span class="n">comparisons</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">proof</span><span class="o">.</span><span class="n">missing_columns</span> <span class="ow">is</span> <span class="kc">None</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2:</strong> Run both test files. Expected: FAIL.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3:</strong> Extend <code>sheet_gaps</code> and <code>Proof</code>; <code>prove</code> writes <code>filter_notes</code>
+      and <code>missing_columns</code> into the proof dict passed to <code>write_proof</code>. Use
+      <code>finder.calculated_fields</code> for formulas.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4:</strong> Run the full suite. Expected: PASS.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5:</strong> Commit:
+      <code>feat(cube): proofs record copies and display switches</code>.</li>
+</ul>
+<h3 id="task-3-evidence-and-suggested-calls">Task 3: Evidence and suggested calls</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>scripts/cube_validation/triage.py</code></li>
+<li>Test: <code>tests/scripts/cube_validation/test_triage.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul>
+<li>Consumes: <code>MemberDoc</code>, <code>member_docs</code> (Task 1); <code>Proof.filter_notes</code>,
+  <code>Proof.restricting_filters</code> (Task 2); <code>compare.Group</code>, <code>compare.Gap</code>,
+  <code>compare.CellDiff</code>; <code>report.RunResult</code>; <code>config.ViewConfig</code>.</li>
+<li>Produces:</li>
+<li><code>SUGGESTIONS = ("map_filters", "filters_nothing", "docs", "owner")</code>, the
+    order the analyst's batch shows them, owner last.</li>
+<li><code>Item</code> frozen dataclass
+    <code>(id: str, kind: str, comparison: str, label: str, stub: dict)</code>: <code>kind</code> in
+    <code>group</code>, <code>cells</code>, <code>gap</code>; <code>id</code> is stable across runs
+    (<code>&lt;comparison&gt;:&lt;column&gt;=&lt;value&gt;</code> for a group, <code>&lt;comparison&gt;:cells</code>,
+    <code>cut:&lt;caption&gt;</code> / <code>filter:&lt;caption&gt;</code> for a gap); <code>label</code> is the masked line
+    <code>report</code> prints; <code>stub</code> is the decision's key fields (<code>comparison</code> +
+    <code>group</code>, <code>comparison</code> + <code>cells: true</code>, or <code>missing_cut</code> / <code>missing_filter</code>).</li>
+<li><code>Suggestion</code> frozen dataclass
+    <code>(item: Item, suggestion: str, evidence: tuple[str, ...], candidates: tuple[str, ...] = ())</code>.</li>
+<li><code>open_items(run: RunResult) -&gt; list[Item]</code>.</li>
+<li><code>suggest(cfg: ViewConfig, run: RunResult, docs: dict[str, MemberDoc], values: Callable[[str, str], str] | None = None) -&gt; list[Suggestion]</code>.
+    <code>values(caption, member)</code> returns a value-check verdict (Task 4); <code>None</code>
+    skips value checks.</li>
+</ul>
+<p>Rules <code>suggest</code> applies, first match wins:</p>
+<ol class="task-list">
+<li>A filter gap with a note in any proof's <code>filter_notes</code>, or one not in any
+   <code>restricting_filters</code>: <code>filters_nothing</code>; evidence is the note, or
+   <code>keeps every member on &lt;sheets&gt;</code>.</li>
+<li>A gap whose caption matches a member by name, title or description tokens
+   (reuse <code>discover._tokens</code>): <code>candidates</code> lists them; with <code>values</code> given and
+   a verdict starting <code>same values</code>, <code>map_filters</code>.</li>
+<li>An item whose involved members (the measure, plus a group's columns) have a
+   non-empty <code>description</code> or <code>ai_context</code>: <code>docs</code>; evidence quotes each as
+   <code>&lt;member&gt;: &lt;text&gt;</code>.</li>
+<li>
+<p>Otherwise <code>owner</code>, evidence <code>no description or ai_context answers it</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing tests</strong>, one per rule plus ordering:</p>
+</li>
+</ol>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_unrestricting_filter_suggests_filters_nothing</span><span class="p">():</span> <span class="o">...</span>
+    <span class="c1"># gap filter "Enroll Status", restricting_filters=[] -&gt; filters_nothing,</span>
+    <span class="c1"># evidence ("keeps every member on Roster",)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_copy_note_suggests_filters_nothing</span><span class="p">():</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_caption_match_lists_candidates_without_value_check</span><span class="p">():</span> <span class="o">...</span>
+    <span class="c1"># values=None -&gt; suggestion "owner" or "docs", candidates ("grade_level",)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_same_values_suggests_map_filters</span><span class="p">():</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_member_docs_suggest_docs_with_quoted_evidence</span><span class="p">():</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_nothing_found_goes_to_owner_last</span><span class="p">():</span> <span class="o">...</span>
+    <span class="c1"># [s.suggestion for s in result] sorted by SUGGESTIONS order</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_item_ids_are_stable_and_hold_no_unreviewed_value</span><span class="p">():</span> <span class="o">...</span>
+    <span class="c1"># a group on an identifier column gets id "&lt;comparison&gt;:&lt;column&gt;=&lt;redacted&gt;"</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2:</strong> Run
+      <code>uv run pytest tests/scripts/cube_validation/test_triage.py -q</code>. Expected:
+      FAIL (module missing).</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3:</strong> Implement <code>triage.py</code>. Reuse <code>report._shown_value</code> and
+      <code>report.mask</code> for labels so masking matches the review issue.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4:</strong> Run it. Expected: PASS.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5:</strong> Commit: <code>feat(cube): suggest a call for each open item</code>.</li>
+</ul>
+<h3 id="task-4-value-checks-and-the-triage-command">Task 4: Value checks and the <code>triage</code> command</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>scripts/cube_validation/triage.py</code>, <code>scripts/cube_validation/cli.py</code></li>
+<li>Test: <code>tests/scripts/cube_validation/test_triage.py</code>,
+  <code>tests/scripts/cube_validation/test_cli.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: Task 3; <code>Proof.missing_columns</code> (Task 2); <code>bq.Warehouse.rows</code>;
+  <code>pipeline._priced_load</code>; <code>pipeline._as_of</code> for the dashboard side.</li>
+<li>Produces:</li>
+<li><code>REFERENCE_MAX_VALUES = 50</code>.</li>
+<li><code>value_check(wh: Warehouse, cube: Cube, cfg: ViewConfig, column: str, member: str, moment: Build, pii: set[str]) -&gt; str</code>,
+    returning exactly one of: <code>same values: map it under filters:</code>,
+    <code>same field, different coding</code>, <code>different values</code>,
+    <code>not compared: identifier column</code>. It compares distinct values of
+    <code>&lt;dashboard_view&gt;.&lt;column&gt;</code> as of <code>moment.start</code> with the member's distinct
+    values from Cube. It never compares when the member is in <code>pii</code> (members
+    whose Cube meta carries <code>meta.contains_pii: true</code>, or whose name ends in
+    <code>_number</code>, <code>_id</code>, <code>_name</code>, <code>_email</code>), or when either side has more than
+    <code>REFERENCE_MAX_VALUES</code> values. It prints values only when the member is in
+    <code>report._SHOWN_COLUMNS</code>; otherwise only the verdict.</li>
+<li><code>triage</code> subcommand: <code>triage &lt;view.yml&gt;</code> reads the latest <code>run.json</code> for the
+    view (same lookup as <code>pipeline.review</code>, same refusal when decisions
+    changed), calls <code>Cube.meta</code>, runs <code>suggest</code> with <code>value_check</code>, writes
+    <code>triage.json</code> beside that <code>run.json</code>, and prints the items grouped by
+    <code>SUGGESTIONS</code> order with their evidence. Takes <code>--max-usd</code> and
+    <code>--max-usd-per-day</code> like <code>run</code>.</li>
+<li>
+<p><code>triage.json</code>:
+    <code>{"view", "moment", "decisions_fingerprint", "items": [{"id", "kind", "comparison", "label", "stub", "suggestion", "evidence", "candidates"}]}</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing tests</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_value_check_skips_identifier_and_high_cardinality_columns</span><span class="p">():</span> <span class="o">...</span>
+    <span class="c1"># member "student_number" -&gt; "not compared: identifier column", no query run</span>
+    <span class="c1"># 51 distinct values -&gt; "not compared: identifier column", no values printed</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_value_check_same_values_and_different_coding</span><span class="p">():</span> <span class="o">...</span>
+    <span class="c1"># {"A","B"} vs {"A","B"} -&gt; "same values: map it under filters:"</span>
+    <span class="c1"># {"W","B"} vs {"White","Black"} with a description match -&gt; "same field, different coding"</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_triage_command_writes_triage_json_beside_latest_run</span><span class="p">(</span><span class="n">fakes</span><span class="p">,</span> <span class="n">tmp_path</span><span class="p">):</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_triage_refuses_when_decisions_changed_since_run</span><span class="p">(</span><span class="n">fakes</span><span class="p">,</span> <span class="n">tmp_path</span><span class="p">):</span> <span class="o">...</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2:</strong> Run both files. Expected: FAIL.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3:</strong> Implement; the dashboard-side distinct query reads through
+      <code>pipeline._as_of</code> and <code>wh.rows</code>, the Cube side through
+      <code>pipeline._priced_load</code>, so both count against the caps.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4:</strong> Run the full suite. Expected: PASS.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5:</strong> Commit: <code>feat(cube): triage command with value checks</code>.</li>
+</ul>
+<hr />
+<h2 id="part-b-owner-answers-in-chat">Part B: owner answers in chat</h2>
+<h3 id="task-5-fix_source-the-tasks-block-and-the-footnote">Task 5: <code>fix_source</code>, the <code>tasks:</code> block, and the footnote</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>scripts/cube_validation/config.py</code>,
+  <code>scripts/cube_validation/report.py</code></li>
+<li>Test: <code>tests/scripts/cube_validation/test_config.py</code>,
+  <code>tests/scripts/cube_validation/test_report.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>
+<p>Produces: <code>CALLS</code> gains <code>fix_source</code>;
+  <code>CALLS_NEEDING_TASK = ("fix_dashboard", "fix_cube", "fix_source")</code>;
+  <code>ViewConfig.tasks: dict[str, str]</code> from an optional top-level <code>tasks:</code> with
+  keys <code>cube_fix</code> and <code>dashboard_fix</code> only, each value passing the existing
+  <code>_TASK</code> pattern. The review footnote reads <code>Counts under 10 show as \</code>&lt;10`,
+  and identifiers of students and staff are hidden.`</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing tests</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_fix_source_needs_a_task</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">):</span> <span class="o">...</span>       <span class="c1"># ConfigError mentions "task"</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_tasks_block_accepts_only_known_keys</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">):</span> <span class="o">...</span>  <span class="c1"># "other_fix" -&gt; ConfigError</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_tasks_block_values_must_be_links</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">):</span> <span class="o">...</span>     <span class="c1"># "see Asana" -&gt; ConfigError</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_review_footnote_names_students_and_staff</span><span class="p">():</span> <span class="o">...</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2:</strong> Run both files. Expected: FAIL.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3:</strong> Implement. A <code>fix_source</code> decision stays quiet like every
+      other call, and the measure's verdict still reads cells only, so it never
+      reads <code>validated</code> while a cell differs; no other change.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4:</strong> Run the full suite. Expected: PASS.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5:</strong> Commit: <code>feat(cube): fix_source call and a tasks block</code>.</li>
+</ul>
+<h3 id="task-6-run-saves-what-the-hand-checks-need">Task 6: <code>run</code> saves what the hand checks need</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>scripts/cube_validation/pipeline.py</code> (<code>Cell</code>, <code>_compare_one</code>, <code>run</code>,
+  <code>_run_from_json</code>), <code>scripts/cube_validation/report.py</code> (<code>RunResult</code>),
+  <code>scripts/cube_validation/bq.py</code> (<code>Warehouse.estimate</code>)</li>
+<li>Test: <code>tests/scripts/cube_validation/test_cli.py</code> (run tests use the fakes),
+  <code>tests/scripts/cube_validation/test_bq.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Produces on <code>RunResult</code> (all default empty, so older <code>run.json</code> files still
+  load):</li>
+<li><code>diff_cells: list[dict]</code>: every cell whose verdict is not <code>pass</code> or
+    <code>dashboard_filtered</code>, as
+    <code>{"comparison", "cut", "key", "dims", "dashboard", "cube", "n_students"}</code>.
+    <code>dims</code> are Cube member names and values; <code>n_students</code> is <code>None</code> unless
+    counted below.</li>
+<li><code>cell_sql: dict[str, dict[str, list[str]]]</code>: per comparison, per cut label,
+    <code>[dashboard_sql, cube_sql]</code>, both already expanded as of the moment (the
+    <code>dash_at.sql</code> and the wrapped <code>cube_at.sql</code> the run executed).</li>
+<li><code>cell_sql_usd: dict[str, dict[str, list[float]]]</code>, the same shape: each
+    side's dry-run price, for the owner, who runs it outside the caps.</li>
+<li><code>Warehouse.estimate(sql: str) -&gt; float</code> in <code>bq.py</code>: the dry-run price, never
+    recorded against the run or daily cap (<code>price</code> records; this must not).</li>
+<li>
+<p>For a comparison with <code>rows</code>, one extra query per comparison counts each
+  differing cell's students: <code>COUNT(DISTINCT &lt;first grain dashboard column&gt;)</code>
+  over the as-of dashboard rows SQL, grouped by the comparison's dim dashboard
+  columns. Comparisons without <code>rows</code> leave <code>n_students</code> as <code>None</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing tests</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_run_saves_differing_cells_and_their_pinned_sql</span><span class="p">(</span><span class="n">fakes</span><span class="p">,</span> <span class="n">tmp_path</span><span class="p">):</span> <span class="o">...</span>
+    <span class="c1"># run.json["diff_cells"][0]["n_students"] == 12; cell_sql has both sides</span>
+    <span class="c1"># and both contain "FOR SYSTEM_TIME AS OF"</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_run_without_rows_leaves_n_students_none</span><span class="p">(</span><span class="n">fakes</span><span class="p">,</span> <span class="n">tmp_path</span><span class="p">):</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_estimate_does_not_count_against_the_daily_cap</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">):</span> <span class="o">...</span>
+    <span class="c1"># spent_today() unchanged after estimate()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_old_run_json_without_new_fields_still_loads</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">):</span> <span class="o">...</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2:</strong> Run
+      <code>uv run pytest tests/scripts/cube_validation/test_cli.py -q</code>. Expected:
+      FAIL.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3:</strong> Implement. The student count goes through <code>wh.rows</code>, so it is
+      priced and capped.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4:</strong> Run the full suite. Expected: PASS.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5:</strong> Commit:
+      <code>feat(cube): runs keep differing cells for hand checks</code>.</li>
+</ul>
+<h3 id="task-7-example-cell-and-pinned-hand-checks">Task 7: Example cell and pinned hand checks</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>scripts/cube_validation/answers.py</code></li>
+<li>Test: <code>tests/scripts/cube_validation/test_answers.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>RunResult.diff_cells</code>, <code>RunResult.cell_sql</code>, <code>RunResult.moment</code>
+  (Task 6); <code>report._is_identifier</code>, <code>report.MASK_BELOW</code>.</li>
+<li>Produces:</li>
+<li><code>TIME_TRAVEL_DAYS = 7</code>.</li>
+<li><code>HandCheck</code> frozen dataclass
+    <code>(comparison: str, cut: str, dims: tuple[tuple[str, str], ...], dashboard: float | None, cube: float | None, dashboard_sql: str, cube_sql: str, dashboard_usd: float, cube_usd: float, expires: datetime, expired: bool)</code>;
+    the prices come from <code>RunResult.cell_sql_usd</code> and show beside each SQL
+    block.</li>
+<li><code>example_cell(run: RunResult, comparison: str) -&gt; dict | None</code>: the
+    differing cell with the largest <code>abs(dashboard - cube)</code> whose every dim
+    passes <code>not report._is_identifier(column)</code> and whose <code>n_students</code> is at
+    least <code>report.MASK_BELOW</code>; ties go to the lowest <code>key</code>. <code>None</code> when no cell
+    qualifies.</li>
+<li>
+<p><code>hand_check(run: RunResult, comparison: str, now: datetime) -&gt; HandCheck | None</code>:
+    wraps each side's saved SQL as
+    <code>SELECT * FROM (&lt;sql&gt;) WHERE &lt;dim&gt; = &lt;literal&gt; AND ...</code> for the example
+    cell, using <code>cube_client._literal</code>;
+    <code>expires = run.moment.start + timedelta(days=TIME_TRAVEL_DAYS)</code>;
+    <code>expired = now &gt;= expires</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing tests</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_example_cell_is_biggest_difference_with_reviewed_dims_only</span><span class="p">():</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_example_cell_skips_cells_under_10_students</span><span class="p">():</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_example_cell_skips_a_teacher_or_student_dim</span><span class="p">():</span> <span class="o">...</span>
+    <span class="c1"># dims (("teacher_name", "x"),) -&gt; None</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_no_example_cell_returns_none</span><span class="p">():</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_hand_check_sql_filters_to_the_example_cell</span><span class="p">():</span> <span class="o">...</span>
+    <span class="c1"># both SQL strings end with "WHERE regions_region_name = 'Newark' AND grade_level = '7'"</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_hand_checks_expire_after_7_days</span><span class="p">():</span> <span class="o">...</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2:</strong> Run
+      <code>uv run pytest tests/scripts/cube_validation/test_answers.py -q</code>.
+      Expected: FAIL.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3:</strong> Implement.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4:</strong> Run it. Expected: PASS.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5:</strong> Commit:
+      <code>feat(cube): pick an example cell and pin hand checks</code>.</li>
+</ul>
+<h3 id="task-8-review-questions-as-json-in-the-issue">Task 8: Review questions as JSON in the issue</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>scripts/cube_validation/answers.py</code>,
+  <code>scripts/cube_validation/report.py</code> (<code>render_review_issue</code>),
+  <code>scripts/cube_validation/pipeline.py</code> (<code>review</code>)</li>
+<li>Test: <code>tests/scripts/cube_validation/test_answers.py</code>,
+  <code>tests/scripts/cube_validation/test_report.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: the <code>questions</code> dict <code>render_review_issue</code> already builds (one per
+  reason and task); Task 7; <code>triage.json</code> (Task 4) when present beside the run.</li>
+<li>Produces:</li>
+<li><code>questions_json(runs: list[RunResult], configs: list[ViewConfig], definitions: dict, triage: dict[str, dict], now: datetime) -&gt; list[dict]</code>,
+    one entry per question in the issue's order:
+    <code>{"id": "Q&lt;n&gt;", "reason", "decisions": [&lt;decision ids&gt;], "views", "definitions": {"dashboard", "cube"}, "evidence": [&lt;triage evidence for its items&gt;], "counts": [&lt;masked lines exactly as the markdown shows&gt;], "hand_checks": [&lt;HandCheck as dict, or {"comparison", "none": "no group cell with 10+ students differs; find an example under your own access"}&gt;], "moment", "expires", "expired"}</code>.</li>
+<li>The issue body ends with
+    <code>&lt;details&gt;&lt;summary&gt;Questions for Claude (JSON)&lt;/summary&gt;</code> and a fenced
+    <code>json</code> block of that list. Its strings come from the same masked text as the
+    markdown; it holds no value the markdown hides.</li>
+<li>
+<p>Each hand check's SQL also appears in the markdown inside its own
+    <code>&lt;details&gt;</code> block.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing tests</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_questions_json_matches_markdown_questions_one_to_one</span><span class="p">():</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_questions_json_hides_what_the_markdown_hides</span><span class="p">():</span> <span class="o">...</span>
+    <span class="c1"># a redacted value and a &lt;10 count never appear unmasked in the JSON text</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_question_without_example_cell_says_find_one_locally</span><span class="p">():</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_review_issue_ends_with_fenced_json_in_details</span><span class="p">():</span> <span class="o">...</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2:</strong> Run both files. Expected: FAIL.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3:</strong> Implement. <code>pipeline.review</code> passes <code>now</code> and the triage file,
+      and stays offline.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4:</strong> Run the full suite. Expected: PASS.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5:</strong> Commit: <code>feat(cube): review issue carries questions as JSON</code>.</li>
+</ul>
+<h3 id="task-9-the-decision-writer-add-decisions-and-record-answers">Task 9: The decision writer, <code>add-decisions</code> and <code>record-answers</code></h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>scripts/cube_validation/config.py</code>,
+  <code>scripts/cube_validation/answers.py</code>, <code>scripts/cube_validation/cli.py</code></li>
+<li>Test: <code>tests/scripts/cube_validation/test_config.py</code>,
+  <code>tests/scripts/cube_validation/test_answers.py</code>,
+  <code>tests/scripts/cube_validation/test_cli.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Produces:</li>
+<li><code>config.write_decision(path: Path, decision: dict) -&gt; None</code>: line-based like
+    <code>write_proof</code>; replaces the <code>decisions:</code> item with the same <code>id</code>, or appends
+    one. Re-loads the file afterwards and raises <code>ConfigError</code> (restoring the
+    original text) if it no longer loads.</li>
+<li><code>add-decisions &lt;view.yml&gt; &lt;approved.json&gt;</code>: <code>approved.json</code> is a list of
+    <code>{"id", "call", "reason", "task", "item": &lt;triage item id&gt;}</code>; each item's
+    <code>stub</code> comes from the latest <code>triage.json</code>, fingerprints from the latest
+    <code>run.json</code> the way step 9 of the <code>cube-validation</code> skill fills them today.
+    Refuses an unknown item id.</li>
+<li><code>Answer</code> frozen dataclass
+    <code>(question: str, decisions: tuple[str, ...], call: str, note: str, task: str = "")</code>.</li>
+<li><code>parse_answers(body: str) -&gt; list[Answer]</code>: reads the one fenced <code>json</code>
+    block in an answers comment; refuses zero or several blocks, a call outside
+    <code>config.CALLS</code>, or <code>fix_source</code> without a task.</li>
+<li><code>NOTE_REFUSALS</code>: an email address (<code>\S+@\S+\.\w+</code>) or a run of 5 or more
+    digits (<code>report._SEPARATED_DIGITS</code> or <code>\d{5,}</code>) in a note.</li>
+<li>
+<p><code>record-answers &lt;view.yml&gt;... --comment &lt;file&gt; --author &lt;login&gt; [--yes]</code>:
+    <code>&lt;file&gt;</code> is the comment body the skill saved. It prints the author and every
+    change it would make, and writes only with <code>--yes</code>. For each answer: every
+    listed decision id must exist in the given files with call <code>domain_owner</code>,
+    else the whole comment is refused. The new reason is
+    <code>&lt;old reason&gt; Owner: &lt;note&gt;</code>; the task is <code>tasks.cube_fix</code> for <code>fix_cube</code>,
+    <code>tasks.dashboard_fix</code> for <code>fix_dashboard</code>, the answer's <code>task</code> for
+    <code>fix_source</code>, and unchanged otherwise; a missing <code>tasks:</code> key refuses that
+    answer. A free-text answer keeps <code>domain_owner</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing tests</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_write_decision_replaces_by_id_and_keeps_comments</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">):</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_write_decision_restores_file_when_result_does_not_load</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">):</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_add_decisions_takes_stub_from_triage_and_fingerprints_from_run</span><span class="p">(</span><span class="n">fakes</span><span class="p">,</span> <span class="n">tmp_path</span><span class="p">):</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_record_answers_dry_run_prints_author_and_changes_writes_nothing</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">,</span> <span class="n">capsys</span><span class="p">):</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_record_answers_maps_calls_to_tasks_block</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">):</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_record_answers_refuses_whole_comment_on_any_mismatch</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">):</span> <span class="o">...</span>
+    <span class="c1"># one unknown decision id -&gt; nothing written to any file</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_record_answers_refuses_email_and_number_runs_in_notes</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">):</span> <span class="o">...</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2:</strong> Run the 3 files. Expected: FAIL.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3:</strong> Implement.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4:</strong> Run the full suite. Expected: PASS.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5:</strong> Commit:
+      <code>feat(cube): write decisions from triage and owner answers</code>.</li>
+</ul>
+<hr />
+<h2 id="part-c-the-builder">Part C: the builder</h2>
+<h3 id="task-10-local-cube-and-a-dev-builds-moment">Task 10: Local Cube and a dev build's moment</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>scripts/cube_validation/cube_client.py</code>,
+  <code>scripts/cube_validation/moment.py</code>, <code>scripts/cube_validation/cli.py</code></li>
+<li>Test: <code>tests/scripts/cube_validation/test_cube_client.py</code>,
+  <code>tests/scripts/cube_validation/test_moment.py</code>,
+  <code>tests/scripts/cube_validation/test_cli.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Produces:</li>
+<li><code>Cube.__init__</code> accepts <code>http</code> only when <code>urllib.parse.urlparse(url)</code> has
+    <code>hostname</code> in <code>{"localhost", "127.0.0.1"}</code> and no <code>username</code>; everything
+    else stays https-only.</li>
+<li><code>--fact-dataset &lt;dataset&gt;</code> on <code>run</code>, <code>check-api</code>, <code>prove</code> and <code>triage</code>: the
+    dataset <code>moment.fact_builds</code> searches and <code>refuse_unless_safe</code> expects.
+    Allowed: <code>kipptaf_marts</code> (default) or <code>zz_[a-z0-9]+_kipptaf_marts</code>; anything
+    else is refused before any query.</li>
+<li>
+<p><code>render_local</code> prints <code>Cube: &lt;base URL host&gt;</code> and <code>Fact: &lt;dataset&gt;.&lt;fact&gt;</code>
+    so a PR description can say what was proven against what.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing tests</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_http_allowed_only_for_loopback_hosts</span><span class="p">():</span>
+    <span class="n">Cube</span><span class="p">(</span><span class="s2">"http://localhost:4000/cubejs-api/v1"</span><span class="p">,</span> <span class="s2">"s"</span><span class="p">,</span> <span class="s2">"e@x"</span><span class="p">)</span>
+    <span class="n">Cube</span><span class="p">(</span><span class="s2">"http://127.0.0.1:4000/cubejs-api/v1"</span><span class="p">,</span> <span class="s2">"s"</span><span class="p">,</span> <span class="s2">"e@x"</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">bad</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"http://localhost.evil.com/x"</span><span class="p">,</span> <span class="s2">"http://127.0.0.1@evil.com/x"</span><span class="p">,</span> <span class="s2">"http://cube.example.com/x"</span><span class="p">):</span>
+        <span class="k">with</span> <span class="n">pytest</span><span class="o">.</span><span class="n">raises</span><span class="p">(</span><span class="n">CubeError</span><span class="p">):</span>
+            <span class="n">Cube</span><span class="p">(</span><span class="n">bad</span><span class="p">,</span> <span class="s2">"s"</span><span class="p">,</span> <span class="s2">"e@x"</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_fact_builds_reads_a_dev_dataset</span><span class="p">():</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_fact_dataset_outside_allowed_names_is_refused</span><span class="p">(</span><span class="n">fakes</span><span class="p">,</span> <span class="n">tmp_path</span><span class="p">):</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_run_output_names_cube_host_and_fact</span><span class="p">(</span><span class="n">fakes</span><span class="p">,</span> <span class="n">tmp_path</span><span class="p">,</span> <span class="n">capsys</span><span class="p">):</span> <span class="o">...</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2:</strong> Run the 3 files. Expected: FAIL.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3:</strong> Implement.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4:</strong> Run the full suite. Expected: PASS.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5:</strong> Commit:
+      <code>feat(cube): validate against a local Cube and a dev build</code>
+      (<code>Refs #6157</code>).</li>
+</ul>
+<h3 id="task-11-cube-members-and-the-duplicate-check">Task 11: Cube members and the duplicate check</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>scripts/cube_validation/builder.py</code></li>
+<li>Modify: <code>scripts/cube_validation/cli.py</code></li>
+<li>Test: <code>tests/scripts/cube_validation/test_builder.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>Cube.meta</code> (Task 1), <code>Cube.compiled</code>, <code>cube_client.bind</code>,
+  <code>cube_client._FACT</code>, <code>decisions.sql_fingerprint</code>.</li>
+<li>Produces:</li>
+<li><code>Member</code> frozen dataclass
+    <code>(name: str, cube: str, kind: str, title: str, description: str, sql: str, sql_fingerprint: str, fact: str)</code>;
+    <code>sql</code> is the measure's compiled expression (<code>pipeline._measure_expression</code>),
+    <code>fact</code> the <code>fct_*</code> table it reads, <code>""</code> when none.</li>
+<li><code>members(cube: Cube) -&gt; list[Member]</code>: every measure of every cube and view
+    in <code>/meta</code>, each compiled alone. Compiling is free (no BigQuery).</li>
+<li><code>same_sql(found: list[Member]) -&gt; list[list[Member]]</code>: groups with equal
+    <code>sql_fingerprint</code> across different cubes, views excluded (a view member
+    repeats its cube's).</li>
+<li><code>same_name(found: list[Member], name: str) -&gt; list[Member]</code>: every member
+    named <code>name</code> on any cube.</li>
+<li>
+<p><code>members</code> subcommand writes <code>members.json</code> under the cache root and prints
+    the <code>same_sql</code> groups.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing tests</strong> with a fake <code>Cube</code> returning a small
+      <code>/meta</code> and compiled SQL:</p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_members_compiles_every_measure_once</span><span class="p">():</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_same_sql_groups_equal_expressions_across_cubes</span><span class="p">():</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_same_sql_ignores_a_view_repeating_its_cube</span><span class="p">():</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_same_name_finds_count_students_on_every_cube</span><span class="p">():</span> <span class="o">...</span>
+    <span class="c1"># 4 cubes -&gt; 4 members, each with its own fact and sql</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2:</strong> Run
+      <code>uv run pytest tests/scripts/cube_validation/test_builder.py -q</code>.
+      Expected: FAIL.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3:</strong> Implement.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4:</strong> Run it. Expected: PASS.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5:</strong> Commit: <code>feat(cube): list Cube members and find duplicates</code>
+      (<code>Refs #6157</code>).</li>
+</ul>
+<h3 id="task-12-workbook-re-inventory">Task 12: Workbook re-inventory</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>scripts/cube_validation/builder.py</code>, <code>scripts/cube_validation/cli.py</code></li>
+<li>Test: <code>tests/scripts/cube_validation/test_builder.py</code> (fixtures:
+  <code>fixtures/calcs.twb</code>, <code>fixtures/roster.twb</code>)</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>discover.calculated_fields</code>, <code>discover.bins</code>,
+  <code>discover.explain_bins</code>, <code>discover.aggregated_fields</code>, <code>discover.sheet_shape</code>,
+  <code>discover.worksheet</code>, <code>discover.sheet_fields</code>.</li>
+<li>Produces:</li>
+<li><code>FieldUse</code> frozen dataclass
+    <code>(caption: str, name: str, role: str, formula: str, sheets: tuple[str, ...], presentation: bool)</code>;
+    <code>role</code> in <code>measure</code>, <code>cut</code>, <code>filter</code>, <code>parameter</code>; <code>formula</code> has code groups
+    expanded (<code>explain_bins</code>); <code>presentation</code> is true for parameters, fields
+    whose formula builds a URL (<code>http</code>), and fields built on the viewer's
+    identity (<code>USERNAME()</code>, <code>ISMEMBEROF(</code>, the <code>personal</code> set from
+    <code>sheet_fields</code>).</li>
+<li><code>workbook_inventory(twb_xml: str) -&gt; list[FieldUse]</code>, one entry per field
+    across every worksheet, sheets merged.</li>
+<li>
+<p><code>inventory-workbook &lt;twb path&gt;</code> subcommand prints JSON. It reads a local
+    file only; the skill downloads the workbook.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing tests</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_inventory_lists_each_field_once_with_all_its_sheets</span><span class="p">():</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_inventory_expands_code_groups_in_formulas</span><span class="p">():</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_inventory_marks_parameters_urls_and_identity_fields_presentation</span><span class="p">():</span> <span class="o">...</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2:</strong> Run <code>test_builder.py</code>. Expected: FAIL.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3:</strong> Implement.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4:</strong> Run it. Expected: PASS.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5:</strong> Commit: <code>feat(cube): re-inventory a workbook from its XML</code>
+      (<code>Refs #6157</code>).</li>
+</ul>
+<h3 id="task-13-the-3-source-inventory">Task 13: The 3-source inventory</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>scripts/cube_validation/builder.py</code>, <code>scripts/cube_validation/cli.py</code></li>
+<li>Test: <code>tests/scripts/cube_validation/test_builder.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: Tasks 11 and 12.</li>
+<li>Produces:</li>
+<li><code>catalog_rows(markdown: str, slug: str) -&gt; list[dict]</code>: from the section
+    headed <code>## &lt;Dashboard&gt; (\</code><slug>`)<code>, the</code>### Measures<code>and</code>###
+    Dimensions<code>tables, as</code>{"field", "kind", "status",
+    "where"}<code>;</code>field<code>is the first column,</code>kind<code>is</code>measure<code>or</code>dimension<code>,</code>status<code>and</code>where`
+    the columns with those headers.</li>
+<li><code>InventoryRow</code> frozen dataclass
+    <code>(field: str, kind: str, member: str, sources: tuple[str, ...], disagreement: str)</code>;
+    <code>sources</code> from <code>catalog</code>, <code>review</code>, <code>asana</code>; <code>member</code> is the Cube member
+    matched by name or title, <code>""</code> when missing; <code>disagreement</code> names what
+    differs (<code>catalog says cube-covered, no member found</code>, <code>only in asana</code>,
+    ...), <code>""</code> when the sources agree.</li>
+<li><code>inventory(catalog: list[dict], review: list[FieldUse], asana: list[dict], found: list[Member]) -&gt; list[InventoryRow]</code>;
+    <code>asana</code> is a list of <code>{"field", "status"}</code> the skill writes from the
+    dashboard's Asana task (retired items left out by the skill, deferred ones
+    with status <code>deferred</code>).</li>
+<li>
+<p><code>inventory &lt;catalog.md&gt; &lt;slug&gt; --review &lt;json&gt; --asana &lt;json&gt;</code> prints the
+    rows as a markdown table for the build issue, then JSON. Presentation fields
+    are left out.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing tests</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_catalog_rows_reads_the_dashboards_measures_and_dimensions</span><span class="p">():</span> <span class="o">...</span>
+    <span class="c1"># a 2-dashboard markdown string; only the slug's rows come back</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_inventory_matches_members_and_flags_disagreements</span><span class="p">():</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_inventory_leaves_out_presentation_fields</span><span class="p">():</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_inventory_lists_deferred_asana_items_without_planning_them</span><span class="p">():</span> <span class="o">...</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2:</strong> Run <code>test_builder.py</code>. Expected: FAIL.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3:</strong> Implement.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4:</strong> Run the full suite. Expected: PASS.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5:</strong> Commit: <code>feat(cube): inventory a dashboard from 3 sources</code>
+      (<code>Refs #6157</code>).</li>
+</ul>
+<hr />
+<h2 id="part-d-the-runbooks">Part D: the runbooks</h2>
+<h3 id="task-14-skills">Task 14: Skills</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>.claude/skills/cube-validation/SKILL.md</code></li>
+<li>Create: <code>.claude/skills/cube-validation-answers/SKILL.md</code></li>
+<li>Create: <code>.claude/skills/cube-builder/SKILL.md</code></li>
+<li>Modify: <code>scripts/CLAUDE.md</code> (the <code>cube_validation/</code> row: new commands)</li>
+</ul>
+<p>Read <code>.claude/rules/claude-md-editing.md</code> and <code>superpowers:writing-skills</code>
+first. Each line must change a decision Claude makes; no history or counts.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: <code>cube-validation</code></strong>: after <code>run</code>, a triage step: run <code>triage</code>;
+      search open GitHub issues for known gaps; check each <code>docs</code> item's quoted
+      text against the result for contradictions; draft a reason per suggested
+      close; show the analyst one batch grouped by suggestion, owner pile last;
+      on "approve all" or "approve all but N", write <code>approved.json</code> and run
+      <code>add-decisions</code>, then <code>run</code> again. Then <code>review</code> as today, plus: the issue
+      is titled "Validate <dashboard> in Cube" and is the validation hub; after
+      posting, fill <code>task</code> with it. Pick-up step: on "pick up the answers on
+      #N", read only the comment the analyst names, save its body, show its
+      author, check notes for a student's or staff member's name, then
+      <code>record-answers --author &lt;login&gt;</code> without <code>--yes</code>, confirm with the
+      analyst, rerun with <code>--yes</code>, then <code>run</code>. Document <code>fix_source</code>, the
+      <code>tasks:</code> block, <code>--fact-dataset</code>, and the footnote.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: <code>cube-validation-answers</code></strong> (the owner's skill). Trigger phrases
+      in plain words ("answer the attendance review", "walk me through issue
+      #N"). Steps: read the validation issue's JSON block (never the markdown);
+      say how many questions; warn when <code>expired</code> or within 1 day of <code>expires</code>;
+      ask one question at a time with everything up front in the design's order
+      (policy question, both definitions, who differs, what triage found, his
+      checks with the collapsed SQL, the 5 choices plus free text); answer
+      follow-ups from the same evidence and ask again; example students he asks
+      for come from his own BigQuery access and stay in chat; for "the source
+      data is wrong", draft the <code>fix_source</code> issue (question, definitions,
+      counts, his note, what his session found, no student or staff detail), he
+      picks the assignee and confirms, then it is opened; at the end, show the
+      summary, check his notes for names, emails or numbers, and on his
+      confirmation post 1 comment: a readable summary plus one fenced <code>json</code>
+      block in <code>parse_answers</code>' shape.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: <code>cube-builder</code></strong>. Steps: inventory (<code>members</code>,
+      <code>inventory-workbook</code>, an independent reviewer subagent that re-inventories
+      the workbook XML without the catalog, the Asana task read into
+      <code>asana.json</code>, then <code>inventory</code>); the duplicate rule (every cube searched;
+      same SQL refused; a same-named member gets one of 3 verdicts the analyst
+      confirms: reuse, add its cube to the view, or a new measure whose name
+      says which students); the 5 tiers, shallowest first; the build issue holds
+      inventory, disagreements and plan; Asana edits only for misses, shown in
+      the issue first and made after approval; 3 PR types (YAML only; Cube adds
+      or changes, analytics engineer review; fact adds or changes, data engineer
+      review, merged before the type 2 that reads it); prove every PR before
+      merge against a local Cube (<code>CUBEJS_SCHEMA_PATH</code> copy per
+      <code>.claude/rules/cube-authoring.md</code>) by default, Cube Cloud Dev Mode by
+      flag, <code>--fact-dataset zz_&lt;user&gt;_kipptaf_marts</code> for type 3; the PR
+      description names the moment, the Cube host and the fact the run printed;
+      when every tier is done, open the dashboard's validation issue and run the
+      whole dashboard through triage and owner answers, then move its Asana
+      stage subtasks from "Built in Cube" toward "Matches within tolerance".</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4:</strong> Run
+      <code>/workspaces/teamster/.trunk/tools/trunk check --force --no-fix .claude/skills/cube-validation/SKILL.md .claude/skills/cube-validation-answers/SKILL.md .claude/skills/cube-builder/SKILL.md scripts/CLAUDE.md docs/superpowers/plans/2026-10-28-cube-triage-owner-answers-and-builder.md &lt;/dev/null</code>.
+      Expected: no lint findings (formatting is the commit hook's).</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5:</strong> Commit:
+      <code>docs(cube): runbooks for triage, owner answers and the builder</code>
+      (<code>Refs #6150</code>, <code>Refs #6157</code>).</li>
+</ul>
+<hr />
+<h2 id="after-the-last-task">After the last task</h2>
+<ul>
+<li>Run <code>uv run pytest tests/scripts/cube_validation -q</code>; all pass.</li>
+<li>Update the #6160 description: the new commands, the 2 new skills, the footnote
+  change, and that the DDI Suite build is the builder's first real test, outside
+  this PR.</li>
+</ul>
+<h2 id="rulings-made-while-planning">Rulings made while planning</h2>
+<ul>
+<li><code>triage</code> is its own command after <code>run</code>, not part of <code>run</code>, so a re-run does
+  not pay for Cube meta calls and value checks every time.</li>
+<li>A "reference column" for value checks is one that is not PII-tagged, not named
+  like an identifier, and has at most 50 values on both sides; values print only
+  for the review's shown columns.</li>
+<li><code>record-answers</code> refuses emails and digit runs in notes. A name cannot be
+  detected reliably by code, so both skills check for names before anything is
+  posted or written.</li>
+<li><code>fix_source</code> stays quiet like every other call; the tool does not read GitHub,
+  so "while its issue is open" is the analyst's re-run after it closes, not a
+  check the tool makes.</li>
+<li>Hand checks are built from SQL the run already executed, so <code>review</code> stays
+  offline and free; only the per-cell student count is a new query.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+    
+  </body>
+</html>

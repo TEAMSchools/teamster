@@ -1,0 +1,2568 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>Cambium EOC Score File Ingestion Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.57a0d79d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#cambium-eoc-score-file-ingestion-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Cambium EOC Score File Ingestion Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/launch-page-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Launch Page
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube-access-individual-exceptions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube Access - Individual Exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/tableau-permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tableau Permissions (People Data)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/csgf-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSGF Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/crdc-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CRDC Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ddi-stack-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDI Stack Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/hs-early-warning-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HS Early Warning Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/dibels-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIBELS Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/stat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/njdoe-universal-screener-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NJDOE Universal Screener Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/athletic-eligibility-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Athletic Eligibility Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/academic-health-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic Health Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/grad-plan-tracking-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Grad Plan Tracking Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ignite-r2i-extract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IGNITE R2I Extract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#global-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global Constraints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#review-focus" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Review Focus
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Review Focus">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-1-dagster-eoc-assets-and-sensor-wiring" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: Dagster eoc assets and sensor wiring
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-2-cambium-package-eoc-source-union-eoc-derivations-rename" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: cambium package — EOC source, union, EOC derivations, rename
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-3-carry-gradelevelwhenassessed-through-both-unions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: Carry gradelevelwhenassessed through both unions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-4-open-the-pr-and-verify-end-to-end-in-the-branch-deployment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: Open the PR and verify end to end in the branch deployment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-5-post-merge-prod-launch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 5: Post-merge prod launch
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-09-22-cambium-eoc-ingest.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="cambium-eoc-score-file-ingestion-implementation-plan">Cambium EOC Score File Ingestion Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Ingest the Cambium EOC (Algebra I, Algebra II, Geometry) score file
+for Newark and Camden into <code>int_pearson__all_assessments</code> with the Pearson-era
+row shape, and carry the student's grade-when-assessed through to kipptaf.</p>
+<p><strong>Architecture:</strong> A new <code>eoc</code> SFTP asset per region lands the file under
+<code>cambium/eoc/</code>. A new <code>src_cambium__eoc</code> external is unioned into the existing
+<code>stg_cambium__njsla</code> behind a <code>cambium_eoc_enabled</code> var (Paterson turns it off).
+EOC rows get <code>discipline = 'Math'</code> and NULL <code>test_grade</code> / <code>assessmentgrade</code>; a
+renamed <code>gradelevelwhenassessed</code> column flows through both union layers.</p>
+<p><strong>Tech Stack:</strong> Dagster (<code>build_sftp_file_asset</code>, Couchdrop sensor), dbt
+BigQuery (<code>dbt_utils.union_relations</code>, dbt-external-tables), pytest.</p>
+<p><strong>Spec:</strong> <code>docs/superpowers/specs/2026-09-22-cambium-eoc-ingest-design.md</code></p>
+<h2 id="global-constraints">Global Constraints</h2>
+<ul>
+<li>Worktree:
+  <code>/workspaces/teamster/.worktrees/cbini/feat/claude-cambium-eoc-ingest</code>
+  (abbreviated <code>$WT</code> below — type the full path; never expand an uppercase shell
+  variable, the hook denies it). Every git call is <code>git -C &lt;worktree&gt;</code>.</li>
+<li>Always <code>uv run</code> for python, dbt, pytest. Run
+  <code>uv run dbt deps --project-dir &lt;project&gt;</code> once per project before its first
+  dbt command, in its own Bash call.</li>
+<li>EOC subjects, verbatim: <code>Algebra I</code>, <code>Algebra II</code>, <code>Geometry</code>. EOC test codes:
+  <code>ALG01</code>, <code>ALG02</code>, <code>GEO01</code>.</li>
+<li>EOC filename suffix: <code>_SLA_EOC</code>. Folder:
+  <code>/data-team/&lt;code_location&gt;/cambium/eoc</code>.</li>
+<li>EOC rows: <code>test_grade</code> NULL, <code>assessmentgrade</code> NULL, <code>discipline = 'Math'</code>.</li>
+<li>New column name is <code>gradelevelwhenassessed</code> (int64) everywhere downstream of
+  the cambium staging models.</li>
+<li>Staging tests set <code>config: severity: error</code> on every test.</li>
+<li>No PII values in commits, PR bodies, or comments. Row counts are fine.</li>
+<li>Commit messages go in files under the session scratchpad and commit with
+  <code>git commit -F</code>; end each with
+  <code>Co-Authored-By: Claude Opus 5.5 (1M context) &lt;noreply@anthropic.com&gt;</code>.</li>
+<li>Before pushing SQL/YAML/markdown run
+  <code>/workspaces/teamster/.trunk/tools/trunk check --force --no-fix &lt;files&gt; &lt;/dev/null</code>
+  with cwd inside the worktree.</li>
+</ul>
+<h2 id="review-focus">Review Focus</h2>
+<ol>
+<li><strong>Paterson with the var off.</strong> A district without an EOC file must parse and
+   compile <code>stg_cambium__njsla</code> with only the NJSLA source. Pinned in Task 2
+   Steps 7 and 8.</li>
+<li><strong>One feed's asset picking up another feed's file.</strong> The <code>njsla</code> asset must
+   never match a <code>_SLA_EOC</code> file in <code>/eoc</code>, and the <code>eoc</code> asset never a file in
+   <code>/njsla</code> or <code>/njgpa</code>. Pinned in Task 1 by the cross-feed test with <code>_SLA_EOC</code>
+   added to its tail list.</li>
+<li><strong>A future EOC subject spelling Cambium has not sent</strong> (e.g. <code>Algebra 1</code>). It
+   must fail the build, not fall through to <code>ELA</code>. Pinned by the <code>subject</code>
+   <code>accepted_values</code> test in Task 2.</li>
+<li><strong>The same test in both files.</strong> A row repeated across the NJSLA and EOC
+   files must fail, not double-count. Pinned by the existing <code>studenttestuuid</code>
+   <code>unique</code> test, which spans the union; Task 4 Step 5 runs it on real data.</li>
+<li><strong>The first prod tick after merge.</strong> The new external is excluded from the
+   deps gate, so <code>stage_external_sources</code> runs against an empty prod prefix
+   unless the <code>eoc</code> asset has landed. Task 5 launches the prod assets
+   immediately after the deploy.</li>
+</ol>
+<hr />
+<h3 id="task-1-dagster-eoc-assets-and-sensor-wiring">Task 1: Dagster <code>eoc</code> assets and sensor wiring</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/teamster/code_locations/kippnewark/cambium/assets.py</code></li>
+<li>Modify: <code>src/teamster/code_locations/kippcamden/cambium/assets.py</code></li>
+<li>Modify: <code>src/teamster/code_locations/kippnewark/couchdrop/sensors.py</code></li>
+<li>Modify: <code>src/teamster/code_locations/kippcamden/couchdrop/sensors.py</code></li>
+<li>Test: <code>tests/libraries/test_cambium_assets.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>
+<p>Produces: asset <code>eoc</code> in each region's <code>cambium/assets.py</code>, key
+  <code>[&lt;code_location&gt;, "cambium", "eoc"]</code>. Task 2's source asset key must match.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Extend the test lists (failing test)</strong></p>
+</li>
+</ul>
+<p>In <code>tests/libraries/test_cambium_assets.py</code>, change the imports and lists at the
+top:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">teamster.code_locations.kippcamden.cambium.assets</span><span class="w"> </span><span class="kn">import</span> <span class="n">eoc</span> <span class="k">as</span> <span class="n">camden_eoc</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">teamster.code_locations.kippcamden.cambium.assets</span><span class="w"> </span><span class="kn">import</span> <span class="n">njgpa</span> <span class="k">as</span> <span class="n">camden_njgpa</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">teamster.code_locations.kippcamden.cambium.assets</span><span class="w"> </span><span class="kn">import</span> <span class="n">njsla</span> <span class="k">as</span> <span class="n">camden_njsla</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">teamster.code_locations.kippnewark.cambium.assets</span><span class="w"> </span><span class="kn">import</span> <span class="n">eoc</span> <span class="k">as</span> <span class="n">newark_eoc</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">teamster.code_locations.kippnewark.cambium.assets</span><span class="w"> </span><span class="kn">import</span> <span class="n">njgpa</span> <span class="k">as</span> <span class="n">newark_njgpa</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">teamster.code_locations.kippnewark.cambium.assets</span><span class="w"> </span><span class="kn">import</span> <span class="n">njsla</span> <span class="k">as</span> <span class="n">newark_njsla</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">teamster.libraries.cambium.assets</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_remote_file_regex</span>
+
+<span class="c1"># The tail after `Record_File`, verified against the real Cambium files.</span>
+<span class="n">NJGPA_TAILS</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"_GPA"</span><span class="p">]</span>
+<span class="n">NJSLA_TAILS</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"_SLA"</span><span class="p">]</span>
+<span class="n">EOC_TAILS</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"_SLA_EOC"</span><span class="p">]</span>
+
+<span class="c1"># district code embedded in each region's filename</span>
+<span class="n">ASSETS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">(</span><span class="n">newark_njgpa</span><span class="p">,</span> <span class="s2">"7325"</span><span class="p">,</span> <span class="n">NJGPA_TAILS</span><span class="p">),</span>
+    <span class="p">(</span><span class="n">newark_njsla</span><span class="p">,</span> <span class="s2">"7325"</span><span class="p">,</span> <span class="n">NJSLA_TAILS</span><span class="p">),</span>
+    <span class="p">(</span><span class="n">newark_eoc</span><span class="p">,</span> <span class="s2">"7325"</span><span class="p">,</span> <span class="n">EOC_TAILS</span><span class="p">),</span>
+    <span class="p">(</span><span class="n">camden_njgpa</span><span class="p">,</span> <span class="s2">"1799"</span><span class="p">,</span> <span class="n">NJGPA_TAILS</span><span class="p">),</span>
+    <span class="p">(</span><span class="n">camden_njsla</span><span class="p">,</span> <span class="s2">"1799"</span><span class="p">,</span> <span class="n">NJSLA_TAILS</span><span class="p">),</span>
+    <span class="p">(</span><span class="n">camden_eoc</span><span class="p">,</span> <span class="s2">"1799"</span><span class="p">,</span> <span class="n">EOC_TAILS</span><span class="p">),</span>
+<span class="p">]</span>
+
+<span class="c1"># Every ordered pair of feeds within one region. Only the directory segment</span>
+<span class="c1"># keeps one feed's asset off another feed's file.</span>
+<span class="n">REGIONS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">([</span><span class="n">newark_njgpa</span><span class="p">,</span> <span class="n">newark_njsla</span><span class="p">,</span> <span class="n">newark_eoc</span><span class="p">],</span> <span class="s2">"7325"</span><span class="p">),</span>
+    <span class="p">([</span><span class="n">camden_njgpa</span><span class="p">,</span> <span class="n">camden_njsla</span><span class="p">,</span> <span class="n">camden_eoc</span><span class="p">],</span> <span class="s2">"1799"</span><span class="p">),</span>
+<span class="p">]</span>
+</code></pre></div>
+<p>In <code>test_one_feeds_asset_never_matches_another_feeds_file</code>, change the tail list
+so the <code>njsla</code> asset is checked against a real EOC filename:</p>
+<div class="highlight"><pre><span></span><code>    <span class="k">for</span> <span class="n">tail</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">""</span><span class="p">,</span> <span class="s2">"_GPA"</span><span class="p">,</span> <span class="s2">"_SLA"</span><span class="p">,</span> <span class="s2">"_SLA_EOC"</span><span class="p">,</span> <span class="s2">"_ELA"</span><span class="p">,</span> <span class="s2">"_MAT"</span><span class="p">,</span> <span class="s2">"_SCI"</span><span class="p">]:</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run the test to verify it fails</strong></li>
+</ul>
+<p>Run (cwd = worktree):
+<code>cd /workspaces/teamster/.worktrees/cbini/feat/claude-cambium-eoc-ingest &amp;&amp; uv run pytest tests/libraries/test_cambium_assets.py -q 2&gt;&amp;1 | tail -n 5</code>
+Expected: collection error, <code>ImportError: cannot import name 'eoc'</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Add the asset in both regions</strong></li>
+</ul>
+<p>In <code>src/teamster/code_locations/kippnewark/cambium/assets.py</code> and the Camden
+twin (identical text; each file's <code>DISTRICT_CODE</code> already differs), add after
+the <code>njsla</code> definition:</p>
+<div class="highlight"><pre><span></span><code><span class="n">eoc</span> <span class="o">=</span> <span class="n">build_sftp_file_asset</span><span class="p">(</span>
+    <span class="n">asset_key</span><span class="o">=</span><span class="p">[</span><span class="o">*</span><span class="n">key_prefix</span><span class="p">,</span> <span class="s2">"eoc"</span><span class="p">],</span>
+    <span class="n">remote_dir_regex</span><span class="o">=</span><span class="sa">rf</span><span class="s2">"</span><span class="si">{</span><span class="n">remote_dir_regex_prefix</span><span class="si">}</span><span class="s2">/eoc"</span><span class="p">,</span>
+    <span class="n">remote_file_regex</span><span class="o">=</span><span class="n">build_remote_file_regex</span><span class="p">(</span>
+        <span class="n">partitions_def</span><span class="o">=</span><span class="n">partitions_def</span><span class="p">,</span>
+        <span class="n">district_code</span><span class="o">=</span><span class="n">DISTRICT_CODE</span><span class="p">,</span>
+        <span class="n">filename_suffix_regex</span><span class="o">=</span><span class="sa">r</span><span class="s2">"_SLA_EOC"</span><span class="p">,</span>
+    <span class="p">),</span>
+    <span class="c1"># Cambium ships EOC with a byte-identical header to the NJSLA file.</span>
+    <span class="n">avro_schema</span><span class="o">=</span><span class="n">NJSLA_SCHEMA</span><span class="p">,</span>
+    <span class="n">ssh_resource_key</span><span class="o">=</span><span class="n">ssh_resource_key</span><span class="p">,</span>
+    <span class="n">partitions_def</span><span class="o">=</span><span class="n">partitions_def</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>and change the list to:</p>
+<div class="highlight"><pre><span></span><code><span class="n">assets</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">njgpa</span><span class="p">,</span>
+    <span class="n">njsla</span><span class="p">,</span>
+    <span class="n">eoc</span><span class="p">,</span>
+<span class="p">]</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Wire both sensors</strong></li>
+</ul>
+<p>In <code>src/teamster/code_locations/kippnewark/couchdrop/sensors.py</code> and the Camden
+twin, add the import beside the other cambium imports:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">teamster.code_locations.kippnewark.cambium.assets</span><span class="w"> </span><span class="kn">import</span> <span class="n">eoc</span> <span class="k">as</span> <span class="n">cambium_eoc</span>
+</code></pre></div>
+<p>(Camden:
+<code>from teamster.code_locations.kippcamden.cambium.assets import eoc as cambium_eoc</code>.)</p>
+<p>and add <code>cambium_eoc,</code> as the first entry of <code>asset_selection</code>, before
+<code>cambium_njgpa,</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Run the tests to verify they pass</strong></li>
+</ul>
+<p>Run:
+<code>cd /workspaces/teamster/.worktrees/cbini/feat/claude-cambium-eoc-ingest &amp;&amp; uv run pytest tests/libraries/test_cambium_assets.py tests/libraries/test_cambium_schema.py -q 2&gt;&amp;1 | tail -n 5</code>
+Expected: all pass.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Validate both code locations load</strong></li>
+</ul>
+<p>Write <code>tests/code_locations/test_zz_eoc_defs.py</code> (throwaway; the conftest loads
+secrets):</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">dagster</span><span class="w"> </span><span class="kn">import</span> <span class="n">AssetKey</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_eoc_in_both_definitions</span><span class="p">():</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">teamster.code_locations.kippcamden.definitions</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+        <span class="n">defs</span> <span class="k">as</span> <span class="n">camden_defs</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">teamster.code_locations.kippnewark.definitions</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+        <span class="n">defs</span> <span class="k">as</span> <span class="n">newark_defs</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">defs</span><span class="p">,</span> <span class="n">loc</span> <span class="ow">in</span> <span class="p">[(</span><span class="n">newark_defs</span><span class="p">,</span> <span class="s2">"kippnewark"</span><span class="p">),</span> <span class="p">(</span><span class="n">camden_defs</span><span class="p">,</span> <span class="s2">"kippcamden"</span><span class="p">)]:</span>
+        <span class="k">assert</span> <span class="n">defs</span><span class="o">.</span><span class="n">resolve_assets_def</span><span class="p">(</span><span class="n">AssetKey</span><span class="p">([</span><span class="n">loc</span><span class="p">,</span> <span class="s2">"cambium"</span><span class="p">,</span> <span class="s2">"eoc"</span><span class="p">]))</span>
+        <span class="n">sensor</span> <span class="o">=</span> <span class="n">defs</span><span class="o">.</span><span class="n">resolve_sensor_def</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">loc</span><span class="si">}</span><span class="s2">__couchdrop__sftp_asset_sensor"</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">sensor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+</code></pre></div>
+<p>First confirm the sensor name:
+<code>rg -n "name=" src/teamster/libraries/couchdrop/sensors.py | head -3</code>, and
+adjust the string if it differs. Run:
+<code>uv run pytest tests/code_locations/test_zz_eoc_defs.py -q 2&gt;&amp;1 | tail -n 5</code>.
+Expected: PASS. If <code>definitions</code> fails to import on a missing dbt manifest,
+record that and rely on Step 5 plus the branch deployment in Task 4. Delete the
+file afterwards: <code>rm tests/code_locations/test_zz_eoc_defs.py</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-cambium-eoc-ingest<span class="w"> </span>add<span class="w"> </span>-u
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-cambium-eoc-ingest<span class="w"> </span>commit<span class="w"> </span>-F<span class="w"> </span>&lt;scratchpad&gt;/commit-msg-eoc-assets.txt
+</code></pre></div>
+<p>Message: <code>feat(cambium): add EOC score file asset for Newark and Camden</code> +
+<code>Refs #5481</code> + trailer.</p>
+<hr />
+<h3 id="task-2-cambium-package-eoc-source-union-eoc-derivations-rename">Task 2: cambium package — EOC source, union, EOC derivations, rename</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/dbt/cambium/models/sources-external.yml</code></li>
+<li>Modify: <code>src/dbt/cambium/models/staging/stg_cambium__njsla.sql</code></li>
+<li>Modify: <code>src/dbt/cambium/models/staging/properties/stg_cambium__njsla.yml</code></li>
+<li>Modify: <code>src/dbt/cambium/models/staging/stg_cambium__njgpa.sql</code></li>
+<li>Modify: <code>src/dbt/cambium/models/staging/properties/stg_cambium__njgpa.yml</code></li>
+<li>Modify: <code>src/dbt/kipppaterson/dbt_project.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: Dagster asset key <code>[&lt;project&gt;, cambium, eoc]</code> (Task 1).</li>
+<li>
+<p>Produces: <code>stg_cambium__njsla</code> and <code>stg_cambium__njgpa</code> expose
+  <code>gradelevelwhenassessed int64</code> in place of <code>grade_level_when_assessed</code>. Task 3
+  lists that name.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Add the source</strong></p>
+</li>
+</ul>
+<p>Append to <code>src/dbt/cambium/models/sources-external.yml</code> under <code>tables:</code>, after
+<code>src_cambium__njsla</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">src_cambium__eoc</span>
+<span class="w">  </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">meta</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">dagster</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">asset_key</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"{{</span><span class="nv"> </span><span class="s">project_name</span><span class="nv"> </span><span class="s">}}"</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cambium</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">eoc</span>
+<span class="w">  </span><span class="nt">external</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">location</span><span class="p">:</span>
+<span class="w">      </span><span class="s">"{{</span><span class="nv"> </span><span class="s">var('cloud_storage_uri_base',</span>
+<span class="w">      </span><span class="s">env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE',</span><span class="nv"> </span><span class="s">''))</span><span class="nv"> </span><span class="s">}}/cambium/eoc/*"</span>
+<span class="w">    </span><span class="nt">options</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">connection_name</span><span class="p">:</span><span class="w"> </span><span class="s">"{{</span><span class="nv"> </span><span class="s">var('bigquery_external_connection_name')</span><span class="nv"> </span><span class="s">}}"</span>
+<span class="w">      </span><span class="nt">metadata_cache_mode</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">MANUAL</span>
+<span class="w">      </span><span class="nt">max_staleness</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">INTERVAL 7 DAY</span>
+<span class="w">      </span><span class="nt">format</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">AVRO</span>
+<span class="w">      </span><span class="nt">enable_logical_types</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">      </span><span class="nt">hive_partition_uri_prefix</span><span class="p">:</span>
+<span class="w">        </span><span class="s">"{{</span><span class="nv"> </span><span class="s">var('cloud_storage_uri_base',</span>
+<span class="w">        </span><span class="s">env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE',</span><span class="nv"> </span><span class="s">''))</span><span class="nv"> </span><span class="s">}}/cambium/eoc/"</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Union the sources in <code>stg_cambium__njsla.sql</code></strong></li>
+</ul>
+<p>Replace the opening <code>with</code> and the <code>njsla</code> CTE's <code>from</code> line. The file becomes:</p>
+<div class="highlight"><pre><span></span><code><span class="err">{</span><span class="o">#-</span><span class="w"> </span><span class="k">source</span><span class="p">()</span><span class="w"> </span><span class="n">inside</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">branch</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">captured</span><span class="w"> </span><span class="k">at</span><span class="w"> </span><span class="n">parse</span><span class="w"> </span><span class="k">time</span><span class="p">,</span><span class="w"> </span><span class="n">so</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">district</span><span class="w"> </span><span class="k">with</span>
+<span class="w">    </span><span class="n">cambium_eoc_enabled</span><span class="w"> </span><span class="k">off</span><span class="w"> </span><span class="n">never</span><span class="w"> </span><span class="n">takes</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">dependency</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">src_cambium__eoc</span><span class="p">.</span><span class="w"> </span><span class="o">-#</span><span class="err">}</span>
+<span class="err">{</span><span class="o">%-</span><span class="w"> </span><span class="k">set</span><span class="w"> </span><span class="n">relations</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="k">source</span><span class="p">(</span><span class="ss">"cambium"</span><span class="p">,</span><span class="w"> </span><span class="ss">"src_cambium__njsla"</span><span class="p">)]</span><span class="w"> </span><span class="o">-%</span><span class="err">}</span>
+<span class="err">{</span><span class="o">%-</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">var</span><span class="p">(</span><span class="ss">"cambium_eoc_enabled"</span><span class="p">,</span><span class="w"> </span><span class="k">true</span><span class="p">)</span><span class="w"> </span><span class="o">-%</span><span class="err">}</span>
+<span class="w">    </span><span class="err">{</span><span class="o">%-</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="n">relations</span><span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="k">source</span><span class="p">(</span><span class="ss">"cambium"</span><span class="p">,</span><span class="w"> </span><span class="ss">"src_cambium__eoc"</span><span class="p">))</span><span class="w"> </span><span class="o">-%</span><span class="err">}</span>
+<span class="err">{</span><span class="o">%-</span><span class="w"> </span><span class="n">endif</span><span class="w"> </span><span class="o">-%</span><span class="err">}</span>
+
+<span class="k">with</span>
+<span class="w">    </span><span class="n">union_relations</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="err">{{</span><span class="w"> </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">union_relations</span><span class="p">(</span><span class="n">relations</span><span class="o">=</span><span class="n">relations</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">    </span><span class="p">),</span>
+
+<span class="w">    </span><span class="n">njsla</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="p">...</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">union_relations</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">summative_flag</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'Y'</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">test_attemptedness_flag</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'Y'</span>
+<span class="w">    </span><span class="p">),</span>
+</code></pre></div>
+<p>(<code>...</code> is the existing column list, edited in Step 3; nothing else in the CTE
+changes.)</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Null the EOC grade in the <code>njsla</code> CTE</strong></li>
+</ul>
+<p>Remove <code>assessment_grade,</code> from the plain column list (line 6). Add this after
+the <code>cast(test_score_complete as numeric) as test_score_complete,</code> line:</p>
+<div class="highlight"><pre><span></span><code><span class="w">            </span><span class="cm">/* EOC forms have no grade. Cambium stamps 'Grade 11' on every EOC</span>
+<span class="cm">               row; Pearson sent NULL, which dim_assessments keys on. */</span>
+<span class="w">            </span><span class="k">if</span><span class="p">(</span>
+<span class="w">                </span><span class="o">`</span><span class="n">subject</span><span class="o">`</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="s1">'Algebra I'</span><span class="p">,</span><span class="w"> </span><span class="s1">'Algebra II'</span><span class="p">,</span><span class="w"> </span><span class="s1">'Geometry'</span><span class="p">),</span>
+<span class="w">                </span><span class="k">null</span><span class="p">,</span>
+<span class="w">                </span><span class="n">assessment_grade</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">assessment_grade</span><span class="p">,</span>
+</code></pre></div>
+<p><code>test_grade</code> in <code>aligned</code> then derives NULL through the existing
+<code>regexp_extract</code>; do not touch it. If <code>trunk check</code> reports ST06 on this column,
+move it to the position sqlfluff asks for within the same CTE.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Map EOC subjects to Math and rename the grade column</strong></li>
+</ul>
+<p>In the <code>leveled</code> CTE replace the <code>discipline</code> case with:</p>
+<div class="highlight"><pre><span></span><code><span class="w">            </span><span class="k">case</span>
+<span class="w">                </span><span class="k">when</span>
+<span class="w">                    </span><span class="o">`</span><span class="n">subject</span><span class="o">`</span>
+<span class="w">                    </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="s1">'Mathematics'</span><span class="p">,</span><span class="w"> </span><span class="s1">'Algebra I'</span><span class="p">,</span><span class="w"> </span><span class="s1">'Algebra II'</span><span class="p">,</span><span class="w"> </span><span class="s1">'Geometry'</span><span class="p">)</span>
+<span class="w">                </span><span class="k">then</span><span class="w"> </span><span class="s1">'Math'</span>
+<span class="w">                </span><span class="k">when</span><span class="w"> </span><span class="o">`</span><span class="n">subject</span><span class="o">`</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'Science'</span>
+<span class="w">                </span><span class="k">then</span><span class="w"> </span><span class="s1">'Science'</span>
+<span class="w">                </span><span class="k">else</span><span class="w"> </span><span class="s1">'ELA'</span>
+<span class="w">            </span><span class="k">end</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">discipline</span><span class="p">,</span>
+</code></pre></div>
+<p>In the <code>aligned</code> CTE remove the plain <code>grade_level_when_assessed,</code> line and add
+<code>grade_level_when_assessed as gradelevelwhenassessed,</code> in the renamed-alias
+group, after <code>assessment_year as assessmentyear,</code>.</p>
+<p>In <code>stg_cambium__njgpa.sql</code> <code>aligned</code> CTE, do the same: remove
+<code>grade_level_when_assessed,</code> and add
+<code>grade_level_when_assessed as gradelevelwhenassessed,</code> after
+<code>assessment_grade as assessmentgrade,</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Update the properties files</strong></li>
+</ul>
+<p><code>stg_cambium__njsla.yml</code>:</p>
+<ul>
+<li>Model <code>description</code>: replace the sentence starting "Cambium ships English
+  Language Arts" with: "Cambium ships English Language Arts, Mathematics and
+  Science in the District Summative Record File, and the Algebra I, Algebra II
+  and Geometry end-of-course tests in a separate EOC file with an identical
+  header. This model unions both files, carries the NJSLA and the NJSLA Science
+  assessments, and branches every subject-dependent column on subject."</li>
+<li><code>test_grade</code>: replace <code>description</code> and the <code>not_null</code> test with:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">test_grade</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int64</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">    </span><span class="no">Grade number parsed out of assessment_grade, which Cambium sends as 'Grade</span>
+<span class="w">    </span><span class="no">3' through 'Grade 11'. NULL for the Algebra I, Algebra II and Geometry</span>
+<span class="w">    </span><span class="no">end-of-course tests, whose forms have no grade, matching the Pearson rows.</span>
+<span class="w">    </span><span class="no">An unparseable value on any other row yields NULL and fails here rather than</span>
+<span class="w">    </span><span class="no">flowing a NULL grade into dim_assessments.</span>
+<span class="w">  </span><span class="nt">data_tests</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">not_null</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">severity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">error</span>
+<span class="w">          </span><span class="nt">where</span><span class="p">:</span><span class="w"> </span><span class="s">"`subject`</span><span class="nv"> </span><span class="s">not</span><span class="nv"> </span><span class="s">in</span><span class="nv"> </span><span class="s">('Algebra</span><span class="nv"> </span><span class="s">I',</span><span class="nv"> </span><span class="s">'Algebra</span><span class="nv"> </span><span class="s">II',</span><span class="nv"> </span><span class="s">'Geometry')"</span>
+</code></pre></div>
+<p>(keep the existing <code>accepted_values</code> block unchanged).</p>
+<ul>
+<li><code>subject</code>: description becomes "'English Language Arts', 'Mathematics',
+  'Science', or one of the end-of-course subjects 'Algebra I', 'Algebra II' and
+  'Geometry'. Drives every subject-dependent derivation in this model, so an
+  unrecognized subject fails here rather than silently landing on the ELA
+  branch." and <code>accepted_values</code> <code>values</code> becomes
+  <code>[English Language Arts, Mathematics, Science, Algebra I, Algebra II, Geometry]</code>.</li>
+<li><code>discipline</code>: description becomes
+  <code>"'Math' for Mathematics and the end-of-course subjects, 'Science' for Science, else 'ELA'."</code></li>
+<li><code>assessmentgrade</code>: description becomes "The test DESIGN level as Cambium sends
+  it, e.g. 'Grade 5'. NULL for end-of-course tests, whose 'Grade 11' is a
+  placeholder. test_grade is the parsed integer; gradelevelwhenassessed is the
+  student's own grade."</li>
+<li>Rename the column entry <code>grade_level_when_assessed</code> to
+  <code>gradelevelwhenassessed</code>; description: "The student's grade at the time of
+  testing. Equals test_grade on every grade-level test; on end-of-course tests,
+  where test_grade is NULL, it is the only grade."</li>
+<li><code>testcode</code> description: append "; ALG01, ALG02 and GEO01 for the end-of-course
+  tests".</li>
+</ul>
+<p><code>stg_cambium__njgpa.yml</code>: rename <code>grade_level_when_assessed</code> to
+<code>gradelevelwhenassessed</code> (keep its description), and in <code>assessmentgrade</code>'s
+description replace <code>grade_level_when_assessed</code> with <code>gradelevelwhenassessed</code>.</p>
+<p>Then sweep for stale references:
+<code>rg -n "grade_level_when_assessed" src/dbt --glob '*.{sql,yml,md}' --glob '!**/target/**' --glob '!**/dbt_packages/**'</code>
+Expected: only the two <code>cast(grade_level_when_assessed as int)</code> lines and the
+two <code>grade_level_when_assessed as gradelevelwhenassessed</code> aliases.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Paterson — turn the var off and disable the source</strong></li>
+</ul>
+<p>In <code>src/dbt/kipppaterson/dbt_project.yml</code> <code>vars:</code> add, after
+<code>edplan_has_archive: false</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Paterson has no EOC file yet. Removing this and the src_cambium__eoc</span>
+<span class="c1"># disable below is the dbt half of onboarding it.</span>
+<span class="nt">cambium_eoc_enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+</code></pre></div>
+<p>and under <code>sources: cambium: cambium:</code> add beside <code>src_cambium__njgpa</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">src_cambium__eoc</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">+enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Parse every consumer</strong></li>
+</ul>
+<p>One Bash call per project for deps first, then:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span>--no-partial-parse<span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-cambium-eoc-ingest/src/dbt/kippnewark<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tail<span class="w"> </span>-n<span class="w"> </span><span class="m">5</span>
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span>--no-partial-parse<span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-cambium-eoc-ingest/src/dbt/kippcamden<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tail<span class="w"> </span>-n<span class="w"> </span><span class="m">5</span>
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span>--no-partial-parse<span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-cambium-eoc-ingest/src/dbt/kipppaterson<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tail<span class="w"> </span>-n<span class="w"> </span><span class="m">5</span>
+</code></pre></div>
+<p>Expected: all three parse clean. Then confirm the graph edges:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>ls<span class="w"> </span>--select<span class="w"> </span>+stg_cambium__njsla<span class="w"> </span>--resource-type<span class="w"> </span><span class="nb">source</span><span class="w"> </span>--project-dir<span class="w"> </span>&lt;each<span class="w"> </span>project&gt;<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tail<span class="w"> </span>-n<span class="w"> </span><span class="m">5</span>
+</code></pre></div>
+<p>Expected: Newark and Camden list <code>source:cambium.cambium.src_cambium__njsla</code> and
+<code>src_cambium__eoc</code>; Paterson lists only <code>src_cambium__njsla</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 8: Compile Paterson against staging</strong></li>
+</ul>
+<p><code>uv run dbt compile --select stg_cambium__njsla --target staging --project-dir /workspaces/teamster/.worktrees/cbini/feat/claude-cambium-eoc-ingest/src/dbt/kipppaterson 2&gt;&amp;1 | tail -n 5</code></p>
+<p>This is not a warehouse write. Expected: success. Open the compiled SQL under
+<code>target/compiled/cambium/models/staging/stg_cambium__njsla.sql</code> and confirm the
+<code>union_relations</code> CTE selects from one relation only. (Newark and Camden cannot
+compile until <code>src_cambium__eoc</code> is staged in Task 4.)</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 9: Lint and commit</strong></li>
+</ul>
+<p><code>trunk check --force --no-fix</code> on the five cambium files and Paterson's
+<code>dbt_project.yml</code>; fix any findings. Commit with message
+<code>feat(cambium): union EOC scores into stg_cambium__njsla</code> + <code>Refs #5481</code> +
+trailer.</p>
+<hr />
+<h3 id="task-3-carry-gradelevelwhenassessed-through-both-unions">Task 3: Carry <code>gradelevelwhenassessed</code> through both unions</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/dbt/pearson/models/intermediate/int_pearson__all_assessments.sql</code></li>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/pearson/intermediate/int_pearson__all_assessments.sql</code></li>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/pearson/intermediate/properties/int_pearson__all_assessments.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>gradelevelwhenassessed int64</code> from Task 2 (cambium) and from
+  <code>stg_pearson__njsla</code> / <code>_njsla_science</code> / <code>_parcc</code> (already present).</li>
+<li>
+<p>Produces: <code>gradelevelwhenassessed</code> on kipptaf <code>int_pearson__all_assessments</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Add the include entries</strong></p>
+</li>
+</ul>
+<p>In both <code>int_pearson__all_assessments.sql</code> files, add
+<code>"gradelevelwhenassessed",</code> to the <code>include=[...]</code> list in alphabetical position
+(after <code>"firstname",</code> in both lists).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Document the column in kipptaf</strong></li>
+</ul>
+<p>In the kipptaf properties file, add after the <code>firstname</code> entry (blank line
+between entries, as the file does):</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">gradelevelwhenassessed</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int64</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">    </span><span class="no">The student's grade at the time of testing. Equals test_grade on grade-level</span>
+<span class="w">    </span><span class="no">tests. On the Algebra I, Algebra II and Geometry end-of-course tests, where</span>
+<span class="w">    </span><span class="no">test_grade is NULL, it is the only grade. NULL for NJGPA rows from Pearson,</span>
+<span class="w">    </span><span class="no">which did not send it.</span>
+</code></pre></div>
+<p>The pearson package's properties file documents only derived columns, so it gets
+no entry.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Parse and compile</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span>--no-partial-parse<span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-cambium-eoc-ingest/src/dbt/kippnewark<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tail<span class="w"> </span>-n<span class="w"> </span><span class="m">3</span>
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span>--no-partial-parse<span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-cambium-eoc-ingest/src/dbt/kipptaf<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tail<span class="w"> </span>-n<span class="w"> </span><span class="m">3</span>
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>compile<span class="w"> </span>--select<span class="w"> </span>int_pearson__all_assessments<span class="w"> </span>--target<span class="w"> </span>staging<span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-cambium-eoc-ingest/src/dbt/kipptaf<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tail<span class="w"> </span>-n<span class="w"> </span><span class="m">3</span>
+</code></pre></div>
+<p>Expected: clean. In the kipptaf compiled SQL, <code>gradelevelwhenassessed</code> appears
+in every branch — real in the cambium branches once they rebuild, otherwise
+<code>cast(null as INT64) as gradelevelwhenassessed</code>. Confirm with
+<code>grep -c gradelevelwhenassessed &lt;compiled file&gt;</code> being at least 8.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Lint and commit</strong></li>
+</ul>
+<p><code>trunk check --force --no-fix</code> on the three files. Commit with
+<code>feat(pearson): carry gradelevelwhenassessed through the NJ assessment unions</code> +
+<code>Refs #5481</code> + trailer.</p>
+<hr />
+<h3 id="task-4-open-the-pr-and-verify-end-to-end-in-the-branch-deployment">Task 4: Open the PR and verify end to end in the branch deployment</h3>
+<p><strong>Files:</strong> none changed unless a check fails.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Push and open the PR non-draft</strong></li>
+</ul>
+<p><code>git -C &lt;worktree&gt; push</code>. Open the PR with <code>mcp__github__create_pull_request</code>
+from <code>.github/pull_request_template.md</code>; body includes <code>Closes #5481</code>, the
+<code>test_grade</code> decision, the post-merge prod launch step, and ends with
+<code>🤖 Generated with [Claude Code](https://claude.com/claude-code)</code>. Non-draft, so
+the Dagster branch deployment builds.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Materialize the branch-deployment assets</strong></li>
+</ul>
+<p>Find the branch deployment with <code>mcp__dagster-plus__list_deployments</code>. Launch
+<code>kippnewark/cambium/eoc</code> and <code>kippcamden/cambium/eoc</code>, partition <code>2026|Spring</code>,
+with <code>mcp__dagster-plus__launch_asset_run</code> against that deployment. Confirm
+success with <code>get_run</code>. The IO manager writes to
+<code>gs://teamster-test/dagster/&lt;project&gt;/cambium/eoc/</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Stage the new external into <code>zz_stg</code> (needs user
+      authorization)</strong></li>
+</ul>
+<p>Ask the user to authorize, then per district, each in its own Bash call:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>run-operation<span class="w"> </span>stage_external_sources<span class="w"> </span>--target<span class="w"> </span>staging<span class="w"> </span>--args<span class="w"> </span><span class="s2">"select: cambium.src_cambium__eoc"</span><span class="w"> </span>--vars<span class="w"> </span><span class="s1">'{cloud_storage_uri_base: gs://teamster-test/dagster/kippnewark, ext_full_refresh: true}'</span><span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-cambium-eoc-ingest/src/dbt/kippnewark
+</code></pre></div>
+<p>and the same with <code>kippcamden</code>. Serialize; never run them in parallel.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Build the staging models into <code>zz_stg</code> (needs user
+      authorization)</strong></li>
+</ul>
+<p>Per district, own Bash call:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--select<span class="w"> </span>stg_cambium__njsla<span class="w"> </span>stg_cambium__njgpa<span class="w"> </span>--target<span class="w"> </span>staging<span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-cambium-eoc-ingest/src/dbt/kippnewark<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tail<span class="w"> </span>-n<span class="w"> </span><span class="m">15</span>
+</code></pre></div>
+<p>Expected: models build, every test passes (<code>unique</code> on <code>studenttestuuid</code>, scoped
+<code>not_null</code> on <code>test_grade</code>, <code>accepted_values</code> on <code>subject</code> and <code>discipline</code>).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Row checks via BigQuery MCP</strong></li>
+</ul>
+<p>Run once with <code>kippnewark</code> and once with <code>kippcamden</code> in the dataset name:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="n">testcode</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="s1">'ALG01'</span><span class="p">,</span><span class="w"> </span><span class="s1">'ALG02'</span><span class="p">,</span><span class="w"> </span><span class="s1">'GEO01'</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_eoc</span><span class="p">,</span>
+<span class="w">    </span><span class="n">discipline</span><span class="p">,</span>
+<span class="w">    </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n</span><span class="p">,</span>
+<span class="w">    </span><span class="n">countif</span><span class="p">(</span><span class="n">test_grade</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">test_grade_set</span><span class="p">,</span>
+<span class="w">    </span><span class="n">countif</span><span class="p">(</span><span class="n">assessmentgrade</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">assessmentgrade_set</span><span class="p">,</span>
+<span class="w">    </span><span class="n">countif</span><span class="p">(</span><span class="n">gradelevelwhenassessed</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">grade_missing</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_stg_kippnewark_cambium</span><span class="p">.</span><span class="n">stg_cambium__njsla</span><span class="o">`</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">is_eoc</span><span class="p">,</span><span class="w"> </span><span class="n">discipline</span>
+</code></pre></div>
+<p>and the same grouping against prod
+<code>teamster-332318.kippnewark_cambium.stg_cambium__njsla</code> for the non-EOC
+baseline.</p>
+<p>Expected: Newark 382 EOC rows, Camden 122; all EOC rows <code>discipline = 'Math'</code>,
+<code>test_grade_set = 0</code>, <code>assessmentgrade_set = 0</code>, <code>grade_missing = 0</code>. Non-EOC
+row counts equal prod <code>kipp&lt;region&gt;_cambium.stg_cambium__njsla</code> counts.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: kipptaf CI</strong></li>
+</ul>
+<p>The PR modifies kipptaf <code>int_pearson__all_assessments.sql</code>, so CI rebuilds it
+from the <code>zz_stg</code> sources. Invoke <code>pr-ci-review</code> and watch the checks with
+<code>gh pr checks &lt;n&gt; --json name,bucket,state</code>. Expected: green. If the union lacks
+<code>gradelevelwhenassessed</code> for the cambium branches, Step 4 did not land the
+rename in <code>zz_stg</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Process review</strong></li>
+</ul>
+<p>Invoke <code>superpowers:receiving-code-review</code> for <code>claude-review</code> findings and post
+a per-finding verdict comment.</p>
+<hr />
+<h3 id="task-5-post-merge-prod-launch">Task 5: Post-merge prod launch</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Launch the prod assets right after the deploy</strong></li>
+</ul>
+<p>After the merge deploys, launch <code>kippnewark/cambium/eoc</code> and
+<code>kippcamden/cambium/eoc</code>, partition <code>2026|Spring</code>, in prod with
+<code>mcp__dagster-plus__launch_asset_run</code>, before the first automation tick requests
+<code>stg_cambium__njsla</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Confirm prod</strong></li>
+</ul>
+<p>Once <code>stg_cambium__njsla</code> rebuilds in both districts and kipptaf's union view
+refreshes, run:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="n">_dbt_source_project</span><span class="p">,</span>
+<span class="w">    </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n</span><span class="p">,</span>
+<span class="w">    </span><span class="n">countif</span><span class="p">(</span><span class="n">discipline</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'Math'</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">math</span><span class="p">,</span>
+<span class="w">    </span><span class="n">countif</span><span class="p">(</span><span class="n">test_grade</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">grade_null</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_pearson</span><span class="p">.</span><span class="n">int_pearson__all_assessments</span><span class="o">`</span>
+<span class="k">where</span><span class="w"> </span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2025</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">testcode</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="s1">'ALG01'</span><span class="p">,</span><span class="w"> </span><span class="s1">'ALG02'</span><span class="p">,</span><span class="w"> </span><span class="s1">'GEO01'</span><span class="p">)</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">_dbt_source_project</span>
+</code></pre></div>
+<p>Expected: <code>kippnewark</code> 382, <code>kippcamden</code> 122, every row Math and grade NULL.
+Comment the counts on #5481.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Open the follow-up issue</strong></li>
+</ul>
+<p>Open an issue for the <code>rpt_tableau__academic_goals_rollup</code> Algebra filter
+described in the spec's <em>Out of scope</em> section, using
+<code>.github/ISSUE_TEMPLATE/bug_report.md</code>, after asking the user.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+    
+  </body>
+</html>

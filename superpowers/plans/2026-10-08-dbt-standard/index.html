@@ -1,0 +1,2626 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>dbt SQL and Model Design Standard Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.57a0d79d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#dbt-sql-and-model-design-standard-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              dbt SQL and Model Design Standard Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/launch-page-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Launch Page
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube-access-individual-exceptions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube Access - Individual Exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/tableau-permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tableau Permissions (People Data)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/csgf-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSGF Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/crdc-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CRDC Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ddi-stack-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDI Stack Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/hs-early-warning-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HS Early Warning Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/dibels-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIBELS Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/stat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/njdoe-universal-screener-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NJDOE Universal Screener Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/athletic-eligibility-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Athletic Eligibility Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/academic-health-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic Health Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/grad-plan-tracking-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Grad Plan Tracking Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ignite-r2i-extract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IGNITE R2I Extract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#global-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global Constraints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#review-focus" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Review Focus
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-1-the-standard-pr-1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 1: the standard (PR 1)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part 1: the standard (PR 1)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-1-clauderulesdbt-architecturemd" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: .claude/rules/dbt-architecture.md
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-2-restructure-clauderulesdbt-sqlmd" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: restructure .claude/rules/dbt-sql.md
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-3-published-page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: published page
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-4-review-prompt-cites-rule-ids" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: review prompt cites rule IDs
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-2-enforcement-pr-2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 2: enforcement (PR 2)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part 2: enforcement (PR 2)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-5-srcdbtkipptafmacrosentity_keyssql" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 5: src/dbt/kipptaf/macros/entity_keys.sql
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-6-sqlfluff-settings-and-banned-syntax-linter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 6: sqlfluff settings and banned-syntax linter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-7-layer-classification-and-edges-a1-a8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 7: layer classification and edges (A1, A8)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-8-touched-model-rules-a3-a4-a7-a9-and-baseline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 8: touched-model rules (A3, A4, A7, A9) and baseline
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-9-domain-tags-workflow-baseline-backlog-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 9: domain tags, workflow, baseline, backlog issues
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-10-08-dbt-standard.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="dbt-sql-and-model-design-standard-implementation-plan">dbt SQL and Model Design Standard Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> One dbt standard (architecture + SQL style) that lives in the Claude
+rule files, publishes to the docs site, and is enforced by lint, a manifest
+check with a baseline ratchet, and claude-review.</p>
+<p><strong>Architecture:</strong> Rule files under <code>.claude/rules/</code> hold every rule with a
+stable ID; <code>pymdownx.snippets</code> includes their human-facing sections into
+<code>docs/reference/dbt-conventions.md</code>. A PEP 723 script reads <code>manifest.json</code> to
+enforce layer edges and touched-model rules; a regex script backs a trunk custom
+linter for banned BigQuery syntax.</p>
+<p><strong>Tech Stack:</strong> Markdown, MkDocs Material + pymdownx.snippets, dbt (BigQuery),
+Python 3.12+ (stdlib only), pytest, trunk, GitHub Actions.</p>
+<p><strong>Spec:</strong> <code>docs/superpowers/specs/2026-10-07-dbt-standard-design.md</code></p>
+<h2 id="global-constraints">Global Constraints</h2>
+<ul>
+<li>Issue #5789. PR 1 body carries <code>Refs #5789</code>; PR 2 uses <code>Closes #5789</code>.</li>
+<li>2 PRs:</li>
+<li>PR 1, the standard (Tasks 1-4): <code>cbini/feat/claude-dbt-standard</code> (exists;
+    holds the spec and this plan). Docs, rule files, and the claude-review
+    prompt. It merges first: the prompt reads the rule files it adds.</li>
+<li>PR 2, enforcement (Tasks 5-9): <code>cbini/feat/claude-dbt-enforcement</code>, created
+    after PR 1 merges with <code>gh issue develop 5789 --name &lt;branch&gt;</code> then
+    <code>git worktree add /workspaces/teamster/.claude/worktrees/&lt;branch&gt; &lt;branch&gt;</code>.
+    The <code>trunk.yaml</code> block for the user goes in its body.</li>
+<li>Never sweep existing models. The standard applies to new and touched code;
+  layer violations go in the baseline.</li>
+<li>Rule IDs are stable once published: <code>A1…</code> architecture, <code>S1…</code> style, and the
+  mart rubric keeps <code>R1…R10</code> unchanged.</li>
+<li>Every rule inside a snippet section has: rule (1 sentence), why (1 line), good
+  and bad example, <code>Enforced by:</code> (check name or <code>review</code>).</li>
+<li><code>.trunk/trunk.yaml</code>, <code>settings.json</code> and hook scripts are Edit-denied: draft
+  the change in the PR body and hand it to the user.</li>
+<li>Scripts are stdlib-only PEP 723 scripts in <code>scripts/</code>, tested by loading them
+  with <code>importlib.util.spec_from_file_location</code> (see <code>scripts/CLAUDE.md</code>).</li>
+<li>Run dbt only as <code>uv run dbt ... --project-dir &lt;worktree&gt;/src/dbt/&lt;project&gt;</code>;
+  invoke <code>dbt-local-dev</code> before any local dbt command.</li>
+<li>Lint before each push:
+  <code>/workspaces/teamster/.trunk/tools/trunk check --force --no-fix &lt;files&gt; &lt;/dev/null</code>.</li>
+</ul>
+<h2 id="review-focus">Review Focus</h2>
+<ul>
+<li>A kipptaf <code>source()</code> pointing at a district or package table whose name has no
+  layer prefix (raw <code>src_*</code>, snapshots, BigQuery-native archives) must be
+  classified <code>source</code>, never crash or count as a violation.</li>
+<li>Disabled models, tests, seeds, analyses and exposures without <code>depends_on</code>
+  must be skipped, not classified.</li>
+<li>A model name present in both a package and kipptaf
+  (<code>int_finalsite__student_contacts</code>) must be keyed by <code>unique_id</code>, never by
+  name.</li>
+<li>A changed <code>properties.yml</code> (no <code>.sql</code> change) must map to its model through
+  <code>patch_path</code>, so the touched-model rules still run.</li>
+<li>In a non-kipptaf project, the whole project is 1 source folder; no edge inside
+  it is a cross-source violation.</li>
+</ul>
+<hr />
+<h2 id="part-1-the-standard-pr-1">Part 1: the standard (PR 1)</h2>
+<h3 id="task-1-clauderulesdbt-architecturemd">Task 1: <code>.claude/rules/dbt-architecture.md</code></h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>.claude/rules/dbt-architecture.md</code></li>
+<li>Modify: <code>src/dbt/kipptaf/models/marts/CLAUDE.md</code> (move <em>Column-naming rubric</em>,
+  <em>Degenerate-dim rule</em>, <em>Plumbing definition</em>, <em>Strict-chain traversal</em>, <em>PK /
+  FK / date column shapes</em> out; leave a 1-line pointer)</li>
+<li>Modify: <code>src/dbt/CLAUDE.md</code> <em>Model Conventions</em> list (add the new file)</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>
+<p>Produces: snippet section <code>architecture</code>, delimited by
+  7-9.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the file.</strong> Frontmatter
+      <code>paths: ["**/src/dbt/**/models/**"]</code>. Inside the section, write these
+      rules from spec section 2:</p>
+</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Rule</th>
+<th>Enforced by</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A1</td>
+<td>Each layer reads only its allowed layers (the edges table)</td>
+<td><code>dbt-layer-check</code> (baseline)</td>
+</tr>
+<tr>
+<td>A2</td>
+<td>An <code>rpt_</code> reads a mart when 1 covers the entity; else links an issue</td>
+<td>review</td>
+</tr>
+<tr>
+<td>A3</td>
+<td>A new <code>int_</code> is build (no suffix) or reshape (5 suffixes)</td>
+<td><code>dbt-layer-check</code></td>
+</tr>
+<tr>
+<td>A4</td>
+<td>1 model per grain per source folder, 1 across domain folders</td>
+<td>review + <code>dbt-layer-check</code> warning</td>
+</tr>
+<tr>
+<td>A5</td>
+<td>Dedup only in <code>stg_</code> or source <code>int_</code></td>
+<td>review</td>
+</tr>
+<tr>
+<td>A6</td>
+<td>Long in the core, wide at the edge</td>
+<td>review</td>
+</tr>
+<tr>
+<td>A7</td>
+<td>Identity in domain <code>int_</code>; entity keys only through their macro</td>
+<td><code>dbt-layer-check</code></td>
+</tr>
+<tr>
+<td>A8</td>
+<td>Exposures depend only on <code>rpt_</code> and marts; Cube only on marts</td>
+<td><code>dbt-layer-check</code> (baseline)</td>
+</tr>
+<tr>
+<td>A9</td>
+<td>No <code>select *</code> in the final select of an <code>rpt_</code> or mart</td>
+<td><code>dbt-layer-check</code></td>
+</tr>
+<tr>
+<td>A10</td>
+<td>Join unioned regional models on <code>_dbt_source_project</code></td>
+<td>review</td>
+</tr>
+<tr>
+<td>A11</td>
+<td>Domain folders are tagged <code>+meta: {layer: domain}</code> in <code>dbt_project.yml</code></td>
+<td><code>dbt-layer-check</code></td>
+</tr>
+</tbody>
+</table>
+<pre><code>  Then the moved mart rubric `R1`-`R10` (text unchanged) and strict-chain
+  rules inside the same section. Put the layer table, edges table, and
+  other-projects paragraph from spec section 2 above the rules.
+</code></pre>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Lint</strong> the 3 files. Expected: <code>✔ No issues</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Commit</strong> <code>docs(dbt): add the architecture rule file</code>.</li>
+</ul>
+<h3 id="task-2-restructure-clauderulesdbt-sqlmd">Task 2: restructure <code>.claude/rules/dbt-sql.md</code></h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>.claude/rules/dbt-sql.md</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>
+<p>Produces: snippet section <code>sql-style</code>; rule IDs below.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Restructure.</strong> Top of file: the <code>sql-style</code> section with these
+      rules, then everything else (Tier 3) below it, unchanged except where a
+      rule moved up:</p>
+</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Rule</th>
+<th>Enforced by</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>S1</td>
+<td>ANSI SQL or a dbt macro first; no <code>qualify</code>, <code>group by all</code>, <code>corresponding</code></td>
+<td><code>sql-banned-syntax</code></td>
+</tr>
+<tr>
+<td>S2</td>
+<td>No positional <code>group by</code></td>
+<td>sqlfluff AM06</td>
+</tr>
+<tr>
+<td>S3</td>
+<td>No subqueries against tables or CTEs (<code>unnest</code> aggregate carve-out)</td>
+<td>sqlfluff ST05 + review</td>
+</tr>
+<tr>
+<td>S4</td>
+<td>No pass-through import CTEs</td>
+<td>review</td>
+</tr>
+<tr>
+<td>S5</td>
+<td>No <code>order by</code> in models</td>
+<td>review</td>
+</tr>
+<tr>
+<td>S6</td>
+<td>Select-list complexity order (the 7 buckets) — house rule</td>
+<td>review</td>
+</tr>
+<tr>
+<td>S7</td>
+<td>sqlfluff ST06 select order (separate heading from S6)</td>
+<td>sqlfluff ST06</td>
+</tr>
+<tr>
+<td>S8</td>
+<td>Max 1 level of function nesting</td>
+<td>review</td>
+</tr>
+<tr>
+<td>S9</td>
+<td>Cast early, once, with an explicit alias</td>
+<td>review</td>
+</tr>
+<tr>
+<td>S10</td>
+<td>No row-level calculations in <code>where</code> or one-sided ones in <code>on</code></td>
+<td>review</td>
+</tr>
+<tr>
+<td>S11</td>
+<td>Row filters on the preserved table go in <code>where</code>, not <code>on</code></td>
+<td>review</td>
+</tr>
+<tr>
+<td>S12</td>
+<td><code>distinct</code> only for grain projection, annotated</td>
+<td>review</td>
+</tr>
+<tr>
+<td>S13</td>
+<td>Half-open intervals for abutting date ranges</td>
+<td>review</td>
+</tr>
+<tr>
+<td>S14</td>
+<td>Booleans <code>is_</code>/<code>has_</code>; Y/N text only inside an <code>rpt_</code> that needs it</td>
+<td>review</td>
+</tr>
+<tr>
+<td>S15</td>
+<td><code>if()</code> for 1 condition, <code>case</code> for 2+</td>
+<td>review</td>
+</tr>
+<tr>
+<td>S16</td>
+<td>Table aliases: short initials from the model name, unique in the query</td>
+<td>review</td>
+</tr>
+<tr>
+<td>S17</td>
+<td><code>union all</code> branches enumerate the same columns in the same order</td>
+<td>review</td>
+</tr>
+<tr>
+<td>S18</td>
+<td>Comments say only what the line cannot show; rationale goes in YAML</td>
+<td>review</td>
+</tr>
+</tbody>
+</table>
+<pre><code>  Add the dbt Labs deviations table (spec section 3) and the 8-item review
+  rubric, each item citing its IDs. Remove the claim that ST06 enforces the
+  7-bucket order.
+</code></pre>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Lint</strong>. Expected: <code>✔ No issues</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Commit</strong> <code>docs(dbt): give SQL style rules stable IDs</code>.</li>
+</ul>
+<h3 id="task-3-published-page">Task 3: published page</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>mkdocs.yml</code> (add extension)</li>
+<li>Modify: <code>docs/reference/dbt-conventions.md</code> (becomes the stub)</li>
+<li>Modify: <code>.github/workflows/mkdocs-gh-deploy.yaml</code> (trigger path)</li>
+<li>Modify: <code>docs/CLAUDE.md</code> <em>Available Markdown Extensions</em> (add snippets)</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>
+<p>Consumes: sections <code>architecture</code> and <code>sql-style</code> from Tasks 1-2.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Enable snippets</strong> in <code>mkdocs.yml</code>:
+      <code>pymdownx.snippets: {base_path: ["."], check_paths: true}</code>.</p>
+</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Rewrite the stub.</strong> Order: the change-process paragraph (spec
+      section 1, last bullet);
+      <code>--8&lt;-- ".claude/rules/dbt-architecture.md:architecture"</code>;
+      <code>--8&lt;-- ".claude/rules/dbt-sql.md:sql-style"</code>; then a "Reference" section
+      keeping today's non-rule content (diacritics, time travel, UDF table,
+      properties-file shape, exposures). Delete the 2 statements that conflict
+      with the rules (pass-through CTEs fine; <code>DISTINCT</code> free-text comment).</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Add</strong> <code>.claude/rules/dbt-*.md</code> to <code>paths:</code> in
+      <code>mkdocs-gh-deploy.yaml</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Build.</strong> Run
+      <code>uv run --group docs mkdocs build --strict --site-dir &lt;scratchpad&gt;/site</code>
+      from the worktree. Expected: exit 0. Then
+      <code>grep -c 'A1' &lt;scratchpad&gt;/site/reference/dbt-conventions/index.html</code> ≥ 1
+      and <code>grep -c 'paths:' …/index.html</code> = 0 (frontmatter excluded). If the
+      markers inside HTML comments are not recognized, use bare</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Lint, commit</strong>
+      <code>docs(dbt): publish the standard from the rule files</code>.</li>
+</ul>
+<h3 id="task-4-review-prompt-cites-rule-ids">Task 4: review prompt cites rule IDs</h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify: <code>.github/workflows/claude-code-review.yaml</code> (prompt, lines 76-84)</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Replace</strong> the SQL paragraph: read
+      <code>.claude/rules/dbt-architecture.md</code> and <code>.claude/rules/dbt-sql.md</code> with
+      the Read tool; check only rules whose <code>Enforced by</code> is <code>review</code>; cite the
+      rule ID in every SQL or dbt finding; never report a rule enforced by
+      sqlfluff, <code>sql-banned-syntax</code>, or <code>dbt-layer-check</code>. Keep the
+      model-altitude paragraph.</p>
+</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Verify</strong> the YAML parses after the fmt hook:
+      <code>uv run python -c "import yaml,sys; yaml.safe_load(open(sys.argv[1]))" .github/workflows/claude-code-review.yaml</code>.
+      Expected: no error. The PR's own review run is the live test: its findings
+      cite IDs.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Commit, push, open PR 1</strong> (spec, plan, Tasks 1-4) with
+      <code>Refs #5789</code>.</li>
+</ul>
+<h2 id="part-2-enforcement-pr-2">Part 2: enforcement (PR 2)</h2>
+<p>Create the PR 2 branch and worktree first (Global Constraints).</p>
+<h3 id="task-5-srcdbtkipptafmacrosentity_keyssql">Task 5: <code>src/dbt/kipptaf/macros/entity_keys.sql</code></h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>src/dbt/kipptaf/macros/entity_keys.sql</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>
+<p>Produces: 1 macro per entity whose key is hashed in 2+ marts. Confirmed by
+  grep on 2026-10-08: <code>student_key(student_number)</code>,
+  <code>staff_key(employee_number)</code>, <code>work_assignment_key(item_id)</code>,
+  <code>region_key(business_unit_code)</code>, <code>survey_key(survey_id)</code>,
+  <code>college_key(college_code_branch)</code>, <code>job_candidate_key(candidate_id)</code>. Each
+  takes the column expression(s) as strings plus <code>nullable=false</code>;
+  <code>nullable=true</code> emits the
+  <code>if(&lt;col&gt; is not null, &lt;hash&gt;, cast(null as string))</code> wrap from
+  <code>.claude/rules/dbt-sql.md</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Re-run the inventory</strong>, including composite keys:
+      <code>rg -U -o 'generate_surrogate_key\(\s*\[[^\]]*\]\s*\)[^,]{0,60}as \w+_key' src/dbt/kipptaf/models/marts</code>.
+      Add a macro for any other key hashed in 2+ models with the same inputs. Do
+      not add <code>teacher_staff_key</code> to <code>staff_key</code>: it hashes <code>internal_id_int</code>,
+      not <code>employee_number</code>. List it in the PR as an open question.</p>
+</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Write a failing check.</strong> For each macro, compare
+      <code>uv run dbt compile --inline "select {{ student_key('student_number') }}"</code>
+      with
+      <code>--inline "select {{ dbt_utils.generate_surrogate_key(['student_number']) }}"</code>.
+      Before the macro exists: compile error.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Implement</strong> the macros.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Verify.</strong> Each pair's compiled SQL is byte-identical; also
+      compare the <code>nullable=true</code> form against the documented <code>if(...)</code> wrap.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong> <code>feat(dbt): add entity key macros</code>. No mart changes;
+      marts adopt the macros when touched.</li>
+</ul>
+<h3 id="task-6-sqlfluff-settings-and-banned-syntax-linter">Task 6: sqlfluff settings and banned-syntax linter</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>.trunk/config/.sqlfluff</code></li>
+<li>Create: <code>scripts/check_sql_banned_syntax.py</code></li>
+<li>Test: <code>tests/scripts/test_check_sql_banned_syntax.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>
+<p>Produces: <code>find_banned(sql: str) -&gt; list[tuple[int, int, str, str]]</code> returning
+  <code>(line, col, rule_code, message)</code>; CLI prints
+  <code>{path}:{line}:{col}: [error] {message} ({rule_code})</code> per hit, exit 1 if any.
+  Codes: <code>S1-qualify</code>, <code>S1-group-by-all</code>, <code>S1-corresponding</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write failing tests</strong>: <code>qualify row_number() over (...) = 1</code> → 1
+      hit <code>S1-qualify</code>; <code>group by all</code> → <code>S1-group-by-all</code>;
+      <code>full union all corresponding</code> → <code>S1-corresponding</code>; the same words in a
+      <code>--</code> comment, a <code>{# #}</code> comment, a string literal (<code>'qualify'</code>), or a
+      column name (<code>is_qualifying</code>) → 0 hits; uppercase <code>QUALIFY</code> → 1 hit.</p>
+</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run</strong>
+      <code>uv run pytest tests/scripts/test_check_sql_banned_syntax.py -v</code>.
+      Expected: FAIL (module missing).</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Implement</strong> with word-boundary regexes after blanking comments
+      and string literals (keep line/column positions).</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run tests.</strong> Expected: PASS.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: sqlfluff config.</strong> Add
+      <code>[sqlfluff:rules:ambiguous.column_references]</code>
+      <code>group_by_and_order_by_style = explicit</code> and
+      <code>[sqlfluff:rules:structure.subquery]</code> <code>forbid_subquery_in = both</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Verify config.</strong> Write a scratch model under <code>.claude/scratch/</code>
+      with the blessed <code>(select min(x) from unnest([...]) as x)</code> form and a
+      <code>group by 1</code>; run trunk check on it. Expected: AM06 fires on <code>group by 1</code>,
+      ST05 does not fire on the <code>unnest</code> form. Then confirm hold-the-line: edit
+      1 untouched line of a model that uses <code>group by 1</code> and run <code>trunk check</code>
+      (no <code>--force</code>); expected: no AM06 on unchanged lines. Record both results
+      in the PR.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Draft the trunk.yaml block</strong> in the PR body for the user: a
+      <code>lint.definitions</code> entry <code>sql-banned-syntax</code> running
+      <code>uv run scripts/check_sql_banned_syntax.py ${target}</code> on <code>sql</code> files under
+      <code>src/dbt/**</code>, <code>output: regex</code> with
+      <code>parse_regex: "(?P&lt;path&gt;.*):(?P&lt;line&gt;\d+):(?P&lt;col&gt;\d+): \[(?P&lt;severity&gt;[^\]]*)\] (?P&lt;message&gt;.*) \((?P&lt;code&gt;[^)]*)\)"</code>,
+      plus <code>sql-banned-syntax</code> in <code>lint.enabled</code>. Verify the definition keys
+      against trunk's custom-linter docs (context7) before handing it over.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 8: Commit</strong> <code>feat(dbt): lint banned SQL syntax and subqueries</code>.</li>
+</ul>
+<h3 id="task-7-layer-classification-and-edges-a1-a8">Task 7: layer classification and edges (A1, A8)</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>scripts/check_dbt_standard.py</code></li>
+<li>Test: <code>tests/scripts/test_check_dbt_standard.py</code></li>
+<li>Create: <code>tests/scripts/fixtures/dbt_standard_manifest.json</code> (hand-built, about
+  15 nodes)</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Produces:</li>
+<li><code>dataclass(frozen=True) class Violation: model: str; rule: str; detail: str; severity: Literal["error", "warning"]; message: str</code>.
+    Baseline key is <code>(model, rule, detail)</code>; <code>detail</code> is the offending parent or
+    child name.</li>
+<li><code>layer_of(node: dict, project: str, domain_folders: set[str]) -&gt; str</code>, one
+    of <code>source</code>, <code>stg</code>, <code>source_int</code>, <code>domain_int</code>, <code>mart</code>, <code>rpt</code>, <code>snapshot</code>,
+    <code>other</code>. Marts are <code>dim_</code>/<code>fct_</code>/<code>bridge_</code>; <code>base_</code> is <code>domain_int</code>; an
+    <code>int_</code> is <code>domain_int</code> when its top folder under <code>models/</code> is in
+    <code>domain_folders</code>, and only in kipptaf.</li>
+<li><code>source_folder(node: dict, project: str) -&gt; str</code>: the top folder under
+    <code>models/</code> in kipptaf; the project name elsewhere.</li>
+<li><code>check_edges(manifest: dict, project: str, domain_folders: set[str]) -&gt; list[Violation]</code>
+    over all enabled models and exposures (rules <code>A1</code>, <code>A8</code>).</li>
+<li>
+<p><code>ALLOWED: dict[str, set[str]]</code>, transcribed from spec section 2's edges
+    table. A kipptaf <code>source()</code> to a district table takes the layer of the
+    table-name prefix; unprefixed → <code>source</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write failing tests</strong>, 1 per row of the edges table (allowed and
+      disallowed case each), plus: <code>rpt_</code> → <code>rpt_</code> is <code>A1</code>; source <code>int_</code>
+      reading another source folder's <code>stg_</code> is <code>A1</code>; a Tableau exposure on an
+      <code>int_</code> is <code>A8</code>; the <code>cube_semantic_layer</code> exposure on an <code>rpt_</code> is <code>A8</code>;
+      the Review Focus cases (unprefixed source table, disabled node, duplicate
+      name across projects, non-kipptaf project).</p>
+</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run tests.</strong> Expected: FAIL.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Implement.</strong></li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run tests.</strong> Expected: PASS.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong> <code>feat(dbt): classify layers and check edges</code>.</li>
+</ul>
+<h3 id="task-8-touched-model-rules-a3-a4-a7-a9-and-baseline">Task 8: touched-model rules (A3, A4, A7, A9) and baseline</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>scripts/check_dbt_standard.py</code></li>
+<li>Modify: <code>tests/scripts/test_check_dbt_standard.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>Violation</code>, <code>layer_of</code> (Task 7); key macro names (Task 5).</li>
+<li>Produces:</li>
+<li><code>changed_models(manifest: dict, changed_files: list[str]) -&gt; set[str]</code>
+    (unique_ids, matching <code>original_file_path</code> and <code>patch_path</code>).</li>
+<li><code>check_touched(manifest: dict, project: str, changed: set[str], added: set[str], domain_folders: set[str]) -&gt; list[Violation]</code>:
+    <code>A3</code> (an added <code>int_</code> whose name ends in a near-miss of a reshape suffix:
+    <code>_pivoted</code>, <code>_unpivoted</code>, <code>_rollups</code>, <code>_rolled_up</code>, <code>_scaffolding</code>,
+    <code>_unioned</code>, <code>_unions</code>; a name with no reshape suffix is a valid build
+    model), <code>A7</code> (mart <code>raw_code</code> calls <code>generate_surrogate_key</code> for a column
+    aliased <code>*&lt;entity&gt;_key</code>, where <code>&lt;entity&gt;_key</code> is in
+    <code>KEY_MACROS = {"student_key", "staff_key", "work_assignment_key", "region_key", "survey_key", "college_key", "job_candidate_key"}</code>
+    plus any Task 5 adds), <code>A9</code> (mart/<code>rpt_</code> final select is <code>select *</code>), <code>A4</code>
+    warning (shares a uniqueness grain, minus direct parents and siblings
+    sharing 1 consumer). A violation whose rule ID is a key of the node's
+    <code>config.meta.standard_exempt</code> is dropped.</li>
+<li><code>load_baseline(path: Path) -&gt; dict[tuple[str, str, str], str]</code> from a TSV
+    <code>model\trule\tdetail\tissue</code>.</li>
+<li><code>compare(violations: list[Violation], baseline: dict) -&gt; tuple[list[Violation], list[tuple[str, str, str]], list[tuple[str, str, str]]]</code>
+    returning <code>(new, stale, missing_issue)</code>.</li>
+<li>
+<p>CLI: <code>--project-dir</code>, <code>--changed-files</code> (file), <code>--added-files</code> (file),
+    <code>--baseline</code>, <code>--write-baseline</code>. Prints <code>::error</code>/<code>::warning</code> GitHub
+    annotations; exit 1 on any new error, stale line, or line without an issue.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write failing tests</strong>: each rule's hit and miss; a
+      <code>properties.yml</code>-only change selects its model; <code>A7</code> catches a
+      role-prefixed key (<code>submitter_staff_key</code>), catches
+      <code>{{- dbt_utils.generate_surrogate_key(</code> with whitespace control, passes
+      <code>{{ staff_key('employee_number') }}</code>, and ignores <code>staff_observation_key</code>;
+      <code>standard_exempt: {A9: "..."}</code> drops an <code>A9</code>; <code>compare</code> reports a new
+      violation, a stale baseline line, and a line with an empty issue column.</p>
+</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run tests.</strong> Expected: FAIL.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Implement.</strong></li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run tests.</strong> Expected: PASS.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong> <code>feat(dbt): check touched models against the standard</code>.</li>
+</ul>
+<h3 id="task-9-domain-tags-workflow-baseline-backlog-issues">Task 9: domain tags, workflow, baseline, backlog issues</h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>Modify: <code>src/dbt/kipptaf/dbt_project.yml</code> (domain folder tags)</li>
+<li>Create: <code>.github/workflows/dbt-standard.yaml</code></li>
+<li>
+<p>Create: <code>src/dbt/standard-baseline.tsv</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Pick domain folders.</strong> Starting list: <code>assessments</code>, <code>extracts</code>,
+      <code>finance</code>, <code>gpa</code>, <code>people</code>, <code>reporting</code>, <code>students</code>, <code>surveys</code>, <code>topline</code>.
+      Keep a folder only if its <code>int_</code> models read 2+ source folders (check with
+      <code>source_folder</code> over the prod manifest); report any difference to the user
+      before tagging.</p>
+</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Test the state risk on 1 folder.</strong> Tag <code>topline</code> only, then
+      <code>uv run dbt ls --project-dir &lt;wt&gt;/src/dbt/kipptaf --resource-type model --select state:modified --state /workspaces/teamster/src/dbt/kipptaf/target/prod | wc -l</code>.
+      Expected if safe: same count as before tagging. If the count jumps by the
+      folder's model count, drop the tags and read domain folders from a
+      <code>DOMAIN_FOLDERS</code> constant in the script instead (spec section 5 fallback).
+      Otherwise tag all folders.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Write the workflow.</strong> <code>pull_request</code> on <code>src/dbt/**</code>,
+      <code>scripts/check_dbt_standard.py</code>, the workflow file; dependabot gate;
+      <code>actions/checkout</code> and <code>astral-sh/setup-uv</code> at the same SHAs as
+      <code>pytest.yaml</code>, <code>fetch-depth: 0</code>. Steps: compute changed and added files
+      with
+      <code>git diff --name-only [--diff-filter=A] origin/main...HEAD -- src/dbt</code>;
+      for each changed project, <code>uv run dbt deps</code> and
+      <code>uv run dbt parse --profiles-dir src/dbt/&lt;project&gt;</code>; then run the check.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Write the baseline.</strong> Run the check with <code>--write-baseline</code> over
+      kipptaf and each district project; issue column empty.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Group violations into issues.</strong> Group lines by fix (usually 1
+      missing mart per group). Show the user the grouping and issue titles;
+      create the issues only after they confirm (bulk outward action), using the
+      feature-request template, labels <code>enhancement</code> and <code>dbt</code>, and add them to
+      project board 4. Fill the issue column.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Verify.</strong> Run the check locally with an empty changed list.
+      Expected: exit 0. Push; expected: the <code>dbt-standard</code> workflow passes on
+      the PR, which also proves <code>dbt parse</code> runs without warehouse credentials.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Commit, push, open PR 2</strong> with <code>Closes #5789</code> and the Task 6
+      <code>trunk.yaml</code> block for the user.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+    
+  </body>
+</html>

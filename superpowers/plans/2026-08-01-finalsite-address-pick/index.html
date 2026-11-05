@@ -1,0 +1,3200 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>Finalsite Address Pick Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.57a0d79d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#finalsite-address-pick-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Finalsite Address Pick Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/launch-page-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Launch Page
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube-access-individual-exceptions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube Access - Individual Exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/tableau-permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tableau Permissions (People Data)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/csgf-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSGF Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/crdc-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CRDC Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ddi-stack-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDI Stack Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/hs-early-warning-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HS Early Warning Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/dibels-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIBELS Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/stat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/njdoe-universal-screener-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NJDOE Universal Screener Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/athletic-eligibility-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Athletic Eligibility Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/academic-health-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic Health Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/grad-plan-tracking-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Grad Plan Tracking Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ignite-r2i-extract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IGNITE R2I Extract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#global-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global Constraints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#file-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File Structure
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="File Structure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-1-pick-the-winning-household-in-the-contact-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: Pick the winning household in the contact model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-2-reorder-and-widen-the-student-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: Reorder and widen the student model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-3-validate-against-production-document-and-open-the-pr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: Validate against production, document, and open the PR
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-08-01-finalsite-address-pick.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="finalsite-address-pick-implementation-plan">Finalsite Address Pick Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Resolve a Finalsite address of record by picking the best candidate
+household instead of withholding when several exist, cutting KIPP Miami students
+with no address anywhere from 158 to 46.</p>
+<p><strong>Architecture:</strong> Two independently revertable commits. The first teaches
+<code>int_finalsite__contact_address_of_record</code> to pick a winner among a contact's
+street-bearing households. The second reorders
+<code>int_finalsite__student_address_of_record</code> to prefer Parent 1's household,
+widens its spine so a student without a Parent 1 still resolves, and reports
+whether the address was picked.</p>
+<p><strong>Tech Stack:</strong> dbt 1.11 on BigQuery, <code>dbt_utils</code>, sqlfluff / markdownlint via
+trunk, BigQuery MCP for validation.</p>
+<p><strong>Spec:</strong> <code>docs/superpowers/specs/2026-08-01-finalsite-address-pick-design.md</code> —
+read it before Task 1.</p>
+<h2 id="global-constraints">Global Constraints</h2>
+<ul>
+<li>Worktree is
+  <code>/workspaces/teamster/.worktrees/cbini/fix/claude-finalsite-address-pick</code> on
+  branch <code>cbini/fix/claude-finalsite-address-pick</code>. Every <code>Read</code> / <code>Edit</code> /
+  <code>Write</code> must use that absolute path. Editing <code>/workspaces/teamster/&lt;path&gt;</code>
+  silently dirties <code>main</code>.</li>
+<li>Every git call is
+  <code>git -C /workspaces/teamster/.worktrees/cbini/fix/claude-finalsite-address-pick ...</code>.</li>
+<li>Every dbt call is <code>uv run dbt ... --project-dir &lt;worktree&gt;/src/dbt/&lt;project&gt;</code>.
+  Never <code>uv --directory</code>.</li>
+<li>Every dev build adds
+  <code>--target dev --defer --favor-state --state /workspaces/teamster/src/dbt/&lt;project&gt;/target/prod</code>.
+  <code>--favor-state</code> is mandatory — a stale personal dev copy silently shadows
+  <code>--defer</code> and produces wrong numbers.</li>
+<li>Never <code>--target prod</code>. <code>--target staging</code> is classifier-blocked and needs
+  explicit user authorization in the immediately preceding turn.</li>
+<li><code>finalsite</code> is a source-system package with no resolvable vars standalone.
+  Build its models through a consuming district:
+  <code>--project-dir &lt;worktree&gt;/src/dbt/kippmiami</code>.</li>
+<li>Run <code>uv run dbt deps --project-dir &lt;worktree&gt;/src/dbt/kippmiami</code> once before
+  the first build in this worktree.</li>
+<li>Lint before every commit, from inside the worktree, with both flags:
+  <code>cd &lt;worktree&gt; &amp;&amp; /workspaces/teamster/.trunk/tools/trunk check --force --no-fix &lt;paths&gt; &lt;/dev/null</code>.</li>
+<li><code>git add</code> names files explicitly. Never <code>-u</code>, <code>-A</code>, or <code>.</code>.</li>
+<li>Commit trailer on every commit:
+  <code>Co-Authored-By: Claude Opus 5 (1M context) &lt;noreply@anthropic.com&gt;</code>.</li>
+<li>No PII in any commit message, PR body, or issue comment. Counts and column
+  names only.</li>
+<li>Pick order is <code>is_complete_address desc, household_id asc</code> — in that order,
+  everywhere. <code>desc</code> on a boolean is safe inside <code>dbt_utils.deduplicate</code>'s
+  <code>array_agg</code>; only explicit <code>asc nulls last</code> / <code>desc nulls first</code> are rejected
+  by BigQuery.</li>
+</ul>
+<h2 id="file-structure">File Structure</h2>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Responsibility</th>
+<th>Task</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>src/dbt/finalsite/models/api/intermediate/int_finalsite__contact_address_of_record.sql</code></td>
+<td>Pick the winning household per contact</td>
+<td>1</td>
+</tr>
+<tr>
+<td><code>.../properties/int_finalsite__contact_address_of_record.yml</code></td>
+<td>Status vocabulary, invariants, unit tests</td>
+<td>1</td>
+</tr>
+<tr>
+<td><code>src/dbt/finalsite/models/api/intermediate/int_finalsite__student_address_of_record.sql</code></td>
+<td>Spine, tier order, picked flag</td>
+<td>2</td>
+</tr>
+<tr>
+<td><code>.../properties/int_finalsite__student_address_of_record.yml</code></td>
+<td>Status values, new column, grain description</td>
+<td>2</td>
+</tr>
+<tr>
+<td><code>src/dbt/kipptaf/models/finalsite/intermediate/int_finalsite__student_address_of_record.sql</code></td>
+<td>Force <code>state:modified</code> so CI rebuilds the union wrapper</td>
+<td>2</td>
+</tr>
+<tr>
+<td><code>src/dbt/finalsite/CLAUDE.md</code></td>
+<td>Model-summary prose for both models</td>
+<td>2</td>
+</tr>
+<tr>
+<td><code>docs/reference/finalsite-focus-import.md</code></td>
+<td>Ops-facing description of the new behavior</td>
+<td>3</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="task-1-pick-the-winning-household-in-the-contact-model">Task 1: Pick the winning household in the contact model</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify:
+  <code>src/dbt/finalsite/models/api/intermediate/int_finalsite__contact_address_of_record.sql</code></li>
+<li>Modify:
+  <code>src/dbt/finalsite/models/api/intermediate/properties/int_finalsite__contact_address_of_record.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>int_finalsite__contacts__households</code> (columns
+  <code>finalsite_enrollment_id</code>, <code>household_id</code>, <code>address_1</code>, <code>address_2</code>, <code>city</code>,
+  <code>state</code>, <code>zip</code>, <code>country</code>, <code>is_complete_address</code>) and
+  <code>stg_finalsite__contacts</code> (<code>finalsite_enrollment_id</code>).</li>
+<li>
+<p>Produces: the same nine output columns in the same order —
+  <code>finalsite_enrollment_id</code>, <code>address_1</code>, <code>address_2</code>, <code>city</code>, <code>state</code>, <code>zip</code>,
+  <code>country</code>, <code>is_complete_address</code>, <code>candidate_count</code>, <code>resolution_status</code>. No
+  column added or removed. <code>resolution_status</code> gains the value <code>picked</code> and
+  loses <code>ambiguous</code>. Task 2 reads <code>candidate_count</code> and <code>resolution_status</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Update the three unit tests that assert <code>ambiguous</code></strong></p>
+</li>
+</ul>
+<p>In <code>properties/int_finalsite__contact_address_of_record.yml</code>, three unit tests
+currently expect a null address with <code>resolution_status: ambiguous</code>. Each now
+expects the picked winner. Make exactly these edits.</p>
+<p>Rename <code>test_contact_address_formatting_variants_stay_distinct</code> to
+<code>test_contact_address_formatting_variants_pick_lowest_household_id</code>, replace its
+<code>description</code>, and replace its <code>expect</code> block:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">test_contact_address_formatting_variants_pick_lowest_household_id</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">Exact matching is deliberate, so two households recording the same address</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">with different punctuation, case, and a ZIP+4 remain two distinct</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">candidates. Both are equally complete, so the tiebreak falls to the lowest</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">`household_id` and that row's raw text is emitted.</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><span class="nt">expect</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">rows</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span>
+<span class="nt">        finalsite_enrollment_id</span><span class="p">:</span><span class="w"> </span><span class="nv">con-1</span><span class="p p-Indicator">,</span>
+<span class="nt">        address_1</span><span class="p">:</span><span class="w"> </span><span class="nv">123 Main St.</span><span class="p p-Indicator">,</span>
+<span class="nt">        address_2</span><span class="p">:</span><span class="w"> </span><span class="nv">null</span><span class="p p-Indicator">,</span>
+<span class="nt">        city</span><span class="p">:</span><span class="w"> </span><span class="nv">Miami</span><span class="p p-Indicator">,</span>
+<span class="nt">        state</span><span class="p">:</span><span class="w"> </span><span class="nv">FL</span><span class="p p-Indicator">,</span>
+<span class="nt">        zip</span><span class="p">:</span><span class="w"> </span><span class="s">"33101"</span><span class="p p-Indicator">,</span>
+<span class="nt">        country</span><span class="p">:</span><span class="w"> </span><span class="nv">US</span><span class="p p-Indicator">,</span>
+<span class="nt">        is_complete_address</span><span class="p">:</span><span class="w"> </span><span class="nv">true</span><span class="p p-Indicator">,</span>
+<span class="nt">        candidate_count</span><span class="p">:</span><span class="w"> </span><span class="nv">2</span><span class="p p-Indicator">,</span>
+<span class="nt">        resolution_status</span><span class="p">:</span><span class="w"> </span><span class="nv">picked</span><span class="p p-Indicator">,</span>
+<span class="w">      </span><span class="p p-Indicator">}</span>
+</code></pre></div>
+<p>Rename <code>test_contact_address_null_field_is_a_distinct_candidate</code> to
+<code>test_contact_address_completeness_wins_over_household_id</code>, and replace its
+<code>description</code> and <code>expect</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">test_contact_address_completeness_wins_over_household_id</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">A null field groups as its own value rather than matching a populated one,</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">so two households on the same street where one carries a ZIP and the other</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">does not are two distinct candidates. The complete one wins regardless of</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">`household_id` order.</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><span class="nt">expect</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">rows</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span>
+<span class="nt">        finalsite_enrollment_id</span><span class="p">:</span><span class="w"> </span><span class="nv">con-7</span><span class="p p-Indicator">,</span>
+<span class="nt">        address_1</span><span class="p">:</span><span class="w"> </span><span class="nv">55 Coral Way</span><span class="p p-Indicator">,</span>
+<span class="nt">        address_2</span><span class="p">:</span><span class="w"> </span><span class="nv">null</span><span class="p p-Indicator">,</span>
+<span class="nt">        city</span><span class="p">:</span><span class="w"> </span><span class="nv">Miami</span><span class="p p-Indicator">,</span>
+<span class="nt">        state</span><span class="p">:</span><span class="w"> </span><span class="nv">FL</span><span class="p p-Indicator">,</span>
+<span class="nt">        zip</span><span class="p">:</span><span class="w"> </span><span class="s">"33134"</span><span class="p p-Indicator">,</span>
+<span class="nt">        country</span><span class="p">:</span><span class="w"> </span><span class="nv">US</span><span class="p p-Indicator">,</span>
+<span class="nt">        is_complete_address</span><span class="p">:</span><span class="w"> </span><span class="nv">true</span><span class="p p-Indicator">,</span>
+<span class="nt">        candidate_count</span><span class="p">:</span><span class="w"> </span><span class="nv">2</span><span class="p p-Indicator">,</span>
+<span class="nt">        resolution_status</span><span class="p">:</span><span class="w"> </span><span class="nv">picked</span><span class="p p-Indicator">,</span>
+<span class="w">      </span><span class="p p-Indicator">}</span>
+</code></pre></div>
+<p>Rename <code>test_contact_address_real_differences_stay_ambiguous</code> to
+<code>test_contact_address_real_differences_pick_lowest_household_id</code>, and replace
+its <code>description</code> and <code>expect</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">test_contact_address_real_differences_pick_lowest_household_id</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">Households sharing a street line but differing by apartment or by city stay</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">distinct candidates. Both are complete, so the lowest `household_id` wins</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">and its address is emitted rather than withheld.</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><span class="nt">expect</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">rows</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span>
+<span class="nt">        finalsite_enrollment_id</span><span class="p">:</span><span class="w"> </span><span class="nv">con-2</span><span class="p p-Indicator">,</span>
+<span class="nt">        address_1</span><span class="p">:</span><span class="w"> </span><span class="nv">222 Bay St</span><span class="p p-Indicator">,</span>
+<span class="nt">        address_2</span><span class="p">:</span><span class="w"> </span><span class="nv">Apt 1</span><span class="p p-Indicator">,</span>
+<span class="nt">        city</span><span class="p">:</span><span class="w"> </span><span class="nv">Miami</span><span class="p p-Indicator">,</span>
+<span class="nt">        state</span><span class="p">:</span><span class="w"> </span><span class="nv">FL</span><span class="p p-Indicator">,</span>
+<span class="nt">        zip</span><span class="p">:</span><span class="w"> </span><span class="s">"33106"</span><span class="p p-Indicator">,</span>
+<span class="nt">        country</span><span class="p">:</span><span class="w"> </span><span class="nv">US</span><span class="p p-Indicator">,</span>
+<span class="nt">        is_complete_address</span><span class="p">:</span><span class="w"> </span><span class="nv">true</span><span class="p p-Indicator">,</span>
+<span class="nt">        candidate_count</span><span class="p">:</span><span class="w"> </span><span class="nv">2</span><span class="p p-Indicator">,</span>
+<span class="nt">        resolution_status</span><span class="p">:</span><span class="w"> </span><span class="nv">picked</span><span class="p p-Indicator">,</span>
+<span class="w">      </span><span class="p p-Indicator">}</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span>
+<span class="nt">        finalsite_enrollment_id</span><span class="p">:</span><span class="w"> </span><span class="nv">con-3</span><span class="p p-Indicator">,</span>
+<span class="nt">        address_1</span><span class="p">:</span><span class="w"> </span><span class="nv">400 Palm Way</span><span class="p p-Indicator">,</span>
+<span class="nt">        address_2</span><span class="p">:</span><span class="w"> </span><span class="nv">null</span><span class="p p-Indicator">,</span>
+<span class="nt">        city</span><span class="p">:</span><span class="w"> </span><span class="nv">Miami</span><span class="p p-Indicator">,</span>
+<span class="nt">        state</span><span class="p">:</span><span class="w"> </span><span class="nv">FL</span><span class="p p-Indicator">,</span>
+<span class="nt">        zip</span><span class="p">:</span><span class="w"> </span><span class="s">"33101"</span><span class="p p-Indicator">,</span>
+<span class="nt">        country</span><span class="p">:</span><span class="w"> </span><span class="nv">US</span><span class="p p-Indicator">,</span>
+<span class="nt">        is_complete_address</span><span class="p">:</span><span class="w"> </span><span class="nv">true</span><span class="p p-Indicator">,</span>
+<span class="nt">        candidate_count</span><span class="p">:</span><span class="w"> </span><span class="nv">2</span><span class="p p-Indicator">,</span>
+<span class="nt">        resolution_status</span><span class="p">:</span><span class="w"> </span><span class="nv">picked</span><span class="p p-Indicator">,</span>
+<span class="w">      </span><span class="p p-Indicator">}</span>
+</code></pre></div>
+<p>Leave <code>test_contact_address_incomplete_resolves_and_fragments_excluded</code>
+untouched — its <code>resolved</code> and <code>no_street</code> cases are unchanged.</p>
+<p>ZIP values are quoted because they are leading-digit strings that yamllint's
+<code>octal-values</code> rule would otherwise flag. Everything else stays unquoted per the
+repo's <code>quoted-strings</code> rule.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Add a unit test proving completeness beats a lower id</strong></li>
+</ul>
+<p>The existing <code>con-7</code> case has the complete household at the lower id, so it
+passes under either ordering. Add a case where the two disagree. Append this
+unit test after the last one in the file:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">test_contact_address_completeness_beats_lower_household_id</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">When the lower `household_id` is the incomplete one, completeness still</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">decides. This is the case that distinguishes the real ordering from a plain</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">lowest-id pick.</span>
+<span class="w">  </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int_finalsite__contact_address_of_record</span>
+<span class="w">  </span><span class="nt">given</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref("stg_finalsite__contacts")</span>
+<span class="w">      </span><span class="nt">rows</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> finalsite_enrollment_id</span><span class="p">:</span><span class="w"> </span><span class="nv">con-8</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref("int_finalsite__contacts__households")</span>
+<span class="w">      </span><span class="nt">format</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sql</span>
+<span class="w">      </span><span class="nt">rows</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">        </span><span class="no">select</span>
+<span class="w">          </span><span class="no">'con-8' as finalsite_enrollment_id,</span>
+<span class="w">          </span><span class="no">'hh-20' as household_id,</span>
+<span class="w">          </span><span class="no">'7 Sunset Dr' as address_1,</span>
+<span class="w">          </span><span class="no">cast(null as string) as address_2,</span>
+<span class="w">          </span><span class="no">cast(null as string) as city,</span>
+<span class="w">          </span><span class="no">cast(null as string) as state,</span>
+<span class="w">          </span><span class="no">cast(null as string) as zip,</span>
+<span class="w">          </span><span class="no">'US' as country,</span>
+<span class="w">          </span><span class="no">false as is_complete_address</span>
+<span class="w">        </span><span class="no">union all</span>
+<span class="w">        </span><span class="no">select 'con-8', 'hh-21', '8 Sunrise Dr', null, 'Miami', 'FL',</span>
+<span class="w">          </span><span class="no">'33101', 'US', true</span>
+<span class="w">  </span><span class="nt">expect</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">rows</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span>
+<span class="nt">          finalsite_enrollment_id</span><span class="p">:</span><span class="w"> </span><span class="nv">con-8</span><span class="p p-Indicator">,</span>
+<span class="nt">          address_1</span><span class="p">:</span><span class="w"> </span><span class="nv">8 Sunrise Dr</span><span class="p p-Indicator">,</span>
+<span class="nt">          address_2</span><span class="p">:</span><span class="w"> </span><span class="nv">null</span><span class="p p-Indicator">,</span>
+<span class="nt">          city</span><span class="p">:</span><span class="w"> </span><span class="nv">Miami</span><span class="p p-Indicator">,</span>
+<span class="nt">          state</span><span class="p">:</span><span class="w"> </span><span class="nv">FL</span><span class="p p-Indicator">,</span>
+<span class="nt">          zip</span><span class="p">:</span><span class="w"> </span><span class="s">"33101"</span><span class="p p-Indicator">,</span>
+<span class="nt">          country</span><span class="p">:</span><span class="w"> </span><span class="nv">US</span><span class="p p-Indicator">,</span>
+<span class="nt">          is_complete_address</span><span class="p">:</span><span class="w"> </span><span class="nv">true</span><span class="p p-Indicator">,</span>
+<span class="nt">          candidate_count</span><span class="p">:</span><span class="w"> </span><span class="nv">2</span><span class="p p-Indicator">,</span>
+<span class="nt">          resolution_status</span><span class="p">:</span><span class="w"> </span><span class="nv">picked</span><span class="p p-Indicator">,</span>
+<span class="w">        </span><span class="p p-Indicator">}</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Run the unit tests to verify they fail</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span><span class="nb">test</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span><span class="s2">"test_type:unit,int_finalsite__contact_address_of_record"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-finalsite-address-pick/src/dbt/kippmiami<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--target<span class="w"> </span>dev<span class="w"> </span>--defer<span class="w"> </span>--favor-state<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kippmiami/target/prod
+</code></pre></div>
+<p>Expected: FAIL. The four picked-address cases fail because the model still nulls
+the address and reports <code>ambiguous</code>. If any of them PASSES, stop — the fixture
+is not exercising what it claims.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Rewrite the model to pick a winner</strong></li>
+</ul>
+<p>Replace the whole of
+<code>src/dbt/finalsite/models/api/intermediate/int_finalsite__contact_address_of_record.sql</code>
+with:</p>
+<div class="highlight"><pre><span></span><code><span class="k">with</span>
+<span class="w">    </span><span class="c1">-- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below</span>
+<span class="w">    </span><span class="n">candidate_households</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="c1">-- Any household carrying a street line is a candidate. Completeness is</span>
+<span class="w">        </span><span class="c1">-- deliberately NOT a gate: an incomplete address is visibly wrong in</span>
+<span class="w">        </span><span class="c1">-- Focus and can be corrected there, whereas withholding it is silent.</span>
+<span class="w">        </span><span class="c1">-- Households with no street at all ARE excluded — Miami holds 94 such</span>
+<span class="w">        </span><span class="c1">-- city/state/ZIP fragments, and each would otherwise count as its own</span>
+<span class="w">        </span><span class="c1">-- candidate and manufacture ambiguity that is not real.</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">finalsite_enrollment_id</span><span class="p">,</span>
+<span class="w">            </span><span class="n">household_id</span><span class="p">,</span>
+<span class="w">            </span><span class="n">address_1</span><span class="p">,</span>
+<span class="w">            </span><span class="n">address_2</span><span class="p">,</span>
+<span class="w">            </span><span class="n">city</span><span class="p">,</span>
+<span class="w">            </span><span class="k">state</span><span class="p">,</span>
+<span class="w">            </span><span class="n">zip</span><span class="p">,</span>
+<span class="w">            </span><span class="n">country</span><span class="p">,</span>
+<span class="w">            </span><span class="n">is_complete_address</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"int_finalsite__contacts__households"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">address_1</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="p">),</span>
+
+<span class="w">    </span><span class="n">address_candidates</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="c1">-- One row per (contact, distinct address). Address identity is an</span>
+<span class="w">        </span><span class="c1">-- exact match on the five mailing fields — no case-folding, no</span>
+<span class="w">        </span><span class="c1">-- punctuation-stripping, no ZIP+4 truncation. Two spellings of the</span>
+<span class="w">        </span><span class="c1">-- same address therefore stay distinct candidates and are counted</span>
+<span class="w">        </span><span class="c1">-- separately, which is what makes candidate_count meaningful.</span>
+<span class="w">        </span><span class="err">{{</span>
+<span class="w">            </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">deduplicate</span><span class="p">(</span>
+<span class="w">                </span><span class="n">relation</span><span class="o">=</span><span class="ss">"candidate_households"</span><span class="p">,</span>
+<span class="w">                </span><span class="n">partition_by</span><span class="o">=</span><span class="p">(</span>
+<span class="w">                    </span><span class="ss">"finalsite_enrollment_id, address_1, address_2, city,"</span>
+<span class="w">                    </span><span class="ss">" state, zip"</span>
+<span class="w">                </span><span class="p">),</span>
+<span class="w">                </span><span class="n">order_by</span><span class="o">=</span><span class="ss">"household_id asc"</span><span class="p">,</span>
+<span class="w">            </span><span class="p">)</span>
+<span class="w">        </span><span class="err">}}</span>
+<span class="w">    </span><span class="p">),</span>
+
+<span class="w">    </span><span class="n">candidate_counts</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="n">finalsite_enrollment_id</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">candidate_count</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">address_candidates</span>
+<span class="w">        </span><span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">finalsite_enrollment_id</span>
+<span class="w">    </span><span class="p">),</span>
+
+<span class="w">    </span><span class="n">picked_address</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="c1">-- The address of record is the BEST candidate, not the only one. A</span>
+<span class="w">        </span><span class="c1">-- complete address beats an incomplete one; ties fall to the lowest</span>
+<span class="w">        </span><span class="c1">-- household_id so the pick is stable between runs. Withholding was</span>
+<span class="w">        </span><span class="c1">-- worse than choosing: a blank address in an import-once feed is</span>
+<span class="w">        </span><span class="c1">-- permanent and silent, while a wrong one is visible and correctable</span>
+<span class="w">        </span><span class="c1">-- in the receiving system.</span>
+<span class="w">        </span><span class="err">{{</span>
+<span class="w">            </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">deduplicate</span><span class="p">(</span>
+<span class="w">                </span><span class="n">relation</span><span class="o">=</span><span class="ss">"address_candidates"</span><span class="p">,</span>
+<span class="w">                </span><span class="n">partition_by</span><span class="o">=</span><span class="ss">"finalsite_enrollment_id"</span><span class="p">,</span>
+<span class="w">                </span><span class="n">order_by</span><span class="o">=</span><span class="ss">"is_complete_address desc, household_id asc"</span><span class="p">,</span>
+<span class="w">            </span><span class="p">)</span>
+<span class="w">        </span><span class="err">}}</span>
+<span class="w">    </span><span class="p">),</span>
+
+<span class="w">    </span><span class="n">counted</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="c1">-- Spined on the full contact list so a contact with no street-bearing</span>
+<span class="w">        </span><span class="c1">-- household still gets a row, with candidate_count 0.</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="k">c</span><span class="p">.</span><span class="n">finalsite_enrollment_id</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">p</span><span class="p">.</span><span class="n">address_1</span><span class="p">,</span>
+<span class="w">            </span><span class="n">p</span><span class="p">.</span><span class="n">address_2</span><span class="p">,</span>
+<span class="w">            </span><span class="n">p</span><span class="p">.</span><span class="n">city</span><span class="p">,</span>
+<span class="w">            </span><span class="n">p</span><span class="p">.</span><span class="k">state</span><span class="p">,</span>
+<span class="w">            </span><span class="n">p</span><span class="p">.</span><span class="n">zip</span><span class="p">,</span>
+<span class="w">            </span><span class="n">p</span><span class="p">.</span><span class="n">country</span><span class="p">,</span>
+<span class="w">            </span><span class="n">p</span><span class="p">.</span><span class="n">is_complete_address</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">coalesce</span><span class="p">(</span><span class="n">cc</span><span class="p">.</span><span class="n">candidate_count</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">candidate_count</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"stg_finalsite__contacts"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="k">c</span>
+<span class="w">        </span><span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">            </span><span class="n">candidate_counts</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">cc</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="k">c</span><span class="p">.</span><span class="n">finalsite_enrollment_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cc</span><span class="p">.</span><span class="n">finalsite_enrollment_id</span>
+<span class="w">        </span><span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">            </span><span class="n">picked_address</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">p</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="k">c</span><span class="p">.</span><span class="n">finalsite_enrollment_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">finalsite_enrollment_id</span>
+<span class="w">    </span><span class="p">)</span>
+
+<span class="k">select</span>
+<span class="w">    </span><span class="n">finalsite_enrollment_id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">address_1</span><span class="p">,</span>
+<span class="w">    </span><span class="n">address_2</span><span class="p">,</span>
+<span class="w">    </span><span class="n">city</span><span class="p">,</span>
+<span class="w">    </span><span class="k">state</span><span class="p">,</span>
+<span class="w">    </span><span class="n">zip</span><span class="p">,</span>
+<span class="w">    </span><span class="n">country</span><span class="p">,</span>
+<span class="w">    </span><span class="n">is_complete_address</span><span class="p">,</span>
+<span class="w">    </span><span class="n">candidate_count</span><span class="p">,</span>
+
+<span class="w">    </span><span class="k">case</span>
+<span class="w">        </span><span class="k">when</span><span class="w"> </span><span class="n">candidate_count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span>
+<span class="w">        </span><span class="k">then</span><span class="w"> </span><span class="s1">'no_street'</span>
+<span class="w">        </span><span class="k">when</span><span class="w"> </span><span class="n">candidate_count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">        </span><span class="k">then</span><span class="w"> </span><span class="s1">'resolved'</span>
+<span class="w">        </span><span class="k">else</span><span class="w"> </span><span class="s1">'picked'</span>
+<span class="w">    </span><span class="k">end</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">resolution_status</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="n">counted</span>
+</code></pre></div>
+<p><code>address_candidates</code> no longer needs a <code>trunk-ignore(sqlfluff/ST03)</code> because
+<code>candidate_counts</code> references it normally. <code>candidate_households</code> keeps its
+ignore — it is still reached only through the macro.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Run the unit tests to verify they pass</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span><span class="nb">test</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span><span class="s2">"test_type:unit,int_finalsite__contact_address_of_record"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-finalsite-address-pick/src/dbt/kippmiami<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--target<span class="w"> </span>dev<span class="w"> </span>--defer<span class="w"> </span>--favor-state<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kippmiami/target/prod
+</code></pre></div>
+<p>Expected: PASS, 5 tests.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Update the two model-level invariants</strong></li>
+</ul>
+<p>In <code>properties/int_finalsite__contact_address_of_record.yml</code>, replace the whole
+<code>data_tests:</code> block on the model (currently lines 19-41) with:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">data_tests</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">dbt_utils.expression_is_true</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">arguments</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">expression</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">          </span><span class="no">(resolution_status != 'no_street' and address_1 is not null)</span>
+<span class="w">          </span><span class="no">or (</span>
+<span class="w">              </span><span class="no">resolution_status = 'no_street'</span>
+<span class="w">              </span><span class="no">and address_1 is null</span>
+<span class="w">              </span><span class="no">and address_2 is null</span>
+<span class="w">              </span><span class="no">and city is null</span>
+<span class="w">              </span><span class="no">and state is null</span>
+<span class="w">              </span><span class="no">and zip is null</span>
+<span class="w">          </span><span class="no">)</span>
+<span class="w">      </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">severity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">error</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">dbt_utils.expression_is_true</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">arguments</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">expression</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">          </span><span class="no">(resolution_status = 'resolved' and candidate_count = 1)</span>
+<span class="w">          </span><span class="no">or (resolution_status = 'no_street' and candidate_count = 0)</span>
+<span class="w">          </span><span class="no">or (resolution_status = 'picked' and candidate_count &gt; 1)</span>
+<span class="w">      </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">severity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">error</span>
+</code></pre></div>
+<p>The first invariant inverts deliberately: previously only <code>resolved</code> carried an
+address, now everything except <code>no_street</code> does.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Update the status column and model descriptions</strong></li>
+</ul>
+<p>Replace the <code>resolution_status</code> column block:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">resolution_status</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">Why this contact does or does not have an address — `resolved` (exactly one</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">distinct address, no judgment applied), `picked` (several distinct</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">addresses, the most complete one chosen and ties broken by the lowest</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">`household_id`), or `no_street` (no household carries a street line).</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">`picked` is the audit signal — it marks every address the pipeline chose</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">rather than read unambiguously.</span>
+<span class="w">  </span><span class="nt">data_tests</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">accepted_values</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">arguments</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">values</span><span class="p">:</span>
+<span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">resolved</span>
+<span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">picked</span>
+<span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">no_street</span>
+<span class="w">        </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">severity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">error</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">not_null</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">severity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">error</span>
+</code></pre></div>
+<p>Replace the <code>candidate_count</code> description text with:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">description</span><span class="p">:</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">Number of distinct addresses on this contact's household linkage. One resolves</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">outright; zero means no household carries a street; more than one means the</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">emitted address was picked from among them.</span>
+</code></pre></div>
+<p>In the model <code>description:</code>, replace the sentence beginning
+<code>A contact resolves only when exactly one distinct address remains;</code> through the
+end of that sentence with:</p>
+<div class="highlight"><pre><span></span><code>      A contact with at least one candidate always emits an address: the most
+      complete one, with ties broken by the lowest `household_id`. The emitted
+      values are the raw text of the winning household.
+</code></pre></div>
+<p>Also replace the earlier clause
+<code>so two spellings of the same address stay distinct candidates and the contact is withheld rather than guessed at</code>
+with
+<code>so two spellings of the same address stay distinct candidates and are counted separately</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 8: Build the model and confirm the status distribution</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span>int_finalsite__contact_address_of_record<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-finalsite-address-pick/src/dbt/kippmiami<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--target<span class="w"> </span>dev<span class="w"> </span>--defer<span class="w"> </span>--favor-state<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kippmiami/target/prod
+</code></pre></div>
+<p>Expected: PASS with both <code>expression_is_true</code> invariants, <code>unique</code>, <code>not_null</code>,
+and <code>accepted_values</code> green.</p>
+<p>Then, with <code>mcp__bigquery__execute_sql</code> against your dev schema (find it via
+<code>INFORMATION_SCHEMA.SCHEMATA</code>, it follows <code>zz_cbini_kippmiami_finalsite</code>):</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="n">resolution_status</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">contacts</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_cbini_kippmiami_finalsite</span><span class="p">.</span><span class="n">int_finalsite__contact_address_of_record</span><span class="o">`</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">resolution_status</span>
+<span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">contacts</span><span class="w"> </span><span class="k">desc</span>
+</code></pre></div>
+<p>Expected against the prod baseline of 4,729 <code>resolved</code> / 511 <code>ambiguous</code> / 2,282
+<code>no_street</code>: <code>resolved</code> 4,729, <code>picked</code> 511, <code>no_street</code> 2,282. The <code>resolved</code>
+and <code>no_street</code> counts must be <strong>unchanged</strong> — only the <code>ambiguous</code> bucket is
+renamed and now carries addresses. Any movement between <code>resolved</code> and
+<code>no_street</code> means the candidate logic changed, which it must not.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 9: Lint</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-finalsite-address-pick<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>--no-fix<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/finalsite/models/api/intermediate/int_finalsite__contact_address_of_record.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/finalsite/models/api/intermediate/properties/int_finalsite__contact_address_of_record.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>&lt;/dev/null
+</code></pre></div>
+<p>Fix anything reported and re-run until clean.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 10: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-finalsite-address-pick<span class="w"> </span>add<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/finalsite/models/api/intermediate/int_finalsite__contact_address_of_record.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/finalsite/models/api/intermediate/properties/int_finalsite__contact_address_of_record.yml
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-finalsite-address-pick<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"fix(finalsite): pick the best candidate household for a contact address</span>
+
+<span class="s2">Refs #4680</span>
+
+<span class="s2">Co-Authored-By: Claude Opus 5 (1M context) &lt;noreply@anthropic.com&gt;"</span>
+</code></pre></div>
+<hr />
+<h3 id="task-2-reorder-and-widen-the-student-model">Task 2: Reorder and widen the student model</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify:
+  <code>src/dbt/finalsite/models/api/intermediate/int_finalsite__student_address_of_record.sql</code></li>
+<li>Modify:
+  <code>src/dbt/finalsite/models/api/intermediate/properties/int_finalsite__student_address_of_record.yml</code></li>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/finalsite/intermediate/int_finalsite__student_address_of_record.sql</code></li>
+<li>Modify: <code>src/dbt/finalsite/CLAUDE.md</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: Task 1's <code>int_finalsite__contact_address_of_record</code> — columns
+  <code>finalsite_enrollment_id</code>, <code>candidate_count</code>, <code>resolution_status</code>,
+  <code>address_1</code>, <code>address_2</code>, <code>city</code>, <code>state</code>, <code>zip</code>, <code>country</code>,
+  <code>is_complete_address</code>. Also <code>stg_finalsite__contacts</code>
+  (<code>finalsite_enrollment_id</code>, <code>status</code>, <code>phone_1_number</code>) and
+  <code>stg_finalsite__contact_relationships</code> (<code>finalsite_enrollment_id</code>, <code>rel_id</code>,
+  <code>is_primary</code>).</li>
+<li>
+<p>Produces: today's columns plus one new <code>is_picked_address</code> (<code>boolean</code>).
+  <code>resolution_status</code> values become <code>primary_contact_household</code>,
+  <code>student_household</code>, <code>unresolved</code>. <code>rpt_focus__addresses</code> continues to filter
+  on <code>address_source is not null</code>, which is unchanged in meaning.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing unit test for Parent 1 precedence</strong></p>
+</li>
+</ul>
+<p>Append to the <code>unit_tests:</code> block in
+<code>properties/int_finalsite__student_address_of_record.yml</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">test_address_of_record_primary_contact_wins_over_student</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">When the student's own household and their Parent 1's household both resolve</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">to different addresses, Parent 1 wins. The student's own linkage is only a</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">fallback.</span>
+<span class="w">  </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int_finalsite__student_address_of_record</span>
+<span class="w">  </span><span class="nt">given</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref("stg_finalsite__contacts")</span>
+<span class="w">      </span><span class="nt">rows</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span>
+<span class="nt">            finalsite_enrollment_id</span><span class="p">:</span><span class="w"> </span><span class="nv">stu-10</span><span class="p p-Indicator">,</span>
+<span class="nt">            status</span><span class="p">:</span><span class="w"> </span><span class="nv">enrolled</span><span class="p p-Indicator">,</span>
+<span class="nt">            phone_1_number</span><span class="p">:</span><span class="w"> </span><span class="nv">null</span><span class="p p-Indicator">,</span>
+<span class="w">          </span><span class="p p-Indicator">}</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span>
+<span class="nt">            finalsite_enrollment_id</span><span class="p">:</span><span class="w"> </span><span class="nv">par-10</span><span class="p p-Indicator">,</span>
+<span class="nt">            status</span><span class="p">:</span><span class="w"> </span><span class="nv">not_in_workflow</span><span class="p p-Indicator">,</span>
+<span class="nt">            phone_1_number</span><span class="p">:</span><span class="w"> </span><span class="s">"+13055551000"</span><span class="p p-Indicator">,</span>
+<span class="w">          </span><span class="p p-Indicator">}</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref("stg_finalsite__contact_relationships")</span>
+<span class="w">      </span><span class="nt">rows</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span>
+<span class="nt">            finalsite_enrollment_id</span><span class="p">:</span><span class="w"> </span><span class="nv">stu-10</span><span class="p p-Indicator">,</span>
+<span class="nt">            rel_id</span><span class="p">:</span><span class="w"> </span><span class="nv">par-10</span><span class="p p-Indicator">,</span>
+<span class="nt">            rel_type</span><span class="p">:</span><span class="w"> </span><span class="nv">parent</span><span class="p p-Indicator">,</span>
+<span class="nt">            is_primary</span><span class="p">:</span><span class="w"> </span><span class="nv">true</span><span class="p p-Indicator">,</span>
+<span class="w">          </span><span class="p p-Indicator">}</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref("int_finalsite__contact_address_of_record")</span>
+<span class="w">      </span><span class="nt">format</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sql</span>
+<span class="w">      </span><span class="nt">rows</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">        </span><span class="no">select</span>
+<span class="w">          </span><span class="no">'stu-10' as finalsite_enrollment_id,</span>
+<span class="w">          </span><span class="no">'1 Student Way' as address_1,</span>
+<span class="w">          </span><span class="no">cast(null as string) as address_2,</span>
+<span class="w">          </span><span class="no">'Miami' as city,</span>
+<span class="w">          </span><span class="no">'FL' as state,</span>
+<span class="w">          </span><span class="no">'33101' as zip,</span>
+<span class="w">          </span><span class="no">'US' as country,</span>
+<span class="w">          </span><span class="no">true as is_complete_address,</span>
+<span class="w">          </span><span class="no">1 as candidate_count,</span>
+<span class="w">          </span><span class="no">'resolved' as resolution_status</span>
+<span class="w">        </span><span class="no">union all</span>
+<span class="w">        </span><span class="no">select 'par-10', '2 Parent Ave', null, 'Miami', 'FL', '33102', 'US',</span>
+<span class="w">          </span><span class="no">true, 1, 'resolved'</span>
+<span class="w">  </span><span class="nt">expect</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">rows</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span>
+<span class="nt">          finalsite_enrollment_id</span><span class="p">:</span><span class="w"> </span><span class="nv">stu-10</span><span class="p p-Indicator">,</span>
+<span class="nt">          student_candidate_count</span><span class="p">:</span><span class="w"> </span><span class="nv">1</span><span class="p p-Indicator">,</span>
+<span class="nt">          primary_contact_candidate_count</span><span class="p">:</span><span class="w"> </span><span class="nv">1</span><span class="p p-Indicator">,</span>
+<span class="nt">          address_source</span><span class="p">:</span><span class="w"> </span><span class="nv">primary_contact_household</span><span class="p p-Indicator">,</span>
+<span class="nt">          address_1</span><span class="p">:</span><span class="w"> </span><span class="nv">2 Parent Ave</span><span class="p p-Indicator">,</span>
+<span class="nt">          address_2</span><span class="p">:</span><span class="w"> </span><span class="nv">null</span><span class="p p-Indicator">,</span>
+<span class="nt">          city</span><span class="p">:</span><span class="w"> </span><span class="nv">Miami</span><span class="p p-Indicator">,</span>
+<span class="nt">          state</span><span class="p">:</span><span class="w"> </span><span class="nv">FL</span><span class="p p-Indicator">,</span>
+<span class="nt">          zip</span><span class="p">:</span><span class="w"> </span><span class="s">"33102"</span><span class="p p-Indicator">,</span>
+<span class="nt">          country</span><span class="p">:</span><span class="w"> </span><span class="nv">US</span><span class="p p-Indicator">,</span>
+<span class="nt">          is_complete_address</span><span class="p">:</span><span class="w"> </span><span class="nv">true</span><span class="p p-Indicator">,</span>
+<span class="nt">          primary_contact_phone</span><span class="p">:</span><span class="w"> </span><span class="s">"+13055551000"</span><span class="p p-Indicator">,</span>
+<span class="nt">          resolution_status</span><span class="p">:</span><span class="w"> </span><span class="nv">primary_contact_household</span><span class="p p-Indicator">,</span>
+<span class="nt">          is_picked_address</span><span class="p">:</span><span class="w"> </span><span class="nv">false</span><span class="p p-Indicator">,</span>
+<span class="w">        </span><span class="p p-Indicator">}</span>
+</code></pre></div>
+<p>BigQuery <code>UNION ALL</code> is positional, so every branch must carry all ten values in
+the same order as the aliased first branch. A missing leading value shifts every
+column and fails on a type mismatch.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Write the failing unit test for a student with no Parent 1</strong></li>
+</ul>
+<p>Append:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">test_address_of_record_no_primary_resolves_from_own_household</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">A student with no Parent 1 still resolves from their own household. The old</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">`where is_primary` spine dropped these students entirely even when their own</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">address was unambiguous.</span>
+<span class="w">  </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int_finalsite__student_address_of_record</span>
+<span class="w">  </span><span class="nt">given</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref("stg_finalsite__contacts")</span>
+<span class="w">      </span><span class="nt">rows</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span>
+<span class="nt">            finalsite_enrollment_id</span><span class="p">:</span><span class="w"> </span><span class="nv">stu-11</span><span class="p p-Indicator">,</span>
+<span class="nt">            status</span><span class="p">:</span><span class="w"> </span><span class="nv">enrolled</span><span class="p p-Indicator">,</span>
+<span class="nt">            phone_1_number</span><span class="p">:</span><span class="w"> </span><span class="nv">null</span><span class="p p-Indicator">,</span>
+<span class="w">          </span><span class="p p-Indicator">}</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref("stg_finalsite__contact_relationships")</span>
+<span class="w">      </span><span class="nt">rows</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span>
+<span class="nt">            finalsite_enrollment_id</span><span class="p">:</span><span class="w"> </span><span class="nv">stu-11</span><span class="p p-Indicator">,</span>
+<span class="nt">            rel_id</span><span class="p">:</span><span class="w"> </span><span class="nv">aunt-11</span><span class="p p-Indicator">,</span>
+<span class="nt">            rel_type</span><span class="p">:</span><span class="w"> </span><span class="nv">aunt/uncle</span><span class="p p-Indicator">,</span>
+<span class="nt">            is_primary</span><span class="p">:</span><span class="w"> </span><span class="nv">null</span><span class="p p-Indicator">,</span>
+<span class="w">          </span><span class="p p-Indicator">}</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref("int_finalsite__contact_address_of_record")</span>
+<span class="w">      </span><span class="nt">format</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sql</span>
+<span class="w">      </span><span class="nt">rows</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">        </span><span class="no">select</span>
+<span class="w">          </span><span class="no">'stu-11' as finalsite_enrollment_id,</span>
+<span class="w">          </span><span class="no">'3 Own St' as address_1,</span>
+<span class="w">          </span><span class="no">cast(null as string) as address_2,</span>
+<span class="w">          </span><span class="no">'Miami' as city,</span>
+<span class="w">          </span><span class="no">'FL' as state,</span>
+<span class="w">          </span><span class="no">'33103' as zip,</span>
+<span class="w">          </span><span class="no">'US' as country,</span>
+<span class="w">          </span><span class="no">true as is_complete_address,</span>
+<span class="w">          </span><span class="no">1 as candidate_count,</span>
+<span class="w">          </span><span class="no">'resolved' as resolution_status</span>
+<span class="w">  </span><span class="nt">expect</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">rows</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span>
+<span class="nt">          finalsite_enrollment_id</span><span class="p">:</span><span class="w"> </span><span class="nv">stu-11</span><span class="p p-Indicator">,</span>
+<span class="nt">          student_candidate_count</span><span class="p">:</span><span class="w"> </span><span class="nv">1</span><span class="p p-Indicator">,</span>
+<span class="nt">          primary_contact_candidate_count</span><span class="p">:</span><span class="w"> </span><span class="nv">0</span><span class="p p-Indicator">,</span>
+<span class="nt">          address_source</span><span class="p">:</span><span class="w"> </span><span class="nv">student_household</span><span class="p p-Indicator">,</span>
+<span class="nt">          address_1</span><span class="p">:</span><span class="w"> </span><span class="nv">3 Own St</span><span class="p p-Indicator">,</span>
+<span class="nt">          address_2</span><span class="p">:</span><span class="w"> </span><span class="nv">null</span><span class="p p-Indicator">,</span>
+<span class="nt">          city</span><span class="p">:</span><span class="w"> </span><span class="nv">Miami</span><span class="p p-Indicator">,</span>
+<span class="nt">          state</span><span class="p">:</span><span class="w"> </span><span class="nv">FL</span><span class="p p-Indicator">,</span>
+<span class="nt">          zip</span><span class="p">:</span><span class="w"> </span><span class="s">"33103"</span><span class="p p-Indicator">,</span>
+<span class="nt">          country</span><span class="p">:</span><span class="w"> </span><span class="nv">US</span><span class="p p-Indicator">,</span>
+<span class="nt">          is_complete_address</span><span class="p">:</span><span class="w"> </span><span class="nv">true</span><span class="p p-Indicator">,</span>
+<span class="nt">          primary_contact_phone</span><span class="p">:</span><span class="w"> </span><span class="nv">null</span><span class="p p-Indicator">,</span>
+<span class="nt">          resolution_status</span><span class="p">:</span><span class="w"> </span><span class="nv">student_household</span><span class="p p-Indicator">,</span>
+<span class="nt">          is_picked_address</span><span class="p">:</span><span class="w"> </span><span class="nv">false</span><span class="p p-Indicator">,</span>
+<span class="w">        </span><span class="p p-Indicator">}</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Update the three existing unit tests</strong></li>
+</ul>
+<p>Every <code>expect</code> row must gain <code>is_picked_address</code> — dbt does not null-fill
+omitted keys, and an uneven <code>expect</code> fails with a column-count mismatch.</p>
+<p>Two of these fixtures also mock the OLD contact model, where <code>ambiguous</code> meant a
+null address. That combination is now impossible: any contact with
+<code>candidate_count &gt;= 1</code> carries an address. Leaving them would test behavior the
+upstream model can no longer produce, so they need real values, not just a new
+key.</p>
+<p><strong><code>test_address_of_record_student_linkage_decisive</code></strong> asserts
+<code>student_household</code> while its Parent 1 (<code>par-1</code>) has <code>candidate_count: 2</code>. Under
+Parent-1-first that parent now wins, so the test no longer demonstrates what its
+name says. Repurpose it into the fallback case. Rename to
+<code>test_address_of_record_student_fallback_when_primary_has_none</code>, replace the
+description with "A student resolves from their own household when their Parent
+1 has no street-bearing household at all.", change the <code>par-1</code> fixture branch to
+<code>select 'par-1', null, null, null, null, null, null, null, 0, 'no_street'</code>, and
+change the expect row's <code>primary_contact_candidate_count</code> to <code>0</code>, keeping
+<code>address_source: student_household</code> and adding <code>is_picked_address: false</code>.</p>
+<p><strong><code>test_address_of_record_primary_contact_fallback</code></strong> already expects
+<code>primary_contact_household</code>, which stays correct. But its <code>stu-2</code> branch carries
+<code>candidate_count: 2</code> with a null address. Make it consistent and make the test
+earn its place by proving <code>picked</code> propagates: change the <code>par-2</code> branch to
+<code>select 'par-2', '111 Palm Way', null, 'Miami', 'FL', '33103', 'US', true, 2, 'picked'</code>,
+change <code>primary_contact_candidate_count</code> to <code>2</code> in the expect row, and add
+<code>is_picked_address: true</code>. Rename it to
+<code>test_address_of_record_picked_flag_propagates</code> and update the description to
+"When the winning household was itself picked from several, the student row
+reports <code>is_picked_address</code>."</p>
+<p><strong><code>test_address_of_record_both_sides_ambiguous</code></strong> — rename to
+<code>test_address_of_record_no_address_anywhere</code>, reword the description to say
+neither the student nor their Parent 1 has a street-bearing household, set both
+fixture branches to <code>candidate_count: 0</code> / <code>'no_street'</code>, change
+<code>resolution_status: ambiguous</code> to <code>resolution_status: unresolved</code>, and add
+<code>is_picked_address: null</code>.</p>
+<p><strong><code>test_address_of_record_incomplete_address_is_emitted</code></strong> — add
+<code>is_picked_address: false</code> to both expect rows. Then verify each row's
+<code>address_source</code> still matches Parent-1-first: any row whose fixture gives the
+primary contact <code>candidate_count &gt;= 1</code> must now expect
+<code>primary_contact_household</code>. Change the ones that do not match, and adjust the
+asserted address to the parent's.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run the tests to verify they fail</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span><span class="nb">test</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span><span class="s2">"test_type:unit,int_finalsite__student_address_of_record"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-finalsite-address-pick/src/dbt/kippmiami<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--target<span class="w"> </span>dev<span class="w"> </span>--defer<span class="w"> </span>--favor-state<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kippmiami/target/prod
+</code></pre></div>
+<p>Expected: FAIL — <code>is_picked_address</code> does not exist yet, so the model output has
+fewer columns than the fixtures.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Rewrite the model</strong></li>
+</ul>
+<p>Replace the whole of
+<code>src/dbt/finalsite/models/api/intermediate/int_finalsite__student_address_of_record.sql</code>
+with:</p>
+<div class="highlight"><pre><span></span><code><span class="k">with</span>
+<span class="w">    </span><span class="n">student_records</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="c1">-- A student record is a contact carrying a workflow status. Adults sit</span>
+<span class="w">        </span><span class="c1">-- at 'not_in_workflow'. This replaces a `where is_primary` spine, which</span>
+<span class="w">        </span><span class="c1">-- defined a student as someone with a designated Parent 1 and so</span>
+<span class="w">        </span><span class="c1">-- dropped every student without one — even when that student's own</span>
+<span class="w">        </span><span class="c1">-- household resolved cleanly.</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="n">finalsite_enrollment_id</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"stg_finalsite__contacts"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="s1">'not_in_workflow'</span>
+<span class="w">    </span><span class="p">),</span>
+
+<span class="w">    </span><span class="n">student_primary_contacts</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="c1">-- `relationships.primary` is a per-record singleton that is true or</span>
+<span class="w">        </span><span class="c1">-- NULL, never false. A second primary on one student surfaces as a</span>
+<span class="w">        </span><span class="c1">-- duplicate and fails this model's uniqueness test, which is the</span>
+<span class="w">        </span><span class="c1">-- intended loud failure.</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="n">finalsite_enrollment_id</span><span class="p">,</span><span class="w"> </span><span class="n">rel_id</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">primary_contact_id</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"stg_finalsite__contact_relationships"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">is_primary</span>
+<span class="w">    </span><span class="p">),</span>
+
+<span class="w">    </span><span class="n">counted</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="c1">-- Candidate counting and address identity live in</span>
+<span class="w">        </span><span class="c1">-- int_finalsite__contact_address_of_record, so both Focus feeds resolve</span>
+<span class="w">        </span><span class="c1">-- an address by one rule. A contact absent from that model has no</span>
+<span class="w">        </span><span class="c1">-- household rows at all, which counts as zero candidates.</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">s</span><span class="p">.</span><span class="n">finalsite_enrollment_id</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">spc</span><span class="p">.</span><span class="n">primary_contact_id</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">sa</span><span class="p">.</span><span class="n">resolution_status</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">student_resolution_status</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">pa</span><span class="p">.</span><span class="n">resolution_status</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">primary_contact_resolution_status</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">coalesce</span><span class="p">(</span><span class="n">sa</span><span class="p">.</span><span class="n">candidate_count</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">student_candidate_count</span><span class="p">,</span>
+<span class="w">            </span><span class="k">coalesce</span><span class="p">(</span><span class="n">pa</span><span class="p">.</span><span class="n">candidate_count</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">primary_contact_candidate_count</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">student_records</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">s</span>
+<span class="w">        </span><span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">            </span><span class="n">student_primary_contacts</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">spc</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">finalsite_enrollment_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">spc</span><span class="p">.</span><span class="n">finalsite_enrollment_id</span>
+<span class="w">        </span><span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">            </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"int_finalsite__contact_address_of_record"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">sa</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">finalsite_enrollment_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sa</span><span class="p">.</span><span class="n">finalsite_enrollment_id</span>
+<span class="w">        </span><span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">            </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"int_finalsite__contact_address_of_record"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">pa</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="n">spc</span><span class="p">.</span><span class="n">primary_contact_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pa</span><span class="p">.</span><span class="n">finalsite_enrollment_id</span>
+<span class="w">    </span><span class="p">),</span>
+
+<span class="w">    </span><span class="n">sourced</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="c1">-- Parent 1's household is the address of record; the student's own is</span>
+<span class="w">        </span><span class="c1">-- the fallback. The reverse order used to be correct because a parent</span>
+<span class="w">        </span><span class="c1">-- carries more households and the old rule withheld on any ambiguity —</span>
+<span class="w">        </span><span class="c1">-- once the contact model picks a winner, the parent's larger household</span>
+<span class="w">        </span><span class="c1">-- count costs nothing. The student tier must stay: some students hold</span>
+<span class="w">        </span><span class="c1">-- an address while their Parent 1 holds none.</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">finalsite_enrollment_id</span><span class="p">,</span>
+<span class="w">            </span><span class="n">primary_contact_id</span><span class="p">,</span>
+<span class="w">            </span><span class="n">student_candidate_count</span><span class="p">,</span>
+<span class="w">            </span><span class="n">primary_contact_candidate_count</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">case</span>
+<span class="w">                </span><span class="k">when</span><span class="w"> </span><span class="n">primary_contact_candidate_count</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">                </span><span class="k">then</span><span class="w"> </span><span class="s1">'primary_contact_household'</span>
+<span class="w">                </span><span class="k">when</span><span class="w"> </span><span class="n">student_candidate_count</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">                </span><span class="k">then</span><span class="w"> </span><span class="s1">'student_household'</span>
+<span class="w">            </span><span class="k">end</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">address_source</span><span class="p">,</span>
+<span class="w">            </span><span class="k">case</span>
+<span class="w">                </span><span class="k">when</span><span class="w"> </span><span class="n">primary_contact_candidate_count</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">                </span><span class="k">then</span><span class="w"> </span><span class="n">primary_contact_id</span>
+<span class="w">                </span><span class="k">when</span><span class="w"> </span><span class="n">student_candidate_count</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">                </span><span class="k">then</span><span class="w"> </span><span class="n">finalsite_enrollment_id</span>
+<span class="w">            </span><span class="k">end</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">address_contact_id</span><span class="p">,</span>
+<span class="w">            </span><span class="k">case</span>
+<span class="w">                </span><span class="k">when</span><span class="w"> </span><span class="n">primary_contact_candidate_count</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">                </span><span class="k">then</span><span class="w"> </span><span class="n">primary_contact_resolution_status</span>
+<span class="w">                </span><span class="k">when</span><span class="w"> </span><span class="n">student_candidate_count</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">                </span><span class="k">then</span><span class="w"> </span><span class="n">student_resolution_status</span>
+<span class="w">            </span><span class="k">end</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">winning_resolution_status</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">counted</span>
+<span class="w">    </span><span class="p">)</span>
+
+<span class="k">select</span>
+<span class="w">    </span><span class="n">s</span><span class="p">.</span><span class="n">finalsite_enrollment_id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">s</span><span class="p">.</span><span class="n">student_candidate_count</span><span class="p">,</span>
+<span class="w">    </span><span class="n">s</span><span class="p">.</span><span class="n">primary_contact_candidate_count</span><span class="p">,</span>
+<span class="w">    </span><span class="n">s</span><span class="p">.</span><span class="n">address_source</span><span class="p">,</span>
+
+<span class="w">    </span><span class="n">a</span><span class="p">.</span><span class="n">address_1</span><span class="p">,</span>
+<span class="w">    </span><span class="n">a</span><span class="p">.</span><span class="n">address_2</span><span class="p">,</span>
+<span class="w">    </span><span class="n">a</span><span class="p">.</span><span class="n">city</span><span class="p">,</span>
+<span class="w">    </span><span class="n">a</span><span class="p">.</span><span class="k">state</span><span class="p">,</span>
+<span class="w">    </span><span class="n">a</span><span class="p">.</span><span class="n">zip</span><span class="p">,</span>
+<span class="w">    </span><span class="n">a</span><span class="p">.</span><span class="n">country</span><span class="p">,</span>
+<span class="w">    </span><span class="n">a</span><span class="p">.</span><span class="n">is_complete_address</span><span class="p">,</span>
+
+<span class="w">    </span><span class="n">pc</span><span class="p">.</span><span class="n">phone_1_number</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">primary_contact_phone</span><span class="p">,</span>
+
+<span class="w">    </span><span class="k">coalesce</span><span class="p">(</span><span class="n">s</span><span class="p">.</span><span class="n">address_source</span><span class="p">,</span><span class="w"> </span><span class="s1">'unresolved'</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">resolution_status</span><span class="p">,</span>
+
+<span class="w">    </span><span class="n">s</span><span class="p">.</span><span class="n">winning_resolution_status</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'picked'</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_picked_address</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="n">sourced</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">s</span>
+<span class="c1">-- address_contact_id is only ever set to a contact that has at least one</span>
+<span class="c1">-- candidate, so this join cannot fan out; when it is null (no address anywhere)</span>
+<span class="c1">-- nothing matches and the address fields stay null.</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"int_finalsite__contact_address_of_record"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">a</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">address_contact_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="n">finalsite_enrollment_id</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"stg_finalsite__contacts"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">pc</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">primary_contact_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pc</span><span class="p">.</span><span class="n">finalsite_enrollment_id</span>
+</code></pre></div>
+<p><code>is_picked_address</code> is null when nothing resolved, because
+<code>winning_resolution_status</code> is null there — that is intended and the unit test
+asserts it.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Run the tests to verify they pass</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span><span class="nb">test</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span><span class="s2">"test_type:unit,int_finalsite__student_address_of_record"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-finalsite-address-pick/src/dbt/kippmiami<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--target<span class="w"> </span>dev<span class="w"> </span>--defer<span class="w"> </span>--favor-state<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kippmiami/target/prod
+</code></pre></div>
+<p>Expected: PASS, 6 tests.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Update the properties YAML</strong></li>
+</ul>
+<p>Replace the <code>resolution_status</code> column block:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">resolution_status</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">Which record supplied the address — `primary_contact_household`,</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">`student_household`, or `unresolved` when neither the student's Parent 1 nor</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">the student themselves has a street-bearing household. Parent 1 is tried</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">first; the student's own linkage is the fallback.</span>
+<span class="w">  </span><span class="nt">data_tests</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">accepted_values</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">arguments</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">values</span><span class="p">:</span>
+<span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">primary_contact_household</span>
+<span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">student_household</span>
+<span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">unresolved</span>
+<span class="w">        </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">severity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">error</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">not_null</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">severity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">error</span>
+</code></pre></div>
+<p>Add this column block immediately after <code>address_source</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">is_picked_address</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">boolean</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">Whether the winning household was chosen from several candidates rather than</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">read unambiguously, carried through from the contact model's `picked`</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">status. Null when no address resolved. This is the audit signal for an</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">import-once feed — it marks every address the pipeline decided rather than</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">found.</span>
+</code></pre></div>
+<p>Replace the <code>student_candidate_count</code> description:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">description</span><span class="p">:</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">Number of distinct addresses on the student's own household linkage, from</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">`int_finalsite__contact_address_of_record`. One or more means the student's</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">own records can supply an address; it is used only when the primary contact</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">has none. Zero means no household linked to the student carries a street line.</span>
+</code></pre></div>
+<p>Replace the <code>primary_contact_candidate_count</code> description:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">description</span><span class="p">:</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">Number of distinct addresses on the primary contact's household linkage. One</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">or more makes the primary contact's household the address of record.</span>
+</code></pre></div>
+<p>Replace the model <code>description:</code> sentences describing grain and resolution with:</p>
+<div class="highlight"><pre><span></span><code>      One row per Finalsite student record — the student's resolved address of
+      record, or a flag when it cannot be resolved. Grain is
+      `finalsite_enrollment_id` for contacts carrying a workflow status, which
+      is how a student record is identified without reaching for a SIS-specific
+      field; adult contacts sit at `not_in_workflow` and are absent. Resolution
+      takes the primary contact's household when
+      `int_finalsite__contact_address_of_record` gives them one, falls back to
+      the student's own when it does, and otherwise emits no address. Address
+      identity, candidate counting, and the pick rule live in that model, so
+      this feed and the contact feed resolve addresses the same way. An emitted
+      address is not guaranteed complete — check `is_complete_address` — and may
+      have been picked from several, which `is_picked_address` reports.
+      SIS-agnostic — no enrollment, status, or academic-year scoping beyond
+      excluding non-student contacts; receivers filter downstream.
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 8: Force the kipptaf union wrapper to rebuild</strong></li>
+</ul>
+<p><code>dbt_utils.union_relations</code> resolves its column list at compile time from the
+source relations' <code>INFORMATION_SCHEMA</code>. A new column does not reach the kipptaf
+wrapper unless the wrapper is itself <code>state:modified</code> — and a properties-YAML
+change does not mark a model modified, only a <code>.sql</code> edit does.</p>
+<p>Add this comment as the first line of
+<code>src/dbt/kipptaf/models/finalsite/intermediate/int_finalsite__student_address_of_record.sql</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="c1">-- is_picked_address added upstream in #4680; this comment forces state:modified</span>
+<span class="c1">-- so CI rebuilds the union and picks up the new column.</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 9: Update the package CLAUDE.md</strong></li>
+</ul>
+<p>In <code>src/dbt/finalsite/CLAUDE.md</code>, replace the
+<code>int_finalsite__contact_address_of_record</code> and
+<code>int_finalsite__student_address_of_record</code> bullets with:</p>
+<div class="highlight"><pre><span></span><code><span class="k">-</span><span class="w"> </span><span class="sb">`int_finalsite__contact_address_of_record`</span> — one row per Finalsite contact
+  (students and adults alike) carrying that contact's resolved address. A
+  household is a candidate once it has a street line — completeness is
+  deliberately not required. A contact with several candidates gets the most
+  complete one, ties broken by lowest <span class="sb">`household_id`</span>, flagged <span class="sb">`picked`</span>; only a
+  contact with no street-bearing household at all gets no address.
+<span class="k">-</span><span class="w"> </span><span class="sb">`int_finalsite__student_address_of_record`</span> — one row per student record (a
+  contact carrying a workflow status; adults sit at <span class="sb">`not_in_workflow`</span>) with the
+  resolved address of record: their primary contact's household when
+  <span class="sb">`int_finalsite__contact_address_of_record`</span> gives them one, else the student's
+  own, else no address and an <span class="sb">`unresolved`</span> flag. Also carries the primary
+  contact's phone, since student records almost never hold one.
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 10: Build the chain and check the stranded count</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span>int_finalsite__contact_address_of_record<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>int_finalsite__student_address_of_record<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-finalsite-address-pick/src/dbt/kippmiami<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--target<span class="w"> </span>dev<span class="w"> </span>--defer<span class="w"> </span>--favor-state<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kippmiami/target/prod
+</code></pre></div>
+<p>Expected: PASS, including <code>unique</code> on <code>finalsite_enrollment_id</code>.</p>
+<p>Then:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="n">resolution_status</span><span class="p">,</span>
+<span class="w">    </span><span class="n">countif</span><span class="p">(</span><span class="n">is_picked_address</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">picked</span><span class="p">,</span>
+<span class="w">    </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">students</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_cbini_kippmiami_finalsite</span><span class="p">.</span><span class="n">int_finalsite__student_address_of_record</span><span class="o">`</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">resolution_status</span>
+<span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">students</span><span class="w"> </span><span class="k">desc</span>
+</code></pre></div>
+<p>Expected: three statuses only. <code>unresolved</code> should be far smaller than today's
+<code>ambiguous</code> count. If <code>unresolved</code> is larger, the tier logic is inverted.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 11: Lint</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-finalsite-address-pick<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>--no-fix<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/finalsite/models/api/intermediate/int_finalsite__student_address_of_record.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/finalsite/models/api/intermediate/properties/int_finalsite__student_address_of_record.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/finalsite/intermediate/int_finalsite__student_address_of_record.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/finalsite/CLAUDE.md<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>&lt;/dev/null
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 12: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-finalsite-address-pick<span class="w"> </span>add<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/finalsite/models/api/intermediate/int_finalsite__student_address_of_record.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/finalsite/models/api/intermediate/properties/int_finalsite__student_address_of_record.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/finalsite/intermediate/int_finalsite__student_address_of_record.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/finalsite/CLAUDE.md
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-finalsite-address-pick<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"fix(finalsite): prefer the primary contact household and widen the student spine</span>
+
+<span class="s2">Refs #4680</span>
+
+<span class="s2">Co-Authored-By: Claude Opus 5 (1M context) &lt;noreply@anthropic.com&gt;"</span>
+</code></pre></div>
+<hr />
+<h3 id="task-3-validate-against-production-document-and-open-the-pr">Task 3: Validate against production, document, and open the PR</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>docs/reference/finalsite-focus-import.md</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: Tasks 1 and 2.</li>
+<li>
+<p>Produces: a PR against <code>main</code> closing #4680.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Build the full Focus chain into dev</strong></p>
+</li>
+</ul>
+<p>The kipptaf union wrappers read all four districts via <code>source()</code>, and
+<code>source()</code> is not <code>--defer</code>-eligible — so each district's package models must
+exist in your dev schema before the kipptaf build will compile. Install packages
+once per district, then build.</p>
+<div class="highlight"><pre><span></span><code><span class="nv">wt</span><span class="o">=</span>/workspaces/teamster/.worktrees/cbini/fix/claude-finalsite-address-pick
+<span class="k">for</span><span class="w"> </span>d<span class="w"> </span><span class="k">in</span><span class="w"> </span>kippmiami<span class="w"> </span>kippcamden<span class="w"> </span>kippnewark<span class="w"> </span>kipppaterson<span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">  </span>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>deps<span class="w"> </span>--project-dir<span class="w"> </span><span class="s2">"</span><span class="nv">$wt</span><span class="s2">/src/dbt/</span><span class="nv">$d</span><span class="s2">"</span>
+<span class="w">  </span>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--select<span class="w"> </span>int_finalsite__contact_address_of_record<span class="w"> </span><span class="se">\</span>
+<span class="w">      </span>int_finalsite__student_address_of_record<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--project-dir<span class="w"> </span><span class="s2">"</span><span class="nv">$wt</span><span class="s2">/src/dbt/</span><span class="nv">$d</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--target<span class="w"> </span>dev<span class="w"> </span>--defer<span class="w"> </span>--favor-state<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--state<span class="w"> </span><span class="s2">"/workspaces/teamster/src/dbt/</span><span class="nv">$d</span><span class="s2">/target/prod"</span>
+<span class="k">done</span>
+</code></pre></div>
+<p>Then the kipptaf layer:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span>int_finalsite__contact_address_of_record<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>int_finalsite__student_address_of_record<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>rpt_focus__addresses<span class="w"> </span>rpt_focus__contacts<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-finalsite-address-pick/src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--target<span class="w"> </span>dev<span class="w"> </span>--defer<span class="w"> </span>--favor-state<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kipptaf/target/prod
+</code></pre></div>
+<p>Report every command's PASS / ERROR counts.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run the safety bar at the kipptaf layer</strong></li>
+</ul>
+<p>Compare your dev kipptaf <code>rpt_focus__addresses</code> — the desired-state model, where
+this change actually lands — against the deployed
+<code>teamster-332318.kipptaf_extracts.rpt_focus__addresses</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="n">countif</span><span class="p">(</span><span class="n">p</span><span class="p">.</span><span class="n">student_id</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">newly_gaining</span><span class="p">,</span>
+<span class="w">    </span><span class="n">countif</span><span class="p">(</span><span class="n">d</span><span class="p">.</span><span class="n">student_id</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">newly_losing</span><span class="p">,</span>
+<span class="w">    </span><span class="n">countif</span><span class="p">(</span>
+<span class="w">        </span><span class="n">d</span><span class="p">.</span><span class="n">student_id</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">        </span><span class="k">and</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">student_id</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">        </span><span class="k">and</span><span class="w"> </span><span class="p">(</span>
+<span class="w">            </span><span class="n">d</span><span class="p">.</span><span class="n">address</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">address</span>
+<span class="w">            </span><span class="k">or</span><span class="w"> </span><span class="k">coalesce</span><span class="p">(</span><span class="n">d</span><span class="p">.</span><span class="n">zipcode</span><span class="p">,</span><span class="w"> </span><span class="s1">'~'</span><span class="p">)</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="k">coalesce</span><span class="p">(</span><span class="n">p</span><span class="p">.</span><span class="n">zipcode</span><span class="p">,</span><span class="w"> </span><span class="s1">'~'</span><span class="p">)</span>
+<span class="w">            </span><span class="k">or</span><span class="w"> </span><span class="k">coalesce</span><span class="p">(</span><span class="n">d</span><span class="p">.</span><span class="n">city</span><span class="p">,</span><span class="w"> </span><span class="s1">'~'</span><span class="p">)</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="k">coalesce</span><span class="p">(</span><span class="n">p</span><span class="p">.</span><span class="n">city</span><span class="p">,</span><span class="w"> </span><span class="s1">'~'</span><span class="p">)</span>
+<span class="w">        </span><span class="p">)</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">address_changed</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_cbini_kipptaf_extracts</span><span class="p">.</span><span class="n">rpt_focus__addresses</span><span class="o">`</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">d</span>
+<span class="k">full</span><span class="w"> </span><span class="k">outer</span><span class="w"> </span><span class="k">join</span>
+<span class="w">    </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_extracts</span><span class="p">.</span><span class="n">rpt_focus__addresses</span><span class="o">`</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">p</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">d</span><span class="p">.</span><span class="n">student_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">student_id</span>
+</code></pre></div>
+<p>Expected: <code>newly_losing</code> <strong>0</strong>, <code>address_changed</code> at most <strong>113</strong>. A
+<code>newly_losing</code> above zero is a defect — stop and report it rather than
+explaining it away.</p>
+<p>Do NOT run this against the kippmiami wrapper. The kippmiami
+<code>models/extracts/sources.yml</code> entry for <code>kipptaf_extracts</code> carries no
+target-conditional schema, so the wrapper always reads <strong>prod</strong>
+<code>kipptaf_extracts</code> regardless of target. A dev build of it silently compares
+prod against prod and reports a clean no-op.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Confirm the stranded count landed at 46</strong></li>
+</ul>
+<p>The stranded count needs the Miami sendable set, which only the kippmiami
+wrapper produces — and per Step 2 that wrapper reads prod. Get the true
+post-change number by taking the wrapper's compiled SQL
+(<code>src/dbt/kippmiami/target/compiled/.../rpt_focus__contacts.sql</code> and
+<code>rpt_focus__addresses.sql</code>), replacing the <code>kipptaf_extracts</code> references with
+your <code>zz_cbini_kipptaf_extracts</code> dev relations, and running the result as CTEs
+inside this query:</p>
+<div class="highlight"><pre><span></span><code><span class="k">with</span>
+<span class="w">    </span><span class="n">sendable</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="c1">-- paste the rewritten rpt_focus__contacts compiled SQL here</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="n">student_id</span><span class="p">,</span><span class="w"> </span><span class="n">address</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="p">...</span>
+<span class="w">    </span><span class="p">),</span>
+<span class="w">    </span><span class="n">addresses</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="c1">-- paste the rewritten rpt_focus__addresses compiled SQL here</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="n">student_id</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="p">...</span>
+<span class="w">    </span><span class="p">),</span>
+<span class="w">    </span><span class="n">grouped</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="n">student_id</span><span class="p">,</span><span class="w"> </span><span class="k">max</span><span class="p">(</span><span class="k">if</span><span class="p">(</span><span class="n">address</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">))</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">has_addr</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">sendable</span>
+<span class="w">        </span><span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">student_id</span>
+<span class="w">    </span><span class="p">),</span>
+<span class="w">    </span><span class="n">no_addr</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="n">student_id</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">grouped</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">has_addr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span>
+<span class="k">select</span>
+<span class="w">    </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">no_addr</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">no_addressed_contact</span><span class="p">,</span>
+<span class="w">    </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">no_addr</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n</span>
+<span class="w">        </span><span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="n">addresses</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">n</span><span class="p">.</span><span class="n">student_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="n">student_id</span>
+<span class="w">        </span><span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">            </span><span class="p">(</span>
+<span class="w">                </span><span class="k">select</span><span class="w"> </span><span class="k">distinct</span><span class="w"> </span><span class="k">cast</span><span class="p">(</span><span class="n">student_id</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">student_id</span>
+<span class="w">                </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kippmiami_focus</span><span class="p">.</span><span class="n">stg_focus__students_join_address</span><span class="o">`</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">f</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="n">n</span><span class="p">.</span><span class="n">student_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">f</span><span class="p">.</span><span class="n">student_id</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="n">student_id</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">f</span><span class="p">.</span><span class="n">student_id</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">truly_stranded</span>
+</code></pre></div>
+<p>Expected: <code>truly_stranded</code> <strong>46</strong>, down from a prod baseline of 158. Report the
+actual number. If it differs materially, report it and stop — do not adjust the
+expectation to match the output.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Update the ops doc</strong></li>
+</ul>
+<p>In <code>docs/reference/finalsite-focus-import.md</code>, four passages in the "Blank
+addresses and nameless contacts are held back" section now describe behavior the
+pipeline no longer has. Make these exact replacements.</p>
+<p>Replace the sentence
+<code>To prevent that, the pipeline **holds a student's address record back when it cannot tell which address to send**.</code>
+with:</p>
+<div class="highlight"><pre><span></span><code>To prevent that, the pipeline **holds a student's address record back only when
+Finalsite has no usable address for them at all**.
+</code></pre></div>
+<p>Replace the whole <strong>Addresses</strong> bullet with:</p>
+<div class="highlight"><pre><span></span><code><span class="k">-</span><span class="w"> </span><span class="gs">**Addresses**</span> — a student's address comes from the households their Parent 1
+  is linked to, falling back to the households the student is linked to when
+  Parent 1 has none. When Finalsite points to several addresses, the pipeline
+  sends the most complete one rather than sending nothing. A household with no
+  street line is not treated as an address at all; a household that has a street
+  but is missing its city, state, or ZIP <span class="gs">**is**</span> sent, so the gap is visible in
+  Focus and can be fixed there. A student gets no address only when neither they
+  nor their Parent 1 has a household carrying a street line, and flows the first
+  run Finalsite gives either of them one.
+</code></pre></div>
+<p>Replace the whole <strong>Contacts</strong> bullet with:</p>
+<div class="highlight"><pre><span></span><code><span class="k">-</span><span class="w"> </span><span class="gs">**Contacts**</span> — a contact is sent only once it has a name. A nameless contact
+  is skipped and flows once the name is filled in. A guardian's address is
+  resolved from the guardian's own households only, with no fallback: when
+  Finalsite links them to several addresses the most complete one is sent, and
+  the address is left blank only when none of their households carries a street
+  line. The contact goes out with the rest of their details either way.
+</code></pre></div>
+<p>Replace the blockquote beginning
+<code>**A student can be enrolled in Focus with no address yet.**</code> with:</p>
+<div class="highlight"><pre><span></span><code><span class="k">&gt; </span><span class="ge">**A student can be enrolled in Focus with no address yet.** That is expected</span>
+<span class="k">&gt; </span><span class="ge">when Finalsite holds no street address for them or for their Parent 1. Fix it</span>
+<span class="k">&gt; </span><span class="ge">in Finalsite — fill in the missing address, or retire the household the family</span>
+<span class="k">&gt; </span><span class="ge">no longer lives at — and it flows on the next run. (Demographics is not held</span>
+<span class="k">&gt; </span><span class="ge">back this way; a student's demographics import as soon as the student is</span>
+<span class="k">&gt; </span><span class="ge">enrolled in Finalsite and new to Focus.)</span>
+</code></pre></div>
+<p>The old blockquote blamed "several and none is marked as the one to use" and a
+missing Parent 1. Neither is a reason for a blank address any more — several
+resolves by picking, and a student with no Parent 1 now resolves from their own
+household.</p>
+<p>Finally, grep the file for <code>ambiguous</code>, <code>more than one address</code>, and <code>several</code>
+to catch any remaining prose asserting the withhold behavior, and fix what you
+find. Leave the "Emergency contacts" subsection alone — it landed in #4652 and
+is unrelated.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Lint the doc</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-finalsite-address-pick<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>--no-fix<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>docs/reference/finalsite-focus-import.md<span class="w"> </span>&lt;/dev/null
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Commit and push</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-finalsite-address-pick<span class="w"> </span>add<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>docs/reference/finalsite-focus-import.md
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-finalsite-address-pick<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"docs: describe address picking for the enrollment team</span>
+
+<span class="s2">Refs #4680</span>
+
+<span class="s2">Co-Authored-By: Claude Opus 5 (1M context) &lt;noreply@anthropic.com&gt;"</span>
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-finalsite-address-pick<span class="w"> </span>push
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Open the PR</strong></li>
+</ul>
+<p>Base <code>main</code>. Body from <code>.github/pull_request_template.md</code>, including
+<code>Closes #4680</code>. Write the body to a file and post it with
+<code>gh api -X POST repos/TEAMSchools/teamster/pulls -F body=@&lt;file&gt; -f title=... -f head=... -f base=main</code>
+— the <code>mcp__github__*</code> write tools strip angle-bracket tokens and entity-encode
+ampersands and quotes. Avoid <code>&amp;</code> and <code>"</code> in the title.</p>
+<p>State in the body: the measured before/after stranded counts, the <code>newly_losing</code>
+and <code>address_changed</code> numbers from Step 2, that the 113 address changes are the
+expected consequence of the tier reorder, that the <code>is_picked_address</code> column
+addition required forcing the kipptaf union wrapper <code>state:modified</code>, and that
+the remaining 46 students are Finalsite data gaps needing Ops cleanup rather
+than a pipeline change.</p>
+<p>Read the stored body back with
+<code>gh api repos/TEAMSchools/teamster/pulls/&lt;n&gt; --jq .body</code> and confirm it is
+intact.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 8: Flag the staging-seed requirement to the user</strong></li>
+</ul>
+<p><code>is_picked_address</code> is a column ADD on a package model that kipptaf unions. dbt
+Cloud CI reads <code>zz_stg_&lt;district&gt;_finalsite</code> copies, which will not carry the
+new column until each district's staging copy is rebuilt. That rebuild is
+<code>dbt build --select int_finalsite__student_address_of_record --target staging</code>
+per district, which recreates shared <code>zz_stg</code> relations and is
+classifier-blocked without explicit user authorization naming the operation.</p>
+<p>Do not attempt it. Report to the user that CI will fail with
+<code>Name is_picked_address not found</code> until they authorize the four staging builds,
+and give them the exact commands.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+    
+  </body>
+</html>

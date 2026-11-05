@@ -1,0 +1,2504 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>KIPP Forward Early Apps Tracker Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.57a0d79d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#kipp-forward-early-apps-tracker-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              KIPP Forward Early Apps Tracker Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/launch-page-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Launch Page
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube-access-individual-exceptions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube Access - Individual Exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/tableau-permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tableau Permissions (People Data)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/csgf-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSGF Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/crdc-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CRDC Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ddi-stack-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDI Stack Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/hs-early-warning-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HS Early Warning Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/dibels-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIBELS Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/stat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/njdoe-universal-screener-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NJDOE Universal Screener Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/athletic-eligibility-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Athletic Eligibility Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/academic-health-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic Health Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/grad-plan-tracking-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Grad Plan Tracking Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ignite-r2i-extract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IGNITE R2I Extract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#global-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global Constraints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#review-focus" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Review Focus
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Review Focus">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-1-application-grain-intermediate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: Application-grain intermediate
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-2-senior-grain-rollup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: Senior-grain rollup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-3-senior-criterion-scaffold" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: Senior × criterion scaffold
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-4-roster-extract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: Roster extract
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-5-summary-extract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 5: Summary extract
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-6-not-submitted-yet-extract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 6: Not Submitted Yet extract
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-7-near-misses-extract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 7: Near Misses extract
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-8-build-in-dev-and-check-against-prod-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 8: Build in dev and check against prod data
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-9-exposure-source-sheet-and-pull-request" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 9: Exposure, source sheet, and pull request
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-10-29-kfwd-early-apps-tracker.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="kipp-forward-early-apps-tracker-implementation-plan">KIPP Forward Early Apps Tracker Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Four <code>rpt_gsheets__kfwd_early_apps_*</code> models that feed a
+daily-refreshing Google Sheet tracking current seniors' early-application goals
+from Overgrad data.</p>
+<p><strong>Architecture:</strong> Three domain intermediates in <code>models/students/</code> hold every
+rule: an application-grain model, a senior-grain rollup, and a senior ×
+criterion scaffold. Four thin <code>rpt_</code> models shape them for the sheet's 4 tabs.
+An exposure in <code>google-sheets.yml</code> names the source sheet.</p>
+<p><strong>Tech Stack:</strong> dbt (BigQuery), dbt unit tests, Connected Sheets.</p>
+<p><strong>Spec:</strong> <code>docs/superpowers/specs/2026-10-29-kfwd-early-apps-tracker-design.md</code></p>
+<h2 id="global-constraints">Global Constraints</h2>
+<ul>
+<li>Worktree:
+  <code>/workspaces/teamster/.claude/worktrees/CGibson17/feat/claude-kfwd-early-apps-tracker</code>
+  (<code>WT</code> below). Every <code>git</code> call is <code>git -C &lt;WT&gt;</code>; every dbt call passes
+  <code>--project-dir &lt;WT&gt;/src/dbt/kipptaf</code>. Always <code>uv run</code>.</li>
+<li>Invoke the <code>dbt-local-dev</code> skill before the first dbt command (dev schema,
+  <code>--defer --state</code>, and the prod manifest path). Run
+  <code>uv run dbt deps --project-dir &lt;WT&gt;/src/dbt/kipptaf</code> in its own Bash call
+  first.</li>
+<li>Never write a <code>--target staging</code> or <code>--target prod</code> object. Dev builds only.</li>
+<li>No student values in git, the PR, or the issue. Unit-test fixtures use
+  <code>Student A</code>-style names and <code>Example College</code>-style colleges.</li>
+<li>Current seniors: <code>graduation_year = {{ var("current_academic_year") + 1 }}</code>.</li>
+<li>The 3 high schools, by Overgrad <code>school__name</code>:
+  <code>KIPP Cooper Norcross High School</code>, <code>KIPP Newark Collegiate Academy</code>,
+  <code>KIPP Newark Lab High School</code>.</li>
+<li>Early <code>due_date__type</code>: <code>early_action</code>, <code>early_action_2</code>, <code>early_decision</code>,
+  <code>early_decision_2</code>, <code>single_choice_early_action</code>. ED = <code>early_decision*</code>; EA =
+  the other 3.</li>
+<li>Submitted <code>status</code>: <code>Applied</code>, <code>Accepted</code>, <code>Denied</code>, <code>Deferred</code>, <code>Waitlisted</code>,
+  <code>Enrolled</code>.</li>
+<li>URM rate: <code>stg_kippadb__account.adjusted_6_year_minority_graduation_rate</code>, on
+  <code>nces_id = cast(university__ipeds_id as string)</code>. Null rate never qualifies
+  and is never near the bar.</li>
+<li>Full need: column <code>is_full_need</code>, always <code>true</code>.</li>
+<li>Every join between <code>int_overgrad__students</code> and <code>int_overgrad__admissions</code>
+  includes <code>_dbt_source_project</code> (rule A10).</li>
+<li>Counts are distinct <code>university__id</code>.</li>
+<li>SQL follows <code>.claude/rules/dbt-sql.md</code>; YAML follows
+  <code>.claude/rules/dbt-yaml.md</code>. Every model and column has a <code>description:</code>.
+  <code>rpt_</code> tests set <code>config: severity: error</code>.</li>
+<li>PII tags (tiers 1 to 3 from <code>.claude/rules/ferpa-pii.md</code>, column level):
+  student name, GPA, GPA band, criterion statuses, and every application list.
+  The Summary model is untagged (aggregate).</li>
+<li><code>overgrad_student_id</code> is the grain key in every student-level model. It stays
+  in the model for tests and is left out of the Connected Sheets column picks.</li>
+<li>Lint every changed SQL, YAML, and markdown file before pushing:
+  <code>cd &lt;WT&gt; &amp;&amp; /workspaces/teamster/.trunk/tools/trunk check --force --no-fix &lt;files&gt; &lt;/dev/null</code>.</li>
+</ul>
+<h2 id="review-focus">Review Focus</h2>
+<ol>
+<li>A flagged senior with no GPA: band <code>No GPA</code>, every criterion <code>N/A</code>, still in
+   N. Test in Task 2.</li>
+<li>An early application whose college has no URM rate: never qualifying, never
+   near the bar. Test in Task 3.</li>
+<li>A flagged senior whose only early application is <code>Withdrew</code>: counted as not
+   submitted, so Section A. Test in Task 2.</li>
+<li>URM exactly on a bar (80.0 qualifies; 75.0 is near the bar; 74.9 is neither).
+   Test in Task 3.</li>
+<li>A GPA band with 0 seniors at 1 school: Summary shows <code>-</code>, not a divide error.
+   Test in Task 5.</li>
+</ol>
+<hr />
+<h3 id="task-1-application-grain-intermediate">Task 1: Application-grain intermediate</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create:
+  <code>src/dbt/kipptaf/models/students/intermediate/int_students__early_applications.sql</code></li>
+<li>Create:
+  <code>src/dbt/kipptaf/models/students/intermediate/properties/int_students__early_applications.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>ref("int_overgrad__admissions")</code>, <code>ref("stg_kippadb__account")</code>.</li>
+<li>
+<p>Produces: 1 row per Overgrad admission whose <code>due_date__type</code> is early, every
+  year and school. Columns: <code>_dbt_source_project</code>, <code>admission_id</code>,
+  <code>overgrad_student_id</code> (<code>student__id</code>), <code>university_id</code>, <code>university_name</code>,
+  <code>due_date_type</code>, <code>application_type</code> (<code>ED</code> or <code>EA</code>), <code>due_date</code>
+  (<code>due_date__date</code>), <code>application_status</code>, <code>is_submitted</code> (bool),
+  <code>urm_graduation_rate</code> (numeric, nullable), <code>is_full_need</code> (bool, always true),
+  <code>updated_at</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the unit test</strong>
+      <code>test_int_students__early_applications_classification</code> in the properties
+      YAML. Given 6 admissions: <code>early_decision</code>/<code>Applied</code>,
+      <code>early_decision_2</code>/<code>Will Apply</code>, <code>single_choice_early_action</code>/<code>Accepted</code>,
+      <code>early_action</code>/<code>Withdrew</code>, <code>regular</code>/<code>Applied</code>, <code>priority</code>/<code>Applied</code>, and
+      2 accounts (one with rate 80.0, one with null rate). Expect 4 rows, with
+      <code>application_type</code> <code>ED</code>, <code>ED</code>, <code>EA</code>, <code>EA</code>; <code>is_submitted</code> true, false,
+      true, false; the rate joined for the matching IPEDS id and null otherwise;
+      <code>is_full_need</code> true on every row.</p>
+</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run it and see it fail</strong>
+      <code>uv run dbt test --select "int_students__early_applications,test_type:unit" --project-dir &lt;WT&gt;/src/dbt/kipptaf</code>
+      Expected: FAIL (model does not exist).</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Write the model.</strong> Filter to the early types in Global
+      Constraints. Left join the account on IPEDS id.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Add the grain test</strong> <code>dbt_utils.unique_combination_of_columns</code>
+      on <code>_dbt_source_project</code>, <code>admission_id</code>. It also catches an IPEDS id on 2
+      Salesforce accounts, which would fan out rows.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Run the unit test.</strong> Expected: PASS.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Commit</strong> <code>feat(dbt): add int_students__early_applications</code>.</li>
+</ul>
+<h3 id="task-2-senior-grain-rollup">Task 2: Senior-grain rollup</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create:
+  <code>src/dbt/kipptaf/models/students/intermediate/int_students__early_applications_rollup.sql</code></li>
+<li>Create: <code>.../properties/int_students__early_applications_rollup.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>ref("int_overgrad__students")</code>, Task 1's model.</li>
+<li>Produces: 1 row per current senior at the 3 high schools, with or without
+  applications or a flag. Columns: <code>_dbt_source_project</code>, <code>overgrad_student_id</code>,
+  <code>student_name</code> (<code>last_name, first_name</code>), <code>high_school</code>, <code>counselor_name</code>
+  (<code>first last</code>), <code>unweighted_gpa</code> (numeric: cast to <code>numeric</code> before
+  <code>round(..., 2)</code>, so a float 3.745 cannot round down), <code>gpa_band</code> (<code>3.75+</code>,
+  <code>3.50-3.74</code>, <code>3.00-3.49</code>, <code>Below 3.00</code>, <code>No GPA</code>), <code>is_ed_ea_flagged</code>
+  (<code>is_ed_ea = 'Yes'</code>), <code>submitted_early_count</code> (int),
+  <code>submitted_early_applications</code> (string), <code>will_apply_early_applications</code>
+  (string), <code>earliest_will_apply_due_date</code> (date), <code>latest_overgrad_updated_at</code>
+  (timestamp: the latest <code>updated_at</code> of the student and their early
+  applications).</li>
+<li>
+<p>List formats, alphabetical by college, joined with <code>,</code>: submitted
+  <code>Example College (ED) 77%</code> (rate rounded to whole number; <code>no rate</code> when
+  null); will-apply <code>Example College (EA)</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write unit test</strong>
+      <code>test_int_students__early_applications_rollup</code>. Given 5 current seniors at
+      the 3 schools plus 1 at <code>KIPP MS Completers (Newark)</code> and 1 with
+      <code>graduation_year</code> of next year. Cases: Student A flagged, GPA 3.96, 2
+      submitted applications to 2 colleges; Student B flagged, null GPA, 0
+      applications; Student C flagged, GPA 3.10, 1 <code>Withdrew</code> application and 1
+      <code>Will Apply</code> due 2026-11-01; Student D unflagged, GPA 3.50, 1 submitted
+      application; Student E GPA 3.745. Override
+      <code>vars: {current_academic_year: 2026}</code>. Expect 5 rows (the MS Completers
+      and next-year seniors excluded). Student B band <code>No GPA</code>, count 0. Student
+      C count 0, will-apply list populated, earliest date 2026-11-01. Student E
+      <code>unweighted_gpa</code> 3.75, band <code>3.75+</code>.</p>
+</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Add a second unit test</strong>
+      <code>test_int_students__early_applications_rollup_distinct_colleges</code>: 1 senior
+      with 2 submitted rows for the same <code>university_id</code>. Expect
+      <code>submitted_early_count</code> = 1.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Run both and see them fail.</strong></li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Write the model.</strong> Spine from <code>int_overgrad__students</code>; left
+      join Task 1 on <code>overgrad_student_id</code> and <code>_dbt_source_project</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Grain test</strong> on <code>_dbt_source_project</code>, <code>overgrad_student_id</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Run the unit tests.</strong> Expected: PASS.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Commit</strong>
+      <code>feat(dbt): add int_students__early_applications_rollup</code>.</li>
+</ul>
+<h3 id="task-3-senior-criterion-scaffold">Task 3: Senior × criterion scaffold</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create:
+  <code>src/dbt/kipptaf/models/students/intermediate/int_students__early_application_criteria_scaffold.sql</code></li>
+<li>Create: <code>.../properties/int_students__early_application_criteria_scaffold.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul>
+<li>Consumes: Tasks 1 and 2.</li>
+<li>Produces: 1 row per senior (any flag) × each criterion of their band. Seniors
+  in <code>Below 3.00</code> or <code>No GPA</code> get no rows. Columns: <code>_dbt_source_project</code>,
+  <code>overgrad_student_id</code>, <code>gpa_band</code>, <code>criterion_code</code>, <code>criterion_sort</code>,
+  <code>criterion_label</code>, <code>required_count</code>, <code>urm_bar</code>, <code>qualifying_count</code>,
+  <code>near_bar_count</code>, <code>is_met</code> (bool), <code>is_near_miss</code> (bool),
+  <code>qualifying_colleges</code>, <code>near_bar_colleges</code>, <code>what_they_have</code>,
+  <code>what_would_close_it</code>.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th><code>criterion_code</code></th>
+<th>sort</th>
+<th>band</th>
+<th>label</th>
+<th>type</th>
+<th>bar</th>
+<th>required</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ed_80_full_need</code></td>
+<td>1</td>
+<td>3.75+</td>
+<td>1 ED, full need, 80%+ URM</td>
+<td>ED</td>
+<td>80</td>
+<td>1</td>
+</tr>
+<tr>
+<td><code>ea_78</code></td>
+<td>2</td>
+<td>3.75+</td>
+<td>2 EA, 78%+ URM</td>
+<td>EA</td>
+<td>78</td>
+<td>2</td>
+</tr>
+<tr>
+<td><code>early_80_full_need</code></td>
+<td>3</td>
+<td>3.50-3.74</td>
+<td>1 ED/EA, full need, 80%+ URM</td>
+<td>early</td>
+<td>80</td>
+<td>1</td>
+</tr>
+<tr>
+<td><code>additional_68</code></td>
+<td>4</td>
+<td>3.50-3.74</td>
+<td>2 additional early, 68%+ URM</td>
+<td>early</td>
+<td>68</td>
+<td>2</td>
+</tr>
+<tr>
+<td><code>early_68</code></td>
+<td>5</td>
+<td>3.00-3.49</td>
+<td>3 early, 68%+ URM</td>
+<td>early</td>
+<td>68</td>
+<td>3</td>
+</tr>
+</tbody>
+</table>
+<ul class="task-list">
+<li>Qualifying: submitted, right type, <code>urm_graduation_rate &gt;= bar</code>, and
+  <code>is_full_need</code> for the 2 full-need rules. For <code>additional_68</code>, set aside the
+  alphabetically first qualifying <code>early_80_full_need</code> college, then count the
+  rest.</li>
+<li>Near bar: submitted, right type, <code>bar - 5 &lt;= rate &lt; bar</code>.</li>
+<li><code>is_near_miss</code>: <code>not is_met</code> and either
+  <code>required_count = 1 and near_bar_count &gt;= 1</code>, or
+  <code>required_count &gt; 1 and (qualifying_count = required_count - 1 or qualifying_count + near_bar_count &gt;= required_count)</code>.</li>
+<li><code>what_they_have</code>: <code>Qualifying: &lt;list&gt;; Near the bar: &lt;list&gt;</code>, omitting an
+  empty part; each item uses the Task 2 submitted format.</li>
+<li>
+<p><code>what_would_close_it</code>, only when <code>is_near_miss</code>: for a 1-school rule,
+  <code>An &lt;ED|ED or EA&gt; college at &lt;bar&gt;%+ (closest: &lt;college&gt; at &lt;rate&gt;%, &lt;gap&gt; points short)</code>
+  with the gap to 1 decimal; otherwise
+  <code>&lt;n&gt; more &lt;ED|EA|early&gt; college(s) at &lt;bar&gt;%+</code> where
+  <code>n = required_count - qualifying_count</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Unit test</strong> <code>test_..._criteria_scaffold_3_75_band</code>. 2 seniors in
+      <code>3.75+</code>. Senior A: ED at 95.8, EA at 79.1 and 88.8. Senior B: ED at 78.2,
+      EA at 79.1 and 73.6. Expect Senior A <code>ed_80_full_need</code> and <code>ea_78</code> met,
+      not near misses. Senior B both not met and both near misses;
+      <code>ed_80_full_need</code> close text
+      <code>An ED college at 80%+ (closest: &lt;college&gt; at 78.2%, 1.8 points short)</code>;
+      <code>ea_78</code> close text <code>1 more EA college at 78%+</code>.</p>
+</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Unit test</strong> <code>test_..._criteria_scaffold_narrow_near_miss</code>. 2
+      seniors in <code>3.00-3.49</code>. Senior C: 0 qualifying, 1 application at 65.0: not
+      a near miss. Senior D: 2 qualifying and 1 at 63.0: near miss.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Unit test</strong> <code>test_..._criteria_scaffold_additional</code>. 1 senior in
+      <code>3.50-3.74</code> with early applications at 92, 88, and 70. Expect
+      <code>early_80_full_need</code> met; <code>additional_68</code> met with <code>qualifying_count</code> 2
+      (88 and 70 count; the alphabetically first of 92 and 88 is set aside).</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Unit test</strong> <code>test_..._criteria_scaffold_edges</code> (Review Focus 2
+      and 4). 3.75+ senior with ED at 80.0 (met), a second 3.75+ senior with ED
+      at 75.0 (near miss) and EA at null rate (not counted), a third with ED at
+      74.9 (not met, not a near miss).</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Run all 4 and see them fail.</strong></li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Write the model.</strong> Criteria come from a literal <code>unnest</code> of
+      structs matching the table above, joined to the rollup on <code>gpa_band</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Grain test</strong> on <code>_dbt_source_project</code>, <code>overgrad_student_id</code>,
+      <code>criterion_code</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 8: Run the unit tests.</strong> Expected: PASS.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 9: Commit</strong> <code>feat(dbt): add early application criteria scaffold</code>.</li>
+</ul>
+<h3 id="task-4-roster-extract">Task 4: Roster extract</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create:
+  <code>src/dbt/kipptaf/models/extracts/google/sheets/rpt_gsheets__kfwd_early_apps_roster.sql</code></li>
+<li>Create: <code>.../sheets/properties/rpt_gsheets__kfwd_early_apps_roster.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: Tasks 2 and 3.</li>
+<li>
+<p>Produces: 1 row per flagged senior. Columns: <code>overgrad_student_id</code>,
+  <code>student_name</code>, <code>high_school</code>, <code>counselor_name</code>, <code>unweighted_gpa</code>, <code>gpa_band</code>,
+  <code>met_all_for_band</code> (<code>Yes</code>/<code>No</code>/<code>N/A</code>), <code>submitted_early_count</code>, then for each
+  <code>criterion_code</code> a <code>&lt;code&gt;_status</code> (<code>Yes</code>/<code>No</code>/<code>N/A</code>) and a <code>&lt;code&gt;_colleges</code>
+  (qualifying list when <code>Yes</code>, else null), then <code>near_miss_count</code>,
+  <code>submitted_early_applications</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Unit test</strong> <code>test_rpt_gsheets__kfwd_early_apps_roster</code>: 3
+      seniors (flagged 3.75+ meeting both; flagged <code>No GPA</code>; unflagged). Expect
+      2 rows. First: <code>met_all_for_band</code> <code>Yes</code>, 3.50 and 3.00 statuses <code>N/A</code>.
+      Second: every status <code>N/A</code>, <code>met_all_for_band</code> <code>N/A</code>, <code>near_miss_count</code> 0.</p>
+</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run it and see it fail.</strong></li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Write the model.</strong> Pivot the scaffold with <code>max(if(...))</code> per
+      criterion; <code>met_all_for_band</code> = <code>logical_and(is_met)</code> over the band's
+      rows, <code>N/A</code> when the senior has none.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Grain test</strong> <code>unique</code> and <code>not_null</code> on <code>overgrad_student_id</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Run it.</strong> Expected: PASS.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Commit</strong> <code>feat(dbt): add early apps roster extract</code>.</li>
+</ul>
+<h3 id="task-5-summary-extract">Task 5: Summary extract</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>.../sheets/rpt_gsheets__kfwd_early_apps_summary.sql</code> and its
+  properties YAML.</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: Tasks 2 and 3.</li>
+<li>Produces: 19 rows, 1 per <code>row_sort</code>. Columns: <code>row_sort</code>, <code>gpa_band</code>,
+  <code>row_label</code>; display columns <code>cooper_norcross</code>, <code>newark_collegiate</code>,
+  <code>newark_lab</code>, <code>all_schools</code>; numeric columns <code>&lt;school&gt;_met</code>,
+  <code>&lt;school&gt;_denominator</code>, <code>&lt;school&gt;_pct</code> for the same 4; <code>data_as_of</code> (date of
+  max <code>latest_overgrad_updated_at</code> over flagged seniors).</li>
+<li>Rows: 1 <code>N: flagged Is ED/EA = Yes</code>; 2 to 5 the band counts (<code>3.75+</code>,
+  <code>3.50-3.74</code>, <code>3.00-3.49</code>, <code>Below 3.00 or no GPA</code>), display as the bare count;
+  6 to 19 the 7 criteria (5 codes plus <code>3.75+ met both</code> and
+  <code>3.50-3.74 met both</code>), each as <code>% of N</code> then <code>% of band</code>.</li>
+<li>Display:
+  <code>format('%d%% (%d/%d)', cast(round(100 * met / denominator) as int64), met, denominator)</code>;
+  <code>-</code> when the denominator is 0.</li>
+<li>
+<p>Population: flagged seniors only.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Unit test</strong> <code>test_rpt_gsheets__kfwd_early_apps_summary</code>: Cooper
+      Norcross with 2 flagged 3.75+ seniors (1 meets <code>ed_80_full_need</code>), Newark
+      Collegiate with 1 flagged 3.00-3.49 senior, Newark Lab with 0 flagged
+      seniors. Expect the <code>ed_80_full_need</code> <code>% of band</code> row: <code>cooper_norcross</code>
+      <code>50% (1/2)</code>, <code>newark_collegiate</code> <code>-</code>, <code>newark_lab</code> <code>-</code>, <code>all_schools</code>
+      <code>50% (1/2)</code>; the N row <code>all_schools</code> <code>3</code>.</p>
+</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run it and see it fail.</strong></li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Write the model.</strong></li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Grain test</strong> <code>unique</code> on <code>row_sort</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Run it.</strong> Expected: PASS.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Commit</strong> <code>feat(dbt): add early apps summary extract</code>.</li>
+</ul>
+<h3 id="task-6-not-submitted-yet-extract">Task 6: Not Submitted Yet extract</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>.../sheets/rpt_gsheets__kfwd_early_apps_not_submitted.sql</code> and its
+  properties YAML.</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: Task 2.</li>
+<li>
+<p>Produces: Section <code>A</code> (flagged, <code>submitted_early_count = 0</code>) and section <code>B</code>
+  (unflagged, <code>submitted_early_count &gt; 0</code>). Columns: <code>overgrad_student_id</code>,
+  <code>section</code>, <code>section_label</code> (<code>A. Flagged ED/EA, no early app submitted</code> /
+  <code>B. Submitted early, but Is ED/EA flag is blank: fix the flag in Overgrad</code>),
+  <code>student_name</code>, <code>high_school</code>, <code>counselor_name</code>, <code>gpa_band</code>,
+  <code>will_apply_early_applications</code>, <code>earliest_will_apply_due_date</code>,
+  <code>submitted_early_applications</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Unit test</strong> with 4 seniors: flagged/0 submitted (A), flagged/1
+      submitted (out), unflagged/1 submitted (B), unflagged/0 (out). Expect 2
+      rows with the right sections.</p>
+</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run it and see it fail.</strong></li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Write the model.</strong></li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Grain test</strong> <code>unique</code> and <code>not_null</code> on <code>overgrad_student_id</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Run it.</strong> Expected: PASS.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Commit</strong> <code>feat(dbt): add early apps not-submitted extract</code>.</li>
+</ul>
+<h3 id="task-7-near-misses-extract">Task 7: Near Misses extract</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>.../sheets/rpt_gsheets__kfwd_early_apps_near_misses.sql</code> and its
+  properties YAML.</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: Tasks 2 and 3.</li>
+<li>
+<p>Produces: 1 row per flagged senior × criterion where <code>is_near_miss</code>. Columns:
+  <code>overgrad_student_id</code>, <code>criterion_code</code>, <code>criterion_sort</code>, <code>student_name</code>,
+  <code>high_school</code>, <code>counselor_name</code>, <code>gpa_band</code>, <code>criterion_label</code>,
+  <code>what_they_have</code>, <code>what_would_close_it</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Unit test</strong>: a flagged senior with 2 near-miss criteria, a
+      flagged senior with 1 met criterion, and an unflagged near-miss senior.
+      Expect 2 rows, both for the first senior.</p>
+</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run it and see it fail.</strong></li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Write the model.</strong></li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Grain test</strong> on <code>overgrad_student_id</code>, <code>criterion_code</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Run it.</strong> Expected: PASS.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Commit</strong> <code>feat(dbt): add early apps near-misses extract</code>.</li>
+</ul>
+<h3 id="task-8-build-in-dev-and-check-against-prod-data">Task 8: Build in dev and check against prod data</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Build</strong> <code>int_students__early_applications+</code> into the dev schema
+      per <code>dbt-local-dev</code> (<code>--target dev --defer --state &lt;prod manifest&gt;</code>).
+      Expected: every model and test passes.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: N check.</strong> Count current seniors at the 3 schools with
+      <code>is_ed_ea = 'Yes'</code> straight from
+      <code>kipptaf_overgrad.int_overgrad__students</code>; it equals the Summary N row
+      <code>all_schools</code> and the Roster row count.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Sum check.</strong> For each Summary row, the 3 school <code>_met</code> and
+      <code>_denominator</code> values sum to the <code>all_schools</code> values.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Stakeholder check, terminal only.</strong> Find the 2 seniors from the
+      2026-10-29 report by name in the dev Roster. Expect one <code>Yes</code> on both
+      3.75+ criteria; the other <code>No</code> on both, with 2 Near Misses rows.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Lint</strong> every new SQL and YAML file. Fix findings.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Commit</strong> any fixes.</li>
+</ul>
+<h3 id="task-9-exposure-source-sheet-and-pull-request">Task 9: Exposure, source sheet, and pull request</h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify: <code>src/dbt/kipptaf/models/exposures/google-sheets.yml</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Get the source sheet URL.</strong> Ask the user to create a blank
+      Google Sheet named <code>rpt_gsheets__kfwd_early_apps</code> in the IMPORTRANGE
+      Sources folder (<code>docs/guides/google-sheets.md</code>) and paste its URL. Do not
+      create it without that confirmation.</p>
+</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Add the exposure.</strong> <code>name: kfwd_early_apps_tracker</code>,
+      <code>label: KIPP Forward Early Apps Tracker</code>, <code>type: application</code>,
+      <code>owner.name: Data Team</code>, <code>url: &lt;source sheet URL&gt;</code>, <code>depends_on</code> the 4
+      <code>rpt_gsheets__kfwd_early_apps_*</code> refs,
+      <code>config.meta.dagster.kinds:     [googlesheets]</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Parse.</strong>
+      <code>uv run dbt parse --no-partial-parse --project-dir &lt;WT&gt;/src/dbt/kipptaf</code>.
+      Expected: no errors.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Lint and commit</strong> <code>feat(dbt): add early apps tracker exposure</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Push and open the PR</strong> from <code>.github/pull_request_template.md</code>,
+      body <code>Closes #6190</code>. Put the post-merge sheet setup in Reviewer Notes: 4
+      Connected Sheets tabs (<code>summary</code>, <code>roster</code>, <code>not_submitted</code>,
+      <code>near_misses</code>) in the source sheet, a daily refresh, every column except
+      <code>overgrad_student_id</code>; then a Reports sheet <code>Early Apps Tracker</code> with 4
+      friendly-named tabs using <code>IMPORTRANGE</code> only.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+    
+  </body>
+</html>

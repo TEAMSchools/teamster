@@ -1,0 +1,2975 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>Google Directory groupKey Guard Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.57a0d79d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#google-directory-groupkey-guard-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Google Directory groupKey Guard Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/launch-page-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Launch Page
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube-access-individual-exceptions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube Access - Individual Exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/tableau-permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tableau Permissions (People Data)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/csgf-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSGF Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/crdc-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CRDC Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ddi-stack-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDI Stack Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/hs-early-warning-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HS Early Warning Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/dibels-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIBELS Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/stat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/njdoe-universal-screener-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NJDOE Universal Screener Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/athletic-eligibility-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Athletic Eligibility Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/academic-health-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic Health Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/grad-plan-tracking-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Grad Plan Tracking Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ignite-r2i-extract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IGNITE R2I Extract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#global-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global Constraints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#file-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File Structure
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="File Structure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-1-skip-and-report-unresolvable-group-addresses" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: Skip and report unresolvable group addresses
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-2-re-enable-the-groups-asset" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: Re-enable the groups asset
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-3-stage-groups-as-a-dbt-source-and-staging-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: Stage groups as a dbt source and staging model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-4-resolve-groupkey-against-the-staged-groups" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: Resolve groupKey against the staged groups
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-5-validate-on-the-branch-deployment-and-open-the-pr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 5: Validate on the branch deployment and open the PR
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#out-of-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Out of scope
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-08-10-google-directory-groupkey-guard.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="google-directory-groupkey-guard-implementation-plan">Google Directory <code>groupKey</code> Guard Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Stop sending group-membership adds for a Google Workspace group that
+does not exist, without blocking student account provisioning, and surface the
+missing group once per run instead of once per student.</p>
+<p><strong>Architecture:</strong> Re-enable the dormant <code>groups</code> asset in the kipptaf Google
+Directory code location so a <code>stg_google_directory__groups</code> model exists, then
+left join it in <code>rpt_google_directory__users_import</code> so an unresolvable group
+address becomes a null <code>groupKey</code> — the same shape <code>orgUnitPath</code> already uses.
+The membership-payload builder skips null-<code>groupKey</code> users and returns one
+aggregated error, which the <code>user_create</code> asset folds into its <code>zero_api_errors</code>
+check.</p>
+<p><strong>Tech Stack:</strong> Dagster (<code>dagster</code>, <code>dagster-gcp</code>), Google Admin SDK Directory
+API via <code>googleapiclient</code>, Pydantic + <code>py_avro_schema</code>, dbt on BigQuery, pytest,
+uv.</p>
+<p>Spec:
+<code>docs/superpowers/specs/2026-08-10-google-directory-groupkey-guard-design.md</code></p>
+<p>Refs <a href="https://github.com/TEAMSchools/teamster/issues/4766">#4766</a></p>
+<h2 id="global-constraints">Global Constraints</h2>
+<ul>
+<li><strong>Worktree:</strong> every command and every file edit targets
+  <code>/workspaces/teamster/.worktrees/cbini/fix/claude-google-directory-groupkey-guard</code>.
+  Use <code>git -C &lt;worktree&gt;</code> for git and <code>uv --directory &lt;worktree&gt; run ...</code>
+  (prefixed with <code>VIRTUAL_ENV=</code>) for Python. Editing
+  <code>/workspaces/teamster/&lt;path&gt;</code> instead silently dirties <code>main</code>.</li>
+<li><strong>Python:</strong> always <code>uv run</code>, never bare <code>python</code> / <code>python3</code> / <code>pytest</code>.</li>
+<li><strong><code>requires-python = "&gt;=3.13"</code>.</strong> Built-in generics (<code>list[dict]</code>,
+  <code>tuple[list[dict], list[dict]]</code>), <code>X | None</code> for nullable.</li>
+<li><strong>Docstrings:</strong> Google Python Style Guide. Multi-line is expected here.</li>
+<li><strong>Do not run <code>trunk fmt</code>.</strong> The pre-commit hook formats. Run
+  <code>.trunk/tools/trunk check --force --no-fix &lt;paths&gt; &lt;/dev/null</code> from inside the
+  worktree only where a step says to; the binary lives only in the main repo, so
+  invoke it by absolute path with cwd set to the worktree.</li>
+<li><strong>SQL conventions:</strong> BigQuery dialect, trailing comma after the last select
+  column (CV03), ST06 select-column ordering (plain refs grouped by source table
+  in join order, then constants, then simple functions, then logicals), no
+  one-sided calculations in join predicates, no <code>ORDER BY</code>, no <code>QUALIFY</code>, max
+  one level of function nesting.</li>
+<li><strong>dbt staging layer:</strong> <code>staging/</code> under <code>google/directory/</code> inherits
+  <code>+materialized: table</code> and <code>+contract: enforced: true</code> from
+  <code>src/dbt/kipptaf/dbt_project.yml</code> — do not repeat either in properties yml.
+  Every staging test sets <code>config: severity: error</code> explicitly, because the
+  project default is <code>warn</code>.</li>
+<li><strong>PII:</strong> group addresses and org unit paths are not student PII. Do not put
+  any student email, name, or number in a commit message, PR body, or issue
+  comment.</li>
+<li><strong>The <code>members</code> asset and <code>MEMBERS_SCHEMA</code> stay commented out.</strong> They belong
+  to the deferred reconciliation work in #4766. Re-enabling them is out of
+  scope.</li>
+<li><strong>Do not add a dbt test on null <code>groupKey</code>.</strong> The extract is a view, and the
+  data-change automation condition only re-materializes tables, so such a test
+  would almost never re-run. The Python-side aggregated error is the alert.</li>
+</ul>
+<hr />
+<h2 id="file-structure">File Structure</h2>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Responsibility</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>src/teamster/libraries/google/directory/resources.py</code></td>
+<td>Membership-payload builder; skip and report guard</td>
+</tr>
+<tr>
+<td><code>tests/resources/test_resource_google_directory.py</code></td>
+<td>Unit tests for that builder</td>
+</tr>
+<tr>
+<td><code>src/teamster/code_locations/kipptaf/google/directory/schema.py</code></td>
+<td>Avro schema for the <code>groups</code> asset</td>
+</tr>
+<tr>
+<td><code>src/teamster/code_locations/kipptaf/google/directory/assets.py</code></td>
+<td><code>groups</code> asset; <code>user_create</code> caller wiring</td>
+</tr>
+<tr>
+<td><code>src/teamster/code_locations/kipptaf/google/directory/schedules.py</code></td>
+<td>Daily pull of <code>groups</code></td>
+</tr>
+<tr>
+<td><code>src/dbt/kipptaf/models/google/directory/sources-external.yml</code></td>
+<td>External Avro source over the new GCS prefix</td>
+</tr>
+<tr>
+<td><code>src/dbt/kipptaf/models/google/directory/staging/stg_google_directory__groups.sql</code></td>
+<td>Flat staging select</td>
+</tr>
+<tr>
+<td><code>.../staging/properties/stg_google_directory__groups.yml</code></td>
+<td>Contract columns, uniqueness test, descriptions</td>
+</tr>
+<tr>
+<td><code>src/dbt/kipptaf/models/extracts/google/directory/rpt_google_directory__users_import.sql</code></td>
+<td>The guard join</td>
+</tr>
+<tr>
+<td><code>.../extracts/google/directory/properties/rpt_google_directory__users_import.yml</code></td>
+<td><code>groupKey</code> description; stale Paterson sentence</td>
+</tr>
+</tbody>
+</table>
+<p>Task order is Python first, then Dagster wiring, then dbt. Task 1 is inert until
+Task 4 lands, because <code>groupKey</code> cannot be null before the join exists — so each
+task is independently safe to merge.</p>
+<hr />
+<h3 id="task-1-skip-and-report-unresolvable-group-addresses">Task 1: Skip and report unresolvable group addresses</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/teamster/libraries/google/directory/resources.py:696-726</code></li>
+<li>Modify:
+  <code>src/teamster/code_locations/kipptaf/google/directory/assets.py:208-218</code></li>
+<li>Test: <code>tests/resources/test_resource_google_directory.py:469-497</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: nothing from earlier tasks.</li>
+<li>
+<p>Produces:
+  <code>members_for_created_users(users: list[dict], create_errors: list[dict]) -&gt; tuple[list[dict], list[dict]]</code>.
+  First element is <code>batch_insert_members</code> payloads (<code>groupKey</code> / <code>email</code> /
+  <code>delivery_settings</code>). Second element holds at most one dict with keys <code>error</code>
+  (str), <code>count</code> (int), <code>orgUnitPaths</code> (list[str]).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Update the shared test fixtures</strong></p>
+</li>
+</ul>
+<p>The three existing tests call <code>_created_user</code>, which has no <code>orgUnitPath</code> and no
+way to express a null <code>groupKey</code>. Replace both helpers at
+<code>tests/resources/test_resource_google_directory.py:472-478</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_created_user</span><span class="p">(</span>
+    <span class="n">email</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">group_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">"g@x.org"</span><span class="p">,</span>
+    <span class="n">org_unit_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"/Students/School A"</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">"primaryEmail"</span><span class="p">:</span> <span class="n">email</span><span class="p">,</span>
+        <span class="s2">"groupKey"</span><span class="p">:</span> <span class="n">group_key</span><span class="p">,</span>
+        <span class="s2">"orgUnitPath"</span><span class="p">:</span> <span class="n">org_unit_path</span><span class="p">,</span>
+    <span class="p">}</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_member</span><span class="p">(</span><span class="n">email</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">"groupKey"</span><span class="p">:</span> <span class="s2">"g@x.org"</span><span class="p">,</span> <span class="s2">"email"</span><span class="p">:</span> <span class="n">email</span><span class="p">,</span> <span class="s2">"delivery_settings"</span><span class="p">:</span> <span class="s2">"DISABLED"</span><span class="p">}</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Update the three existing tests for the tuple return</strong></li>
+</ul>
+<p>Each currently asserts against a bare list. Replace the three assertions:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_members_for_created_users_all_succeeded</span><span class="p">():</span>
+    <span class="n">users</span> <span class="o">=</span> <span class="p">[</span><span class="n">_created_user</span><span class="p">(</span><span class="s2">"a@x.org"</span><span class="p">),</span> <span class="n">_created_user</span><span class="p">(</span><span class="s2">"b@x.org"</span><span class="p">)]</span>
+    <span class="k">assert</span> <span class="n">members_for_created_users</span><span class="p">(</span><span class="n">users</span><span class="p">,</span> <span class="p">[])</span> <span class="o">==</span> <span class="p">(</span>
+        <span class="p">[</span><span class="n">_member</span><span class="p">(</span><span class="s2">"a@x.org"</span><span class="p">),</span> <span class="n">_member</span><span class="p">(</span><span class="s2">"b@x.org"</span><span class="p">)],</span>
+        <span class="p">[],</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_members_for_created_users_skips_failed_create</span><span class="p">():</span>
+    <span class="n">users</span> <span class="o">=</span> <span class="p">[</span><span class="n">_created_user</span><span class="p">(</span><span class="s2">"a@x.org"</span><span class="p">),</span> <span class="n">_created_user</span><span class="p">(</span><span class="s2">"b@x.org"</span><span class="p">)]</span>
+    <span class="n">create_errors</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">"primaryEmail"</span><span class="p">:</span> <span class="s2">"b@x.org"</span><span class="p">,</span> <span class="s2">"error"</span><span class="p">:</span> <span class="s2">"boom"</span><span class="p">}]</span>
+    <span class="k">assert</span> <span class="n">members_for_created_users</span><span class="p">(</span><span class="n">users</span><span class="p">,</span> <span class="n">create_errors</span><span class="p">)</span> <span class="o">==</span> <span class="p">(</span>
+        <span class="p">[</span><span class="n">_member</span><span class="p">(</span><span class="s2">"a@x.org"</span><span class="p">)],</span>
+        <span class="p">[],</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_members_for_created_users_all_failed_returns_empty</span><span class="p">():</span>
+    <span class="n">users</span> <span class="o">=</span> <span class="p">[</span><span class="n">_created_user</span><span class="p">(</span><span class="s2">"a@x.org"</span><span class="p">)]</span>
+    <span class="n">create_errors</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">"primaryEmail"</span><span class="p">:</span> <span class="s2">"a@x.org"</span><span class="p">,</span> <span class="s2">"error"</span><span class="p">:</span> <span class="s2">"boom"</span><span class="p">}]</span>
+    <span class="k">assert</span> <span class="n">members_for_created_users</span><span class="p">(</span><span class="n">users</span><span class="p">,</span> <span class="n">create_errors</span><span class="p">)</span> <span class="o">==</span> <span class="p">([],</span> <span class="p">[])</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Write the three new failing tests</strong></li>
+</ul>
+<p>Append after <code>test_members_for_created_users_all_failed_returns_empty</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_members_for_created_users_skips_null_group_key</span><span class="p">():</span>
+    <span class="n">users</span> <span class="o">=</span> <span class="p">[</span><span class="n">_created_user</span><span class="p">(</span><span class="s2">"a@x.org"</span><span class="p">),</span> <span class="n">_created_user</span><span class="p">(</span><span class="s2">"b@x.org"</span><span class="p">,</span> <span class="n">group_key</span><span class="o">=</span><span class="kc">None</span><span class="p">)]</span>
+
+    <span class="n">members</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">members_for_created_users</span><span class="p">(</span><span class="n">users</span><span class="p">,</span> <span class="p">[])</span>
+
+    <span class="k">assert</span> <span class="n">members</span> <span class="o">==</span> <span class="p">[</span><span class="n">_member</span><span class="p">(</span><span class="s2">"a@x.org"</span><span class="p">)]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_members_for_created_users_reports_null_group_key_once</span><span class="p">():</span>
+    <span class="n">users</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">_created_user</span><span class="p">(</span><span class="s2">"a@x.org"</span><span class="p">,</span> <span class="n">group_key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">org_unit_path</span><span class="o">=</span><span class="s2">"/Students/School B"</span><span class="p">),</span>
+        <span class="n">_created_user</span><span class="p">(</span><span class="s2">"b@x.org"</span><span class="p">,</span> <span class="n">group_key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">org_unit_path</span><span class="o">=</span><span class="s2">"/Students/School A"</span><span class="p">),</span>
+    <span class="p">]</span>
+
+    <span class="n">_</span><span class="p">,</span> <span class="n">unresolved</span> <span class="o">=</span> <span class="n">members_for_created_users</span><span class="p">(</span><span class="n">users</span><span class="p">,</span> <span class="p">[])</span>
+
+    <span class="k">assert</span> <span class="n">unresolved</span> <span class="o">==</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s2">"error"</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s2">"2 created users have no resolvable students group; membership"</span>
+                <span class="s2">" skipped"</span>
+            <span class="p">),</span>
+            <span class="s2">"count"</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s2">"orgUnitPaths"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"/Students/School A"</span><span class="p">,</span> <span class="s2">"/Students/School B"</span><span class="p">],</span>
+        <span class="p">}</span>
+    <span class="p">]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_members_for_created_users_does_not_report_null_group_key_for_failed_create</span><span class="p">():</span>
+    <span class="n">users</span> <span class="o">=</span> <span class="p">[</span><span class="n">_created_user</span><span class="p">(</span><span class="s2">"a@x.org"</span><span class="p">,</span> <span class="n">group_key</span><span class="o">=</span><span class="kc">None</span><span class="p">)]</span>
+    <span class="n">create_errors</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">"primaryEmail"</span><span class="p">:</span> <span class="s2">"a@x.org"</span><span class="p">,</span> <span class="s2">"error"</span><span class="p">:</span> <span class="s2">"boom"</span><span class="p">}]</span>
+
+    <span class="k">assert</span> <span class="n">members_for_created_users</span><span class="p">(</span><span class="n">users</span><span class="p">,</span> <span class="n">create_errors</span><span class="p">)</span> <span class="o">==</span> <span class="p">([],</span> <span class="p">[])</span>
+</code></pre></div>
+<p>The third test is the one that matters for alert hygiene: a user whose account
+creation failed is already reported by <code>batch_insert_users</code>, so reporting it
+again as an unresolved group would double-count the same student.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run the tests to verify they fail</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span>uv<span class="w"> </span>--directory<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-google-directory-groupkey-guard<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>run<span class="w"> </span>pytest<span class="w"> </span>tests/resources/test_resource_google_directory.py<span class="w"> </span>-k<span class="w"> </span>members_for_created_users<span class="w"> </span>-v
+</code></pre></div>
+<p>Expected: the three updated tests fail comparing a <code>list</code> to a <code>tuple</code>; the
+three new tests fail unpacking a <code>list</code> into two names
+(<code>ValueError: too many values to unpack</code>) or on the missing second element.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Rewrite the helper</strong></li>
+</ul>
+<p>Replace the whole function at
+<code>src/teamster/libraries/google/directory/resources.py:696-726</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">members_for_created_users</span><span class="p">(</span>
+    <span class="n">users</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span> <span class="n">create_errors</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">"""Build group-membership payloads for users whose creation did not fail.</span>
+
+<span class="sd">    A user's group membership can only be added once the account exists, so a</span>
+<span class="sd">    user whose ``batch_insert_users`` call failed must be excluded — otherwise</span>
+<span class="sd">    the membership insert is guaranteed to fail with "resource not found".</span>
+
+<span class="sd">    A user whose ``groupKey`` is null is excluded for a different reason: the</span>
+<span class="sd">    extract resolves ``groupKey`` against the groups Google actually has, so</span>
+<span class="sd">    null means the students group for that region does not exist. Attempting the</span>
+<span class="sd">    add would fail with "404 Resource Not Found: groupKey" once per user, so the</span>
+<span class="sd">    membership is skipped and reported once for the whole run instead.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        users: The users passed to</span>
+<span class="sd">            :meth:`GoogleDirectoryResource.batch_insert_users`.</span>
+<span class="sd">        create_errors: The ``{"primaryEmail", "error"}`` dicts it returned for</span>
+<span class="sd">            users whose creation ultimately failed.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A two-tuple. The first element holds</span>
+<span class="sd">        :meth:`GoogleDirectoryResource.batch_insert_members` payloads</span>
+<span class="sd">        (``groupKey`` / ``email`` / ``delivery_settings``) for created users</span>
+<span class="sd">        whose ``groupKey`` resolved. The second holds at most one aggregated</span>
+<span class="sd">        ``{"error", "count", "orgUnitPaths"}`` dict describing the created users</span>
+<span class="sd">        whose group could not be resolved, and is empty when every group</span>
+<span class="sd">        resolved.</span>
+<span class="sd">    """</span>
+    <span class="n">failed_emails</span> <span class="o">=</span> <span class="p">{</span><span class="n">e</span><span class="p">[</span><span class="s2">"primaryEmail"</span><span class="p">]</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">create_errors</span><span class="p">}</span>
+
+    <span class="n">created</span> <span class="o">=</span> <span class="p">[</span><span class="n">u</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">users</span> <span class="k">if</span> <span class="n">u</span><span class="p">[</span><span class="s2">"primaryEmail"</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">failed_emails</span><span class="p">]</span>
+
+    <span class="n">members</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s2">"groupKey"</span><span class="p">:</span> <span class="n">u</span><span class="p">[</span><span class="s2">"groupKey"</span><span class="p">],</span>
+            <span class="s2">"email"</span><span class="p">:</span> <span class="n">u</span><span class="p">[</span><span class="s2">"primaryEmail"</span><span class="p">],</span>
+            <span class="s2">"delivery_settings"</span><span class="p">:</span> <span class="s2">"DISABLED"</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">created</span>
+        <span class="k">if</span> <span class="n">u</span><span class="p">[</span><span class="s2">"groupKey"</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="p">]</span>
+
+    <span class="n">unresolved</span> <span class="o">=</span> <span class="p">[</span><span class="n">u</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">created</span> <span class="k">if</span> <span class="n">u</span><span class="p">[</span><span class="s2">"groupKey"</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">unresolved</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">members</span><span class="p">,</span> <span class="p">[]</span>
+
+    <span class="k">return</span> <span class="n">members</span><span class="p">,</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s2">"error"</span><span class="p">:</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">unresolved</span><span class="p">)</span><span class="si">}</span><span class="s2"> created users have no resolvable students"</span>
+                <span class="s2">" group; membership skipped"</span>
+            <span class="p">),</span>
+            <span class="s2">"count"</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">unresolved</span><span class="p">),</span>
+            <span class="s2">"orgUnitPaths"</span><span class="p">:</span> <span class="nb">sorted</span><span class="p">({</span><span class="n">u</span><span class="p">[</span><span class="s2">"orgUnitPath"</span><span class="p">]</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">unresolved</span><span class="p">}),</span>
+        <span class="p">}</span>
+    <span class="p">]</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Run the tests to verify they pass</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span>uv<span class="w"> </span>--directory<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-google-directory-groupkey-guard<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>run<span class="w"> </span>pytest<span class="w"> </span>tests/resources/test_resource_google_directory.py<span class="w"> </span>-k<span class="w"> </span>members_for_created_users<span class="w"> </span>-v
+</code></pre></div>
+<p>Expected: 6 passed.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Update the caller</strong></li>
+</ul>
+<p>In <code>src/teamster/code_locations/kipptaf/google/directory/assets.py</code>, replace the
+comment and call at lines 208-218:</p>
+<div class="highlight"><pre><span></span><code>            <span class="c1"># Only add users whose creation succeeded — a failed create leaves</span>
+            <span class="c1"># no account, so its member insert would fail with "resource not</span>
+            <span class="c1"># found" and double-count the same student in the error check.</span>
+            <span class="c1"># Users whose groupKey did not resolve are skipped and reported</span>
+            <span class="c1"># once, rather than once per user.</span>
+            <span class="n">members_data</span><span class="p">,</span> <span class="n">unresolved_group_errors</span> <span class="o">=</span> <span class="n">members_for_created_users</span><span class="p">(</span>
+                <span class="n">valid_users</span><span class="p">,</span> <span class="n">create_errors</span>
+            <span class="p">)</span>
+
+            <span class="n">errors</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">unresolved_group_errors</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">members_data</span><span class="p">:</span>
+                <span class="n">members_errors</span> <span class="o">=</span> <span class="n">google_directory</span><span class="o">.</span><span class="n">batch_insert_members</span><span class="p">(</span><span class="n">members_data</span><span class="p">)</span>
+
+                <span class="k">for</span> <span class="n">me</span> <span class="ow">in</span> <span class="n">members_errors</span><span class="p">:</span>
+                    <span class="n">context</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg</span><span class="o">=</span><span class="n">me</span><span class="p">)</span>
+                    <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">me</span><span class="p">)</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 8: Verify the whole resource test module still passes</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span>uv<span class="w"> </span>--directory<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-google-directory-groupkey-guard<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>run<span class="w"> </span>pytest<span class="w"> </span>tests/resources/test_resource_google_directory.py<span class="w"> </span>-v<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--deselect<span class="w"> </span>tests/resources/test_resource_google_directory.py::test_list_orgunits<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--deselect<span class="w"> </span>tests/resources/test_resource_google_directory.py::test_get_orgunit<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--deselect<span class="w"> </span>tests/resources/test_resource_google_directory.py::test_list_roles<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--deselect<span class="w"> </span>tests/resources/test_resource_google_directory.py::test_list_role_assignments<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--deselect<span class="w"> </span>tests/resources/test_resource_google_directory.py::test_list_members
+</code></pre></div>
+<p>Expected: no failures. Those five deselected tests are credential-backed
+developer probes that call the live Directory API and dump JSON into <code>env/</code>;
+they error without Google credentials. Every other test in the module, including
+the mocked <code>test_list_*</code> pagination and retry tests, must pass — do not widen
+the deselect list to <code>-k "not list_"</code>, which would silently skip those.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 9: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-google-directory-groupkey-guard
+git<span class="w"> </span>add<span class="w"> </span>src/teamster/libraries/google/directory/resources.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/teamster/code_locations/kipptaf/google/directory/assets.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>tests/resources/test_resource_google_directory.py
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"fix(dagster): skip membership adds for an unresolved students group</span>
+
+<span class="s2">Refs #4766"</span>
+</code></pre></div>
+<hr />
+<h3 id="task-2-re-enable-the-groups-asset">Task 2: Re-enable the <code>groups</code> asset</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/teamster/code_locations/kipptaf/google/directory/schema.py:1-25</code></li>
+<li>Modify:
+  <code>src/teamster/code_locations/kipptaf/google/directory/assets.py:13-18,31,279-303</code></li>
+<li>Modify:
+  <code>src/teamster/code_locations/kipptaf/google/directory/schedules.py:4-12,23</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: nothing from Task 1.</li>
+<li>
+<p>Produces: Dagster asset key <code>kipptaf/google/directory/groups</code>, writing Avro to
+  <code>&lt;bucket&gt;/dagster/kipptaf/google/directory/groups/</code>. Task 3's dbt source reads
+  that prefix.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Add the Avro schema</strong></p>
+</li>
+</ul>
+<p>In <code>schema.py</code>, add <code>Group</code> to the existing import and uncomment the schema. The
+import block and the new constant:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">teamster.libraries.google.directory.schema</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Group</span><span class="p">,</span>
+    <span class="n">OrgUnits</span><span class="p">,</span>
+    <span class="n">Role</span><span class="p">,</span>
+    <span class="n">RoleAssignment</span><span class="p">,</span>
+    <span class="n">User</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">GROUPS_SCHEMA</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">py_avro_schema</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="n">py_type</span><span class="o">=</span><span class="n">Group</span><span class="p">,</span> <span class="n">namespace</span><span class="o">=</span><span class="s2">"group"</span><span class="p">))</span>
+</code></pre></div>
+<p>Place <code>GROUPS_SCHEMA</code> above <code>ORGUNITS_SCHEMA</code> to keep the constants
+alphabetical, and delete only the commented <code>GROUPS_SCHEMA</code> line at the bottom.
+Leave the commented <code>MEMBERS_SCHEMA</code> line exactly as it is.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Verify the schema generates</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span>uv<span class="w"> </span>--directory<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-google-directory-groupkey-guard<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>run<span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"from teamster.code_locations.kipptaf.google.directory.schema import GROUPS_SCHEMA; print(sorted(f['name'] for f in GROUPS_SCHEMA['fields']))"</span>
+</code></pre></div>
+<p>Expected:
+<code>['adminCreated', 'aliases', 'description', 'directMembersCount', 'email', 'etag', 'id', 'kind', 'name', 'nonEditableAliases']</code>.</p>
+<p>If this fails with a missing <code>manifest.json</code>, the code location's <code>__init__</code>
+needs the dbt manifest — build it once in the worktree, then re-run:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span>uv<span class="w"> </span>--directory<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-google-directory-groupkey-guard<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>run<span class="w"> </span>dagster-dbt<span class="w"> </span>project<span class="w"> </span>prepare-and-package<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--file<span class="w"> </span>src/teamster/code_locations/kipptaf/__init__.py
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Define the asset</strong></li>
+</ul>
+<p>In <code>assets.py</code>, add <code>GROUPS_SCHEMA</code> to the schema import (alphabetically first),
+then insert this asset immediately above the existing <code>orgunits</code> asset at
+line 31. It must be defined above the <code>assets</code> list at the bottom of the file,
+or the list raises <code>NameError</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="nd">@asset</span><span class="p">(</span>
+    <span class="n">key</span><span class="o">=</span><span class="p">[</span><span class="o">*</span><span class="n">key_prefix</span><span class="p">,</span> <span class="s2">"groups"</span><span class="p">],</span>
+    <span class="n">check_specs</span><span class="o">=</span><span class="p">[</span><span class="n">build_check_spec_avro_schema_valid</span><span class="p">([</span><span class="o">*</span><span class="n">key_prefix</span><span class="p">,</span> <span class="s2">"groups"</span><span class="p">])],</span>
+    <span class="n">io_manager_key</span><span class="o">=</span><span class="s2">"io_manager_gcs_avro"</span><span class="p">,</span>
+    <span class="n">group_name</span><span class="o">=</span><span class="s2">"google_directory"</span><span class="p">,</span>
+    <span class="n">kinds</span><span class="o">=</span><span class="p">{</span><span class="s2">"python"</span><span class="p">},</span>
+<span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">groups</span><span class="p">(</span><span class="n">context</span><span class="p">:</span> <span class="n">AssetExecutionContext</span><span class="p">,</span> <span class="n">google_directory</span><span class="p">:</span> <span class="n">GoogleDirectoryResource</span><span class="p">):</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">google_directory</span><span class="o">.</span><span class="n">list_groups</span><span class="p">()</span>
+
+    <span class="k">yield</span> <span class="n">Output</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">GROUPS_SCHEMA</span><span class="p">),</span> <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">"record_count"</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)})</span>
+
+    <span class="k">yield</span> <span class="n">check_avro_schema_valid</span><span class="p">(</span>
+        <span class="n">asset_key</span><span class="o">=</span><span class="n">context</span><span class="o">.</span><span class="n">asset_key</span><span class="p">,</span> <span class="n">records</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="n">GROUPS_SCHEMA</span>
+    <span class="p">)</span>
+</code></pre></div>
+<p>Then add <code>groups</code> to the <code>assets</code> list, before <code>orgunits</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="n">assets</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">google_directory_role_assignments_create</span><span class="p">,</span>
+    <span class="n">google_directory_user_create</span><span class="p">,</span>
+    <span class="n">google_directory_user_update</span><span class="p">,</span>
+    <span class="n">groups</span><span class="p">,</span>
+    <span class="n">orgunits</span><span class="p">,</span>
+    <span class="n">role_assignments</span><span class="p">,</span>
+    <span class="n">roles</span><span class="p">,</span>
+    <span class="n">users</span><span class="p">,</span>
+<span class="p">]</span>
+</code></pre></div>
+<p>Delete the now-duplicated commented <code>groups</code> asset block at the bottom of the
+file. Leave the commented <code>members</code> asset and
+<code>google_directory_partitioned_assets</code> block untouched.</p>
+<p><code>GoogleDirectoryResource.list_groups()</code> already exists and takes no required
+arguments — do not add or change resource methods.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Schedule the daily pull</strong></li>
+</ul>
+<p>In <code>schedules.py</code>, add <code>groups</code> to the asset import (alphabetically, after the
+three <code>google_directory_*</code> names) and to the nonpartitioned schedule target:</p>
+<div class="highlight"><pre><span></span><code><span class="n">google_directory_nonpartitioned_asset_schedule</span> <span class="o">=</span> <span class="n">ScheduleDefinition</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">CODE_LOCATION</span><span class="si">}</span><span class="s2">__google__directory__nonpartitioned_asset_job_schedule"</span><span class="p">,</span>
+    <span class="n">target</span><span class="o">=</span><span class="p">[</span><span class="n">groups</span><span class="p">,</span> <span class="n">orgunits</span><span class="p">,</span> <span class="n">role_assignments</span><span class="p">,</span> <span class="n">roles</span><span class="p">,</span> <span class="n">users</span><span class="p">],</span>
+    <span class="n">cron_schedule</span><span class="o">=</span><span class="s2">"30 1 * * *"</span><span class="p">,</span>
+    <span class="n">execution_timezone</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">LOCAL_TIMEZONE</span><span class="p">),</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>This is the same 1:30am schedule <code>orgunits</code> uses. Do not add a separate schedule
+and do not change any cron.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Verify the modules compile and the wiring is present</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-google-directory-groupkey-guard
+<span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span>uv<span class="w"> </span>--directory<span class="w"> </span>.<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>py_compile<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/teamster/code_locations/kipptaf/google/directory/assets.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/teamster/code_locations/kipptaf/google/directory/schedules.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/teamster/code_locations/kipptaf/google/directory/schema.py
+grep<span class="w"> </span>-n<span class="w"> </span><span class="s2">"groups,"</span><span class="w"> </span>src/teamster/code_locations/kipptaf/google/directory/assets.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/teamster/code_locations/kipptaf/google/directory/schedules.py
+</code></pre></div>
+<p>Expected: <code>py_compile</code> silent, and <code>grep</code> shows <code>groups,</code> in both the <code>assets</code>
+list and the schedule <code>target</code>.</p>
+<p><code>dagster definitions validate -m teamster.code_locations.kipptaf.definitions</code> is
+NOT the gate here — it fails in this codespace on unrelated Illuminate and
+Zendesk dlt credential resolution. The real runtime gate is the branch
+deployment in Task 5.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-google-directory-groupkey-guard
+git<span class="w"> </span>add<span class="w"> </span>src/teamster/code_locations/kipptaf/google/directory/assets.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/teamster/code_locations/kipptaf/google/directory/schedules.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/teamster/code_locations/kipptaf/google/directory/schema.py
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"feat(dagster): pull Google Workspace groups daily</span>
+
+<span class="s2">Refs #4766"</span>
+</code></pre></div>
+<hr />
+<h3 id="task-3-stage-groups-as-a-dbt-source-and-staging-model">Task 3: Stage groups as a dbt source and staging model</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/dbt/kipptaf/models/google/directory/sources-external.yml:26</code></li>
+<li>Create:
+  <code>src/dbt/kipptaf/models/google/directory/staging/stg_google_directory__groups.sql</code></li>
+<li>Create:
+  <code>src/dbt/kipptaf/models/google/directory/staging/properties/stg_google_directory__groups.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: the GCS prefix written by Task 2's asset.</li>
+<li>
+<p>Produces: <code>ref("stg_google_directory__groups")</code> with columns <code>email</code>, <code>id</code>,
+  <code>name</code>, <code>description</code>, <code>direct_members_count</code>, <code>admin_created</code>, <code>etag</code>,
+  <code>kind</code>, <code>aliases</code>, <code>non_editable_aliases</code>. Task 4 joins on <code>email</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Install dbt packages in the worktree</strong></p>
+</li>
+</ul>
+<p>A fresh worktree has no <code>dbt_packages/</code>, and every later dbt command fails
+without it.</p>
+<div class="highlight"><pre><span></span><code><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span>uv<span class="w"> </span>--directory<span class="w"> </span>/workspaces/teamster<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>deps<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-google-directory-groupkey-guard/src/dbt/kipptaf
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Declare the external source</strong></li>
+</ul>
+<p>In <code>sources-external.yml</code>, insert this block immediately after the
+<code>src_google_directory__users</code> block and before <code>src_google_directory__orgunits</code>.
+Indentation must match its siblings exactly — the block starts at 6 spaces:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">src_google_directory__groups</span>
+<span class="w">  </span><span class="nt">external</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">location</span><span class="p">:</span><span class="w"> </span><span class="s">"{{</span><span class="nv"> </span><span class="s">var('cloud_storage_uri_base')</span><span class="nv"> </span><span class="s">}}/google/directory/groups/*"</span>
+<span class="w">    </span><span class="nt">options</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">connection_name</span><span class="p">:</span><span class="w"> </span><span class="s">"{{</span><span class="nv"> </span><span class="s">var('bigquery_external_connection_name')</span><span class="nv"> </span><span class="s">}}"</span>
+<span class="w">      </span><span class="nt">metadata_cache_mode</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">MANUAL</span>
+<span class="w">      </span><span class="nt">max_staleness</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">INTERVAL 7 DAY</span>
+<span class="w">      </span><span class="nt">format</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">AVRO</span>
+<span class="w">      </span><span class="nt">enable_logical_types</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">  </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">meta</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">dagster</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">asset_key</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">kipptaf</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">google</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">directory</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">groups</span>
+</code></pre></div>
+<p>Do not touch the source-level <code>schema:</code> block — the existing dev/staging/prod
+prefix conditional already covers every table in this source.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Write the staging model</strong></li>
+</ul>
+<p>Create <code>stg_google_directory__groups.sql</code>. BigQuery column references are
+case-insensitive, so the lowercased Avro field names are the repo convention
+here (matching <code>stg_google_directory__users.sql</code>). The trailing comma after the
+last column is required by sqlfluff CV03:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="n">id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">email</span><span class="p">,</span>
+<span class="w">    </span><span class="n">name</span><span class="p">,</span>
+<span class="w">    </span><span class="n">description</span><span class="p">,</span>
+<span class="w">    </span><span class="n">directmemberscount</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">direct_members_count</span><span class="p">,</span>
+<span class="w">    </span><span class="n">admincreated</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">admin_created</span><span class="p">,</span>
+<span class="w">    </span><span class="n">etag</span><span class="p">,</span>
+<span class="w">    </span><span class="n">kind</span><span class="p">,</span>
+
+<span class="w">    </span><span class="cm">/* repeated */</span>
+<span class="w">    </span><span class="n">aliases</span><span class="p">,</span>
+<span class="w">    </span><span class="n">noneditablealiases</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">non_editable_aliases</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">source</span><span class="p">(</span><span class="ss">"google_directory"</span><span class="p">,</span><span class="w"> </span><span class="ss">"src_google_directory__groups"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+</code></pre></div>
+<p>If <code>trunk check</code> in Step 6 flags <code>name</code> under sqlfluff RF04 (reserved keyword as
+identifier), change that line to <code>name as `name`,</code> — the backticked form is
+the precedent in <code>stg_google_directory__orgunits.sql</code> and is not an AL09
+self-alias violation. Make no other change in response to RF04.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Write the properties yml</strong></li>
+</ul>
+<p>Create <code>properties/stg_google_directory__groups.yml</code>. <code>email</code> sorts to the top
+because it carries the column-level tests. Do not add <code>materialized</code> or
+<code>contract</code> — both are inherited from <code>dbt_project.yml</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">models</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">stg_google_directory__groups</span>
+<span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;</span>
+<span class="w">      </span><span class="no">Google Workspace groups as returned by the Directory API groups list</span>
+<span class="w">      </span><span class="no">endpoint. Consumed by rpt_google_directory__users_import to confirm that a</span>
+<span class="w">      </span><span class="no">region's student group exists before a membership add is attempted against</span>
+<span class="w">      </span><span class="no">it.</span>
+<span class="w">    </span><span class="nt">columns</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">email</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;</span>
+<span class="w">          </span><span class="no">Primary address of the group. Join key for validating a constructed</span>
+<span class="w">          </span><span class="no">student group address against the groups Google actually has.</span>
+<span class="w">        </span><span class="nt">data_tests</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">unique</span><span class="p">:</span>
+<span class="w">              </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">                </span><span class="nt">severity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">error</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">not_null</span><span class="p">:</span>
+<span class="w">              </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">                </span><span class="nt">severity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">error</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">id</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Immutable Google-assigned identifier for the group.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">name</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Display name of the group, as set in the admin console.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">description</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;</span>
+<span class="w">          </span><span class="no">Free-text purpose of the group, as set in the admin console. Often</span>
+<span class="w">          </span><span class="no">empty.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">direct_members_count</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;</span>
+<span class="w">          </span><span class="no">Number of members that belong to the group directly rather than</span>
+<span class="w">          </span><span class="no">through a nested group. Carried as a string by the Directory API.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">admin_created</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">boolean</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;</span>
+<span class="w">          </span><span class="no">True when an administrator created the group, false when it was</span>
+<span class="w">          </span><span class="no">created by a user.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">etag</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Entity tag of the resource, reported by the API.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">kind</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;</span>
+<span class="w">          </span><span class="no">Resource type reported by the API, always admin#directory#group.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">aliases</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">array&lt;string&gt;</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Alternate addresses that deliver to this group.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">non_editable_aliases</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">array&lt;string&gt;</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;</span>
+<span class="w">          </span><span class="no">Domain-derived alternate addresses for the group that cannot be</span>
+<span class="w">          </span><span class="no">edited.</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Verify the model parses and compiles</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span>uv<span class="w"> </span>--directory<span class="w"> </span>/workspaces/teamster<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>compile<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span>stg_google_directory__groups<span class="w"> </span>--target<span class="w"> </span>prod<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-google-directory-groupkey-guard/src/dbt/kipptaf
+</code></pre></div>
+<p>Expected: compiles, and <code>target/compiled/.../stg_google_directory__groups.sql</code>
+resolves the source to <code>kipptaf_google_directory.src_google_directory__groups</code>.
+<code>compile</code> performs no warehouse write. A <code>dbt build</code> cannot work yet — the
+external table does not exist until Task 5 materializes the asset and stages it.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Lint the new files</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-google-directory-groupkey-guard
+/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>--no-fix<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/google/directory/sources-external.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/google/directory/staging/stg_google_directory__groups.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/google/directory/staging/properties/stg_google_directory__groups.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>&lt;/dev/null
+</code></pre></div>
+<p>If <code>.trunk/tools/trunk</code> does not exist, use <code>~/.cache/trunk/launcher/trunk</code>
+instead — the symlink is created lazily on first run. Formatting-only findings
+(<code>prettier</code>, MD060) are fixed by the pre-commit hook; act only on sqlfluff and
+yamllint findings that name a rule and a line.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-google-directory-groupkey-guard
+git<span class="w"> </span>add<span class="w"> </span>src/dbt/kipptaf/models/google/directory/sources-external.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/google/directory/staging/stg_google_directory__groups.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/google/directory/staging/properties/stg_google_directory__groups.yml
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"feat(dbt): stage Google Workspace groups</span>
+
+<span class="s2">Refs #4766"</span>
+</code></pre></div>
+<hr />
+<h3 id="task-4-resolve-groupkey-against-the-staged-groups">Task 4: Resolve <code>groupKey</code> against the staged groups</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/extracts/google/directory/rpt_google_directory__users_import.sql:186-260</code></li>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/extracts/google/directory/properties/rpt_google_directory__users_import.yml:3-11,45-46</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>ref("stg_google_directory__groups")</code> from Task 3, joined on
+  <code>email</code>.</li>
+<li>
+<p>Produces: the <code>groupKey</code> column of
+  <code>kipptaf_extracts.rpt_google_directory__users_import</code>, now null when the
+  region's students group is absent from Google. Task 1's helper reads it.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Derive the target address in <code>with_google</code></strong></p>
+</li>
+</ul>
+<p>Add one column to the <code>with_google</code> select, between <code>u.surrogate_key_target</code> and
+the first <code>if(...)</code>. ST06 puts an operator expression before the logicals:</p>
+<div class="highlight"><pre><span></span><code><span class="w">            </span><span class="n">u</span><span class="p">.</span><span class="n">surrogate_key_target</span><span class="p">,</span>
+
+<span class="w">            </span><span class="s1">'group-students-'</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">region</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="s1">'@teamstudents.org'</span>
+<span class="w">            </span><span class="k">as</span><span class="w"> </span><span class="n">group_key_target</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">if</span><span class="p">(</span><span class="n">u</span><span class="p">.</span><span class="n">primary_email</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"> </span><span class="k">true</span><span class="p">,</span><span class="w"> </span><span class="k">false</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_matched</span><span class="p">,</span>
+</code></pre></div>
+<p>The address is built here, one CTE upstream of the join, for two reasons: the
+SQL guide forbids one-sided calculations in join predicates, and BigQuery
+rejects a select-list alias referenced from its own select's <code>ON</code> clause.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Join the groups model in <code>final</code></strong></li>
+</ul>
+<p>Replace the whole <code>final</code> CTE. It gains a table alias because it now reads from
+two relations, so every column reference is prefixed:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="k">final</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">w</span><span class="p">.</span><span class="o">*</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">g</span><span class="p">.</span><span class="n">email</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">group_key</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">if</span><span class="p">(</span><span class="k">not</span><span class="w"> </span><span class="n">w</span><span class="p">.</span><span class="n">is_matched</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="n">w</span><span class="p">.</span><span class="n">suspended</span><span class="p">,</span><span class="w"> </span><span class="k">true</span><span class="p">,</span><span class="w"> </span><span class="k">false</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_create</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">if</span><span class="p">(</span>
+<span class="w">                </span><span class="n">w</span><span class="p">.</span><span class="n">is_matched</span>
+<span class="w">                </span><span class="k">and</span><span class="w"> </span><span class="err">{{</span>
+<span class="w">                    </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">generate_surrogate_key</span><span class="p">(</span>
+<span class="w">                        </span><span class="p">[</span><span class="ss">"first_name"</span><span class="p">,</span><span class="w"> </span><span class="ss">"last_name"</span><span class="p">,</span><span class="w"> </span><span class="ss">"suspended"</span><span class="p">,</span><span class="w"> </span><span class="ss">"org_unit_path"</span><span class="p">]</span>
+<span class="w">                    </span><span class="p">)</span>
+<span class="w">                </span><span class="err">}}</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">w</span><span class="p">.</span><span class="n">surrogate_key_target</span><span class="p">,</span>
+<span class="w">                </span><span class="k">true</span><span class="p">,</span>
+<span class="w">                </span><span class="k">false</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_update</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">with_google</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">w</span>
+<span class="w">        </span><span class="cm">/* A null group_key means the region's students group does not exist in</span>
+<span class="cm">        Google. Unlike a null org_unit_path, it does NOT drop the student: the</span>
+<span class="cm">        account is still provisioned, and the user_create asset skips the</span>
+<span class="cm">        membership add and reports the missing group once. */</span>
+<span class="w">        </span><span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">            </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"stg_google_directory__groups"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="k">g</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="n">w</span><span class="p">.</span><span class="n">group_key_target</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">g</span><span class="p">.</span><span class="n">email</span>
+<span class="w">    </span><span class="p">)</span>
+</code></pre></div>
+<p>Leave the <code>generate_surrogate_key</code> arguments unqualified. They are column-name
+strings, and <code>g</code> contributes none of those four names, so they stay unambiguous.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Project the resolved address in the outer select</strong></li>
+</ul>
+<p>Replace the outer select's column list. <code>groupKey</code> is now a plain column
+reference, so ST06 moves it up into the enumeration group and out of the
+constants group where the concatenation used to sit:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="n">student_email_google</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="o">`</span><span class="n">primaryEmail</span><span class="o">`</span><span class="p">,</span>
+<span class="w">    </span><span class="n">org_unit_path</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="o">`</span><span class="n">orgUnitPath</span><span class="o">`</span><span class="p">,</span>
+<span class="w">    </span><span class="n">group_key</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="o">`</span><span class="n">groupKey</span><span class="o">`</span><span class="p">,</span>
+<span class="w">    </span><span class="n">suspended</span><span class="p">,</span>
+<span class="w">    </span><span class="n">is_create</span><span class="p">,</span>
+<span class="w">    </span><span class="n">is_update</span><span class="p">,</span>
+<span class="w">    </span><span class="n">student_number</span><span class="p">,</span>
+
+<span class="w">    </span><span class="s1">'SHA-1'</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="o">`</span><span class="n">hashFunction</span><span class="o">`</span><span class="p">,</span>
+
+<span class="w">    </span><span class="n">struct</span><span class="p">(</span><span class="n">first_name</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="o">`</span><span class="n">givenName</span><span class="o">`</span><span class="p">,</span><span class="w"> </span><span class="n">last_name</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="o">`</span><span class="n">familyName</span><span class="o">`</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="o">`</span><span class="n">name</span><span class="o">`</span><span class="p">,</span>
+<span class="w">    </span><span class="n">to_hex</span><span class="p">(</span><span class="n">sha1</span><span class="p">(</span><span class="n">student_web_password</span><span class="p">))</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="o">`</span><span class="n">password</span><span class="o">`</span><span class="p">,</span>
+
+<span class="w">    </span><span class="k">if</span><span class="p">(</span><span class="n">grade_level</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="k">true</span><span class="p">,</span><span class="w"> </span><span class="k">false</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="o">`</span><span class="n">changePasswordAtNextLogin</span><span class="o">`</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="k">final</span>
+</code></pre></div>
+<p>Do NOT change the trailing <code>where</code> clause or its comment. The student must stay
+in the extract when the group is missing. <code>group_key_target</code> reaches <code>final</code> via
+<code>w.*</code> but is deliberately not projected here — the extract's columns become the
+Google <code>users.insert</code> payload, so an unused extra field would ride along.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Update the properties yml</strong></li>
+</ul>
+<p>Two edits. First, the model description's last sentence claims Paterson is
+excluded, untrue since 079381c63 — replace the description:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;</span>
+<span class="w">  </span><span class="no">Google Workspace student accounts to create or update, consumed by the</span>
+<span class="w">  </span><span class="no">google_directory user_create and user_update assets. Rows are the union of two</span>
+<span class="w">  </span><span class="no">enrollment sources — PowerSchool for the NJ regions, and Focus for Miami,</span>
+<span class="w">  </span><span class="no">whose PowerSchool instance is a frozen archive. A row appears only when the</span>
+<span class="w">  </span><span class="no">account is missing (is_create) or when its name, suspension state, or org unit</span>
+<span class="w">  </span><span class="no">has drifted from the source of record (is_update).</span>
+</code></pre></div>
+<p>Second, give <code>groupKey</code> a description recording the null semantics:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">groupKey</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;</span>
+<span class="w">    </span><span class="no">Address of the region's student group, resolved against</span>
+<span class="w">    </span><span class="no">stg_google_directory__groups. Null when that group does not exist in Google</span>
+<span class="w">    </span><span class="no">Workspace, in which case the account is still created and the membership add</span>
+<span class="w">    </span><span class="no">is skipped.</span>
+</code></pre></div>
+<p>Add no data test on this column — see Global Constraints.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Verify the extract compiles</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span>uv<span class="w"> </span>--directory<span class="w"> </span>/workspaces/teamster<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>compile<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span>rpt_google_directory__users_import<span class="w"> </span>--target<span class="w"> </span>prod<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-google-directory-groupkey-guard/src/dbt/kipptaf
+</code></pre></div>
+<p>Expected: compiles. Read
+<code>target/compiled/kipptaf/models/extracts/google/directory/rpt_google_directory__users_import.sql</code>
+and confirm three things: the <code>left join</code> resolves to
+<code>kipptaf_google_directory.stg_google_directory__groups</code>, the outer select
+projects <code>group_key as groupKey</code>, and <code>group_key_target</code> appears nowhere in the
+outer select.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Lint the changed SQL</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-google-directory-groupkey-guard
+/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>--no-fix<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/extracts/google/directory/rpt_google_directory__users_import.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/extracts/google/directory/properties/rpt_google_directory__users_import.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>&lt;/dev/null
+</code></pre></div>
+<p>Expected: no sqlfluff findings. ST06 (column ordering) and ST09 (join-predicate
+order) are the two rules this change is most likely to trip; both fire only at
+pre-push and CI, so this step is not optional.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-google-directory-groupkey-guard
+git<span class="w"> </span>add<span class="w"> </span>src/dbt/kipptaf/models/extracts/google/directory/rpt_google_directory__users_import.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/extracts/google/directory/properties/rpt_google_directory__users_import.yml
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"fix(dbt): resolve groupKey against the staged Google groups</span>
+
+<span class="s2">Refs #4766"</span>
+</code></pre></div>
+<hr />
+<h3 id="task-5-validate-on-the-branch-deployment-and-open-the-pr">Task 5: Validate on the branch deployment and open the PR</h3>
+<p><strong>Files:</strong> none. This task is operational.</p>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: everything from Tasks 1-4.</li>
+<li>
+<p>Produces: a staged
+  <code>zz_stg_kipptaf_google_directory.src_google_directory__groups</code> external table,
+  a green dbt Cloud CI run, and an open PR.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Push the branch</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-google-directory-groupkey-guard<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>push<span class="w"> </span>-u<span class="w"> </span>origin<span class="w"> </span>cbini/fix/claude-google-directory-groupkey-guard
+</code></pre></div>
+<p>The pre-push hook runs <code>trunk check</code> git-diff-scoped. It can miss findings on
+already-committed lines, which is why Tasks 3 and 4 ran <code>--force</code> explicitly.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Open the PR</strong></li>
+</ul>
+<p>Use <code>.github/pull_request_template.md</code> as the body and include <code>Refs #4766</code> so
+the PR lands on the project board. Do not <code>gh project item-add</code> the PR.</p>
+<p>Because the diff touches <code>src/teamster/**</code>, this PR gets a Dagster branch
+deployment. Recover its name from the <code>dagster-cloud-deploy / deploy</code> job log
+line <code>Deploying to branch deployment &lt;hash&gt;</code>; there are ~5 same-named check
+runs, one per code location, and all must reach a terminal conclusion before the
+deploy counts as green.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Materialize <code>groups</code> in the branch deployment</strong></li>
+</ul>
+<p>Preview first, then confirm:</p>
+<div class="highlight"><pre><span></span><code>mcp__dagster__launch_run(
+    asset_keys=["kipptaf/google/directory/groups"],
+    deployment="&lt;branch-deployment-hash&gt;",
+    confirm=False,
+)
+</code></pre></div>
+<p>A dormant branch deployment throws <code>DagsterUserCodeUnreachableError</code> on the
+first call — retry after about 90 seconds to let the code location warm.</p>
+<p>Confirm the Avro landed via <code>mcp__dagster__get_asset_materializations</code> and check
+<code>record_count</code> is greater than zero. Branch deployments redirect the bucket, so
+the file is at <code>gs://teamster-test/dagster/kipptaf/google/directory/groups/</code>.</p>
+<p>Also confirm the asset's <code>avro_schema_valid</code> check passed. A warning there means
+the Directory API returns a field the <code>Group</code> Pydantic model does not declare;
+the fix is to add the field to
+<code>src/teamster/libraries/google/directory/schema.py</code>, not to suppress the check.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Stage the staging-target external (user runs this)</strong></li>
+</ul>
+<p>dbt Cloud CI runs <code>target=staging</code>, which resolves <code>cloud_storage_uri_base</code> to
+the prod bucket — not the test bucket the branch deployment just wrote to. So
+the location must be overridden for this one staging run:</p>
+<div class="highlight"><pre><span></span><code>uv run dbt run-operation stage_external_sources
+  --args "select: google_directory.src_google_directory__groups"
+  --vars '{cloud_storage_uri_base: gs://teamster-test/dagster/kipptaf, ext_full_refresh: true}'
+  --target staging
+  --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-google-directory-groupkey-guard/src/dbt/kipptaf
+</code></pre></div>
+<p>This drops and recreates a shared <code>zz_stg</code> table, so the auto-classifier blocks
+it. Hand it to the user's terminal rather than retrying it.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Build the staging model to exercise the contract</strong></li>
+</ul>
+<p>Contract enforcement (<code>assert_columns_equivalent</code>) runs only inside a real
+<code>dbt build</code>, never in <code>compile</code> and never in a SELECT against the external. This
+is the first point at which it can run, because the external table now exists:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span>uv<span class="w"> </span>--directory<span class="w"> </span>/workspaces/teamster<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span>stg_google_directory__groups<span class="w"> </span>--target<span class="w"> </span>staging<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-google-directory-groupkey-guard/src/dbt/kipptaf
+</code></pre></div>
+<p>Expected: the model builds and both <code>email</code> tests pass. A contract failure here
+names the offending column and type — reconcile the properties yml <code>data_type</code>
+against <code>INFORMATION_SCHEMA.COLUMNS</code> on the staged table rather than guessing;
+<code>numeric</code> and <code>float64</code> are distinct types, and BigQuery's legacy spellings
+(<code>bool</code> / <code>boolean</code>, <code>int64</code> / <code>integer</code>) may differ between the yml and
+<code>INFORMATION_SCHEMA</code> without being real drift.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Verify the three working regions resolve — added by the final
+      review</strong></li>
+</ul>
+<p>The join compares the constructed address to
+<code>stg_google_directory__groups.email</code> only. The code it replaces passed that
+address to <code>members.insert</code>, which also resolves aliases and unique ids. So if
+<code>newark</code>, <code>camden</code>, or <code>miami</code>'s address is an <strong>alias</strong> of a group whose
+primary address differs, this change turns a working region's <code>groupKey</code> null
+and silently stops its membership adds — the regression class this branch exists
+to prevent, inverted.</p>
+<p>This is the first point where it can be checked, because the staged table now
+holds real group data:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="n">email</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_stg_kipptaf_google_directory</span><span class="p">.</span><span class="n">stg_google_directory__groups</span><span class="o">`</span>
+<span class="k">where</span><span class="w"> </span><span class="n">email</span><span class="w"> </span><span class="k">like</span><span class="w"> </span><span class="s1">'group-students-%'</span>
+</code></pre></div>
+<p>Expect <code>camden</code>, <code>miami</code>, and <code>newark</code> — and NOT <code>paterson</code>, whose absence is
+the bug this branch guards. If any of the three is missing, its address is an
+alias: add <code>or w.group_key_target in unnest(g.aliases)</code> to the join in
+<code>rpt_google_directory__users_import.sql</code>. The staging model already carries
+<code>aliases</code>, so no schema change is needed. Do not add that arm speculatively —
+verify first, because an unnecessary alias arm widens the match and can resolve
+a group address that Google would have rejected.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Confirm CI is green on both surfaces</strong></li>
+</ul>
+<p>dbt Cloud is a commit status; Trunk, CodeQL, and <code>claude</code> are check runs. Check
+both:</p>
+<div class="highlight"><pre><span></span><code>gh<span class="w"> </span>pr<span class="w"> </span>checks<span class="w"> </span>&lt;pr-number&gt;<span class="w"> </span>--json<span class="w"> </span>name,bucket,state
+</code></pre></div>
+<p>Trunk's check runs are re-created on every push, so a poll that samples the gap
+between them can report done prematurely — re-check after a delay. After dbt
+Cloud passes, fetch warnings with
+<code>mcp__dbt__get_job_run_error(run_id=&lt;ci_run&gt;, warning_only=true)</code> before calling
+the PR done.</p>
+<p>Process <code>claude-review</code> findings through <code>superpowers:receiving-code-review</code> —
+verify each claim against the code before replying. It runs only on <code>opened</code> /
+<code>ready_for_review</code>, never on a push, so do not wait for a re-review after
+pushing a fix.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 8: Record the two post-merge actions in the PR body</strong></li>
+</ul>
+<p>Neither is a code change, and both need an owner:</p>
+<ol>
+<li>Ops creates <code>group-students-paterson@teamstudents.org</code> in the admin console.
+   Until then the guard fires one warning per run and Paterson accounts are
+   created without membership.</li>
+<li>Launch <code>kipptaf/google/directory/groups</code> in prod as soon as the post-merge
+   deploy lands. The prod external table does not exist until a prod
+   materialization drops a file, and <code>build_dbt_assets</code> runs
+   <code>stage_external_sources</code> on every dbt asset run — which fails creating an
+   AVRO external over an empty prefix. The dbt automation fires within minutes
+   of the deploy, well before the 1:30am schedule. Worst case it fails once and
+   self-heals after the manual materialization.</li>
+</ol>
+<hr />
+<h2 id="out-of-scope">Out of scope</h2>
+<p>Tracked on #4766, deliberately not in this plan:</p>
+<ul>
+<li>Backfilling group membership for the 884 existing Paterson accounts.</li>
+<li>Recurring membership reconciliation. Membership is attempted only under
+  <code>is_create</code>, so no region has drift correction, and a student whose membership
+  was skipped is never retried. That work needs the <code>members</code> asset, which
+  re-enabling <code>groups</code> makes possible as a follow-up.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+    
+  </body>
+</html>

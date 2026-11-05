@@ -1,0 +1,3126 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>model-support skill Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.57a0d79d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#model-support-skill-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              model-support skill Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/launch-page-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Launch Page
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube-access-individual-exceptions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube Access - Individual Exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/tableau-permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tableau Permissions (People Data)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/csgf-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSGF Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/crdc-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CRDC Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ddi-stack-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDI Stack Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/hs-early-warning-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HS Early Warning Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/dibels-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIBELS Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/stat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/njdoe-universal-screener-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NJDOE Universal Screener Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/athletic-eligibility-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Athletic Eligibility Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/academic-health-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic Health Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/grad-plan-tracking-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Grad Plan Tracking Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ignite-r2i-extract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IGNITE R2I Extract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#global-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global Constraints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#review-focus" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Review Focus
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Review Focus">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-1-red-baselines-no-skill" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: RED baselines (no skill)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-2-split_skillpy-with-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: split_skill.py with tests
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-3-check_linkspy-with-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: check_links.py with tests
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-4-comment_only_diffpy-with-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: comment_only_diff.py with tests
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-5-references-for-document-mode-intake-inventory-and-the-doc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 5: references for document-mode intake, inventory, and the doc
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-6-references-for-the-yaml-audit-tests-and-known-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 6: references for the YAML audit, tests, and known issues
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-7-references-for-the-family-skill-update-mode-and-qa-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 7: references for the family skill, update mode, and QA mode
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-8-the-entry-skillmd" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 8: the entry SKILL.md
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-9-green-walk-tests-and-fixes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 9: GREEN walk tests and fixes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-10-open-the-pr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 10: open the PR
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-09-24-model-support-skill.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="model-support-skill-implementation-plan">model-support skill Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Ship <code>.claude/skills/model-support/</code>, a three-mode skill (document,
+update, QA) for dbt model families, walk-tested per
+<code>superpowers:writing-skills</code>.</p>
+<p><strong>Architecture:</strong> An ICM-shaped entry <code>SKILL.md</code> that routes each step to one
+file under <code>references/</code>, plus three Python helper scripts under <code>scripts/</code> with
+pytest coverage. RED baselines run first, without the skill; walk tests run
+last, with it.</p>
+<p><strong>Tech Stack:</strong> Markdown skill files, Python 3 standard library only (scripts),
+pytest, trunk.</p>
+<p><strong>Spec:</strong> <code>docs/superpowers/specs/2026-09-24-model-support-skill-design.md</code></p>
+<h2 id="global-constraints">Global Constraints</h2>
+<ul>
+<li>Worktree:
+  <code>/workspaces/teamster/.worktrees/GabyRangelB/feat/claude-document-the-model-skill</code>
+  (abbreviated <code>$WT</code> below; write it out in full in every command, since hook
+  Rule 7 blocks uppercase shell variables). Every git call is
+  <code>git -C &lt;worktree&gt;</code>.</li>
+<li>Open every file under <code>.claude/skills/</code> with the Read tool, never <code>cat</code> (root
+  CLAUDE.md, <em>Tooling</em>). <code>.claude/rules/claude-md-editing.md</code> applies to every
+  skill line: each line names a decision Claude makes differently; no
+  tombstones; bold only for lines a skimmer must not miss.</li>
+<li>Frontmatter <code>description</code> starts "Use when…" and lists triggers only, never
+  the workflow (<code>superpowers:writing-skills</code>, CSO).</li>
+<li>Never call the Tableau MCP or load <code>tableau-workbook-xml</code> without warning the
+  user and getting a go-ahead.</li>
+<li>Sheet handoffs: whole tab or block, tab-separated file in the session
+  scratchpad, handed over as a path with the sheet link and tab name.</li>
+<li>No PII in git or GitHub. Aggregates without small cells only.</li>
+<li>Walk-test pass: the entry file plus at most two more reads.</li>
+<li>Scripts: standard library only; run through <code>uv run</code>.</li>
+<li>Lint every changed file before pushing:
+  <code>/workspaces/teamster/.trunk/tools/trunk check --force --no-fix &lt;files&gt; &lt;/dev/null</code>
+  with cwd in the worktree.</li>
+<li>Commit messages end with
+  <code>Co-Authored-By: Claude Opus 5.5 (1M context) &lt;noreply@anthropic.com&gt;</code>.</li>
+</ul>
+<h2 id="review-focus">Review Focus</h2>
+<ol>
+<li>A family with no exposure at all (an <code>int_</code> model feeding a process nobody
+   declared). Expected: the skill asks the user who consumes it and suggests
+   adding the exposure, rather than guessing the branch. Pinned in Task 5
+   (intake-and-inventory text) and walk test W1's checklist.</li>
+<li>An exposure set that mixes Tableau and a Google Sheet on the same family.
+   Expected: both outline branches, one section per consumer. Pinned in Task 5.</li>
+<li><code>split_skill.py</code> on a skill with <code>##</code> inside a fenced block, including a
+   <code>~~~</code> fence and a fence with an info string. Expected: those lines stay in
+   their section, lines in = lines out. Pinned in Task 2 tests.</li>
+<li><code>comment_only_diff.py</code> on SQL containing <code>--</code> inside a string literal
+   (<code>'--'</code>, <code>"a -- b"</code>). Expected: the string is not treated as a comment, so a
+   change inside it is reported as a logic change. Pinned in Task 4 tests.</li>
+<li>QA requested on a family with no reference doc. Expected: the skill runs the
+   inventory step first, then QA. Pinned in Task 7 (qa-mode text) and walk test
+   W5.</li>
+</ol>
+<hr />
+<h3 id="task-1-red-baselines-no-skill">Task 1: RED baselines (no skill)</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>&lt;session scratchpad&gt;/red-baseline.md</code> (not committed)</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>
+<p>Produces: the baseline failure list that Tasks 5-8 must each address, and that
+  the PR body's "For Claude" section cites.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Dispatch two cold Sonnet subagents in parallel, one message</strong></p>
+</li>
+</ul>
+<p>Model <code>sonnet</code>. Neither prompt names <code>model-support</code>. Prompt A:</p>
+<div class="highlight"><pre><span></span><code>You are working in the teamster repo at /workspaces/teamster (read-only for
+this task). Planning only: no scripts, queries, git, or edits. Do the reading
+yourself; no sub-agents.
+
+Task from the user: "Document the athletic eligibility tracker so the next
+owner can run it. It's rpt_gsheets__athletic_eligibility and whatever feeds
+it."
+
+Return, under 400 words: (1) every file you Read, in order; (2) your concrete
+plan, step by step, including what you would write, where, and how you would
+verify each claim; (3) what you would ask the user before starting.
+</code></pre></div>
+<p>Prompt B:</p>
+<div class="highlight"><pre><span></span><code>You are working in the teamster repo at /workspaces/teamster (read-only for
+this task). Planning only: no scripts, queries, git, or edits. Do the reading
+yourself; no sub-agents.
+
+Task from the user: "I refactored int_tableau__college_assessment_roster_scores
+for readability. Nothing should change on the CARAT dashboard. Can you check
+prod values will still match?"
+
+Return, under 400 words: (1) every file you Read, in order; (2) your concrete
+plan, step by step; (3) what you would ask the user before starting.
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Score each response against this checklist and write the result
+      to <code>red-baseline.md</code></strong></li>
+</ul>
+<p>For each item, record hit (the failure happened), avoided, or not applicable:</p>
+<div class="highlight"><pre><span></span><code>A1 asks for source material (docs, PDFs, notes)
+A2 asks about Google Sheet upkeep processes
+A3 proposes a family boundary and waits, instead of auditing shared upstreams
+   (int_extracts__student_enrollments, base_powerschool__final_grades)
+A4 picks a process outline (sheet consumer), not a dashboard outline
+A5 plans a cold review of doc claims against the SQL
+A6 plans uniqueness tests checked against prod first
+A7 plans description-only YAML edits with a diff check
+A8 proposes (or asks about) a family skill rather than always/never creating one
+B1 diffs dev against prod on the view key, both directions
+B2 ties each difference to a SQL change
+B3 goes to the warehouse first; Tableau only with a warning
+B4 accounts for dev-build traps (--defer, stale dev tables)
+B5 keeps student-level differences out of GitHub
+</code></pre></div>
+<p>Expected: most A and B items are hits. If a subagent avoids an item, note what
+it read that taught it; the skill need not repeat that source's content, only
+link to it.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Report the baseline to the user in one short message</strong> (no
+      commit; the file stays in scratch).</li>
+</ul>
+<hr />
+<h3 id="task-2-split_skillpy-with-tests">Task 2: <code>split_skill.py</code> with tests</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>$WT/.claude/skills/model-support/scripts/split_skill.py</code></li>
+<li>Create: <code>$WT/tests/skills/__init__.py</code> (empty)</li>
+<li>Create: <code>$WT/tests/skills/test_model_support_scripts.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Produces:
+  <code>split_sections(text: str, mapping: dict[str, str], default: str) -&gt; dict[str, list[str]]</code>
+  — keys are destination file names, values are lines (with newline endings) in
+  source order. <code>mapping</code> keys are exact <code>##</code> heading texts (without the <code>##</code>
+  prefix). Lines before the first <code>##</code> heading go to <code>default</code>. A <code>##</code> heading
+  missing from <code>mapping</code> raises <code>KeyError</code> naming it.</li>
+<li>
+<p>CLI: <code>split_skill.py SOURCE MAPPING_JSON OUTDIR</code> — writes each destination
+  under OUTDIR (overwriting), prints <code>lines in: N, lines out: N</code>, exits 1 if the
+  counts differ.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing tests</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">importlib.util</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">types</span><span class="w"> </span><span class="kn">import</span> <span class="n">ModuleType</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pytest</span>
+
+<span class="n">SKILL_SCRIPTS</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span><span class="o">.</span><span class="n">parents</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">/</span> <span class="s2">".claude/skills/model-support/scripts"</span>
+<span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_load</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ModuleType</span><span class="p">:</span>
+    <span class="n">spec</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">spec_from_file_location</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">SKILL_SCRIPTS</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.py"</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">spec</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">spec</span><span class="o">.</span><span class="n">loader</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="n">module</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">module_from_spec</span><span class="p">(</span><span class="n">spec</span><span class="p">)</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">module</span>
+    <span class="n">spec</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">exec_module</span><span class="p">(</span><span class="n">module</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">module</span>
+
+
+<span class="n">SOURCE</span> <span class="o">=</span> <span class="s2">"""---</span>
+<span class="s2">name: demo</span>
+<span class="s2">---</span>
+
+<span class="s2"># Demo</span>
+
+<span class="s2">Intro line.</span>
+
+<span class="s2">## Goals</span>
+
+<span class="s2">Goal text.</span>
+
+<span class="s2">```sql</span>
+<span class="s2">## not a heading (backtick fence)</span>
+<span class="s2">```</span>
+
+<span class="s2">### Sub of goals</span>
+
+<span class="s2">~~~text</span>
+<span class="s2">## not a heading (tilde fence)</span>
+<span class="s2">~~~</span>
+
+<span class="s2">## Gotchas</span>
+
+<span class="s2">````markdown</span>
+<span class="s2">```</span>
+<span class="s2">## still not a heading (nested fence)</span>
+<span class="s2">```</span>
+<span class="s2">````</span>
+
+<span class="s2">Last line.</span>
+<span class="s2">"""</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_split_routes_sections_and_keeps_fenced_hashes</span><span class="p">():</span>
+    <span class="n">split</span> <span class="o">=</span> <span class="n">_load</span><span class="p">(</span><span class="s2">"split_skill"</span><span class="p">)</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">split</span><span class="o">.</span><span class="n">split_sections</span><span class="p">(</span>
+        <span class="n">SOURCE</span><span class="p">,</span>
+        <span class="p">{</span><span class="s2">"Goals"</span><span class="p">:</span> <span class="s2">"references/goals.md"</span><span class="p">,</span> <span class="s2">"Gotchas"</span><span class="p">:</span> <span class="s2">"references/gotchas.md"</span><span class="p">},</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">"SKILL.md"</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">assert</span> <span class="s2">"Intro line.</span><span class="se">\n</span><span class="s2">"</span> <span class="ow">in</span> <span class="n">out</span><span class="p">[</span><span class="s2">"SKILL.md"</span><span class="p">]</span>
+    <span class="n">goals</span> <span class="o">=</span> <span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">out</span><span class="p">[</span><span class="s2">"references/goals.md"</span><span class="p">])</span>
+    <span class="k">assert</span> <span class="s2">"## not a heading (backtick fence)"</span> <span class="ow">in</span> <span class="n">goals</span>
+    <span class="k">assert</span> <span class="s2">"## not a heading (tilde fence)"</span> <span class="ow">in</span> <span class="n">goals</span>
+    <span class="k">assert</span> <span class="s2">"### Sub of goals"</span> <span class="ow">in</span> <span class="n">goals</span>
+    <span class="n">gotchas</span> <span class="o">=</span> <span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">out</span><span class="p">[</span><span class="s2">"references/gotchas.md"</span><span class="p">])</span>
+    <span class="k">assert</span> <span class="s2">"## still not a heading (nested fence)"</span> <span class="ow">in</span> <span class="n">gotchas</span>
+    <span class="k">assert</span> <span class="s2">"Last line."</span> <span class="ow">in</span> <span class="n">gotchas</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_split_accounts_for_every_line</span><span class="p">():</span>
+    <span class="n">split</span> <span class="o">=</span> <span class="n">_load</span><span class="p">(</span><span class="s2">"split_skill"</span><span class="p">)</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">split</span><span class="o">.</span><span class="n">split_sections</span><span class="p">(</span>
+        <span class="n">SOURCE</span><span class="p">,</span>
+        <span class="p">{</span><span class="s2">"Goals"</span><span class="p">:</span> <span class="s2">"references/goals.md"</span><span class="p">,</span> <span class="s2">"Gotchas"</span><span class="p">:</span> <span class="s2">"references/gotchas.md"</span><span class="p">},</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">"SKILL.md"</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">out</span><span class="o">.</span><span class="n">values</span><span class="p">())</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">SOURCE</span><span class="o">.</span><span class="n">splitlines</span><span class="p">(</span><span class="n">keepends</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_split_rejects_unmapped_heading</span><span class="p">():</span>
+    <span class="n">split</span> <span class="o">=</span> <span class="n">_load</span><span class="p">(</span><span class="s2">"split_skill"</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">pytest</span><span class="o">.</span><span class="n">raises</span><span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="n">match</span><span class="o">=</span><span class="s2">"Gotchas"</span><span class="p">):</span>
+        <span class="n">split</span><span class="o">.</span><span class="n">split_sections</span><span class="p">(</span><span class="n">SOURCE</span><span class="p">,</span> <span class="p">{</span><span class="s2">"Goals"</span><span class="p">:</span> <span class="s2">"g.md"</span><span class="p">},</span> <span class="n">default</span><span class="o">=</span><span class="s2">"SKILL.md"</span><span class="p">)</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run to verify failure</strong></li>
+</ul>
+<p>Run:
+<code>VIRTUAL_ENV= uv --directory /workspaces/teamster/.worktrees/GabyRangelB/feat/claude-document-the-model-skill run pytest /workspaces/teamster/.worktrees/GabyRangelB/feat/claude-document-the-model-skill/tests/skills/test_model_support_scripts.py -q 2&gt;&amp;1 | tail -n 15</code></p>
+<p>Expected: 3 errors, <code>FileNotFoundError</code> / <code>No such file</code> for <code>split_skill.py</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Implement</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="sd">"""Split an oversized skill file into references, verbatim, by `## ` heading.</span>
+
+<span class="sd">Usage: split_skill.py SOURCE MAPPING_JSON OUTDIR</span>
+
+<span class="sd">MAPPING_JSON maps each `## ` heading text to a destination path relative to</span>
+<span class="sd">OUTDIR, plus an optional "_default" key for lines before the first heading</span>
+<span class="sd">(default: SKILL.md). Every source line lands in exactly one destination.</span>
+<span class="sd">"""</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="n">FENCE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"^(`{3,}|~{3,})"</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">split_sections</span><span class="p">(</span>
+    <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">mapping</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">default</span><span class="p">:</span> <span class="nb">str</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
+    <span class="n">out</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">dest</span> <span class="o">=</span> <span class="n">default</span>
+    <span class="n">fence</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">text</span><span class="o">.</span><span class="n">splitlines</span><span class="p">(</span><span class="n">keepends</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="n">match</span> <span class="o">=</span> <span class="n">FENCE</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
+            <span class="n">marker</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">fence</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">fence</span> <span class="o">=</span> <span class="n">marker</span>
+            <span class="k">elif</span> <span class="n">marker</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">fence</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">marker</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">fence</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">line</span><span class="p">[</span>
+                <span class="nb">len</span><span class="p">(</span><span class="n">marker</span><span class="p">)</span> <span class="p">:</span>
+            <span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+                <span class="n">fence</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">elif</span> <span class="n">fence</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"## "</span><span class="p">):</span>
+            <span class="n">heading</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="mi">3</span><span class="p">:]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">heading</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">mapping</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"unmapped heading: </span><span class="si">{</span><span class="n">heading</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="n">dest</span> <span class="o">=</span> <span class="n">mapping</span><span class="p">[</span><span class="n">heading</span><span class="p">]</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">dest</span><span class="p">,</span> <span class="p">[])</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">out</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="n">argv</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="n">source</span><span class="p">,</span> <span class="n">mapping_path</span><span class="p">,</span> <span class="n">outdir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="n">Path</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="n">Path</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+    <span class="n">mapping</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">mapping_path</span><span class="o">.</span><span class="n">read_text</span><span class="p">())</span>
+    <span class="n">default</span> <span class="o">=</span> <span class="n">mapping</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"_default"</span><span class="p">,</span> <span class="s2">"SKILL.md"</span><span class="p">)</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">read_text</span><span class="p">()</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">split_sections</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">mapping</span><span class="p">,</span> <span class="n">default</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">dest</span><span class="p">,</span> <span class="n">lines</span> <span class="ow">in</span> <span class="n">out</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">outdir</span> <span class="o">/</span> <span class="n">dest</span>
+        <span class="n">path</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">path</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">))</span>
+    <span class="n">lines_in</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="o">.</span><span class="n">splitlines</span><span class="p">(</span><span class="n">keepends</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+    <span class="n">lines_out</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">out</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"lines in: </span><span class="si">{</span><span class="n">lines_in</span><span class="si">}</span><span class="s2">, lines out: </span><span class="si">{</span><span class="n">lines_out</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">lines_in</span> <span class="o">==</span> <span class="n">lines_out</span> <span class="k">else</span> <span class="mi">1</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="n">main</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">))</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run to verify pass</strong></li>
+</ul>
+<p>Same command as Step 2. Expected: <code>3 passed</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/GabyRangelB/feat/claude-document-the-model-skill<span class="w"> </span>add<span class="w"> </span>.claude/skills/model-support/scripts/split_skill.py<span class="w"> </span>tests/skills/__init__.py<span class="w"> </span>tests/skills/test_model_support_scripts.py
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/GabyRangelB/feat/claude-document-the-model-skill<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"feat(model-support): add a verbatim skill splitter with line accounting"</span><span class="w"> </span>-m<span class="w"> </span><span class="s2">"Refs #5434"</span><span class="w"> </span>-m<span class="w"> </span><span class="s2">"Co-Authored-By: Claude Opus 5.5 (1M context) &lt;noreply@anthropic.com&gt;"</span>
+</code></pre></div>
+<hr />
+<h3 id="task-3-check_linkspy-with-tests">Task 3: <code>check_links.py</code> with tests</h3>
+<p>The spec names <code>check_links.sh</code>; this plan makes it Python so it can share the
+pytest file. Same job, same location.</p>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>$WT/.claude/skills/model-support/scripts/check_links.py</code></li>
+<li>Modify: <code>$WT/tests/skills/test_model_support_scripts.py</code> (append)</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Produces:
+  <code>find_broken_links(paths: list[Path]) -&gt; list[tuple[Path, int, str]]</code> — scans
+  every <code>*.md</code> file under each path (file or directory), returns
+  <code>(file, line_number, target)</code> for each relative link target that does not
+  exist. Skips <code>http:</code>, <code>https:</code>, <code>mailto:</code>, pure <code>#anchor</code> links, and anything
+  inside fenced code. Strips <code>#fragment</code> before resolving; resolves relative to
+  the file's directory.</li>
+<li>
+<p>CLI: <code>check_links.py PATH...</code> — prints <code>file:line: target</code> per broken link,
+  exits 1 if any.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Append the failing tests</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_check_links_reports_only_broken_relative_links</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">):</span>
+    <span class="n">links</span> <span class="o">=</span> <span class="n">_load</span><span class="p">(</span><span class="s2">"check_links"</span><span class="p">)</span>
+    <span class="p">(</span><span class="n">tmp_path</span> <span class="o">/</span> <span class="s2">"references"</span><span class="p">)</span><span class="o">.</span><span class="n">mkdir</span><span class="p">()</span>
+    <span class="p">(</span><span class="n">tmp_path</span> <span class="o">/</span> <span class="s2">"references"</span> <span class="o">/</span> <span class="s2">"goals.md"</span><span class="p">)</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="s2">"# Goals</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+    <span class="p">(</span><span class="n">tmp_path</span> <span class="o">/</span> <span class="s2">"SKILL.md"</span><span class="p">)</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span>
+        <span class="s2">"[ok](references/goals.md)</span><span class="se">\n</span><span class="s2">"</span>
+        <span class="s2">"[ok anchor](references/goals.md#goals)</span><span class="se">\n</span><span class="s2">"</span>
+        <span class="s2">"[web](https://example.com/x)</span><span class="se">\n</span><span class="s2">"</span>
+        <span class="s2">"[self](#top)</span><span class="se">\n</span><span class="s2">"</span>
+        <span class="s2">"[broken](references/missing.md)</span><span class="se">\n</span><span class="s2">"</span>
+        <span class="s2">"```text</span><span class="se">\n</span><span class="s2">[in fence](nowhere.md)</span><span class="se">\n</span><span class="s2">```</span><span class="se">\n</span><span class="s2">"</span>
+    <span class="p">)</span>
+    <span class="n">broken</span> <span class="o">=</span> <span class="n">links</span><span class="o">.</span><span class="n">find_broken_links</span><span class="p">([</span><span class="n">tmp_path</span><span class="p">])</span>
+    <span class="k">assert</span> <span class="n">broken</span> <span class="o">==</span> <span class="p">[(</span><span class="n">tmp_path</span> <span class="o">/</span> <span class="s2">"SKILL.md"</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="s2">"references/missing.md"</span><span class="p">)]</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run to verify failure</strong> — same pytest command as Task 2 Step 2.
+      Expected: 1 error for <code>check_links.py</code> missing, 3 passed.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Implement</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="sd">"""Report relative markdown links whose targets do not exist.</span>
+
+<span class="sd">Usage: check_links.py PATH...   (files or directories; scans *.md)</span>
+<span class="sd">"""</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="n">LINK</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\]\(([^)\s]+)\)"</span><span class="p">)</span>
+<span class="n">FENCE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"^\s*(`{3,}|~{3,})"</span><span class="p">)</span>
+<span class="n">SKIP</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"http:"</span><span class="p">,</span> <span class="s2">"https:"</span><span class="p">,</span> <span class="s2">"mailto:"</span><span class="p">,</span> <span class="s2">"#"</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_md_files</span><span class="p">(</span><span class="n">paths</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Path</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Path</span><span class="p">]:</span>
+    <span class="n">files</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">paths</span><span class="p">:</span>
+        <span class="n">files</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">rglob</span><span class="p">(</span><span class="s2">"*.md"</span><span class="p">))</span> <span class="k">if</span> <span class="n">path</span><span class="o">.</span><span class="n">is_dir</span><span class="p">()</span> <span class="k">else</span> <span class="p">[</span><span class="n">path</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">files</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">find_broken_links</span><span class="p">(</span><span class="n">paths</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Path</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
+    <span class="n">broken</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">md</span> <span class="ow">in</span> <span class="n">_md_files</span><span class="p">(</span><span class="n">paths</span><span class="p">):</span>
+        <span class="n">in_fence</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">number</span><span class="p">,</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">md</span><span class="o">.</span><span class="n">read_text</span><span class="p">()</span><span class="o">.</span><span class="n">splitlines</span><span class="p">(),</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">FENCE</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">line</span><span class="p">):</span>
+                <span class="n">in_fence</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">in_fence</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">in_fence</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">for</span> <span class="n">target</span> <span class="ow">in</span> <span class="n">LINK</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">line</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">target</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">SKIP</span><span class="p">):</span>
+                    <span class="k">continue</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">md</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="n">target</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"#"</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                    <span class="n">broken</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">md</span><span class="p">,</span> <span class="n">number</span><span class="p">,</span> <span class="n">target</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">broken</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="n">argv</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="n">broken</span> <span class="o">=</span> <span class="n">find_broken_links</span><span class="p">([</span><span class="n">Path</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">:]])</span>
+    <span class="k">for</span> <span class="n">md</span><span class="p">,</span> <span class="n">number</span><span class="p">,</span> <span class="n">target</span> <span class="ow">in</span> <span class="n">broken</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">md</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">number</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">target</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">broken</span> <span class="k">else</span> <span class="mi">0</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="n">main</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">))</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run to verify pass.</strong> Expected: <code>4 passed</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong> — <code>git -C &lt;worktree&gt; add</code> the script and the test file;
+      message
+      <code>feat(model-support): add a relative-link checker for skills and docs</code>,
+      then <code>Refs #5434</code> and the co-author line, as in Task 2.</p>
+</li>
+</ul>
+<hr />
+<h3 id="task-4-comment_only_diffpy-with-tests">Task 4: <code>comment_only_diff.py</code> with tests</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>$WT/.claude/skills/model-support/scripts/comment_only_diff.py</code></li>
+<li>Modify: <code>$WT/tests/skills/test_model_support_scripts.py</code> (append)</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Produces: <code>strip_comments(sql: str) -&gt; str</code> — removes <code>-- …</code> to end of line,
+  <code>/* … */</code>, and <code>{# … #}</code>, leaving anything inside <code>'…'</code>, <code>"…"</code>, or <code>`…`</code>
+  untouched; then collapses all whitespace runs to one space and strips.
+  <code>is_comment_only(old: str, new: str) -&gt; bool</code>.</li>
+<li>
+<p>CLI: <code>comment_only_diff.py OLD_SQL NEW_SQL</code> — prints <code>comment-only</code> and exits
+  0, or prints <code>LOGIC CHANGE</code> and exits 1. To compare against main:
+  <code>git -C &lt;worktree&gt; show origin/main:&lt;path&gt; &gt; &lt;scratchpad&gt;/old.sql</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Append the failing tests</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_comment_only_edit_is_detected</span><span class="p">():</span>
+    <span class="n">diff</span> <span class="o">=</span> <span class="n">_load</span><span class="p">(</span><span class="s2">"comment_only_diff"</span><span class="p">)</span>
+    <span class="n">old</span> <span class="o">=</span> <span class="s2">"select a, -- old note</span><span class="se">\n</span><span class="s2">    b</span><span class="se">\n</span><span class="s2">from t /* block */</span><span class="se">\n</span><span class="s2">{# jinja note #}</span><span class="se">\n</span><span class="s2">"</span>
+    <span class="n">new</span> <span class="o">=</span> <span class="s2">"select a,</span><span class="se">\n</span><span class="s2">    b -- new note</span><span class="se">\n</span><span class="s2">from t</span><span class="se">\n</span><span class="s2">"</span>
+    <span class="k">assert</span> <span class="n">diff</span><span class="o">.</span><span class="n">is_comment_only</span><span class="p">(</span><span class="n">old</span><span class="p">,</span> <span class="n">new</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_logic_edit_is_detected</span><span class="p">():</span>
+    <span class="n">diff</span> <span class="o">=</span> <span class="n">_load</span><span class="p">(</span><span class="s2">"comment_only_diff"</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">diff</span><span class="o">.</span><span class="n">is_comment_only</span><span class="p">(</span><span class="s2">"select a from t"</span><span class="p">,</span> <span class="s2">"select b from t"</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_dashes_inside_strings_are_not_comments</span><span class="p">():</span>
+    <span class="n">diff</span> <span class="o">=</span> <span class="n">_load</span><span class="p">(</span><span class="s2">"comment_only_diff"</span><span class="p">)</span>
+    <span class="n">old</span> <span class="o">=</span> <span class="s2">"select '--' as sep, </span><span class="se">\"</span><span class="s2">a -- b</span><span class="se">\"</span><span class="s2"> as label from t"</span>
+    <span class="n">new</span> <span class="o">=</span> <span class="s2">"select '-' as sep, </span><span class="se">\"</span><span class="s2">a -- b</span><span class="se">\"</span><span class="s2"> as label from t"</span>
+    <span class="k">assert</span> <span class="s2">"'--'"</span> <span class="ow">in</span> <span class="n">diff</span><span class="o">.</span><span class="n">strip_comments</span><span class="p">(</span><span class="n">old</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">diff</span><span class="o">.</span><span class="n">is_comment_only</span><span class="p">(</span><span class="n">old</span><span class="p">,</span> <span class="n">new</span><span class="p">)</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run to verify failure.</strong> Expected: 3 errors for the missing
+      script, 4 passed.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Implement</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="sd">"""Prove a SQL edit is comment-only by comparing comment-stripped tokens.</span>
+
+<span class="sd">Usage: comment_only_diff.py OLD_SQL NEW_SQL</span>
+<span class="sd">"""</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="n">QUOTES</span> <span class="o">=</span> <span class="s2">"'</span><span class="se">\"</span><span class="s2">`"</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">strip_comments</span><span class="p">(</span><span class="n">sql</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">out</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">i</span><span class="p">,</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">sql</span><span class="p">)</span>
+    <span class="n">quote</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">n</span><span class="p">:</span>
+        <span class="n">ch</span> <span class="o">=</span> <span class="n">sql</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">quote</span><span class="p">:</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ch</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">ch</span> <span class="o">==</span> <span class="s2">"</span><span class="se">\\</span><span class="s2">"</span> <span class="ow">and</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">&lt;</span> <span class="n">n</span><span class="p">:</span>
+                <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sql</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+                <span class="n">i</span> <span class="o">+=</span> <span class="mi">2</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">ch</span> <span class="o">==</span> <span class="n">quote</span><span class="p">:</span>
+                <span class="n">quote</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">elif</span> <span class="n">ch</span> <span class="ow">in</span> <span class="n">QUOTES</span><span class="p">:</span>
+            <span class="n">quote</span> <span class="o">=</span> <span class="n">ch</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ch</span><span class="p">)</span>
+            <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">elif</span> <span class="n">sql</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"--"</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+            <span class="n">end</span> <span class="o">=</span> <span class="n">sql</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="n">n</span> <span class="k">if</span> <span class="n">end</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span> <span class="k">else</span> <span class="n">end</span>
+        <span class="k">elif</span> <span class="n">sql</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"/*"</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+            <span class="n">end</span> <span class="o">=</span> <span class="n">sql</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">"*/"</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="n">n</span> <span class="k">if</span> <span class="n">end</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span> <span class="k">else</span> <span class="n">end</span> <span class="o">+</span> <span class="mi">2</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">" "</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">sql</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"{#"</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+            <span class="n">end</span> <span class="o">=</span> <span class="n">sql</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">"#}"</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="n">n</span> <span class="k">if</span> <span class="n">end</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span> <span class="k">else</span> <span class="n">end</span> <span class="o">+</span> <span class="mi">2</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">" "</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ch</span><span class="p">)</span>
+            <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\s+"</span><span class="p">,</span> <span class="s2">" "</span><span class="p">,</span> <span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">out</span><span class="p">))</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">is_comment_only</span><span class="p">(</span><span class="n">old</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">new</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">strip_comments</span><span class="p">(</span><span class="n">old</span><span class="p">)</span> <span class="o">==</span> <span class="n">strip_comments</span><span class="p">(</span><span class="n">new</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="n">argv</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="n">old</span><span class="p">,</span> <span class="n">new</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">read_text</span><span class="p">(),</span> <span class="n">Path</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span><span class="o">.</span><span class="n">read_text</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">is_comment_only</span><span class="p">(</span><span class="n">old</span><span class="p">,</span> <span class="n">new</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"comment-only"</span><span class="p">)</span>
+        <span class="k">return</span> <span class="mi">0</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"LOGIC CHANGE"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="mi">1</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="n">main</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">))</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run to verify pass.</strong> Expected: <code>7 passed</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong> — message
+      <code>feat(model-support): add a comment-only SQL diff check</code>, then
+      <code>Refs #5434</code> and the co-author line.</p>
+</li>
+</ul>
+<hr />
+<h3 id="task-5-references-for-document-mode-intake-inventory-and-the-doc">Task 5: references for document-mode intake, inventory, and the doc</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>$WT/.claude/skills/model-support/references/intake-and-inventory.md</code></li>
+<li>Create: <code>$WT/.claude/skills/model-support/references/reference-doc.md</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: the spec's <em>Document mode flow</em> steps 1-3 and <em>Doc outlines</em>.</li>
+<li>
+<p>Produces: section headings that <code>SKILL.md</code> (Task 8) links to by file name:
+  <code>intake-and-inventory.md</code> and <code>reference-doc.md</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write <code>intake-and-inventory.md</code></strong> with these sections, in this
+      order, and no others:</p>
+</li>
+<li>
+<p><code># Intake and inventory</code> — one line: document mode steps 1-2; stop after the
+   boundary is confirmed.</p>
+</li>
+<li><code>## Intake</code> — ask, in one message: (a) source material, accepted three ways
+   (a file dropped in the session scratchpad; a public URL, read with WebFetch;
+   an org Google Drive file shared with the Codespaces account, read through the
+   Drive connector), plus a superpowers spec if the model was designed through
+   brainstorming; (b) whether the family has Google Sheet upkeep (examples:
+   CARAT goal updates, season regeneration, College Board ID tagging); (c) who
+   owns the family now and who inherits it. Granola and other claude.ai
+   connectors may need authorizing in claude.ai settings; if one is unavailable,
+   ask for an export to scratch instead.</li>
+<li><code>## Find the consumers</code> — grep <code>src/dbt/*/models/exposures/*.yml</code> for the
+   model names. Branch table: Tableau exposure → dashboard outline; Google
+   Sheet, extract, or other → process outline; both → both outlines, one section
+   per consumer; none → ask the user who consumes it and suggest adding the
+   exposure (see <code>src/dbt/kipptaf/CLAUDE.md</code> → Exposures). Reading the exposure
+   YAML is local; do not open Tableau.</li>
+<li><code>## Propose the boundary</code> — walk parents from each exposed model
+   (<code>rg -o 'ref\("[^"]+"\)'</code> on each <code>.sql</code>, <code>find src/dbt -name '&lt;model&gt;.sql'</code>
+   to locate each, reading the current project's copy first per
+   <code>src/dbt/CLAUDE.md</code>). Keep a model when every child it has is inside the
+   family (<code>rg -l 'ref\("&lt;model&gt;"\)' src/dbt</code> lists children). Present the list
+   as a table (model, layer, in/out, why) and wait for the user's confirmation.
+   Shared upstreams get one line in the doc: "reads X for Y, joined on Z".</li>
+<li>
+<p><code>## Measure what exists</code> — existing doc under <code>docs/models/</code>, existing skill
+   under <code>.claude/skills/</code>; line counts per heading with
+   <code>awk '/^#{2,4} /{if(h)print n"\t"h; h=$0; n=0} {n++} END{print n"\t"h}' &lt;file&gt;</code>.
+   Mark as cut candidates: one-time checks, change logs, "Resolved —" notes,
+   stale counts. Note which dashboard views or process steps have no
+   explanation.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Write <code>reference-doc.md</code></strong> with these sections:</p>
+</li>
+<li>
+<p><code># Reference doc</code> — audience: the next owner and the family skill; the page
+   is public on GitHub.</p>
+</li>
+<li><code>## Outline</code> — shared opening (What it is → How it fits together, with a
+   diagram → Terms → Where the data comes from: source and owner), the dashboard
+   middle (per view: What it shows / Grain / Reads / Worth knowing), the process
+   middle (What triggers it → Inputs → Steps → Outputs: where they land and who
+   reads them → Who runs it and when), shared close (Supporting models → Inputs:
+   Google Sheets and others → Decisions → Known issues, need to fix → Yearly
+   upkeep).</li>
+<li><code>## What to cut</code> — one-time before/after measurements (move to the family
+   skill if it cites them), "Resolved —" and "used to" narration, tombstones,
+   counts that go stale ("27 students" → "a few dozen"), evidence tables.</li>
+<li><code>## Public-page rules</code> — no internal sheet URLs or IDs ("ask the data team"),
+   no emails, no student data, no small-cell counts; no standalone bold line as
+   a heading (MD036, <code>docs/CLAUDE.md</code>); add the page to the <code>mkdocs.yml</code> nav
+   under <code>Models</code>.</li>
+<li><code>## Cold review</code> — required for a new doc and for every edited section. Ask
+   the user before dispatching; they may skip a trivial edit. Dispatch one Opus
+   subagent with this prompt, verbatim apart from the placeholders:</li>
+</ul>
+<div class="highlight"><pre><span></span><code>You are reviewing a project manual as the person about to inherit the
+project. Read &lt;absolute doc path&gt; in full (or, for an update, only these
+sections: &lt;section names&gt;). Then spot-check at least 10 specific factual
+claims against the code under &lt;absolute worktree path&gt;/src/dbt.
+Prioritise grain, which models read which, join keys and partitions,
+filters, and denominators. Do the reading yourself; no sub-agents; no edits.
+Report: wrong or overstated claims with file:line evidence; where a
+newcomer gets lost; what reads like a check dump or change log; anything
+inappropriate for a public page.
+</code></pre></div>
+<p>Verify each flag against the SQL yourself before editing. Fix every confirmed
+   one.</p>
+<ol class="task-list">
+<li>
+<p><code>## Repoint links</code> — after renaming sections, grep the skills for the old
+   names (<code>rg -n '_&lt;Old section&gt;_|reference doc' .claude/skills</code>) and run
+   <code>scripts/check_links.py</code> on the skill and the doc.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Lint and link-check</strong></p>
+</li>
+</ol>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/GabyRangelB/feat/claude-document-the-model-skill<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>--no-fix<span class="w"> </span>.claude/skills/model-support/references/intake-and-inventory.md<span class="w"> </span>.claude/skills/model-support/references/reference-doc.md<span class="w"> </span>&lt;/dev/null<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tail<span class="w"> </span>-n<span class="w"> </span><span class="m">5</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>.claude/skills/model-support/scripts/check_links.py<span class="w"> </span>.claude/skills/model-support
+</code></pre></div>
+<p>Expected: <code>No issues</code>; the link checker prints nothing and exits 0.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Commit</strong> — message
+      <code>feat(model-support): add intake, inventory, and reference-doc guides</code>.</li>
+</ul>
+<hr />
+<h3 id="task-6-references-for-the-yaml-audit-tests-and-known-issues">Task 6: references for the YAML audit, tests, and known issues</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>$WT/.claude/skills/model-support/references/yaml-audit.md</code></li>
+<li>Create: <code>$WT/.claude/skills/model-support/references/tests-and-issues.md</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: the spec's document steps 4-6.</li>
+<li>
+<p>Produces: files linked from <code>SKILL.md</code> by name.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write <code>yaml-audit.md</code></strong> with sections:</p>
+</li>
+<li>
+<p><code># YAML audit</code> — descriptions only; the SQL is the source of truth over the
+   doc. Read <code>.claude/rules/dbt-yaml.md</code> first (it loads on the first YAML
+   read).</p>
+</li>
+<li><code>## Sizing</code> — inline for about five models or fewer; otherwise split the
+   family into groups of about six (staging, intermediate, views) and dispatch
+   one Opus subagent per group, in parallel, in one message.</li>
+<li><code>## The audit prompt</code> — verbatim:</li>
+</ul>
+<div class="highlight"><pre><span></span><code>Audit dbt YAML descriptions against the SQL for these models: &lt;list, each
+with its absolute .sql and properties .yml path under &lt;worktree&gt;&gt;. Do the
+edits yourself; no sub-agents. Edit descriptions only: never SQL, tests,
+config, contains_pii, contract, data_type, or column names. The SQL is the
+source of truth over any doc. Never change a test to match a description
+or the reverse: flag the disagreement instead. Remove change-log narration,
+stale counts, TODOs, and issue refs (#1234) from descriptions. Then run,
+from &lt;worktree&gt;, trunk check --force --no-fix on each edited file and
+uv run dbt parse --no-partial-parse --project-dir &lt;worktree&gt;/src/dbt/&lt;project&gt;.
+Report: per file a one-line summary; FLAGS with file:line evidence (column
+lists that don't match the SQL, missing uniqueness tests, wrong grains);
+lint and parse results verbatim.
+</code></pre></div>
+<ol class="task-list">
+<li><code>## Verify the diff yourself</code> —
+   <code>git -C &lt;worktree&gt; diff -U0 -- '*.yml' | rg '^[+-].*(data_type|data_tests|severity|combination_of_columns|contains_pii|materialized|- name:)'</code>
+   must show only intentional changes, each listed in the commit message. Then
+   <code>uv run dbt parse --no-partial-parse --project-dir &lt;worktree&gt;/src/dbt/&lt;project&gt;</code>.</li>
+<li>
+<p><code>## Flags</code> — the reviewers' flags are the most valuable output; each goes to
+   <code>tests-and-issues.md</code> or to "Known issues, need to fix".</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Write <code>tests-and-issues.md</code></strong> with sections:</p>
+</li>
+<li>
+<p><code># Tests and known issues</code></p>
+</li>
+<li><code>## Propose tests from the model</code> — per model: the grain's key gets <code>unique</code>
+   or <code>dbt_utils.unique_combination_of_columns</code> (required on every staging,
+   intermediate, and <code>rpt_</code> model, <code>.claude/rules/dbt-models.md</code>); <code>not_null</code> on
+   key columns except <code>generate_surrogate_key</code> output; <code>accepted_values</code> on
+   low-cardinality categorical columns (status, region, test type);
+   <code>relationships</code> to the parent model's key where the join is a lookup. Present
+   as a table (model, test, column, why, prod result) and wait for approval.</li>
+<li><code>## Check against prod first</code> — rows vs distinct keys:</li>
+</ol>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n_rows</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="n">to_json_string</span><span class="p">(</span><span class="n">struct</span><span class="p">(</span><span class="o">&lt;</span><span class="k">key</span><span class="w"> </span><span class="n">cols</span><span class="o">&gt;</span><span class="p">)))</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n_keys</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="o">&lt;</span><span class="n">dataset</span><span class="o">&gt;</span><span class="p">.</span><span class="o">&lt;</span><span class="n">model</span><span class="o">&gt;`</span>
+</code></pre></div>
+<p>Through the BigQuery MCP (SELECT-only). Staging tests need
+   <code>config: severity: error</code>; the kipptaf default is warn.</p>
+<ol class="task-list">
+<li><code>## A test that fails today</code> — still add it (it warns); put the cause in the
+   doc's "Known issues, need to fix" with the query that shows it, aggregates
+   only.</li>
+<li><code>## "Probably harmless" gets a query</code> — every suspected-harmless oddity is
+   checked: an arbitrary <code>row_number</code> pick is harmless only if every column
+   consumers read is constant within the partition (<code>count(distinct &lt;col&gt;)</code> per
+   partition = 1); dead rows are harmless only if the consumer never reads them
+   (group in the consumer). Record each check in the commit message.</li>
+<li>
+<p><code>## SQL comments</code> — stale counts and "after this PR" narration in SQL
+   comments are removed; prove it with <code>scripts/comment_only_diff.py</code>; warn the
+   user that a comment edit marks the model <code>state:modified</code>, so dbt Cloud CI
+   rebuilds its descendants.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Lint and link-check</strong> — same command shape as Task 5 Step 3, on
+      the two new files. Expected: clean.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Commit</strong> — message
+      <code>feat(model-support): add YAML-audit and tests guides</code>.</p>
+</li>
+</ol>
+<hr />
+<h3 id="task-7-references-for-the-family-skill-update-mode-and-qa-mode">Task 7: references for the family skill, update mode, and QA mode</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>$WT/.claude/skills/model-support/references/model-skill.md</code></li>
+<li>Create: <code>$WT/.claude/skills/model-support/references/update-mode.md</code></li>
+<li>Create: <code>$WT/.claude/skills/model-support/references/qa-mode.md</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: spec document step 7, <em>Update mode flow</em>, <em>QA mode flow</em>; scripts
+  from Tasks 2-4 by path.</li>
+<li>
+<p>Produces: files linked from <code>SKILL.md</code>; the walk-test prompt that Task 9
+  reuses verbatim.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write <code>model-skill.md</code></strong> with sections:</p>
+</li>
+<li>
+<p><code># The family skill</code></p>
+</li>
+<li><code>## Propose, then ask</code> — list what a skill would hold for this family from
+   what inventory found: sheet-upkeep procedures, yearly rollover (grep the
+   family SQL for <code>current_academic_year</code> and hard-coded years), recurring QA
+   checks, questions people ask about the numbers, before/after history. If
+   none, say so and propose no skill. Wait for the user.</li>
+<li><code>## Shape</code> — ICM inside the repo convention: <code>SKILL.md</code> (frontmatter
+   <code>description</code> starting "Use when…" with triggers and model names; rules that
+   apply to every task; a route-by-task table sending each task to one
+   reference; a "why did this number change" table if the family has one; the
+   sheet-handoff contract; a scripts list) and <code>references/*.md</code>, one per task
+   area. Worked examples: <code>.claude/skills/tableau-workbook-xml/</code> and, once PR
+   #5542 merges, <code>.claude/skills/carat-dashboard/</code>. Standardize on
+   <code>references/</code>, not <code>reference/</code>.</li>
+<li><code>## Restructuring an oversized skill</code> — write a mapping JSON (each <code>##</code>
+   heading → destination; <code>_default</code> for the entry), run
+   <code>uv run python .claude/skills/model-support/scripts/split_skill.py &lt;SKILL.md&gt; &lt;mapping.json&gt; &lt;skill dir&gt;</code>
+   (it must print equal lines in and out), then fix cross-file <code>_Section_</code>
+   pointers and relative links (<code>../scripts/</code>, <code>../../../../docs/</code>), then
+   <code>scripts/check_links.py &lt;skill dir&gt;</code>. Then trim the entry to routing.</li>
+<li><code>## Walk test</code> — required for a new skill and for every edited skill file, on
+   a task that uses the edit. Ask before dispatching. Cold Sonnet, planning
+   only, prompt verbatim:</li>
+</ul>
+<div class="highlight"><pre><span></span><code>Walk test of a Claude Code skill. Entry file: &lt;abs path&gt;. Read it with the
+Read tool, then read only what it routes you to. Do the reading yourself;
+no sub-agents. Planning only: no scripts, queries, git, or edits. Task:
+&lt;realistic user request&gt;. Return, under 300 words: (1) every file you Read,
+in order, with line ranges; (2) your concrete steps; (3) anything unclear,
+missing, or mis-pointed.
+</code></pre></div>
+<p>Pass: the entry plus at most two more reads. Fixes that worked on CARAT:
+   merge a reference every task needed together; add an explicit "this overrides
+   step N of X" link; name where a doc section stops ("read X and Y, stop at
+   heading Z"). Re-run until it passes.</p>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Write <code>update-mode.md</code></strong> with sections:</p>
+</li>
+<li>
+<p><code># Update mode</code></p>
+</li>
+<li><code>## Find what moved</code> —
+   <code>git -C &lt;worktree&gt; diff --stat origin/main...HEAD -- &lt;family paths&gt;</code>; if the
+   family has no reference doc yet, stop and run document mode.</li>
+<li><code>## Change → re-run</code> — the spec's four-row table, each row expanded to the
+   exact reference file to follow (column → <code>yaml-audit.md</code> + <code>reference-doc.md</code>
+   sections that name it + <code>tests-and-issues.md</code>; join/filter/grain → prod grain
+   check from <code>tests-and-issues.md</code>, then <code>qa-mode.md</code> refactor parity if values
+   may move; new view/tab/model → <code>intake-and-inventory.md</code> boundary check + a
+   new doc section + a new skill route; comment only →
+   <code>scripts/comment_only_diff.py</code> and the CI warning).</li>
+<li>
+<p><code>## Subagent checks after every update</code> — cold review of every edited doc
+   section (<code>reference-doc.md</code> → Cold review); walk test of every edited
+   family-skill file (<code>model-skill.md</code> → Walk test). Ask before each dispatch.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Write <code>qa-mode.md</code></strong> with sections:</p>
+</li>
+<li>
+<p><code># QA mode</code> — start from the family's reference doc for grains, keys, and
+   known issues; if there is none, run <code>intake-and-inventory.md</code> first. If the
+   family skill has its own QA procedure, link straight to that reference file,
+   never to the family's <code>SKILL.md</code> (CARAT:
+   <code>.claude/skills/carat-dashboard/references/official-scores-qa.md</code>), follow
+   it, and skip the generic checks. Going through the family's entry file costs
+   a third read and fails the walk test.</p>
+</li>
+<li><code>## New data landed</code> — the five comparisons from the spec, each with a query
+   shape; previous load via
+   <code>FOR SYSTEM_TIME AS OF timestamp_sub(current_timestamp(), interval &lt;n&gt; hour)</code>
+   (7 days back at most; one timestamp per query, so run before and now as
+   separate queries); same point last year via <code>academic_year - 1</code>. Label every
+   finding expected (with the reason) or needs a look.</li>
+<li><code>## Refactor parity</code> — build the changed <code>rpt_</code> views in dev (invoke
+   <code>dbt-local-dev</code> first for <code>--defer</code> and stale-dev traps) or read the CI
+   schema (<code>dbt_cloud_pr_&lt;job&gt;_&lt;pr&gt;_*</code>). Diff on the view key, both directions:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="s1">'only_in_dev'</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">side</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n</span>
+<span class="k">from</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="o">&lt;</span><span class="k">key</span><span class="w"> </span><span class="n">cols</span><span class="o">&gt;</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="o">`&lt;</span><span class="n">dev</span><span class="w"> </span><span class="n">relation</span><span class="o">&gt;`</span>
+<span class="w">    </span><span class="k">except</span><span class="w"> </span><span class="k">distinct</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="o">&lt;</span><span class="k">key</span><span class="w"> </span><span class="n">cols</span><span class="o">&gt;</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="o">`&lt;</span><span class="n">prod</span><span class="w"> </span><span class="n">relation</span><span class="o">&gt;`</span>
+<span class="p">)</span>
+<span class="k">union</span><span class="w"> </span><span class="k">all</span>
+<span class="k">select</span><span class="w"> </span><span class="s1">'only_in_prod'</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span>
+<span class="k">from</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="o">&lt;</span><span class="k">key</span><span class="w"> </span><span class="n">cols</span><span class="o">&gt;</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="o">`&lt;</span><span class="n">prod</span><span class="w"> </span><span class="n">relation</span><span class="o">&gt;`</span>
+<span class="w">    </span><span class="k">except</span><span class="w"> </span><span class="k">distinct</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="o">&lt;</span><span class="k">key</span><span class="w"> </span><span class="n">cols</span><span class="o">&gt;</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="o">`&lt;</span><span class="n">dev</span><span class="w"> </span><span class="n">relation</span><span class="o">&gt;`</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>Then, on matched keys, count rows where each column differs
+   (<code>countif(d.&lt;col&gt; is distinct from p.&lt;col&gt;)</code>), grouped by school and term.
+   Tie each difference to a hunk of the SQL diff; label it regression or
+   intended.</p>
+<ol class="task-list">
+<li><code>## Tableau (opt-in)</code> — only when the warehouse diff is clean and the user
+   needs proof the dashboard itself matches. Say it costs a lot of tokens and
+   wait for a yes before any Tableau MCP call or loading <code>tableau-workbook-xml</code>.</li>
+<li>
+<p><code>## Where results go</code> — student-level rows stay in the terminal and the
+   session scratchpad; GitHub gets aggregates without small cells
+   (<code>.claude/rules/ferpa-pii.md</code>).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Lint and link-check</strong> the three files. Expected: clean.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong> — message
+      <code>feat(model-support): add family-skill, update-mode, and QA-mode guides</code>.</p>
+</li>
+</ol>
+<hr />
+<h3 id="task-8-the-entry-skillmd">Task 8: the entry <code>SKILL.md</code></h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>$WT/.claude/skills/model-support/SKILL.md</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>
+<p>Consumes: every reference file name from Tasks 5-7 and script names from Tasks
+  2-4.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write <code>SKILL.md</code></strong>, target under 120 lines, exactly this
+      structure:</p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code>---
+name: model-support
+description: &gt;-
+  Use when documenting a dbt model family for handover (a dashboard's lineage or
+  a process model such as a Google Sheet extract), updating a documented
+  family's reference doc, YAML, tests, or skill after a model change, or QA-ing
+  prod values after new data lands or after a refactor that should not change
+  them. Triggers: "document this model", "update the docs for", "write a
+  reference doc", "restructure this skill", "check prod values", "did the
+  refactor change anything", "new scores landed", or a docs/models page or
+<span class="gu">  family skill that no longer matches the SQL.</span>
+<span class="gu">---</span>
+
+<span class="gh"># Model support</span>
+
+Three modes for one dbt model family: document, update, QA. Pick the mode from
+the request; if unclear, ask.
+
+<span class="gu">## Rules for every mode</span>
+
+<span class="k">-</span><span class="w"> </span>No Tableau MCP call and no <span class="sb">`tableau-workbook-xml`</span> load without warning the
+  user about the token cost and getting a yes. QA goes to the warehouse first.
+<span class="k">-</span><span class="w"> </span>Sheet changes go out as the whole tab or block, as a tab-separated file in the
+  session scratchpad, handed over as a path with the sheet link and tab name.
+  Never comma-separated; never pasted into chat.
+<span class="k">-</span><span class="w"> </span>Read the source the user is editing (a Sheets external through ADC from
+  Python), not a reshaped staging table.
+<span class="k">-</span><span class="w"> </span>State a pipeline behavior only from code or a before/after observation, never
+  from a timestamp.
+<span class="k">-</span><span class="w"> </span>Read the whole block before flagging a bug in it.
+<span class="k">-</span><span class="w"> </span>No doc claim ships without the cold review; no skill edit ships without a walk
+  test. Ask before each dispatch.
+<span class="k">-</span><span class="w"> </span>Student-level rows stay in the terminal and scratch.
+
+<span class="gu">## Route by step</span>
+
+| Mode     | Step                                   | Read                               |
+| -------- | -------------------------------------- | ---------------------------------- |
+| Document | 1-2 Intake, consumers, boundary        | references/intake-and-inventory.md |
+| Document | 3 Reference doc and cold review        | references/reference-doc.md        |
+| Document | 4 YAML descriptions                    | references/yaml-audit.md           |
+| Document | 5-6 Tests, known issues, SQL comments  | references/tests-and-issues.md     |
+| Document | 7 Family skill, restructure, walk test | references/model-skill.md          |
+| Update   | Any change to a documented family      | references/update-mode.md          |
+| QA       | New data or refactor parity            | references/qa-mode.md              |
+
+Document mode runs steps 1-8 in order; step 8 is below.
+
+<span class="gu">## Step 8: close out</span>
+
+Trunk on every changed file (<span class="sb">`--force --no-fix`</span>),
+<span class="sb">`uv run dbt parse --no-partial-parse`</span>, commits that state what was verified,
+push, PR. Tell the user every judgment call they might disagree with.
+
+<span class="gu">## Scripts</span>
+
+<span class="k">-</span><span class="w"> </span><span class="sb">`scripts/split_skill.py`</span> — verbatim split of an oversized skill.
+<span class="k">-</span><span class="w"> </span><span class="sb">`scripts/check_links.py`</span> — relative links that do not resolve.
+<span class="k">-</span><span class="w"> </span><span class="sb">`scripts/comment_only_diff.py`</span> — prove a SQL edit is comment-only.
+
+<span class="gu">## Acceptance for a run</span>
+
+Walk tests pass (entry plus at most two reads); the cold review finds no wrong
+claims after fixes; the YAML diff is description-only apart from listed
+intentional changes; <span class="sb">`dbt parse`</span> and trunk pass; every missing uniqueness test
+is added or listed as a known issue.
+</code></pre></div>
+<p>Make the route-table links real markdown links
+(<code>[intake-and-inventory.md](references/intake-and-inventory.md)</code>) and script
+names links to <code>scripts/…</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Lint, link-check, line count</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/GabyRangelB/feat/claude-document-the-model-skill<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>--no-fix<span class="w"> </span>.claude/skills/model-support/SKILL.md<span class="w"> </span>&lt;/dev/null<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tail<span class="w"> </span>-n<span class="w"> </span><span class="m">5</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>.claude/skills/model-support/scripts/check_links.py<span class="w"> </span>.claude/skills/model-support<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>wc<span class="w"> </span>-l<span class="w"> </span>.claude/skills/model-support/SKILL.md
+</code></pre></div>
+<p>Expected: clean, no broken links, under 120 lines.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Commit</strong> — message
+      <code>feat(model-support): add the routing entry file</code>.</li>
+</ul>
+<hr />
+<h3 id="task-9-green-walk-tests-and-fixes">Task 9: GREEN walk tests and fixes</h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify: any file under <code>$WT/.claude/skills/model-support/</code> that a walk test
+  shows mis-pointed.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Dispatch five cold Sonnet walk tests in one message</strong>, using the
+      walk-test prompt from <code>model-skill.md</code> → Walk test with entry
+      <code>/workspaces/teamster/.worktrees/GabyRangelB/feat/claude-document-the-model-skill/.claude/skills/model-support/SKILL.md</code>.
+      Tasks:</p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code>W1 "Document the athletic eligibility tracker (rpt_gsheets__athletic_eligibility)
+   so the next owner can run it."
+W2 "I added a column to rpt_gsheets__athletic_eligibility. Update everything
+   that documents it."
+W3 "The dibels-dashboard skill is 3,000 lines. Restructure it so sessions
+   actually read it."
+W4 "New official SAT scores landed for CARAT. Check the prod values make sense."
+W5 "I refactored int_students__athletic_eligibility for readability; it has no
+   reference doc yet. Check prod values won't change."
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Score each.</strong> Pass: SKILL.md plus at most two more reads, and
+      the plan hits the matching RED checklist items from Task 1 (W1: A1-A8; W5:
+      B1-B5 and the inventory-first rule). Every read counts, including files in
+      a family's own skill. W4 passes only by reading SKILL.md, <code>qa-mode.md</code>,
+      and CARAT's <code>official-scores-qa.md</code> directly.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Fix every failure</strong> in the file the walk test names (merge
+      references, add a pointer, name a stopping heading). Re-lint and
+      re-link-check the edited files.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Re-run only the failed walk tests.</strong> Repeat Steps 3-4 until all
+      five pass.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong> — message <code>fix(model-support): close walk-test gaps</code>
+      with each fix and the final read counts per walk test in the body.</p>
+</li>
+</ul>
+<hr />
+<h3 id="task-10-open-the-pr">Task 10: open the PR</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Full checks</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/GabyRangelB/feat/claude-document-the-model-skill<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>--no-fix<span class="w"> </span><span class="k">$(</span>git<span class="w"> </span>diff<span class="w"> </span>--name-only<span class="w"> </span>origin/main...HEAD<span class="k">)</span><span class="w"> </span>&lt;/dev/null<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tail<span class="w"> </span>-n<span class="w"> </span><span class="m">5</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span>uv<span class="w"> </span>--directory<span class="w"> </span>/workspaces/teamster/.worktrees/GabyRangelB/feat/claude-document-the-model-skill<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>/workspaces/teamster/.worktrees/GabyRangelB/feat/claude-document-the-model-skill/tests/skills<span class="w"> </span>-q<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tail<span class="w"> </span>-n<span class="w"> </span><span class="m">5</span>
+</code></pre></div>
+<p>Expected: <code>No issues</code>; <code>7 passed</code>.</p>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Push</strong> — <code>git -C &lt;worktree&gt; push</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Open a draft PR</strong> with <code>mcp__github__create_pull_request</code>, body
+      from <code>.github/pull_request_template.md</code>: plain-language Summary; Reviewer
+      Notes naming the judgment calls (Python link checker instead of <code>.sh</code>,
+      matching all 10 existing skill scripts; <code>tests/skills/</code> is the first test
+      coverage for skill scripts and runs locally only, since <code>pytest.yaml</code>
+      covers <code>tests/launch/**</code> alone; five-model inline threshold; QA's Tableau
+      opt-in); <code>Refs #5434</code> (not <code>Closes</code>: acceptance needs the athletic
+      eligibility run); a "For Claude" fold-out with the RED baseline summary
+      and walk-test read counts. Draft until the athletic eligibility PR's real
+      run passes and its fixes land here. End the body with the Claude Code
+      attribution line.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Verify</strong> the returned title, body, and draft state match intent.</p>
+</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+    
+  </body>
+</html>
