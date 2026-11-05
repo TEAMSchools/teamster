@@ -28,21 +28,12 @@ models:
             severity: error
       - dbt_utils.expression_is_true:
           arguments:
-            expression: >-
+            expression: |
               metric not in ('is_off_track_attendance', 'is_off_track_academic')
               or domain = 'overall'
           config:
             severity: error
     columns:
-      - name: academic_year
-        data_type: int64
-        description: >-
-          Starting calendar year of the school year the rule applies to (2025 =
-          SY25-26).
-        data_tests:
-          - not_null:
-              config:
-                severity: error
       - name: region
         data_type: string
         description: Region the rule applies to.
@@ -121,6 +112,14 @@ models:
           - not_null:
               config:
                 severity: error
+          - relationships:
+              arguments:
+                to: ref('int_students__promotional_status_metrics_unpivot')
+                field: metric
+              config:
+                severity: error
+                where: |
+                  metric not in ('is_off_track_attendance', 'is_off_track_academic')
       - name: comparator
         data_type: string
         description: Comparison operator applied as metric comparator value.
@@ -161,6 +160,11 @@ models:
                 values: [met, not_met]
               config:
                 severity: error
+      - name: academic_year
+        data_type: int64
+        description: >-
+          Starting calendar year of the school year the rule applies to (2025 =
+          SY25-26).
       - name: detail_label
         data_type: string
         description: >-
