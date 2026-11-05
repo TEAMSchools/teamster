@@ -6,7 +6,9 @@ models:
       mastery band, and each band's level relative to that mastery band.
       Illuminate and Focus number their band sets separately, so a set is
       identified by source and band set id together. Band sets that score no
-      internal assessment are left out.
+      internal assessment are left out. Focus band set ids are unique only
+      within 1 Focus instance; kippmiami is the only one, so adding a second
+      Focus region means adding the region to the band key.
     config:
       materialized: table
       meta:
@@ -77,8 +79,9 @@ models:
       - name: maximum_score
         data_type: numeric
         description: >-
-          The next band's minimum percent correct, which this band runs up to
-          but does not include. Null for the top band.
+          The next band's minimum percent correct. Null for the top band.
+          Illuminate places a score in a band only up to 0.1 below this value,
+          so a score in that gap gets no band.
       - name: is_mastery
         data_type: boolean
         description: The source's mastery flag for this band.
@@ -110,7 +113,8 @@ unit_tests:
       (same id as Illuminate set 1) has 8 bands, Level 3 at band 6, and repeats
       the label Low Level 1 on bands 1 and 4. Illuminate set 4 scores only a
       non-internal row, so it is left out. Illuminate set 5 starts mastery at
-      band 2, fails the level rule, and gets no level.
+      band 2, fails the level rule, and gets no level. Illuminate set 6 starts
+      mastery at band 3 but flags band 4 as not mastery, so it fails too.
     model: int_assessments__performance_band_union
     given:
       # sql format: the model reads only these 3 columns
@@ -122,6 +126,7 @@ unit_tests:
           union all select 'apex', 1, true
           union all select 'illuminate', 4, false
           union all select 'illuminate', 5, true
+          union all select 'illuminate', 6, true
           union all select 'illuminate', null, true
       - input: ref('int_illuminate__performance_band_sets')
         rows:
@@ -251,6 +256,46 @@ unit_tests:
               label: E5,
               label_number: 5,
               minimum_value: 90,
+              is_mastery: true,
+            }
+          - {
+              performance_band_set_id: 6,
+              description: Set F,
+              label: F1,
+              label_number: 1,
+              minimum_value: 0,
+              is_mastery: false,
+            }
+          - {
+              performance_band_set_id: 6,
+              description: Set F,
+              label: F2,
+              label_number: 2,
+              minimum_value: 20,
+              is_mastery: false,
+            }
+          - {
+              performance_band_set_id: 6,
+              description: Set F,
+              label: F3,
+              label_number: 3,
+              minimum_value: 40,
+              is_mastery: true,
+            }
+          - {
+              performance_band_set_id: 6,
+              description: Set F,
+              label: F4,
+              label_number: 4,
+              minimum_value: 60,
+              is_mastery: false,
+            }
+          - {
+              performance_band_set_id: 6,
+              description: Set F,
+              label: F5,
+              label_number: 5,
+              minimum_value: 80,
               is_mastery: true,
             }
       - input: ref('int_focus__apex_band_levels')
@@ -514,6 +559,61 @@ unit_tests:
             band_number: 5,
             band_count: 5,
             mastery_band_number: 2,
+            maximum_score: null,
+            mastery_level: null,
+            is_far_below: null,
+            is_level_rule_valid: false,
+          }
+        - {
+            source: illuminate,
+            performance_band_set_id: 6,
+            band_number: 1,
+            band_count: 5,
+            mastery_band_number: 3,
+            maximum_score: 20,
+            mastery_level: null,
+            is_far_below: null,
+            is_level_rule_valid: false,
+          }
+        - {
+            source: illuminate,
+            performance_band_set_id: 6,
+            band_number: 2,
+            band_count: 5,
+            mastery_band_number: 3,
+            maximum_score: 40,
+            mastery_level: null,
+            is_far_below: null,
+            is_level_rule_valid: false,
+          }
+        - {
+            source: illuminate,
+            performance_band_set_id: 6,
+            band_number: 3,
+            band_count: 5,
+            mastery_band_number: 3,
+            maximum_score: 60,
+            mastery_level: null,
+            is_far_below: null,
+            is_level_rule_valid: false,
+          }
+        - {
+            source: illuminate,
+            performance_band_set_id: 6,
+            band_number: 4,
+            band_count: 5,
+            mastery_band_number: 3,
+            maximum_score: 80,
+            mastery_level: null,
+            is_far_below: null,
+            is_level_rule_valid: false,
+          }
+        - {
+            source: illuminate,
+            performance_band_set_id: 6,
+            band_number: 5,
+            band_count: 5,
+            mastery_band_number: 3,
             maximum_score: null,
             mastery_level: null,
             is_far_below: null,

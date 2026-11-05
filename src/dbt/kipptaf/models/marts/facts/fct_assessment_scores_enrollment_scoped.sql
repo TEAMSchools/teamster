@@ -393,21 +393,14 @@ select
     ia.is_replacement,
     ia.performance_band_label_number,
 
-    -- same 3 inputs dim_performance_bands hashes
-    if(
-        ia.performance_band_set_id is not null
-        and ia.performance_band_label_number is not null,
-        {{
-            dbt_utils.generate_surrogate_key(
-                [
-                    "ia.source",
-                    "ia.performance_band_set_id",
-                    "ia.performance_band_label_number",
-                ]
-            )
-        }},
-        cast(null as string)
-    ) as performance_band_key,
+    {{
+        performance_band_key(
+            "ia.source",
+            "ia.performance_band_set_id",
+            "ia.performance_band_label_number",
+            nullable="ia.performance_band_label_number",
+        )
+    }} as performance_band_key,
 
     sr.resolution_type as enrollment_resolution,
 from internal_assessments as ia

@@ -16,6 +16,7 @@ with
 
             'illuminate' as `source`,
 
+            -- numeric in staging; retyping it there would touch every consumer
             cast(label_number as int64) as band_number,
         from {{ ref("int_illuminate__performance_band_sets") }}
 
@@ -63,9 +64,7 @@ with
         select
             *,
 
-            -- a band breaks the rule when its mastery flag disagrees with its
-            -- position, it is out of cut-point order, or mastery starts below
-            -- band 3; a null mastery band (no mastery band) breaks it too
+            -- null mastery band (a set with no mastery band) -> invalid
             coalesce(
                 is_mastery = (band_number >= mastery_band_number)
                 and band_number = cut_rank
@@ -86,11 +85,8 @@ with
     )
 
 select
-    {{
-        dbt_utils.generate_surrogate_key(
-            ["source", "performance_band_set_id", "band_number"]
-        )
-    }} as performance_band_key,
+    {{ performance_band_key("source", "performance_band_set_id", "band_number") }}
+    as performance_band_key,
 
     source,
     performance_band_set_id,

@@ -48,8 +48,9 @@ cubes:
 
       - name: maximum_score
         description: >-
-          The next band's minimum percent correct, which this band runs up to
-          but does not include. Null for the top band.
+          The next band's minimum percent correct. Null for the top band.
+          Illuminate places a score in a band only up to 0.1 below this value,
+          so a score in that gap gets no band.
         sql: maximum_score
         type: number
         public: true

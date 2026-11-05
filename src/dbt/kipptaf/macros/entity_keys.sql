@@ -30,6 +30,12 @@
     {{ return(_entity_key([business_unit_code], nullable)) }}
 {% endmacro %}
 
+{% macro performance_band_key(
+    source, performance_band_set_id, band_number, nullable=false
+) %}
+    {{ return(_entity_key([source, performance_band_set_id, band_number], nullable)) }}
+{% endmacro %}
+
 {% macro survey_key(survey_id, nullable=false) %}
     {{ return(_entity_key([survey_id], nullable)) }}
 {% endmacro %}
