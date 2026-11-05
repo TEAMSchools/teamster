@@ -10,7 +10,10 @@ models:
       attendance and academic outcomes as pseudo-metrics. Statuses are NULL for
       student-terms no policy row matches (e.g. years not yet seeded in the
       sheet). SPED exemptions and PowerSchool log overrides stay code-owned in
-      the metrics model.
+      the metrics model. It shares the metrics model's grain on purpose — the
+      metrics are a table so their many source joins run once per build, and
+      this evaluation stays a view so it reads the current policy table on every
+      query. Do not merge the two.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

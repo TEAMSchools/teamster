@@ -156,6 +156,7 @@ with
         inner join
             {{ ref("stg_powerschool__gen") }} as g
             on lg.logtypeid = g.id
+            and lg._dbt_source_project = g._dbt_source_project
             and g.cat = 'logtype'
             and g.name in ('Exempt from retention', 'Retain without criteria')
     ),

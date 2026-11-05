@@ -20,9 +20,13 @@ inner join
     and a.grade_min <= b.grade_max
     and a.grade_max >= b.grade_min
     and (a.term_name = b.term_name or 'All' in (a.term_name, b.term_name))
+-- keeps one direction of each pair; identical scopes never reach this point
 where
-    not (
+    a.grade_min < b.grade_min
+    or (
         a.grade_min = b.grade_min
-        and a.grade_max = b.grade_max
-        and a.term_name = b.term_name
+        and (
+            a.grade_max < b.grade_max
+            or (a.grade_max = b.grade_max and a.term_name < b.term_name)
+        )
     )

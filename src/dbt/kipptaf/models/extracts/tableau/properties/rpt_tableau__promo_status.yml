@@ -11,8 +11,14 @@ models:
     columns:
       - name: student_number
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
       - name: lastfirst
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: region
         data_type: string
       - name: school_level
@@ -25,61 +31,145 @@ models:
         data_type: string
       - name: advisor_name
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: lep_status
         data_type: boolean
+        config:
+          meta:
+            contains_pii: true
       - name: ethnicity
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: gender
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: is_retained_year
         data_type: boolean
+        config:
+          meta:
+            contains_pii: true
       - name: is_retained_ever
         data_type: boolean
+        config:
+          meta:
+            contains_pii: true
       - name: term
         data_type: string
       - name: is_current
         data_type: boolean
       - name: ada_term_running
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: n_absences_y1_running
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: n_absences_y1_running_non_susp
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: n_absences_y1_running_non_susp_no_tardy
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: iready_reading_recent
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: iready_math_recent
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: n_failing
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
       - name: n_failing_core
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
       - name: projected_credits_y1_term
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: projected_credits_cum
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: dibels_composite_level_recent
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
       - name: star_math_level_recent
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
       - name: star_reading_level_recent
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
       - name: fast_ela_level_recent
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
       - name: fast_math_level_recent
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
       - name: attendance_status
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: attendance_status_hs_detail
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: academic_status
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: exemption
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: promo_status_overall
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: iep_status
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: manual_retention
         data_type: string
+        config:
+          meta:
+            contains_pii: true
