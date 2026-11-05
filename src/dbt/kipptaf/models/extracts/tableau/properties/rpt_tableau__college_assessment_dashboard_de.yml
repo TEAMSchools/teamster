@@ -6,10 +6,10 @@ models:
       ends in (DE), at store code Y1 or Q2. The college course, pass flag,
       score, semester, and institution come from the dual-enrollment extension
       table, which holds one row per college semester, so a course that spans
-      Fall and Spring has 2 rows. A stored grade with no extension row has 1 row
-      with null college columns. Reads PowerSchool only, not the college
-      assessment models. A student can hold both a Q2 and a Y1 row for one
-      course in one year; see the inline TODO.
+      Fall and Spring has 2 rows. A stored grade with no extension row that
+      names a college course has 1 row with null college columns. Reads
+      PowerSchool only, not the college assessment models. A student can hold
+      both a Q2 and a Y1 row for one course in one year; see the inline TODO.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
