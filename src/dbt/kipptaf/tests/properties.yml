@@ -215,6 +215,18 @@ data_tests:
           ref:
             name: dim_student_ell_status
 
+  - name: dim_student_504_status__no_overlapping_spans
+    description: >-
+      Within a `student_key` and district, consecutive 504 status spans must not
+      overlap. Each span covers one enrollment stint, so an overlap means two
+      concurrent stints both carry the 504 flag.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: dim_student_504_status
+
   - name: dim_student_meal_eligibility_status__no_overlapping_spans
     description: >-
       Within a `student_key` partition, consecutive meal-eligibility spans must
