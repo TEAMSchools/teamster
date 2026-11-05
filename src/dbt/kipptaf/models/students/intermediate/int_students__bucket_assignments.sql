@@ -62,7 +62,10 @@ with
                 then 'Math'
             end as `subject`,
         from {{ ref("int_focus__student_group_memberships") }}
-        where title like 'Bucket%'
+        -- floor is the SIS cutover year: before it the frozen PowerSchool
+        -- archive owns Miami's buckets, and the latest-wins pick below would
+        -- otherwise let a backfilled Focus group override an archived bucket
+        where title like 'Bucket%' and syear >= 2026
     ),
 
     assignment_union as (

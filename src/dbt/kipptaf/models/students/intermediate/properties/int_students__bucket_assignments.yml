@@ -94,8 +94,10 @@ unit_tests:
       past exit on amended-out rows), counts a same-subject double upload,
       excludes non-bucket groups and programs, and keeps same-number students in
       different regions apart. Reads the Miami PowerSchool archive through its
-      ADA rows' student numbers, drops an archive row with no ADA match, and
-      never lets an NJ ADA row replace an enrollment-resolved number.
+      ADA rows' student numbers, drops an archive row with no ADA match, never
+      lets an NJ ADA row replace an enrollment-resolved number, and ignores a
+      Focus group from before the SIS cutover year, so it cannot override an
+      archived bucket.
     model: int_students__bucket_assignments
     given:
       - input: ref("int_powerschool__spenrollments")
@@ -190,6 +192,14 @@ unit_tests:
               2026,
               timestamp '2026-09-17 12:00:00',
               'Advisory 5A',
+              cast(null as date),
+              'kippmiami'
+          union all
+          select
+              84005678,
+              2025,
+              timestamp '2026-08-01 12:00:00',
+              'Bucket 3 - ELA',
               cast(null as date),
               'kippmiami'
     expect:
