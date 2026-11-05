@@ -111,3 +111,134 @@ models:
           Count of years the student has been enrolled in the network. Populated
           on the student's primary enrollment stint per academic year; null on
           additional same-year stints (multi-stint students).
+
+      - name: ela_bucket
+        data_type: string
+        description: >-
+          The student's ELA bucket for the academic year — the latest stored
+          assignment, or Bucket 4 when none is stored. Null before 2025-26 and
+          on grade 99 rows. The same on every enrollment row of the year in a
+          region. Use it when the subject being analyzed is ELA or reading; for
+          assessments, pick ela_bucket or math_bucket by the assessment's
+          bucket_subject.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: math_bucket
+        data_type: string
+        description: >-
+          The student's math bucket for the academic year — the latest stored
+          assignment, or Bucket 4 when none is stored. Null before 2025-26 and
+          on grade 99 rows. The same on every enrollment row of the year in a
+          region. Use it when the subject being analyzed is math; for
+          assessments, pick ela_bucket or math_bucket by the assessment's
+          bucket_subject.
+        config:
+          meta:
+            contains_pii: true
+
+unit_tests:
+  - name: unit_dim_student_enrollments_buckets
+    description: >-
+      Gives every enrollment row of a year the student's stored ELA and math
+      bucket for that year and region, or Bucket 4 when none is stored; keeps
+      same-number students in different regions apart; and leaves both buckets
+      null before 2025-26 and on grade 99 rows.
+    model: dim_student_enrollments
+    given:
+      - input: ref("int_students__student_enrollment_union")
+        rows:
+          - student_number: 5001
+            _dbt_source_project: kippnewark
+            academic_year: 2025
+            entrydate: 2025-09-03
+            exitdate: 2026-01-12
+            schoolid: 101
+            grade_level: 5
+          - student_number: 5001
+            _dbt_source_project: kippnewark
+            academic_year: 2025
+            entrydate: 2026-01-12
+            exitdate: 2026-06-30
+            schoolid: 101
+            grade_level: 5
+          - student_number: 5001
+            _dbt_source_project: kippcamden
+            academic_year: 2025
+            entrydate: 2025-09-04
+            exitdate: 2026-06-30
+            schoolid: 201
+            grade_level: 6
+          - student_number: 5002
+            _dbt_source_project: kippnewark
+            academic_year: 2024
+            entrydate: 2024-09-03
+            exitdate: 2025-06-30
+            schoolid: 101
+            grade_level: 4
+          - student_number: 5003
+            _dbt_source_project: kippnewark
+            academic_year: 2026
+            entrydate: 2026-06-30
+            exitdate: 2026-07-01
+            schoolid: 999999
+            grade_level: 99
+          - student_number: 5004
+            _dbt_source_project: kippnewark
+            academic_year: 2026
+            entrydate: 2026-09-02
+            exitdate: 2027-06-30
+            schoolid: 101
+            grade_level: 12
+      - input: ref("int_students__schools")
+        rows: []
+      - input: ref("int_students__bucket_assignments")
+        rows:
+          - academic_year: 2025
+            _dbt_source_project: kippnewark
+            student_number: 5001
+            subject: Reading
+            bucket: Bucket 2
+          - academic_year: 2025
+            _dbt_source_project: kippcamden
+            student_number: 5001
+            subject: Math
+            bucket: Bucket 1
+          - academic_year: 2024
+            _dbt_source_project: kippnewark
+            student_number: 5002
+            subject: Reading
+            bucket: Bucket 2
+    expect:
+      rows:
+        - academic_year: 2025
+          entry_date_key: 2025-09-03
+          grade_level: 5
+          ela_bucket: Bucket 2
+          math_bucket: Bucket 4
+        - academic_year: 2025
+          entry_date_key: 2026-01-12
+          grade_level: 5
+          ela_bucket: Bucket 2
+          math_bucket: Bucket 4
+        - academic_year: 2025
+          entry_date_key: 2025-09-04
+          grade_level: 6
+          ela_bucket: Bucket 4
+          math_bucket: Bucket 1
+        - academic_year: 2024
+          entry_date_key: 2024-09-03
+          grade_level: 4
+          ela_bucket: null
+          math_bucket: null
+        - academic_year: 2026
+          entry_date_key: 2026-06-30
+          grade_level: 99
+          ela_bucket: null
+          math_bucket: null
+        - academic_year: 2026
+          entry_date_key: 2026-09-02
+          grade_level: 12
+          ela_bucket: Bucket 4
+          math_bucket: Bucket 4

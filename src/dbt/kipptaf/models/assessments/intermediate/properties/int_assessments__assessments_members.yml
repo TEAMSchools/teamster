@@ -26,11 +26,16 @@ models:
       AppSheet tags join on source and assessment_id, so an Apex tag fills its
       module, grade, subject, date, and regions; Apex scope is always null.
     data_tests:
+      # error, not the project's warn: dim_assessments dedupes on its own key,
+      # so a duplicate member (a crosswalk subject with 2 disciplines) would
+      # vanish there and keep an arbitrary bucket_subject
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
               - source
               - assessment_id
+          config:
+            severity: error
     columns:
       - name: assessment_id
         data_tests:
@@ -151,6 +156,13 @@ models:
           assessments, Apex assessments, and every external assessment equal
           their own `assessment_id`; external ids have no row in the canonical
           model.
+      - name: bucket_subject
+        data_type: string
+        description: >-
+          Reading or Math when the course subject crosswalk maps `subject_area`
+          to the ELA or Math discipline; null otherwise, including subject areas
+          with no crosswalk row. Tells a consumer which of a student's buckets
+          (ELA or math) applies to the assessment.
 
 unit_tests:
   - name: test_apex_assessments_are_their_own_canonical
@@ -205,6 +217,8 @@ unit_tests:
           select 9002, 'Apex Math B', 2026, 7, 'Mathematics', date('2026-10-05')
           union all
           select 8001, 'Apex Old', 2025, 7, 'Mathematics', date('2025-10-05')
+      - input: ref('stg_google_sheets__assessments__course_subject_crosswalk')
+        rows: []
     expect:
       rows:
         - {
@@ -289,6 +303,8 @@ unit_tests:
               date('2026-09-28') as administered_at
           union all
           select 9002, 'Apex Math B', 2026, 7, 'Mathematics', date('2026-10-05')
+      - input: ref('stg_google_sheets__assessments__course_subject_crosswalk')
+        rows: []
     expect:
       rows:
         - {
@@ -321,3 +337,112 @@ unit_tests:
             subject_area: Algebra I,
             administered_at: 2026-10-10,
           }
+  - name: test_bucket_subject_from_course_subject_crosswalk
+    description: >-
+      Maps an assessment's subject area to Reading or Math through the course
+      subject crosswalk's ELA and Math disciplines, on Illuminate and Apex
+      alike; a subject in another discipline or with no crosswalk row gets no
+      bucket subject, and Focus rows with no Illuminate subject area are
+      ignored.
+    model: int_assessments__assessments_members
+    given:
+      - input: ref('int_illuminate__assessments')
+        rows:
+          - assessment_id: 9101
+            title: Text Study Quiz
+            academic_year: 2027
+            academic_year_clean: 2026
+            subject_area: Text Study
+            administered_at: 2026-09-01
+          - assessment_id: 9102
+            title: Algebra Quiz
+            academic_year: 2027
+            academic_year_clean: 2026
+            subject_area: Algebra I
+            administered_at: 2026-09-01
+          - assessment_id: 9103
+            title: Science Quiz
+            academic_year: 2027
+            academic_year_clean: 2026
+            subject_area: Science
+            administered_at: 2026-09-01
+          - assessment_id: 9104
+            title: Word Work Quiz
+            academic_year: 2027
+            academic_year_clean: 2026
+            subject_area: Word Work
+            administered_at: 2026-09-01
+      - input: ref('stg_google_appsheet__illuminate_assessments_extension')
+        format: sql
+        rows: |
+          select
+              cast(null as string) as `source`,
+              cast(null as int64) as assessment_id,
+              cast(null as string) as module_type,
+              cast(null as int64) as module_sequence,
+              cast(null as string) as module_code,
+              cast(null as int64) as illuminate_grade_level_id,
+              cast(null as string) as regions_assessed,
+              cast(null as array<string>) as regions_assessed_array,
+              cast(null as string) as regions_report_card,
+              cast(null as string) as regions_progress_report,
+              cast(null as date) as administered_at,
+              cast(null as string) as subject
+          from unnest([1])
+          where false
+      - input: ref('stg_illuminate__dna_assessments__assessment_grade_levels')
+        rows: []
+      - input: ref('int_focus__apex_assessments')
+        format: sql
+        rows: |
+          select
+              9201 as assessment_id,
+              'Apex Text Study' as title,
+              2026 as academic_year,
+              7 as band_set_id,
+              'Text Study' as subject_area,
+              date('2026-09-28') as administered_at
+      - input: ref('stg_google_sheets__assessments__course_subject_crosswalk')
+        rows:
+          - SIS: PowerSchool
+            PowerSchool_Course_Number: ENG10
+            Standard_Course_Name: English 100
+            Illuminate_Subject_Area: Text Study
+            Discipline: ELA
+          - SIS: PowerSchool
+            PowerSchool_Course_Number: MATH30
+            Standard_Course_Name: Algebra I
+            Illuminate_Subject_Area: Algebra I
+            Discipline: Math
+          - SIS: PowerSchool
+            PowerSchool_Course_Number: SCI10
+            Standard_Course_Name: Science
+            Illuminate_Subject_Area: Science
+            Discipline: Science
+          - SIS: Focus
+            PowerSchool_Course_Number: "1001010"
+            Standard_Course_Name: ELA Gr6
+            Illuminate_Subject_Area: null
+            Discipline: null
+    expect:
+      rows:
+        - source: illuminate
+          assessment_id: 9101
+          subject_area: Text Study
+          bucket_subject: Reading
+        - source: illuminate
+          assessment_id: 9102
+          subject_area: Algebra I
+          bucket_subject: Math
+        - source: illuminate
+          assessment_id: 9103
+          subject_area: Science
+          bucket_subject: null
+        - source: illuminate
+          assessment_id: 9104
+          subject_area: Word Work
+          bucket_subject: null
+        - source: apex
+          assessment_id: 9201
+          subject_area: Text Study
+          bucket_subject: Reading
