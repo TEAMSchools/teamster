@@ -1,0 +1,93 @@
+# Sandbox access-model canaries.
+#
+# Both tiers run this file. KTAF CI owns it, because KTAF owns the marts and
+# the access_policy blocks and must break first when a policy changes;
+# MasterBorn's kit suite runs it unmodified as its acceptance gate.
+#
+# A canary going red means the ACCESS MODEL broke. A divergence assertion
+# going red means KTAF's generator regressed — that is why those live in
+# divergences.yml, which MasterBorn does not gate on. Merged, MasterBorn's
+# gate would fail for something MasterBorn cannot fix, which is how a gate
+# starts getting overridden.
+#
+# `expect` is BLOCKED, ROWS or ZERO. BLOCKED asserts the real SQL API denial
+# text ("Table or CTE with name '<view>' not found"); a quiet zero rows is a
+# FAILURE against it, not a pass. That one rule is what forces sign-off in
+# production mode, because a dev-mode runner returns zero rows where
+# production denies (#4605).
+#
+# Run against the sandbox deployment's PRODUCTION environment, never a Dev
+# Mode one:
+#   uv run scripts/cube_rls_matrix.py --expect src/cube/sandbox/canaries.yml
+#
+# The personas are declared in personas.yml and are fabricated, so this file
+# carries no PII.
+canaries:
+  - persona: aja.ogwumike@ktaf-sandbox.invalid
+    query_shape: SELECT count(*) FROM student_attendance_enrollment_daily_view
+    expect: BLOCKED
+    why: none on every axis emits no group, so the view default-denies.
+
+  - persona: unresolvable@ktaf-sandbox.invalid
+    query_shape: SELECT count(*) FROM student_attendance_enrollment_daily_view
+    expect: BLOCKED
+    why:
+      no dim_staff_cube_access row at all resolves to an empty context. This
+      persona is deliberately absent from personas.yml.
+
+  - persona: aja.ogwumike@ktaf-sandbox.invalid
+    query_shape: SELECT count(*) FROM staff_pii
+    expect: BLOCKED
+    why:
+      none staff_pii_scope emits no staff-pii group, so the PII view
+      default-denies even though the directory does not.
+
+  - persona: sheryl.swoopes@ktaf-sandbox.invalid
+    query_shape: SELECT count(*) FROM student_attendance_enrollment_daily_view
+    expect: ROWS
+    why: network student scope sees every location.
+
+  - persona: zydrunas.ilgauskas@ktaf-sandbox.invalid
+    query_shape: SELECT count(*) FROM staff_pii
+    expect: ROWS
+    why: teaching_staff PII scope resolves against a non-empty remit.
+
+  - persona: ororo.munroe@ktaf-sandbox.invalid
+    query_shape: SELECT count(*) FROM staff_pii
+    expect: ROWS
+    why:
+      reporting_chain PII scope with a NON-empty chain. Pairs with
+      shaquille.oquinn below, whose chain is empty.
+
+  - persona: shaquille.oquinn@ktaf-sandbox.invalid
+    query_shape: SELECT count(*) FROM staff_pii
+    expect: BLOCKED
+    why:
+      reporting_chain PII scope with an EMPTY chain. buildGroups emits no
+      staff-pii group when the chain resolves empty, because Cube throws "Values
+      required for filter" on an equals [] row filter (#4269) — so the viewer
+      takes the no-group default-deny path instead of hitting that error. This
+      is the branch production cannot reach by design.
+
+  - persona: karl-anthony.maximoff@ktaf-sandbox.invalid
+    query_shape: SELECT count(*) FROM staff_pii
+    expect: ROWS
+    why:
+      reporting_chain_or_below_rank resolves through the OR of the
+      remit-plus-rank check and the chain-IN check.
+
+  - persona: zydrunas.ilgauskas@ktaf-sandbox.invalid
+    query_shape: SELECT count(*) FROM staff_directory
+    expect: ROWS
+    why:
+      staff-directory is emitted for ANY resolved staff row, with no row_level
+      filter, so every persona with a dim_staff_cube_access row sees it
+      regardless of their PII scope.
+
+  - persona: unresolvable@ktaf-sandbox.invalid
+    query_shape: SELECT count(*) FROM staff_directory
+    expect: BLOCKED
+    why:
+      the one view every resolved viewer can read is still denied to an identity
+      the warehouse has never heard of. Distinguishes "no row" from "a row with
+      no scopes".
