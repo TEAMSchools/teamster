@@ -61,6 +61,8 @@ with
                 -- trunk-ignore(sqlfluff/LT01)
                 date_add(a.new_date_local, interval 4 day), week(monday)
             ) as application_week_start,
+
+            a.resume_score is not null as has_resume_score,
         from {{ ref("stg_smartrecruiters__applications") }} as a
         /* separating out multi-select fields for reporting */
         cross join unnest(split(a.subject_preference, ',')) as subject_preference_single
@@ -81,7 +83,7 @@ with
             case
                 when
                     department_org_field_value in ('Teacher', 'Teaching Fellow')
-                    and resume_score is not null
+                    and has_resume_score
                     and date_reviewed < date_add(application_week_start, interval 7 day)
                 then 1
                 when department_org_field_value in ('Teacher', 'Teaching Fellow')
@@ -141,6 +143,9 @@ with
 
 select
     *,
+
+    application_state = 'WITHDRAWN'
+    and within_week_initial_review = 0 as is_withdrawn_before_review,
 
     case
         when
