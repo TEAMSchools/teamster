@@ -47,3 +47,6 @@ models:
         description: >-
           The metric's value for the student-term, null when the student has no
           value for it.
+        config:
+          meta:
+            contains_pii: true

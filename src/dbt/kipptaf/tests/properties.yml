@@ -1308,6 +1308,19 @@ data_tests:
         - google_sheet
       severity: error
 
+  - name: stg_google_sheets__reporting__promo_status_policies__rule_group_single_scope
+    description: >-
+      The engine ANDs a rule group's conditions only when they share one scope
+      (grade range and term), so a group whose rows overlap in grade and term
+      but differ in either splits into separate groups that each fire alone,
+      turning the AND into an OR. Lists the overlapping row pairs, where 'All'
+      overlaps every term. Fix the grade range or term on the Promo Status
+      Policies sheet, or give the rows different rule_group numbers.
+    config:
+      tags:
+        - google_sheet
+      severity: error
+
   - name: stg_google_sheets__reporting__promo_status_policies__metric_in_catalog
     description: >-
       A policy row naming a metric the engine cannot evaluate silently never

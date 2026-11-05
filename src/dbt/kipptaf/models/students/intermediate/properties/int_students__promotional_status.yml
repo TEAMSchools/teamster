@@ -52,106 +52,172 @@ models:
         data_type: float64
         description:
           Average daily attendance rate accumulated through the end of the term.
+        config:
+          meta:
+            contains_pii: true
       - name: n_absences_y1_running
         data_type: float64
         description: >
           Total absences year-to-date through the end of the term, including
           suspensions and tardy-converted absences.
+        config:
+          meta:
+            contains_pii: true
       - name: n_absences_y1_running_non_susp
         data_type: float64
         description: >
           Absences year-to-date excluding suspension codes (ISS, OSS, OS, OSSP,
           SHI), plus a tardy penalty of floor(tardies / 3). Used for Camden HS
           promotion thresholds.
+        config:
+          meta:
+            contains_pii: true
       - name: n_absences_y1_running_non_susp_no_tardy
         data_type: float64
         description: >
           Absences year-to-date excluding suspension codes (ISS, OSS, OS, OSSP,
           SHI) with no tardy penalty applied. Used for Newark HS promotion
           thresholds.
+        config:
+          meta:
+            contains_pii: true
       - name: iready_reading_recent
         data_type: string
         description:
           Most recent iReady reading overall relative placement for the year.
+        config:
+          meta:
+            contains_pii: true
       - name: iready_math_recent
         data_type: string
         description:
           Most recent iReady math overall relative placement for the year.
+        config:
+          meta:
+            contains_pii: true
       - name: n_failing
         data_type: int64
         description: Number of courses with a failing grade as of the term.
+        config:
+          meta:
+            contains_pii: true
       - name: n_failing_core
         data_type: int64
         description: Number of core courses with a failing grade as of the term.
+        config:
+          meta:
+            contains_pii: true
       - name: projected_credits_cum
         data_type: float64
         description: >
           Projected cumulative credits earned through end of year, combining
           projected year credits with historical earned credits.
+        config:
+          meta:
+            contains_pii: true
       - name: projected_credits_y1_term
         data_type: float64
         description:
           Projected credits to be earned in the current academic year through
           the term.
+        config:
+          meta:
+            contains_pii: true
       - name: dibels_composite_level_recent_str
         data_type: string
         description:
           Most recent DIBELS composite benchmark level label for the year.
+        config:
+          meta:
+            contains_pii: true
       - name: dibels_composite_level_recent
         data_type: int64
         description: >
           Most recent DIBELS composite benchmark level as an integer (lower is
           more at-risk).
+        config:
+          meta:
+            contains_pii: true
       - name: star_math_level_recent
         data_type: int64
         description:
           Most recent Renaissance STAR math achievement level for the year.
+        config:
+          meta:
+            contains_pii: true
       - name: star_reading_level_recent
         data_type: int64
         description:
           Most recent Renaissance STAR reading achievement level for the year.
+        config:
+          meta:
+            contains_pii: true
       - name: fast_ela_level_recent
         data_type: int64
         description:
           Most recent FAST ELA achievement level for the year (Florida only).
+        config:
+          meta:
+            contains_pii: true
       - name: fast_math_level_recent
         data_type: int64
         description:
           Most recent FAST math achievement level for the year (Florida only).
+        config:
+          meta:
+            contains_pii: true
       - name: attendance_status
         data_type: string
         description: >-
           On-Track or Off-Track from the attendance-domain policy rules matching
           the student's region, grade, year, and term. NULL when no attendance
           rule matches.
+        config:
+          meta:
+            contains_pii: true
       - name: attendance_status_hs_detail
         data_type: string
         description: >
           Detailed attendance status for HS students: On-Track, Off-Track
           (Approaching threshold), or Off-Track (Already reached threshold).
           Identical to attendance_status for non-HS grades.
+        config:
+          meta:
+            contains_pii: true
       - name: academic_status
         data_type: string
         description: >-
           On-Track or Off-Track from the academic-domain policy rules matching
           the student's region, grade, year, and term. NULL when no academic
           rule matches.
+        config:
+          meta:
+            contains_pii: true
       - name: exemption
         data_type: string
         description: >
           Populated when a student is exempt from retention criteria: Exempt -
           Special Education or Exempt - Manual Override.
+        config:
+          meta:
+            contains_pii: true
       - name: manual_retention
         data_type: string
         description: >
           Populated with 'Manual Retention' when a staff member has logged a
           force-retention entry in PowerSchool regardless of other criteria.
+        config:
+          meta:
+            contains_pii: true
       - name: overall_status
         data_type: string
         description: >-
           On-Track or Off-Track from the overall-domain policy rules, which may
           combine the attendance and academic outcomes (as pseudo-metrics) with
           direct metric conditions. NULL when no overall rule matches.
+        config:
+          meta:
+            contains_pii: true
 
 unit_tests:
   - name: test_promo_status_or_of_ands
