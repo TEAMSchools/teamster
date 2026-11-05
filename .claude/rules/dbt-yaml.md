@@ -326,6 +326,10 @@ legitimately-superseded inactive rows that repeat the key.
   without it, a district or kipptaf staging test degrades to a warning and won't
   fail CI. Set `error`, except on a ticketed test (#5558): it runs at `warn` on
   the earliest model that can route its ticket, which is often a staging model.
+  A test is ticketed when its failures are fixed in a source system and both
+  backups exist: a downstream model that handles the bad rows on purpose, and an
+  `error` test on that model. Until its runbook meta lands, it carries
+  `TODO(#5558): runbook`.
 - Intermediate tests may omit the override where a warning is acceptable. A
   warning is not acceptable on the uniqueness test `.claude/rules/dbt-models.md`
   requires: it is the model's grain backstop, so set `error`, with the
