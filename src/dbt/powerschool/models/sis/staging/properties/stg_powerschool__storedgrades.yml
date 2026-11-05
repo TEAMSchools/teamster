@@ -11,6 +11,7 @@ models:
     data_tests:
       # Permanent warning: the Ops cleanup worklist for duplicate stored grades.
       # The dedupe lives in int_powerschool__student_course_grades_spine.
+      # TODO(#5558): runbook
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:

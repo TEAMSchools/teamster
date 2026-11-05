@@ -44,6 +44,7 @@ models:
           meta:
             contains_pii: true
         data_tests:
+          # TODO(#5558): runbook
           - accepted_values:
               arguments:
                 values: [1, 2, 3, 4]
@@ -59,6 +60,7 @@ models:
           meta:
             contains_pii: true
         data_tests:
+          # TODO(#5558): runbook
           - accepted_values:
               arguments:
                 values: [1, 2, 3, 4]
@@ -75,6 +77,7 @@ models:
           meta:
             contains_pii: true
         data_tests:
+          # TODO(#5558): runbook
           - accepted_values:
               arguments:
                 values: [1, 2, 3, 4]
@@ -90,6 +93,7 @@ models:
           meta:
             contains_pii: true
         data_tests:
+          # TODO(#5558): runbook
           - accepted_values:
               arguments:
                 values: [1, 2, 3, 4]
@@ -107,6 +111,7 @@ models:
           meta:
             contains_pii: true
         data_tests:
+          # TODO(#5558): runbook
           - relationships:
               arguments:
                 to: ref("stg_google_sheets__kfwd__career_launch_rubric")
@@ -124,6 +129,7 @@ models:
           meta:
             contains_pii: true
         data_tests:
+          # TODO(#5558): runbook
           - relationships:
               arguments:
                 to: ref("stg_google_sheets__kfwd__career_launch_rubric")
@@ -142,6 +148,7 @@ models:
           meta:
             contains_pii: true
         data_tests:
+          # TODO(#5558): runbook
           - relationships:
               arguments:
                 to: ref("stg_google_sheets__kfwd__career_launch_rubric")
@@ -159,6 +166,7 @@ models:
           meta:
             contains_pii: true
         data_tests:
+          # TODO(#5558): runbook
           - relationships:
               arguments:
                 to: ref("stg_google_sheets__kfwd__career_launch_rubric")

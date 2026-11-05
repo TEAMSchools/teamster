@@ -21,6 +21,8 @@ models:
               - probe_number
               - device_date
               - assessment_grade
+          config:
+            severity: error
     columns:
       - name: school_name
         data_type: string
@@ -30,9 +32,12 @@ models:
         description: >-
           Source relation with its kipp region prefix replaced by the school's
           dagster_code_location from the location crosswalk. Null when the
-          school name has no crosswalk match.
+          school name has no crosswalk match, which fails the not_null test. To
+          fix, add the vendor's school name to the locations Google Sheet.
         data_tests:
-          - not_null
+          - not_null:
+              config:
+                severity: error
       - name: region
         data_type: string
         description: Region derived from the location crosswalk.

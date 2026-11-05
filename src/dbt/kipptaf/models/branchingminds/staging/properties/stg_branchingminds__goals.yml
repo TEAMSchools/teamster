@@ -38,7 +38,7 @@ models:
         data_tests:
           - branchingminds_school_year_matches_partition:
               config:
-                severity: warn
+                severity: error
                 description:
                   A partition holds a later school year than its fiscal year, so
                   BrM rolled to the new year before July 1 and the frozen June
