@@ -52,7 +52,8 @@ with
             overall_tier,
 
             row_number() over (
-                partition by employee_number order by eval_date desc
+                partition by employee_number
+                order by eval_date desc, observed_at_timestamp desc, observation_id desc
             ) as rn,
         from {{ ref("int_performance_management__observations") }}
         where observation_type_abbreviation = 'PMS'

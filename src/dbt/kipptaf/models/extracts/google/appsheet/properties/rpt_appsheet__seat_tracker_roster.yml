@@ -23,6 +23,7 @@ models:
           for a seat with no active teammate.
         data_tests:
           - unique
+          - not_null
       - name: assignment_status
         data_type: string
         description:
