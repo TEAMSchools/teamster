@@ -606,6 +606,14 @@ PHRASES.update(
         "student_assessment_scores.pct_students_far_below": [
             "Filter response_type to overall",
         ],
+        "student_assessment_scores.mastery_level": [
+            "band numbers do not",
+            "name both assessments",
+        ],
+        "student_assessment_scores.pct_students_at_level": [
+            "Group by mastery_level",
+            "add to 100% only when each student has 1 score",
+        ],
         "student_assessment_scores.count_students_banded": [
             "Group by mastery_level",
             "can add up to more than the ungrouped total",

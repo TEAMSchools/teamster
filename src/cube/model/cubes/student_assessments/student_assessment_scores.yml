@@ -153,6 +153,24 @@ cubes:
             label spelling. To compare bands across assessments, compare
             mastery_level instead.
 
+      # The band cube's level, re-exposed here so pct_students_at_level can
+      # reduce by it: multi-stage reduce_by takes only this cube's dimensions.
+      # The view shows this member, not the band cube's.
+      - name: mastery_level
+        description: >-
+          The band's level relative to its set's mastery band, the same on every
+          set. At/Above is the mastery band and every band above it; Approaching
+          is the band directly below the mastery band; Below is every band under
+          that. Null when the band set's setup breaks the rule's assumptions.
+        sql: "{student_performance_bands.mastery_level}"
+        type: string
+        public: true
+        meta:
+          ai_context: >-
+            Compares across assessments, where band numbers do not. To see
+            whether a student moved between bands on 2 assessments, compare
+            mastery_level on each, and name both assessments.
+
       - name: is_mastery
         description: >-
           Per-row proficient flag that pct_proficient is built from. The bar is
@@ -469,6 +487,39 @@ cubes:
             student with scores at 2 levels in the slice counts at both, so the
             level rows can add up to more than the ungrouped total; filter to 1
             assessment and response_type overall for 1 level per student.
+
+      # Denominator of pct_students_at_level: count_students_banded with
+      # mastery_level dropped from the query's grain.
+      - name: _count_students_banded_all_levels
+        description: >-
+          count_students_banded over every mastery level of the query's other
+          dimensions. Denominator of pct_students_at_level.
+        multi_stage: true
+        sql: "{count_students_banded}"
+        type: sum
+        reduce_by:
+          - mastery_level
+        public: false
+
+      - name: pct_students_at_level
+        description: >-
+          Of the students with a banded score in a slice, the percent at each
+          mastery_level. Illuminate and Focus Assessments only. Read it grouped
+          by mastery_level.
+        multi_stage: true
+        sql:
+          "1.0 * {count_students_banded} /
+          NULLIF({_count_students_banded_all_levels}, 0)"
+        type: number
+        format: percent
+        public: true
+        meta:
+          ai_context: >-
+            Group by mastery_level and filter response_type to overall. The
+            levels of a slice add to 100% only when each student has 1 score in
+            it, so also group by assessment (title, or grade_level,
+            academic_subject and module_code); a slice spanning several
+            assessments counts a student at every level they reached.
 
       - name: _count_students_below
         description: >-

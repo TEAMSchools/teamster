@@ -34,6 +34,7 @@ views:
           - pct_proficient_formative
           - pct_proficient_crq
           - count_students_banded
+          - pct_students_at_level
           - pct_students_below
           - pct_students_far_below
           - avg_percent_correct
@@ -44,6 +45,7 @@ views:
           - enrollment_resolution
           - proficiency_level
           - performance_band_label_number
+          - mastery_level
           - is_mastery
           - scale_score
           - percent_correct
@@ -73,7 +75,8 @@ views:
           - source_assessment_id
 
       # is_mastery stays on the fact's include; the band's own flag would
-      # collide with it.
+      # collide with it. mastery_level comes from the fact's proxy, which
+      # pct_students_at_level reduces by.
       - join_path: student_assessment_scores.student_performance_bands
         includes:
           - performance_band_set
@@ -84,7 +87,6 @@ views:
           - maximum_score
           - mastery_band_number
           - mastery_minimum_score
-          - mastery_level
           - is_far_below
 
       - join_path: student_assessment_scores.dates
