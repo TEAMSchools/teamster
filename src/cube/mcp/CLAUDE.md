@@ -83,12 +83,11 @@ Cloud Run service via `--set-secrets`).
 - **Cloud Run request timeout defaults to 300s** (no `--timeout` set). Claude
   Code's 60s per-tool ceiling is tighter for tool wall-clock; Cloud Run's
   governs the underlying connection.
-- **After a deploy that changes tool signatures or descriptions, refresh the
-  connector's tool list on the client.** claude.ai Custom Connector sessions
-  cache the tool list and keep serving the old schema indefinitely — a new
-  parameter or an edited description is invisible to the model until the user
-  reconnects / refreshes the connector (settings → the cube connector). The
-  server has the change immediately; the client does not (#4473).
+- **After a deploy that changes tool signatures or descriptions, a new chat sees
+  them; an open one may not.** A claude.ai or Claude Desktop chat started after
+  the deploy loads the new tool list with no connector reconnect. A chat or
+  Claude Code session that loaded its tool list before the deploy keeps the old
+  schema. Tell users to start a new chat, not to reconnect.
 
 ## MCP SDK gotchas
 
