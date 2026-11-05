@@ -22,15 +22,19 @@ models:
         description: >-
           Form or survey id from the survey platform, or the literal PowerSchool
           for InfoSnap enrollment submissions.
+        data_tests:
+          - not_null
+      - name: survey_response_id
+        data_type: string
+        description: >-
+          Id of one submission. For PowerSchool, the submission record id.
+        data_tests:
+          - not_null
       - name: survey_title
         data_type: string
         description: >-
           Survey title. Matches the round name in the reporting terms sheet,
           which is how the open-round gate finds each response's round.
-      - name: survey_response_id
-        data_type: string
-        description: >-
-          Id of one submission. For PowerSchool, the submission record id.
       - name: question_shortname
         data_type: string
         description: >-
@@ -90,6 +94,9 @@ models:
       - name: location
         data_type: string
         description: Respondent's school or work location name.
+        config:
+          meta:
+            contains_pii: true
       - name: race_ethnicity
         data_type: string
         description: >-
@@ -117,6 +124,9 @@ models:
         description: >-
           Student's grade level, or for teachers the main grade level they
           teach.
+        config:
+          meta:
+            contains_pii: true
       - name: survey_audience
         data_type: string
         description: >-
