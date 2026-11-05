@@ -23,7 +23,8 @@ select
     enr.is_retained_year,
     enr.year_in_network,
 
-    -- 2025-26 is the first year of the 4-bucket model
+    -- both buckets: 2025-26 is the first year of the 4-bucket model, and grade
+    -- 99 is the graduate placeholder row, which gets no bucket
     if(
         enr.academic_year >= 2025 and enr.grade_level != 99,
         coalesce(rb.bucket, 'Bucket 4'),
