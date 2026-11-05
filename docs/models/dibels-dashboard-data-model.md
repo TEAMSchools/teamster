@@ -443,10 +443,18 @@ The Tableau workbook is the `literacy_dashboard` exposure in
   `int_extracts__student_enrollments_subjects` (Reading, one row per student per
   year).
 - Worth knowing: it is not DIBELS data; it shares the workbook. Paterson is
-  excluded. Its data flows automatically from Illuminate, so upkeep is only
-  asking the Managing Director of Teaching & Learning (Sabine Vilsaint) at
-  rollover whether it is still used, then moving the dashboard's academic year
-  to the current year in the workbook. It has no year filter in SQL.
+  excluded. It has no year filter in SQL.
+- New quizzes: each quiz Teaching & Learning creates in Illuminate is a new
+  repository, and the data team adds each one by hand in the places listed in
+  `src/dbt/kipptaf/models/illuminate/CLAUDE.md`. A quiz nobody added still
+  appears, because its words and grade load for every repository, but every
+  student shows as untested and the DeansList sight words extract leaves it out.
+  The warn test
+  `stg_illuminate__dna_repositories__repositories__sight_words_have_scores`
+  flags a current-year quiz with no scores a week after its date administered.
+- Rollover: ask the Managing Director of Teaching & Learning (Sabine Vilsaint)
+  whether the dashboard is still used, then move its academic year to the
+  current year in the workbook.
 
 ## Process: PM goal setting
 
@@ -1068,7 +1076,9 @@ for editing the sheets safely.
     matching between Expected Assessments and the PM goals sheet.
 11. Sight words: ask the Managing Director of Teaching & Learning (Sabine
     Vilsaint) whether the dashboard is still used, then move its academic year
-    to the current year in the workbook.
+    to the current year in the workbook. The year's quizzes are new Illuminate
+    repositories; add each one as it appears (see
+    `rpt_tableau__sight_words_dashboard` above).
 12. NJDOE screener: see its own page,
     [NJDOE universal screener](njdoe-universal-screener-data-model.md).
 
