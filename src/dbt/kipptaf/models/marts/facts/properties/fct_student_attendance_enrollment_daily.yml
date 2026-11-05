@@ -822,3 +822,89 @@ unit_tests:
           false, 0, 0, 1, 0, 0, 0, 'Present'
           )
         ])
+
+  - name: test_days_ytd_skips_a_day_with_null_attendance
+    description:
+      Three membership days, present, unmeasured, then absent. A day whose
+      attendancevalue is null (the source could not convert it) must add to
+      neither n_membership_days_ytd nor n_present_days_ytd, so the unmeasured
+      day sits outside every rate instead of reading as present or absent. This
+      is the defense the upstream PowerSchool warn tests on null attendance rely
+      on.
+    model: fct_student_attendance_enrollment_daily
+    given:
+      - input: ref('int_students__enrollment_daily')
+        format: sql
+        rows: |
+          select
+            1 as student_number,
+            'kippnewark' as _dbt_source_project,
+            2025 as academic_year,
+            date '2025-09-01' as entrydate,
+            d as calendardate,
+            date '2025-09-01' as week_start_monday,
+            100 as schoolid,
+            cast(null as string) as term,
+            true as is_in_session_day,
+            1.0 as membershipvalue
+          from unnest(generate_date_array(
+            date '2025-09-01', date '2025-09-03'
+          )) as d
+
+      - input: ref('int_students__attendance_daily')
+        format: sql
+        rows: |
+          select
+            1 as student_number,
+            'kippnewark' as _dbt_source_project,
+            date '2025-09-01' as calendardate,
+            cast(null as string) as att_code,
+            1.0 as attendancevalue,
+            1.0 as is_present_weighted,
+            false as is_truant,
+            0.0 as is_absent,
+            0.0 as is_tardy,
+            1.0 as is_ontime,
+            0.0 as is_oss,
+            0.0 as is_iss,
+            0.0 as is_suspended,
+            1.0 as membershipvalue,
+            'Present' as attendance_category,
+            0.0 as n_absent_running_90
+          union all
+          select
+            1, 'kippnewark', date '2025-09-02', 'M', null, null, false, null,
+            null, null, null, null, null, 1.0, null, 0.0
+          union all
+          select
+            1, 'kippnewark', date '2025-09-03', 'A', 0.0, 0.0, false, 1.0,
+            0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 'Absent', 1.0
+
+      - input: ref('int_students__schools')
+        format: sql
+        rows: |
+          select
+            100 as school_number,
+            'kippnewark' as _dbt_source_project,
+            'loc-abc' as location_key
+
+      - input: ref('dim_terms')
+        format: sql
+        rows: |
+          select
+            999 as school_id,
+            'NOMATCH' as term_name,
+            1900 as academic_year,
+            'RT' as `type`,
+            'term-none' as term_key
+    expect:
+      rows:
+        - date_key: 2025-09-01
+          n_membership_days_ytd: 1.0
+          n_present_days_ytd: 1.0
+        - date_key: 2025-09-02
+          n_membership_days_ytd: 1.0
+          n_present_days_ytd: 1.0
+        - date_key: 2025-09-03
+          n_membership_days_ytd: 2.0
+          n_present_days_ytd: 1.0
