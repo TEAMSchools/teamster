@@ -202,6 +202,25 @@ data_tests:
             name: int_powerschool__ps_enrollment_all
             package: powerschool
 
+  - name: stg_powerschool__u_storedgrades_de__no_duplicate_semester
+    description: >-
+      A PowerSchool stored grade holds more than one dual-enrollment (DE)
+      extension row for the same college semester, usually because the college
+      result was entered twice. Each row returned lists the record ids of one
+      duplicate set. Fix it in PowerSchool by deleting the extra DE entry and
+      keeping the one with the college course and institution filled in.
+      Downstream, stg_powerschool__u_storedgrades_de keeps one row per stored
+      grade and semester, so reports count the result once in the meantime.
+      Reads the source because the staging model has already removed the
+      duplicates.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: stg_powerschool__u_storedgrades_de
+            package: powerschool
+
   - name: int_powerschool__spenrollments__no_concurrent_bucket_per_subject
     description: >-
       A PowerSchool student holds 2 different Bucket special programs for the

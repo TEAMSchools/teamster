@@ -344,7 +344,8 @@ legitimately-superseded inactive rows that repeat the key.
   singular-test `config()`; keep only per-test fields (`meta.dagster.ref`).
 - A singular test follows the severity rule of the model its `meta.dagster.ref`
   names, or of the one model it reads. One on a staging model sets `error` in
-  `tests/properties.yml`, unless it is a ticketed test.
+  `tests/properties.yml`, unless it is a ticketed test or reads the source
+  behind a `stg_` dedup (_Choosing a singular test_), which both run at `warn`.
 
 ### When tests run
 
@@ -378,6 +379,16 @@ Write a singular test only when no generic test can express the check. Check
 A singular test fits a check that compares rows with each other or with another
 row set: a window predicate, a self-join for overlaps, an anti-join from a
 driving set for coverage, or a group whose rows must agree.
+
+A source defect that a `stg_` model dedups (A5) is the one case where a generic
+test cannot do the job. The dedup hides the duplicates from any test on the
+`stg_`, and a generic test declared on the source never becomes a Dagster check,
+because dagster-dbt's `enable_source_tests_as_checks` is off here, so its
+failures reach no one. Write a singular test that reads the `source()`, with
+`-- depends_on: {{ ref("<stg model>") }}` and `meta.dagster.ref` naming that
+`stg_` (see _Singular-test `meta.dagster.ref`_ below). Set `warn`: the `stg_`
+dedup is the downstream defense the _Source data_ bullet asks for, so the test
+lists rows to fix at the source rather than gating the build.
 
 Return one row per violation, so the failure count is the number of things to
 fix. A self-join keeps one direction of each pair with a strict tie-break on the
