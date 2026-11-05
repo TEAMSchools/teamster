@@ -1,4 +1,12 @@
 with
+    -- grain projection, not dup-masking: each archive studentid maps to 1
+    -- student_number
+    miami_archive_student_numbers as (
+        select distinct studentid, student_number, _dbt_source_project,
+        from {{ ref("int_powerschool__ada") }}
+        where _dbt_source_project = 'kippmiami'
+    ),
+
     powerschool_programs as (
         select
             sp.academic_year,
@@ -6,9 +14,9 @@ with
             sp._dbt_source_project,
             sp.enter_date as assignment_date,
 
-            co.student_number,
-
             'powerschool' as bucket_store,
+
+            coalesce(co.student_number, an.student_number) as student_number,
 
             trim(split(sp.specprog_name, '-')[offset(0)]) as bucket,
 
@@ -20,12 +28,17 @@ with
                 then 'Math'
             end as `subject`,
         from {{ ref("int_powerschool__spenrollments") }} as sp
-        inner join
+        left join
             {{ ref("int_extracts__student_enrollments") }} as co
             on sp.studentid = co.studentid
             and sp.academic_year = co.academic_year
             and sp._dbt_source_project = co._dbt_source_project
-        where sp.specprog_name like 'Bucket%' and co.rn_year = 1
+            and co.rn_year = 1
+        left join
+            miami_archive_student_numbers as an
+            on sp.studentid = an.studentid
+            and sp._dbt_source_project = an._dbt_source_project
+        where sp.specprog_name like 'Bucket%'
     ),
 
     focus_memberships as (
@@ -63,6 +76,7 @@ with
             assignment_date,
             exit_date,
         from powerschool_programs
+        where student_number is not null
 
         union all
 
