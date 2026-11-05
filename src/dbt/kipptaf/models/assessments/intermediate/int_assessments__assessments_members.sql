@@ -140,31 +140,44 @@ with
                     grade_level_id
                 order by assessment_id
             )
+    ),
+
+    -- grain projection, not dup-masking: the crosswalk maps each subject area
+    -- to 1 discipline
+    subject_disciplines as (
+        select distinct illuminate_subject_area as subject_area, discipline,
+        from {{ ref("stg_google_sheets__assessments__course_subject_crosswalk") }}
+        where illuminate_subject_area is not null
     )
 
 select
-    source,
-    assessment_id,
-    title,
-    academic_year,
-    academic_year_clean,
-    scope,
-    creator_first_name,
-    creator_last_name,
-    performance_band_set_id,
-    assessment_type,
-    tags,
-    module_code,
-    module_type,
-    module_sequence,
-    tagged_grade_level_id,
-    regions_assessed,
-    regions_assessed_array,
-    regions_report_card,
-    regions_progress_report,
-    administered_at,
-    subject_area,
-    grade_level_id,
-    is_internal_assessment,
-    canonical_assessment_id,
-from canonical
+    c.source,
+    c.assessment_id,
+    c.title,
+    c.academic_year,
+    c.academic_year_clean,
+    c.scope,
+    c.creator_first_name,
+    c.creator_last_name,
+    c.performance_band_set_id,
+    c.assessment_type,
+    c.tags,
+    c.module_code,
+    c.module_type,
+    c.module_sequence,
+    c.tagged_grade_level_id,
+    c.regions_assessed,
+    c.regions_assessed_array,
+    c.regions_report_card,
+    c.regions_progress_report,
+    c.administered_at,
+    c.subject_area,
+    c.grade_level_id,
+    c.is_internal_assessment,
+    c.canonical_assessment_id,
+
+    case
+        sd.discipline when 'ELA' then 'Reading' when 'Math' then 'Math'
+    end as bucket_subject,
+from canonical as c
+left join subject_disciplines as sd on c.subject_area = sd.subject_area
