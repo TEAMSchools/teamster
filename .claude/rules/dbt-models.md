@@ -175,7 +175,8 @@ comments beyond the block you are editing only when asked.
    in any PR that modifies one (_Tests on marts and `rpt_` models_ in
    `.claude/rules/dbt-yaml.md`).
 
-**Exceptions** — a kipptaf `stg_` union view over district staging, and a thin
+**Exceptions** — a kipptaf union view over district `stg_` or `int_` models (a
+`dbt_utils.union_relations` passthrough with no other logic), and a thin
 cross-project wrapper `rpt_` (a district `rpt_powerschool__autocomm_*` or other
 `extracts/` wrapper sourcing `kipptaf_extracts`), carry NO uniqueness test; it
 lives on the model they wrap. The district wrapper is contract-columns-only (no

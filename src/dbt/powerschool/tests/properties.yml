@@ -40,6 +40,65 @@ data_tests:
             name: int_powerschool__ps_enrollment_all
             package: powerschool
 
+  # TODO(#5558): runbook
+  - name: test_stg_powerschool__attendance_conversion_items__covers_ada_codes
+    description: >-
+      A school's attendance conversion has no codeday conversion item for an
+      attendance code that counts for ADA. Each row is 1 missing item, for an
+      FTE and attendance conversion that enrolled students use that school year.
+      It includes codes no student has received yet, so a row is a setup gap,
+      not always a day that is already wrong. Days with that code get no
+      attendance value. Fix it in PowerSchool by adding the code to the
+      attendance conversion for that FTE.
+      fct_student_attendance_enrollment_daily skips days with no attendance
+      value when it counts membership and present days.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: stg_powerschool__attendance_conversion_items
+            package: powerschool
+
+  # TODO(#5558): runbook
+  - name: test_stg_powerschool__attendance_code__present_code_per_school_year
+    description: >-
+      A school has enrolled students in a school year but no attendance code
+      described as Present for that year. A NULL yearid means the enrollment
+      starts on a date no year term covers at that school. Days with no
+      attendance record are valued with the Present code, so these days get no
+      attendance value. Fix it in PowerSchool by adding the Present code for
+      that school year, or by adding or extending the year term.
+      fct_student_attendance_enrollment_daily skips days with no attendance
+      value when it counts membership and present days.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: stg_powerschool__attendance_code
+            package: powerschool
+
+  # TODO(#5558): runbook
+  - name: test_int_powerschool__ps_attendance_daily__at_enrolled_school
+    description: >-
+      A PowerSchool daily attendance record is at a school other than the one
+      the student was enrolled in that day. Each row is 1 record. Daily
+      attendance is matched to enrollment by student and date only, so the
+      record counts at the enrolled school. A code that counts for ADA is looked
+      up in the enrolled school's attendance conversion, where it usually does
+      not exist, and the day gets no attendance value. Fix it in PowerSchool by
+      moving the record to the enrolled school, or deleting it.
+      fct_student_attendance_enrollment_daily skips days with no attendance
+      value when it counts membership and present days.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: int_powerschool__ps_attendance_daily
+            package: powerschool
+
   - name: int_powerschool__student_enrollment_union_no_shared_stint_boundary
     description: >-
       A PowerSchool student's enrollment stint exits on the same date the next
