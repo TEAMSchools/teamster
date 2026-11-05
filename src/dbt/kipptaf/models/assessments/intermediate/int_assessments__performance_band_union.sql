@@ -14,7 +14,7 @@ with
             minimum_value as minimum_score,
             is_mastery,
 
-            'illuminate' as source,
+            'illuminate' as `source`,
 
             cast(label_number as int64) as band_number,
         from {{ ref("int_illuminate__performance_band_sets") }}
@@ -28,7 +28,7 @@ with
             min_score as minimum_score,
             is_mastery,
 
-            'apex' as source,
+            'apex' as `source`,
 
             label_number as band_number,
         from {{ ref("int_focus__apex_band_levels") }}

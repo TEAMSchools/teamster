@@ -50,6 +50,7 @@ models:
                 severity: warn
 
       - name: source
+        quote: true
         data_type: string
         description: Source system of the band set, illuminate or apex.
       - name: performance_band_set_id
