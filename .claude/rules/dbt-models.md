@@ -197,8 +197,9 @@ prod relation in place. Applies even when the model has no exposure and zero
 remaining `ref()`s — a consumer nobody knew about then degrades to frozen data
 instead of vanishing. Do not propose deletion as the tidier option, and do not
 issue a `drop view` for the orphaned relation. Disabling a model leaves singular
-tests that ref it and `relationships` tests pointing at it enabled (see _Test
-config defaults_ in `.claude/rules/dbt-yaml.md`); disable or remove those too.
+tests that ref it and `relationships` tests pointing at it enabled (see
+_Disabling a model_ in `.claude/rules/dbt-yaml.md`); disable or remove those
+too.
 
 Exception, decided on #5162: a kipptaf `select *` union passthrough over
 district sources with no remaining `ref()` is deleted outright, source entries
