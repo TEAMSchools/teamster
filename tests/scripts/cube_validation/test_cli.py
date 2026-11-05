@@ -1784,6 +1784,36 @@ def test_probe_fingerprint_covers_how_the_export_is_read(tmp_path):
     assert fp(summed) not in (base, fp(YML))
 
 
+COMPUTED = YML.replace(
+    "    dashboard_view: kipptaf_tableau.rpt_d\n",
+    "    dashboard_view: kipptaf_tableau.rpt_d\n"
+    "    dashboard_columns:\n"
+    "      level3: \"if(band >= 3, 'At/Above', 'Below')\"\n",
+)
+
+
+def test_dashboard_columns_reach_every_dashboard_read(tmp_path):
+    cfg = load_view_config(_file(tmp_path, COMPUTED))
+    comparison = cfg.comparisons[0]
+    derived = (
+        "(SELECT *, if(band >= 3, 'At/Above', 'Below') AS level3 "
+        f"FROM `{pipeline.PROJECT}`.`kipptaf_tableau`.`rpt_d`)"
+    )
+
+    assert derived in pipeline.dashboard_rows_sql(cfg, comparison)
+    assert derived in pipeline.probe_sql(cfg, comparison, {})
+
+
+def test_dashboard_columns_change_the_row_population(tmp_path):
+    # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+    from cube_validation.config import row_population
+
+    plain = load_view_config(_file(tmp_path, YML)).comparisons[0]
+    computed = load_view_config(_file(tmp_path, COMPUTED)).comparisons[0]
+
+    assert row_population(plain) != row_population(computed)
+
+
 # --- run: missing cuts and filters ----------------------------------------------
 
 GAP_PROOF = (
