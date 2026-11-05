@@ -104,11 +104,12 @@ jobs:
             "Choosing a test", "Test severity" and "Tests on marts and rpt_
             models" in dbt-yaml.md: uniqueness test, its severity, explicit
             severity on every staging test, not_null on natural-key grain
-            columns the model's own SQL does not keep non-null, no not_null on
-            columns it does, and only error tests on marts and rpt_ models.
-            Severity resolves from the folder defaults in dbt_project.yml as
-            well as the test's own config. These rules have no IDs, so cite the
-            file and section name.
+            columns the model's own SQL does not keep non-null, no test the
+            model's own SQL already guarantees (the grain uniqueness test
+            excepted), and only error tests on marts and rpt_ models. Severity
+            resolves from the folder defaults in dbt_project.yml as well as the
+            test's own config. These rules have no IDs, so cite the file and
+            section name.
 
             For each int_ or rpt_ model the PR adds, write a ledger in the
             fold-out: one line per rule below, even when the answer is "none". A

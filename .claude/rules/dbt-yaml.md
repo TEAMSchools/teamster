@@ -278,25 +278,33 @@ legitimately-superseded inactive rows that repeat the key.
   `data_tests:`. This repo commonly uses `config.where`-scoped `not_null` /
   `expression_is_true` to flag null-column / drop-from-extract conditions, so
   the coverage you want may already exist and already fire as a warn.
-- **Never add `not_null` to a column this model's own SQL keeps non-null.** The
-  test can never fail, and it still costs a full BigQuery scan per CI run — on a
-  view mart that scan re-expands the entire upstream chain. Ask: could any input
-  data, however wrong, make this column NULL? If not, skip the test. Guarantees
-  that count: an unwrapped `generate_surrogate_key`, a `coalesce` / `ifnull`
-  with a non-null default, a literal, `count(...)`, a `where <col> is not null`
-  filter, and an expression over these that cannot itself return NULL (not
-  `nullif`, a `safe_` function, division, or a `case` without `else`). A
-  guarantee counts only if it holds at every definition site of the column, in
-  every UNION branch, and no later outer join can bring the column back as NULL.
-  A guarantee that rests on upstream data does not count — a parent's `not_null`
-  test, a join that matches today, a source that always sends the field —
-  because that is what the test guards.
+- **Never add a test this model's own SQL already guarantees.** It can never
+  fail, and it still costs a full BigQuery scan per CI run — on a view mart that
+  scan re-expands the entire upstream chain. Ask: could any input data, however
+  wrong, make this test fail? If not, skip it. Common cases: `accepted_values`
+  on a `case` whose every branch, `else` included, returns an accepted literal;
+  `relationships` on a column taken from an inner join to the `to:` model with
+  no later step changing it; `expression_is_true` restating the SQL
+  (`end >= start` on `greatest(start, end)`); a second test on the same grain,
+  such as `unique_combination_of_columns` beside `unique` on a surrogate key of
+  those columns. The uniqueness test `.claude/rules/dbt-models.md` requires
+  stays even when the SQL guarantees it: it guards the grain against later
+  edits, where a join fan-out is silent and costly downstream.
+- `not_null` is the most common case. Guarantees that count: an unwrapped
+  `generate_surrogate_key`, a `coalesce` / `ifnull` with a non-null default, a
+  literal, `count(...)`, a `where <col> is not null` filter, and an expression
+  over these that cannot itself return NULL (not `nullif`, a `safe_` function,
+  division, or a `case` without `else`). A guarantee counts only if it holds at
+  every definition site of the column, in every UNION branch, and no later outer
+  join can bring the column back as NULL. A guarantee that rests on upstream
+  data does not count — a parent's `not_null` test, a join that matches today, a
+  source that always sends the field — because that is what the test guards.
 - **Never delete a `not_null` from a column that carries `accepted_values`.**
   `accepted_values` compiles to `where value not in (...)`, which NULL never
   satisfies, so it passes NULLs. Every enum column that must be non-null carries
   `not_null` too, even one the SQL keeps non-null; the pairing is the only thing
-  making the enum test reject NULL. It overrides the rule above; nothing else
-  does.
+  making the enum test reject NULL. It and the grain uniqueness test are the
+  only exceptions to the rule above.
 
 ### Test severity
 
