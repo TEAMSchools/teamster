@@ -8,13 +8,6 @@ models:
       hire not yet started, a closed position, a scoot sub, or a name only
       captured in notes — so the app still has a row to attach seat-tracking
       actions to when no real employee occupies the seat.
-    config:
-      meta:
-        standard_exempt:
-          A5: >-
-            Keeping the tier from each staff member's latest PMS evaluation is
-            the business rule (last_performance_management_score means the most
-            recent score), not source-duplicate masking.
     columns:
       - name: employee_number
         data_type: int64
