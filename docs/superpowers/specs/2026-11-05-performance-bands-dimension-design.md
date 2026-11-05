@@ -250,3 +250,13 @@ Delete both interim band-set tables (Illuminate and Focus Assessments) from
   and an 8-band Focus set.
 - Closing the 2 Asana subtasks (State test code / name with a pointer to
   `module_code` and `title`; QBL as retired) once the PR merges.
+
+## Revision 2026-11-05: guard tests warn
+
+Decided by Cristina while planning. The guard tests under _Guard tests_ run at
+`warn`, not `error`: an `error` on the domain intermediate would skip the
+dimension and the whole assessment fact downstream, so one oddly configured
+Illuminate band set would stop every assessment dashboard refreshing. Instead, a
+band set that breaks any of the 3 assumptions gets a null `mastery_level` and a
+null `is_far_below` on every band. Its scores still load, with no level, and the
+warning names the set to fix.
