@@ -18,7 +18,7 @@ shared:
     sheet: DKI - Assessment Mastery Grid
     dashboard_view: kipptaf_tableau.rpt_tableau__ddi_dashboard
     decimals: 2
-    filters:
+    filters: &dki_filters
       Academic Year: { dashboard: academic_year, cube: academic_year }
       Response Type: { dashboard: response_type, cube: response_type }
       Region: { dashboard: region, cube: region_name }
@@ -46,6 +46,10 @@ shared:
         - { dashboard: is_mastery_int, cube: is_mastery }
   school: &school
     <<: *dki
+    # Student Tier is the bucket of the assessment's subject (Refs #6192).
+    filters:
+      <<: *dki_filters
+      Student Tier: { dashboard: nj_student_tier, cube: bucket }
     dims:
       - { dashboard: school, cube: abbreviation }
       - { dashboard: grade_level, cube: grade_level }
@@ -59,6 +63,9 @@ shared:
       clear_filters: [Discipline]
   region: &region
     <<: *dki
+    filters:
+      <<: *dki_filters
+      Student Tier: { dashboard: nj_student_tier, cube: bucket }
     dims:
       - { dashboard: region, cube: region_name }
       - { dashboard: grade_level, cube: grade_level }
@@ -67,6 +74,79 @@ shared:
       drop: [Week Start Monday, Grade/Subject, School, Module Code]
       add: { rows: [Region, Grade Level, Subject Area] }
       clear_filters: [Discipline]
+  # Module Dashboard bucket sheets (Refs #6192): one column per bucket through
+  # Measure Names, on the assessment dashboard's own datasource. Each sheet is
+  # a panel: a click on the Grade Heatmap filters it to one grade and module,
+  # whose fields sit on Detail. The proof copy clears those action filters and
+  # puts grade, module and subject on rows, so each export row is what one
+  # click shows. It also clears the Subject Area group, so Math rows prove
+  # math_bucket too. % Completion stays: a range filter cannot be cleared, and
+  # it keeps every group, since an overall row exists only where a student has
+  # a score.
+  bucket_module: &bucket_module
+    confirmed: true
+    workbook: 6d82b643-59a8-4106-b2f9-97ddf7f638e7
+    dashboard_view: kipptaf_tableau.rpt_tableau__assessment_dashboard
+    filters:
+      Academic Year: { dashboard: academic_year, cube: academic_year }
+      Response Type: { dashboard: response_type, cube: response_type }
+      Region: { dashboard: region, cube: region_name }
+      Grade Level: { dashboard: grade_level, cube: grade_level }
+      Module Type: { dashboard: module_type, cube: module_type }
+      Module Number Raw: { dashboard: module_number, cube: module_code }
+      Subject Area: { dashboard: subject_area, cube: academic_subject }
+      nj_student_tier: { dashboard: nj_student_tier, cube: bucket }
+    defaults: { Academic Year: "2026" }
+    cuts: [{ Response Type: overall }]
+    dims:
+      - { dashboard: grade_level, cube: grade_level }
+      - { dashboard: module_type, cube: module_type }
+      - { dashboard: module_number, cube: module_code }
+      - { dashboard: subject_area, cube: academic_subject }
+    # The workbook's Mastery calc: 1, 0, or blank where is_mastery is null.
+    dashboard_columns:
+      is_mastery_int: case when is_mastery then 1 when not is_mastery then 0 end
+    shelves:
+      add: { rows: [Grade Level, Module Type, Module Number Raw, Subject Area] }
+      clear_filters:
+        - Subject Area (group)
+        - Action (Grade Level,Schoolid)
+        - Action (Module Type (group),Grade Level,Module Number Raw,Module Type)
+          1
+        - Action (Section Number,Grade Level)
+        - Action (Section Number,Grade Level,Module Number Raw)
+        - Action (Section Number,Grade Level,Module Number Raw,school)
+    rows: &bucket_rows
+      grain:
+        - { dashboard: student_number, cube: lea_student_identifier }
+        - { dashboard: assessment_id, cube: source_assessment_id }
+        - { dashboard: response_type, cube: response_type }
+        - { dashboard: standard_code, cube: response_type_code }
+      values:
+        - { dashboard: is_mastery_int, cube: is_mastery }
+  # Bucket N Students: distinct students in the bucket with a mastery verdict,
+  # blank when there are none.
+  bucket_students: &bucket_students
+    <<: *bucket_module
+    sheet: Module - Overall - Bucket Counts
+    measure: count_students
+    decimals: 0
+    definitions:
+      dashboard: >-
+        COUNTD of student_number where nj_student_tier is the bucket and
+        is_mastery is not null; blank when 0.
+      cube: >-
+        count_students with bucket in the bucket and is_mastery set.
+  # Bucket N Mastery: the average of Mastery over the bucket's scores.
+  bucket_mastery: &bucket_mastery
+    <<: *bucket_module
+    sheet: Module - Overall - Bucket Mastery
+    measure: pct_proficient
+    decimals: 2
+    definitions:
+      dashboard: >-
+        AVG of Mastery (1, 0, or blank) where nj_student_tier is the bucket.
+      cube: pct_proficient with bucket in the bucket.
 comparisons:
   - id: mastery-dki-school
     <<: *school
@@ -75,14 +155,15 @@ comparisons:
     probe: avg(is_mastery_int)
     proof:
       fingerprint: 3c570b06fff00569956ab30062ec5971502aa895511df28e3e73d894b00496c6
-      cells: 2335
-      proven_at: "2026-10-30T12:19:06.630004+00:00"
-      workbook_updated_at: "2026-10-30T05:49:01+00:00"
+      cells: 2585
+      proven_at: "2026-11-08T21:40:00.320191+00:00"
+      workbook_updated_at: "2026-11-08T06:42:06+00:00"
       probe_fingerprint: 8cce34f2bea64e939a9602b9d87589092767700b09df9bfe33a340e2df35b104
+      source_fingerprint: 0f04e5bc396bc10f77f44b8ef651a385c4eb60d3a8d925755e8ebbb36c7d3b6e
       cuts:
         - '{"Response Type": "overall"}'
         - '{"Response Type": "standard"}'
-      totals_skipped: 310
+      totals_skipped: 360
       shelves:
         drop:
           - Week Start Monday
@@ -107,7 +188,6 @@ comparisons:
         - IEP Status
         - Ml Status
         - School Level
-        - Student Tier
         - Term
         - Week Start Monday
         - gifted_and_talented
@@ -118,18 +198,17 @@ comparisons:
         - Exclude Future Assessments
       filter_notes: {}
       missing_columns:
-        Week Start Monday: week_start_monday
-        state_test_proficiency: state_test_proficiency
-        Term: term
-        is_low_25_fl: is_low_25_fl
-        Head Of School: head_of_school
-        is_sipps: is_sipps
-        gifted_and_talented: gifted_and_talented
-        Student Tier: nj_student_tier
-        School Level: school_level
-        Dibels Most Recent Composite: dibels_most_recent_composite
         Ml Status: ml_status
+        Head Of School: head_of_school
+        state_test_proficiency: state_test_proficiency
+        is_sipps: is_sipps
         IEP Status: iep_status
+        gifted_and_talented: gifted_and_talented
+        Term: term
+        Dibels Most Recent Composite: dibels_most_recent_composite
+        School Level: school_level
+        is_low_25_fl: is_low_25_fl
+        Week Start Monday: week_start_monday
   - id: mastery-dki-region
     <<: *region
     measure: pct_proficient
@@ -137,10 +216,11 @@ comparisons:
     probe: avg(is_mastery_int)
     proof:
       fingerprint: 3c570b06fff00569956ab30062ec5971502aa895511df28e3e73d894b00496c6
-      cells: 437
-      proven_at: "2026-10-30T12:21:55.741677+00:00"
-      workbook_updated_at: "2026-10-30T05:49:01+00:00"
+      cells: 447
+      proven_at: "2026-11-08T21:42:40.788170+00:00"
+      workbook_updated_at: "2026-11-08T06:42:06+00:00"
       probe_fingerprint: 169ffc2780ad5554bb33383ce97da9ce05e5b35e3a0cecd369af28f3e9e0ef8a
+      source_fingerprint: 0f04e5bc396bc10f77f44b8ef651a385c4eb60d3a8d925755e8ebbb36c7d3b6e
       cuts:
         - '{"Response Type": "overall"}'
         - '{"Response Type": "standard"}'
@@ -168,7 +248,6 @@ comparisons:
         - IEP Status
         - Ml Status
         - School Level
-        - Student Tier
         - Term
         - Week Start Monday
         - gifted_and_talented
@@ -179,18 +258,17 @@ comparisons:
         - Exclude Future Assessments
       filter_notes: {}
       missing_columns:
-        Week Start Monday: week_start_monday
-        state_test_proficiency: state_test_proficiency
-        Term: term
-        is_low_25_fl: is_low_25_fl
-        Head Of School: head_of_school
-        is_sipps: is_sipps
-        gifted_and_talented: gifted_and_talented
-        Student Tier: nj_student_tier
-        School Level: school_level
-        Dibels Most Recent Composite: dibels_most_recent_composite
         Ml Status: ml_status
+        Head Of School: head_of_school
+        state_test_proficiency: state_test_proficiency
+        is_sipps: is_sipps
         IEP Status: iep_status
+        gifted_and_talented: gifted_and_talented
+        Term: term
+        Dibels Most Recent Composite: dibels_most_recent_composite
+        School Level: school_level
+        is_low_25_fl: is_low_25_fl
+        Week Start Monday: week_start_monday
   # Gen Ed is iep_status other than Has IEP; a blank iep_status counts in
   # neither, as a null is_iep does in Cube.
   - id: mastery-gened-dki-school
@@ -207,14 +285,15 @@ comparisons:
       dashboard_scope: [{ dashboard: iep_status, values: [No IEP] }]
     proof:
       fingerprint: 3c570b06fff00569956ab30062ec5971502aa895511df28e3e73d894b00496c6
-      cells: 2335
-      proven_at: "2026-10-30T12:24:19.033577+00:00"
-      workbook_updated_at: "2026-10-30T05:49:01+00:00"
+      cells: 2585
+      proven_at: "2026-11-08T21:45:01.276707+00:00"
+      workbook_updated_at: "2026-11-08T06:42:06+00:00"
       probe_fingerprint: b73e3c91a61f6173c227c2a9dacdbc302d73de28b9cf92ae7a4ef86ef4d6aa37
+      source_fingerprint: 0f04e5bc396bc10f77f44b8ef651a385c4eb60d3a8d925755e8ebbb36c7d3b6e
       cuts:
         - '{"Response Type": "overall"}'
         - '{"Response Type": "standard"}'
-      totals_skipped: 310
+      totals_skipped: 360
       shelves:
         drop:
           - Week Start Monday
@@ -239,7 +318,6 @@ comparisons:
         - IEP Status
         - Ml Status
         - School Level
-        - Student Tier
         - Term
         - Week Start Monday
         - gifted_and_talented
@@ -250,18 +328,17 @@ comparisons:
         - Exclude Future Assessments
       filter_notes: {}
       missing_columns:
-        Week Start Monday: week_start_monday
-        state_test_proficiency: state_test_proficiency
-        Term: term
-        is_low_25_fl: is_low_25_fl
-        Head Of School: head_of_school
-        is_sipps: is_sipps
-        gifted_and_talented: gifted_and_talented
-        Student Tier: nj_student_tier
-        School Level: school_level
-        Dibels Most Recent Composite: dibels_most_recent_composite
         Ml Status: ml_status
+        Head Of School: head_of_school
+        state_test_proficiency: state_test_proficiency
+        is_sipps: is_sipps
         IEP Status: iep_status
+        gifted_and_talented: gifted_and_talented
+        Term: term
+        Dibels Most Recent Composite: dibels_most_recent_composite
+        School Level: school_level
+        is_low_25_fl: is_low_25_fl
+        Week Start Monday: week_start_monday
   - id: mastery-iep-dki-school
     <<: *school
     measure: pct_proficient
@@ -276,14 +353,15 @@ comparisons:
       dashboard_scope: [{ dashboard: iep_status, values: [Has IEP] }]
     proof:
       fingerprint: 3c570b06fff00569956ab30062ec5971502aa895511df28e3e73d894b00496c6
-      cells: 2335
-      proven_at: "2026-10-30T12:25:36.463444+00:00"
-      workbook_updated_at: "2026-10-30T05:49:01+00:00"
+      cells: 2585
+      proven_at: "2026-11-08T21:46:11.791303+00:00"
+      workbook_updated_at: "2026-11-08T06:42:06+00:00"
       probe_fingerprint: edbb20c9ef90ad5c6787b32e5c3fb88a47ca984fab3fd7e6f2d682e88584a9e7
+      source_fingerprint: 0f04e5bc396bc10f77f44b8ef651a385c4eb60d3a8d925755e8ebbb36c7d3b6e
       cuts:
         - '{"Response Type": "overall"}'
         - '{"Response Type": "standard"}'
-      totals_skipped: 310
+      totals_skipped: 360
       shelves:
         drop:
           - Week Start Monday
@@ -308,7 +386,6 @@ comparisons:
         - IEP Status
         - Ml Status
         - School Level
-        - Student Tier
         - Term
         - Week Start Monday
         - gifted_and_talented
@@ -319,18 +396,17 @@ comparisons:
         - Exclude Future Assessments
       filter_notes: {}
       missing_columns:
-        Week Start Monday: week_start_monday
-        state_test_proficiency: state_test_proficiency
-        Term: term
-        is_low_25_fl: is_low_25_fl
-        Head Of School: head_of_school
-        is_sipps: is_sipps
-        gifted_and_talented: gifted_and_talented
-        Student Tier: nj_student_tier
-        School Level: school_level
-        Dibels Most Recent Composite: dibels_most_recent_composite
         Ml Status: ml_status
+        Head Of School: head_of_school
+        state_test_proficiency: state_test_proficiency
+        is_sipps: is_sipps
         IEP Status: iep_status
+        gifted_and_talented: gifted_and_talented
+        Term: term
+        Dibels Most Recent Composite: dibels_most_recent_composite
+        School Level: school_level
+        is_low_25_fl: is_low_25_fl
+        Week Start Monday: week_start_monday
   - id: mastery-gened-dki-region
     <<: *region
     measure: pct_proficient
@@ -345,10 +421,11 @@ comparisons:
       dashboard_scope: [{ dashboard: iep_status, values: [No IEP] }]
     proof:
       fingerprint: 3c570b06fff00569956ab30062ec5971502aa895511df28e3e73d894b00496c6
-      cells: 437
-      proven_at: "2026-10-30T12:26:50.882390+00:00"
-      workbook_updated_at: "2026-10-30T05:49:01+00:00"
+      cells: 447
+      proven_at: "2026-11-08T21:47:31.514520+00:00"
+      workbook_updated_at: "2026-11-08T06:42:06+00:00"
       probe_fingerprint: faa7892153b24abec7a0ac6bbe5f969153dddeb4f930d9de57118d050c2a3f25
+      source_fingerprint: 0f04e5bc396bc10f77f44b8ef651a385c4eb60d3a8d925755e8ebbb36c7d3b6e
       cuts:
         - '{"Response Type": "overall"}'
         - '{"Response Type": "standard"}'
@@ -376,7 +453,6 @@ comparisons:
         - IEP Status
         - Ml Status
         - School Level
-        - Student Tier
         - Term
         - Week Start Monday
         - gifted_and_talented
@@ -387,18 +463,17 @@ comparisons:
         - Exclude Future Assessments
       filter_notes: {}
       missing_columns:
-        Week Start Monday: week_start_monday
-        state_test_proficiency: state_test_proficiency
-        Term: term
-        is_low_25_fl: is_low_25_fl
-        Head Of School: head_of_school
-        is_sipps: is_sipps
-        gifted_and_talented: gifted_and_talented
-        Student Tier: nj_student_tier
-        School Level: school_level
-        Dibels Most Recent Composite: dibels_most_recent_composite
         Ml Status: ml_status
+        Head Of School: head_of_school
+        state_test_proficiency: state_test_proficiency
+        is_sipps: is_sipps
         IEP Status: iep_status
+        gifted_and_talented: gifted_and_talented
+        Term: term
+        Dibels Most Recent Composite: dibels_most_recent_composite
+        School Level: school_level
+        is_low_25_fl: is_low_25_fl
+        Week Start Monday: week_start_monday
   - id: mastery-iep-dki-region
     <<: *region
     measure: pct_proficient
@@ -413,10 +488,11 @@ comparisons:
       dashboard_scope: [{ dashboard: iep_status, values: [Has IEP] }]
     proof:
       fingerprint: 3c570b06fff00569956ab30062ec5971502aa895511df28e3e73d894b00496c6
-      cells: 437
-      proven_at: "2026-10-30T12:28:12.622863+00:00"
-      workbook_updated_at: "2026-10-30T05:49:01+00:00"
+      cells: 447
+      proven_at: "2026-11-08T21:48:41.915921+00:00"
+      workbook_updated_at: "2026-11-08T06:42:06+00:00"
       probe_fingerprint: 1fda865df11b3a177d9d1c56514650b8c2cd479a56bdd3928cbbeb51b4a5b705
+      source_fingerprint: 0f04e5bc396bc10f77f44b8ef651a385c4eb60d3a8d925755e8ebbb36c7d3b6e
       cuts:
         - '{"Response Type": "overall"}'
         - '{"Response Type": "standard"}'
@@ -444,7 +520,6 @@ comparisons:
         - IEP Status
         - Ml Status
         - School Level
-        - Student Tier
         - Term
         - Week Start Monday
         - gifted_and_talented
@@ -455,18 +530,17 @@ comparisons:
         - Exclude Future Assessments
       filter_notes: {}
       missing_columns:
-        Week Start Monday: week_start_monday
-        state_test_proficiency: state_test_proficiency
-        Term: term
-        is_low_25_fl: is_low_25_fl
-        Head Of School: head_of_school
-        is_sipps: is_sipps
-        gifted_and_talented: gifted_and_talented
-        Student Tier: nj_student_tier
-        School Level: school_level
-        Dibels Most Recent Composite: dibels_most_recent_composite
         Ml Status: ml_status
+        Head Of School: head_of_school
+        state_test_proficiency: state_test_proficiency
+        is_sipps: is_sipps
         IEP Status: iep_status
+        gifted_and_talented: gifted_and_talented
+        Term: term
+        Dibels Most Recent Composite: dibels_most_recent_composite
+        School Level: school_level
+        is_low_25_fl: is_low_25_fl
+        Week Start Monday: week_start_monday
   # DKI - Assessment Mastery Bars colors each row by Performance Bands - 3
   # Level, a workbook calc that bins performance_band_label_number by school
   # level instead of reading the band set's mastery band. dashboard_columns
@@ -611,6 +685,580 @@ comparisons:
         Ml Status: ml_status
         state_test_proficiency: state_test_proficiency
         Dibels Most Recent Composite: dibels_most_recent_composite
+  - id: students-bucket-1-module
+    <<: *bucket_students
+    sheet_field: Bucket 1 Students
+    scope:
+      - { cube: is_internal_assessment, values: [true] }
+      - { cube: bucket, values: [Bucket 1] }
+      - { cube: is_mastery, operator: set }
+    probe: >-
+      nullif(count(distinct if(nj_student_tier = 'Bucket 1' and is_mastery is
+      not null, student_number, null)), 0)
+    rows:
+      <<: *bucket_rows
+      dashboard_scope:
+        - { dashboard: nj_student_tier, values: [Bucket 1] }
+        - { dashboard: is_mastery, operator: set }
+    proof:
+      fingerprint: 0d3f74b84de109f5dfe85d869ac3cfb87044093cc43e2916af242503ccc5418a
+      cells: 492
+      proven_at: "2026-11-08T21:54:11.920226+00:00"
+      workbook_updated_at: "2026-11-08T06:42:06+00:00"
+      probe_fingerprint: 6bddaa62814eea736ce2e3122f3c969ef6af22f8b21bea313cca5eedf72f5cde
+      source_fingerprint: 04be9335ed594489d483384947c2521c87f3d1b070ec97d8f4ea38c63f69f74a
+      cuts:
+        - '{"Response Type": "overall"}'
+      totals_skipped: 0
+      shelves:
+        clear_filters:
+          - Subject Area (group)
+          - Action (Grade Level,Schoolid)
+          - Action (Module Type (group),Grade Level,Module Number Raw,Module
+            Type) 1
+          - Action (Section Number,Grade Level)
+          - Action (Section Number,Grade Level,Module Number Raw)
+          - Action (Section Number,Grade Level,Module Number Raw,school)
+        add:
+          rows:
+            - Grade Level
+            - Module Type
+            - Module Number Raw
+            - Subject Area
+      missing_cuts: []
+      missing_filters:
+        - "% Completion"
+        - C 504 Status
+        - Is Foundations
+        - Is Replacement
+        - Lep Status
+        - NJ Tutoring
+        - School Level (School)
+        - Schoolid
+        - Subject Area (group)
+        - Team
+        - Territory
+        - dibels_most_recent_composite
+        - head_of_school
+        - is_low_25_fl
+        - is_sipps
+        - state_test_proficiency
+      restricting_filters:
+        - "% Completion"
+      filter_notes: {}
+      missing_columns:
+        dibels_most_recent_composite: dibels_most_recent_composite
+        is_low_25_fl: is_low_25_fl
+        head_of_school: head_of_school
+        Is Replacement: is_replacement
+        Is Foundations: is_foundations
+        is_sipps: is_sipps
+        Territory: territory
+        C 504 Status: c_504_status
+        Lep Status: lep_status
+        state_test_proficiency: state_test_proficiency
+        Team: team
+        Schoolid: schoolid
+  - id: students-bucket-2-module
+    <<: *bucket_students
+    sheet_field: Bucket 2 Students
+    scope:
+      - { cube: is_internal_assessment, values: [true] }
+      - { cube: bucket, values: [Bucket 2] }
+      - { cube: is_mastery, operator: set }
+    probe: >-
+      nullif(count(distinct if(nj_student_tier = 'Bucket 2' and is_mastery is
+      not null, student_number, null)), 0)
+    rows:
+      <<: *bucket_rows
+      dashboard_scope:
+        - { dashboard: nj_student_tier, values: [Bucket 2] }
+        - { dashboard: is_mastery, operator: set }
+    proof:
+      fingerprint: 0d3f74b84de109f5dfe85d869ac3cfb87044093cc43e2916af242503ccc5418a
+      cells: 492
+      proven_at: "2026-11-08T21:55:26.007670+00:00"
+      workbook_updated_at: "2026-11-08T06:42:06+00:00"
+      probe_fingerprint: b5b03864d1976e618f31bf21a18a74954b9d5d7f56df63c453cf3b7d664cc480
+      source_fingerprint: 04be9335ed594489d483384947c2521c87f3d1b070ec97d8f4ea38c63f69f74a
+      cuts:
+        - '{"Response Type": "overall"}'
+      totals_skipped: 0
+      shelves:
+        clear_filters:
+          - Subject Area (group)
+          - Action (Grade Level,Schoolid)
+          - Action (Module Type (group),Grade Level,Module Number Raw,Module
+            Type) 1
+          - Action (Section Number,Grade Level)
+          - Action (Section Number,Grade Level,Module Number Raw)
+          - Action (Section Number,Grade Level,Module Number Raw,school)
+        add:
+          rows:
+            - Grade Level
+            - Module Type
+            - Module Number Raw
+            - Subject Area
+      missing_cuts: []
+      missing_filters:
+        - "% Completion"
+        - C 504 Status
+        - Is Foundations
+        - Is Replacement
+        - Lep Status
+        - NJ Tutoring
+        - School Level (School)
+        - Schoolid
+        - Subject Area (group)
+        - Team
+        - Territory
+        - dibels_most_recent_composite
+        - head_of_school
+        - is_low_25_fl
+        - is_sipps
+        - state_test_proficiency
+      restricting_filters:
+        - "% Completion"
+      filter_notes: {}
+      missing_columns:
+        dibels_most_recent_composite: dibels_most_recent_composite
+        is_low_25_fl: is_low_25_fl
+        head_of_school: head_of_school
+        Is Replacement: is_replacement
+        Is Foundations: is_foundations
+        is_sipps: is_sipps
+        Territory: territory
+        C 504 Status: c_504_status
+        Lep Status: lep_status
+        state_test_proficiency: state_test_proficiency
+        Team: team
+        Schoolid: schoolid
+  - id: students-buckets-1-2-module
+    <<: *bucket_students
+    sheet_field: Buckets 1&2 Students
+    scope:
+      - { cube: is_internal_assessment, values: [true] }
+      - { cube: bucket, values: [Bucket 1, Bucket 2] }
+      - { cube: is_mastery, operator: set }
+    probe: >-
+      nullif(count(distinct if(nj_student_tier in ('Bucket 1', 'Bucket 2') and
+      is_mastery is not null, student_number, null)), 0)
+    rows:
+      <<: *bucket_rows
+      dashboard_scope:
+        - { dashboard: nj_student_tier, values: [Bucket 1, Bucket 2] }
+        - { dashboard: is_mastery, operator: set }
+    proof:
+      fingerprint: 0d3f74b84de109f5dfe85d869ac3cfb87044093cc43e2916af242503ccc5418a
+      cells: 492
+      proven_at: "2026-11-08T21:55:28.357367+00:00"
+      workbook_updated_at: "2026-11-08T06:42:06+00:00"
+      probe_fingerprint: a3f9c1f7d671e9241ed9130271310b8a65f39ee836e930cccb0eeca9e7bc8198
+      source_fingerprint: 04be9335ed594489d483384947c2521c87f3d1b070ec97d8f4ea38c63f69f74a
+      cuts:
+        - '{"Response Type": "overall"}'
+      totals_skipped: 0
+      shelves:
+        clear_filters:
+          - Subject Area (group)
+          - Action (Grade Level,Schoolid)
+          - Action (Module Type (group),Grade Level,Module Number Raw,Module
+            Type) 1
+          - Action (Section Number,Grade Level)
+          - Action (Section Number,Grade Level,Module Number Raw)
+          - Action (Section Number,Grade Level,Module Number Raw,school)
+        add:
+          rows:
+            - Grade Level
+            - Module Type
+            - Module Number Raw
+            - Subject Area
+      missing_cuts: []
+      missing_filters:
+        - "% Completion"
+        - C 504 Status
+        - Is Foundations
+        - Is Replacement
+        - Lep Status
+        - NJ Tutoring
+        - School Level (School)
+        - Schoolid
+        - Subject Area (group)
+        - Team
+        - Territory
+        - dibels_most_recent_composite
+        - head_of_school
+        - is_low_25_fl
+        - is_sipps
+        - state_test_proficiency
+      restricting_filters:
+        - "% Completion"
+      filter_notes: {}
+      missing_columns:
+        dibels_most_recent_composite: dibels_most_recent_composite
+        is_low_25_fl: is_low_25_fl
+        head_of_school: head_of_school
+        Is Replacement: is_replacement
+        Is Foundations: is_foundations
+        is_sipps: is_sipps
+        Territory: territory
+        C 504 Status: c_504_status
+        Lep Status: lep_status
+        state_test_proficiency: state_test_proficiency
+        Team: team
+        Schoolid: schoolid
+  - id: students-bucket-3-module
+    <<: *bucket_students
+    sheet_field: Bucket 3 Students
+    scope:
+      - { cube: is_internal_assessment, values: [true] }
+      - { cube: bucket, values: [Bucket 3] }
+      - { cube: is_mastery, operator: set }
+    probe: >-
+      nullif(count(distinct if(nj_student_tier = 'Bucket 3' and is_mastery is
+      not null, student_number, null)), 0)
+    rows:
+      <<: *bucket_rows
+      dashboard_scope:
+        - { dashboard: nj_student_tier, values: [Bucket 3] }
+        - { dashboard: is_mastery, operator: set }
+    proof:
+      fingerprint: 0d3f74b84de109f5dfe85d869ac3cfb87044093cc43e2916af242503ccc5418a
+      cells: 492
+      proven_at: "2026-11-08T21:55:30.580954+00:00"
+      workbook_updated_at: "2026-11-08T06:42:06+00:00"
+      probe_fingerprint: ce333b0a6b770b8f60496b38d7bd7c459826b29a5b10fa730e47c3750e1688d6
+      source_fingerprint: 04be9335ed594489d483384947c2521c87f3d1b070ec97d8f4ea38c63f69f74a
+      cuts:
+        - '{"Response Type": "overall"}'
+      totals_skipped: 0
+      shelves:
+        clear_filters:
+          - Subject Area (group)
+          - Action (Grade Level,Schoolid)
+          - Action (Module Type (group),Grade Level,Module Number Raw,Module
+            Type) 1
+          - Action (Section Number,Grade Level)
+          - Action (Section Number,Grade Level,Module Number Raw)
+          - Action (Section Number,Grade Level,Module Number Raw,school)
+        add:
+          rows:
+            - Grade Level
+            - Module Type
+            - Module Number Raw
+            - Subject Area
+      missing_cuts: []
+      missing_filters:
+        - "% Completion"
+        - C 504 Status
+        - Is Foundations
+        - Is Replacement
+        - Lep Status
+        - NJ Tutoring
+        - School Level (School)
+        - Schoolid
+        - Subject Area (group)
+        - Team
+        - Territory
+        - dibels_most_recent_composite
+        - head_of_school
+        - is_low_25_fl
+        - is_sipps
+        - state_test_proficiency
+      restricting_filters:
+        - "% Completion"
+      filter_notes: {}
+      missing_columns:
+        dibels_most_recent_composite: dibels_most_recent_composite
+        is_low_25_fl: is_low_25_fl
+        head_of_school: head_of_school
+        Is Replacement: is_replacement
+        Is Foundations: is_foundations
+        is_sipps: is_sipps
+        Territory: territory
+        C 504 Status: c_504_status
+        Lep Status: lep_status
+        state_test_proficiency: state_test_proficiency
+        Team: team
+        Schoolid: schoolid
+  - id: mastery-bucket-1-module
+    <<: *bucket_mastery
+    sheet_field: Bucket 1
+    scope:
+      - { cube: is_internal_assessment, values: [true] }
+      - { cube: bucket, values: [Bucket 1] }
+    probe: avg(if(nj_student_tier = 'Bucket 1', is_mastery_int, null))
+    rows:
+      <<: *bucket_rows
+      dashboard_scope: [{ dashboard: nj_student_tier, values: [Bucket 1] }]
+    proof:
+      fingerprint: 34fdc3edfd57cab4a2496f461bac09732d7ed4a29aa42fb7f56b7a95c4166098
+      cells: 492
+      proven_at: "2026-11-08T21:55:32.494357+00:00"
+      workbook_updated_at: "2026-11-08T06:42:06+00:00"
+      probe_fingerprint: 80998b8bfacc04e0083331967c542e38ffe69cd21d355087d4b6b4fdbbbf4fa3
+      source_fingerprint: 04be9335ed594489d483384947c2521c87f3d1b070ec97d8f4ea38c63f69f74a
+      cuts:
+        - '{"Response Type": "overall"}'
+      totals_skipped: 0
+      shelves:
+        clear_filters:
+          - Subject Area (group)
+          - Action (Grade Level,Schoolid)
+          - Action (Module Type (group),Grade Level,Module Number Raw,Module
+            Type) 1
+          - Action (Section Number,Grade Level)
+          - Action (Section Number,Grade Level,Module Number Raw)
+          - Action (Section Number,Grade Level,Module Number Raw,school)
+        add:
+          rows:
+            - Grade Level
+            - Module Type
+            - Module Number Raw
+            - Subject Area
+      missing_cuts: []
+      missing_filters:
+        - "% Completion"
+        - C 504 Status
+        - Is Foundations
+        - Is Replacement
+        - Lep Status
+        - NJ Tutoring
+        - School Level (School)
+        - Schoolid
+        - Subject Area (group)
+        - Team
+        - Territory
+        - dibels_most_recent_composite
+        - head_of_school
+        - is_low_25_fl
+        - is_sipps
+        - state_test_proficiency
+      restricting_filters:
+        - "% Completion"
+      filter_notes: {}
+      missing_columns:
+        dibels_most_recent_composite: dibels_most_recent_composite
+        is_low_25_fl: is_low_25_fl
+        head_of_school: head_of_school
+        Is Replacement: is_replacement
+        Is Foundations: is_foundations
+        is_sipps: is_sipps
+        Territory: territory
+        C 504 Status: c_504_status
+        Lep Status: lep_status
+        state_test_proficiency: state_test_proficiency
+        Team: team
+        Schoolid: schoolid
+  - id: mastery-bucket-2-module
+    <<: *bucket_mastery
+    sheet_field: Bucket 2
+    scope:
+      - { cube: is_internal_assessment, values: [true] }
+      - { cube: bucket, values: [Bucket 2] }
+    probe: avg(if(nj_student_tier = 'Bucket 2', is_mastery_int, null))
+    rows:
+      <<: *bucket_rows
+      dashboard_scope: [{ dashboard: nj_student_tier, values: [Bucket 2] }]
+    proof:
+      fingerprint: 34fdc3edfd57cab4a2496f461bac09732d7ed4a29aa42fb7f56b7a95c4166098
+      cells: 492
+      proven_at: "2026-11-08T21:56:45.133862+00:00"
+      workbook_updated_at: "2026-11-08T06:42:06+00:00"
+      probe_fingerprint: 2104eeff981c1c468aa4bceda2f139b6fe7d1e9d8aa6e8f2f2786ebc8d7cb88b
+      source_fingerprint: 04be9335ed594489d483384947c2521c87f3d1b070ec97d8f4ea38c63f69f74a
+      cuts:
+        - '{"Response Type": "overall"}'
+      totals_skipped: 0
+      shelves:
+        clear_filters:
+          - Subject Area (group)
+          - Action (Grade Level,Schoolid)
+          - Action (Module Type (group),Grade Level,Module Number Raw,Module
+            Type) 1
+          - Action (Section Number,Grade Level)
+          - Action (Section Number,Grade Level,Module Number Raw)
+          - Action (Section Number,Grade Level,Module Number Raw,school)
+        add:
+          rows:
+            - Grade Level
+            - Module Type
+            - Module Number Raw
+            - Subject Area
+      missing_cuts: []
+      missing_filters:
+        - "% Completion"
+        - C 504 Status
+        - Is Foundations
+        - Is Replacement
+        - Lep Status
+        - NJ Tutoring
+        - School Level (School)
+        - Schoolid
+        - Subject Area (group)
+        - Team
+        - Territory
+        - dibels_most_recent_composite
+        - head_of_school
+        - is_low_25_fl
+        - is_sipps
+        - state_test_proficiency
+      restricting_filters:
+        - "% Completion"
+      filter_notes: {}
+      missing_columns:
+        dibels_most_recent_composite: dibels_most_recent_composite
+        is_low_25_fl: is_low_25_fl
+        head_of_school: head_of_school
+        Is Replacement: is_replacement
+        Is Foundations: is_foundations
+        is_sipps: is_sipps
+        Territory: territory
+        C 504 Status: c_504_status
+        Lep Status: lep_status
+        state_test_proficiency: state_test_proficiency
+        Team: team
+        Schoolid: schoolid
+  - id: mastery-buckets-1-2-module
+    <<: *bucket_mastery
+    sheet_field: Buckets 1&2
+    scope:
+      - { cube: is_internal_assessment, values: [true] }
+      - { cube: bucket, values: [Bucket 1, Bucket 2] }
+    probe: >-
+      avg(if(nj_student_tier in ('Bucket 1', 'Bucket 2'), is_mastery_int, null))
+    rows:
+      <<: *bucket_rows
+      dashboard_scope:
+        - { dashboard: nj_student_tier, values: [Bucket 1, Bucket 2] }
+    proof:
+      fingerprint: 34fdc3edfd57cab4a2496f461bac09732d7ed4a29aa42fb7f56b7a95c4166098
+      cells: 492
+      proven_at: "2026-11-08T21:56:47.397547+00:00"
+      workbook_updated_at: "2026-11-08T06:42:06+00:00"
+      probe_fingerprint: 6cc8aa5f3542ef89e1fec363a1aef2cdbc3fa8a25ed3444351fc60579461c81b
+      source_fingerprint: 04be9335ed594489d483384947c2521c87f3d1b070ec97d8f4ea38c63f69f74a
+      cuts:
+        - '{"Response Type": "overall"}'
+      totals_skipped: 0
+      shelves:
+        clear_filters:
+          - Subject Area (group)
+          - Action (Grade Level,Schoolid)
+          - Action (Module Type (group),Grade Level,Module Number Raw,Module
+            Type) 1
+          - Action (Section Number,Grade Level)
+          - Action (Section Number,Grade Level,Module Number Raw)
+          - Action (Section Number,Grade Level,Module Number Raw,school)
+        add:
+          rows:
+            - Grade Level
+            - Module Type
+            - Module Number Raw
+            - Subject Area
+      missing_cuts: []
+      missing_filters:
+        - "% Completion"
+        - C 504 Status
+        - Is Foundations
+        - Is Replacement
+        - Lep Status
+        - NJ Tutoring
+        - School Level (School)
+        - Schoolid
+        - Subject Area (group)
+        - Team
+        - Territory
+        - dibels_most_recent_composite
+        - head_of_school
+        - is_low_25_fl
+        - is_sipps
+        - state_test_proficiency
+      restricting_filters:
+        - "% Completion"
+      filter_notes: {}
+      missing_columns:
+        dibels_most_recent_composite: dibels_most_recent_composite
+        is_low_25_fl: is_low_25_fl
+        head_of_school: head_of_school
+        Is Replacement: is_replacement
+        Is Foundations: is_foundations
+        is_sipps: is_sipps
+        Territory: territory
+        C 504 Status: c_504_status
+        Lep Status: lep_status
+        state_test_proficiency: state_test_proficiency
+        Team: team
+        Schoolid: schoolid
+  - id: mastery-bucket-3-module
+    <<: *bucket_mastery
+    sheet_field: Bucket 3
+    scope:
+      - { cube: is_internal_assessment, values: [true] }
+      - { cube: bucket, values: [Bucket 3] }
+    probe: avg(if(nj_student_tier = 'Bucket 3', is_mastery_int, null))
+    rows:
+      <<: *bucket_rows
+      dashboard_scope: [{ dashboard: nj_student_tier, values: [Bucket 3] }]
+    proof:
+      fingerprint: 34fdc3edfd57cab4a2496f461bac09732d7ed4a29aa42fb7f56b7a95c4166098
+      cells: 492
+      proven_at: "2026-11-08T21:56:49.369632+00:00"
+      workbook_updated_at: "2026-11-08T06:42:06+00:00"
+      probe_fingerprint: 34ea416a30f79b822d4c52c6378522fcf7fa6a010290a8e031b796739404c3bd
+      source_fingerprint: 04be9335ed594489d483384947c2521c87f3d1b070ec97d8f4ea38c63f69f74a
+      cuts:
+        - '{"Response Type": "overall"}'
+      totals_skipped: 0
+      shelves:
+        clear_filters:
+          - Subject Area (group)
+          - Action (Grade Level,Schoolid)
+          - Action (Module Type (group),Grade Level,Module Number Raw,Module
+            Type) 1
+          - Action (Section Number,Grade Level)
+          - Action (Section Number,Grade Level,Module Number Raw)
+          - Action (Section Number,Grade Level,Module Number Raw,school)
+        add:
+          rows:
+            - Grade Level
+            - Module Type
+            - Module Number Raw
+            - Subject Area
+      missing_cuts: []
+      missing_filters:
+        - "% Completion"
+        - C 504 Status
+        - Is Foundations
+        - Is Replacement
+        - Lep Status
+        - NJ Tutoring
+        - School Level (School)
+        - Schoolid
+        - Subject Area (group)
+        - Team
+        - Territory
+        - dibels_most_recent_composite
+        - head_of_school
+        - is_low_25_fl
+        - is_sipps
+        - state_test_proficiency
+      restricting_filters:
+        - "% Completion"
+      filter_notes: {}
+      missing_columns:
+        dibels_most_recent_composite: dibels_most_recent_composite
+        is_low_25_fl: is_low_25_fl
+        head_of_school: head_of_school
+        Is Replacement: is_replacement
+        Is Foundations: is_foundations
+        is_sipps: is_sipps
+        Territory: territory
+        C 504 Status: c_504_status
+        Lep Status: lep_status
+        state_test_proficiency: state_test_proficiency
+        Team: team
+        Schoolid: schoolid
 decisions:
   - id: school-c6-future-filter
     comparison: mastery-dki-school
