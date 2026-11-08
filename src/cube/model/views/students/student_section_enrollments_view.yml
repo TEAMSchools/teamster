@@ -51,6 +51,8 @@ views:
           - graduation_year
           - year_in_network
           - is_retained_year
+          - ela_bucket
+          - math_bucket
 
       - join_path: student_section_enrollments.student_school_enrollments.students
         prefix: false
@@ -138,6 +140,8 @@ views:
             - graduation_year
             - year_in_network
             - is_retained_year
+            - ela_bucket
+            - math_bucket
 
     access_policy:
       # Row-level location scoping (was queryRewrite.studentRowFilters). A

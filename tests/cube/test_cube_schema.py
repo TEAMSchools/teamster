@@ -545,7 +545,12 @@ TWINS.update(
                 "module_code",
                 "academic_subject",
                 "grade_level_tested",
+                "bucket_subject",
             ]
+        },
+        **{
+            ("student_school_enrollments", c): ("dim_student_enrollments", c)
+            for c in ["ela_bucket", "math_bucket"]
         },
         ("student_assessment_administrations", "administration_period"): (
             "dim_assessment_administrations",

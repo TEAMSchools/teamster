@@ -273,6 +273,32 @@ cubes:
         type: boolean
         public: true
 
+      # Reads 2 joined cubes: the assessment's bucket_subject picks the
+      # student's ELA or math bucket for the year. Both sit on this cube's only
+      # join path to them, so referencing them adds no join and no diamond.
+      - name: bucket
+        description: >-
+          The student's bucket for the subject of this assessment — the ELA
+          bucket on reading and ELA assessments, the math bucket on math
+          assessments, and null where no bucket applies (science, social
+          studies, AP exam scores, combined and composite college scores, and
+          internal subjects with no course subject crosswalk row). Bucket 4 when
+          the student has no stored bucket for that subject; null before 2025-26
+          and on grade 99 rows.
+        sql: >-
+          CASE {student_assessments.bucket_subject}
+            WHEN 'Reading' THEN {student_school_enrollments.ela_bucket}
+            WHEN 'Math' THEN {student_school_enrollments.math_bucket}
+          END
+        type: string
+        public: true
+        meta:
+          ai_context: >-
+            Values are Bucket 1 to Bucket 4. For a bucket's mastery rate, filter
+            bucket and read pct_proficient. To leave out scores with no bucket,
+            filter bucket set. Every score before 2025-26 reads null, because
+            the bucket model starts that year.
+
     measures:
       # Three nested counts, widest first: assigned contains taken contains
       # scored. Each answers a different question and they are not

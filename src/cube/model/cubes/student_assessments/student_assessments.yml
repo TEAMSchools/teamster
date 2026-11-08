@@ -140,6 +140,25 @@ cubes:
         type: string
         public: true
 
+      # Hidden: it exists for student_assessment_scores.bucket, which reads it
+      # to pick the ELA or math bucket. The mapping lives in dbt because
+      # academic_subject is an open vocabulary, so a CASE list here would drift.
+      - name: bucket_subject
+        description: >-
+          Which of a student's buckets applies to scores on this assessment —
+          Reading pairs with `dim_student_enrollments.ela_bucket`, Math with
+          `math_bucket`, and null means no bucket applies (science, social
+          studies, AP exam scores, combined and composite college scores, and
+          internal subjects with no course subject crosswalk row). Internal
+          assessments take it from the course subject crosswalk's discipline for
+          their subject; state tests from their ELA or Math discipline; i-Ready
+          from its subject; STAR is Math or else Reading; DIBELS is Reading;
+          Official college scores from their credit category (ENG or MATH);
+          Practice college scores from their subject (EBRW, English and Reading,
+          or Math).
+        sql: bucket_subject
+        type: string
+
       - name: is_internal_assessment
         description: >-
           TRUE for the KIPP-authored interims, Illuminate and Focus Assessments;

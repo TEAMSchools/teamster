@@ -139,6 +139,8 @@ views:
           - entry_date
           - exit_date
           - is_retained_year
+          - ela_bucket
+          - math_bucket
 
       - join_path: student_attendance_enrollment_daily.student_school_enrollments.student_homeroom_section.staff_homeroom_teacher
         prefix: true
@@ -265,6 +267,8 @@ views:
             - entry_date
             - exit_date
             - is_retained_year
+            - ela_bucket
+            - math_bucket
         - name: Teacher
           members:
             - staff_homeroom_teacher_full_name
