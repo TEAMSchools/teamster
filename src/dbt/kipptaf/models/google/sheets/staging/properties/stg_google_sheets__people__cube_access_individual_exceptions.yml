@@ -68,6 +68,9 @@ models:
               additional_staff_location_scope
           config:
             severity: error
+      # Fix in the sheet: the row's expiry_date falls before its grant_date. An
+      # inverted window is never live, so dim_staff_cube_access grants nothing.
+      # TODO(#5558): runbook
       - dbt_utils.expression_is_true:
           arguments:
             expression: >-

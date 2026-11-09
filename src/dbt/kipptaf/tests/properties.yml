@@ -584,6 +584,7 @@ data_tests:
           ref:
             name: int_students__course_sections
 
+  # TODO(#5558): runbook
   - name: test_cube_access_individual_exceptions_grant_reaches_a_viewer
     description: >-
       Every live grant row should resolve to a row in dim_staff_cube_access, and
