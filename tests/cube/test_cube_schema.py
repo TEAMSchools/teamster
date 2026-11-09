@@ -613,6 +613,7 @@ PHRASES.update(
         "student_assessment_scores.pct_students_at_level": [
             "Group by mastery_level",
             "add to 100% only when each student has 1 score",
+            "rather than filtering on it",
         ],
         "student_assessment_scores.count_students_banded": [
             "Group by mastery_level",

@@ -150,7 +150,9 @@ cubes:
           The band's level relative to its set's mastery band, the same on every
           set. At/Above is the mastery band and every band above it; Approaching
           is the band directly below the mastery band; Below is every band under
-          that. Null when the band set's setup breaks the rule's assumptions.
+          that. Illuminate and Focus Assessments only; null for every other
+          source, for not-taken rows, and when the band set's setup breaks the
+          rule's assumptions.
         sql: "{CUBE}.mastery_level"
         type: string
         public: true
@@ -162,8 +164,10 @@ cubes:
 
       - name: is_far_below
         description: >-
-          True for the lowest band of a set when it is not a mastery band. Null
-          when the band set's setup breaks the level rule's assumptions.
+          True for the lowest band of a set when it is not a mastery band.
+          Illuminate and Focus Assessments only; null for every other source,
+          for not-taken rows, and when the band set's setup breaks the level
+          rule's assumptions.
         sql: "{CUBE}.is_far_below"
         type: boolean
         public: true
@@ -462,15 +466,15 @@ cubes:
             get a proficient count.
 
       # Below and Far Below shares are percents of students, counted on the
-      # same key as count_students. Numerators and denominator all filter on
-      # the fact's mastery_level, so a band set that fails the level rule (null
-      # level) drops out of both sides.
+      # same key as count_students. The denominator filters on mastery_level and
+      # the numerators on mastery_level or is_far_below, both null for a band
+      # set that fails the level rule, so such a set drops out of both sides.
       - name: count_students_banded
         description: >-
           Distinct students (per student-year) with a score that fell in a
           performance band with a mastery level. Illuminate and Focus
           Assessments only. Denominator of pct_students_below and
-          pct_students_far_below.
+          pct_students_far_below, and numerator of pct_students_at_level.
         sql: "{student_section_enrollments.student_enrollment_key}"
         type: count_distinct
         public: true
@@ -514,7 +518,10 @@ cubes:
             levels of a slice add to 100% only when each student has 1 score in
             it, so also group by assessment (title, or grade_level,
             academic_subject and module_code); a slice spanning several
-            assessments counts a student at every level they reached.
+            assessments counts a student at every level they reached. Group by
+            mastery_level rather than filtering on it: a filter can reach the
+            denominator and read 100%. For the Below share alone, use
+            pct_students_below.
 
       - name: _count_students_below
         description: >-

@@ -274,9 +274,9 @@ erDiagram
 erDiagram
   fct_staff_observation_scores }o--|| fct_staff_observations : "staff_observation_key"
   fct_staff_observation_scores }o--|| dim_staff_observation_rubric_measurements : "staff_observation_rubric_measurement_key"
-  fct_staff_observations }o--|| dim_staff_observation_rubrics : "staff_observation_rubric_key"
   fct_staff_observations }o--|| dim_staff : "teacher_staff_key"
   fct_staff_observations }o--|| dim_staff_observation_types : "staff_observation_type_key"
+  fct_staff_observations }o--|| dim_staff_observation_rubrics : "staff_observation_rubric_key"
   fct_staff_observations }o--|| dim_staff : "observer_staff_key"
   dim_staff_observation_rubric_measurements }o--|| dim_staff_observation_rubrics : "staff_observation_rubric_key"
 ```
@@ -292,9 +292,9 @@ erDiagram
 
 ```mermaid
 erDiagram
-  fct_staff_observations }o--|| dim_staff_observation_rubrics : "staff_observation_rubric_key"
   fct_staff_observations }o--|| dim_staff : "teacher_staff_key"
   fct_staff_observations }o--|| dim_staff_observation_types : "staff_observation_type_key"
+  fct_staff_observations }o--|| dim_staff_observation_rubrics : "staff_observation_rubric_key"
   fct_staff_observations }o--|| dim_staff : "observer_staff_key"
 ```
 
@@ -309,40 +309,6 @@ erDiagram
 | `staff_observation_type_key`   | `dim_staff_observation_types`   |
 | `teacher_staff_key`            | `dim_staff`                     |
 | `term_key`                     | `dim_terms`                     |
-
-## fct_student_attendance_enrollment_daily
-
-```mermaid
-erDiagram
-  fct_student_attendance_enrollment_daily }o--|| dim_student_enrollments : "student_enrollment_key"
-  dim_student_enrollments }o--|| dim_students : "student_key"
-```
-
-### Foreign keys
-
-| FK column                | References                |
-| ------------------------ | ------------------------- |
-| `date_key`               | `dim_dates`               |
-| `student_enrollment_key` | `dim_student_enrollments` |
-| `term_key`               | `dim_terms`               |
-
-## fct_student_attendance_enrollment_periods
-
-```mermaid
-erDiagram
-  fct_student_attendance_enrollment_periods }o--|| dim_student_enrollments : "student_enrollment_key"
-  dim_student_enrollments }o--|| dim_students : "student_key"
-```
-
-### Foreign keys
-
-| FK column                          | References                |
-| ---------------------------------- | ------------------------- |
-| `period_end_date_key`              | `dim_dates`               |
-| `period_start_date_key`            | `dim_dates`               |
-| `period_start_membership_date_key` | `dim_dates`               |
-| `student_enrollment_key`           | `dim_student_enrollments` |
-| `term_key`                         | `dim_terms`               |
 
 ## fct_student_attendance_interventions
 
@@ -380,6 +346,39 @@ erDiagram
 | `streak_end_date_key`    | `dim_dates`               |
 | `streak_start_date_key`  | `dim_dates`               |
 | `student_enrollment_key` | `dim_student_enrollments` |
+
+## fct_student_attendance_enrollment_daily
+
+```mermaid
+erDiagram
+  fct_student_attendance_enrollment_daily }o--|| dim_student_enrollments : "student_enrollment_key"
+  dim_student_enrollments }o--|| dim_students : "student_key"
+```
+
+### Foreign keys
+
+| FK column                | References                |
+| ------------------------ | ------------------------- |
+| `date_key`               | `dim_dates`               |
+| `student_enrollment_key` | `dim_student_enrollments` |
+| `term_key`               | `dim_terms`               |
+
+## fct_student_attendance_enrollment_periods
+
+```mermaid
+erDiagram
+  fct_student_attendance_enrollment_periods }o--|| dim_student_enrollments : "student_enrollment_key"
+  dim_student_enrollments }o--|| dim_students : "student_key"
+```
+
+### Foreign keys
+
+| FK column                | References                |
+| ------------------------ | ------------------------- |
+| `period_end_date_key`    | `dim_dates`               |
+| `period_start_date_key`  | `dim_dates`               |
+| `student_enrollment_key` | `dim_student_enrollments` |
+| `term_key`               | `dim_terms`               |
 
 ## fct_support_tickets
 

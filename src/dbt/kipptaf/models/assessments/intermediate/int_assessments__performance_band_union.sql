@@ -38,10 +38,8 @@ with
             b.band_number,
             b.is_mastery,
 
-            count(*) over w_set as band_count,
             min(if(b.is_mastery, b.band_number, null)) over w_set
             as mastery_band_number,
-            lead(b.minimum_score) over (w_set order by b.band_number) as maximum_score,
             row_number() over (w_set order by b.minimum_score) as cut_rank,
         from bands as b
         inner join
@@ -59,6 +57,7 @@ with
             coalesce(
                 is_mastery = (band_number >= mastery_band_number)
                 and band_number = cut_rank
+                -- 3+ so Approaching and Far Below never share a band
                 and mastery_band_number >= 3,
                 false
             ) as is_band_valid,
@@ -79,8 +78,6 @@ select
     source,
     performance_band_set_id,
     band_number,
-    band_count,
-    maximum_score,
     is_mastery,
     mastery_band_number,
     is_level_rule_valid,

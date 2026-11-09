@@ -9,6 +9,7 @@ select
 
     coalesce(
         lead(bl.min_score) over (partition by bl.band_set_id order by bl.min_score),
+        -- open top: above any score, so the top band has no upper limit
         1000000
     ) as upper_bound,
 
