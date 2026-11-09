@@ -82,3 +82,14 @@ fan-out if ADP ever sends 2 active NJ pensions for one position.
 then compare the dev build to prod: staff with a pension plan on the current
 record rises from 114 to 1,244, non-current rows carry no plan, and row counts
 and existing current-row values hold.
+
+## Revision 2026-11-09: review on #6328
+
+- The roster history uniqueness test resolves to the project default `warn`, so
+  it does not stop a fan-out. A `unique` test on `position_id` in
+  `stg_adp_workforce_now__pension_and_benefits_enrollments`, scoped to active
+  rows for the 3 NJ pension plans and set to `error`, now fails the build if ADP
+  sends 2 active pensions for one position.
+- `rn_enrollment_recent` is removed from the staging model, reversing the
+  non-goal above. It had no readers, and its person-wide ranking caused this
+  bug.
