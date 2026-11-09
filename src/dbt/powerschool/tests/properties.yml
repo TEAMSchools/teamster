@@ -101,15 +101,12 @@ data_tests:
 
   - name: int_powerschool__student_enrollment_union_no_shared_stint_boundary
     description: >-
-      A PowerSchool student's enrollment stint exits on the same date the next
-      stint enters. The normal pattern is an exit on one day and re-entry the
-      next, so a shared boundary date puts the student in both stints that day
-      and fans out date-range joins on it (for example survey attribution and
-      attendance windows). Fix it in PowerSchool by moving the earlier stint's
-      exit date back one day, or the later stint's entry date forward one day.
+      Retired. Flags a stint that exits on the date the next stint enters.
+      PowerSchool's exitdate is the first day the student is no longer enrolled,
+      so a shared boundary is a clean transfer and needs no fix. Real overlaps
+      are covered by
+      test_int_powerschool__ps_enrollment_all__no_overlapping_stints.
     config:
-      # PowerSchool exitdate is exclusive, so a shared boundary is a clean
-      # transfer, not an overlap; no_overlapping_stints covers real overlaps.
       enabled: false
       severity: warn
       meta:

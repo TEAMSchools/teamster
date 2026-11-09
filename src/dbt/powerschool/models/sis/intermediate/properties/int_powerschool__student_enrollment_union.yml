@@ -43,11 +43,16 @@ models:
         description: >-
           `exitdate`, cut back to the next stint's `entrydate` when a later
           stint at any school starts before this one ends, so the later stint
-          owns the overlapping days. Exclusive, like `exitdate`. Date-range
-          joins that must stay one row per student-day use this instead of
-          `exitdate`. Overlapping stints are a PowerSchool data-entry defect
-          that test_int_powerschool__ps_enrollment_all__no_overlapping_stints
-          warns on. Null on graduate placeholder rows.
+          owns the overlapping days. A stint nested inside a longer one also
+          ends the longer one at the nested stint's start. Only stints this
+          model keeps can clip, so summer-school and zero-length stints do not;
+          int_powerschool__ps_enrollment_all counts them, and its
+          `exitdate_clipped` can end earlier. Exclusive, like `exitdate`.
+          Date-range joins that must stay one row per student-day use this
+          instead of `exitdate`. Overlapping stints are a PowerSchool data-entry
+          defect that
+          test_int_powerschool__ps_enrollment_all__no_overlapping_stints warns
+          on. Null on graduate placeholder rows.
         data_type: date
       - name: entrycode
         data_type: string
