@@ -14,9 +14,11 @@ unit_tests:
   - name: unit_ap_unpivot_drops_ids_missing_from_crosswalk
     description: >-
       Proves the defense behind the relationships warn test on
-      stg_collegeboard__ap.ap_number_ap_id. CB1 is in the crosswalk and its
-      score comes through. CB2 and CB3 are missing from it, so their scores are
-      dropped on purpose rather than collapsing into one row with no student.
+      stg_collegeboard__ap.ap_number_ap_id and the not_null warn test on the
+      crosswalk's student number. CB1 is in the crosswalk and its score comes
+      through. CB2 is in it with no student number and CB3 is missing from it,
+      so their scores are dropped on purpose rather than collapsing into one row
+      with no student.
     model: int_collegeboard__ap_unpivot
     given:
       - input: ref('stg_collegeboard__ap')
@@ -46,6 +48,8 @@ unit_tests:
         format: sql
         rows: |
           select 'CB1' as college_board_id, 101 as powerschool_student_number
+          union all
+          select 'CB2', cast(null as int64)
       - input: ref('stg_google_sheets__collegeboard__ap_codes')
         format: sql
         rows: |

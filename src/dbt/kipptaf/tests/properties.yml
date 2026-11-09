@@ -1200,10 +1200,10 @@ data_tests:
       dropping out of the newest two means ADP hard-deleted or merged the
       record. One day of slack absorbs a single missed or partial nightly pull.
       stg_adp_workforce_now__workers drops these associates, so the test reads
-      the source. A burst of hits points to two bad pulls in a row, not ghosts;
-      re-pull the newest partitions first, since the staging model drops every
-      listed associate until then. The nightly schedule re-pulls only a rolling
-      window, so a deletion never reaches older partitions on its own. On a hit,
+      the source. More than 25 hits at once points to a short pull, not ghosts;
+      staging then drops no one, so re-pull the newest partitions before acting
+      on each associate. The nightly schedule re-pulls only a rolling window, so
+      a deletion never reaches older partitions on its own. On a hit,
       rematerialize the ADP workers partitions spanning the associate's active
       dates (through last_seen_partition_date); the re-pull removes the record
       from the source and clears the test.

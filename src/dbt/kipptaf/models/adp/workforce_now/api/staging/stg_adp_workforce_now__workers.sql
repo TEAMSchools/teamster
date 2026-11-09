@@ -54,17 +54,36 @@ with
         cross join partition_window as pw
     ),
 
+    ghost_count as (
+        select count(distinct associate_oid) as n_ghosts,
+        from last_seen
+        where last_seen_partition_date < min_expected_last_seen_date
+    ),
+
+    flagged as (
+        select
+            ls.*,
+
+            /* ghosts: associates ADP hard-deleted or merged, which fall out of
+               the newest partitions. More than 25 at once means a short pull
+               (the nightly re-pull rewrites the whole window), not real
+               deletions, so keep everyone; the source-reading warn test lists
+               them either way. */
+            ls.last_seen_partition_date < ls.min_expected_last_seen_date
+            and gc.n_ghosts <= 25 as is_dropped_ghost,
+        from last_seen as ls
+        cross join ghost_count as gc
+    ),
+
     deduplicate as (
         select
-            * except (min_expected_last_seen_date),
+            * except (min_expected_last_seen_date, is_dropped_ghost),
 
             lag(surrogate_key, 1, '') over (
                 partition by associate_oid order by effective_date_start asc
             ) as surrogate_key_lag,
-        from last_seen
-        -- drops ghosts: associates ADP hard-deleted or merged, which fall out of
-        -- the newest partitions; the source-reading warn test lists them
-        where last_seen_partition_date >= min_expected_last_seen_date
+        from flagged
+        where not is_dropped_ghost
     ),
 
     flattened as (
