@@ -545,16 +545,19 @@ comparisons:
   # Level, a workbook calc that bins performance_band_label_number by school
   # level instead of reading the band set's mastery band. dashboard_columns
   # rebuilds that calc under its own name, so its export header maps to it.
-  # Cells differ where the school-level guess and the band set disagree. The
-  # sheet shows each level's share of Student Count (COUNTD of students)
-  # across the levels of its row; the probe rebuilds that percent of total.
+  # A band outside both bins (6 and up) shows as its own number, as the
+  # workbook's bins leave it. Cells differ where the school-level guess and the
+  # band set disagree. The sheet shows each level's share of Student Count
+  # (COUNTD of students) across the levels of its row; the probe rebuilds that
+  # percent of total. Overall rows only: on standard rows a student counts at
+  # every level a standard reached, as pct_students_at_level's ai_context says.
   - id: levels-dki-mastery-bars
     <<: *dki
-    # Unconfirmed until prove can read this sheet's percent-of-total export,
-    # which still carries a percent format; set it back to true once proven.
+    # Unconfirmed until it proves: a few cells still differ from the sheet.
     confirmed: false
     sheet: DKI - Assessment Mastery Bars
     measure: pct_students_at_level
+    cuts: [{ Response Type: overall }]
     probe_sql: |
       select {dims},
         n / sum(n) over (partition by school, grade_level, subject_area, module_code) as value
@@ -571,10 +574,12 @@ comparisons:
           when school_level = 'HS' then case cast(performance_band_label_number as int64)
             when 1 then 'Below' when 2 then 'Approaching'
             when 3 then 'At/Above' when 4 then 'At/Above' when 5 then 'At/Above'
+            else format('%.1f', cast(performance_band_label_number as float64))
           end
           else case cast(performance_band_label_number as int64)
             when 1 then 'Below' when 2 then 'Below' when 3 then 'Approaching'
             when 4 then 'At/Above' when 5 then 'At/Above'
+            else format('%.1f', cast(performance_band_label_number as float64))
           end
         end
     dims:
