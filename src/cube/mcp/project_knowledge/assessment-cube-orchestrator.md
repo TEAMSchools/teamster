@@ -10,17 +10,16 @@ description and `ai_context` as the `meta` tool returns them.
 ## How to use this file
 
 This file and `assessment-cube-reference.md` are both loaded as project
-knowledge in the shared Project; the reference file now holds only the interim
-band-set tables for the 2 internal sources, Illuminate and Focus Assessments.
-Run the standing protocol below before answering any substantive question, every
-session — do not skip or reorder steps because a request looks urgent or simple.
-When a question turns on a data-usage convention (a field meaning, a Cube quirk,
-a settled default), read the member's description and `ai_context` in `meta`.
-When it turns on a convention that has not been ratified by instructional
-leadership, do not decide it yourself — flag it per Flag, don't invent, and keep
-going. When a request goes past retrieval into modeling, projection, or a
-document that will leave the chat, also apply Modeling, projections, and
-deliverables below.
+knowledge in the shared Project; the reference file now holds only the band-set
+tables for the 2 internal sources, Illuminate and Focus Assessments. Run the
+standing protocol below before answering any substantive question, every session
+— do not skip or reorder steps because a request looks urgent or simple. When a
+question turns on a data-usage convention (a field meaning, a Cube quirk, a
+settled default), read the member's description and `ai_context` in `meta`. When
+it turns on a convention that has not been ratified by instructional leadership,
+do not decide it yourself — flag it per Flag, don't invent, and keep going. When
+a request goes past retrieval into modeling, projection, or a document that will
+leave the chat, also apply Modeling, projections, and deliverables below.
 
 ## The standing protocol
 

@@ -139,6 +139,7 @@ class FieldUse:
     presentation: bool
 
 
+_BARE_REF = re.compile(r"\[[^\]]+\]\.\[(?P<name>[^\]:]+)\]")
 _ROLE_ORDER = ("parameter", "measure", "cut", "filter")
 
 
@@ -146,7 +147,8 @@ def _sheet_uses(ws: ET.Element, groups: set[str]) -> dict[tuple[str, str], str]:
     """A worksheet's fields as `(aggregation, bare name)`, each with the role the
     sheet gives it. The aggregation is `""` unless a raw field is aggregated.
     `groups` names the workbook's group and bin fields, which a filter names
-    with no derivation prefix.
+    with no derivation prefix. A shelf names one the same way, and a Measure
+    Names filter names its Measure Values measures as members.
 
     A cut wins over a filter on the same field, and a measure over both.
     """
@@ -187,10 +189,26 @@ def _sheet_uses(ws: ET.Element, groups: set[str]) -> dict[tuple[str, str], str]:
     for ref in finder.FIELD_REF.finditer(shelves):
         if found := field_of(ref[0]):
             add(*found)
+    # A group or bin on a shelf is a bare ref, which FIELD_REF never yields.
+    for ref in _BARE_REF.finditer(shelves):
+        if ref["name"] in groups:
+            add(("", ref["name"]), "cut")
 
     shelf_fields = set(uses)
     for filter_el in ws.iter("filter"):
-        found = field_of(filter_el.get("column") or "")
+        column = filter_el.get("column") or ""
+        if column.endswith("].[:Measure Names]"):
+            # A measure shown only through Measure Values is named only as a
+            # member of this filter, quoted like a ref. An `except` filter
+            # names the measures it hides instead.
+            top = filter_el.find("groupfilter")
+            if top is not None and top.get("function") == "except":
+                continue
+            for member in filter_el.iter("groupfilter"):
+                if found := field_of(finder._unquote(member.get("member"))):
+                    add(found[0], "measure")
+            continue
+        found = field_of(column)
         if found and found[0] not in shelf_fields:
             add(found[0], "filter")
 

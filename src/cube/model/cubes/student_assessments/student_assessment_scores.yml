@@ -142,7 +142,35 @@ cubes:
             Compare band numbers within one assessment and one response_type.
             There, prefer this number to proficiency_level text for grouping and
             ordering; on standard and group rows a few bands carry more than one
-            label spelling.
+            label spelling. To compare bands across assessments, compare
+            mastery_level instead.
+
+      - name: mastery_level
+        description: >-
+          The band's level relative to its set's mastery band, the same on every
+          set. At/Above is the mastery band and every band above it; Approaching
+          is the band directly below the mastery band; Below is every band under
+          that. Illuminate and Focus Assessments only; null for every other
+          source, for not-taken rows, and when the band set's setup breaks the
+          rule's assumptions.
+        sql: "{CUBE}.mastery_level"
+        type: string
+        public: true
+        meta:
+          ai_context: >-
+            Compares across assessments, where band numbers do not. To see
+            whether a student moved between bands on 2 assessments, compare
+            mastery_level on each, and name both assessments.
+
+      - name: is_far_below
+        description: >-
+          True for the lowest band of a set when it is not a mastery band.
+          Illuminate and Focus Assessments only; null for every other source,
+          for not-taken rows, and when the band set's setup breaks the level
+          rule's assumptions.
+        sql: "{CUBE}.is_far_below"
+        type: boolean
+        public: true
 
       - name: is_mastery
         description: >-
@@ -436,6 +464,119 @@ cubes:
           ai_context: >-
             Pair it with count_scored; never multiply it by count_assigned to
             get a proficient count.
+
+      # Below and Far Below shares are percents of students, counted on the
+      # same key as count_students. The denominator filters on mastery_level and
+      # the numerators on mastery_level or is_far_below, both null for a band
+      # set that fails the level rule, so such a set drops out of both sides.
+      - name: count_students_banded
+        description: >-
+          Distinct students (per student-year) with a score that fell in a
+          performance band with a mastery level. Illuminate and Focus
+          Assessments only. Denominator of pct_students_below and
+          pct_students_far_below, and numerator of pct_students_at_level.
+        sql: "{student_section_enrollments.student_enrollment_key}"
+        type: count_distinct
+        public: true
+        filters:
+          - sql: "{CUBE}.mastery_level IS NOT NULL"
+        meta:
+          ai_context: >-
+            Group by mastery_level for the number of students at each level. A
+            student with scores at 2 levels in the slice counts at both, so the
+            level rows can add up to more than the ungrouped total; filter to 1
+            assessment and response_type overall for 1 level per student.
+
+      # Denominator of pct_students_at_level: count_students_banded with
+      # mastery_level dropped from the query's grain.
+      - name: _count_students_banded_all_levels
+        description: >-
+          count_students_banded over every mastery level of the query's other
+          dimensions. Denominator of pct_students_at_level.
+        multi_stage: true
+        sql: "{count_students_banded}"
+        type: sum
+        reduce_by:
+          - mastery_level
+        public: false
+
+      - name: pct_students_at_level
+        description: >-
+          Of the students with a banded score in a slice, the percent at each
+          mastery_level. Illuminate and Focus Assessments only. Read it grouped
+          by mastery_level.
+        multi_stage: true
+        sql:
+          "1.0 * {count_students_banded} /
+          NULLIF({_count_students_banded_all_levels}, 0)"
+        type: number
+        format: percent
+        public: true
+        meta:
+          ai_context: >-
+            Group by mastery_level and filter response_type to overall. The
+            levels of a slice add to 100% only when each student has 1 score in
+            it, so also group by assessment (title, or grade_level,
+            academic_subject and module_code); a slice spanning several
+            assessments counts a student at every level they reached. Group by
+            mastery_level rather than filtering on it: a filter can reach the
+            denominator and read 100%. For the Below share alone, use
+            pct_students_below.
+
+      - name: _count_students_below
+        description: >-
+          Distinct students (per student-year) with a score at the Below level.
+          Numerator of pct_students_below.
+        sql: "{student_section_enrollments.student_enrollment_key}"
+        type: count_distinct
+        public: false
+        filters:
+          - sql: "{CUBE}.mastery_level = 'Below'"
+
+      - name: _count_students_far_below
+        description: >-
+          Distinct students (per student-year) with a score in the lowest band
+          of its set. Numerator of pct_students_far_below.
+        sql: "{student_section_enrollments.student_enrollment_key}"
+        type: count_distinct
+        public: false
+        filters:
+          - sql: "{CUBE}.is_far_below"
+
+      - name: pct_students_below
+        description: >-
+          The percent of students with a score at the Below level (Far Below
+          included), out of students with a banded score in the slice.
+          Illuminate and Focus Assessments only. A level is relative to the
+          mastery band of the band set that scored the row, so it means the same
+          on every set. A student counts once if any of their scores in the
+          slice is Below.
+        sql:
+          "1.0 * {_count_students_below} / NULLIF({count_students_banded}, 0)"
+        type: number
+        format: percent
+        public: true
+        meta:
+          ai_context: &band_share_context >-
+            Filter response_type to overall for a share of students by their
+            overall score. With response_type open, a student counts as Below
+            when any standard or group score is Below; for standards, filter
+            response_type to standard and group by response_type_description.
+
+      - name: pct_students_far_below
+        description: >-
+          The percent of students with a score in the lowest band of its set,
+          when that band is not a mastery band, out of students with a banded
+          score in the slice. Illuminate and Focus Assessments only. A student
+          counts once if any of their scores in the slice is Far Below.
+        sql:
+          "1.0 * {_count_students_far_below} / NULLIF({count_students_banded},
+          0)"
+        type: number
+        format: percent
+        public: true
+        meta:
+          ai_context: *band_share_context
 
       - name: _sum_percent_correct
         description: >-

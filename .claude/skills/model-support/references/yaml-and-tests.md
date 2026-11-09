@@ -115,7 +115,7 @@ severity_ in `.claude/rules/dbt-yaml.md`.
 ## A test that fails today
 
 Add it anyway at `warn`, with a `TODO(#N)` to flip it once it passes, unless it
-is a ticketed source-data test (_Warn, defend, error_ in
+is a defended source-data test (_Warn, defend, error_ in
 `.claude/rules/dbt-yaml.md`), which stays `warn`. Put the cause in the reference
 doc under "Known issues, need to fix" with the query that shows it, in
 aggregates only.
