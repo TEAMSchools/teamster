@@ -1289,6 +1289,64 @@ unit_tests:
         - { assessment_id: 3, academic_year: 2025 }
         - { assessment_id: 4, academic_year: null }
 
+  - name: test_int_focus__apex_band_levels_numbering
+    model: int_focus__apex_band_levels
+    given:
+      - input: ref('stg_focus__apex_band_levels')
+        rows:
+          - { band_set_id: 9, label: Level 3, min_score: 45 }
+          - { band_set_id: 9, label: Low Level 1, min_score: 0 }
+          - { band_set_id: 9, label: Level 4, min_score: 55 }
+          - { band_set_id: 9, label: Level 2, min_score: 40 }
+          - { band_set_id: 8, label: Advanced, min_score: 0 }
+          - { band_set_id: 7, label: Level 3, min_score: 0 }
+      - input: ref('stg_focus__apex_band_sets')
+        rows:
+          - { id: 9, name: Set Nine }
+          - { id: 8, name: Set Eight }
+    expect:
+      rows:
+        - {
+            band_set_id: 9,
+            band_set_name: Set Nine,
+            label: Low Level 1,
+            label_number: 1,
+            upper_bound: 40,
+            is_mastery: false,
+          }
+        - {
+            band_set_id: 9,
+            band_set_name: Set Nine,
+            label: Level 2,
+            label_number: 2,
+            upper_bound: 45,
+            is_mastery: false,
+          }
+        - {
+            band_set_id: 9,
+            band_set_name: Set Nine,
+            label: Level 3,
+            label_number: 3,
+            upper_bound: 55,
+            is_mastery: true,
+          }
+        - {
+            band_set_id: 9,
+            band_set_name: Set Nine,
+            label: Level 4,
+            label_number: 4,
+            upper_bound: 1000000,
+            is_mastery: true,
+          }
+        - {
+            band_set_id: 8,
+            band_set_name: Set Eight,
+            label: Advanced,
+            label_number: 1,
+            upper_bound: 1000000,
+            is_mastery: null,
+          }
+
   - name: test_int_focus__apex_results_session_pick
     model: int_focus__apex_results
     given:
@@ -1386,7 +1444,7 @@ unit_tests:
         rows: []
       - input: ref('stg_focus__standard_categories_1')
         rows: []
-      - input: ref('stg_focus__apex_band_levels')
+      - input: ref('int_focus__apex_band_levels')
         rows: []
     expect:
       rows:
@@ -1436,7 +1494,7 @@ unit_tests:
       - input: ref('stg_focus__standard_categories_1')
         rows:
           - { id: 1, title: Mathematics (B.E.S.T.)(Focus) }
-      - input: ref('stg_focus__apex_band_levels')
+      - input: ref('int_focus__apex_band_levels')
         rows: []
     expect:
       rows:
@@ -1497,7 +1555,7 @@ unit_tests:
       - input: ref('stg_focus__standard_categories_1')
         rows:
           - { id: 1, title: Mathematics (B.E.S.T.)(Focus) }
-      - input: ref('stg_focus__apex_band_levels')
+      - input: ref('int_focus__apex_band_levels')
         rows: []
     expect:
       rows:
@@ -1592,13 +1650,48 @@ unit_tests:
       - input: ref('stg_focus__standard_categories_1')
         rows:
           - { id: 1, title: Mathematics (B.E.S.T.)(Focus) }
-      - input: ref('stg_focus__apex_band_levels')
+      - input: ref('int_focus__apex_band_levels')
         rows:
-          - { band_set_id: 9, label: Low Level 1, min_score: 0, max_score: 39 }
-          - { band_set_id: 9, label: Level 2, min_score: 40, max_score: 44 }
-          - { band_set_id: 9, label: Level 3, min_score: 45, max_score: 54 }
-          - { band_set_id: 9, label: Level 4, min_score: 55, max_score: 100 }
-          - { band_set_id: 8, label: Advanced, min_score: 0, max_score: 100 }
+          - {
+              band_set_id: 9,
+              label: Low Level 1,
+              min_score: 0,
+              upper_bound: 40,
+              label_number: 1,
+              is_mastery: false,
+            }
+          - {
+              band_set_id: 9,
+              label: Level 2,
+              min_score: 40,
+              upper_bound: 45,
+              label_number: 2,
+              is_mastery: false,
+            }
+          - {
+              band_set_id: 9,
+              label: Level 3,
+              min_score: 45,
+              upper_bound: 55,
+              label_number: 3,
+              is_mastery: true,
+            }
+          - {
+              band_set_id: 9,
+              label: Level 4,
+              min_score: 55,
+              upper_bound: 1000000,
+              label_number: 4,
+              is_mastery: true,
+            }
+          - {
+              band_set_id: 8,
+              label: Advanced,
+              min_score: 0,
+              upper_bound: 1000000,
+              label_number: 1,
+              is_mastery: null,
+            }
     expect:
       rows:
         - {
