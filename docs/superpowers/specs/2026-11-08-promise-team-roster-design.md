@@ -360,15 +360,20 @@ Commands, in the order a demo would show them (the mockup at
 https://claude.ai/artifact/M7BCEbYf7kehbXdZgSHS4h shows each one):
 
 1. **Score the week.** Per school and grade: who crossed a flag this week, who
-   moved tier or flag since last week, who on a Promise Team roster has no
-   contact in 10 days (with the DeansList link per row), and which active plans
-   have no form entry since the last meeting. A behavior block: new suspensions
-   with infraction, referring staff, days and return date; students returning
-   from OSS this week, with the re-entry meeting due; anyone with 2 or more
-   referrals in the week, listing who referred them. A six-week trend row for
-   the school: flagged students, contact fidelity against the 100% goal, chronic
-   absence rate, Tier 2+ referrals per week, OSS days per week. Reads the
-   changes tab and Cube for attendance as of today.
+   moved since last week, who on a Promise Team roster has no contact in 10 days
+   (with the DeansList link per row), and which active plans have no form entry
+   since the last meeting. "Moved" is a state change between the two latest
+   weekly snapshots, one of a fixed set: new to roster, exited, tier up, tier
+   down, new flag, flag cleared, promotion status changed. Each row shows last
+   week's state, this week's state, and what the extract saw that week
+   (absences, suspension days, referrals, who changed the roster and when),
+   never an inferred cause. A behavior block: new suspensions with infraction,
+   referring staff, days and return date; students returning from OSS this week,
+   with the re-entry meeting due; anyone with 2 or more referrals in the week,
+   listing who referred them. A six-week trend row for the school: flagged
+   students, contact fidelity against the 100% goal, chronic absence rate, Tier
+   2+ referrals per week, OSS days per week. Reads the changes tab and Cube for
+   attendance as of today.
 2. **Meeting agenda.** The flag list ordered for the 60-minute meeting: new
    flags, then no-contact students, then students at 6 or more weeks on a Tier 2
    or 3 roster. Each line carries last contact date, staff and outcome, and this
