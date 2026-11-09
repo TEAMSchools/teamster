@@ -167,3 +167,109 @@ models:
       - name: penalties
         data_type: |
           ARRAY<STRUCT<IncidentID STRING, IncidentPenaltyID STRING, SchoolID STRING, PenaltyID STRING, PenaltyName STRING, StartDate STRING, EndDate STRING, NumPeriods STRING, IsSuspension BOOL, IsReportable BOOL, SAID STRING, Print BOOL, StudentID STRING, NumDays STRUCT<long_value INT64, double_value FLOAT64>>>
+
+unit_tests:
+  - name: test_stg_deanslist__incidents__close_ts_date_min_valid
+    description: >-
+      Proves the defense behind the deanslist_dates_before_min_valid warn test.
+      A close date before deanslist_min_valid_date becomes null, and a close
+      date on that date passes through.
+    model: stg_deanslist__incidents
+    given:
+      - input: source('deanslist', 'src_deanslist__incidents')
+        format: sql
+        rows: |
+          select
+              r.incidentid,
+              r.closets,
+
+              true as isactive,
+              'f' as _file_name,
+
+              cast(null as bool) as hearingflag,
+              cast(null as bool) as isreferral,
+              cast(null as bool) as nondisciplinary,
+              cast(null as bool) as sendalert,
+              cast(null as array<string>) as actions,
+              cast(null as array<string>) as attachments,
+              cast(null as array<string>) as custom_fields,
+              cast(null as array<string>) as penalties,
+              cast(null as string) as addlreqs,
+              cast(null as string) as adminsummary,
+              cast(null as string) as category,
+              cast(null as string) as context,
+              cast(null as string) as createby,
+              cast(null as string) as createfirst,
+              cast(null as string) as createlast,
+              cast(null as string) as createmiddle,
+              cast(null as string) as createtitle,
+              cast(null as string) as familymeetingnotes,
+              cast(null as string) as followupnotes,
+              cast(null as string) as gender,
+              cast(null as string) as gradelevelshort,
+              cast(null as string) as hearinglocation,
+              cast(null as string) as hearingnotes,
+              cast(null as string) as hearingtime,
+              cast(null as string) as homeroomname,
+              cast(null as string) as infraction,
+              cast(null as string) as `location`,
+              cast(null as string) as reporteddetails,
+              cast(null as string) as returnperiod,
+              cast(null as string) as `status`,
+              cast(null as string) as studentfirst,
+              cast(null as string) as studentlast,
+              cast(null as string) as studentmiddle,
+              cast(null as string) as updateby,
+              cast(null as string) as updatefirst,
+              cast(null as string) as updatelast,
+              cast(null as string) as updatemiddle,
+              cast(null as string) as updatetitle,
+              cast(null as string) as categoryid,
+              cast(null as string) as createstaffschoolid,
+              cast(null as string) as infractiontypeid,
+              cast(null as string) as locationid,
+              cast(null as string) as reportingincidentid,
+              cast(null as string) as schoolid,
+              cast(null as string) as statusid,
+              cast(null as string) as studentid,
+              cast(null as string) as studentschoolid,
+              cast(null as string) as updatestaffschoolid,
+              cast(
+                  null as struct<date string, timezone_type int64, timezone string>
+              ) as createts,
+              cast(
+                  null as struct<date string, timezone_type int64, timezone string>
+              ) as dl_lastupdate,
+              cast(
+                  null as struct<date string, timezone_type int64, timezone string>
+              ) as hearingdate,
+              cast(
+                  null as struct<date string, timezone_type int64, timezone string>
+              ) as issuets,
+              cast(
+                  null as struct<date string, timezone_type int64, timezone string>
+              ) as returndate,
+              cast(
+                  null as struct<date string, timezone_type int64, timezone string>
+              ) as reviewts,
+              cast(
+                  null as struct<date string, timezone_type int64, timezone string>
+              ) as updatets,
+          from
+              unnest(
+                  [
+                      struct(
+                          '1' as incidentid,
+                          struct(
+                              '2015-06-30 23:59:59' as date,
+                              3 as timezone_type,
+                              'UTC' as timezone
+                          ) as closets
+                      ),
+                      struct('2', struct('2015-07-01 00:00:00', 3, 'UTC'))
+                  ]
+              ) as r
+    expect:
+      rows:
+        - { incident_id: 1, close_ts_date: null }
+        - { incident_id: 2, close_ts_date: 2015-07-01 00:00:00 }

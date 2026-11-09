@@ -263,3 +263,57 @@ models:
         data_type: float64
       - name: suspension_type
         data_type: string
+
+unit_tests:
+  - name: test_int_deanslist__incidents__penalties__dates_min_valid
+    description: >-
+      Proves the defense behind the deanslist_dates_before_min_valid warn test.
+      A penalty start or end date before deanslist_min_valid_date becomes null,
+      and a date on or after it passes through.
+    model: int_deanslist__incidents__penalties
+    given:
+      - input: ref('int_deanslist__incidents')
+        format: sql
+        rows: |
+          select
+              1 as incident_id,
+              cast(null as array<string>) as actions,
+              cast(null as array<string>) as attachments,
+              cast(null as array<string>) as custom_fields,
+              [
+                  struct(
+                      '10' as incidentpenaltyid,
+                      '2015-06-30' as startdate,
+                      '2015-07-01' as enddate,
+                      cast(null as bool) as isreportable,
+                      cast(null as bool) as issuspension,
+                      cast(null as bool) as `print`,
+                      cast(null as string) as penaltyid,
+                      cast(null as string) as schoolid,
+                      cast(null as string) as studentid,
+                      cast(null as string) as said,
+                      cast(null as string) as numperiods,
+                      cast(null as string) as penaltyname,
+                      cast(
+                          null as struct<long_value int64, double_value float64>
+                      ) as numdays
+                  ),
+                  struct(
+                      '11', '2015-07-01', '2015-06-30', null, null, null, null,
+                      null, null, null, null, null, null
+                  )
+              ] as penalties,
+    expect:
+      rows:
+        - {
+            incident_id: 1,
+            incident_penalty_id: 10,
+            start_date: null,
+            end_date: 2015-07-01,
+          }
+        - {
+            incident_id: 1,
+            incident_penalty_id: 11,
+            start_date: 2015-07-01,
+            end_date: null,
+          }

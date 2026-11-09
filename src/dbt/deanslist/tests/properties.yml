@@ -1,0 +1,20 @@
+data_tests:
+  # TODO(#5558): runbook
+  - name: deanslist_dates_before_min_valid
+    description: >-
+      A DeansList incident has a close date, or a penalty has a start or end
+      date, before the earliest valid DeansList date (the
+      deanslist_min_valid_date variable). These are placeholder or mistyped
+      dates, not real ones. Each row is 1 date to fix. Fix it in DeansList by
+      correcting or clearing the date on the incident or its penalty.
+      stg_deanslist__incidents nulls close dates before that date, and
+      int_deanslist__incidents__penalties nulls start and end dates before it,
+      so reports never use them. Reads the source because those models have
+      already nulled the dates.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: stg_deanslist__incidents
+            package: deanslist
