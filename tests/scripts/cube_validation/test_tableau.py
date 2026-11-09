@@ -17,6 +17,7 @@ from cube_validation.discover import sheet_shape
 from cube_validation.tableau import (
     RefreshMovedError,
     Tableau,
+    _number,
     displayed_decimals,
     drop_number_formats,
     expose_sheet,
@@ -141,7 +142,7 @@ def _comparison(**kw) -> Comparison:
     return Comparison(**base)
 
 
-def _rows(values: dict[str, float | None]) -> list[dict]:
+def _rows(values: dict[str, float | str | None]) -> list[dict]:
     return [{"region": k, "value": v} for k, v in values.items()]
 
 
@@ -200,10 +201,17 @@ def test_prove_refuses_formatted_values_and_missing_decimals():
     with pytest.raises(ValueError, match="number format"):
         prove(
             _comparison(),
-            _rows({"North": "91.2%"}),
-            _rows({"North": 0.912}),
+            _rows({"North": "$91.20"}),
+            _rows({"North": 91.2}),
             twb_xml=_twb(),
         )
+    # A percent reads as a fraction: a percent-of-total calc keeps its %.
+    assert prove(
+        _comparison(),
+        _rows({"North": "91.2%"}),
+        _rows({"North": 0.912}),
+        twb_xml=_twb(),
+    ).proven
     with pytest.raises(ValueError, match="decimals"):
         prove(_comparison(decimals=None), [], [], twb_xml=_twb())
 
@@ -1113,3 +1121,17 @@ def test_source_fingerprint_follows_the_connection_not_the_extract():
     assert source_fingerprint(twb("v1", "10/30/2026"), "S") == base
     assert source_fingerprint(twb("v1", "10/29/2026", other="y"), "S") == base
     assert source_fingerprint(twb("v2", "10/29/2026"), "S") != base
+
+
+def test_export_number_reads_a_percent_of_total_as_a_fraction():
+    # A percent-of-total table calc exports with a % even after
+    # drop_number_formats, since Tableau formats it with no rule in the XML.
+    assert _number("11.538461538%") == pytest.approx(0.11538461538)
+    assert _number("-2.5%") == pytest.approx(-0.025)
+    assert _number("1,234.5%") == pytest.approx(12.345)
+
+
+@pytest.mark.parametrize("text", ["$12.50", "12 pts", "%", "12%%", "nan", "inf"])
+def test_export_number_still_refuses_other_formats(text):
+    with pytest.raises(ValueError, match="still carries a number format"):
+        _number(text)

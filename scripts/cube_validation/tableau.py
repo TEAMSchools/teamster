@@ -67,6 +67,7 @@ _STYLE_RULE = re.compile(
 _ATTR = re.compile(r"""([\w:.-]+)=(?:'([^']*)'|"([^"]*)")""")
 _DEFAULT_FORMAT = re.compile(r"""\s+default-format=(?:'[^']*'|"[^"]*")""")
 _THOUSANDS = re.compile(r"[-+]?\d{1,3}(?:,\d{3})+(?:\.\d+)?")
+_PLAIN_NUMBER = re.compile(r"[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?")
 _INSTANCE_SUFFIXES = {"nk", "ok", "qk"}
 _WINDOW_TAG = re.compile(r"<window(?=[\s/>])[^>]*>")
 _HIDDEN = re.compile(r"""\s+hidden=(?:'true'|"true")""")
@@ -1184,14 +1185,19 @@ def _number(value: Any) -> float | None:
     text = str(value).strip()
     if not text:
         return None
-    if "%" in text or any(c.isalpha() and c not in "eE" for c in text):
+    # A percent-of-total table calc keeps its % after drop_number_formats:
+    # Tableau formats it with no rule in the XML. It still exports every digit,
+    # so the % reads as a fraction.
+    percent = text.endswith("%")
+    body = text[:-1] if percent else text
+    if _THOUSANDS.fullmatch(body):
+        body = body.replace(",", "")
+    if not _PLAIN_NUMBER.fullmatch(body):
         raise ValueError(
             f"export value {text!r} still carries a number format; "
             "publish the copy through drop_number_formats"
         )
-    if _THOUSANDS.fullmatch(text):
-        text = text.replace(",", "")
-    return float(text)
+    return float(body) / 100 if percent else float(body)
 
 
 def _index(
