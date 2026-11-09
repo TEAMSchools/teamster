@@ -290,10 +290,22 @@ select
 
     cast(null as string) as qbl,
 
-    g.grade_goal,
-    g.school_goal,
-    g.region_goal,
     g.organization_goal,
+
+    -- T&L's QA goals apply to QA modules and to CRQ modules
+    if(
+        co.module_type in ('QA', 'CRQ'), coalesce(g.qa_goal, g.grade_goal), g.grade_goal
+    ) as grade_goal,
+    if(
+        co.module_type in ('QA', 'CRQ'),
+        coalesce(g.qa_goal, g.school_goal),
+        g.school_goal
+    ) as school_goal,
+    if(
+        co.module_type in ('QA', 'CRQ'),
+        coalesce(g.qa_goal, g.region_goal),
+        g.region_goal
+    ) as region_goal,
 
     coalesce(
         ip.total_iready_lessons_passed_reading, 0
@@ -389,10 +401,22 @@ select
 
     cast(null as string) as qbl,
 
-    g.grade_goal,
-    g.school_goal,
-    g.region_goal,
     g.organization_goal,
+
+    -- T&L's QA goals apply to QA modules and to CRQ modules
+    if(
+        co.module_type in ('QA', 'CRQ'), coalesce(g.qa_goal, g.grade_goal), g.grade_goal
+    ) as grade_goal,
+    if(
+        co.module_type in ('QA', 'CRQ'),
+        coalesce(g.qa_goal, g.school_goal),
+        g.school_goal
+    ) as school_goal,
+    if(
+        co.module_type in ('QA', 'CRQ'),
+        coalesce(g.qa_goal, g.region_goal),
+        g.region_goal
+    ) as region_goal,
 
     null as total_iready_lessons_passed_reading,
     null as total_iready_lessons_passed_math,
@@ -512,10 +536,10 @@ select
     null as is_sipps,
     null as is_low_25_fl,
     null as qbl,
+    null as organization_goal,
     null as grade_goal,
     null as school_goal,
     null as region_goal,
-    null as organization_goal,
     null as total_iready_lessons_passed_reading,
     null as total_iready_lessons_passed_math,
     null as is_qbl,

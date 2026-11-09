@@ -23,5 +23,6 @@ select
     g.organization_goal,
     g.grade_band_goal,
     g.assessment_band_goal,
+    g.qa_goal as quarterly_assessment_goal,
 from {{ ref("stg_google_sheets__assessments__academic_goals") }} as g
 inner join {{ ref("int_students__schools") }} as s on g.school_id = s.school_number
