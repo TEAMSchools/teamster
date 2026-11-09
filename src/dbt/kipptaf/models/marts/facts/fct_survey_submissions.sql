@@ -103,7 +103,7 @@ with
             {{ ref("int_extracts__student_enrollments") }} as enr
             on sg.respondent_email = enr.student_email
             and enr.entrydate <= date(sg.date_submitted)
-            and enr.exitdate >= date(sg.date_submitted)
+            and enr.last_enrolled_date >= date(sg.date_submitted)
         where
             sg.survey_title = 'School Community Diagnostic Student Survey'
             and sg.round_rn = 1
