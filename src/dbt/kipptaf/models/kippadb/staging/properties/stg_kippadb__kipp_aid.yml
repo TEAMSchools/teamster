@@ -1,8 +1,12 @@
 models:
   - name: stg_kippadb__kipp_aid
+    description: >-
+      One row per Salesforce KIPP Aid record that is not deleted, with the Maher
+      Fund marker tag in the notes parsed into columns.
     columns:
       - name: id
         data_type: string
+        description: Salesforce id of the record.
         data_tests:
           - unique:
               config:
@@ -17,46 +21,65 @@ models:
           True when the note carries the appended MAHER_FUND marker tag
           identifying the record as a Maher Fund award; false otherwise,
           including when the note is null or empty.
-      - name: fund_type
-        data_type: string
-        data_tests:
-          - accepted_values:
-              arguments:
-                values: [Emergency, Enrichment, Unclassified]
-              config:
-                severity: warn
-        description:
-          Funding classification parsed from the MAHER_FUND tag's type field
-          (Emergency, Enrichment, or Unclassified); null when the note is
-          untagged.
       - name: name
         data_type: string
+        description: >-
+          Salesforce record name (auto-number or label) of the record.
       - name: created_by_id
         data_type: string
+        description: Salesforce id of the user who created the record.
       - name: created_date
         data_type: timestamp
+        description: Timestamp when the record was created in Salesforce.
       - name: last_activity_date
         data_type: date
+        description: >-
+          Date of the most recent activity logged on the record in Salesforce.
       - name: last_modified_by_id
         data_type: string
+        description: Salesforce id of the user who last modified the record.
       - name: last_modified_date
         data_type: timestamp
+        description: Timestamp when the record was last modified in Salesforce.
       - name: system_modstamp
         data_type: timestamp
+        description: >-
+          Timestamp of the last change to the record, including system changes,
+          in Salesforce.
       - name: amount
         data_type: numeric
+        description: Dollar amount of the aid.
       - name: date
         data_type: date
+        description: Date of the aid award.
       - name: kipp_aid_count
         data_type: numeric
+        description: Value of the Salesforce field KIPP_Aid_Count__c.
       - name: notes
         data_type: string
+        description: >-
+          Free-text notes on the aid record, including any appended Maher Fund
+          marker tag.
+        config:
+          meta:
+            contains_pii: true
       - name: status
         data_type: string
+        description: Status of the aid record, as entered in Salesforce.
       - name: student
         data_type: string
+        description: Salesforce id of the student's Contact record.
       - name: type
         data_type: string
+        description: Type of aid, as entered in Salesforce.
+      - name: fund_type
+        data_type: string
+        description: >-
+          Funding classification from the MAHER_FUND tag's type field. Emergency
+          and Enrichment pass through; any other or missing type on a tagged
+          note becomes Unclassified. Null when the note is untagged.
+          test_sf_kipp_aid_fund_type_unlisted lists tagged notes whose type is
+          not on the list.
       - name: doc_type
         data_type: string
         description:
@@ -68,8 +91,49 @@ models:
           The note with the MAHER_FUND tag and its surrounding whitespace
           removed; equals the original note when untagged, and null when the
           note is null.
+        config:
+          meta:
+            contains_pii: true
       - name: academic_year
         data_type: int64
         description:
           Academic year (July-June) that the award's date falls in, expressed as
           the start year.
+
+unit_tests:
+  - name: unit_stg_kippadb__kipp_aid_fund_type
+    description: >-
+      a1 and a2 carry listed types and keep them. a3 has a misspelled type and
+      a4 has a tag with no type; both become Unclassified. a5 has no tag, so its
+      fund type is null.
+    model: stg_kippadb__kipp_aid
+    given:
+      - input: source("kippadb", "kipp_aid")
+        rows:
+          - id: a1
+            notes__c: rent [MAHER_FUND|v1|type=Emergency|doc=PO1]
+            isdeleted: false
+          - id: a2
+            notes__c: camp [MAHER_FUND|v1|type=Enrichment|doc=PO2]
+            isdeleted: false
+          - id: a3
+            notes__c: books [MAHER_FUND|v1|type=Emergancy|doc=PO3]
+            isdeleted: false
+          - id: a4
+            notes__c: bus [MAHER_FUND|v1|doc=PO4]
+            isdeleted: false
+          - id: a5
+            notes__c: plain note
+            isdeleted: false
+    expect:
+      rows:
+        - id: a1
+          fund_type: Emergency
+        - id: a2
+          fund_type: Enrichment
+        - id: a3
+          fund_type: Unclassified
+        - id: a4
+          fund_type: Unclassified
+        - id: a5
+          fund_type: null

@@ -4,6 +4,8 @@ models:
       One row per Standardized Test record in Salesforce (KIPP Forward), with
       ACT, SAT, PSAT and AP scores held as wide columns.
     data_tests:
+      # TODO(#6291): add the staging dedup once KIPP Forward confirms which copy
+      # to keep (proposal: latest modified), then move this check to raw data.
       - dbt_utils.unique_combination_of_columns:
           name: standardized_test_one_record_per_contact_test_date_subject
           description: >-

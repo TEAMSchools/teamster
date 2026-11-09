@@ -3,9 +3,12 @@ with
     ps_xw as (
         select sat.*, xw.powerschool_student_number,
         from {{ ref("stg_collegeboard__sat") }} as sat
-        left join
+        -- a score with no crosswalk match has no student to attach to; the
+        -- relationships test on stg_collegeboard__sat.cb_id lists them
+        inner join
             {{ ref("stg_google_sheets__collegeboard__sat_id_crosswalk") }} as xw
             on sat.cb_id = xw.college_board_id
+            and xw.powerschool_student_number is not null
     ),
 
     deduplicate as (
