@@ -13,6 +13,7 @@ pure; `value_check` and `run_triage` read the warehouse and Cube.
 
 from __future__ import annotations
 
+import copy
 import dataclasses
 import hashlib
 import json
@@ -352,9 +353,37 @@ def proven_triage(
     if recorded is not None:
         try:
             mark_decided(run, items, recorded, refuse=True)
+            mark_decided(run, _closed(loaded), recorded, refuse=True)
         except pipeline.Refusal as exc:
             raise pipeline.Refusal(f"{view}: {exc}") from exc
     return loaded
+
+
+def _closed(loaded: dict) -> list[dict]:
+    """A copy of the triage's closed groups, which `mark_decided` marks in place."""
+    return copy.deepcopy(loaded.get("closed") or [])
+
+
+def check_closed(run: RunResult, run_json: Path, recorded: list[Decision]) -> None:
+    """Refuse a cause decision that disagrees with the `group` decision closing a
+    group its proof covers.
+
+    Triage lists no closed group, so `mark_decided` on its items never sees
+    one; the triage's `closed` list (`closed_groups`) says which causes each
+    holds. Called wherever decisions are written, so the disagreement refuses
+    then, not once the group decision goes stale and the group reopens. With
+    no readable triage of the run's moment there is nothing to compare.
+
+    Raises:
+        pipeline.Refusal: A holding cause decision and a `group` decision on
+            one closed group make different calls.
+    """
+    try:
+        loaded = json.loads((run_json.parent / "triage.json").read_text())
+    except (OSError, json.JSONDecodeError):
+        return
+    if isinstance(loaded, dict) and loaded.get("moment") == _moment(run):
+        mark_decided(run, _closed(loaded), recorded, refuse=True)
 
 
 # Why a cause decision no longer decides an item it names.
@@ -408,6 +437,11 @@ def _groups_by_key(run: RunResult) -> dict[str, Group]:
     return {i.key: g for i, g in _entries(run) if isinstance(g, Group)}
 
 
+def _quiet_by_key(run: RunResult) -> dict[str, Group]:
+    """The groups a `group` decision closes in the run, by `_open_key`."""
+    return {_open_key(g): g for _, g in run.applied.quiet}
+
+
 def mark_decided(
     run: RunResult,
     items: list[dict],
@@ -429,7 +463,9 @@ def mark_decided(
 
     Args:
         run: The run the items come from.
-        items: The triage items, marked in place.
+        items: The triage items, or its `closed` groups, marked in place. The
+            group is looked up among the run's open and closed groups, since
+            a re-apply since triage can close an item's.
         recorded: The view's decisions.
         refuse: Raise on a disagreement instead of noting it.
         note: Add why a decision does not hold, and any redundancy or
@@ -438,7 +474,7 @@ def mark_decided(
     Raises:
         pipeline.Refusal: With `refuse`, a disagreement.
     """
-    groups = _groups_by_key(run)
+    groups = {**_quiet_by_key(run), **_groups_by_key(run)}
     by_group = [d for d in recorded if d.group and not d.cause]
     for item in items:
         if not decidable(item):
@@ -466,9 +502,17 @@ def mark_decided(
                 if d.call == other.call:
                     lines.append(f"decision {d.id} repeats group decision {other.id}")
                     continue
+                # A closed group's id is a hash: name it by the closing
+                # decision's column, never by its values.
+                where = (
+                    f"a group of {item['comparison']!r} that {other.id!r} "
+                    f"closes by {other.group.get('column')!r}"
+                    if item.get("closed")
+                    else f"item {item['id']!r}"
+                )
                 line = (
                     f"decisions {other.id!r} ({other.call}) and {d.id!r} "
-                    f"({d.call}) disagree on item {item['id']!r}"
+                    f"({d.call}) disagree on {where}"
                 )
                 if refuse:
                     raise pipeline.Refusal(line)
@@ -1023,6 +1067,79 @@ def _missing_column(cfg: ViewConfig, caption: str) -> str:
     return ""
 
 
+def with_closed(run: RunResult) -> RunResult:
+    """The run with its closed groups listed as open, for the stored proofs.
+
+    A proof reads every unmatched row of its bucket already, so classifying
+    the closed groups too only adds their keys; `closed_groups` splits the
+    result back.
+    """
+    quiet = [g for _, g in run.applied.quiet]
+    return dataclasses.replace(
+        run,
+        applied=dataclasses.replace(run.applied, open=[*run.applied.open, *quiet]),
+    )
+
+
+def closed_groups(run: RunResult, ran: list, cfg: ViewConfig) -> tuple[list, list]:
+    """Split the proofs' runs over `with_closed(run)` into open and closed groups.
+
+    Args:
+        run: The run as triage lists it.
+        ran: `confirm.run_stored`'s runs over `with_closed(run)`.
+        cfg: The view's config, for a dashboard-filtered group's filter.
+
+    Returns:
+        The runs over the open groups only, under their own item ids, as
+        `confirm.apply_runs` reads them (a run over closed groups alone is
+        dropped), and the closed groups a proof fully explains, or a
+        `dashboard_filters` entry drops, each as an item `mark_decided`
+        reads, marked `closed` and named by its `_open_key`.
+    """
+    from . import confirm
+
+    open_ids = {i.key: i.id for i, g in _entries(run) if isinstance(g, Group)}
+    quiet = _quiet_by_key(run)
+    kept, closed = [], []
+    for r in ran:
+        mine = [
+            (open_ids[_open_key(g)], g) for _, g in r.items if _open_key(g) in open_ids
+        ]
+        if mine:
+            found = r.found and {
+                open_ids[_open_key(g)]: r.found[i]
+                for i, g in r.items
+                if _open_key(g) in open_ids
+            }
+            kept.append(dataclasses.replace(r, items=mine, found=found))
+        if not r.found:
+            continue
+        shut = {_open_key(g): r.found[i] for i, g in r.items if _open_key(g) in quiet}
+        entries = [_closed_item(quiet[k]) for k in shut]
+        confirm.apply_outcomes(entries, r.proof, shut)
+        closed += [e for e in entries if e["suggestion"] == "cause"]
+    by_id = {c.id: c for c in cfg.comparisons}
+    for g in quiet.values():
+        if g.bucket == "dashboard_filtered" and (
+            filtered := _filter_cause(by_id.get(g.comparison_id), g)
+        ):
+            cause, _, _, proof = filtered
+            closed.append({**_closed_item(g), "suggestion": "cause", "cause": cause,
+                           "proof": proof})  # fmt: skip
+    return kept, [
+        {k: e[k] for k in ("id", "key", "kind", "comparison", "closed", "suggestion",
+                           "cause", "proof")}
+        for e in closed
+    ]  # fmt: skip
+
+
+def _closed_item(g: Group) -> dict:
+    key = _open_key(g)
+    return {"id": key, "key": key, "kind": "group", "comparison": g.comparison_id,
+            "closed": True, "suggestion": "investigate", "evidence": [],
+            "evidence_posted": [], "cause": None, "proof": None}  # fmt: skip
+
+
 def run_triage(
     cfg: ViewConfig,
     *,
@@ -1088,10 +1205,17 @@ def run_triage(
         # Proofs first: they are the only path to `cause`, so a trace that
         # hits a cap never un-proves an item, and nothing they explain is
         # traced.
-        ran = (
-            confirm.run_stored(cfg, run, proofs, wh=wh, cube=cube, prepared=prepared)
+        # Closed groups go through the proofs too, so a cause decision that
+        # disagrees with the `group` decision closing one refuses when it is
+        # written (`check_closed`).
+        ran, closed = closed_groups(
+            run,
+            confirm.run_stored(
+                cfg, with_closed(run), proofs, wh=wh, cube=cube, prepared=prepared
+            )
             if proofs is not None
-            else []
+            else [],
+            cfg,
         )
         traced = (
             trace.trace_run(
@@ -1127,6 +1251,9 @@ def run_triage(
                 "decisions_fingerprint": run.decisions_fingerprint,
                 "open": open_keys(run),
                 "items": items,
+                # Groups a `group` decision closes, with the causes a proof
+                # gives them (`closed_groups`), for `check_closed`.
+                "closed": closed,
                 # Per comparison, each proven cause's students per cell and
                 # cut, from the proofs' counting queries (`review` examples).
                 "cause_students": kept.get("cause_students", {}),

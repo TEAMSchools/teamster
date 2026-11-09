@@ -1032,3 +1032,90 @@ def test_a_decision_closing_an_item_triage_holds_in_investigate_refuses(tmp_path
         pipeline.Refusal, match=r"decision 'hand' closes item .* `investigate`"
     ):
         proven_triage(run, run_json)
+
+
+# --- closed groups: what a cause decision covers past triage's items ---------
+
+from collections import Counter  # noqa: E402
+from pathlib import Path  # noqa: E402
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+from cube_validation.triage import (  # noqa: E402
+    _entries,
+    _open_key,
+    check_closed,
+    closed_groups,
+    with_closed,
+)
+
+
+def _ran_over(run, cause="C1"):
+    """A stored proof's run over `with_closed(run)` explaining every group."""
+    proof = confirm.Proof(Path("v") / "proofs" / "v" / "enrollment__dashboard_only.sql",
+                          "enrollment", "dashboard_only",
+                          {cause: ("cube", NO_SECTION)}, "SELECT 1")  # fmt: skip
+    items = [(i.id, g) for i, g in _entries(with_closed(run))]
+    found = {i: confirm.Outcome(g.n_rows, Counter({cause: g.n_rows})) for i, g in items}
+    return proof, confirm.Ran(proof, items, found)
+
+
+def test_closed_groups_keep_open_ids_and_classify_the_closed_one(tmp_path):
+    # P and Q share a masked id: listed together, P would be `#2`.
+    p = Group("enrollment", (("region", "Paterson"),), "dashboard_only", 30, 4)
+    q = Group("enrollment", (("region", "Camden"),), "dashboard_only", 20, 4)
+    run = _fp_run([p])
+    run.applied.quiet = [(_group_decision("fix_cube"), q)]
+    (p_item,) = open_items(run)
+    proof, ran = _ran_over(run)
+    assert {i for i, _ in ran.items} == {p_item.id, f"{p_item.id}#2"}
+
+    (kept,), (closed,) = closed_groups(run, [ran], _cfg())
+
+    assert kept.items == [(p_item.id, p)] and list(kept.found) == [p_item.id]
+    assert closed == {
+        "id": _open_key(q), "key": _open_key(q), "kind": "group",
+        "comparison": "enrollment", "closed": True, "suggestion": "cause",
+        "cause": [{"side": "cube", "step": "C1", "label": NO_SECTION, "n_rows": 20}],
+        "proof": {"kind": "query", "path": proof.recorded,
+                  "fingerprint": proof.fingerprint},
+    }  # fmt: skip
+
+
+def test_a_run_over_closed_groups_alone_is_not_an_open_items_run():
+    q = _groups("Camden")[0]
+    run = _fp_run([])
+    run.applied.quiet = [(_group_decision("fix_cube"), q)]
+    _, ran = _ran_over(run)
+
+    kept, closed = closed_groups(run, [ran], _cfg())
+
+    assert kept == [] and [c["key"] for c in closed] == [_open_key(q)]
+
+
+@pytest.mark.parametrize("call", ["fix_cube", "deliberate"])
+def test_check_closed_compares_a_cause_with_the_group_decision_closing_it(
+    tmp_path, call
+):
+    q = _groups("Newark")[0]
+    run = _fp_run([])
+    group_decision = _group_decision("fix_cube")
+    run.applied.quiet = [(group_decision, q)]
+    proof, ran = _ran_over(run)
+    _, closed = closed_groups(run, [ran], _cfg())
+    run_json = _write_run_triage(tmp_path, run, [])
+    loaded = json.loads((tmp_path / "triage.json").read_text())
+    (tmp_path / "triage.json").write_text(json.dumps({**loaded, "closed": closed}))
+    cause = _cause_decision("a", NO_SECTION, call=call, proof=proof.fingerprint)
+
+    if call == "fix_cube":
+        check_closed(run, run_json, [group_decision, cause])
+        return
+    with pytest.raises(pipeline.Refusal) as refused:
+        check_closed(run, run_json, [group_decision, cause])
+    assert str(refused.value) == (
+        "decisions 'by-region' (fix_cube) and 'a' (deliberate) disagree on a group "
+        "of 'enrollment' that 'by-region' closes by 'region'"
+    )
+    # The review gate reads the same list.
+    with pytest.raises(pipeline.Refusal, match="closes by 'region'"):
+        proven_triage(run, run_json, [group_decision, cause])

@@ -2509,6 +2509,48 @@ def test_triage_proves_first_and_traces_only_what_no_proof_explains(
     assert item["proof"]["path"] == f"proofs/v/ada-region__{group.bucket}.sql"
 
 
+def test_triage_classifies_a_group_a_group_decision_closes(
+    fakes, tmp_path, monkeypatch
+):
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+    path = _with_decision(_saved_fingerprints(tmp_path), tmp_path, call="fix_cube")
+    assert cli.main(["reapply", str(path)]) == 0
+    (saved,) = (tmp_path / "cache" / "v").glob("*/run.json")
+    run = pipeline._run_from_json(json.loads(saved.read_text()))
+    assert run.applied.open == []
+    ((_, group),) = run.applied.quiet
+    proof = confirm.Proof(
+        path.parent / "proofs" / "v" / f"ada-region__{group.bucket}.sql",
+        "ada-region",
+        group.bucket,
+        {"C1": ("dashboard", "the sheet drops them")},
+        "SELECT 1",
+    )
+
+    def stored(cfg, run_, d, **k):
+        items = confirm._bucket_items(run_, "ada-region", group.bucket)
+        found = {i: confirm.Outcome(g.n_rows, Counter({"C1": g.n_rows}))
+                 for i, g in items}  # fmt: skip
+        return [confirm.Ran(proof, items, found)]
+
+    monkeypatch.setattr(confirm, "run_stored", stored)
+    monkeypatch.setattr(trace, "trace_run", lambda *a, **k: trace.TraceResult({}))
+    monkeypatch.setattr(trace, "check_ready", lambda *a, **k: None)
+
+    assert cli.main(["triage", str(path)]) == 0
+
+    loaded = json.loads((saved.parent / "triage.json").read_text())
+    # Closed, so never an item; the proof still says which causes it holds.
+    assert not [i for i in loaded["items"] if i["kind"] == "group"]
+    (closed,) = loaded["closed"]
+    assert closed["key"] == triage._open_key(group)
+    assert closed["cause"] == [
+        {"side": "dashboard", "step": "C1", "label": "the sheet drops them",
+         "n_rows": group.n_rows}
+    ]  # fmt: skip
+    assert closed["proof"]["path"] == f"proofs/v/ada-region__{group.bucket}.sql"
+
+
 def test_triage_confirm_reaches_its_command(fakes, tmp_path, monkeypatch):
     path = _file(tmp_path)
     seen = {}
@@ -2975,6 +3017,100 @@ def test_add_decisions_refuses_while_an_item_is_in_investigate(fakes, tmp_path, 
     _triage_everything(tmp_path, [_triage_item("e"), _triage_item("x", "cause", "j")])
     assert cli.main(["add-decisions", str(path), str(approved)]) == 0
     assert [d.id for d in load_view_config(path).decisions] == ["a"]
+
+
+def _closed_by_a_group_decision(tmp_path):
+    """A run whose Miami group a `group` decision (fix_cube) closes.
+
+    Its triage lists no Miami item: the stored proof classified the closed
+    group under `closed`, and proved open item `other` on the same cause.
+    """
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+    path = _with_decision(_saved_fingerprints(tmp_path), tmp_path, call="fix_cube")
+    assert cli.main(["reapply", str(path)]) == 0
+    (run_json,) = (tmp_path / "cache" / "v").glob("*/run.json")
+    run = pipeline._run_from_json(json.loads(run_json.read_text()))
+    ((_, miami),) = run.applied.quiet
+    _write_triage(run_json, [_triage_item("e", item_id="other")])
+    found = run_json.parent / "triage.json"
+    loaded = json.loads(found.read_text())
+    key = triage._open_key(miami)
+    loaded["closed"] = [
+        {"id": key, "key": key, "kind": "group", "comparison": "ada-region",
+         "closed": True, "suggestion": "cause", "cause": [STEP],
+         "proof": dict(STORED_PROOF)}
+    ]  # fmt: skip
+    found.write_text(json.dumps(loaded))
+    return path
+
+
+def _cause_on_other(tmp_path, call):
+    entry = {"id": "no-section", "call": call, "reason": "r", "item": "other"}
+    return _approved(
+        tmp_path, [{**entry, "task": "#6150"} if call != "deliberate" else entry]
+    )
+
+
+def test_add_decisions_refuses_a_cause_disagreeing_with_a_closed_group(
+    fakes, tmp_path, capsys
+):
+    path = _closed_by_a_group_decision(tmp_path)
+    before = path.read_text()
+    capsys.readouterr()
+
+    assert (
+        cli.main(
+            ["add-decisions", str(path), str(_cause_on_other(tmp_path, "deliberate"))]
+        )
+        == 1
+    )
+
+    err = capsys.readouterr().err
+    assert "'miami-scope' (fix_cube) and 'no-section' (deliberate) disagree" in err
+    assert "regions_region_name" in err and "nothing written" in err
+    assert "Miami" not in err
+    assert path.read_text() == before
+
+
+def test_add_decisions_writes_a_cause_agreeing_with_a_closed_group(
+    fakes, tmp_path, capsys
+):
+    path = _closed_by_a_group_decision(tmp_path)
+
+    assert (
+        cli.main(
+            ["add-decisions", str(path), str(_cause_on_other(tmp_path, "fix_cube"))]
+        )
+        == 0
+    )
+
+    assert [d.id for d in load_view_config(path).decisions] == [
+        "miami-scope",
+        "no-section",
+    ]
+
+
+def test_reapply_refuses_a_hand_edit_making_a_cause_disagree_with_a_closed_group(
+    fakes, tmp_path, capsys
+):
+    path = _closed_by_a_group_decision(tmp_path)
+    assert (
+        cli.main(
+            ["add-decisions", str(path), str(_cause_on_other(tmp_path, "fix_cube"))]
+        )
+        == 0
+    )
+    text = path.read_text()
+    # The cause decision is written last: flip its call only.
+    at = text.rindex("call: fix_cube")
+    path.write_text(text[:at] + "call: fix_source" + text[at + len("call: fix_cube") :])
+    capsys.readouterr()
+
+    assert cli.main(["reapply", str(path)]) == 1
+
+    err = capsys.readouterr().err
+    assert "'miami-scope' (fix_cube) and 'no-section' (fix_source) disagree" in err
+    assert "Miami" not in err
 
 
 def test_add_decisions_refuses_a_view_never_triaged(fakes, tmp_path, capsys):
