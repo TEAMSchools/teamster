@@ -213,29 +213,106 @@ models:
         data_type: string
         description:
           outlier when the observer falls outside the interquartile-range fence
-          for the current round, else not outlier.
+          for the current round, else not outlier; null when the group was too
+          small to fit.
       - name: iqr_global
         data_type: string
         description:
           outlier when the observer falls outside the interquartile-range fence
-          across all rounds, else not outlier.
+          across all rounds, else not outlier; null when the group was too small
+          to fit.
       - name: cluster_current
         data_type: string
         description:
           outlier when clustering on the current round labels the observer as
-          noise (-1), else not outlier.
+          noise (-1), else not outlier; null when the group was too small to
+          fit.
       - name: cluster_global
         data_type: string
         description:
           outlier when clustering across all rounds labels the observer as noise
-          (-1), else not outlier.
+          (-1), else not outlier; null when the group was too small to fit.
       - name: tree_current
         data_type: string
         description:
           outlier when the tree-based detector flags the observer (-1) on the
-          current round, else not outlier.
+          current round, else not outlier; null when the group was too small to
+          fit.
       - name: tree_global
         data_type: string
         description:
           outlier when the tree-based detector flags the observer (-1) across
-          all rounds, else not outlier.
+          all rounds, else not outlier; null when the group was too small to
+          fit.
+
+unit_tests:
+  - name: unit_rpt_pm_outlier_detection_unfit_rows_stay_null
+    description: >-
+      The outlier script leaves the outlier fields null for a group too small to
+      fit. Observer 1 is such a row and must show null labels, not "not
+      outlier". Observer 2 is flagged by every method and shows "outlier".
+    model: rpt_tableau__pm_outlier_detection
+    given:
+      - input: ref("stg_performance_management__outlier_detection")
+        rows:
+          - observer_employee_number: 1
+            academic_year: 2026
+            form_term: PM2
+          - observer_employee_number: 2
+            academic_year: 2026
+            form_term: PM2
+            is_iqr_outlier_current: true
+            is_iqr_outlier_global: true
+            cluster_current: -1
+            cluster_global: -1
+            tree_outlier_current: -1
+            tree_outlier_global: -1
+      - input: ref("stg_google_sheets__reporting__terms")
+        rows:
+          - academic_year: 2026
+            code: PM2
+            type: PMS
+            name: Coach Scores
+            end_date: 2026-12-18
+      - input: ref("int_performance_management__observation_details")
+        rows:
+          - employee_number: 10
+            observer_employee_number: 1
+            academic_year: 2026
+            term_code: PM2
+            observation_type_abbreviation: PMS
+            observation_score: 3.0
+            observed_at_timestamp: 2026-12-01 12:00:00
+          - employee_number: 20
+            observer_employee_number: 2
+            academic_year: 2026
+            term_code: PM2
+            observation_type_abbreviation: PMS
+            observation_score: 3.0
+            observed_at_timestamp: 2026-12-01 12:00:00
+      - input: ref("int_people__staff_roster_history")
+        rows:
+          - employee_number: 1
+            primary_indicator: true
+            effective_date_start_timestamp: 2026-07-01 00:00:00
+            effective_date_end_timestamp: 9999-12-31 00:00:00
+          - employee_number: 2
+            primary_indicator: true
+            effective_date_start_timestamp: 2026-07-01 00:00:00
+            effective_date_end_timestamp: 9999-12-31 00:00:00
+    expect:
+      rows:
+        - observer_employee_number: 1
+          iqr_current: null
+          iqr_global: null
+          cluster_current: null
+          cluster_global: null
+          tree_current: null
+          tree_global: null
+        - observer_employee_number: 2
+          iqr_current: outlier
+          iqr_global: outlier
+          cluster_current: outlier
+          cluster_global: outlier
+          tree_current: outlier
+          tree_global: outlier

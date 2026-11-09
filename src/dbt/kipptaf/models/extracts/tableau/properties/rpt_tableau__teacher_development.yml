@@ -6,7 +6,7 @@ models:
       attributes at the observation date and their performance management (PM)
       scores for the year. Feeds the teacher development dashboard.
     data_tests:
-      # TODO(#ARCHIVE_DUPES): archive rows repeat 5 observation-measurement
+      # TODO(#6321): archive rows repeat 5 observation-measurement
       # pairs; flip to error once the archive is deduplicated
       - dbt_utils.unique_combination_of_columns:
           arguments:

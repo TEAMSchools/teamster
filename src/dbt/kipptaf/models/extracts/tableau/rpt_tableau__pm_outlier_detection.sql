@@ -133,12 +133,44 @@ select
     tsrh.home_work_location_name as teacher_location,
     tsrh.reports_to_formatted_name as teacher_manager,
 
-    if(sd.is_iqr_outlier_current, 'outlier', 'not outlier') as iqr_current,
-    if(sd.is_iqr_outlier_global, 'outlier', 'not outlier') as iqr_global,
-    if(sd.cluster_current = -1, 'outlier', 'not outlier') as cluster_current,
-    if(sd.cluster_global = -1, 'outlier', 'not outlier') as cluster_global,
-    if(sd.tree_outlier_current = -1, 'outlier', 'not outlier') as tree_current,
-    if(sd.tree_outlier_global = -1, 'outlier', 'not outlier') as tree_global,
+    /* the script leaves these null for a group too small to fit; keep them
+    null rather than reporting "not outlier" */
+    case
+        when sd.is_iqr_outlier_current
+        then 'outlier'
+        when not sd.is_iqr_outlier_current
+        then 'not outlier'
+    end as iqr_current,
+    case
+        when sd.is_iqr_outlier_global
+        then 'outlier'
+        when not sd.is_iqr_outlier_global
+        then 'not outlier'
+    end as iqr_global,
+    case
+        when sd.cluster_current = -1
+        then 'outlier'
+        when sd.cluster_current is not null
+        then 'not outlier'
+    end as cluster_current,
+    case
+        when sd.cluster_global = -1
+        then 'outlier'
+        when sd.cluster_global is not null
+        then 'not outlier'
+    end as cluster_global,
+    case
+        when sd.tree_outlier_current = -1
+        then 'outlier'
+        when sd.tree_outlier_current is not null
+        then 'not outlier'
+    end as tree_current,
+    case
+        when sd.tree_outlier_global = -1
+        then 'outlier'
+        when sd.tree_outlier_global is not null
+        then 'not outlier'
+    end as tree_global,
 from score_dates as sd
 inner join
     {{ ref("int_people__staff_roster_history") }} as srh
