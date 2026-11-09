@@ -329,8 +329,12 @@ tables; a view between the gate and its consumers still reads the bad rows. A
 dedup hides the defect from every test after it, so the warn test reads the
 source (_Choosing a singular test_).
 
-One exception needs no defense: a `relationships` test between 2 tables the
-loader reads at different moments with no snapshot (Focus, per
+2 cases need no defense. The first is a missing value every consumer already
+shows as missing (blank, untested, not yet entered), so no count or label comes
+out wrong; the warn test alone routes the fix. A missing value that changes a
+result still needs a defense: one that drops a row from a join, lands in the
+wrong group, or reads as zero. The second is a `relationships` test between 2
+tables the loader reads at different moments with no snapshot (Focus, per
 `src/dbt/focus/CLAUDE.md`). A row written mid-load is an orphan until the next
 load, so add one only for an orphan seen to persist across loads, and set
 `warn`: at `error`, a mid-load write fails the build.
@@ -426,12 +430,12 @@ group check groups by the group key.
 - Staging-layer tests MUST set `config: severity` explicitly on every test;
   without it, a district or kipptaf staging test degrades to a warning and won't
   fail CI. Set `warn` on a source-data test whose defense and proof are in place
-  (_Warn, defend, error_) and on the loader-timing exception. A ticketed test
-  (#5558) is one of these, on the earliest model that can route its ticket;
-  until its runbook meta lands, it carries `TODO(#5558): runbook`. Set `error`
-  on a gate, on a proof test, and on every test of the model's own logic. A new
-  `error` test that fails in prod lands as `warn` with a `TODO(#N)` and flips
-  once its query returns 0 rows.
+  (_Warn, defend, error_) and on the 2 cases there that need no defense. A
+  ticketed test (#5558) is one of these, on the earliest model that can route
+  its ticket; until its runbook meta lands, it carries `TODO(#5558): runbook`.
+  Set `error` on a gate, on a proof test, and on every test of the model's own
+  logic. A new `error` test that fails in prod lands as `warn` with a `TODO(#N)`
+  and flips once its query returns 0 rows.
 - Intermediate tests may omit the override where a warning is acceptable. A
   warning is not acceptable on the uniqueness test `.claude/rules/dbt-models.md`
   requires: it is the model's grain backstop, so set `error`, with the
