@@ -294,7 +294,14 @@ def _dashboard_ref(comparison: Comparison) -> str:
             f"comparison {comparison.id!r}: `dashboard_view` must be dataset.view"
         )
     ds, name = comparison.dashboard_view.split(".")
-    return f"`{PROJECT}`.`{ds}`.`{name}`"
+    table = f"`{PROJECT}`.`{ds}`.`{name}`"
+    if not comparison.dashboard_columns:
+        return table
+    computed = ", ".join(
+        f"{sql} AS {column}" for column, sql in comparison.dashboard_columns.items()
+    )
+    # trunk-ignore(bandit/B608): column names are validated in config.py; the expressions are the analyst's own SQL, like probe_sql
+    return f"(SELECT *, {computed} FROM {table})"
 
 
 def _date_cubes(cfg: ViewConfig) -> set[str]:
@@ -1566,13 +1573,23 @@ def check_claims(cfg: ViewConfig, cache_root: Path) -> None:
     can re-apply to, there is nothing to check against and nothing refuses.
 
     Raises:
-        Refusal: Two decisions claim the same group, gap or cells.
+        Refusal: Two decisions claim the same group, gap or cells, or a cause
+            decision disagrees with the `group` decision closing a group its
+            proof covers (`triage.check_closed`).
     """
     try:
-        saved, _ = _reapplicable(cfg, cache_root)
+        saved, run_json = _reapplicable(cfg, cache_root)
     except Refusal:
         return
-    _apply_saved(cfg, saved)
+    applied = _apply_saved(cfg, saved)
+    _check_closed(cfg, dataclasses.replace(saved, applied=applied), run_json)
+
+
+def _check_closed(cfg: ViewConfig, run: RunResult, run_json: Path) -> None:
+    try:
+        triage.check_closed(run, run_json, cfg.decisions)
+    except Refusal as exc:
+        raise Refusal(f"{cfg.view}: {exc}") from exc
 
 
 def reapply(cfg: ViewConfig, cache_root: Path) -> RunResult:
@@ -1588,10 +1605,13 @@ def reapply(cfg: ViewConfig, cache_root: Path) -> RunResult:
 
     Raises:
         Refusal: The view has no saved run, the run predates what re-applying
-            needs, or two decisions claim the same item.
+            needs, two decisions claim the same item, or a cause decision
+            disagrees with the `group` decision closing a group its proof
+            covers (`triage.check_closed`). Nothing is rewritten.
     """
     saved, run_json = _reapplicable(cfg, cache_root)
     applied = _apply_saved(cfg, saved)
+    _check_closed(cfg, dataclasses.replace(saved, applied=applied), run_json)
 
     groups, gaps, cells = _open_counts(
         cfg.comparisons, applied.open, applied.open_gaps, applied.open_cells
