@@ -181,7 +181,14 @@ Columns, grouped by source:
   `last_contact_staff_name`, `days_since_last_contact`, `n_contacts_ytd`,
   `n_attendance_contacts_ytd`, `attendance_intervention_status` (from the
   interventions mart: the highest absence threshold crossed and whether its
-  required contact exists).
+  required contact exists), `deanslist_communication_url`: the direct link to
+  the student's DeansList communication page, where the history is read and a
+  new entry is created. Pattern:
+  `https://kippnj.deanslistsoftware.com/student/<dl student id>/<name slug>/communication`.
+  The id is DeansList's own student id from `stg_deanslist__students`
+  (`student_id`), not the PowerSchool student number. The builder confirms
+  whether the name slug is required or decorative before choosing how to build
+  it.
 - Flags (booleans, the Lab tracker's thresholds, all year to date):
   `is_flag_4_plus_absences` and `is_flag_8_plus_absences` (all absences, excused
   and unexcused, matching the tracker's "# Days Absent"),
