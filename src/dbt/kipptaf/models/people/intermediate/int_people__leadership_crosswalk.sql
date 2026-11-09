@@ -67,9 +67,7 @@ with
     ),
 
     asl_managers as (
-        /* stand-in head of school while the School Leader seat is vacant: the
-           active manager most of the school's Assistant School Leaders
-           report to */
+        -- vacancy stand-in for head of school
         select
             a.home_work_location_powerschool_school_id,
             a.reports_to_employee_number,

@@ -162,7 +162,9 @@ unit_tests:
       has no School Leader, so the manager two of its three Assistant School
       Leaders report to stands in. School 3 has no School Leader and most of its
       Assistant School Leaders report to a terminated manager, so the pick skips
-      that manager and takes the active one.
+      that manager and takes the active one. School 4 has no School Leader and
+      one Assistant School Leader under each of two managers, so the tie goes to
+      the lower employee number.
     model: int_people__leadership_crosswalk
     given:
       - input: ref('int_people__staff_roster')
@@ -247,6 +249,24 @@ unit_tests:
             assignment_status: Active
             reports_to_employee_number: 300
             home_work_location_powerschool_school_id: 3
+          - employee_number: 40
+            job_title: Director School Operations
+            assignment_status: Active
+            home_work_location_powerschool_school_id: 4
+            home_work_location_reporting_name: School Four
+            home_work_location_region: Paterson
+            home_work_location_abbreviation: Four
+            home_work_location_campus_name: Campus Four
+          - employee_number: 41
+            job_title: Assistant School Leader
+            assignment_status: Active
+            reports_to_employee_number: 300
+            home_work_location_powerschool_school_id: 4
+          - employee_number: 42
+            job_title: Assistant School Leader
+            assignment_status: Active
+            reports_to_employee_number: 200
+            home_work_location_powerschool_school_id: 4
     expect:
       rows:
         - home_work_location_powerschool_school_id: 1
@@ -258,3 +278,6 @@ unit_tests:
         - home_work_location_powerschool_school_id: 3
           sl_employee_number: null
           head_of_school_employee_number: 300
+        - home_work_location_powerschool_school_id: 4
+          sl_employee_number: null
+          head_of_school_employee_number: 200
