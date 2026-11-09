@@ -611,6 +611,10 @@ What `preflight` cannot check:
   quoting it.
 - Do not start a `run` between 8 pm and midnight ET on a Saturday: the week can
   shift if Tableau Server's clock is not Eastern.
+- A `% of Total` on a distinct count (`COUNTD`) divides by `TOTAL(COUNTD(...))`,
+  which Tableau recomputes over the partition: the distinct entities there, not
+  the sum of the marks. A probe that divides by `sum(n) over (...)` counts an
+  entity at 2 marks twice. Divide by `count(distinct ...) over (...)` instead.
 
 ## Results
 
