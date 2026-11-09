@@ -142,6 +142,47 @@ def test_mixed_partition_fits_each_set():
     assert all(r["pc1_current"] is not None for r in records)
 
 
+def test_tree_outliers_repeat_across_runs():
+    df = _frame(("etr_so", 2024, "PM1", 30), ("etr_so", 2025, "PM3", 30))
+
+    runs = [
+        [
+            (r["tree_outlier_current"], r["tree_outlier_global"])
+            for r in score_partition(df, 2025, "PM3")
+        ]
+        for _ in range(5)
+    ]
+
+    assert all(run == runs[0] for run in runs)
+
+
+def test_no_nan_in_any_record():
+    df = _frame(
+        ("etr_so", 2025, "PM3", 10),
+        ("etr_values", 2026, "PM1", 8),
+        ("etr_values", 2026, "PM2", 2),
+    )
+
+    for year, term in [(2025, "PM3"), (2026, "PM2")]:
+        for r in score_partition(df, year, term):
+            for key, value in r.items():
+                assert not (isinstance(value, float) and math.isnan(value)), key
+
+
+def test_small_current_group_keeps_global_fit():
+    df = _frame(("etr_values", 2026, "PM1", 8), ("etr_values", 2026, "PM2", 2))
+
+    records = score_partition(df, 2026, "PM2")
+
+    assert len(records) == 2
+    for r in records:
+        assert r["pc1_current"] is None
+        assert r["cluster_current"] is None
+        assert r["pc1_global"] is not None
+        assert r["cluster_global"] is not None
+        assert r["is_iqr_outlier_global"] is not None
+
+
 def test_empty_partition_returns_no_records():
     df = _frame(("etr_so", 2025, "PM3", 10))
 

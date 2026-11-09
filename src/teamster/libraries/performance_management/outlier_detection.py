@@ -113,9 +113,9 @@ def fit_outliers(df: pandas.DataFrame, columns: list[str]) -> pandas.DataFrame:
     # 0.6 is the historic optimal epsilon
     df["cluster"] = DBSCAN(min_samples=3, eps=0.6).fit_predict(X=df[["pc1", "pc2"]])
 
-    # assumes 10% of the data are outliers
+    # assumes 10% of the data are outliers; fixed seed so re-runs agree
     # trunk-ignore(pyright/reportArgumentType)
-    model = IsolationForest(contamination=0.1)
+    model = IsolationForest(contamination=0.1, random_state=0)
     model.fit(X=df[columns])
     df["tree_outlier"] = model.predict(X=df[columns])
 
