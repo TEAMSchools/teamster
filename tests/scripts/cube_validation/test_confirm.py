@@ -596,7 +596,12 @@ def test_a_cause_flag_is_checked(flag, why):
 
 @pytest.mark.parametrize(
     "words",
-    ["grades 9 10 11 12 differ", "school year 2025 2026 rolled over", "grades 5 6 7 8"],
+    [
+        "grades 9 10 11 12 differ",
+        "school year 2025 2026 rolled over",
+        "grades 5 6 7 8",
+        "school years 2024 2025 2026",
+    ],
 )
 def test_a_cause_flag_allows_a_grade_list_and_a_school_year(words):
     assert confirm.parse_cause_flag(f"C1=cube:{words}")[2] == words

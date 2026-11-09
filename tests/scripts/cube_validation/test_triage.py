@@ -1092,6 +1092,14 @@ def test_a_run_over_closed_groups_alone_is_not_an_open_items_run():
     assert kept == [] and [c["key"] for c in closed] == [_open_key(q)]
 
 
+def test_check_closed_says_when_no_triage_lets_it_run(tmp_path, capsys):
+    run = _fp_run([])
+
+    check_closed(run, tmp_path / "run.json", [])
+
+    assert "closed-group check skipped" in capsys.readouterr().err
+
+
 @pytest.mark.parametrize("call", ["fix_cube", "deliberate"])
 def test_check_closed_compares_a_cause_with_the_group_decision_closing_it(
     tmp_path, call

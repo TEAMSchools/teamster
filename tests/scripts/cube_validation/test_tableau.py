@@ -205,11 +205,20 @@ def test_prove_refuses_formatted_values_and_missing_decimals():
             _rows({"North": 91.2}),
             twb_xml=_twb(),
         )
-    # A percent reads as a fraction: a percent-of-total calc keeps its %.
+    # A percent rounded to the comparison's decimals is a format left behind.
+    with pytest.raises(ValueError, match="number format"):
+        prove(
+            _comparison(),
+            _rows({"North": "91.2%", "South": "50%"}),
+            _rows({"North": 0.912, "South": 0.5}),
+            twb_xml=_twb(),
+        )
+    # A percent-of-total calc keeps its % at full precision; an exact cell
+    # beside it reads too.
     assert prove(
         _comparison(),
-        _rows({"North": "91.2%"}),
-        _rows({"North": 0.912}),
+        _rows({"North": "91.234567891%", "South": "50%"}),
+        _rows({"North": 0.91234567891, "South": 0.5}),
         twb_xml=_twb(),
     ).proven
     with pytest.raises(ValueError, match="decimals"):

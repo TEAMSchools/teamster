@@ -18,6 +18,7 @@ import dataclasses
 import hashlib
 import json
 import re
+import sys
 from collections import Counter
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -381,9 +382,15 @@ def check_closed(run: RunResult, run_json: Path, recorded: list[Decision]) -> No
     try:
         loaded = json.loads((run_json.parent / "triage.json").read_text())
     except (OSError, json.JSONDecodeError):
-        return
+        loaded = None
     if isinstance(loaded, dict) and loaded.get("moment") == _moment(run):
         mark_decided(run, _closed(loaded), recorded, refuse=True)
+        return
+    print(
+        "closed-group check skipped: no triage of this run; "
+        "run `triage --no-trace` to check decisions against closed groups",
+        file=sys.stderr,
+    )
 
 
 # Why a cause decision no longer decides an item it names.
@@ -1126,6 +1133,8 @@ def closed_groups(run: RunResult, ran: list, cfg: ViewConfig) -> tuple[list, lis
             cause, _, _, proof = filtered
             closed.append({**_closed_item(g), "suggestion": "cause", "cause": cause,
                            "proof": proof})  # fmt: skip
+    # 2 proofs, or a proof and a sheet filter, can explain one closed group.
+    closed = list({json.dumps([e["key"], e["proof"]]): e for e in closed}.values())
     return kept, [
         {k: e[k] for k in ("id", "key", "kind", "comparison", "closed", "suggestion",
                            "cause", "proof")}

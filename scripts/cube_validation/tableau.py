@@ -1179,6 +1179,26 @@ def _key_text(value: Any) -> str:
     return format(number.normalize(), "f") if number.is_finite() else text
 
 
+def _rounded_percent(rows: list[dict[str, Any]], decimals: int) -> str | None:
+    """The first `%` export value, when no `%` value in the export carries more
+    digits than `decimals`: a percent format left on the copy, not a
+    percent-of-total calc, which exports every digit. Judged across the export
+    so an exact cell such as `50%` beside full-precision ones still reads."""
+    texts = [
+        str(r["value"]).strip()
+        for r in rows
+        if isinstance(r.get("value"), str) and str(r["value"]).strip().endswith("%")
+    ]
+
+    def digits(text: str) -> int:
+        body = text[:-1].replace(",", "")
+        return len(body.split(".", 1)[1]) + 2 if "." in body else 2
+
+    if texts and all(digits(t) <= decimals for t in texts):
+        return texts[0]
+    return None
+
+
 def _number(value: Any) -> float | None:
     if value is None or isinstance(value, (int, float)):
         return None if value is None else float(value)
@@ -1258,6 +1278,11 @@ def prove(
         raise ValueError(f"comparison {comparison.id!r} has no decimals")
     if not comparison.sheet:
         raise ValueError(f"comparison {comparison.id!r} has no sheet")
+    if (rounded := _rounded_percent(exports, comparison.decimals)) is not None:
+        raise ValueError(
+            f"export value {rounded!r} still carries a number format; "
+            "publish the copy through drop_number_formats"
+        )
 
     dims = [p.dashboard for p in comparison.dims]
     failures: list[str] = []

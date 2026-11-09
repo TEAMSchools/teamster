@@ -223,10 +223,10 @@ def _cause(line: str) -> tuple[str, str, str]:
 
 # Digit groups joined by single spaces. `answers.NOTE_REFUSALS` refuses any such
 # run of 5 digits, which would also refuse a grade list (`9 10 11 12`), so a cause
-# refuses only a run holding a group of 3+ digits, and lets a school year span
-# (`2025 2026`) through.
+# refuses only a run holding a group of 3+ digits, and lets a run of years
+# (`2024 2025 2026`) through.
 _SPACED_DIGITS = re.compile(r"\d+(?: \d+)+")
-_YEAR_SPAN = re.compile(r"(?:19|20)\d{2} (?:19|20)\d{2}")
+_YEAR_SPAN = re.compile(r"(?:19|20)\d{2}(?: (?:19|20)\d{2})+")
 
 
 def _spaced_id(words: str) -> bool:
