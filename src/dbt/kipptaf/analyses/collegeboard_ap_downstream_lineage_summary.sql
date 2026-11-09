@@ -18,15 +18,15 @@
 -- Defaults to the network's current_academic_year -- override at compile
 -- time for a different cycle: --vars '{current_academic_year: <year>}'.
 --
--- kipptaf_dbt_test__audit.int_collegeboard__ap_unpivot__crosswalk_resolves is
--- a dbt test's store_failures output, not a ref()-able dbt node -- kept as a
--- literal fully-qualified path.
+-- The audit path below is the store_failures output of the relationships test
+-- on stg_collegeboard__ap.ap_number_ap_id, not a ref()-able dbt node -- kept
+-- as a literal fully-qualified path.
 with
     crosswalk_gaps as (
         select count(*) as remaining_crosswalk_gaps,
         from
             -- trunk-ignore(sqlfluff/LT05): fully-qualified test-audit path, can't wrap
-            `teamster-332318`.kipptaf_dbt_test__audit.int_collegeboard__ap_unpivot__crosswalk_resolves
+            `teamster-332318`.kipptaf_dbt_test__audit.relationships_stg_collegeboard_ada115e39694b541e69e7c19ae548029
     ),
 
     unpivot_count as (

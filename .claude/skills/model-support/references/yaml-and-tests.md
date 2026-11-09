@@ -109,13 +109,16 @@ select
 from `teamster-332318.<dataset>.<model>`
 ```
 
-For `accepted_values`, list the distinct values first. Staging tests need
-`config: severity: error`; the kipptaf default is warn.
+For `accepted_values`, list the distinct values first. Set severity per _Test
+severity_ in `.claude/rules/dbt-yaml.md`.
 
 ## A test that fails today
 
-Add it anyway; it warns. Put the cause in the reference doc under "Known issues,
-need to fix" with the query that shows it, in aggregates only.
+Add it anyway at `warn`, with a `TODO(#N)` to flip it once it passes, unless it
+is a ticketed source-data test (_Warn, defend, error_ in
+`.claude/rules/dbt-yaml.md`), which stays `warn`. Put the cause in the reference
+doc under "Known issues, need to fix" with the query that shows it, in
+aggregates only.
 
 Count duplicates on the source-grain model with its full natural key, including
 every column that legitimately repeats within a day (subject, section,

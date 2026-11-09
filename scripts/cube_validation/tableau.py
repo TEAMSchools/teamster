@@ -67,6 +67,7 @@ _STYLE_RULE = re.compile(
 _ATTR = re.compile(r"""([\w:.-]+)=(?:'([^']*)'|"([^"]*)")""")
 _DEFAULT_FORMAT = re.compile(r"""\s+default-format=(?:'[^']*'|"[^"]*")""")
 _THOUSANDS = re.compile(r"[-+]?\d{1,3}(?:,\d{3})+(?:\.\d+)?")
+_PLAIN_NUMBER = re.compile(r"[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?")
 _INSTANCE_SUFFIXES = {"nk", "ok", "qk"}
 _WINDOW_TAG = re.compile(r"<window(?=[\s/>])[^>]*>")
 _HIDDEN = re.compile(r"""\s+hidden=(?:'true'|"true")""")
@@ -1178,20 +1179,45 @@ def _key_text(value: Any) -> str:
     return format(number.normalize(), "f") if number.is_finite() else text
 
 
+def _rounded_percent(rows: list[dict[str, Any]], decimals: int) -> str | None:
+    """The first `%` export value, when no `%` value in the export carries more
+    digits than `decimals`: a percent format left on the copy, not a
+    percent-of-total calc, which exports every digit. Judged across the export
+    so an exact cell such as `50%` beside full-precision ones still reads."""
+    texts = [
+        str(r["value"]).strip()
+        for r in rows
+        if isinstance(r.get("value"), str) and str(r["value"]).strip().endswith("%")
+    ]
+
+    def digits(text: str) -> int:
+        body = text[:-1].replace(",", "")
+        return len(body.split(".", 1)[1]) + 2 if "." in body else 2
+
+    if texts and all(digits(t) <= decimals for t in texts):
+        return texts[0]
+    return None
+
+
 def _number(value: Any) -> float | None:
     if value is None or isinstance(value, (int, float)):
         return None if value is None else float(value)
     text = str(value).strip()
     if not text:
         return None
-    if "%" in text or any(c.isalpha() and c not in "eE" for c in text):
+    # A percent-of-total table calc keeps its % after drop_number_formats:
+    # Tableau formats it with no rule in the XML. It still exports every digit,
+    # so the % reads as a fraction.
+    percent = text.endswith("%")
+    body = text[:-1] if percent else text
+    if _THOUSANDS.fullmatch(body):
+        body = body.replace(",", "")
+    if not _PLAIN_NUMBER.fullmatch(body):
         raise ValueError(
             f"export value {text!r} still carries a number format; "
             "publish the copy through drop_number_formats"
         )
-    if _THOUSANDS.fullmatch(text):
-        text = text.replace(",", "")
-    return float(text)
+    return float(body) / 100 if percent else float(body)
 
 
 def _index(
@@ -1252,6 +1278,11 @@ def prove(
         raise ValueError(f"comparison {comparison.id!r} has no decimals")
     if not comparison.sheet:
         raise ValueError(f"comparison {comparison.id!r} has no sheet")
+    if (rounded := _rounded_percent(exports, comparison.decimals)) is not None:
+        raise ValueError(
+            f"export value {rounded!r} still carries a number format; "
+            "publish the copy through drop_number_formats"
+        )
 
     dims = [p.dashboard for p in comparison.dims]
     failures: list[str] = []

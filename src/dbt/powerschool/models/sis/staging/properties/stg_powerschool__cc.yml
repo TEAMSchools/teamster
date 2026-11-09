@@ -12,6 +12,7 @@ models:
     data_tests:
       # Permanent warnings: the Ops cleanup worklist for PowerSchool
       # double-writes. The dedupe lives in base_powerschool__course_enrollments.
+      # TODO(#5558): runbook
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
@@ -20,6 +21,7 @@ models:
               - dateleft
           config:
             severity: warn
+      # TODO(#5558): runbook
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:

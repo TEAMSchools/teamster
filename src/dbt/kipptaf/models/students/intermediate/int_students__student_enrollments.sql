@@ -284,7 +284,8 @@ with
 
             regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as _dbt_source_project,
 
-            date_sub(exitdate, interval 1 day) as last_enrolled_date,
+            -- clipped so an overlapping earlier stint ends before the next starts
+            date_sub(exitdate_clipped, interval 1 day) as last_enrolled_date,
 
             initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
         from union_relations
