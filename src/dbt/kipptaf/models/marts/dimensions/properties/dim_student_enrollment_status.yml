@@ -6,6 +6,7 @@ models:
       from the three SCD2 status dims, following the enrollment-grain
       aggregation rules: ELL via LEFT JOIN (one span per stint); IEP via latest
       span; meal via NJ Oct-15 span or earliest fallback, Miami via latest span.
+      504 has no source dates, so it comes from the enrollment stint's own flag.
       Absence of a status row is normalized to false/null — not missing data.
       Consumed by the Cube semantic layer as a snowflake sub-dim joined
       one-to-one to dim_student_enrollments.
@@ -61,6 +62,20 @@ models:
           during this enrollment stint. FALSE when no ELL span exists for the
           stint (absence of a row = not ELL). Derived from
           dim_student_ell_status via LEFT JOIN; coalesced from NULL to false.
+
+      - name: is_504
+        data_type: boolean
+        description: >-
+          TRUE if the student had a Section 504 plan during this enrollment
+          stint. FALSE otherwise, including when the source system leaves the
+          flag unset, as it does for most Miami students and every current-year
+          Paterson student. This is the enrollment 504 status the assessment
+          dashboards show; state test files carry their own 504 flag, which can
+          differ.
+        config:
+          meta:
+            contains_pii: true
+            source_column: int_students__student_enrollments.is_504
 
       - name: is_iep
         data_type: boolean

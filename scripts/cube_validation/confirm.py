@@ -221,6 +221,23 @@ def _cause(line: str) -> tuple[str, str, str]:
     return _checked(m["bucket"], m["side"], m["words"])
 
 
+# Digit groups joined by single spaces. `answers.NOTE_REFUSALS` refuses any such
+# run of 5 digits, which would also refuse a grade list (`9 10 11 12`), so a cause
+# refuses only a run holding a group of 3+ digits, and lets a run of years
+# (`2024 2025 2026`) through.
+_SPACED_DIGITS = re.compile(r"\d+(?: \d+)+")
+_YEAR_SPAN = re.compile(r"(?:19|20)\d{2}(?: (?:19|20)\d{2})+")
+
+
+def _spaced_id(words: str) -> bool:
+    return any(
+        sum(c.isdigit() for c in run) >= 5
+        and any(len(g) >= 3 for g in run.split())
+        and not _YEAR_SPAN.fullmatch(run)
+        for run in _SPACED_DIGITS.findall(words)
+    )
+
+
 def _checked(bucket: str, side: str, words: str) -> tuple[str, str, str]:
     if not _BUCKET.fullmatch(bucket) or bucket == UNEXPLAINED:
         raise pipeline.Refusal(
@@ -232,7 +249,7 @@ def _checked(bucket: str, side: str, words: str) -> tuple[str, str, str]:
     words = " ".join(words.split())
     if not words:
         raise pipeline.Refusal(f"bucket {bucket}: say what the cause is in words")
-    if id_like(words):
+    if id_like(words) or _spaced_id(words):
         raise pipeline.Refusal(
             f"bucket {bucket}: the words hold an email or an ID-like number; "
             "a proof is committed, so name no student or staff member"
