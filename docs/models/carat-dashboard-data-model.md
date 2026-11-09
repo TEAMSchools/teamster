@@ -425,10 +425,14 @@ guarded by a uniqueness test.
 **What it shows:** dual-enrollment course results: the college course, pass or
 fail, score, semester, and institution.
 
-**Grain:** one row per student per dual-enrollment course grade, from
-PowerSchool stored grades (store codes `Y1` and `Q2`) and the dual-enrollment
-extension table. It doesn't touch the assessment pipeline. Its uniqueness test
-currently warns; see _Known issues, need to fix_.
+**Grain:** one row per PowerSchool stored grade (store codes `Y1` and `Q2`) per
+college semester. The dual-enrollment extension table holds one row per college
+semester, so a course that spans Fall and Spring has 2 rows. It doesn't touch
+the assessment pipeline.
+
+**Counting:** the DE Overview tab counts rows, so a student with Fall and Spring
+rows for one course counts twice. Whether that tab should count students instead
+is open with the dashboard owner.
 
 ### `rpt_tableau__ap_assessment_dashboard`: AP
 
@@ -716,25 +720,22 @@ settle `strategy_case` to one value per student and score type before the group
 by, or to drop it from the grain if the workbook doesn't use it; the Over Time
 tab's visible filters don't include it. Tracked in #4871.
 
-### `_de` duplicates some stored grades
+### `_de` can hold `Q2` and `Y1` rows for the same course
 
-Two separate problems, and the test catches only the first.
+Institutions submit grades twice a year, and it has already happened that fall's
+`Q2` and spring's `Y1` both land for one course in one year. The student then
+has two stored grades, so two rows, and the uniqueness test doesn't see it
+because the `storedgrades_dcid` values differ. A `TODO` in the model marks where
+a priority rule would go; the fix is to decide which store code wins for a
+course-year.
 
-- **Extension-table fan-out.** Some PowerSchool stored grades match more than
-  one row in the dual-enrollment extension table, with different course, score,
-  or semester values, so the view carries two or three rows for one grade. The
-  uniqueness test on (`student_number`, `storedgrades_dcid`) warns on them.
-- **`Q2` and `Y1` for the same course.** Institutions submit grades twice a
-  year, and it has already happened that fall's `Q2` and spring's `Y1` both land
-  for one course in one year. The student then has two stored grades, so two
-  rows, and the test doesn't see it because the `storedgrades_dcid` values
-  differ. The view has more rows than student-course-years, and a `TODO` in the
-  model marks where a priority rule would go.
+Duplicate extension rows for one stored grade and semester are handled upstream:
+`stg_powerschool__u_storedgrades_de` keeps one, and a warn test lists them for
+cleanup in PowerSchool.
 
 Also, about four in ten rows have no match in the extension table, so their
 course, score, and institution are empty. `unique_identifier` is not a key; use
-`storedgrades_dcid`. The fix is to decide which extension row wins for a stored
-grade and which store code wins for a course-year.
+`storedgrades_dcid` and `de_semester`.
 
 ### Pre-2016 SAT is on the old 2400 scale
 

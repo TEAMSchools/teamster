@@ -142,10 +142,12 @@ orphan until the next load, so a `relationships` test here fires on teacher
 activity, not on defects. The two kept, `stg_focus__test_history_scores`
 `administration_id` and `stg_focus__students_join_people` `person_id`, guard
 persistent orphans. Any `relationships` test stays `severity: warn`, because at
-`error` a teacher saving mid-load fails the whole district build. Single-table
-key tests (`unique`, `not_null` on a Focus id) stay `severity: error`, since one
-table IS read atomically. A single-table test of what staff entered (a duplicate
-FLEID, a blank ELL code) is a source-data check and lands at `warn`.
+`error` a teacher saving mid-load fails the whole district build: the
+loader-timing exception under _Warn, defend, error_ in
+`.claude/rules/dbt-yaml.md`. Single-table key tests (`unique`, `not_null` on a
+Focus id) stay `severity: error`, since one table IS read atomically. A
+single-table test of what staff entered (a duplicate FLEID, a blank ELL code) is
+a source-data check and follows warn, defend, error.
 
 ## Model Structure
 

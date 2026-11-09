@@ -1,3 +1,12 @@
+with
+    open_rounds as (
+        select term_name, term_code, academic_year,
+        from {{ ref("dim_terms") }}
+        where
+            `type` = 'SURVEY'
+            and end_date >= current_date('{{ var("local_timezone") }}')
+    )
+
 /* Google Forms and Alchemer Responses */
 select
     sr.survey_id,
@@ -80,8 +89,14 @@ left join
     and srh.home_work_location_dagster_code_location = tgl._dbt_source_project
     and sr.academic_year = tgl.academic_year
     and tgl.grade_level_rank = 1
+left join
+    open_rounds as orr
+    on sr.survey_title = orr.term_name
+    and sr.term_code = orr.term_code
+    and sr.academic_year = orr.academic_year
 where
-    sr.question_shortname like '%scd%'
+    orr.term_code is null
+    and sr.question_shortname like '%scd%'
     and sr.survey_title in (
         'Engagement & Support Surveys',
         'KIPP NJ & KIPP Miami Family Survey',
@@ -145,8 +160,14 @@ left join
 left join
     {{ ref("stg_google_sheets__surveys__scd_question_crosswalk") }} as qc
     on sr.data_item_key = qc.question_code
+left join
+    open_rounds as orr
+    on rt.name = orr.term_name
+    and rt.code = orr.term_code
+    and rt.academic_year = orr.academic_year
 where
-    sr.data_item_key in (
+    orr.term_code is null
+    and sr.data_item_key in (
         'School_Survey_01',
         'School_Survey_02',
         'School_Survey_03',

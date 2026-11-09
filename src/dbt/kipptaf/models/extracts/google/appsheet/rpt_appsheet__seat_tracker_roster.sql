@@ -44,15 +44,6 @@ with
             and question_shortname = 'itr_plans'
             and academic_year = {{ var("current_academic_year") }}
         group by respondent_employee_number, answer, academic_year
-    ),
-
-    pm_tier as (
-        select employee_number, overall_tier, max(eval_date) as eval_date,
-
-        from {{ ref("int_performance_management__observations") }}
-        where observation_type_abbreviation = 'PMS'
-        group by employee_number, overall_tier
-
     )
 
 select
@@ -164,7 +155,11 @@ inner join
     {{ ref("int_people__location_crosswalk") }} as lc
     on sr.home_work_location_name = lc.location_name
 left join itr_response as ir on sr.employee_number = ir.employee_number
-left join pm_tier as pm on sr.employee_number = pm.employee_number
+left join
+    {{ ref("int_performance_management__observations") }} as pm
+    on sr.employee_number = pm.employee_number
+    and pm.observation_type_abbreviation = 'PMS'
+    and pm.rn_employee_type = 1
 
 union all
 
