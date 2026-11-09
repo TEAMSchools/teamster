@@ -113,6 +113,7 @@ data_tests:
           ref:
             name: stg_google_sheets__finalsite__status_crosswalk
 
+  # TODO(#5558): runbook
   - name: test_int_tableau__fresh_goals_scaffold_region_matches_scaffold
     description: >-
       int_tableau__fresh_goals_scaffold's inner join to the goals sheet keys on
@@ -126,9 +127,11 @@ data_tests:
       in int_tableau__fresh_goals_scaffold already scopes on region too and
       handles it correctly. Warns (not errors) on any goals-sheet row for a real
       school whose typed region doesn't match the scaffold's derived region for
-      the same school/grade -- that row is being silently dropped from
-      int_tableau__fresh_goals_scaffold's inner join.
+      the same school/grade. int_tableau__fresh_goals_scaffold drops that row on
+      purpose; fix the region in the goals sheet so the goal reaches the
+      dashboard.
     config:
+      severity: warn
       tags:
         - google_sheet
       meta:
@@ -897,6 +900,7 @@ data_tests:
           ref:
             name: stg_deanslist__behavior
 
+  # TODO(#5558): runbook
   - name: stg_google_sheets__google_forms__question_department_crosswalk__covers_all_abbreviations
     description: >-
       The crosswalk is maintained by hand and separately from the form items
@@ -1313,3 +1317,19 @@ data_tests:
       tags:
         - google_sheet
       severity: error
+
+  # TODO(#5558): runbook
+  - name: stg_google_sheets__crdc__student_numbers__repeated_rows
+    description: >-
+      Lists students tagged to the same CRDC question section more than once on
+      the CRDC sheet's student-numbers tab. Delete the extra row on the sheet.
+      stg_google_sheets__crdc__student_numbers keeps one copy until then, so the
+      test reads the sheet.
+    config:
+      severity: warn
+      tags:
+        - google_sheet
+      meta:
+        dagster:
+          ref:
+            name: stg_google_sheets__crdc__student_numbers

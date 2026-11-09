@@ -17,4 +17,5 @@ select
 
     sch._dbt_source_project,
 from {{ ref("stg_google_sheets__finance__enrollment_targets") }} as et
+-- drops sheet rows whose schoolid matches no school, on purpose
 inner join {{ ref("int_students__schools") }} as sch on et.schoolid = sch.school_number
