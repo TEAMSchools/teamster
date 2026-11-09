@@ -27,8 +27,12 @@ class OutlierDetection(BaseModel):
     etr5a: float | None = None
     etr5b: float | None = None
     etr5c: float | None = None
+    excellence: float | None = None
+    fun: float | None = None
     is_iqr_outlier_current: bool | None = None
     is_iqr_outlier_global: bool | None = None
+    kid_focus: float | None = None
+    measure_set: str | None = None
     overall_score: float | None = None
     pc1_current: float | None = None
     pc1_global: float | None = None
@@ -38,6 +42,9 @@ class OutlierDetection(BaseModel):
     pc2_global: float | None = None
     pc2_variance_explained_current: float | None = None
     pc2_variance_explained_global: float | None = None
+    presence: float | None = None
+    punctuality: float | None = None
+    radical_love: float | None = None
     so1: float | None = None
     so2: float | None = None
     so3: float | None = None
@@ -46,6 +53,7 @@ class OutlierDetection(BaseModel):
     so6: float | None = None
     so7: float | None = None
     so8: float | None = None
+    team: float | None = None
     tree_outlier_current: int | None = None
     tree_outlier_global: int | None = None
 
