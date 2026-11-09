@@ -208,15 +208,15 @@ Columns, grouped by source:
   promotion policy, below).
 - Discipline (behavioral marts, year to date unless named): `n_referrals` (all
   DeansList incidents), `n_referrals_tier_2_plus` (`category_tier` in T2 and
-  T3), `n_referrals_last_7_days`, `n_referrals_last_30_days`,
-  `last_referral_date`, `last_referral_tier`, `last_referral_infraction`,
-  `last_referral_staff_name`, `top_referral_category`, `n_iss_events`,
-  `n_iss_days`, `n_oss_events`, `n_oss_days` (DeansList consequences, the same
-  source as `rpt_gsheets__suspensions`, not attendance codes),
-  `last_suspension_date`, `last_suspension_type`, `suspension_return_date` (the
-  consequence end date when it is today or later, so the roster shows who is out
-  now and who returns this week), `is_referral_spike` (2 or more referrals in
-  the last 7 days).
+  T3), `n_referrals_last_7_days`, `n_referrals_last_14_days`,
+  `n_referrals_last_30_days`, `last_referral_date`, `last_referral_tier`,
+  `last_referral_infraction`, `last_referral_staff_name`,
+  `top_referral_category`, `n_iss_events`, `n_iss_days`, `n_oss_events`,
+  `n_oss_days` (DeansList consequences, the same source as
+  `rpt_gsheets__suspensions`, not attendance codes), `last_suspension_date`,
+  `last_suspension_type`, `suspension_return_date` (the consequence end date
+  when it is today or later, so the roster shows who is out now and who returns
+  this week), `is_referral_spike` (2 or more referrals in the last 7 days).
 - Grades (`fct_grades_gpa`, current term): `gpa_term`, `gpa_ytd`,
   `cumulative_gpa`, `n_failing_ytd`, `credit_hours_earned_cumulative`,
   `credit_hours_attempted_cumulative`. The GPA the tracker pastes each week is
@@ -309,8 +309,9 @@ currently at the school, from `fct_behavioral_incidents` and
 referring staff, status, consequence type, suspension type, days assigned, start
 and end dates, `is_suspension`, `is_reportable`. No free-text context. Sorted by
 student then date, like the contacts tab, so the one-pager reads one student's
-block. Tier 1 lifts are included, since the Paterson hub counts them and the
-roster's `n_referrals` does too.
+block. Tier 1 referrals are included, since the roster's `n_referrals` counts
+them. The word "lifts" does not appear anywhere in this work: not in the models,
+the sheet, the skill or its reference file.
 
 The weekly tab also carries `n_referrals_week`, `n_referrals_tier_2_plus_week`
 and `n_oss_days_week`, so referral and suspension trends draw from it.
