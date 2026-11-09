@@ -206,10 +206,17 @@ Columns, grouped by source:
   or above), `n_absences_to_credit_loss` (18 minus
   `n_absences_y1_running_non_susp_no_tardy`, floor 0; both values come from the
   promotion policy, below).
-- Discipline (behavioral marts, year to date): `n_referrals` (all DeansList
-  incidents), `n_referrals_tier_2_plus` (`category_tier` in T2 and T3),
-  `n_iss_days` and `n_oss_days` (DeansList consequences, the same source as
-  `rpt_gsheets__suspensions`, not attendance codes), `last_suspension_date`.
+- Discipline (behavioral marts, year to date unless named): `n_referrals` (all
+  DeansList incidents), `n_referrals_tier_2_plus` (`category_tier` in T2 and
+  T3), `n_referrals_last_7_days`, `n_referrals_last_30_days`,
+  `last_referral_date`, `last_referral_tier`, `last_referral_infraction`,
+  `last_referral_staff_name`, `top_referral_category`, `n_iss_events`,
+  `n_iss_days`, `n_oss_events`, `n_oss_days` (DeansList consequences, the same
+  source as `rpt_gsheets__suspensions`, not attendance codes),
+  `last_suspension_date`, `last_suspension_type`, `suspension_return_date` (the
+  consequence end date when it is today or later, so the roster shows who is out
+  now and who returns this week), `is_referral_spike` (2 or more referrals in
+  the last 7 days).
 - Grades (`fct_grades_gpa`, current term): `gpa_term`, `gpa_ytd`,
   `cumulative_gpa`, `n_failing_ytd`, `credit_hours_earned_cumulative`,
   `credit_hours_attempted_cumulative`. The GPA the tracker pastes each week is
@@ -295,6 +302,19 @@ column. Sorted by student then date, so the skill can read one student's block
 for the one-pager without pulling the tab. About 4,000 rows per school so far
 this year, 8,000 to 10,000 by June.
 
+`rpt_gsheets__promise_team_incidents`: one row per incident consequence this
+year (an incident with no consequence still gets one row) for a student
+currently at the school, from `fct_behavioral_incidents` and
+`fct_behavioral_consequences`: incident date, category, tier, infraction,
+referring staff, status, consequence type, suspension type, days assigned, start
+and end dates, `is_suspension`, `is_reportable`. No free-text context. Sorted by
+student then date, like the contacts tab, so the one-pager reads one student's
+block. Tier 1 lifts are included, since the Paterson hub counts them and the
+roster's `n_referrals` does too.
+
+The weekly tab also carries `n_referrals_week`, `n_referrals_tier_2_plus_week`
+and `n_oss_days_week`, so referral and suspension trends draw from it.
+
 `rpt_gsheets__promise_team_form_responses`: every form response this year, one
 row per submission, for the weekly history and the replacement of NCA's Student
 History Archive (entry week, baseline ADA and GPA, exit week, exit figures come
@@ -334,9 +354,13 @@ https://claude.ai/artifact/M7BCEbYf7kehbXdZgSHS4h shows each one):
 1. **Score the week.** Per school and grade: who crossed a flag this week, who
    moved tier or flag since last week, who on a Promise Team roster has no
    contact in 10 days (with the DeansList link per row), and which active plans
-   have no form entry since the last meeting. A six-week trend row for the
-   school: flagged students, contact fidelity against the 100% goal, chronic
-   absence rate. Reads the changes tab and Cube for attendance as of today.
+   have no form entry since the last meeting. A behavior block: new suspensions
+   with infraction, referring staff, days and return date; students returning
+   from OSS this week, with the re-entry meeting due; anyone with 2 or more
+   referrals in the week, listing who referred them. A six-week trend row for
+   the school: flagged students, contact fidelity against the 100% goal, chronic
+   absence rate, Tier 2+ referrals per week, OSS days per week. Reads the
+   changes tab and Cube for attendance as of today.
 2. **Meeting agenda.** The flag list ordered for the 60-minute meeting: new
    flags, then no-contact students, then students at 6 or more weeks on a Tier 2
    or 3 roster. Each line carries last contact date, staff and outcome, and this
@@ -352,8 +376,9 @@ https://claude.ai/artifact/M7BCEbYf7kehbXdZgSHS4h shows each one):
 5. **Log this week.** Returns the student's prefilled form link, or drafts the
    answers from a sentence the case manager types, for them to paste.
 6. **Student one-pager.** Trend across the weekly tab, plan from the form, every
-   non-mass contact from the contacts tab, discipline, GPA and credits, laid out
-   for printing before a family meeting.
+   non-mass contact from the contacts tab, every incident this year from the
+   incidents tab with tier, infraction, referring staff and consequence, GPA and
+   credits, laid out for printing before a family meeting.
 7. **Leadership rollup.** One paragraph per school: counts by tier, contact
    fidelity, movement, open level-up requests, with six-week trend cards (on a
    plan, contact fidelity, share of plan students above their starting ADA,
@@ -424,6 +449,9 @@ Carried into the skill and roster design once answered. None blocks the extract.
   one-to-one entry under `Att: Social Services` does.
 - The one-pager for a student lists every non-mass contact this year, read from
   the contacts tab, matching the count on the student's DeansList page.
+- The one-pager lists every incident this year with its consequence, matching
+  the student's DeansList incident history, and a student suspended on Friday
+  shows a return date and appears in Monday's behavior block.
 - The NCA report sheet contains no Lab students, and the Lab sheet no NCA
   students, checked by comparing each sheet's distinct `school` values after the
   first scheduled extract.
