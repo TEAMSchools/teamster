@@ -161,21 +161,30 @@ Columns, grouped by source:
   `n_days_absent`, `n_days_absent_unexcused`, `n_days_tardy`, `ada_tier`,
   `is_chronically_absent`, `is_truant`, `days_to_90_pct` (membership days the
   student must attend without an absence to reach 90% ADA; null when already at
-  or above), `n_absences_to_credit_loss` (18 minus unexcused absences, floor 0;
-  the 18 is the high school credit-loss threshold and is a `var`).
+  or above), `n_absences_to_credit_loss` (18 minus
+  `n_absences_y1_running_non_susp_no_tardy`, floor 0; both values come from the
+  promotion policy, below).
 - Discipline (behavioral marts, year to date): `n_referrals` (all DeansList
   incidents), `n_referrals_tier_2_plus` (`category_tier` in T2 and T3),
   `n_iss_days` and `n_oss_days` (DeansList consequences, the same source as
   `rpt_gsheets__suspensions`, not attendance codes), `last_suspension_date`.
 - Grades (`fct_grades_gpa`, current term): `gpa_term`, `gpa_ytd`,
   `cumulative_gpa`, `n_failing_ytd`, `credit_hours_earned_cumulative`,
-  `credit_hours_attempted_cumulative`, `credit_status`. The GPA the tracker
-  pastes each week is term GPA, so `gpa_term` drives the GPA flag.
-  `credit_status` is the Newark high school attendance-based credit loss rule
-  (the tracker shows "Credit Loss - can earn N credits back" and warns families
-  at 18 absences). Its exact definition is an open question below; until it is
-  answered the column ships null and `n_absences_to_credit_loss` uses 18 total
-  absences.
+  `credit_hours_attempted_cumulative`. The GPA the tracker pastes each week is
+  term GPA, so `gpa_term` drives the GPA flag.
+- Promotion status (`int_students__promotional_status`, current term; a domain
+  intermediate, no mart covers it): `attendance_status`,
+  `attendance_status_hs_detail`, `academic_status`, `overall_status`,
+  `n_absences_y1_running_non_susp_no_tardy`, `projected_credits_cum`. This is
+  the tracker's "credit loss" column. The rule is the Newark high school
+  promotion policy, maintained by regional leaders in the promo status policies
+  sheet (`stg_google_sheets__reporting__promo_status_policies`), not restated
+  here: absences year to date excluding suspension days and tardies, Off-Track
+  "Already reached threshold" at 18, "Approaching threshold" at 4.5 in Q1, 9 in
+  Q2, 13.5 in Q3 and 18 in Q4; academic Off-Track below 25, 50, 85 and 120
+  projected cumulative credits by grade. The roster reads the computed status
+  and never re-implements it. How credits are earned back after the threshold is
+  a school process and stays an open question.
 - Contact (communication log, year to date): `last_contact_date`,
   `last_contact_method`, `last_contact_reason`, `last_contact_outcome`,
   `last_contact_staff_name`, `days_since_last_contact`, `n_contacts_ytd`,
@@ -194,7 +203,11 @@ Columns, grouped by source:
   and unexcused, matching the tracker's "# Days Absent"),
   `is_flag_never_in_school` (zero present days), `is_flag_gpa_below_2`
   (`gpa_term`), `is_flag_no_contact_10_days` (on a Promise Team roster with no
-  communication log entry in 10 calendar days).
+  communication log entry in 10 calendar days). The tracker's 4+ and 8+ lines
+  sit close to the promotion policy's Q1 and Q2 approaching thresholds (4.5 and
+  9, on the non-suspension, no-tardy count). The skill shows both; whether the
+  team retires its own thresholds for the policy's is open question 10 in the
+  stakeholder doc.
 
 The free-text communication log `notes` column does not ship. Date, reason,
 outcome and staff do. The notes stay in DeansList, one click away, and leaving
@@ -285,12 +298,11 @@ builder's call, following that precedent.
 
 ## Open questions for the stakeholder
 
-Carried into the skill and roster design once answered. Only the first blocks a
-column; the extract ships without it.
+Carried into the skill and roster design once answered. None blocks the extract.
 
-0. The credit loss rule: which absences count (all, unexcused, per course
-   period), the day thresholds for "risk" and "loss", and how credits are earned
-   back. The Lab tracker:
+0. Credit recovery: how a student past the 18-absence threshold earns credits
+   back, and where that is recorded today. The threshold itself comes from the
+   promotion policy and is not a question. The Lab tracker:
    https://docs.google.com/spreadsheets/d/1j1pVyClQld93uIHyWFXcxsCozTAoyffuyErhrGO0MKY
 1. Plan lead per student: a DeansList custom field, or inferred from who logs
    the contacts?
