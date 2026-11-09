@@ -519,7 +519,11 @@ cause, do not retry around it.
    nothing until re-approved through `add-decisions`, never by pasting new
    fingerprints; one the owner answered (`answer:`) is never re-approved: delete
    it to ask again. `add-decisions` writes these; do not hand-write one. A cause
-   decision and a `group` decision on one group with different calls refuse.
+   decision and a `group` decision on one group with different calls refuse, in
+   `add-decisions`, `reapply` and `review`, even after the `group` decision
+   closed the group. That check reads the closed groups the latest `triage`
+   classified, so run `triage --no-trace` after `triage confirm` saves a new
+   proof and before the next `add-decisions`.
 
 10. `review <files> --domain <domain>` prints the validation issue's body: the
     numbered questions, each with the owner's hand checks, and a link to the
@@ -607,6 +611,10 @@ What `preflight` cannot check:
   quoting it.
 - Do not start a `run` between 8 pm and midnight ET on a Saturday: the week can
   shift if Tableau Server's clock is not Eastern.
+- A `% of Total` on a distinct count (`COUNTD`) divides by `TOTAL(COUNTD(...))`,
+  which Tableau recomputes over the partition: the distinct entities there, not
+  the sum of the marks. A probe that divides by `sum(n) over (...)` counts an
+  entity at 2 marks twice. Divide by `count(distinct ...) over (...)` instead.
 
 ## Results
 

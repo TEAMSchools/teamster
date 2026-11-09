@@ -649,6 +649,7 @@ def _questions(
             key or (d.reason, d.task),
             {
                 "reason": d.reason,
+                "reasons": [],
                 "task": d.task,
                 "parts": [],
                 "kinds": [],
@@ -661,6 +662,7 @@ def _questions(
         q["kinds"].append(kind)
         q["hidden"] += hidden
         q["decisions"] += [(view, x) for x in decisions]
+        q["reasons"] += [x.reason for x in decisions if x.reason not in q["reasons"]]
         for cid in comparisons:
             if (view, cid) not in [(v, c) for v, c, _ in q["comparisons"]]:
                 q["comparisons"].append((view, cid, kind))
@@ -779,9 +781,23 @@ def also_decided(
     return out
 
 
+def question_reasons(q: dict) -> list[str]:
+    """Every distinct reason behind a question, scrubbed, in decision order.
+
+    A cause proven on several comparisons is one question, and each
+    comparison's decision may carry its own reason.
+    """
+    raw = q["reasons"] or [q["reason"]]
+    return list(dict.fromkeys(_safe_reason(r, q["hidden"]) for r in raw))
+
+
 def question_reason(q: dict) -> str:
-    """The question's reason as the issue shows it, without its task."""
-    return _safe_reason(q["reason"], q["hidden"])
+    """The question's reason as the issue shows it, without its task: each
+    distinct reason, ended once and joined, so none is dropped."""
+    reasons = question_reasons(q)
+    if len(reasons) == 1:
+        return reasons[0]
+    return " ".join(r if r.endswith(("?", "!", ".")) else f"{r}." for r in reasons)
 
 
 def defined_comparisons(questions: list[dict], view: str) -> set[str]:
