@@ -33,6 +33,10 @@ views:
           - pct_proficient
           - pct_proficient_formative
           - pct_proficient_crq
+          - count_students_banded
+          - pct_students_at_level
+          - pct_students_below
+          - pct_students_far_below
           - avg_percent_correct
           - avg_scale_score
           - assessment_score_key
@@ -41,6 +45,8 @@ views:
           - enrollment_resolution
           - proficiency_level
           - performance_band_label_number
+          - mastery_level
+          - is_far_below
           - is_mastery
           - scale_score
           - percent_correct
@@ -221,6 +227,8 @@ views:
             - enrollment_resolution
             - proficiency_level
             - performance_band_label_number
+            - mastery_level
+            - is_far_below
             - is_mastery
             - scale_score
             - percent_correct

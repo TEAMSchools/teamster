@@ -5,9 +5,10 @@ each member's description, and its `ai_context` where it has one, come back from
 the `meta` tool. Read them there. The session protocol and the open decisions
 are in `assessment-cube-orchestrator.md`.
 
-This file holds one thing Cube does not carry yet: the performance band sets of
-the 2 internal sources, Illuminate and Focus Assessments. #5573 adds band-set
-members to Cube and deletes this file.
+This file holds one thing Cube does not carry: the performance band sets of the
+2 internal sources, Illuminate and Focus Assessments, with their cut points.
+Cube carries each score's level relative to its set's mastery band
+(`mastery_level`, `is_far_below`), but not a set's name or cut points.
 
 ## Illuminate performance band sets (interim)
 

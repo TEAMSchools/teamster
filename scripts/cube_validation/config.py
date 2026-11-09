@@ -163,6 +163,11 @@ class Comparison:
     # Tableau recomputes the measure at the new grain, so the proof covers that
     # grain, not the sheet's own.
     shelves: dict[str, Any] = field(default_factory=dict)
+    # Columns computed over `dashboard_view`, `{name: SQL expression}`, for a
+    # workbook calc a dim or row value maps to. Every dashboard read sees them
+    # as plain columns. Name one after the calc (`Calculation_<id>`) and the
+    # export header with the calc's caption maps to it.
+    dashboard_columns: dict[str, str] = field(default_factory=dict)
 
 
 # The keys that decide which rows a comparison reconciles and which of them
@@ -175,6 +180,7 @@ _POPULATION = (
     "cuts",
     "scope",
     "dashboard_filters",
+    "dashboard_columns",
 )
 
 
@@ -415,7 +421,21 @@ def _comparison(reader: _Reader) -> Comparison:
             for k, v in reader.get("parameters", dict, default={}).items()
         },
         shelves=_shelves(reader, dims, filters),
+        dashboard_columns=_dashboard_columns(reader),
     )
+
+
+def _dashboard_columns(reader: _Reader) -> dict[str, str]:
+    columns = reader.get("dashboard_columns", dict, default={})
+    for name, sql in columns.items():
+        if not (isinstance(name, str) and _IDENTIFIER.fullmatch(name)):
+            reader.fail(
+                "dashboard_columns",
+                f"names must be plain identifiers ([A-Za-z_][A-Za-z0-9_]*); got {name!r}",
+            )
+        if not (isinstance(sql, str) and sql.strip()):
+            reader.fail("dashboard_columns", f"{name}: the expression must be SQL text")
+    return dict(columns)
 
 
 def _caption_list(reader: _Reader, key: str) -> list[str]:

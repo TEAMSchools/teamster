@@ -92,6 +92,17 @@ def test_email_is_optional_but_read_when_present(tmp_path):
     assert cfg.email == "a@example.org"
 
 
+def test_dashboard_columns_names_must_be_identifiers(tmp_path):
+    text = EXAMPLE.replace(
+        "    probe: avg(is_present)\n",
+        '    probe: avg(is_present)\n    dashboard_columns: {"bad name": "1"}\n',
+        1,
+    )
+
+    with pytest.raises(ConfigError, match=r"dashboard_columns"):
+        load_view_config(_write(tmp_path, text))
+
+
 def test_unknown_call_is_refused(tmp_path):
     path = _write(tmp_path, EXAMPLE.replace("call: deliberate", "call: maybe"))
 
