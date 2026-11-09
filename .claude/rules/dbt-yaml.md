@@ -321,13 +321,13 @@ steps:
    on the defended model is the proof instead.
 
 All 3 steps are the default. A `warn` test with no defense is a gap: add the
-defense and its proof. Make the test an `error` gate with no defense only when
-no model can handle the bad rows sensibly (a hand-kept config row with no
-correct fallback, for example) or when the data's owner prefers a paused refresh
-to bad rows. A failing gate skips only downstream tables; a view between the
-gate and its consumers still reads the bad rows. A dedup hides the defect from
-every test after it, so the warn test reads the source (_Choosing a singular
-test_).
+defense and its proof. Data with no correct fallback, such as a misspelled row
+on a hand-kept config sheet, is still defended: drop the row on purpose. Make
+the test an `error` gate with no defense only when the data's owner asks for a
+paused refresh instead of missing rows. A failing gate skips only downstream
+tables; a view between the gate and its consumers still reads the bad rows. A
+dedup hides the defect from every test after it, so the warn test reads the
+source (_Choosing a singular test_).
 
 One exception needs no defense: a `relationships` test between 2 tables the
 loader reads at different moments with no snapshot (Focus, per
