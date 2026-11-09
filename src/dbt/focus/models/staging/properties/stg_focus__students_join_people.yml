@@ -6,6 +6,7 @@ models:
       pickup / relationship attributes. Soft-deleted rows are excluded. Used to
       tell whether a student already has a contact in Focus.
     data_tests:
+      # TODO(#5558): runbook
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:

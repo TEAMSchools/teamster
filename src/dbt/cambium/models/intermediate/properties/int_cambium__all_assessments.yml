@@ -353,6 +353,15 @@ models:
         data_type: string
         description: Unique identifier for the student's test-taking event.
 
+      - name: student_growth_percentile
+        data_type: int64
+        description: >-
+          Student growth percentile from stg_cambium__njsla. NULL on NJGPA,
+          which carries none.
+        config:
+          meta:
+            contains_pii: true
+
       - name: student_with_disabilities
         data_type: string
         description: Disability code as reported by Cambium (IEP, 504 or B).

@@ -279,3 +279,23 @@ models:
           comparable across assessments, or across response types within one
           assessment: standard and group rows can carry different band labels
           than the assessment's overall rows.
+
+      # Read from int_assessments__performance_band_union on source, band set
+      # id and band number.
+      - name: mastery_level
+        data_type: string
+        description: >-
+          The band's level relative to its set's mastery band, the same on every
+          set. At/Above is the mastery band and every band above it; Approaching
+          is the band directly below the mastery band; Below is every band under
+          that. Illuminate and Focus Assessments only; null for every other
+          source, for not-taken rows, and when the band set's setup breaks the
+          rule's assumptions.
+
+      - name: is_far_below
+        data_type: boolean
+        description: >-
+          True for the lowest band of a set when it is not a mastery band.
+          Illuminate and Focus Assessments only; null for every other source,
+          for not-taken rows, and when the band set's setup breaks the level
+          rule's assumptions.

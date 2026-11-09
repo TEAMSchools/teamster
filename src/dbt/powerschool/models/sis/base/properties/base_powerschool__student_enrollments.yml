@@ -17,6 +17,8 @@ models:
         data_type: date
       - name: exitdate
         data_type: date
+      - name: exitdate_clipped
+        data_type: date
       - name: entrycode
         data_type: string
       - name: exitcode

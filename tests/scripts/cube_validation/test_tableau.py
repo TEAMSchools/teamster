@@ -17,6 +17,7 @@ from cube_validation.discover import sheet_shape
 from cube_validation.tableau import (
     RefreshMovedError,
     Tableau,
+    _number,
     displayed_decimals,
     drop_number_formats,
     expose_sheet,
@@ -141,7 +142,7 @@ def _comparison(**kw) -> Comparison:
     return Comparison(**base)
 
 
-def _rows(values: dict[str, float | None]) -> list[dict]:
+def _rows(values: dict[str, float | str | None]) -> list[dict]:
     return [{"region": k, "value": v} for k, v in values.items()]
 
 
@@ -200,10 +201,26 @@ def test_prove_refuses_formatted_values_and_missing_decimals():
     with pytest.raises(ValueError, match="number format"):
         prove(
             _comparison(),
-            _rows({"North": "91.2%"}),
-            _rows({"North": 0.912}),
+            _rows({"North": "$91.20"}),
+            _rows({"North": 91.2}),
             twb_xml=_twb(),
         )
+    # A percent rounded to the comparison's decimals is a format left behind.
+    with pytest.raises(ValueError, match="number format"):
+        prove(
+            _comparison(),
+            _rows({"North": "91.2%", "South": "50%"}),
+            _rows({"North": 0.912, "South": 0.5}),
+            twb_xml=_twb(),
+        )
+    # A percent-of-total calc keeps its % at full precision; an exact cell
+    # beside it reads too.
+    assert prove(
+        _comparison(),
+        _rows({"North": "91.234567891%", "South": "50%"}),
+        _rows({"North": 0.91234567891, "South": 0.5}),
+        twb_xml=_twb(),
+    ).proven
     with pytest.raises(ValueError, match="decimals"):
         prove(_comparison(decimals=None), [], [], twb_xml=_twb())
 
@@ -776,6 +793,40 @@ def test_set_shelves_clears_a_filter_on_one_sheet_only():
         assert after["Mastery by Week"] == before["Mastery by Week"]
 
 
+_ACTION = f"{DKI_DS}.[Action (School)]"
+_ACTION_FILTER = (
+    f"<filter class='categorical' column='{_ACTION}'>\n"
+    "            <groupfilter function='crossjoin' "
+    "user:ui-action-filter='[Action1_X]' user:ui-domain='database' "
+    "user:ui-enumeration='inclusive' user:ui-marker='enumerate'>\n"
+    "              <groupfilter function='empty-level' member='[school]' />\n"
+    "            </groupfilter>\n"
+    "          </filter>\n"
+    "          "
+)
+
+
+def test_set_shelves_clears_an_action_filter_by_removing_it():
+    discipline = f"<filter class='categorical' column='{DKI_DS}.[Discipline]'"
+    slice_ = f"<column>{DKI_DS}.[Discipline]</column>"
+    assert DKI_TWB.count(discipline) == 2 and DKI_TWB.count(slice_) == 1
+    src = DKI_TWB.replace(discipline, _ACTION_FILTER + discipline, 1).replace(
+        slice_, f"<column>{_ACTION}</column>\n            {slice_}", 1
+    )
+    assert _ACTION in _worksheets(src)["Mastery Grid"]
+
+    out = set_shelves(src, "Mastery Grid", {"clear_filters": ["Action (School)"]}).xml
+
+    ET.fromstring(out)
+    grid = _worksheets(out)["Mastery Grid"]
+    # An action filter has no level to keep every member of; leaving it out of
+    # the copy shows every row, as the dashboard does before a click.
+    assert _ACTION not in grid
+    assert grid.count("<filter class='categorical'") == 4
+    assert grid.count("<column>[federated") == 4
+    assert out.replace(grid, "") == src.replace(_worksheets(src)["Mastery Grid"], "")
+
+
 def test_set_shelves_refuses_to_clear_a_missing_or_range_filter():
     with pytest.raises(ValueError, match="no filter on 'School'; it filters Disc"):
         set_shelves(DKI_TWB, "Mastery Grid", {"clear_filters": ["School"]})
@@ -1079,3 +1130,17 @@ def test_source_fingerprint_follows_the_connection_not_the_extract():
     assert source_fingerprint(twb("v1", "10/30/2026"), "S") == base
     assert source_fingerprint(twb("v1", "10/29/2026", other="y"), "S") == base
     assert source_fingerprint(twb("v2", "10/29/2026"), "S") != base
+
+
+def test_export_number_reads_a_percent_of_total_as_a_fraction():
+    # A percent-of-total table calc exports with a % even after
+    # drop_number_formats, since Tableau formats it with no rule in the XML.
+    assert _number("11.538461538%") == pytest.approx(0.11538461538)
+    assert _number("-2.5%") == pytest.approx(-0.025)
+    assert _number("1,234.5%") == pytest.approx(12.345)
+
+
+@pytest.mark.parametrize("text", ["$12.50", "12 pts", "%", "12%%", "nan", "inf"])
+def test_export_number_still_refuses_other_formats(text):
+    with pytest.raises(ValueError, match="still carries a number format"):
+        _number(text)

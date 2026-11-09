@@ -137,3 +137,10 @@ models:
           of the academic year; PM2 -> January 1 of (year+1); PM3 -> March 1 of
           (year+1). Null in the 2023 walkthrough branch and for non-PM
           term_codes.
+      - name: rn_employee_type
+        data_type: int64
+        description: >-
+          Rank of the observation among the employee's observations of the same
+          type, newest first. 1 is the most recent, ordered by eval_date, then
+          observed_at_timestamp, then observation_id, so several observations in
+          one term still rank in a stable order.

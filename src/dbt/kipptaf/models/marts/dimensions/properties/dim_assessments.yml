@@ -83,7 +83,8 @@ models:
         data_type: string
         description: >-
           Display name of the assessment (Ed-Fi
-          edFi_assessment.assessmentTitle).
+          edFi_assessment.assessmentTitle). For state tests, the test name, such
+          as NJSLA, NJSLA Science, NJGPA, FAST or EOC.
 
       # Ed-Fi academic_subject_descriptor.
       - name: academic_subject
