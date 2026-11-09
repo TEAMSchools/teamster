@@ -96,6 +96,22 @@ Verified in the warehouse on 2026-11-08.
   lockers, graduation date, community service hours). None hold plan state.
 - The Lab tracker already consumes `rpt_gsheets__gpa_roster` as its "GPA Feed"
   tab, so the team already trusts a nightly extract.
+- The NCA tracker is a different tool from Lab's: a case-management sheet with
+  81 focus students, each carrying a case manager, a computed primary risk and
+  priority letter, a primary barrier, an intervention, this week's action, a due
+  date, evidence, a Promise Status (Active, Monitor, Exit) and a level-up
+  request to leadership. Risk indicators (GPA under 2.5, chronic absence, 2 or
+  more suspensions, 5 or more referrals, ADA under 75%) are computed in-sheet
+  from pasted DATA tabs; referrals and suspensions are matched by student name.
+  A Student History Archive keeps entry and exit baselines. Many cells read
+  "Needs Update".
+- The communication log at the two high schools is mostly daily absence-reason
+  notes (`Att: Unknown`, `Att: Illness`, `Att: Other`, one per absence), plus
+  mass messages (the same topic text sent to 20 or more students on one day),
+  the tiered `Chronic Absence: N` letters, and one-to-one case work logged under
+  ordinary attendance reasons. Call type is blank on about 70% of Lab entries;
+  call status (Completed, Left Message, Unreachable) is populated. No reason
+  marks a Promise Team contact.
 
 ## Approaches
 
@@ -127,15 +143,37 @@ DeansList's own RTI rosters. A student on a Promise Team plan is a member of
 `rti_tier` and roster name, not from a custom field. Moving a student between
 rosters is the tier change; the weekly snapshot records it.
 
-No student custom fields in v1. Plan lead, goal, cycle start, "likely why" and
-the week-6 Child Study Team recommendation are plan state the Paterson hub
-holds. They are open questions for the stakeholder (below). If wanted, each is
-one DeansList student custom field plus one line in
-`int_deanslist__students__custom_fields__pivot`.
+Plan state beyond membership and tier lives in a weekly Google Form, not in
+DeansList custom fields and not in the sheet. NCA already records 8 plan fields
+per student each week; the form carries the same ones: Promise Status (Active,
+Monitor, Exit), primary barrier, intervention, this week's action, due date,
+evidence from last week, level-up needed and level-up request. The respondent's
+email is the case manager. The student is prefilled through the form's
+prefilled-link feature; the roster sheet and the skill carry a "Log this week"
+link per student with the student number filled in, so no one types a name. One
+form per school, frozen once the roster ships, because the prefilled links
+depend on the question ids. About 100 to 120 submissions a week across both
+schools.
+
+Responses land in a Data-Team-owned linked sheet and reach the warehouse as
+`stg_google_sheets__promise_team__weekly_updates`, following the Google Form
+source steps in `docs/guides/google-sheets.md`. Responses are append-only, so
+plan history comes free. The form is for internal case notes only; its first
+line says family contacts go in DeansList.
 
 Prerequisite outside this repo: a DeansList administrator creates the RTI roster
 set at NCA (Lab already has one) and the Promise Team moves its current list
 into the Tier 2 and Tier 3 attendance and behavior rosters.
+
+### What counts as a Promise Team contact
+
+Every communication log entry for a student while on a Tier 2 or 3 roster
+counts, except mass messages. A mass message is an entry whose user, date and
+topic text match 10 or more students' entries that day. Daily absence-reason
+notes count. Letters count. No new log type, no topic convention, no filter on
+who logged it. `is_flag_no_contact_10_days`, `n_contacts_ytd`, the no-contact
+list and contact fidelity all use this definition. The one-pager and the
+contacts tab show every non-mass entry and mark the mass ones out.
 
 ### The roster model
 
@@ -156,7 +194,11 @@ Columns, grouped by source:
   `iep_status`, `is_504`, `ml_status`, `enroll_status`.
 - Promise Team state (rosters): `promise_team_tier` (2, 3 or null),
   `promise_team_focus` (`Attendance`, `Behavior`, both, or null),
-  `promise_team_roster_names`.
+  `promise_team_roster_names`, `weeks_on_roster` (from the roster snapshot).
+- Plan (latest weekly form response): `case_manager`, `promise_status`,
+  `primary_barrier`, `intervention`, `this_week_action`, `action_due_date`,
+  `last_form_date`, `is_level_up_requested`, `weekly_form_url` (the prefilled
+  link for this student).
 - Attendance (daily and periods marts, year to date): `ada`, `ontime_rate`,
   `n_days_absent`, `n_days_absent_unexcused`, `n_days_tardy`, `ada_tier`,
   `is_chronically_absent`, `is_truant`, `days_to_90_pct` (membership days the
@@ -242,9 +284,21 @@ student per school with this week's figures, last week's, the change, and the
 string). A few hundred rows per school, so the Sheets connector can read it in
 one range. The full weekly tab stays for the one-pager and for analysts.
 
-"Weeks on a Tier 2 or 3 roster", from the first week the roster snapshot shows
-the student there, stands in for cycle start until the stakeholder answers open
-question 2.
+`weeks_on_roster`, from the first week the roster snapshot shows the student on
+a Tier 2 or 3 roster, is the cycle clock; the form's first "Active" response for
+the student is the fallback where the snapshot predates nothing.
+
+`rpt_gsheets__promise_team_contacts`: one row per non-mass communication log
+entry this year for a student currently at the school: date, staff, method,
+status, reason, topic, `is_mass_message`, `is_while_on_roster`. No `notes`
+column. Sorted by student then date, so the skill can read one student's block
+for the one-pager without pulling the tab. About 4,000 rows per school so far
+this year, 8,000 to 10,000 by June.
+
+`rpt_gsheets__promise_team_form_responses`: every form response this year, one
+row per submission, for the weekly history and the replacement of NCA's Student
+History Archive (entry week, baseline ADA and GPA, exit week, exit figures come
+from joining responses to the weekly tab).
 
 ### Delivery
 
@@ -266,31 +320,50 @@ report sheet pair plus an exposure, not a new model.
 
 ### The Claude skill
 
-One scorer. The person who runs both teams has the Google Sheets and Cube
-connectors and the skill. Everyone else reads what the skill produces. The
-skill's reference file holds the Lab tracker's outreach script and the flag
-thresholds.
+One scorer. The person who runs both teams has the Google Sheets, Google Slides
+and Cube connectors and the skill. Everyone else reads what the skill produces.
+The skill's reference file holds the Lab tracker's outreach script, the flag
+thresholds, and NCA's intervention menu.
 
-Commands, in the order a demo would show them:
+Every student name the skill prints carries two links from the roster sheet: the
+DeansList communication page and the prefilled weekly form.
+
+Commands, in the order a demo would show them (the mockup at
+https://claude.ai/artifact/M7BCEbYf7kehbXdZgSHS4h shows each one):
 
 1. **Score the week.** Per school and grade: who crossed a flag this week, who
    moved tier or flag since last week, who on a Promise Team roster has no
-   contact in 10 days. Reads the changes tab for movement and Cube for
-   attendance as of today.
+   contact in 10 days (with the DeansList link per row), and which active plans
+   have no form entry since the last meeting. A six-week trend row for the
+   school: flagged students, contact fidelity against the 100% goal, chronic
+   absence rate. Reads the changes tab and Cube for attendance as of today.
 2. **Meeting agenda.** The flag list ordered for the 60-minute meeting: new
    flags, then no-contact students, then students at 6 or more weeks on a Tier 2
-   or 3 roster. Each line carries last contact date, staff and outcome.
-3. **Call prep card.** The outreach script filled with one student's ADA,
-   absences, absences to credit loss and last contact. After the call, the skill
-   returns the communication log entry text for the caller to paste into
-   DeansList.
-4. **Student one-pager.** Trend across the weekly tab, contacts, discipline, GPA
-   and credits, laid out for printing before a family meeting.
-5. **Leadership rollup.** One paragraph per school: counts by tier, contact
-   fidelity, movement, for the principal or regional lead.
+   or 3 roster. Each line carries last contact date, staff and outcome, and this
+   week's action from the form.
+3. **Meeting deck.** The agenda as a Google Slides deck through the Slides
+   connector: title, four numbers, one slide per agenda block, commitments,
+   "before you leave". Saved to the Promise Team folder. "Regenerate" rebuilds
+   it in place; "no names" produces the leadership version.
+4. **Call prep card.** The outreach script filled with one student's ADA,
+   absences, promotion status and last contact, with the barrier from the form.
+   After the call, the skill returns the communication log entry text and the
+   DeansList link.
+5. **Log this week.** Returns the student's prefilled form link, or drafts the
+   answers from a sentence the case manager types, for them to paste.
+6. **Student one-pager.** Trend across the weekly tab, plan from the form, every
+   non-mass contact from the contacts tab, discipline, GPA and credits, laid out
+   for printing before a family meeting.
+7. **Leadership rollup.** One paragraph per school: counts by tier, contact
+   fidelity, movement, open level-up requests, with six-week trend cards (on a
+   plan, contact fidelity, share of plan students above their starting ADA,
+   school ADA against 90%).
+8. **Just the table.** Any grade or filter as one wide table of roster columns
+   with no commentary, and a copy that pastes into a Sheet or Doc.
 
-The skill never stores anything and never writes to the sheet. If a user types a
-note into Claude, the skill returns it formatted for DeansList and says so.
+The skill never stores anything and never writes to the roster sheet. If a user
+types a family-contact note into Claude, the skill returns it formatted for
+DeansList and says so; a case note becomes form answers.
 
 The skill is a Claude plugin or skill distributed the way the gradebook
 expectations upload skill is. Its home in this repo and its distribution are the
@@ -304,14 +377,15 @@ Carried into the skill and roster design once answered. None blocks the extract.
    back, and where that is recorded today. The threshold itself comes from the
    promotion policy and is not a question. The Lab tracker:
    https://docs.google.com/spreadsheets/d/1j1pVyClQld93uIHyWFXcxsCozTAoyffuyErhrGO0MKY
-1. Plan lead per student: a DeansList custom field, or inferred from who logs
-   the contacts?
-2. Goal and cycle start date per student: custom fields, or kept in the meeting
-   notes?
-3. "Likely why" category and the week-6 Child Study Team recommendation: do the
-   Newark teams use either?
-4. Does NCA's Promise Team run the same thresholds and rhythm as Lab's?
-5. Who at each school may be granted the sheet?
+1. Does the weekly form's 8 fields cover what each team records today? NCA's
+   tracker has them all; Lab has an "Assigned Teammate" and a strategy column.
+2. "Likely why" category and the week-6 Child Study Team recommendation (from
+   the Paterson hub): do the Newark teams want either on the form?
+3. Does NCA keep its own risk thresholds (GPA under 2.5, ADA under 75%, 5 or
+   more referrals, 2 or more suspensions) alongside Lab's, and does it run the
+   same weekly rhythm?
+4. Who at each school may be granted the sheet, and who are the case managers
+   who get the form?
 
 ## Left to the builder
 
@@ -328,6 +402,12 @@ Carried into the skill and roster design once answered. None blocks the extract.
 - The roster snapshot's `check_cols` (membership has no attributes that change,
   so the check is on presence of the row) and its tick, aligned with the GPA
   snapshot.
+- The mass-message rule's exact threshold and matching (topic text equality
+  versus a normalized prefix), checked against last year's data so the known
+  blasts of 26 to 29 students are caught and the `Att: Social Services` case
+  work is not.
+- The form's question list and prefilled-link construction, and how the roster
+  model builds `weekly_form_url` from it.
 - Skill file layout, reference file contents, and distribution.
 
 ## Acceptance
@@ -338,6 +418,12 @@ Carried into the skill and roster design once answered. None blocks the extract.
   recent tab and against DeansList.
 - A student placed on `RTI Attendance - Tier 2` in DeansList shows
   `promise_team_tier = 2` the next morning.
+- A form submitted from a student's prefilled link shows as that student's plan
+  columns the next morning, with the respondent as `case_manager`.
+- A mass message to 29 students does not count as a contact for any of them; a
+  one-to-one entry under `Att: Social Services` does.
+- The one-pager for a student lists every non-mass contact this year, read from
+  the contacts tab, matching the count on the student's DeansList page.
 - The NCA report sheet contains no Lab students, and the Lab sheet no NCA
   students, checked by comparing each sheet's distinct `school` values after the
   first scheduled extract.
