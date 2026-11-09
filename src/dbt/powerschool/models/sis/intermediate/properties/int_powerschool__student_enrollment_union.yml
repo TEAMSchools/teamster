@@ -39,6 +39,16 @@ models:
           Date the student left the school for this stint. Null on graduate
           placeholder rows, which a date-range join silently drops.
         data_type: date
+      - name: exitdate_clipped
+        description: >-
+          `exitdate`, cut back to the next stint's `entrydate` when a later
+          stint at any school starts before this one ends, so the later stint
+          owns the overlapping days. Exclusive, like `exitdate`. Date-range
+          joins that must stay one row per student-day use this instead of
+          `exitdate`. Overlapping stints are a PowerSchool data-entry defect
+          that test_int_powerschool__ps_enrollment_all__no_overlapping_stints
+          warns on. Null on graduate placeholder rows.
+        data_type: date
       - name: entrycode
         data_type: string
       - name: exitcode

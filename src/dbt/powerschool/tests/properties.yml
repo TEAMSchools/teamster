@@ -28,10 +28,10 @@ data_tests:
       stint's half-open `[entrydate, exitdate)`, usually because the old stint
       was left open after a transfer. Fix it in PowerSchool by closing the
       earlier stint, or correcting its exit date, so it ends on or before the
-      later stint's entry date. Downstream, `exitdate_clipped` on this model
-      cuts the earlier stint off at the later stint's `entrydate`, so
-      `int_powerschool__ps_membership_reg` stays at one row per student-day
-      instead of double-counting the overlap in attendance.
+      later stint's entry date. Downstream, `exitdate_clipped` on this model and
+      on `int_powerschool__student_enrollment_union` cuts the earlier stint off
+      at the later stint's `entrydate`, so attendance and the enrollment spine
+      stay at one row per student-day instead of double-counting the overlap.
     config:
       severity: warn
       meta:
@@ -108,6 +108,9 @@ data_tests:
       attendance windows). Fix it in PowerSchool by moving the earlier stint's
       exit date back one day, or the later stint's entry date forward one day.
     config:
+      # PowerSchool exitdate is exclusive, so a shared boundary is a clean
+      # transfer, not an overlap; no_overlapping_stints covers real overlaps.
+      enabled: false
       severity: warn
       meta:
         dagster:
