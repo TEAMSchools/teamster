@@ -280,15 +280,19 @@ models:
           assessment: standard and group rows can carry different band labels
           than the assessment's overall rows.
 
-      - name: performance_band_key
+      # Read from int_assessments__performance_band_union on source, band set
+      # id and band number. Null for every source but Illuminate and Focus
+      # Assessments, for not-taken rows, and for a score with no band set.
+      - name: mastery_level
         data_type: string
         description: >-
-          FK to dim_performance_bands: the band the score fell in, on the band
-          set its response type was scored against. Illuminate and Focus
-          Assessments only; null for every other source, for not-taken rows, and
-          for a score with no band set.
-        config:
-          meta:
-            foreign_key:
-              to: ref('dim_performance_bands')
-              to_columns: [performance_band_key]
+          The band's level relative to its set's mastery band, the same on every
+          set. At/Above is the mastery band and every band above it; Approaching
+          is the band directly below the mastery band; Below is every band under
+          that. Null when the band set's setup breaks the rule's assumptions.
+
+      - name: is_far_below
+        data_type: boolean
+        description: >-
+          True for the lowest band of a set when it is not a mastery band. Null
+          when the band set's setup breaks the level rule's assumptions.

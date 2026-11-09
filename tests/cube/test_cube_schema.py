@@ -527,6 +527,8 @@ TWINS.update(
                 "response_type_description",
                 "response_type_root_description",
                 "performance_band_label_number",
+                "mastery_level",
+                "is_far_below",
                 "proficiency_level",
                 "is_mastery",
                 "scale_score",
@@ -556,22 +558,6 @@ TWINS.update(
             "source_assessment_id",
         ),
         ("student_assessments", "title"): ("dim_assessments", "title"),
-        **{
-            ("student_performance_bands", c): ("dim_performance_bands", c)
-            for c in [
-                "performance_band_key",
-                "performance_band_set",
-                "band_label",
-                "band_number",
-                "band_count",
-                "minimum_score",
-                "maximum_score",
-                "mastery_band_number",
-                "mastery_minimum_score",
-                "mastery_level",
-                "is_far_below",
-            ]
-        },
         ("locations", "grade_band"): ("dim_locations", "grade_band"),
         ("courses", "is_foundations"): ("dim_courses", "is_foundations"),
         ("student_attendance_enrollment_daily", "n_absent_days_rolling_90"): (
@@ -611,13 +597,6 @@ PHRASES.update(
             "Not comparable across assessments",
             "across response types",
             "compare mastery_level instead",
-        ],
-        "student_performance_bands.mastery_level": [
-            "band numbers do not",
-            "name both assessments",
-        ],
-        "student_performance_bands.mastery_minimum_score": [
-            "what counts as mastery on this test",
         ],
         "student_assessment_scores.pct_students_below": [
             "percent of students",

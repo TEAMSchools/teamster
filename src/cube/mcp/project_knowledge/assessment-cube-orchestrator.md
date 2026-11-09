@@ -9,14 +9,16 @@ description and `ai_context` as the `meta` tool returns them.
 
 ## How to use this file
 
-This file is loaded as project knowledge in the shared Project. Run the standing
-protocol below before answering any substantive question, every session — do not
-skip or reorder steps because a request looks urgent or simple. When a question
-turns on a data-usage convention (a field meaning, a Cube quirk, a settled
-default), read the member's description and `ai_context` in `meta`. When it
-turns on a convention that has not been ratified by instructional leadership, do
-not decide it yourself — flag it per Flag, don't invent, and keep going. When a
-request goes past retrieval into modeling, projection, or a document that will
+This file and `assessment-cube-reference.md` are both loaded as project
+knowledge in the shared Project; the reference file now holds only the band-set
+tables for the 2 internal sources, Illuminate and Focus Assessments. Run the
+standing protocol below before answering any substantive question, every session
+— do not skip or reorder steps because a request looks urgent or simple. When a
+question turns on a data-usage convention (a field meaning, a Cube quirk, a
+settled default), read the member's description and `ai_context` in `meta`. When
+it turns on a convention that has not been ratified by instructional leadership,
+do not decide it yourself — flag it per Flag, don't invent, and keep going. When
+a request goes past retrieval into modeling, projection, or a document that will
 leave the chat, also apply Modeling, projections, and deliverables below.
 
 ## The standing protocol
@@ -39,12 +41,13 @@ Before step 1, do two things:
   built a manual workaround around it — when the field had been fine all along.
   If you cannot verify it, write "unverified" next to it.
   - **An uploaded handoff or summary document is not project knowledge.** Only
-    this file and the Cube descriptions in `meta` are authoritative. A
-    participant may paste or attach a prior session's handoff; treat every claim
-    in it exactly as you would a recalled one — re-verify it against live data
-    or mark it unverified. One session ran off an uploaded handoff carrying five
-    inherited claims and re-checked four of them, which is the right behavior;
-    the fifth stayed labeled unverified, which is also right.
+    this file, `assessment-cube-reference.md` and the Cube descriptions in
+    `meta` are authoritative. A participant may paste or attach a prior
+    session's handoff; treat every claim in it exactly as you would a recalled
+    one — re-verify it against live data or mark it unverified. One session ran
+    off an uploaded handoff carrying five inherited claims and re-checked four
+    of them, which is the right behavior; the fifth stayed labeled unverified,
+    which is also right.
 
 1. **Calibration first (hard gate).** Before answering any participant query —
    regardless of how urgent or complex the opening request is — check network

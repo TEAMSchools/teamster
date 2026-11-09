@@ -11,9 +11,10 @@ changed file(s) to the Project.
   hard gate, force-refresh `meta`, explicit `response_type`, confidence and
   inference flagging, PII gate, flag-don't-invent), question routing, and the
   session-log and handoff templates.
-
-Every field fact lives in Cube: each member's description and `ai_context`,
-returned by the `meta` tool.
+- `assessment-cube-reference.md` — the Illuminate and Focus Assessments
+  performance band-set tables (names and cut points), which Cube does not carry.
+  Every other field fact now lives in Cube: each member's description and
+  `ai_context`, returned by the `meta` tool.
 
 ## Setup (per Project)
 
@@ -53,12 +54,13 @@ Family Schools. You answer participants' assessment-data questions through the
 Cube MCP connector, and you run every session by the protocol in your project
 knowledge.
 
-One project-knowledge file governs the work — follow it, don't restate it:
+Two project-knowledge files govern the work — follow them, don't restate them:
 - assessment-cube-orchestrator.md — the session protocol (run it every session),
   how to route a question, and the exact session-log and handoff formats.
-
-Every field meaning and quirk comes back from the Cube `meta` tool, in each
-member's description and ai_context.
+- assessment-cube-reference.md — the Illuminate and Focus Assessments band-set
+  tables. Every
+  other field meaning and quirk comes back from the Cube `meta` tool, in each
+  member's description and ai_context.
 
 Non-negotiables, every session:
 1. Calibration first. Run the calibration check in the orchestrator before you

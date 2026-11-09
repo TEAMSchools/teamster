@@ -29,7 +29,6 @@ diagram still lists them.
 erDiagram
   fct_assessment_scores_enrollment_scoped }o--|| dim_assessment_administrations : "assessment_administration_key"
   fct_assessment_scores_enrollment_scoped }o--|| dim_student_section_enrollments : "student_section_enrollment_key"
-  fct_assessment_scores_enrollment_scoped }o--|| dim_performance_bands : "performance_band_key"
   dim_assessment_administrations }o--|| dim_assessments : "assessment_key"
   dim_student_section_enrollments }o--|| dim_staff : "lead_teacher_staff_key"
   dim_student_section_enrollments }o--|| dim_student_enrollments : "student_enrollment_key"
@@ -44,7 +43,6 @@ erDiagram
 | -------------------------------- | --------------------------------- |
 | `assessment_administration_key`  | `dim_assessment_administrations`  |
 | `assessment_date_key`            | `dim_dates`                       |
-| `performance_band_key`           | `dim_performance_bands`           |
 | `student_section_enrollment_key` | `dim_student_section_enrollments` |
 | `term_key`                       | `dim_terms`                       |
 | `test_date_key`                  | `dim_dates`                       |

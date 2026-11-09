@@ -14,7 +14,6 @@ exposures:
       - ref("dim_assessment_comparisons")
       - ref("dim_assessment_goals")
       - ref("dim_assessments")
-      - ref("dim_performance_bands")
       - ref("dim_college_enrollments")
       - ref("dim_colleges")
       - ref("dim_course_sections")

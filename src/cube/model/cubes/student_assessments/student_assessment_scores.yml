@@ -36,14 +36,6 @@ cubes:
         sql: "{terms.term_key} = {CUBE}.term_key"
         relationship: many_to_one
 
-      # The band the score fell in, on its own response type's band set. Only
-      # path to the band dimension, so no diamond.
-      - name: student_performance_bands
-        sql: >
-          {student_performance_bands.performance_band_key} =
-          {CUBE}.performance_band_key
-        relationship: many_to_one
-
     dimensions:
       - name: assessment_score_key
         description: Surrogate key. Primary key for this fact.
@@ -153,16 +145,13 @@ cubes:
             label spelling. To compare bands across assessments, compare
             mastery_level instead.
 
-      # The band cube's level, re-exposed here so pct_students_at_level can
-      # reduce by it: multi-stage reduce_by takes only this cube's dimensions.
-      # The view shows this member, not the band cube's.
       - name: mastery_level
         description: >-
           The band's level relative to its set's mastery band, the same on every
           set. At/Above is the mastery band and every band above it; Approaching
           is the band directly below the mastery band; Below is every band under
           that. Null when the band set's setup breaks the rule's assumptions.
-        sql: "{student_performance_bands.mastery_level}"
+        sql: "{CUBE}.mastery_level"
         type: string
         public: true
         meta:
@@ -170,6 +159,14 @@ cubes:
             Compares across assessments, where band numbers do not. To see
             whether a student moved between bands on 2 assessments, compare
             mastery_level on each, and name both assessments.
+
+      - name: is_far_below
+        description: >-
+          True for the lowest band of a set when it is not a mastery band. Null
+          when the band set's setup breaks the level rule's assumptions.
+        sql: "{CUBE}.is_far_below"
+        type: boolean
+        public: true
 
       - name: is_mastery
         description: >-
@@ -191,9 +188,7 @@ cubes:
           ai_context: >-
             For i-Ready at or above grade level, filter proficiency_level to Mid
             or Above Grade Level instead. When reporting an Illuminate or Focus
-            Assessments rate, say which assessments it covers. The bar behind an
-            Illuminate or Focus Assessments row is in performance_band_set and
-            mastery_minimum_score.
+            Assessments rate, say which assessments it covers.
 
       - name: scale_score
         description: >-
@@ -468,8 +463,8 @@ cubes:
 
       # Below and Far Below shares are percents of students, counted on the
       # same key as count_students. Numerators and denominator all filter on
-      # the joined band cube's level, so a band set that fails the level rule
-      # (null level) drops out of both sides.
+      # the fact's mastery_level, so a band set that fails the level rule (null
+      # level) drops out of both sides.
       - name: count_students_banded
         description: >-
           Distinct students (per student-year) with a score that fell in a
@@ -480,7 +475,7 @@ cubes:
         type: count_distinct
         public: true
         filters:
-          - sql: "{student_performance_bands.mastery_level} IS NOT NULL"
+          - sql: "{CUBE}.mastery_level IS NOT NULL"
         meta:
           ai_context: >-
             Group by mastery_level for the number of students at each level. A
@@ -529,7 +524,7 @@ cubes:
         type: count_distinct
         public: false
         filters:
-          - sql: "{student_performance_bands.mastery_level} = 'Below'"
+          - sql: "{CUBE}.mastery_level = 'Below'"
 
       - name: _count_students_far_below
         description: >-
@@ -539,7 +534,7 @@ cubes:
         type: count_distinct
         public: false
         filters:
-          - sql: "{student_performance_bands.is_far_below}"
+          - sql: "{CUBE}.is_far_below"
 
       - name: pct_students_below
         description: >-

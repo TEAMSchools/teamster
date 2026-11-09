@@ -2,32 +2,33 @@ models:
   - name: int_assessments__performance_band_union
     description: >-
       Every band of every Illuminate and Focus Assessments band set that scores
-      an internal assessment, one row per band, with the set's cut points and
-      mastery band, and each band's level relative to that mastery band.
-      Illuminate and Focus number their band sets separately, so a set is
-      identified by source and band set id together. Band sets that score no
-      internal assessment are left out. Focus band set ids are unique only
-      within 1 Focus instance; kippmiami is the only one, so adding a second
-      Focus region means adding the region to the band key.
+      an internal assessment, one row per band, with the set's mastery band and
+      each band's level relative to that mastery band. Illuminate and Focus
+      number their band sets separately, so a set is identified by source and
+      band set id together. Band sets that score no internal assessment are left
+      out. Focus band set ids are unique only within 1 Focus instance; kippmiami
+      is the only one, so adding a second Focus region means adding the region
+      to the scores fact's join on this model.
     config:
       materialized: table
       meta:
         dagster:
-          # The assessment star's tick; dim_performance_bands and the scores
-          # fact read this model. Refs #4559, #4821
+          # The assessment star's tick; the scores fact reads this model.
+          # Refs #4559, #4821
           automation_condition:
             cron_schedule: 30 0,10,13,15,17 * * *
+    # The scores fact joins on these 3 columns to read each score's level, so a
+    # duplicate here would fan out the fact.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - source
+              - performance_band_set_id
+              - band_number
+          config:
+            severity: error
     columns:
-      - name: performance_band_key
-        data_type: string
-        description: >-
-          Surrogate key of the band, hashed from source, band set id and band
-          number. Primary key; the scores fact hashes the same 3 values.
-        data_tests:
-          - unique:
-              config:
-                severity: error
-
       # The level rule's guard. Severity warn by design: an error here would
       # skip the scores fact and stop every assessment dashboard refreshing.
       - name: is_level_rule_valid
@@ -59,23 +60,12 @@ models:
         data_type: int64
         description: >-
           The source system's own band set id; unique only together with source.
-      - name: performance_band_set
-        data_type: string
-        description: Name of the band set the band belongs to.
-      - name: band_label
-        data_type: string
-        description: >-
-          The band's label as the source spells it. A set can repeat a label, so
-          band_number, not the label, identifies a band.
       - name: band_number
         data_type: int64
         description: Position of the band in its set, 1 = lowest.
       - name: band_count
         data_type: int64
         description: Number of bands in the set.
-      - name: minimum_score
-        data_type: numeric
-        description: Lowest percent correct in the band.
       - name: maximum_score
         data_type: numeric
         description: >-
@@ -88,11 +78,6 @@ models:
       - name: mastery_band_number
         data_type: int64
         description: The set's lowest mastery band.
-      - name: mastery_minimum_score
-        data_type: numeric
-        description: >-
-          The set's mastery cut: the lowest percent correct that counts as
-          mastery.
       - name: mastery_level
         data_type: string
         description: >-

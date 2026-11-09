@@ -260,3 +260,17 @@ Illuminate band set would stop every assessment dashboard refreshing. Instead, a
 band set that breaks any of the 3 assumptions gets a null `mastery_level` and a
 null `is_far_below` on every band. Its scores still load, with no level, and the
 warning names the set to fix.
+
+## Revision 2026-11-09: no band dimension
+
+Decided on PR review (cbini). `dim_performance_bands` and its Cube cube are
+dropped. The fact already carries the band label, band number and `is_mastery`,
+and the asks need only the level, so `fct_assessment_scores_enrollment_scoped`
+gains 2 columns, `mastery_level` and `is_far_below`, read from
+`int_assessments__performance_band_union` on source, band set id and band
+number. The union keeps the level rule and its guard and unit tests. Cube reads
+both columns straight off the fact, and the share measures keep their names.
+
+Goal 5 and goal 6 are withdrawn. Cut points, set names and mastery cuts stay in
+`assessment-cube-reference.md`: no DDI view and no stakeholder ask needs them in
+Cube.

@@ -46,6 +46,7 @@ views:
           - proficiency_level
           - performance_band_label_number
           - mastery_level
+          - is_far_below
           - is_mastery
           - scale_score
           - percent_correct
@@ -73,21 +74,6 @@ views:
           - administration_period
           - test_type
           - source_assessment_id
-
-      # is_mastery stays on the fact's include; the band's own flag would
-      # collide with it. mastery_level comes from the fact's proxy, which
-      # pct_students_at_level reduces by.
-      - join_path: student_assessment_scores.student_performance_bands
-        includes:
-          - performance_band_set
-          - band_label
-          - band_number
-          - band_count
-          - minimum_score
-          - maximum_score
-          - mastery_band_number
-          - mastery_minimum_score
-          - is_far_below
 
       - join_path: student_assessment_scores.dates
         includes:
@@ -241,6 +227,8 @@ views:
             - enrollment_resolution
             - proficiency_level
             - performance_band_label_number
+            - mastery_level
+            - is_far_below
             - is_mastery
             - scale_score
             - percent_correct
@@ -249,18 +237,6 @@ views:
             - response_type_description
             - response_type_root_description
             - is_replacement
-        - name: Performance band
-          members:
-            - performance_band_set
-            - band_label
-            - band_number
-            - band_count
-            - minimum_score
-            - maximum_score
-            - mastery_band_number
-            - mastery_minimum_score
-            - mastery_level
-            - is_far_below
         - name: Date
           members:
             - assessment_date

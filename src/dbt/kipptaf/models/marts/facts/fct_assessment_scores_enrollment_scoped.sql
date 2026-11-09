@@ -15,7 +15,6 @@ with
             rr.is_replacement,
             rr.performance_band_label,
             rr.performance_band_label_number,
-            rr.performance_band_set_id,
             rr.is_mastery,
             rr.n_assessments,
             rr.percent_correct,
@@ -37,6 +36,9 @@ with
 
             c.administered_date,
 
+            pb.mastery_level,
+            pb.is_far_below,
+
             coalesce(c.administered_date, rr.date_taken) as assessment_date_key,
 
             cast(null as numeric) as scale_score,
@@ -53,6 +55,12 @@ with
             {{ ref("int_assessments__assessments_canonical") }} as c
             on a.source = c.source
             and a.canonical_assessment_id = c.canonical_assessment_id
+        -- LEFT: a score with no band set or no band has no level
+        left join
+            {{ ref("int_assessments__performance_band_union") }} as pb
+            on rr.source = pb.source
+            and rr.performance_band_set_id = pb.performance_band_set_id
+            and rr.performance_band_label_number = pb.band_number
         where rr.is_internal_assessment
     ),
 
@@ -392,15 +400,8 @@ select
     ia.response_type_root_description,
     ia.is_replacement,
     ia.performance_band_label_number,
-
-    {{
-        performance_band_key(
-            "ia.source",
-            "ia.performance_band_set_id",
-            "ia.performance_band_label_number",
-            nullable="ia.performance_band_label_number",
-        )
-    }} as performance_band_key,
+    ia.mastery_level,
+    ia.is_far_below,
 
     sr.resolution_type as enrollment_resolution,
 from internal_assessments as ia
@@ -489,7 +490,8 @@ select
     cast(null as string) as response_type_root_description,
     cast(null as bool) as is_replacement,
     cast(null as numeric) as performance_band_label_number,
-    cast(null as string) as performance_band_key,
+    cast(null as string) as mastery_level,
+    cast(null as bool) as is_far_below,
 
     sr.resolution_type as enrollment_resolution,
 from state_union as su
@@ -583,7 +585,8 @@ select
     cast(null as string) as response_type_root_description,
     cast(null as bool) as is_replacement,
     cast(null as numeric) as performance_band_label_number,
-    cast(null as string) as performance_band_key,
+    cast(null as string) as mastery_level,
+    cast(null as bool) as is_far_below,
 
     sr.resolution_type as enrollment_resolution,
 from vendor_all as va
