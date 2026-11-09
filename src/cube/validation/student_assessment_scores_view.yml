@@ -550,6 +550,9 @@ comparisons:
   # across the levels of its row; the probe rebuilds that percent of total.
   - id: levels-dki-mastery-bars
     <<: *dki
+    # Unconfirmed until prove can read this sheet's percent-of-total export,
+    # which still carries a percent format; set it back to true once proven.
+    confirmed: false
     sheet: DKI - Assessment Mastery Bars
     measure: pct_students_at_level
     probe_sql: |
