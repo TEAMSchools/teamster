@@ -5,12 +5,12 @@ with
 
             cw.week_start_monday,
             cw.week_end_sunday,
-            cw.quarter,
+            cw.term,
             cw.semester,
             cw.school_week_start_date,
             cw.school_week_end_date,
             cw.week_number_academic_year,
-            cw.week_number_quarter,
+            cw.week_number_term,
             cw.is_current_week_mon_sun,
             cw.date_count,
 

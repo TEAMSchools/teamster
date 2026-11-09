@@ -4,13 +4,13 @@ from dagster import (
     Definitions,
     load_assets_from_modules,
 )
-from dagster_k8s import k8s_job_executor
 
 from teamster.code_locations.kipptaf import (
     CODE_LOCATION,
     DBT_PROJECT,
     adp,
     airbyte,
+    branchingminds,
     collegeboard,
     couchdrop,
     coupa,
@@ -31,6 +31,7 @@ from teamster.code_locations.kipptaf import (
     tableau,
     zendesk,
 )
+from teamster.core.executors import zombie_aware_k8s_job_executor
 from teamster.core.freshness import apply_freshness_policies
 from teamster.core.resources import (
     BIGQUERY_RESOURCE,
@@ -48,7 +49,7 @@ from teamster.core.resources import (
 )
 
 defs = Definitions(
-    executor=k8s_job_executor,
+    executor=zombie_aware_k8s_job_executor,
     assets=apply_freshness_policies(
         [
             *dbt.asset_specs,
@@ -60,6 +61,7 @@ defs = Definitions(
                     dlt,
                     google,
                     adp,
+                    branchingminds,
                     collegeboard,
                     coupa,
                     deanslist,
@@ -94,6 +96,7 @@ defs = Definitions(
     sensors=[
         *google.sensors,
         *adp.sensors,
+        *branchingminds.sensors,
         *couchdrop.sensors,
         *deanslist.sensors,
         AutomationConditionSensorDefinition(

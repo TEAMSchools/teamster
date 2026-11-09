@@ -4,6 +4,7 @@ from dagster import (
     AssetExecutionContext,
     Config,
     DailyPartitionsDefinition,
+    FreshnessPolicy,
     Output,
     asset,
 )
@@ -22,6 +23,19 @@ from teamster.libraries.finalsite.api.resources import FinalsiteResource
 # not exist until tomorrow, and every tick fails with DagsterUnknownPartitionError.
 CONTACTS_PARTITIONS_DEF = DailyPartitionsDefinition(
     start_date="2026-10-06", timezone="America/New_York", end_offset=1
+)
+
+# For each district's stg_finalsite__contacts. Each deadline requires the rebuild
+# after the tick before it (schedules.py): 01:00 for 00:15, 13:00 for 12:00, ahead
+# of the consumers listed in the code-location CLAUDE.md files. A missing
+# `contacts` partition fails `NOT any_deps_missing` and freezes staging for good,
+# so a failed policy here usually means: backfill the gap partition. See #6013.
+CONTACTS_STAGING_FRESHNESS_POLICY = FreshnessPolicy.cron(
+    deadline_cron="0 1,13 * * *",
+    # Under 12h so the spring DST shift cannot stretch the 13:00 window back over
+    # the 00:15 rebuild; Dagster also caps it at the shortest gap between deadlines.
+    lower_bound_delta=timedelta(hours=11),
+    timezone="America/New_York",
 )
 
 

@@ -52,7 +52,8 @@ select
     c.met_math,
     c.final_grad_path_code,
     c.final_grad_path_name,
-    c.grad_eligibility,
+
+    g.grad_eligibility,
 
     if(e.met_fafsa_requirement, 'Yes', 'No') as has_fafsa,
 
@@ -71,6 +72,14 @@ left join
     and e.discipline = c.discipline
     and c.scale_score is not null
     and c.rn_highest = 1
+/* grad_eligibility is one value per student, so read it from a row every
+   student has, not only from scored rows */
+left join
+    {{ ref("int_students__graduation_path_codes") }} as g
+    on e.student_number = g.student_number
+    and e.discipline = g.discipline
+    and e._dbt_source_project = g._dbt_source_project
+    and g.rn_discipline_distinct = 1
 where
     e.academic_year = {{ var("current_academic_year") }}
     and e.rn_year = 1

@@ -21,6 +21,10 @@ Authoritative consumer list for a source-system package:
 Packages" prose drifts; `packages.yml` is ground truth. `kipptaf` consumes most
 source data via `source()`, not as a package.
 
+Every `kipp*` project installs `dbt_overrides` and carries a root stub at
+`macros/materialization_test.sql`. A new dbt project that stores test failures
+needs both; see `src/dbt/dbt_overrides/CLAUDE.md`.
+
 **A model name can exist in both a source-system package and `kipptaf`** (e.g.
 `int_finalsite__student_contacts`). `ref()` resolves to the CURRENT project's
 copy, so when reading a `kipptaf` model's upstream, open the `kipptaf` file —
@@ -114,10 +118,13 @@ deployments. Developers use `<repo-root>/.dbt/profiles.yml` (not
 
 ## No seeds
 
-dbt seeds are forbidden. Every project sets `seed-paths: []`, so a CSV dropped
-into `seeds/` is never loaded and a `ref()` to it fails at parse. Hand-kept
-lookup data lives in a Google Sheet, read through a `sources-external.yml` entry
-and a `stg_google_sheets__*` model. Never put a path back in `seed-paths`.
+dbt seeds are forbidden: a seed commits data to the repo, so every data change
+becomes a code change and a redeploy. Every project sets `seed-paths: []`, so a
+CSV dropped into `seeds/` is never loaded and a `ref()` to it fails at parse.
+Hand-kept lookup data lives in a Google Sheet, read through a
+`sources-external.yml` entry and a `stg_google_sheets__*` model. A list another
+organization publishes at a stable URL is fetched by a Dagster asset instead, so
+no one copies it by hand. Never put a path back in `seed-paths`.
 
 ## Model Conventions
 

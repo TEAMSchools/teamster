@@ -6,6 +6,9 @@ assessment, prior tags included); edits land in a BigQuery table read as
 `stg_google_appsheet__illuminate_assessments_extension`. Having a row there IS
 `is_internal_assessment` — the tag is membership.
 
+An "already tagged" error for an assessment missing from the app is a year
+problem, not a tag problem: [item-bank-year.md](item-bank-year.md).
+
 ## What each tag field controls
 
 | Field                            | Controls                                                                                                                                                                                                                           |

@@ -10,6 +10,7 @@ select
     r.home_department_name as department,
     r.formatted_name,
     r.google_email,
+    r.reports_to_google_email,
     r.assignment_status,
     r.home_business_unit_name as entity,
     r.home_business_unit_code as entity_short,
@@ -27,7 +28,7 @@ select
         else 'ineligible'
     end as eligibility_status,
     case
-        when r.home_business_unit_code in ('TEAM', 'KCNA')
+        when r.home_business_unit_code in ('TEAM', 'KCNA', 'KPAT')
         then 'NJ'
         when r.home_business_unit_code = 'KIPP_MIAMI'
         then 'MIA'
@@ -37,8 +38,16 @@ select
     case
         /* all access view */
         when
-            r.home_department_name
-            in ('Data', 'Human Resources', 'Leadership Development', 'Executive')
+            r.home_department_name in (
+                'Data',
+                'Human Resources',
+                'Leadership Development',
+                'Executive',
+                'Financial Planning and Analysis',
+                'Accounting',
+                'Accounting and Compliance',
+                'Compliance'
+            )
         then 3
         when
             r.home_business_unit_code = 'KIPP_TAF'

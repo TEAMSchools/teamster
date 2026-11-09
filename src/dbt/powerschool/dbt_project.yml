@@ -33,6 +33,32 @@ models:
         # for every consuming district.
         dlt:
           +enabled: true
+          # No NJ district loads these tables through dlt; only a kippmiami
+          # archive rebuild enables them. See src/dbt/kippmiami/CLAUDE.md.
+          stg_powerschool__codeset:
+            +enabled: false
+          stg_powerschool__emailaddress:
+            +enabled: false
+          stg_powerschool__originalcontactmap:
+            +enabled: false
+          stg_powerschool__person:
+            +enabled: false
+          stg_powerschool__personaddress:
+            +enabled: false
+          stg_powerschool__personaddressassoc:
+            +enabled: false
+          stg_powerschool__personemailaddressassoc:
+            +enabled: false
+          stg_powerschool__personphonenumberassoc:
+            +enabled: false
+          stg_powerschool__phonenumber:
+            +enabled: false
+          stg_powerschool__prefs:
+            +enabled: false
+          stg_powerschool__studentcontactassoc:
+            +enabled: false
+          stg_powerschool__studentcontactdetail:
+            +enabled: false
         # ARCHIVED (#4442): the ODBC ingestion path is retired; models are
         # kept in-tree for reference. Disabled by default; the kippmiami
         # archive rebuild (#5201) enabled it once.

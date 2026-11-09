@@ -11,6 +11,6 @@ with
         }}
     )
 
--- trunk-ignore(sqlfluff/AM04): union_relations resolves columns at run time
+-- trunk-ignore(sqlfluff/AM04): union_relations lists columns at compile time
 select ur.*, {{ extract_source_project("ur") }} as _dbt_source_project,
 from union_relations as ur

@@ -1,3 +1,5 @@
+from datetime import UTC, datetime
+
 from dagster import AssetExecutionContext, Output, asset
 
 from teamster.core.asset_checks import (
@@ -5,6 +7,44 @@ from teamster.core.asset_checks import (
     check_avro_schema_valid,
 )
 from teamster.libraries.overgrad.resources import OvergradResource
+
+# list endpoints that support the `updated_after` filter
+CURSOR_ENDPOINTS = {"students", "admissions", "followings"}
+
+
+def _parse_updated_at(record: dict) -> datetime:
+    updated_at = record.get("updated_at")
+
+    if updated_at is None:
+        return datetime.min.replace(tzinfo=UTC)
+
+    parsed = datetime.fromisoformat(updated_at)
+
+    # Overgrad sends UTC; read a timestamp without a marker as UTC too
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=UTC)
+
+
+def merge_by_id(records: list[dict]) -> list[dict]:
+    """Reduce a pull to one record per `id`.
+
+    Where an `id` repeats, the copy with the later `updated_at` wins; a missing
+    `updated_at` loses to any dated copy. Records without an `id` cannot be
+    matched, so they pass through unmerged.
+    """
+    merged: dict[int, dict] = {}
+    no_id: list[dict] = []
+
+    for record in records:
+        if record.get("id") is None:
+            no_id.append(record)
+            continue
+
+        current = merged.get(record["id"])
+
+        if current is None or _parse_updated_at(record) > _parse_updated_at(current):
+            merged[record["id"]] = record
+
+    return [*merged.values(), *no_id]
 
 
 def build_overgrad_asset(
@@ -37,6 +77,8 @@ def build_overgrad_asset(
             response_json = overgrad.get(name, context.partition_key).json()
 
             data = [response_json["data"]]
+        elif name in CURSOR_ENDPOINTS:
+            data = merge_by_id(overgrad.list_by_cursor(path=name))
         else:
             data = overgrad.list(path=name)
 

@@ -8,6 +8,7 @@ with
             attempted_njgpa_ela,
             attempted_njgpa_math,
 
+            countif(pathway_option = 'NJGPA') as njgpa_cutoff_rows,
             countif(pathway_option = 'NJGPA' and scale_score is not null) as scored,
         from {{ ref("int_students__graduation_path_codes") }}
         /* DLM, portfolio, no-pathway and incomplete-credit students are coded
@@ -27,6 +28,7 @@ with
             cohort,
             student_number,
             discipline,
+            njgpa_cutoff_rows,
             scored,
 
             case
@@ -40,4 +42,6 @@ with
 
 select cohort, student_number, discipline, scored,
 from attempted
-where sat_the_test and scored = 0
+/* no NJGPA cut score rows at all means NJDOE has not published the class yet,
+   which the model labels Pending Cut Score */
+where sat_the_test and njgpa_cutoff_rows > 0 and scored = 0

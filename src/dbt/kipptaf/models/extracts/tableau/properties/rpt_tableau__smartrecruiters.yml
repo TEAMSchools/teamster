@@ -1,87 +1,473 @@
 models:
   - name: rpt_tableau__smartrecruiters
+    description: >-
+      SmartRecruiters applications for the Recruitment Dashboard, one row per
+      application, recruiter, and subject preference. Applications with several
+      recruiters or subjects repeat once per recruiter and subject, so the
+      dashboard counts distinct application_id. Dates are Eastern calendar days.
+      The app review goal groups applications into App Review Weeks that run
+      Thursday to Wednesday, are named for their Monday, and are due the Monday
+      after.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - application_id
+              - recruiter
+              - subject_preference
+          config:
+            severity: error
     columns:
-      - name: phone_interview_score
-        data_type: int64
       - name: application_id
         data_type: string
+        description: SmartRecruiters application id.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: phone_interview_score
+        data_type: int64
+        description: Phone interview score the recruiter entered.
       - name: reason_for_rejection
         data_type: string
+        description: SmartRecruiters reason for rejection, when rejected.
       - name: application_state
         data_type: string
+        description: >-
+          Current SmartRecruiters state of the application, such as NEW, LEAD,
+          IN_REVIEW, INTERVIEW, REJECTED, or HIRED.
       - name: application_url
         data_type: string
+        description: Link to the application in SmartRecruiters.
       - name: candidate_email
         data_type: string
+        description: Candidate email address.
+        config:
+          meta:
+            contains_pii: true
       - name: candidate_first_name
         data_type: string
+        description: Candidate first name.
+        config:
+          meta:
+            contains_pii: true
       - name: candidate_id
         data_type: string
+        description: SmartRecruiters candidate id.
       - name: candidate_last_name
         data_type: string
+        description: Candidate last name.
+        config:
+          meta:
+            contains_pii: true
       - name: candidate_linkedin_profile_url
         data_type: string
+        description: Candidate LinkedIn profile link.
+        config:
+          meta:
+            contains_pii: true
       - name: date_demo
         data_type: date
+        description:
+          Eastern date the application reached the demo interview step.
       - name: date_hired
         data_type: date
+        description: Eastern date the application moved to Hired.
       - name: date_last_update
         data_type: date
+        description:
+          Eastern date the application last changed in SmartRecruiters.
       - name: date_lead
         data_type: date
+        description: Eastern date the application entered the Lead state.
       - name: date_new
         data_type: date
+        description: Eastern date the application entered the New state.
       - name: date_offer
         data_type: date
+        description: Eastern date the application moved to Offer.
       - name: date_phone_screen_complete
         data_type: date
+        description: Eastern date the phone screen was marked complete.
       - name: date_phone_screen_requested
         data_type: date
+        description:
+          Eastern date the application moved to phone screen requested.
       - name: date_rejected
         data_type: date
+        description: Eastern date the application was rejected.
       - name: department_internal
         data_type: string
+        description: Internal department of the job posting.
       - name: department_org_field_value
         data_type: string
+        description: >-
+          Job category from the posting's department field, such as Teacher or
+          Teaching Fellow. Decides which review rule within_week_initial_review
+          applies.
       - name: job_city
         data_type: string
+        description: City of the job posting.
       - name: job_title
         data_type: string
+        description: Title of the job posting.
       - name: recruiter_multiple
         data_type: string
+        description: Comma-separated list of every recruiter on the application.
       - name: source
         data_type: string
+        description: Candidate source.
       - name: source_subtype
         data_type: string
+        description: Candidate source subtype.
       - name: source_type
         data_type: string
+        description: Candidate source type.
       - name: subject_preference_multiple
         data_type: string
+        description: >-
+          Comma-separated subjects the candidate chose, or No Preference.
       - name: time_in_application_state_new
         data_type: int64
+        description: Days the application spent in the New state.
       - name: time_in_application_state_in_review
         data_type: int64
+        description: Days the application spent in the In Review state.
       - name: time_in_application_state_lead
         data_type: int64
+        description: Days the application spent in the Lead state.
       - name: recruiter
         data_type: string
+        description: >-
+          One recruiter from recruiter_multiple. The model repeats each
+          application once per recruiter.
       - name: application_week_start
         data_type: date
+        description: >-
+          Monday that names the App Review Week the application arrived in. The
+          week runs Thursday to Wednesday around that Monday, so date_received
+          plus 4 days, truncated to its Monday. Null when date_received is null.
+      - name: date_received
+        data_type: date
+        description: >-
+          Eastern date the application came in, the earlier of date_lead and
+          date_new. A Lead starts the review clock the day it comes in, whether
+          or not it reaches New. Null only when the application has neither
+          date.
+      - name: date_reviewed
+        data_type: date
+        description: >-
+          Earliest Eastern date the application moved to phone screen requested,
+          phone screen complete, demo, offer, hired, or rejected. Null while it
+          has not moved. SmartRecruiters does not date the resume score, so only
+          the move is dated.
+      - name: review_due_date
+        data_type: date
+        description: >-
+          Monday after the App Review Week. A teacher or teaching fellow
+          application counts as reviewed on time only when it moved before this
+          date.
+      - name: has_resume_score
+        data_type: boolean
+        description: >-
+          True when a recruiter entered a resume score in SmartRecruiters. The
+          SmartRecruiters average rating does not count. The App Review Week
+          rule requires it.
+      - name: is_withdrawn_before_review
+        data_type: boolean
+        description: >-
+          True when the candidate withdrew and the application was not reviewed
+          on time. Leave these out of the app review goal, so a recruiter is not
+          held to an application the candidate pulled. SmartRecruiters sends no
+          withdrawal date, so the flag follows the current state; a later
+          withdrawal can move a finished week.
+      - name: is_review_due
+        data_type: boolean
+        description: >-
+          True once review_due_date has arrived (Eastern), false for the current
+          and upcoming weeks, and null when application_week_start is null. Use
+          it to score only finished weeks under the App Review Week rule, which
+          covers Teacher and Teaching Fellow applications. A due week can still
+          change slightly, because SmartRecruiters does not date the resume
+          score: an application moved before the deadline and scored after it
+          turns to on time when the score is entered.
       - name: subject_preference
         data_type: string
+        description: >-
+          One subject from subject_preference_multiple, trimmed. The model
+          repeats each application once per subject.
       - name: school_shared_with
         data_type: string
+        description:
+          School the application was shared with, Miami or New Jersey.
       - name: resume_score
         data_type: numeric
+        description: >-
+          Recruiter-entered resume score, falling back to the SmartRecruiters
+          average rating when no score was entered.
       - name: high_quality_candidate
         data_type: int64
+        description: 1 when resume_score is 3 or higher, else 0.
       - name: within_week_initial_review
         data_type: int64
+        description: >-
+          1 when the application was reviewed on time, else 0. Teacher and
+          Teaching Fellow applications need a resume_score and a date_reviewed
+          before review_due_date; the score itself has no date, so it may be
+          entered later. Other roles count when they moved out of New within 7
+          days of date_new, or moved to a later step within 7 days with a resume
+          score; their rows can change after is_review_due turns true.
       - name: days_to_hire
         data_type: int64
+        description: Days from date_new to date_hired.
       - name: days_since_update
         data_type: int64
+        description: Days from date_last_update to today.
       - name: stalled_application
         data_type: int64
+        description: >-
+          1 when the application is still open (not hired, rejected,
+          transferred, or withdrawn) and has not changed in 7 or more days.
       - name: stalled_application_high_quality
         data_type: int64
+        description:
+          1 when stalled_application is 1 and high_quality_candidate is 1.
+
+unit_tests:
+  - name: unit_rpt_smartrecruiters_app_review_week
+    description: >-
+      The App Review Week runs Thursday to Wednesday and is named for its
+      Monday. A teacher app counts as reviewed on time when it has a resume
+      score and moved to phone screen (or later) or rejected before the next
+      Monday. app_a arrived Thursday and moved Friday of the next week. app_b
+      arrived Wednesday and was rejected on the deadline Monday. app_c was
+      rejected in time with no score. app_d is scored but still New. app_e is a
+      non-teacher role on the separate 7-day rule. app_f is in a week whose
+      deadline has not passed. app_g has only a SmartRecruiters rating, which is
+      not a resume score. app_h was withdrawn unreviewed and is flagged to leave
+      out. app_i was reviewed on time and then withdrawn, so it keeps its
+      credit. app_j is a Lead nobody acted on, placed in its week by the Lead
+      date. app_k came in as a Lead and reached New 9 days later, so its clock
+      started at the Lead date and its move was late.
+    model: rpt_tableau__smartrecruiters
+    given:
+      - input: ref("stg_smartrecruiters__applications")
+        format: sql
+        rows: |
+          select
+              'app_a' as application_id,
+              'INTERVIEW' as application_state,
+              cast(null as string) as application_url,
+              cast(null as string) as candidate_email,
+              cast(null as string) as candidate_first_name,
+              cast(null as string) as candidate_id,
+              cast(null as string) as candidate_last_name,
+              cast(null as string) as candidate_linkedin_profile_url,
+              cast(null as string) as department_internal,
+              'Teacher' as department_org_field_value,
+              cast(null as string) as job_city,
+              cast(null as string) as job_title,
+              cast(null as string) as source,
+              cast(null as string) as source_subtype,
+              cast(null as string) as source_type,
+              cast(null as int64) as time_in_application_state_new,
+              cast(null as int64) as time_in_application_state_in_review,
+              cast(null as int64) as time_in_application_state_lead,
+              cast(null as string) as school_shared_with,
+              cast(null as int64) as phone_interview_score,
+              cast(null as string) as application_reason_for_rejection,
+              'Recruiter A' as recruiters,
+              'Math' as subject_preference,
+              3 as resume_score,
+              cast(null as numeric) as average_rating,
+              date '2026-10-22' as new_date,
+              date '2026-10-22' as new_date_local,
+              date '2026-10-30' as phone_screen_requested_date,
+              date '2026-10-30' as phone_screen_requested_date_local,
+              cast(null as date) as phone_screen_complete_date,
+              cast(null as date) as phone_screen_complete_date_local,
+              cast(null as date) as demo_date,
+              cast(null as date) as demo_date_local,
+              cast(null as date) as offer_date,
+              cast(null as date) as offer_date_local,
+              cast(null as date) as hired_date,
+              cast(null as date) as hired_date_local,
+              cast(null as date) as rejected_date,
+              cast(null as date) as rejected_date_local,
+              cast(null as date) as lead_date,
+              cast(null as date) as lead_date_local,
+              cast(null as date) as last_update_date,
+              cast(null as date) as last_update_date_local
+          union all
+          select
+              'app_b', 'REJECTED', null, null, null, null, null, null, null,
+              'Teacher', null, null, null, null, null, null, null, null, null,
+              null, null, 'Recruiter A', 'Math', 2, null,
+              date '2026-10-28', date '2026-10-28', null, null, null, null,
+              null, null, null, null, null, null,
+              date '2026-11-02', date '2026-11-02', null, null, null, null
+          union all
+          select
+              'app_c', 'REJECTED', null, null, null, null, null, null, null,
+              'Teacher', null, null, null, null, null, null, null, null, null,
+              null, null, 'Recruiter A', 'Math', null, null,
+              date '2026-10-15', date '2026-10-15', null, null, null, null,
+              null, null, null, null, null, null,
+              date '2026-10-16', date '2026-10-16', null, null, null, null
+          union all
+          select
+              'app_d', 'NEW', null, null, null, null, null, null, null,
+              'Teacher', null, null, null, null, null, 3, null, null, null,
+              null, null, 'Recruiter A', 'Math', 4, null,
+              date '2026-10-26', date '2026-10-26', null, null, null, null,
+              null, null, null, null, null, null,
+              null, null, null, null, null, null
+          union all
+          select
+              'app_e', 'REJECTED', null, null, null, null, null, null, null,
+              'Operations', null, null, null, null, null, 2, null, null, null,
+              null, null, 'Recruiter A', 'Math', null, null,
+              date '2026-10-26', date '2026-10-26', null, null, null, null,
+              null, null, null, null, null, null,
+              date '2026-10-27', date '2026-10-27', null, null, null, null
+          union all
+          select
+              'app_f', 'NEW', null, null, null, null, null, null, null,
+              'Teacher', null, null, null, null, null, null, null, null, null,
+              null, null, 'Recruiter A', 'Math', null, null,
+              date '2099-01-01', date '2099-01-01', null, null, null, null,
+              null, null, null, null, null, null,
+              null, null, null, null, null, null
+          union all
+          select
+              'app_g', 'INTERVIEW', null, null, null, null, null, null, null,
+              'Teacher', null, null, null, null, null, null, null, null, null,
+              null, null, 'Recruiter A', 'Math', null, 3,
+              date '2026-10-26', date '2026-10-26',
+              date '2026-10-27', date '2026-10-27', null, null,
+              null, null, null, null, null, null,
+              null, null, null, null, null, null
+          union all
+          select
+              'app_h', 'WITHDRAWN', null, null, null, null, null, null, null,
+              'Teacher', null, null, null, null, null, null, null, null, null,
+              null, null, 'Recruiter A', 'Math', null, null,
+              date '2026-10-26', date '2026-10-26', null, null, null, null,
+              null, null, null, null, null, null,
+              null, null, null, null, null, null
+          union all
+          select
+              'app_j', 'LEAD', null, null, null, null, null, null, null,
+              'Teacher', null, null, null, null, null, null, null, null, null,
+              null, null, 'Recruiter A', 'Math', null, null,
+              null, null, null, null, null, null,
+              null, null, null, null, null, null,
+              null, null, date '2026-10-22', date '2026-10-22', null, null
+          union all
+          select
+              'app_k', 'INTERVIEW', null, null, null, null, null, null, null,
+              'Teacher', null, null, null, null, null, null, null, null, null,
+              null, null, 'Recruiter A', 'Math', 3, null,
+              date '2026-10-29', date '2026-10-29',
+              date '2026-10-30', date '2026-10-30', null, null,
+              null, null, null, null, null, null,
+              null, null, date '2026-10-20', date '2026-10-20', null, null
+          union all
+          select
+              'app_i', 'WITHDRAWN', null, null, null, null, null, null, null,
+              'Teacher', null, null, null, null, null, null, null, null, null,
+              null, null, 'Recruiter A', 'Math', 3, null,
+              date '2026-10-26', date '2026-10-26',
+              date '2026-10-27', date '2026-10-27', null, null,
+              null, null, null, null, null, null,
+              null, null, null, null, null, null
+    expect:
+      rows:
+        - application_id: app_a
+          date_received: 2026-10-22
+          application_week_start: 2026-10-26
+          review_due_date: 2026-11-02
+          date_reviewed: 2026-10-30
+          is_review_due: true
+          within_week_initial_review: 1
+          is_withdrawn_before_review: false
+        - application_id: app_b
+          date_received: 2026-10-28
+          application_week_start: 2026-10-26
+          review_due_date: 2026-11-02
+          date_reviewed: 2026-11-02
+          is_review_due: true
+          within_week_initial_review: 0
+          is_withdrawn_before_review: false
+        - application_id: app_c
+          date_received: 2026-10-15
+          application_week_start: 2026-10-19
+          review_due_date: 2026-10-26
+          date_reviewed: 2026-10-16
+          is_review_due: true
+          within_week_initial_review: 0
+          is_withdrawn_before_review: false
+        - application_id: app_d
+          date_received: 2026-10-26
+          application_week_start: 2026-10-26
+          review_due_date: 2026-11-02
+          date_reviewed: null
+          is_review_due: true
+          within_week_initial_review: 0
+          is_withdrawn_before_review: false
+        - application_id: app_e
+          date_received: 2026-10-26
+          application_week_start: 2026-10-26
+          review_due_date: 2026-11-02
+          date_reviewed: 2026-10-27
+          is_review_due: true
+          within_week_initial_review: 1
+          is_withdrawn_before_review: false
+        - application_id: app_f
+          date_received: 2099-01-01
+          application_week_start: 2099-01-05
+          review_due_date: 2099-01-12
+          date_reviewed: null
+          is_review_due: false
+          within_week_initial_review: 0
+          is_withdrawn_before_review: false
+        - application_id: app_g
+          date_received: 2026-10-26
+          application_week_start: 2026-10-26
+          review_due_date: 2026-11-02
+          date_reviewed: 2026-10-27
+          is_review_due: true
+          within_week_initial_review: 0
+          is_withdrawn_before_review: false
+        - application_id: app_h
+          date_received: 2026-10-26
+          application_week_start: 2026-10-26
+          review_due_date: 2026-11-02
+          date_reviewed: null
+          is_review_due: true
+          within_week_initial_review: 0
+          is_withdrawn_before_review: true
+        - application_id: app_i
+          date_received: 2026-10-26
+          application_week_start: 2026-10-26
+          review_due_date: 2026-11-02
+          date_reviewed: 2026-10-27
+          is_review_due: true
+          within_week_initial_review: 1
+          is_withdrawn_before_review: false
+        - application_id: app_j
+          date_received: 2026-10-22
+          application_week_start: 2026-10-26
+          review_due_date: 2026-11-02
+          date_reviewed: null
+          is_review_due: true
+          within_week_initial_review: 0
+          is_withdrawn_before_review: false
+        - application_id: app_k
+          date_received: 2026-10-20
+          application_week_start: 2026-10-19
+          review_due_date: 2026-10-26
+          date_reviewed: 2026-10-30
+          is_review_due: true
+          within_week_initial_review: 0
+          is_withdrawn_before_review: false

@@ -3,6 +3,12 @@ models:
     data_tests:
       - dbt_utils.expression_is_true:
           name: enrollment_graduated_end_date_not_future
+          description: >-
+            A Salesforce Enrollment record with status Graduated whose Actual
+            End Date is still in the future. A graduation cannot end later than
+            today, so the date is a typo, most often a mistyped year. KIPP
+            Forward corrects the Actual End Date on each listed Enrollment
+            record in Salesforce.
           arguments:
             expression:
               actual_end_date <= current_date('{{ var("local_timezone") }}')

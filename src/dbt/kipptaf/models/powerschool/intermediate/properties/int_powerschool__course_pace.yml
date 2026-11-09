@@ -18,6 +18,12 @@ models:
         data_type: string
       - name: course_name
         data_type: string
+      - name: sectionid
+        data_type: int64
+      - name: teacher_lastfirst
+        data_type: string
+      - name: credittype
+        data_type: string
       - name: potential_credit_hours
         data_type: float64
       - name: courses_gradescaleid_unweighted

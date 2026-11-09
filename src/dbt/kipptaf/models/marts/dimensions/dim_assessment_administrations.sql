@@ -163,17 +163,19 @@ with
         from {{ ref("int_assessments__college_assessment") }}
     ),
 
-    -- College Practice: one administration per (scope, test_date,
+    -- College Practice: one administration per (scope, subject_area, test_date,
     -- administration_round). _dbt_source_project is null because college tests
-    -- are region-agnostic. Aggregates across subject_area rows in the upstream
-    -- model.
+    -- are region-agnostic. module_code must match practice_assessments in
+    -- dim_assessments, or assessment_key orphans.
+    -- grain projection, not dup-masking
     practice_administrations as (
-        select
+        select distinct
             scope,
+            subject_area,
             academic_year,
+            module_code,
 
             scope as title,
-            scope as module_code,
             test_date as administered_date,
             administration_round as administration_period,
 
@@ -183,10 +185,7 @@ with
             cast(null as string) as _dbt_source_project,
             cast(null as int64) as grade_level,
             cast(null as int64) as source_assessment_id,
-
-            any_value(subject_area) as subject_area,
         from {{ ref("int_assessments__college_assessment_practice") }}
-        group by scope, test_date, academic_year, administration_round
     ),
 
     -- AP: one administration per (subject, academic_year). Test date is

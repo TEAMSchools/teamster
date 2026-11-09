@@ -216,6 +216,27 @@ def test_refresh_key_sql_names_its_cubes_table() -> None:
     )
 
 
+def test_refresh_key_window_ends_at_build_range_end() -> None:
+    # A refresh_key that limits rebuilds to a date window must end that window at
+    # build_range_end. If the window ends earlier, a partition past it reads
+    # 'frozen' forever and stops picking up new rows, with no error.
+    offenders = []
+    for path in CUBE_MODEL_DIR.rglob("cubes/**/*.yml"):
+        doc = yaml.safe_load(path.read_text()) or {}
+        for cube in doc.get("cubes", []) or []:
+            for pre_agg in cube.get("pre_aggregations", []) or []:
+                key_sql = (pre_agg.get("refresh_key") or {}).get("sql") or ""
+                end_sql = (pre_agg.get("build_range_end") or {}).get("sql") or ""
+                if "GENERATE_DATE_ARRAY" not in key_sql or not end_sql:
+                    continue
+                ceiling = re.sub(r"\s+", "", re.sub(r"^\s*SELECT", "", end_sql))
+                if ceiling not in re.sub(r"\s+", "", key_sql):
+                    offenders.append(f"{path}: {cube['name']}.{pre_agg['name']}")
+    assert not offenders, (
+        "refresh_key window does not end at build_range_end:\n" + "\n".join(offenders)
+    )
+
+
 def test_row_level_filter_members_are_exposed_by_their_view() -> None:
     # A row_level filter naming a member the view doesn't (or no longer)
     # expose compiles fine but silently never matches -- Cube has no
@@ -506,6 +527,8 @@ TWINS.update(
                 "response_type_description",
                 "response_type_root_description",
                 "performance_band_label_number",
+                "mastery_level",
+                "is_far_below",
                 "proficiency_level",
                 "is_mastery",
                 "scale_score",
@@ -519,6 +542,7 @@ TWINS.update(
             ("student_assessments", c): ("dim_assessments", c)
             for c in [
                 "is_internal_assessment",
+                "assessment_family",
                 "module_type",
                 "module_code",
                 "academic_subject",
@@ -533,8 +557,13 @@ TWINS.update(
             "dim_assessment_administrations",
             "source_assessment_id",
         ),
+        ("student_assessments", "title"): ("dim_assessments", "title"),
         ("locations", "grade_band"): ("dim_locations", "grade_band"),
         ("courses", "is_foundations"): ("dim_courses", "is_foundations"),
+        ("student_attendance_enrollment_daily", "n_absent_days_rolling_90"): (
+            "fct_student_attendance_enrollment_daily",
+            "n_absent_days_rolling_90",
+        ),
     }
 )
 
@@ -567,6 +596,28 @@ PHRASES.update(
             "Illuminate and Focus Assessments only; null for every other source",
             "Not comparable across assessments",
             "across response types",
+            "compare mastery_level instead",
+        ],
+        "student_assessment_scores.pct_students_below": [
+            "percent of students",
+            "Far Below included",
+            "Filter response_type to overall",
+        ],
+        "student_assessment_scores.pct_students_far_below": [
+            "Filter response_type to overall",
+        ],
+        "student_assessment_scores.mastery_level": [
+            "band numbers do not",
+            "name both assessments",
+        ],
+        "student_assessment_scores.pct_students_at_level": [
+            "Group by mastery_level",
+            "add to 100% only when each student has 1 score",
+            "rather than filtering on it",
+        ],
+        "student_assessment_scores.count_students_banded": [
+            "Group by mastery_level",
+            "can add up to more than the ungrouped total",
         ],
         "student_assessment_scores.proficiency_level": [
             "Tested Out",
@@ -654,7 +705,7 @@ PHRASES.update(
         ],
         # Assessments cube
         "student_assessments.assessment_type": [
-            "filter is_internal_assessment instead",
+            "filter assessment_family instead",
             "computer-adaptive",
             "select a source",
             "college (SAT, ACT and PSAT, Official and Practice)",
@@ -663,7 +714,12 @@ PHRASES.update(
         "student_assessments.is_internal_assessment": [
             "KIPP-authored interims, Illuminate and Focus Assessments",
             "internal source can change between years",
-            "filter assessment_type to select an external source",
+            "Filter assessment_family instead to select any kind of source",
+        ],
+        "student_assessments.assessment_family": [
+            "vendor_diagnostic (iready, dibels and star)",
+            "filter assessment_type to select 1 source",
+            "report them per source rather than pooled",
         ],
         "student_assessments.module_type": [
             "UA (Unit Assessment)",

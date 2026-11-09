@@ -1,0 +1,20 @@
+select
+    firstname,
+    middlename,
+    lastname,
+    statecontactid,
+    employer,
+    whocreated,
+    whencreated,
+    whomodified,
+    whenmodified,
+
+    cast(dcid as int) as dcid,
+    cast(id as int) as id,
+    cast(prefixcodesetid as int) as prefixcodesetid,
+    cast(suffixcodesetid as int) as suffixcodesetid,
+    cast(gendercodesetid as int) as gendercodesetid,
+    cast(statecontactnumber as int) as statecontactnumber,
+    cast(isactive as int) as isactive,
+    cast(excludefromstatereporting as int) as excludefromstatereporting,
+from {{ source("powerschool_dlt", "person") }}

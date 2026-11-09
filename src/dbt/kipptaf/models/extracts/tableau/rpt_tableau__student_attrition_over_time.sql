@@ -33,7 +33,7 @@ select
     co.week_start_monday,
     co.week_end_sunday,
     co.week_number_academic_year,
-    co.quarter,
+    co.term as `quarter`,
 
     if(co.week_start_monday between co.entrydate and co.exitdate, 0, 1) as is_attrition,
 from {{ ref("int_extracts__student_enrollments_weeks") }} as co

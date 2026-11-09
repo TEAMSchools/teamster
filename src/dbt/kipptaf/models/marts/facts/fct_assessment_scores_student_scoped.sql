@@ -45,6 +45,7 @@ with
             scale_score,
             administration_round,
             test_type,
+            module_code,
 
             row_number() over (
                 partition by powerschool_student_number, scope
@@ -171,24 +172,18 @@ select
         )
     }} as assessment_score_key,
 
-    if(
-        pa.student_number is not null,
-        {{ dbt_utils.generate_surrogate_key(["pa.student_number"]) }},
-        cast(null as string)
-    ) as student_key,
+    {{ student_key("pa.student_number", nullable=true) }} as student_key,
 
     {{
-        dbt_utils.generate_surrogate_key(
-            [
-                "'college'",
-                "pa.scope",
-                "pa.test_date",
-                "pa.academic_year",
-                "cast(null as string)",
-                "pa.administration_round",
-                "cast(null as int64)",
-                "pa.test_type",
-            ]
+        assessment_administration_key(
+            "'college'",
+            "pa.module_code",
+            "pa.test_date",
+            "pa.academic_year",
+            "null",
+            "pa.administration_round",
+            "null",
+            "pa.test_type",
         )
     }} as assessment_administration_key,
 

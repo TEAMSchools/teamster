@@ -7,7 +7,13 @@ models:
       credit hours. FK to dim_student_section_enrollments, dim_terms, and
       dim_dates (role-playing via term_start_date_key and term_end_date_key).
       Reaches dim_student_enrollments by traversing
-      student_section_enrollment_key.
+      student_section_enrollment_key. A grade is kept only when its section
+      enrollment is matched to a school enrollment in
+      dim_student_section_enrollments, so every row traverses to
+      dim_student_enrollments. Students who enroll partway through a term keep
+      their grade. Grades on section enrollments with no matching school
+      enrollment, such as a course at a second campus or a schedule row that
+      closed before the student enrolled, are dropped.
     columns:
       - name: grades_term_key
         data_type: string
@@ -166,3 +172,55 @@ models:
         description: >-
           TRUE if this course grade is excluded from GPA calculation. Cast from
           upstream int64 0/1 flag per R3 boolean-prefix convention.
+
+unit_tests:
+  - name: test_fct_grades_term_keeps_grades_with_a_matched_enrollment
+    description:
+      Locks the population rule. A term grade is kept only when its section
+      enrollment is matched to a school enrollment in
+      dim_student_section_enrollments. Feeds a matched section enrollment with 2
+      terms (both kept, one row each), a section enrollment the dim could not
+      match to a school enrollment (dropped), and one missing from the dim
+      (dropped).
+    model: fct_grades_term
+    given:
+      - input: ref('int_students__final_grades')
+        rows:
+          - cc_dcid: 1
+            _dbt_source_project: kippnewark
+            storecode: Q1
+            term_percent_grade: 90
+          - cc_dcid: 1
+            _dbt_source_project: kippnewark
+            storecode: Q2
+            term_percent_grade: 85
+          - cc_dcid: 2
+            _dbt_source_project: kippnewark
+            storecode: Q1
+            term_percent_grade: 80
+          - cc_dcid: 3
+            _dbt_source_project: kippnewark
+            storecode: Q1
+            term_percent_grade: 70
+      - input: ref('dim_student_section_enrollments')
+        rows:
+          # student_section_enrollment_key("1", "kippnewark")
+          # trunk-ignore(gitleaks/generic-api-key): surrogate key fixture, not a secret
+          - student_section_enrollment_key: 00b9169e88f2a42ca30294ac7297680d
+            student_enrollment_key: a
+          # student_section_enrollment_key("2", "kippnewark")
+          # trunk-ignore(gitleaks/generic-api-key): surrogate key fixture, not a secret
+          - student_section_enrollment_key: f648101fedbcb6da08ebb6588693c27f
+            student_enrollment_key: null
+      - input: ref('dim_regions')
+        rows:
+          - dagster_code_location: kippnewark
+            name: Newark
+      - input: ref('stg_google_sheets__reporting__terms')
+        rows:
+          - type: RT
+            name: Q9
+    expect:
+      rows:
+        - percent_grade: 90
+        - percent_grade: 85

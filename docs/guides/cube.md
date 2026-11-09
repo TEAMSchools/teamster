@@ -623,16 +623,14 @@ Do **not** use the Cube Playground **Models** tab in dev mode. It overwrites
 YAML files in `model/cubes/` and `model/views/` with auto-generated content,
 discarding hand-authored definitions.
 
-When a user requests a field their access tier excludes, Cube **blocks the
-entire query** — it does not silently drop the column and return the rest. In
-practice this only surfaces in Tableau, where a workbook published by someone
-with broad access (e.g. `staff-pii`) may error at query time for viewers with
-narrower access. BI tools that connect via Cube's SQL API (Superset) avoid this
-because each user's field list is filtered at connection time. A member-strip
-approach that drops inaccessible fields transparently is tracked in
-[#4268](https://github.com/TEAMSchools/teamster/issues/4268). Until then, build
-Tableau workbooks using only the fields your least-privileged audience can see,
-or publish separate workbooks per access tier.
+Every view today grants all of its fields to anyone who can open it, limited to
+the rows their scope allows. Sensitive fields live in their own view
+(`staff_pii` beside `staff_directory`), so a workbook built on a view works for
+everyone who can open that view. Cube can also grant a group only some fields of
+a view. If a view does that, a query that names a field outside the viewer's
+grant **fails as a whole**; Cube does not drop the field and return the rest.
+Build a workbook on such a view using only the fields its narrowest audience can
+see.
 
 ## Using Cube with Claude
 

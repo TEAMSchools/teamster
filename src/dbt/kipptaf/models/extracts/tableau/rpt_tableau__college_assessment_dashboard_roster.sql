@@ -64,6 +64,9 @@ select
     sh.sat_ebrw_highest,
     sh.sat_math_highest,
 
+    b.nj_student_tier_ela,
+    b.nj_student_tier_math,
+
     concat(
         ea.expected_field_name, ' ', ea.expected_score_category
     ) as expected_field_name_score_category,
@@ -90,6 +93,11 @@ left join
     and ea.expected_unique_test_admin_id = a.unique_test_admin_id
     and ea.expected_score_category = a.score_category
 left join sat_highlights as sh on e.student_number = sh.student_number
+left join
+    {{ ref("int_students__college_assessment_buckets_pivot") }} as b
+    on e.student_number = b.student_number
+    and e.academic_year = b.academic_year
+    and e._dbt_source_project = b._dbt_source_project
 left join
     {{ ref("int_students__ccr_schedule") }} as sch
     on e.student_number = sch.student_number

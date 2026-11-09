@@ -4,7 +4,8 @@ Source-system staging project for **PowerSchool SIS** data. Produces clean,
 contract-enforced staging models consumed by the NJ district dbt projects
 (`kippnewark`, `kippcamden`, `kipppaterson`) and `kipptaf`. `kippmiami` no
 longer consumes it — its SIS moved to Focus (#4441). The exception is an archive
-rebuild, which re-includes the package in `kippmiami` and removes it again
+rebuild, which re-includes the package (dlt variant, reading the frozen
+`dagster_kippmiami_dlt_powerschool` pull) in `kippmiami` and removes it again
 afterward; `src/dbt/kippmiami/CLAUDE.md` carries that recipe. If you find the
 package listed in that project's `packages.yml`, a rebuild is mid-flight.
 
@@ -16,7 +17,7 @@ models/
     base/        # base models (light renaming, no logic)
     staging/
       dlt/       # models sourced from dlt (Oracle over SSH tunnel → BigQuery); ENABLED by default — the live SIS path
-      odbc/      # models sourced from live Oracle ODBC connection (ARCHIVED - disabled by default; the kippmiami archive rebuild (#5201) enabled it once)
+      odbc/      # models sourced from live Oracle ODBC connection (ARCHIVED - disabled by default)
       sftp/      # models sourced from SFTP file extracts (disabled by default; unused)
     intermediate/
 ```
@@ -72,21 +73,22 @@ columns at once — dbt reports only the first.
 
 ## GPA Gotchas
 
-- **`storecode = 'Y1'` only**: Q1–Q4 records have `gpa_points = 0` by design —
-  only `storecode = 'Y1'` rows are used in GPA calculations.
+- **`storecode = 'Y1'` only**: Q1–Q4 records carry scale `gpa_points` too, but
+  only `storecode = 'Y1'` rows are used in GPA calculations. Filter on
+  `storecode`, never on `gpa_points != 0`.
 - **`districtentrydate` null placeholder**: PowerSchool stores null/missing
   dates as `1899-xx-xx`. Derive network tenure from `MIN(academic_year)` in
   storedgrades instead.
 
 ## FTE & Sentinel Gotchas
 
-- **FTE scoping**: `stg_powerschool__fte` is per `(schoolid, yearid)`. An
-  enrollment's `fteid` must reference an FTE whose `schoolid` and `yearid` match
-  — otherwise `(fteid, attendance_conversion_id)` joins to nothing in
-  `stg_powerschool__attendance_conversion_items` and `attendancevalue` is
-  silently NULL in `int_powerschool__ps_adaadm_daily_ctod`. PS does not enforce;
-  guarded by
-  `test_int_powerschool__ps_enrollment_all__fteid_belongs_to_school_year`.
+- **NULL `attendancevalue`**: the causes are listed in the `attendancevalue`
+  description on `int_powerschool__ps_adaadm_daily_ctod`, and each one is a
+  PowerSchool setup or data-entry gap flagged by a warn test in
+  `tests/properties.yml`. Read both before calling a NULL day a modeling bug.
+- **`fteid = 0`** on `stg_powerschool__attendance_conversion_items` means no
+  FTE. Those rows repeat the conversion key and match no enrollment, so the key
+  test excludes them; do not dedupe them.
 - **`schoolid = 999999`**: graduated-students sentinel, not a "no school"
   marker. Already excluded in `int_powerschool__district_entry_date`. Students
   at 999999 commonly retain a real-school FTE from prior placement. They get no

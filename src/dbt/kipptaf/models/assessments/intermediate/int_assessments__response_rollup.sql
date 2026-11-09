@@ -1,4 +1,58 @@
 with
+    responses_keyed as (
+        select
+            asr.student_assessment_id,
+            asr.response_type,
+            asr.response_type_code,
+            asr.response_type_description,
+            asr.response_type_root_description,
+            asr.points_possible,
+            asr.points,
+            asr.percent_correct,
+
+            pb.canonical_performance_band_set_id,
+
+            coalesce(
+                pb.canonical_response_type_id, asr.response_type_id
+            ) as response_type_id,
+        from {{ ref("int_illuminate__agg_student_responses") }} as asr
+        left join
+            {{ ref("int_assessments__performance_bands") }} as pb
+            on asr.assessment_id = pb.assessment_id
+            and asr.response_type = pb.response_type
+            and asr.response_type_id = pb.response_type_id
+    ),
+
+    -- one sitting scores a split standard once per record; sum the records back
+    -- into one score
+    responses_merged as (
+        select
+            student_assessment_id,
+            response_type,
+            response_type_id,
+            response_type_code,
+            response_type_description,
+            canonical_performance_band_set_id,
+
+            min(response_type_root_description) as response_type_root_description,
+            sum(points_possible) as points_possible,
+            sum(points) as points,
+            any_value(percent_correct) as reported_percent_correct,
+            count(*) as n_records,
+
+            round(
+                safe_divide(sum(points), sum(points_possible)) * 100, 1
+            ) as merged_percent_correct,
+        from responses_keyed
+        group by
+            student_assessment_id,
+            response_type,
+            response_type_id,
+            response_type_code,
+            response_type_description,
+            canonical_performance_band_set_id
+    ),
+
     scaffold_responses as (
         select
             s.illuminate_student_id,
@@ -30,10 +84,13 @@ with
             asr.response_type_root_description,
             asr.points_possible,
             asr.points,
-            asr.percent_correct,
+            asr.canonical_performance_band_set_id,
 
-            pb.canonical_performance_band_set_id,
-
+            if(
+                asr.n_records = 1,
+                asr.reported_percent_correct,
+                asr.merged_percent_correct
+            ) as percent_correct,
             if(s.is_internal_assessment, c.title, s.title) as canonical_title,
             if(
                 s.is_internal_assessment, c.administered_date, s.administered_at
@@ -44,13 +101,8 @@ with
 
         from {{ ref("int_assessments__scaffold") }} as s
         left join
-            {{ ref("int_illuminate__agg_student_responses") }} as asr
+            responses_merged as asr
             on s.student_assessment_id = asr.student_assessment_id
-        left join
-            {{ ref("int_assessments__performance_bands") }} as pb
-            on s.assessment_id = pb.assessment_id
-            and asr.response_type = pb.response_type
-            and asr.response_type_id = pb.response_type_id
         left join
             {{ ref("int_assessments__assessments_canonical") }} as c
             on s.source = c.source
@@ -106,13 +158,11 @@ with
     ),
 
     -- Per-partition tiebreak for location columns. NOT a canonical attribute —
-    -- school / _dbt_source_project are per-response location data that vary
-    -- across rows in the same (student, canonical_assessment, is_replacement)
-    -- partition because of upstream Illuminate canonicalization defects
-    -- (#3801) carrying wrong academic_year tags onto duplicated assessments.
-    -- first_value on a deterministic ordering picks both columns from the
-    -- same row so independent min() drift can't split them. Once #3801 is
-    -- resolved, the partition becomes pure and this CTE can be removed.
+    -- school / _dbt_source_project can vary within a (student,
+    -- canonical_assessment, is_replacement) partition when the student is
+    -- rostered to the canonical assessment at a second school. The ordering
+    -- credits the result to the school of the sitting; first_value picks both
+    -- columns from the same row so independent min() drift can't split them.
     tiebroken_attrs as (
         select
             *,
@@ -159,13 +209,14 @@ with
             response_type_id,
             response_type_code,
             response_type_description,
-            response_type_root_description,
 
+            -- members can score one standard through records with different roots
+            min(response_type_root_description) as response_type_root_description,
             min(date_taken) as date_taken,
 
             -- selected_* values are constant per partition (windowed in
             -- tiebroken_attrs). any_value() makes that explicit without
-            -- independent-min() drift. See #3801.
+            -- independent-min() drift.
             any_value(selected_school_id) as powerschool_school_id,
             any_value(selected_region) as region,
             any_value(selected_dbt_source_project) as _dbt_source_project,
@@ -173,6 +224,7 @@ with
             count(distinct assessment_id) as n_assessments,
 
             sum(points) as points,
+            sum(points_possible) as points_possible,
 
             array_agg(distinct assessment_id order by assessment_id) as assessment_ids,
 
@@ -201,8 +253,7 @@ with
             response_type,
             response_type_id,
             response_type_code,
-            response_type_description,
-            response_type_root_description
+            response_type_description
     ),
 
     response_union as (
@@ -227,6 +278,7 @@ with
             response_type_root_description,
             date_taken,
             points,
+            points_possible,
             percent_correct,
             n_assessments,
             assessment_ids,
@@ -270,6 +322,7 @@ with
             response_type_root_description,
             date_taken,
             points,
+            points_possible,
             percent_correct,
 
             1 as n_assessments,
@@ -323,6 +376,7 @@ with
             r.response_type_root_description,
             r.date_taken,
             r.points,
+            r.points_possible,
 
             -- float64 in Focus; numeric keeps the union's Illuminate type
             cast(r.percent_correct as numeric) as percent_correct,
@@ -382,6 +436,7 @@ select
     ru.response_type_root_description,
     ru.date_taken,
     ru.points,
+    ru.points_possible,
     ru.percent_correct,
     ru.title,
     ru.assessment_id,

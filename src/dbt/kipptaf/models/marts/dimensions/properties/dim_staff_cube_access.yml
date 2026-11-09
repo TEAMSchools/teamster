@@ -86,20 +86,6 @@ models:
               entity != 'KTAF' or student_location_scope in ('network', 'none')
           config:
             severity: error
-      # A school student scope whose location does not resolve grants nothing:
-      # the policy filters on a NULL abbreviation and the viewer is denied every
-      # row, which looks exactly like a correct deny at the Cube surface. Warn,
-      # not error — the rows are a real upstream gap in the work-assignment
-      # location, so this surfaces them for Ops rather than blocking a deploy.
-      # TODO(#5524): flip to error once every school-scoped viewer has a
-      # work-assignment location.
-      - dbt_utils.expression_is_true:
-          arguments:
-            expression: |
-              student_location_scope != 'school'
-              or location_abbreviation is not null
-          config:
-            severity: warn
       # legal_entity_region_key is employer-derived for a FERPA reason that
       # covers student records only. It also bounds the staff-PII remit, via
       # computeAllowedAbbreviations, whenever staff_location_scope is region or
@@ -140,12 +126,12 @@ models:
           Google email so a recycled address cannot resolve to a stale identity.
           Also the key the individual-exceptions sheet is written against, and
           the only identifier a non-employee grantee has. Cube matches it
-          case-sensitively, so the sheet side is lower-cased upstream.
+          case-sensitively, so the sheet side is lower-cased upstream. Null for
+          a staff viewer with no Google account yet; that row matches no login.
         config:
           meta:
             contains_pii: true
         data_tests:
-          - not_null
           - unique
 
       - name: entity

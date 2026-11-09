@@ -34,6 +34,7 @@ models:
           filters on membership in it, so a duplicate across two regions would
           silently widen one viewer's access to the other's school.
         data_tests:
+          - not_null
           - unique
 
       - name: region_key

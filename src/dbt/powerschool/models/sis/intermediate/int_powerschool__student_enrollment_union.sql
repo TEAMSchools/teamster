@@ -198,11 +198,13 @@ with
             (academic_year + 13) + (-1 * grade_level) as cohort_primary,
 
             lag(yearid, 1) over (
-                partition by studentid order by yearid asc
+                partition by studentid
+                order by yearid asc, exitdate asc, reenrollments_dcid desc
             ) as yearid_prev,
 
             lag(grade_level, 1) over (
-                partition by studentid order by yearid asc
+                partition by studentid
+                order by yearid asc, exitdate asc, reenrollments_dcid desc
             ) as grade_level_prev,
 
             row_number() over (
@@ -247,6 +249,7 @@ with
         from window_calcs
     ),
 
+    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
     final as (
         select
             * except (rn_undergrad, year_in_school, year_in_network),
@@ -257,18 +260,6 @@ with
             if(exitcode = 'G1', cohort_primary, null) as cohort_graduated,
             if(exitdate is not null, true, false) as is_enrolled_y1,
 
-            if(
-                date(academic_year, 10, 1) between entrydate and exitdate, true, false
-            ) as is_enrolled_oct01,
-            if(
-                date(academic_year, 10, 15) between entrydate and exitdate, true, false
-            ) as is_enrolled_oct15,
-            if(
-                date(academic_year + 1, 3, 15) between entrydate and exitdate,
-                true,
-                false
-            ) as is_enrolled_mar15,
-
             case
                 when yearid = yearid_prev
                 then false
@@ -277,14 +268,34 @@ with
                 else false
             end as is_retained_year,
         from window_calcs_2
+    ),
+
+    deduped as (
+        -- keep one stint per entrydate; PowerSchool data entry occasionally
+        -- creates two and downstream rn_year = 1 filters assume this row survived
+        {{
+            dbt_utils.deduplicate(
+                relation="final",
+                partition_by="student_number, academic_year, entrydate",
+                order_by="rn_year asc",
+            )
+        }}
+    ),
+
+    with_next_entry as (
+        select
+            *,
+
+            lead(entrydate) over (
+                partition by studentid order by entrydate, exitdate
+            ) as next_entrydate,
+        from deduped
     )
 
-    -- keep one stint per entrydate; PowerSchool data entry occasionally creates two
-    -- and downstream rn_year = 1 filters assume this row survived
-    {{
-        dbt_utils.deduplicate(
-            relation="final",
-            partition_by="student_number, academic_year, entrydate",
-            order_by="rn_year asc",
-        )
-    }}
+select
+    -- trunk-ignore(sqlfluff/AM04)
+    * except (next_entrydate),
+
+    -- overlapping stints: the later stint owns the shared days
+    if(next_entrydate < exitdate, next_entrydate, exitdate) as exitdate_clipped,
+from with_next_entry

@@ -14,22 +14,23 @@ with
             is_proficient_int as is_proficient_int_state,
             cast(null as int64) as scale_score_iready,
 
-            if(
-                score_source = 'state_nj',
-                assessment_name,
-                concat('FAST ', administration_period)
-            ) as assessment_type,
+            case
+                when score_source = 'state_nj'
+                then assessment_name
+                when assessment_name = 'EOC'
+                then 'Algebra I EOC'
+                else concat('FAST ', administration_period)
+            end as assessment_type,
 
             if(illuminate_subject_area = 'Text Study', 'Reading', 'Math') as `subject`,
 
-            -- grade 3 FAST reads PM1 of the same year, not PM3 of the prior year
-            academic_year + if(
-                score_source = 'state_fl' and administration_period = 'PM1', 0, 1
-            ) as academic_year,
+            benchmark_academic_year as academic_year,
 
             case
                 when score_source = 'state_nj'
                 then 'njsla_prior_year'
+                when assessment_name = 'EOC'
+                then 'eoc_algebra_prior_year'
                 when administration_period = 'PM1'
                 then 'fast_pm1'
                 else 'fast_pm3_prior_year'
@@ -50,6 +51,12 @@ with
                     and assessment_name = 'FAST'
                     and scale_score is not null
                     and administration_period in ('PM1', 'PM3')
+                )
+                or (
+                    score_source = 'state_fl'
+                    and assessment_name = 'EOC'
+                    and raw_subject = 'Algebra I'
+                    and scale_score is not null
                 )
             )
 
@@ -200,7 +207,7 @@ with
 
             case
                 when bu.`source` = 'iready_boy'
-                then 1
+                then 2
                 when e.region != 'Miami' and bu.`source` = 'njsla_prior_year'
                 then 0
                 when
@@ -223,6 +230,11 @@ with
                     and e.grade_level between 4 and 9
                     and bu.`source` = 'fast_pm3_prior_year'
                 then 0
+                when
+                    e.region = 'Miami'
+                    and e.grade_level = 9
+                    and bu.`source` = 'eoc_algebra_prior_year'
+                then 1
             end as priority,
         from benchmark_union as bu
         inner join

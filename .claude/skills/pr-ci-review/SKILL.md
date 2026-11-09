@@ -13,10 +13,11 @@ description:
 
 # pr-ci-review
 
-- **`not_planned` closure with a "Tracked in Asana: <url>" comment = handoff to
-  Ops, not rejection.** The `TODO(#NNNN)` pointer is still live. Reopen the GH
-  issue and apply the `ops-tracked` label; it stays open until the linked Asana
-  task completes.
+- **A GitHub issue that needs no code change is closed.** A warn test firing on
+  bad source data, or a fix that is a sheet or source-system edit, goes to an
+  Asana task owned by the source owner. Close the issue `not_planned` with a
+  "Tracked in Asana: <url>" comment and leave it closed. Remove any
+  `TODO(#NNNN)` that points at it; the test's description names the fix.
 
 - **Check dbt Cloud CI state before pushing fixes**: pushing cancels an
   in-progress dbt run and restarts it. Before pushing a CI-fix commit, confirm

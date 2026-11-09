@@ -29,14 +29,16 @@ with
             cast(null as float64) as core_cumulative_y1_gpa,
             cast(null as float64) as earned_credits_cum_projected,
             cast(null as float64) as potential_credits_cum,
-        from {{ ref("stg_focus__student_gpa_calculated") }} as g
+        from {{ ref("int_focus__student_gpa_cumulative") }} as g
         inner join
             {{ ref("int_focus__students") }} as st on g.student_id = st.student_id
         inner join {{ ref("int_focus__schools") }} as fs on g.school_id = fs.id
         left join
             {{ ref("stg_google_sheets__people__locations") }} as loc
             on fs.school_number = loc.focus_school_id
-        where g.syear >= 2026 and g.marking_period_id = -1
+        -- Miami's Focus cutover year. A pre-cutover Focus row would win the
+        -- anti-join below; flooring it keeps that student's PowerSchool value.
+        where g.syear >= 2026
     ),
 
     powerschool_conformed as (

@@ -38,7 +38,7 @@ views:
       very few days each — a student who misses one of their first four days
       sits at 75% ADA and counts as chronically absent. That makes the first
       weeks of an academic year volatile rather than wrong. Always display
-      count_students alongside any rate measure on this view.
+      count_students_measured alongside any rate measure on this view.
 
       Paterson's presence-derived measures (ada_tier, pct_chronically_absent,
       truancy) carry a known upstream uncertainty from incomplete PowerSchool
@@ -46,17 +46,19 @@ views:
       count_students is unaffected. The conversion items were never captured at
       the time, so this is unlikely to be backfilled.
 
-      Every rate on this view divides by count_students, which counts students
-      with recorded attendance. No minimum-day floor applies -- one measured day
-      is enough -- but a student whose attendance was never recorded is outside
-      both the numerator and the denominator. Population and denominator are the
-      same number, so they cannot drift apart and an unmeasured student cannot
-      pull a rate down.
+      Every rate on this view divides by count_students_measured, the students
+      with at least 1 recorded attendance day. No minimum-day floor applies --
+      one measured day is enough -- but a student whose attendance was never
+      recorded is outside both the numerator and the denominator, so an
+      unmeasured student cannot pull a rate down. count_students is the
+      enrollment headcount and counts that student; count_students_measured does
+      not.
 
     cubes:
       - join_path: student_attendance_enrollment_periods
         includes:
           - count_students
+          - count_students_measured
           - count_chronically_absent
           - pct_chronically_absent
           - pct_tier_1_2

@@ -85,6 +85,15 @@ sources:
                 - powerschool
                 - sis
                 - cc
+      - name: codeset
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - codeset
       - name: courses
         config:
           meta:
@@ -112,6 +121,15 @@ sources:
                 - powerschool
                 - sis
                 - districtteachercategory
+      - name: emailaddress
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - emailaddress
       - name: fte
         config:
           meta:
@@ -247,6 +265,60 @@ sources:
                 - powerschool
                 - sis
                 - log
+      - name: originalcontactmap
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - originalcontactmap
+      - name: person
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - person
+      - name: personaddress
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - personaddress
+      - name: personaddressassoc
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - personaddressassoc
+      - name: personemailaddressassoc
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - personemailaddressassoc
+      - name: personphonenumberassoc
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - personphonenumberassoc
       - name: pgfinalgrades
         config:
           meta:
@@ -256,6 +328,24 @@ sources:
                 - powerschool
                 - sis
                 - pgfinalgrades
+      - name: phonenumber
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - phonenumber
+      - name: prefs
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - prefs
       - name: reenrollments
         config:
           meta:
@@ -364,6 +454,24 @@ sources:
                 - powerschool
                 - sis
                 - storedgrades
+      - name: studentcontactassoc
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - studentcontactassoc
+      - name: studentcontactdetail
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - studentcontactdetail
       - name: studentcorefields
         config:
           meta:

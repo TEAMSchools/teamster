@@ -48,6 +48,17 @@ families:
       - "GPA Roster: Miami"
       - "GPA Roster: Newark"
       - "GPA Roster: Paterson"
+  - id: report_cards_and_transcripts
+    name: Report Cards and Transcripts
+    description:
+      Student report cards and transcripts, plus assessment results, in a folder
+      per school. Pick your region.
+    group: operations
+    members:
+      - Camden Report Cards and Transcripts
+      - Miami Report Cards and Transcripts
+      - Newark Report Cards and Transcripts
+      - Paterson Report Cards and Transcripts
   - id: student_contact_info_feed
     name: Student Contact Info Feed (SCIF)
     description: Student and guardian contact information. Pick your region.
