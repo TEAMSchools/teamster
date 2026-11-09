@@ -137,12 +137,12 @@ select
     meal.meal_eligibility,
 
     coalesce(ell.is_ell, false) as is_ell,
-    coalesce(s5.is_504, false) as is_504,
+    coalesce(sec.is_504, false) as is_504,
     coalesce(iep.is_iep, false) as is_iep,
     coalesce(meal.is_meal_eligible, false) as is_meal_eligible,
 
 from {{ ref("dim_student_enrollments") }} as enr
 left join ell on enr.student_enrollment_key = ell.student_enrollment_key
-left join section_504 as s5 on enr.student_enrollment_key = s5.student_enrollment_key
+left join section_504 as sec on enr.student_enrollment_key = sec.student_enrollment_key
 left join iep on enr.student_enrollment_key = iep.student_enrollment_key
 left join meal on enr.student_enrollment_key = meal.student_enrollment_key
