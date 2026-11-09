@@ -376,7 +376,16 @@ https://claude.ai/artifact/M7BCEbYf7kehbXdZgSHS4h shows each one):
    After the call, the skill returns the communication log entry text and the
    DeansList link.
 5. **Log this week.** Returns the student's prefilled form link, or drafts the
-   answers from a sentence the case manager types, for them to paste.
+   answers from a sentence the case manager types, for them to paste. Scribe
+   mode is the same command for the whole meeting: the scorer types one line per
+   decision as it is made ("Baptiste: bus pass by Wed, Ortiz owns") and, at
+   "wrap up", the skill returns one prefilled form link per student with action,
+   owner and due date drafted, plus DeansList text for any agreed family
+   contact. The case manager clicks, checks and submits. Nothing is stored in
+   Claude; the form response is the record, and an unsubmitted link is a lost
+   commitment, which is why Monday's score lists active students with no entry
+   since the last meeting. Recording or transcribing the meeting is not part of
+   this design (see Open questions).
 6. **Student one-pager.** Trend across the weekly tab, plan from the form, every
    non-mass contact from the contacts tab, every incident this year from the
    incidents tab with tier, infraction, referring staff and consequence, GPA and
@@ -413,6 +422,11 @@ Carried into the skill and roster design once answered. None blocks the extract.
    same weekly rhythm?
 4. Who at each school may be granted the sheet, and who are the case managers
    who get the form?
+5. Does either team record or transcribe the Wednesday meeting today? A
+   transcript that names students and family situations is a student record held
+   by a vendor, so the skill does not read one until Compliance names the
+   approved tool and its consent and retention rules. Until then, follow-ups are
+   captured by typing them into "Log this week" during the meeting.
 
 ## Left to the builder
 
