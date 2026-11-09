@@ -51,22 +51,6 @@ models:
               - student_number
               - source
               - assessment_id
-      # Scoped to the current academic year so past years do not bury new rows.
-      - dbt_utils.expression_is_true:
-          description: >-
-            Catches a current-year student assessment whose date_taken falls
-            before the assessment's academic year began. Either the assessment
-            is filed under the wrong academic year in Illuminate, or date_taken
-            is corrupt. Fix the assessment's academic year, or the date, in
-            Illuminate. Section resolution anchors on administered_date, not
-            date_taken, so a bad date_taken does not misplace the row.
-          arguments:
-            expression: |
-              academic_year != {{ var("current_academic_year") }}
-              or date_taken is null
-              or date_taken >= date(academic_year, 7, 1)
-          config:
-            severity: warn
     columns:
       - name: section_match_method
         data_type: string

@@ -30,9 +30,9 @@ models:
         data_type: |
           array<struct<name string, _id string, category string, district string>>
       - name: regional_admin_schools
-        data_type: |
-          array<struct<name string, _id string>>
-        description: Current `regionalAdminSchools` on the destination user.
+        data_type: array<string>
+        description:
+          Current `regionalAdminSchools` school ids on the destination user.
       # - name: accounting_id
       #   data_type: string
       # - name: calendar_email

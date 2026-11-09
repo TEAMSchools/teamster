@@ -18,8 +18,8 @@ with
             cw._dbt_source_project,
             cw.academic_year,
             cw.region,
-            cw.`quarter`,
-            cw.week_number_quarter,
+            cw.term as `quarter`,
+            cw.week_number_term as week_number_quarter,
             cw.week_start_monday,
             cw.school_week_end_date,
 

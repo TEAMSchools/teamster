@@ -175,6 +175,7 @@ unit_tests:
             score_source: state_fl
             assessment_name: FAST
             administration_period: PM1
+            benchmark_academic_year: 2026
             test_grade: 3
             grade_level_when_assessed: 3
             raw_subject: null
@@ -269,6 +270,7 @@ unit_tests:
             score_source: state_fl
             assessment_name: FAST
             administration_period: PM3
+            benchmark_academic_year: 2026
             test_grade: 3
             grade_level_when_assessed: 3
             raw_subject: null
@@ -338,6 +340,7 @@ unit_tests:
             score_source: state_fl
             assessment_name: FAST
             administration_period: PM1
+            benchmark_academic_year: 2026
             test_grade: 3
             grade_level_when_assessed: 3
             raw_subject: null
@@ -354,6 +357,7 @@ unit_tests:
             score_source: state_fl
             assessment_name: FAST
             administration_period: PM3
+            benchmark_academic_year: 2026
             test_grade: 3
             grade_level_when_assessed: 3
             raw_subject: null
@@ -410,6 +414,7 @@ unit_tests:
             score_source: state_fl
             assessment_name: EOC
             administration_period: PM3
+            benchmark_academic_year: 2026
             test_grade: 8
             grade_level_when_assessed: null
             raw_subject: Algebra I
@@ -426,6 +431,7 @@ unit_tests:
             score_source: state_fl
             assessment_name: FAST
             administration_period: PM3
+            benchmark_academic_year: 2026
             test_grade: 8
             grade_level_when_assessed: null
             raw_subject: null
@@ -442,6 +448,7 @@ unit_tests:
             score_source: state_fl
             assessment_name: EOC
             administration_period: PM3
+            benchmark_academic_year: 2026
             test_grade: 8
             grade_level_when_assessed: null
             raw_subject: Algebra I
@@ -458,6 +465,7 @@ unit_tests:
             score_source: state_fl
             assessment_name: EOC
             administration_period: PM3
+            benchmark_academic_year: 2026
             test_grade: 8
             grade_level_when_assessed: null
             raw_subject: Civics
@@ -474,6 +482,7 @@ unit_tests:
             score_source: state_fl
             assessment_name: EOC
             administration_period: PM3
+            benchmark_academic_year: 2026
             test_grade: 7
             grade_level_when_assessed: null
             raw_subject: Algebra I

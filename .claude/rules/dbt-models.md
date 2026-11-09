@@ -175,7 +175,8 @@ comments beyond the block you are editing only when asked.
    in any PR that modifies one (_Tests on marts and `rpt_` models_ in
    `.claude/rules/dbt-yaml.md`).
 
-**Exceptions** — a kipptaf `stg_` union view over district staging, and a thin
+**Exceptions** — a kipptaf union view over district `stg_` or `int_` models (a
+`dbt_utils.union_relations` passthrough with no other logic), and a thin
 cross-project wrapper `rpt_` (a district `rpt_powerschool__autocomm_*` or other
 `extracts/` wrapper sourcing `kipptaf_extracts`), carry NO uniqueness test; it
 lives on the model they wrap. The district wrapper is contract-columns-only (no
@@ -197,8 +198,9 @@ prod relation in place. Applies even when the model has no exposure and zero
 remaining `ref()`s — a consumer nobody knew about then degrades to frozen data
 instead of vanishing. Do not propose deletion as the tidier option, and do not
 issue a `drop view` for the orphaned relation. Disabling a model leaves singular
-tests that ref it and `relationships` tests pointing at it enabled (see _Test
-config defaults_ in `.claude/rules/dbt-yaml.md`); disable or remove those too.
+tests that ref it and `relationships` tests pointing at it enabled (see
+_Disabling a model_ in `.claude/rules/dbt-yaml.md`); disable or remove those
+too.
 
 Exception, decided on #5162: a kipptaf `select *` union passthrough over
 district sources with no remaining `ref()` is deleted outright, source entries

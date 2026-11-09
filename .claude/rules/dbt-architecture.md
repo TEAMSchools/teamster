@@ -149,11 +149,17 @@ A tool reads an `rpt_` or a mart. Cube reads marts only.
 - Bad: a Tableau exposure `depends_on: ref("int_topline__student_metrics")`.
 - Enforced by: `dbt-layer-check`, with a baseline.
 
-#### A9. No `select *` in the final select of an `rpt_` or mart
+#### A9. No `select *` in the final select of an `rpt_`, a mart, or a view
 
-- Why: the column list is the consumer's contract; a star hides it.
+The view rule covers every layer. A `dbt_utils.union_relations` wrapper is
+exempt, because its star is the column superset and it rebuilds on its own.
+
+- Why: the column list is the consumer's contract; a star hides it. A view also
+  fixes its columns when it is created, and a view whose own SQL never changes
+  is never recreated, so a star view never picks up a column added upstream.
 - Good: `select student_key, academic_year, … from final`.
-- Bad: `select * from final`.
+- Bad: `select * from final`; `select u.*, c.days_in_term from u left join c` in
+  a view.
 - Enforced by: `dbt-layer-check` (lines the PR changes).
 
 #### A10. Join unioned regional models on `_dbt_source_project`

@@ -1,0 +1,185 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<workbook original-version='18.1' source-build='2025.1.0' version='18.1' xmlns:user='http://www.tableausoftware.com/xml/user'>
+  <datasources>
+    <datasource caption='Mastery Rows' inline='true' name='federated.0dki (copy)' version='18.1'>
+      <column caption='Grade Level' datatype='integer' name='[grade_level]' role='dimension' type='ordinal' />
+      <column caption='Subject Area' datatype='string' name='[subject_area]' role='dimension' type='nominal' />
+      <column caption='Module Code' datatype='string' name='[module_code]' role='dimension' type='nominal' />
+      <column caption='School' datatype='string' name='[school]' role='dimension' type='nominal' />
+      <column caption='Academic Year' datatype='integer' name='[academic_year]' role='dimension' type='ordinal' />
+      <column caption='Week Start Monday' datatype='date' name='[week_start_monday]' role='dimension' type='ordinal' />
+      <column caption='Is Mastery Int' datatype='real' name='[is_mastery_int]' role='measure' type='quantitative' />
+      <column datatype='string' name='[Discipline]' role='dimension' type='nominal'>
+        <calculation class='categorical-bin' column='[subject_area]' default='&quot;Other&quot;' new-bin='true'>
+          <bin default-name='false' value='&quot;ELA&quot;'>
+            <value>&quot;English 100&quot;</value>
+            <value>&quot;Text Study&quot;</value>
+          </bin>
+          <bin default-name='false' value='&quot;Math&quot;'>
+            <value>&quot;Algebra I&quot;</value>
+          </bin>
+        </calculation>
+      </column>
+    </datasource>
+  </datasources>
+  <worksheets>
+    <worksheet name='Mastery Grid'>
+      <table>
+        <view>
+          <datasources>
+            <datasource caption='Mastery Rows' name='federated.0dki (copy)' />
+          </datasources>
+          <datasource-dependencies datasource='federated.0dki (copy)'>
+            <column datatype='string' name='[Discipline]' role='dimension' type='nominal'>
+              <calculation class='categorical-bin' column='[subject_area]' default='&quot;Other&quot;' new-bin='true'>
+                <bin default-name='false' value='&quot;ELA&quot;'>
+                  <value>&quot;English 100&quot;</value>
+                  <value>&quot;Text Study&quot;</value>
+                </bin>
+                <bin default-name='false' value='&quot;Math&quot;'>
+                  <value>&quot;Algebra I&quot;</value>
+                </bin>
+              </calculation>
+            </column>
+            <column caption='Academic Year' datatype='integer' name='[academic_year]' role='dimension' type='ordinal' />
+            <column-instance column='[is_mastery_int]' derivation='Avg' name='[avg:is_mastery_int:qk]' pivot='key' type='quantitative' />
+            <column-instance column='[is_mastery_int]' derivation='Avg' name='[diff:avg:is_mastery_int:qk:2]' pivot='key' type='quantitative'>
+              <table-calc diff-options='Relative' ordering-type='Field' type='Difference'>
+                <order field='[federated.0dki (copy)].[week_start_monday]' />
+                <order field='[federated.0dki (copy)].[module_code]' />
+                <address>
+                  <value>1</value>
+                </address>
+              </table-calc>
+            </column-instance>
+            <column-instance column='[is_mastery_int]' derivation='Avg' name='[diff:avg:is_mastery_int:qk]' pivot='key' type='quantitative'>
+              <table-calc diff-options='Relative' ordering-type='Rows' type='Difference'>
+                <address>
+                  <value>-1</value>
+                </address>
+              </table-calc>
+            </column-instance>
+            <column caption='Grade Level' datatype='integer' name='[grade_level]' role='dimension' type='ordinal' />
+            <column caption='Is Mastery Int' datatype='real' name='[is_mastery_int]' role='measure' type='quantitative' />
+            <column-instance column='[week_start_monday]' derivation='MDY' name='[md:week_start_monday:ok]' pivot='key' type='ordinal' />
+            <column caption='Module Code' datatype='string' name='[module_code]' role='dimension' type='nominal' />
+            <column-instance column='[academic_year]' derivation='None' name='[none:academic_year:ok]' pivot='key' type='ordinal' />
+            <column-instance column='[grade_level]' derivation='None' name='[none:grade_level:ok]' pivot='key' type='ordinal' />
+            <column-instance column='[module_code]' derivation='None' name='[none:module_code:nk]' pivot='key' type='nominal' />
+            <column-instance column='[school]' derivation='None' name='[none:school:nk]' pivot='key' type='nominal' />
+            <column-instance column='[week_start_monday]' derivation='None' name='[none:week_start_monday:ok]' pivot='key' type='ordinal' />
+            <column caption='School' datatype='string' name='[school]' role='dimension' type='nominal' />
+            <column caption='Week Start Monday' datatype='date' name='[week_start_monday]' role='dimension' type='ordinal' />
+          </datasource-dependencies>
+          <filter class='categorical' column='[federated.0dki (copy)].[Discipline]' filter-group='94'>
+            <groupfilter function='member' level='[Discipline]' member='&quot;ELA&quot;' user:ui-domain='database' user:ui-enumeration='inclusive' user:ui-marker='enumerate' />
+          </filter>
+          <filter class='categorical' column='[federated.0dki (copy)].[md:week_start_monday:ok]' filter-group='100'>
+            <groupfilter function='level-members' level='[md:week_start_monday:ok]' user:ui-enumeration='all' user:ui-marker='enumerate' />
+          </filter>
+          <filter class='categorical' column='[federated.0dki (copy)].[none:academic_year:ok]' filter-group='99'>
+            <groupfilter function='member' level='[none:academic_year:ok]' member='2026' user:ui-domain='database' user:ui-enumeration='inclusive' user:ui-marker='enumerate' />
+          </filter>
+          <filter class='categorical' column='[federated.0dki (copy)].[none:week_start_monday:ok]' filter-group='97'>
+            <groupfilter function='level-members' level='[none:week_start_monday:ok]' />
+          </filter>
+          <natural-sort column='[federated.0dki (copy)].[none:week_start_monday:ok]' direction='DESC' />
+          <slices>
+            <column>[federated.0dki (copy)].[Discipline]</column>
+            <column>[federated.0dki (copy)].[md:week_start_monday:ok]</column>
+            <column>[federated.0dki (copy)].[none:academic_year:ok]</column>
+            <column>[federated.0dki (copy)].[none:week_start_monday:ok]</column>
+          </slices>
+          <aggregation value='true' />
+        </view>
+        <style>
+          <style-rule element='cell'>
+            <format attr='text-format' field='[federated.0dki (copy)].[avg:is_mastery_int:qk]' value='p0%' />
+            <format attr='text-format' field='[federated.0dki (copy)].[diff:avg:is_mastery_int:qk:2]' value='*▲ #%;▼ #%' />
+          </style-rule>
+          <style-rule element='header'>
+            <format attr='height' field='[federated.0dki (copy)].[none:week_start_monday:ok]' value='21' />
+          </style-rule>
+          <style-rule element='label'>
+            <format attr='font-size' field='[federated.0dki (copy)].[none:school:nk]' value='12' />
+            <format attr='font-size' field='[federated.0dki (copy)].[none:week_start_monday:ok]' value='12' />
+          </style-rule>
+          <style-rule element='mark'>
+            <encoding attr='size-bar' field='[federated.0dki (copy)].[diff:avg:is_mastery_int:qk:2]' field-type='quantitative' max-size='1' min-size='0.005' type='centersize' />
+          </style-rule>
+        </style>
+        <panes>
+          <pane selection-relaxation-option='selection-relaxation-allow'>
+            <view>
+              <breakdown value='auto' />
+            </view>
+            <mark class='Square' />
+            <encodings>
+              <tooltip column='[federated.0dki (copy)].[diff:avg:is_mastery_int:qk]' />
+              <text column='[federated.0dki (copy)].[avg:is_mastery_int:qk]' />
+              <text column='[federated.0dki (copy)].[diff:avg:is_mastery_int:qk:2]' />
+            </encodings>
+            <customized-label>
+              <formatted-text>
+                <run fontsize='12'><![CDATA[<[federated.0dki (copy)].[avg:is_mastery_int:qk]>]]></run>
+                <run>Æ&#10;</run>
+                <run fontsize='10'><![CDATA[<[federated.0dki (copy)].[diff:avg:is_mastery_int:qk:2]>]]></run>
+              </formatted-text>
+            </customized-label>
+          </pane>
+        </panes>
+        <rows onTop='true'>[federated.0dki (copy)].[none:grade_level:ok]</rows>
+        <cols onLeft='true'>([federated.0dki (copy)].[none:week_start_monday:ok] / ([federated.0dki (copy)].[none:module_code:nk] / [federated.0dki (copy)].[none:school:nk]))</cols>
+      </table>
+      <simple-id uuid='{00000000-0000-0000-0000-0000000000b1}' />
+    </worksheet>
+    <worksheet name='Mastery by Week'>
+      <table>
+        <view>
+          <datasources>
+            <datasource caption='Mastery Rows' name='federated.0dki (copy)' />
+          </datasources>
+          <datasource-dependencies datasource='federated.0dki (copy)'>
+            <column-instance column='[is_mastery_int]' derivation='Avg' name='[avg:is_mastery_int:qk]' pivot='key' type='quantitative' />
+            <column caption='Is Mastery Int' datatype='real' name='[is_mastery_int]' role='measure' type='quantitative' />
+            <column caption='Week Start Monday' datatype='date' name='[week_start_monday]' role='dimension' type='ordinal' />
+            <column-instance column='[week_start_monday]' derivation='None' name='[none:week_start_monday:ok]' pivot='key' type='ordinal' />
+          </datasource-dependencies>
+          <filter class='categorical' column='[federated.0dki (copy)].[Discipline]' filter-group='94'>
+            <groupfilter function='member' level='[Discipline]' member='&quot;Math&quot;' />
+          </filter>
+          <natural-sort column='[federated.0dki (copy)].[none:week_start_monday:ok]' direction='DESC' />
+          <aggregation value='true' />
+        </view>
+        <style />
+        <panes>
+          <pane selection-relaxation-option='selection-relaxation-allow'>
+            <view>
+              <breakdown value='auto' />
+            </view>
+            <mark class='Automatic' />
+          </pane>
+        </panes>
+        <rows>[federated.0dki (copy)].[none:week_start_monday:ok]</rows>
+        <cols />
+      </table>
+      <simple-id uuid='{00000000-0000-0000-0000-0000000000b2}' />
+    </worksheet>
+  </worksheets>
+  <windows>
+    <window class='worksheet' name='Mastery Grid'>
+      <cards>
+        <edge name='right'>
+          <strip size='300'>
+            <card param='[federated.0dki (copy)].[md:week_start_monday:ok]' type='filter' />
+            <card param='[federated.0dki (copy)].[Discipline]' type='filter' />
+          </strip>
+        </edge>
+      </cards>
+      <simple-id uuid='{00000000-0000-0000-0000-0000000000b3}' />
+    </window>
+    <window class='worksheet' name='Mastery by Week'>
+      <simple-id uuid='{00000000-0000-0000-0000-0000000000b4}' />
+    </window>
+  </windows>
+</workbook>

@@ -83,3 +83,17 @@ def test_schedule_name_matches_the_existing_dagster_plus_object():
     )
 
     assert schedule.name == "test__finalsite__contacts__daily_asset_job_schedule"
+
+
+def test_one_asset_runs_in_process():
+    schedule = build_finalsite_contacts_schedule(
+        code_location="test",
+        execution_timezone=TIMEZONE,
+        asset_selection=[_contacts],
+    )
+
+    defs = Definitions(assets=[_contacts], schedules=[schedule])
+    job = defs.resolve_job_def(schedule.job_name)
+
+    assert job.name == "test__finalsite__contacts__daily_asset_job"
+    assert job.executor_def.name == "in_process"

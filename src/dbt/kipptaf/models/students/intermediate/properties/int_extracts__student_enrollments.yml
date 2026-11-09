@@ -132,10 +132,12 @@ models:
         description:
           Inclusive last day the student was enrolled in this stint. PowerSchool
           records exitdate as the first day the student is no longer enrolled,
-          so PowerSchool stints use the day before exitdate; Focus trims each
-          stint to the day before the next one starts, so Focus stints use
-          exitdate unchanged. Null for graduate placeholder rows, which carry no
-          exit date. Use this column, not exitdate, for any "enrolled on date X"
+          so PowerSchool stints use the day before exitdate, after cutting an
+          earlier stint back to the next stint's entry date when the two overlap
+          (exitdate_clipped in the PowerSchool package); Focus trims each stint
+          to the day before the next one starts, so Focus stints use exitdate
+          unchanged. Null for graduate placeholder rows, which carry no exit
+          date. Use this column, not exitdate, for any "enrolled on date X"
           test.
       - name: entrycode
         data_type: string
@@ -1089,6 +1091,9 @@ models:
           school_level.
       - name: fafsa_status_mismatch_category
         data_type: string
+        config:
+          meta:
+            contains_pii: true
         data_tests:
           - accepted_values:
               arguments:
@@ -1099,7 +1104,8 @@ models:
                   grade_level != 99 and academic_year = {{
                   var('current_academic_year')}}
         description:
-          The grade level the student was in for this enrollment or if EOY, the
-          next grade level unless thestudent is being demoted. Categorical
-          mapping of academic_year, fafsa_opt_out, grade_level,
-          salesforce_contact_df_has_fafsa.
+          Flags a grade 12 student whose Salesforce contact says they have a
+          FAFSA while Overgrad records a FAFSA opt-out. Reads
+          "Salesforce/Overgrad has FAFSA opt-out mismatch" from academic year
+          2024 on, and "No issues" otherwise. KIPP Forward fixes a mismatch by
+          correcting the FAFSA status in Salesforce or the opt-out in Overgrad.

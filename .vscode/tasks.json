@@ -70,7 +70,7 @@
     {
       "label": "dbt: Generate Prod Manifests",
       "type": "shell",
-      "command": "bash .vscode/scripts/post-merge.sh",
+      "command": "bash .vscode/scripts/post-merge.sh --all",
       "presentation": {
         "reveal": "always",
         "panel": "dedicated",

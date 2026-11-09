@@ -125,12 +125,17 @@ accept a subagent's self-report without the checks there.
   findings, and post a per-finding verdict as a PR comment. Everything else
   about review and CI: invoke `pr-ci-review`.
 - A finding you do not fix is declined (give the reason; nothing to record) or
-  deferred. A deferred finding links its record when you report it: an open
-  issue, a comment on one, a `standard-baseline.tsv` row, or a `TODO(#N)`. If
-  none covers it, file the issue first. "Out of scope", "backlog", or "left to
-  the author" with no link drops the work, since the user reads the verdict as
-  handled. This covers `claude-review` verdicts and executing-plans "Deferred
-  minors", whose ledger is deleted at finish.
+  deferred. For executing-plans "Deferred minors" and final-review findings, the
+  user picks, not you. Ask with `AskUserQuestion` (fix in this PR / defer to an
+  issue / decline) and wait. A reply that does not answer the question is not a
+  decision; ask again. Verify each finding against the code or data before you
+  ask, since a reviewer's minor can be wrong. A deferred finding links its
+  record when you report it: an open issue, a comment on one, a
+  `standard-baseline.tsv` row, or a `TODO(#N)`. If none covers it, file the
+  issue first. "Out of scope", "backlog", or "left to the author" with no link
+  drops the work, since the user reads the verdict as handled. This covers
+  `claude-review` verdicts and executing-plans "Deferred minors", whose ledger
+  is deleted at finish.
 
 ## Tooling
 
@@ -293,6 +298,10 @@ exploration that led nowhere (keep only the conclusion).
 - BigQuery MCP (`execute_sql_readonly`): warehouse inspection (raw rows, schema
   diffs, `INFORMATION_SCHEMA`), engineering tasks, and ad-hoc SQL only after
   `cube meta` shows no view covers the columns.
+- Google Sheet contents (a `src_google_sheets__*` source, an Ops sheet fix):
+  `mcp__claude_ai_Google_Sheets__get_values`, not BigQuery. The BigQuery MCP
+  cannot read sheet-backed externals, and the prod `stg_` table is frozen at its
+  last build.
 - dbt MCP `show`: only when `ref()`/`source()` resolution is needed.
 - Dagster: two servers, one tool per job, and `dagster-plus` (Dagster's own
   hosted server) wins any job it covers. `dagster` (homebrew) keeps what

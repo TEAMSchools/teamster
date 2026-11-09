@@ -10,9 +10,10 @@ models:
       domain across assessments whose AppSheet report-card regions include the
       student's region, mapping each standard code to a domain through the
       standard domains sheet; standards with no domain mapping are dropped.
-      Report Card scores come from int_assessments__standard_rollup, so a
-      standard counts once in its domain average even when Illuminate splits it
-      across standard sets.
+      Report Card scores are the standard rows of
+      int_assessments__response_rollup, which scores a standard once even when
+      Illuminate splits it across standard sets, so it counts once in its domain
+      average.
     config:
       meta:
         contains_pii: true

@@ -1,13 +1,16 @@
 data_tests:
+  # TODO(#5558): runbook
   - name: test_illuminate_assessment_split_standard
     description: >-
       Illuminate keeps some standards, such as Common Core, in more than one
       standards set. Lists current-year assessments that align items to one
       standard (same code and description) through records in more than one set,
       which splits that standard's scores across records.
-      int_assessments__standard_rollup merges the split, so reports stay right.
-      Fix it in Illuminate by realigning the assessment's items to one set's
-      record.
+      int_assessments__performance_bands groups the records and
+      int_assessments__response_rollup scores them once, so reports stay right.
+      A split across records with different band sets leaves that standard
+      without a band label. Fix it in Illuminate by realigning the assessment's
+      items to one set's record.
     config:
       severity: warn
       meta:
@@ -59,6 +62,8 @@ data_tests:
       score type's grade rows, or a per-grade goal that disagrees where no over
       time goal exists to override it.
     config:
+      tags:
+        - google_sheet
       severity: error
       meta:
         dagster:
@@ -100,11 +105,13 @@ data_tests:
       in one but missing from the other, scoped to the current Finalsite
       academic year.
     config:
+      tags:
+        - google_sheet
       severity: error
       meta:
         dagster:
           ref:
-            name: int_finalsite__status_report_unpivot
+            name: stg_google_sheets__finalsite__status_crosswalk
 
   - name: test_int_tableau__fresh_goals_scaffold_region_matches_scaffold
     description: >-
@@ -122,10 +129,12 @@ data_tests:
       the same school/grade -- that row is being silently dropped from
       int_tableau__fresh_goals_scaffold's inner join.
     config:
+      tags:
+        - google_sheet
       meta:
         dagster:
           ref:
-            name: int_tableau__fresh_goals_scaffold
+            name: stg_google_sheets__finalsite__goals
 
   - name: test_stg_google_sheets__finalsite__status_crosswalk_single_year
     description: >-
@@ -138,6 +147,8 @@ data_tests:
       or double-count rows with no error. This test fails loudly on that
       condition instead.
     config:
+      tags:
+        - google_sheet
       severity: error
       meta:
         dagster:
@@ -276,11 +287,30 @@ data_tests:
       a canonical row, so a master row without aliases is unreachable from most
       upstream lookups).
     config:
+      tags:
+        - google_sheet
       severity: error
       meta:
         dagster:
           ref:
             name: stg_google_sheets__people__locations
+
+  # TODO(#5558): runbook
+  - name: stg_google_sheets__assessments__academic_goals__sheet_duplicates
+    description: >-
+      Lists keys that appear on more than one row of the academic goals Google
+      Sheet (academic year, school, grade, state assessment code and subject).
+      The staging model keeps the row with the higher school goal, so reports
+      stay at one row per key, but that pick may not be the goal the school set.
+      To fix, the sheet owner deletes the extra row for each listed key.
+    config:
+      tags:
+        - google_sheet
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: stg_google_sheets__assessments__academic_goals
 
   - name: test_sf_contact_note_duplicate
     description: >-
@@ -312,14 +342,63 @@ data_tests:
 
   - name: int_assessments__scaffold__replacement_region_untagged
     description: >-
-      Returns students on a replacement curriculum who took an Illuminate
-      assessment that is not tagged for their region. Fix each row in one of two
-      ways. If the region should give this assessment, add the region to the
-      assessment's regions_assessed in the AppSheet Illuminate assessments
+      A student on a replacement curriculum took an Illuminate assessment that
+      is not tagged for the student's region. Fix each row in one of two ways.
+      If the region should give this assessment, add the region to the
+      assessment's regions_assessed tag in the AppSheet Illuminate assessments
       extension. If the student should not have taken it, remove the student's
       assessment in Illuminate. Until then,
       bridge_assessment_expectations_student_scoped leaves the row out, because
       dim_assessment_administrations has no administration for that region.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: int_assessments__scaffold
+
+  - name: stg_illuminate__dna_assessments__students_assessments__taken_before_academic_year
+    description: >-
+      A student took an Illuminate assessment before the assessment's academic
+      year began (date taken before 1 July of the start year). Usually the
+      assessment was copied from a prior year and kept the old academic year.
+      Downstream, the score sits in a school year it was not taken in. Correct
+      the assessment's academic year, or the date taken, in Illuminate.
+      Assessments whose academic year is not a real year are skipped.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: stg_illuminate__dna_assessments__students_assessments
+
+  - name: stg_illuminate__dna_repositories__repository_fields__sight_words_unique_label
+    description: >-
+      An Illuminate Sight Words Quiz repository holds the same field label more
+      than once, often the placeholder TBD. Downstream, the sight words
+      dashboard repeats the student's row for that word. Rename or remove the
+      duplicate field in the repository in Illuminate.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: stg_illuminate__dna_repositories__repository_fields
+
+  - name: stg_illuminate__dna_repositories__repositories__sight_words_have_scores
+    description: >-
+      A Sight Words Quiz repository from this school year has no scores a week
+      after its date administered. Usually the repository is missing from the
+      hand-kept Illuminate ingestion and staging lists, so add it in the places
+      models/illuminate/CLAUDE.md names. Otherwise no one has entered scores in
+      Illuminate yet. Until then, the sight words dashboard shows every student
+      as untested on that quiz, and the DeansList sight words extract leaves it
+      out.
+    config:
+      # TODO(#6292): warn, not error, because late score entry also fires this
+      # and would stop the kipptaf build. #6292 splits the 2 causes.
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: stg_illuminate__dna_repositories__repositories
 
   - name: int_assessments__resolved_section_enrollments__unique_per_score
     description: >-
@@ -351,21 +430,6 @@ data_tests:
         dagster:
           ref:
             name: fct_assessment_scores_enrollment_scoped
-
-  - name: int_collegeboard__ap_unpivot__crosswalk_resolves
-    description: >-
-      Returns one row per `stg_collegeboard__ap.ap_number_ap_id` that has no
-      matching `college_board_id` in
-      `stg_google_sheets__collegeboard__ap_id_crosswalk`. Each row is an
-      unresolved CB-file student whose AP scores are dropped from
-      `int_assessments__ap_assessments`. Ops signal to add the missing IDs to
-      the crosswalk; failure rows persist in `kipptaf_dbt_test__audit` for
-      direct query.
-    config:
-      meta:
-        dagster:
-          ref:
-            name: int_collegeboard__ap_unpivot
 
   - name: rpt_focus__demographics__language_crosswalk_resolves
     description: >-
@@ -401,7 +465,7 @@ data_tests:
       meta:
         dagster:
           ref:
-            name: dim_student_section_enrollments
+            name: int_students__course_enrollments
 
   - name: test_miami_section_enrollment_orphan_rate
     description: >-
@@ -429,20 +493,19 @@ data_tests:
     description: >-
       Warns if Miami's current-year `is_dropped_section` rate leaves the band
       the inference was validated against, or if the flag goes null again. Focus
-      has no drop convention, so the Miami value is inferred (#4968): the
-      schedule row's end_date falls before its marking period ends, and the
-      student still holds an open schedule row that year. The second half
-      excludes a withdrawal sweep. Both halves are assumptions about Focus
+      has no drop convention, so the Miami value is the Focus schedule
+      `is_dropped` inference: the seat closed before its marking period ends and
+      not with a withdrawal. A seat that closes on or after the end of an
+      enrollment stint at that school, before any re-enrollment there, is
+      treated as part of the withdrawal. Both halves are assumptions about Focus
       behavior, and this test is what notices when either stops holding -- a
-      bulk close of schedule rows, or a change that breaks the sweep exclusion,
-      would show up as a rate spike. Shipped at 2.97% (576 of 19,363 AY2026
-      rows) against a like-for-like NJ band of 0.23% to 8.55% at the same point
-      in the year. The 20% ceiling sits above every NJ completed-year rate
-      (17.35% Camden AY2025 is the highest measured), so it does not fire when
-      Miami's own year finishes accumulating. The null check is the other
-      direction: a regression in the Focus branch would restore the nulls this
-      replaced, and a null flag silently removes Miami from every report using
-      the bare `not is_dropped_section` idiom (#4996).
+      bulk close of schedule rows, or seats closed before the enrollment end is
+      set, would show up as a rate spike. The 20% ceiling sits above every NJ
+      completed-year rate, so it does not fire when Miami's own year finishes
+      accumulating. The null check is the other direction: a regression in the
+      Focus branch would restore the nulls this replaced, and a null flag
+      silently removes Miami from every report using the bare `not
+      is_dropped_section` idiom (#4996).
     config:
       severity: warn
       meta:
@@ -506,17 +569,14 @@ data_tests:
 
   - name: test_focus_course_sections_teacher_resolves
     description: >-
-      Warns on Focus course periods whose lead teacher does not resolve through
-      the staff roster (by `ein`, falling back to email), scoped to the Focus
-      population by year so the frozen Miami PowerSchool archive (which predates
-      the roster and will never resolve) doesn't inflate the count. Measured
-      floor is 80 AY2026 course periods: 67 with no teacher assigned in Focus at
-      all, plus 13 whose assigned user resolves through neither `ein` nor email.
-      Both are source data gaps in Focus / the roster, not a modeling defect.
-      (`int_focus__course_periods` also holds 21 stale AY2025 rows that the
-      year-scope filter correctly excludes here -- a raw, unscoped count over
-      all course periods would show 101 unresolved instead, double-counting that
-      stale year.)
+      A Focus course period has a lead teacher, but that Focus user matches no
+      one on the ADP staff roster, by `ein` or by email. Downstream, the
+      section's teachernumber on int_students__course_sections is null. Fix the
+      user's employee id or email in Focus, or the worker's record in ADP, so
+      the two match. Scoped to the Focus years, because the frozen Miami
+      PowerSchool archive predates the roster. A course period with no lead
+      teacher at all is checked earlier, on stg_focus__course_periods.teacher_id
+      in the focus package.
     config:
       severity: warn
       meta:
@@ -541,6 +601,8 @@ data_tests:
       that lands on a real but inactive address, and any future spine change
       that drops a population the sheet still writes against.
     config:
+      tags:
+        - google_sheet
       severity: warn
       meta:
         dagster:
@@ -558,6 +620,8 @@ data_tests:
       a strict permissiveness order). Fails loudly on that condition instead of
       dim_staff_cube_access silently picking one via an aggregate.
     config:
+      tags:
+        - google_sheet
       severity: error
       meta:
         dagster:
@@ -601,6 +665,8 @@ data_tests:
       NOT caught here — grade 12 has no Y1 GPA goal by design, and detecting
       that case would need the intent recorded in the sheet.
     config:
+      tags:
+        - google_sheet
       severity: error
       meta:
         dagster:
@@ -624,6 +690,8 @@ data_tests:
       aggregation_hash alone is not unique across years and metrics, so the
       check needs the full three-column key.
     config:
+      tags:
+        - google_sheet
       severity: error
       meta:
         dagster:
@@ -805,6 +873,8 @@ data_tests:
       the lowered value, which is the grain the join actually uses, and so
       subsumes the raw unique test rather than sitting alongside it.
     config:
+      tags:
+        - google_sheet
       severity: error
       meta:
         dagster:
@@ -820,7 +890,7 @@ data_tests:
       unnoticed. A hit means either map it in the CASE, or add it to the
       exclusion list if it is intentionally out of scope.
     config:
-      severity: warn
+      severity: error
       meta:
         dagster:
           ref:
@@ -835,6 +905,8 @@ data_tests:
       leaking, so this warns rather than errors -- it surfaces the abbreviations
       Ops still needs to map without blocking a build.
     config:
+      tags:
+        - google_sheet
       severity: warn
       meta:
         dagster:
@@ -849,6 +921,8 @@ data_tests:
       scope its population, so a school goal without a network parent would drop
       those students with no error.
     config:
+      tags:
+        - google_sheet
       severity: error
       meta:
         dagster:
@@ -955,27 +1029,7 @@ data_tests:
       meta:
         dagster:
           ref:
-            name: stg_google_sheets__student_graduation_path_cutoffs
-
-  - name: int_extracts__student_enrollments__miami_cohort_not_ahead_of_entry
-    description: >-
-      Miami's copy of the powerschool package test
-      base_powerschool__student_enrollments__cohort_not_ahead_of_entry, which
-      covers the New Jersey regions. Miami's enrollments come from Focus, and
-      kipptaf derives their cohort the same way, frozen at the student's first
-      year in the school for grade 9 and up. A current high school student whose
-      grade level implies an earlier graduating class (`cohort_primary`) than
-      their recorded cohort has skipped a grade or is missing an enrollment
-      year, both corrected in Focus. Falling behind the cohort is ordinary
-      retention and is not tested. Anchored on this table rather than on
-      int_students__student_enrollments, a view whose tests rerun only when its
-      code changes. Warn, because no result here is fixed by a code change.
-    config:
-      severity: warn
-      meta:
-        dagster:
-          ref:
-            name: int_extracts__student_enrollments
+            name: int_students__graduation_path_codes
 
   - name: test_state_assessment_joins_resolve_miami
     description: >-
@@ -1014,7 +1068,7 @@ data_tests:
       meta:
         dagster:
           ref:
-            name: rpt_schoolmint_grow__users
+            name: stg_schoolmint_grow__schools
 
   - name: stg_google_sheets__assessments__vendor_subject_crosswalk__covers_all_sources
     description: >-
@@ -1023,6 +1077,8 @@ data_tests:
       because an unmapped subject falls back to its raw value rather than
       dropping the row.
     config:
+      tags:
+        - google_sheet
       meta:
         dagster:
           ref:
@@ -1177,6 +1233,8 @@ data_tests:
       sections, so a row that names no section silently drops its treated
       students rather than raising an error.
     config:
+      tags:
+        - google_sheet
       meta:
         dagster:
           ref:
@@ -1190,7 +1248,66 @@ data_tests:
       a goal with no scaffold row is dropped entirely rather than reported with
       a null threshold.
     config:
+      tags:
+        - google_sheet
       meta:
         dagster:
           ref:
             name: stg_google_sheets__kippfwd__goals
+
+  - name: test_kfwd_early_apps_schools_have_seniors
+    description: >-
+      Every high school on the schools tab of the KIPP Forward Early Apps
+      Settings sheet has at least 1 current senior in Overgrad under that exact
+      name. A school with none usually means Overgrad spells the name
+      differently, and the early apps tracker silently leaves its seniors out.
+      Fix the overgrad_school_name on the schools tab to match Overgrad.
+    config:
+      tags:
+        - google_sheet
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: stg_google_sheets__kfwd__early_apps_schools
+
+  - name: stg_google_sheets__reporting__promo_status_policies__current_year_coverage
+    description: >-
+      Lists every current-year region and grade with enrolled students that has
+      no policy row for one of the three domains (attendance, academic,
+      overall). A scope with no rule reads NULL statuses on the promotional
+      status dashboard, and nothing else flags the gap. Fix by adding the rows
+      to the Promo Status Policies sheet; expect this to fail each July until
+      the new year's rows are added. Miami is left out while its integrations
+      are incomplete.
+    config:
+      tags:
+        - google_sheet
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: stg_google_sheets__reporting__promo_status_policies
+
+  - name: stg_google_sheets__reporting__promo_status_policies__detail_label_consistent
+    description: >-
+      A rule group's detail_label is emitted when the group fires, so every
+      condition row in the group must carry the same label. Lists groups whose
+      rows disagree. Fix the label on the Promo Status Policies sheet.
+    config:
+      tags:
+        - google_sheet
+      severity: error
+
+  - name: stg_google_sheets__reporting__promo_status_policies__rule_group_single_scope
+    description: >-
+      The engine ANDs a rule group's conditions only when they share one scope
+      (grade range and term), so a group whose rows overlap in grade and term
+      but differ in either splits into separate groups that each fire alone,
+      turning the AND into an OR. Lists the overlapping row pairs, where 'All'
+      overlaps every term. Fix the grade range or term on the Promo Status
+      Policies sheet, or give the rows different rule_group numbers.
+    config:
+      tags:
+        - google_sheet
+      severity: error

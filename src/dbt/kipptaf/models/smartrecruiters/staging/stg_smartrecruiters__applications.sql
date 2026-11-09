@@ -106,4 +106,22 @@ select
     cast(phone_screen_requested_datetime as date) as phone_screen_requested_date,
     cast(rejected_datetime as date) as rejected_date,
     cast(selection_day_datetime as date) as selection_day_date,
+
+    date(timestamp(demo_datetime), '{{ var("local_timezone") }}') as demo_date_local,
+    date(timestamp(hired_datetime), '{{ var("local_timezone") }}') as hired_date_local,
+    date(
+        timestamp(last_update_datetime), '{{ var("local_timezone") }}'
+    ) as last_update_date_local,
+    date(timestamp(lead_datetime), '{{ var("local_timezone") }}') as lead_date_local,
+    date(timestamp(new_datetime), '{{ var("local_timezone") }}') as new_date_local,
+    date(timestamp(offer_datetime), '{{ var("local_timezone") }}') as offer_date_local,
+    date(
+        timestamp(phone_screen_complete_datetime), '{{ var("local_timezone") }}'
+    ) as phone_screen_complete_date_local,
+    date(
+        timestamp(phone_screen_requested_datetime), '{{ var("local_timezone") }}'
+    ) as phone_screen_requested_date_local,
+    date(
+        timestamp(rejected_datetime), '{{ var("local_timezone") }}'
+    ) as rejected_date_local,
 from applications

@@ -50,13 +50,13 @@ data_tests:
             package: focus
   - name: focus_unmapped_phone_contact_titles
     description: >-
-      Warns when a stg_focus__people_join_contacts row has neither phone_type
+      Fails when a stg_focus__people_join_contacts row has neither phone_type
       nor is_email_title set (an unmapped title needing a new mapping), or has
       both set (an ambiguous title the model silently excludes as email,
       potentially dropping a real phone value). A null title is treated as
       unmapped. Rows with no value are ignored.
     config:
-      severity: warn
+      severity: error
       meta:
         dagster:
           ref:
@@ -135,4 +135,22 @@ data_tests:
         dagster:
           ref:
             name: int_focus__schedule
+            package: focus
+
+  - name: int_focus__student_enrollment_roster__no_skipped_grade
+    description: >-
+      A Focus high school student (grade 9 to 12) whose grade rose by more than
+      1 between consecutive school years. Each year is the student's
+      highest-grade stint, with no-shows excluded. A skipped grade puts the
+      student ahead of the cohort they entered with, which matters for the
+      4-year graduation cohort. Fix the grade level on the enrollment, or move
+      the enrollment to the right school year, in Focus. New Jersey's version is
+      int_powerschool__ps_enrollment_all__no_skipped_grade in the powerschool
+      package.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: int_focus__student_enrollment_roster
             package: focus

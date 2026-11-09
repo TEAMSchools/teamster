@@ -209,6 +209,14 @@ models:
           Date the grade was last changed. Null on every Focus row — Focus's
           modified_date is null on every student_report_card_grades row.
         data_type: date
+      - name: comment_value
+        description: >-
+          Teacher comment on the final grade, from PowerSchool pgfinalgrades.
+          Null on every Focus row.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
 
 unit_tests:
   - name: test_int_students__final_grades_posted_grade_supersedes_dt

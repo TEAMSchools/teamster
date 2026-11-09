@@ -30,6 +30,8 @@ select
     t.teachernumber,
     t.lastfirst as teacher_lastfirst,
 
+    gsi.name as courses_gradescale_name,
+
     {# TODO: refactor to gsheet, alongside the school_level_alt override #}
     if(
         term.academic_year >= 2025 and sec.schoolid = 179905 and sec.grade_level >= 5,
@@ -64,3 +66,5 @@ left join
     {{ ref("int_powerschool__teachers") }} as t
     on sec.teacher = t.id
     and sec.schoolid = t.schoolid
+left join
+    {{ ref("stg_powerschool__gradescaleitem") }} as gsi on cou.gradescaleid = gsi.id

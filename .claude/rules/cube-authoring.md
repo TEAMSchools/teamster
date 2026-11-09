@@ -174,10 +174,13 @@ and diagnostics are in the `cube-ops` skill.
   `time_dimension` min/max — and a `dates.date_day` anchor routes through
   `dim_dates` (calendar spine to 9999), so the refresh worker enumerates
   thousands of empty yearly partitions on the post-merge prod redeploy (#4460).
-  Bound to real data (`SELECT DATE('2015-07-01')` to `CURRENT_DATE`). Cube
-  rebuilds a changed pre-agg on merge to `main`, so validate the build stays
-  bounded on a branch staging deployment FIRST — confirm the partition count via
-  `JOBS_BY_PROJECT` for `cube-cloud@teamster-332318`.
+  Bound to real data, and end the range at the latest date a row can carry, not
+  `CURRENT_DATE`: rows past the end are missing from every query the rollup
+  serves, with no fallback to the fact. A refresh-key window must reach the same
+  end, or future partitions never rebuild. Cube rebuilds a changed pre-agg on
+  merge to `main`, so validate the build stays bounded on a branch staging
+  deployment FIRST — confirm the partition count via `JOBS_BY_PROJECT` for
+  `cube-cloud@teamster-332318`.
 - **Measure Cube's own overhead before proposing a pre-aggregation.** It runs
   about a second per query on the student views (planning, Cube Store transport,
   connection) and exceeds BigQuery execution time on most of them, so a pre-agg
@@ -319,10 +322,10 @@ access policies above). `cube.js` exports exactly `driverFactory`,
 - **`checkAuth` (REST/MCP)** receives the RAW bearer token STRING — a custom
   `checkAuth` replaces Cube's default JWT verify+decode. It verifies the HS256
   signature against `CUBEJS_API_SECRET` itself, reads the `email` claim, and
-  sets `req.securityContext = await resolveAccess(email)`. No/invalid token →
-  `jwt.verify` throws → Cube rejects the request; no `Authorization` header
-  resolves to the empty default-deny context. **It runs in developer mode too**,
-  so the local REST Playground resolves a pasted `{"email": ...}`; do not assume
+  sets `req.securityContext = await resolveAccess(email)`. An invalid token →
+  `jwt.verify` throws → Cube rejects the request with a 403; no `Authorization`
+  header is a 401. **It runs in developer mode too**, so the local REST
+  Playground resolves a pasted `{"email": ...}`; do not assume
   `NODE_ENV=production` is needed. `jwt.verify` also enforces `maxAge: "12h"`
   derived from `iat`, which rejects a stale cached Playground token and any
   token with no `iat` at all. Cube Cloud's `iss: "cubecloud"` context never

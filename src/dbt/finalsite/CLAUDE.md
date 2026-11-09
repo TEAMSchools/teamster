@@ -61,7 +61,7 @@ models/
 
 `stg_finalsite__contacts` carries THREE repeated key-value arrays —
 `id_attributes`, `custom_attributes`, `track_attributes` (each
-`STRUCT<field_name, value STRUCT<string_value, boolean_value, array_string_value>>`);
+`STRUCT<field_name, value STRUCT<boolean_value, double_value, string_value, array_string_value>>`);
 each has a pivot int model above. Scan all three when sourcing a field, and
 verify by VALUES, not field name (e.g. `current_residence_ss` is McKinney-Vento
 housing status, not a county).

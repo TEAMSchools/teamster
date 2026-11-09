@@ -7,9 +7,9 @@
     "test": "node --test"
   },
   "dependencies": {
-    "@cubejs-backend/bigquery-driver": "^1.8.5",
-    "@cubejs-backend/server": "^1.8.5",
-    "@google-cloud/bigquery": "^9.3.0",
+    "@cubejs-backend/bigquery-driver": "^1.8.21",
+    "@cubejs-backend/server": "^1.8.21",
+    "@google-cloud/bigquery": "^9.6.1",
     "jsonwebtoken": "^9.0.3"
   }
 }

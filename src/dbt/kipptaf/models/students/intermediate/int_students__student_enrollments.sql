@@ -115,9 +115,6 @@ with
             enr.year_in_school,
             enr.year_in_network,
             enr.is_enrolled_fdos,
-            enr.is_enrolled_oct01,
-            enr.is_enrolled_oct15,
-            enr.is_enrolled_mar15,
             enr.dob,
             enr.state,
             enr.school_abbreviation,
@@ -287,7 +284,8 @@ with
 
             regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as _dbt_source_project,
 
-            date_sub(exitdate, interval 1 day) as last_enrolled_date,
+            -- clipped so an overlapping earlier stint ends before the next starts
+            date_sub(exitdate_clipped, interval 1 day) as last_enrolled_date,
 
             initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
         from union_relations
@@ -330,9 +328,6 @@ with
             year_in_school,
             year_in_network,
             is_enrolled_y1,
-            is_enrolled_oct01,
-            is_enrolled_oct15,
-            is_enrolled_mar15,
             is_enrolled_recent,
             is_enrolled_fdos,
             is_retained_year,
@@ -425,9 +420,6 @@ with
             year_in_school,
             year_in_network,
             is_enrolled_y1,
-            is_enrolled_oct01,
-            is_enrolled_oct15,
-            is_enrolled_mar15,
             is_enrolled_recent,
             is_enrolled_fdos,
             is_retained_year,
@@ -483,11 +475,11 @@ with
         from focus_final
     ),
 
-    -- Rebuilt here for both regions from last_enrolled_date, because the
-    -- PowerSchool package counts exitdate as an enrolled day (#6058).
+    -- Built from last_enrolled_date: PowerSchool's exitdate is the first day
+    -- the student is gone (#6058).
     stint_flags as (
         select
-            * except (is_enrolled_oct01, is_enrolled_oct15, is_enrolled_mar15),
+            *,
 
             if(
                 entrydate <= date(academic_year, 10, 1)
