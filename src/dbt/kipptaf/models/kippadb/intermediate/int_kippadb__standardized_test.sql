@@ -5,6 +5,7 @@ select
     st.date,
     st.test_type,
     st.subject,
+    st.last_modified_date,
     st.scoring_irregularity,
     st.administration_round,
     st.act_composite,
