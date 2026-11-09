@@ -583,6 +583,8 @@ def test_check_sql_refuses_a_literal_on_a_column_that_names_a_person(where):
         ("C1=sheet:words", "side must be"),
         ("UNEXPLAINED=cube:words", "not be UNEXPLAINED"),
         ("C1=cube:student 1234567", "ID-like"),
+        ("C1=cube:student 1234 5678", "ID-like"),
+        ("C1=cube:student 123 456 789 012", "ID-like"),
     ],
 )
 def test_a_cause_flag_is_checked(flag, why):
@@ -590,6 +592,14 @@ def test_a_cause_flag_is_checked(flag, why):
         confirm.parse_cause_flag(flag)
 
     assert "1234567" not in str(caught.value)
+
+
+@pytest.mark.parametrize(
+    "words",
+    ["grades 9 10 11 12 differ", "school year 2025 2026 rolled over", "grades 5 6 7 8"],
+)
+def test_a_cause_flag_allows_a_grade_list_and_a_school_year(words):
+    assert confirm.parse_cause_flag(f"C1=cube:{words}")[2] == words
 
 
 # --- the proof file ------------------------------------------------------------------
