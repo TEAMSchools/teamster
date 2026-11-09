@@ -92,3 +92,43 @@ models:
         config:
           meta:
             contains_pii: true
+
+unit_tests:
+  - name: int_assessments__ap_assessments_drops_unmatched_students
+    description:
+      An AP score with no PowerSchool student number, from either source, does
+      not reach the model. A matched score from each source does.
+    model: int_assessments__ap_assessments
+    given:
+      - input: ref("int_kippadb__standardized_test_unpivot")
+        rows:
+          - school_specific_id: 100001
+            academic_year: 2016
+            score_type: ap
+            test_subject: Biology
+            score: 4
+          - school_specific_id: null
+            academic_year: 2016
+            score_type: ap
+            test_subject: Chemistry
+            score: 3
+      - input: ref("int_collegeboard__ap_unpivot")
+        rows:
+          - powerschool_student_number: 100002
+            academic_year: 2022
+            exam_code_description: Calculus AB
+            exam_grade: 5
+          - powerschool_student_number: null
+            academic_year: 2022
+            exam_code_description: Calculus BC
+            exam_grade: 2
+    expect:
+      rows:
+        - powerschool_student_number: 100001
+          academic_year: 2016
+          test_subject: Biology
+          data_source: ADB
+        - powerschool_student_number: 100002
+          academic_year: 2022
+          test_subject: Calculus AB
+          data_source: CB File
