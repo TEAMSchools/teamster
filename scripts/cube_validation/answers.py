@@ -38,6 +38,7 @@ from .report import (
     mask,
     question_parts,
     question_reason,
+    question_reasons,
     without_sql,
 )
 
@@ -775,10 +776,14 @@ def questions_json(
                 ],
                 {(c["view"], c["comparison"]) for c in checks if "none" not in c},
             )
+        # Only a merged question with differing reasons gets the list; a JSON
+        # read without it still has the one `reason` string.
+        reasons = question_reasons(q)
         out.append(
             {
                 "id": f"Q{n}",
                 "reason": question_reason(q),
+                **({"reasons": reasons} if len(reasons) > 1 else {}),
                 "decisions": [d.id for _, d in q["decisions"]],
                 "views": views,
                 "definitions": defs,

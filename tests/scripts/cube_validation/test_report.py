@@ -886,3 +886,50 @@ def test_a_hidden_value_is_redacted_only_as_a_whole_value():
     text = _safe_reason("grade 1 lost 414 rows; see Q1 and 1.5", ["1"])
 
     assert text == "grade <redacted> lost 414 rows; see Q1 and 1.5"
+
+
+def _cause_asks(reasons):
+    """One cause proven on a comparison per reason, each decided on its own."""
+    asks = []
+    for n, reason in enumerate(reasons, start=1):
+        d = Decision(
+            f"cause-{n}", f"cmp-{n}", "domain_owner", reason,
+            cause={"side": "dashboard", "label": "sheet filter team"},
+            task="#6150",
+        )  # fmt: skip
+        g = Group(f"cmp-{n}", (("region", "Newark"),), "value_differs", 400, 40)
+        asks.append(CauseAsk(d, [g], 40))
+    return {"enrollment_view": asks}
+
+
+def _cause_review(reasons):
+    run = _run(applied=Applied())
+    run.findings = []
+    causes = _cause_asks(reasons)
+    cfg = ViewConfig(view="enrollment_view", fact="d.t", comparisons=[])
+    questions = questions_json([run], [cfg], {}, {}, START, causes=causes)
+    body = render_review_issue("Registrar", [run], None, questions, causes=causes)
+    return body, questions
+
+
+def test_a_cause_question_lists_every_distinct_reason():
+    body, questions = _cause_review(
+        ["Team filter was set by hand", "Roster adds late transfers"]
+    )
+
+    assert len(questions) == 1
+    for text in (body, questions[0]["reason"]):
+        assert "Team filter was set by hand" in text
+        assert "Roster adds late transfers" in text
+    assert questions[0]["reasons"] == [
+        "Team filter was set by hand",
+        "Roster adds late transfers",
+    ]
+
+
+def test_a_cause_question_with_one_reason_is_unchanged():
+    body, questions = _cause_review(["Team filter was set by hand"] * 2)
+
+    assert questions[0]["reason"] == "Team filter was set by hand"
+    assert "reasons" not in questions[0]
+    assert "Reasons" not in body.split("## Proposed approach")[0]

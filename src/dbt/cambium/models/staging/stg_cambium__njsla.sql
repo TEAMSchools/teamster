@@ -33,6 +33,7 @@ with
             cast(grade_level_when_assessed as int) as grade_level_when_assessed,
             cast(local_student_identifier as int) as local_student_identifier,
             cast(state_student_identifier as int) as state_student_identifier,
+            cast(studentgrowthpercentile as int) as student_growth_percentile,
 
             cast(test_performance_level as numeric) as test_performance_level,
             cast(test_scale_score as numeric) as test_scale_score,
