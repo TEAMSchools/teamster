@@ -11,9 +11,17 @@ models:
       no title filter, because those managers hold varied titles (Head of
       Schools, Managing Director, Chief Academic Officer). Grouped on
       `home_work_location_reporting_name` so an ADP rename does not split a
-      school into two rows.
+      school into two rows. While a School Leader seat is vacant, the head of
+      school falls back to the manager most of the school's Assistant School
+      Leaders report to.
     config:
       materialized: table
+      meta:
+        standard_exempt:
+          A5: >-
+            The Assistant School Leader manager pick is the vacancy business
+            rule (the manager most of a school's Assistant School Leaders report
+            to stands in for the head of school), not source-duplicate masking.
     columns:
       - name: home_work_location_powerschool_school_id
         description: |
@@ -63,7 +71,12 @@ models:
           Leader's `reports_to_employee_number` with no job-title filter. Today
           that is a Head of Schools, Managing Director, or Chief Academic
           Officer; check `head_of_school_job_title` before treating the name as
-          a Head of Schools. NULL only when the school has no School Leader.
+          a Head of Schools. When the school has no School Leader or School
+          Leader in Residence (a vacancy), falls back to the active manager most
+          of the school's Assistant School Leaders report to, ties broken by the
+          lowest employee number. NULL when that manager is not active, or when
+          the school has neither a School Leader nor an Assistant School Leader
+          with an active manager.
         data_type: int64
       - name: head_of_school_preferred_name_lastfirst
         description: Head of School's preferred name in `Last, First` format.
@@ -140,3 +153,108 @@ models:
       - name: mdo_sam_account_name
         description: MDO's Active Directory `sAMAccountName`.
         data_type: string
+
+unit_tests:
+  - name: test_int_people__leadership_crosswalk_head_of_school_vacancy
+    description:
+      School 1 has a School Leader, so its head of school is that leader's
+      manager even though an Assistant School Leader reports elsewhere. School 2
+      has no School Leader, so the manager two of its three Assistant School
+      Leaders report to stands in. School 3 has no School Leader and most of its
+      Assistant School Leaders report to a terminated manager, so the pick skips
+      that manager and takes the active one.
+    model: int_people__leadership_crosswalk
+    given:
+      - input: ref('int_people__staff_roster')
+        rows:
+          - employee_number: 100
+            job_title: Head of Schools
+            assignment_status: Active
+            home_work_location_powerschool_school_id: 0
+          - employee_number: 200
+            job_title: Deputy Head of Schools
+            assignment_status: Active
+            home_work_location_powerschool_school_id: 0
+          - employee_number: 300
+            job_title: Managing Director
+            assignment_status: Active
+            home_work_location_powerschool_school_id: 0
+          - employee_number: 900
+            job_title: Head of Schools
+            assignment_status: Terminated
+            home_work_location_powerschool_school_id: 0
+          - employee_number: 10
+            job_title: School Leader
+            assignment_status: Active
+            reports_to_employee_number: 100
+            home_work_location_powerschool_school_id: 1
+            home_work_location_reporting_name: School One
+            home_work_location_region: Newark
+            home_work_location_abbreviation: One
+            home_work_location_campus_name: Campus One
+          - employee_number: 11
+            job_title: Assistant School Leader
+            assignment_status: Active
+            reports_to_employee_number: 200
+            home_work_location_powerschool_school_id: 1
+            home_work_location_reporting_name: School One
+            home_work_location_region: Newark
+            home_work_location_abbreviation: One
+            home_work_location_campus_name: Campus One
+          - employee_number: 20
+            job_title: Director School Operations
+            assignment_status: Active
+            home_work_location_powerschool_school_id: 2
+            home_work_location_reporting_name: School Two
+            home_work_location_region: Newark
+            home_work_location_abbreviation: Two
+            home_work_location_campus_name: Campus Two
+          - employee_number: 21
+            job_title: Assistant School Leader
+            assignment_status: Active
+            reports_to_employee_number: 200
+            home_work_location_powerschool_school_id: 2
+          - employee_number: 22
+            job_title: Assistant School Leader, SPED
+            assignment_status: Active
+            reports_to_employee_number: 200
+            home_work_location_powerschool_school_id: 2
+          - employee_number: 23
+            job_title: Assistant School Leader, School Culture
+            assignment_status: Active
+            reports_to_employee_number: 300
+            home_work_location_powerschool_school_id: 2
+          - employee_number: 30
+            job_title: Director School Operations
+            assignment_status: Active
+            home_work_location_powerschool_school_id: 3
+            home_work_location_reporting_name: School Three
+            home_work_location_region: Camden
+            home_work_location_abbreviation: Three
+            home_work_location_campus_name: Campus Three
+          - employee_number: 31
+            job_title: Assistant School Leader
+            assignment_status: Active
+            reports_to_employee_number: 900
+            home_work_location_powerschool_school_id: 3
+          - employee_number: 32
+            job_title: Assistant School Leader
+            assignment_status: Active
+            reports_to_employee_number: 900
+            home_work_location_powerschool_school_id: 3
+          - employee_number: 33
+            job_title: Assistant School Leader
+            assignment_status: Active
+            reports_to_employee_number: 300
+            home_work_location_powerschool_school_id: 3
+    expect:
+      rows:
+        - home_work_location_powerschool_school_id: 1
+          sl_employee_number: 10
+          head_of_school_employee_number: 100
+        - home_work_location_powerschool_school_id: 2
+          sl_employee_number: null
+          head_of_school_employee_number: 200
+        - home_work_location_powerschool_school_id: 3
+          sl_employee_number: null
+          head_of_school_employee_number: 300

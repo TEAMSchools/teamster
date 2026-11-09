@@ -176,7 +176,12 @@ views:
           student_assessment_scores.student_section_enrollments.student_school_enrollments.locations.staff_head_of_school
         prefix: true
         includes:
-          - full_name
+          - name: full_name
+            meta:
+              ai_context: >-
+                Stored Last, First. Resolve a name against staff_directory
+                before filtering; a zero-row result is not proof the head of
+                school has no schools.
           - first_name
           - last_name
           - google_email

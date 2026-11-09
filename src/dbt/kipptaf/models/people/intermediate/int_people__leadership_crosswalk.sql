@@ -66,6 +66,44 @@ with
             home_work_location_campus_name
     ),
 
+    asl_managers as (
+        /* stand-in head of school while the School Leader seat is vacant: the
+           active manager most of the school's Assistant School Leaders
+           report to */
+        select
+            a.home_work_location_powerschool_school_id,
+            a.reports_to_employee_number,
+
+            row_number() over (
+                partition by a.home_work_location_powerschool_school_id
+                order by count(*) desc, a.reports_to_employee_number asc
+            ) as rn,
+        from active_roster as a
+        inner join
+            active_roster as m on a.reports_to_employee_number = m.employee_number
+        where a.job_title like 'Assistant School Leader%'
+        group by
+            a.home_work_location_powerschool_school_id, a.reports_to_employee_number
+    ),
+
+    school_leadership_heads as (
+        select
+            l.*,
+
+            if(
+                l.sl_employee_number is null,
+                am.reports_to_employee_number,
+                sl.reports_to_employee_number
+            ) as head_of_school_employee_number,
+        from school_leadership as l
+        left join staff_roster as sl on l.sl_employee_number = sl.employee_number
+        left join
+            asl_managers as am
+            on l.home_work_location_powerschool_school_id
+            = am.home_work_location_powerschool_school_id
+            and am.rn = 1
+    ),
+
     mdo as (
         select
             home_work_location_region,
@@ -119,9 +157,9 @@ select
     mdo.google_email as mdo_google_email,
     mdo.job_title as mdo_job_title,
     mdo.sam_account_name as mdo_sam_account_name,
-from school_leadership as l
+from school_leadership_heads as l
 left join staff_roster as sl on l.sl_employee_number = sl.employee_number
-left join active_roster as hos on sl.reports_to_employee_number = hos.employee_number
+left join active_roster as hos on l.head_of_school_employee_number = hos.employee_number
 left join staff_roster as dso on l.dso_employee_number = dso.employee_number
 left join active_roster as mdso on dso.reports_to_employee_number = mdso.employee_number
 left join mdo as m on l.home_work_location_region = m.home_work_location_region
