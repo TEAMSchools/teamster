@@ -147,13 +147,19 @@ Plan state beyond membership and tier lives in a weekly Google Form, not in
 DeansList custom fields and not in the sheet. NCA already records 8 plan fields
 per student each week; the form carries the same ones: Promise Status (Active,
 Monitor, Exit), primary barrier, intervention, this week's action, due date,
-evidence from last week, level-up needed and level-up request. The respondent's
-email is the case manager. The student is prefilled through the form's
-prefilled-link feature; the roster sheet and the skill carry a "Log this week"
-link per student with the student number filled in, so no one types a name. One
-form per school, frozen once the roster ships, because the prefilled links
-depend on the question ids. About 100 to 120 submissions a week across both
-schools.
+evidence from last week, level-up needed and level-up request, plus a case
+manager dropdown of the school's staff. The case manager is the dropdown value
+on the latest response, not the respondent, so a dean can log a week for a
+student without becoming the owner. The student and the current case manager are
+prefilled through the form's prefilled-link feature; the roster sheet and the
+skill carry a "Log this week" link per student with the student number and
+latest case manager filled in, so no one types a name, and a changed case
+manager carries forward from the next morning's links. One form per school,
+frozen once the roster ships, because the prefilled links depend on the question
+ids; adding a dropdown option for a new staff member does not change them. Setup
+seeds the first links from each school's current assignment list (Lab's
+"Assigned Teammate" column), since no response exists yet. About 100 to 120
+submissions a week across both schools.
 
 Responses land in a Data-Team-owned linked sheet and reach the warehouse as
 `stg_google_sheets__promise_team__weekly_updates`, following the Google Form
@@ -413,7 +419,7 @@ Carried into the skill and roster design once answered. None blocks the extract.
    back, and where that is recorded today. The threshold itself comes from the
    promotion policy and is not a question. The Lab tracker:
    https://docs.google.com/spreadsheets/d/1j1pVyClQld93uIHyWFXcxsCozTAoyffuyErhrGO0MKY
-1. Does the weekly form's 8 fields cover what each team records today? NCA's
+1. Do the weekly form's 9 fields cover what each team records today? NCA's
    tracker has them all; Lab has an "Assigned Teammate" and a strategy column.
 2. "Likely why" category and the week-6 Child Study Team recommendation (from
    the Paterson hub): do the Newark teams want either on the form?
@@ -460,7 +466,8 @@ Carried into the skill and roster design once answered. None blocks the extract.
 - A student placed on `RTI Attendance - Tier 2` in DeansList shows
   `promise_team_tier = 2` the next morning.
 - A form submitted from a student's prefilled link shows as that student's plan
-  columns the next morning, with the respondent as `case_manager`.
+  columns the next morning, with the dropdown value as `case_manager`, and the
+  next morning's prefilled link for that student carries it.
 - A mass message to 29 students does not count as a contact for any of them; a
   one-to-one entry under `Att: Social Services` does.
 - The one-pager for a student lists every non-mass contact this year, read from
