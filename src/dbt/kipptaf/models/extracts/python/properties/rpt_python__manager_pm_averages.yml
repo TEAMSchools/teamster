@@ -36,6 +36,14 @@ models:
       - name: term_num
         data_type: int64
         description: Round number parsed from the last character of form_term.
+      - name: measure_set
+        data_type: string
+        description:
+          Which rubric measures the observer's forms scored this round —
+          etr_values when any form scored a core value (the Values or
+          Professionalism and Punctuality strands, from AY2026), otherwise
+          etr_so (ETR plus S&O). The outlier detection script fits each set
+          separately.
       - name: etr1a
         data_type: float64
         description: Average row score on rubric measure ETR1A.
@@ -117,6 +125,32 @@ models:
       - name: so8
         data_type: float64
         description: Average row score on rubric measure SO08.
+      - name: excellence
+        data_type: float64
+        description: Average row score on core value Excellence (Values strand).
+      - name: fun
+        data_type: float64
+        description: Average row score on core value Fun (Values strand).
+      - name: kid_focus
+        data_type: float64
+        description: Average row score on core value Kid Focus (Values strand).
+      - name: presence
+        data_type: float64
+        description:
+          Average row score on Presence (Professionalism and Punctuality
+          strand).
+      - name: punctuality
+        data_type: float64
+        description:
+          Average row score on Punctuality (Professionalism and Punctuality
+          strand).
+      - name: radical_love
+        data_type: float64
+        description:
+          Average row score on core value Radical Love (Values strand).
+      - name: team
+        data_type: float64
+        description: Average row score on core value TEAM (Values strand).
       - name: overall_score
         data_type: float64
         description:
