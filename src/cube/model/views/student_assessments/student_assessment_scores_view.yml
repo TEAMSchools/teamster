@@ -170,6 +170,16 @@ views:
                 use grade_level.
           - campus
           - city
+          - head_of_school_staff_key
+
+      - join_path: >-
+          student_assessment_scores.student_section_enrollments.student_school_enrollments.locations.staff_head_of_school
+        prefix: true
+        includes:
+          - full_name
+          - first_name
+          - last_name
+          - google_email
 
       - join_path: >-
           student_assessment_scores.student_section_enrollments.student_school_enrollments.locations.regions
@@ -270,6 +280,11 @@ views:
             - city
             - region_name
             - state
+            - head_of_school_staff_key
+            - staff_head_of_school_full_name
+            - staff_head_of_school_first_name
+            - staff_head_of_school_last_name
+            - staff_head_of_school_google_email
         - name: Student
           members:
             - student_key

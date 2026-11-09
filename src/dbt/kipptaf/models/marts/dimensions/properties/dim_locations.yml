@@ -50,6 +50,21 @@ models:
               to: ref('dim_regions')
               to_columns: [region_key]
 
+      - name: head_of_school_staff_key
+        data_type: string
+        description: >-
+          Staff key of the school's head of school — the manager of the school's
+          School Leader, as the staff roster reports today. Usually a Head of
+          Schools; sometimes a Managing Director or Chief Academic Officer. FK
+          to dim_staff. Current state only, so a past year shows today's head of
+          school. Null for campus rows and for schools with no School Leader on
+          the roster.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_staff')
+              to_columns: [staff_key]
+
       - name: name
         quote: true
         data_type: string
