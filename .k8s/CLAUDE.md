@@ -74,6 +74,14 @@ skill.
   (#6077): whether GKE's own migration cordon (not `kubectl cordon`) applies to
   an amd64 node it cannot fully drain. If amd64 nodes still outlive a stockout,
   that is why.
+- **Keep the amd64 fallback, even though most new nodes come up amd64.**
+  `general-purpose-arm` provisions `e4a`, which often stocks out in our zones,
+  and GKE critical-pod preemptions hit run/step pods only on amd64 nodes. Run
+  retries absorb those preemptions. Do not pin back to built-in Scale-Out arm64
+  (`t2a`): its stockouts trip Dagster's start timeout, which fails runs for
+  good. Do not add a `machineFamily: t2a` rule either (per-VM billing, see
+  above). `general-purpose` and `general-purpose-arm` are the only `podFamily`
+  values, so no per-pod rule reaches another arm series.
 - **No node affinity on CCC pods carrying `safe-to-evict`.** Autopilot treats
   the annotation as an extended-duration request and adds a
   `cloud.google.com/extended-duration-pods` key, which Warden
