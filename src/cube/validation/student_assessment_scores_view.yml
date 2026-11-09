@@ -553,20 +553,23 @@ comparisons:
   # every level a standard reached, as pct_students_at_level's ai_context says.
   - id: levels-dki-mastery-bars
     <<: *dki
-    # Unconfirmed until it proves: a few cells still differ from the sheet.
-    confirmed: false
     sheet: DKI - Assessment Mastery Bars
     measure: pct_students_at_level
     cuts: [{ Response Type: overall }]
+    # The sheet's % of Total divides by TOTAL(COUNTD(student)), the row's
+    # distinct students, not the sum of its levels: a student at 2 levels counts
+    # once below the line.
     probe_sql: |
-      select {dims},
-        n / sum(n) over (partition by school, grade_level, subject_area, module_code) as value
+      select {dims}, count(distinct student_number) / any_value(students) as value
       from (
-        select {dims}, count(distinct student_number) as n
+        select *,
+          count(distinct student_number) over (
+            partition by school, grade_level, subject_area, module_code
+          ) as students
         from ({rows})
         where {where}
-        group by {dims}
       )
+      group by {dims}
     dashboard_columns:
       Calculation_3457427549115576330: |
         case
@@ -604,7 +607,60 @@ comparisons:
         - { dashboard: response_type_code, cube: response_type_code }
       values:
         - { dashboard: performance_band_label_number, cube: band_number }
-    proof: null
+    proof:
+      fingerprint: 8be8411cbf75a6f2141e46e61238e18c998d4fcd1f58de2bdefc33d3cc0d6be5
+      cells: 3503
+      proven_at: "2026-11-09T17:12:17.618125+00:00"
+      workbook_updated_at: "2026-11-09T06:45:19+00:00"
+      probe_fingerprint: 6cb975f2ee4bfed6a84cb005bec5f07cf8ce032140d4133f9792be5321da7362
+      source_fingerprint: 0f04e5bc396bc10f77f44b8ef651a385c4eb60d3a8d925755e8ebbb36c7d3b6e
+      cuts:
+        - '{"Response Type": "overall"}'
+      totals_skipped: 0
+      shelves:
+        drop:
+          - Grade/Subject
+          - School
+        clear_filters:
+          - Discipline
+          - Action (Grade/Subject,Module Code,School,Week Start Monday)
+        add:
+          rows:
+            - School
+            - Grade Level
+            - Subject Area
+      missing_cuts: []
+      missing_filters:
+        - Dibels Most Recent Composite
+        - Discipline
+        - Exclude Future Assessments
+        - Head Of School
+        - IEP Status
+        - Ml Status
+        - School Level
+        - Student Tier
+        - Term
+        - Week Start Monday
+        - gifted_and_talented
+        - is_low_25_fl
+        - is_sipps
+        - state_test_proficiency
+      restricting_filters:
+        - Exclude Future Assessments
+      filter_notes: {}
+      missing_columns:
+        is_low_25_fl: is_low_25_fl
+        Head Of School: head_of_school
+        Dibels Most Recent Composite: dibels_most_recent_composite
+        is_sipps: is_sipps
+        state_test_proficiency: state_test_proficiency
+        IEP Status: iep_status
+        Week Start Monday: week_start_monday
+        Term: term
+        Student Tier: nj_student_tier
+        School Level: school_level
+        gifted_and_talented: gifted_and_talented
+        Ml Status: ml_status
   # DKI - Assessment Mastery Table shows AVG(Is Far Below) through Measure
   # Values: band 1 is 1, any higher band 0. Module Code joins the rows so each
   # cell holds 1 overall score per student, where an average of score rows and
