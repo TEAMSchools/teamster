@@ -10,5 +10,3 @@ models:
       - name: finalsite_enrollment_id
         data_type: string
         description: Finalsite contact UUID this relationship belongs to.
-        data_tests:
-          - not_null

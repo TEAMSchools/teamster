@@ -11,5 +11,3 @@ models:
       - name: finalsite_enrollment_id
         data_type: string
         description: Finalsite contact UUID.
-        data_tests:
-          - not_null

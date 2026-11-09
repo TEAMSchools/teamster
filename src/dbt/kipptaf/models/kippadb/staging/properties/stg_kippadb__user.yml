@@ -5,6 +5,8 @@ models:
           arguments:
             combination_of_columns:
               - id
+          config:
+            severity: error
     columns:
       - name: id
         data_type: string

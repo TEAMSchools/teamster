@@ -13,6 +13,21 @@ models:
             combination_of_columns:
               - schoolid
               - date_value
+          config:
+            severity: error
+      # TODO(#5558): runbook
+      - dbt_utils.expression_is_true:
+          name: stg_powerschool__calendar_day__date_value_after_2000
+          description:
+            A PowerSchool calendar day is dated before 2000. These are phantom
+            rows, usually 1900-01-01, not real school days. A PowerSchool admin
+            deletes them from the calendar of the school in schoolid. The
+            kipptaf stg_powerschool__calendar_day nulls these dates until they
+            are deleted.
+          arguments:
+            expression: date_value >= '2000-01-01'
+          config:
+            severity: warn
     columns:
       - name: id
         data_type: int64

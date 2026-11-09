@@ -1,61 +1,154 @@
 models:
   - name: rpt_deanslist__promo_status
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - term
+          config:
+            severity: error
     columns:
       - name: student_number
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        data_tests:
+          - not_null:
+              config:
+                severity: error
       - name: academic_year
         data_type: int64
       - name: term
         data_type: string
       - name: gpa_cum
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: gpa_cum_projected
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: grades_y1_credits_projected
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: gpa_term
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: gpa_y1
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: promo_status_overall
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: promo_status_attendance
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: promo_status_grades
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: grades_y1_failing_projected
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
       - name: n_failing_core
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
       - name: ada_term_running
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: projected_credits_y1_term
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: promo_status_lit
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: promo_status_qa_math
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
       - name: grades_y1_credits_enrolled
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
       - name: promo_credits_needed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
       - name: dibels_composite_recent
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: iready_reading_recent
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: iready_math_recent
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: star_reading_level_recent
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: star_math_level_recent
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: fast_ela_level_recent
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: fast_math_level_recent
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: athletic_eligibility
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: promo_status_math
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: is_summer_school_eligible
         data_type: boolean
+        config:
+          meta:
+            contains_pii: true

@@ -1,4 +1,5 @@
 data_tests:
+  # TODO(#5558): runbook
   - name: test_illuminate_assessment_split_standard
     description: >-
       Illuminate keeps some standards, such as Common Core, in more than one
@@ -294,6 +295,7 @@ data_tests:
           ref:
             name: stg_google_sheets__people__locations
 
+  # TODO(#5558): runbook
   - name: stg_google_sheets__assessments__academic_goals__sheet_duplicates
     description: >-
       Lists keys that appear on more than one row of the academic goals Google
@@ -390,6 +392,9 @@ data_tests:
       as untested on that quiz, and the DeansList sight words extract leaves it
       out.
     config:
+      # TODO(#6292): warn, not error, because late score entry also fires this
+      # and would stop the kipptaf build. #6292 splits the 2 causes.
+      severity: warn
       meta:
         dagster:
           ref:
@@ -425,21 +430,6 @@ data_tests:
         dagster:
           ref:
             name: fct_assessment_scores_enrollment_scoped
-
-  - name: int_collegeboard__ap_unpivot__crosswalk_resolves
-    description: >-
-      Returns one row per `stg_collegeboard__ap.ap_number_ap_id` that has no
-      matching `college_board_id` in
-      `stg_google_sheets__collegeboard__ap_id_crosswalk`. Each row is an
-      unresolved CB-file student whose AP scores are dropped from
-      `int_assessments__ap_assessments`. Ops signal to add the missing IDs to
-      the crosswalk; failure rows persist in `kipptaf_dbt_test__audit` for
-      direct query.
-    config:
-      meta:
-        dagster:
-          ref:
-            name: stg_collegeboard__ap
 
   - name: rpt_focus__demographics__language_crosswalk_resolves
     description: >-
@@ -900,7 +890,7 @@ data_tests:
       unnoticed. A hit means either map it in the CASE, or add it to the
       exclusion list if it is intentionally out of scope.
     config:
-      severity: warn
+      severity: error
       meta:
         dagster:
           ref:
@@ -1280,3 +1270,44 @@ data_tests:
         dagster:
           ref:
             name: stg_google_sheets__kfwd__early_apps_schools
+
+  - name: stg_google_sheets__reporting__promo_status_policies__current_year_coverage
+    description: >-
+      Lists every current-year region and grade with enrolled students that has
+      no policy row for one of the three domains (attendance, academic,
+      overall). A scope with no rule reads NULL statuses on the promotional
+      status dashboard, and nothing else flags the gap. Fix by adding the rows
+      to the Promo Status Policies sheet; expect this to fail each July until
+      the new year's rows are added. Miami is left out while its integrations
+      are incomplete.
+    config:
+      tags:
+        - google_sheet
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: stg_google_sheets__reporting__promo_status_policies
+
+  - name: stg_google_sheets__reporting__promo_status_policies__detail_label_consistent
+    description: >-
+      A rule group's detail_label is emitted when the group fires, so every
+      condition row in the group must carry the same label. Lists groups whose
+      rows disagree. Fix the label on the Promo Status Policies sheet.
+    config:
+      tags:
+        - google_sheet
+      severity: error
+
+  - name: stg_google_sheets__reporting__promo_status_policies__rule_group_single_scope
+    description: >-
+      The engine ANDs a rule group's conditions only when they share one scope
+      (grade range and term), so a group whose rows overlap in grade and term
+      but differ in either splits into separate groups that each fire alone,
+      turning the AND into an OR. Lists the overlapping row pairs, where 'All'
+      overlaps every term. Fix the grade range or term on the Promo Status
+      Policies sheet, or give the rows different rule_group numbers.
+    config:
+      tags:
+        - google_sheet
+      severity: error

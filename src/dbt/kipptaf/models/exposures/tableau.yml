@@ -720,6 +720,7 @@ exposures:
           asset:
             metadata:
               id: 0982565d-e986-4d75-a826-63f181560fab
+              cron_schedule: 0 7 * * *
   - name: state_testing_analysis_tool
     label: State Testing Analysis Tool
     type: dashboard

@@ -85,11 +85,12 @@ handled automatically by `dbt_union_relations_automation_condition()`.
 
 ### kipptaf-level `stg_*` union views
 
-Pure `union_relations()` views over per-region district staging tables (e.g.
-`stg_powerschool__u_studentsuserfields`, `stg_powerschool__studentcorefields`)
-are functionally intermediates. Uniqueness tests and `materialized: table`
-belong on the per-region source-system staging models, not on the kipptaf-level
-view. Don't add either when creating a new one.
+Pure `union_relations()` views over per-region district staging or source `int_`
+models (e.g. `stg_powerschool__u_studentsuserfields`,
+`int_powerschool__ps_adaadm_daily_ctod`) are functionally intermediates.
+Uniqueness tests and `materialized: table` belong on the per-region
+source-system models, not on the kipptaf-level view. Don't add either when
+creating a new one.
 
 Exception: make a union view a table when it hosts a `relationships` test
 against a kipptaf model, such as the location crosswalk. A test on a view runs
