@@ -10,3 +10,62 @@ models:
               - rn_exam_number
           config:
             severity: error
+unit_tests:
+  - name: unit_ap_unpivot_drops_ids_missing_from_crosswalk
+    description: >-
+      Proves the defense behind the relationships warn test on
+      stg_collegeboard__ap.ap_number_ap_id. CB1 is in the crosswalk and its
+      score comes through. CB2 and CB3 are missing from it, so their scores are
+      dropped on purpose rather than collapsing into one row with no student.
+    model: int_collegeboard__ap_unpivot
+    given:
+      - input: ref('stg_collegeboard__ap')
+        rows:
+          - {
+              ap_number_ap_id: CB1,
+              enrollment_school_year: 2024,
+              admin_year_01: 24,
+              exam_code_01: "07",
+              exam_grade_01: 4,
+            }
+          - {
+              ap_number_ap_id: CB2,
+              enrollment_school_year: 2024,
+              admin_year_01: 24,
+              exam_code_01: "07",
+              exam_grade_01: 3,
+            }
+          - {
+              ap_number_ap_id: CB3,
+              enrollment_school_year: 2024,
+              admin_year_01: 24,
+              exam_code_01: "07",
+              exam_grade_01: 5,
+            }
+      - input: ref('stg_google_sheets__collegeboard__ap_id_crosswalk')
+        format: sql
+        rows: |
+          select 'CB1' as college_board_id, 101 as powerschool_student_number
+      - input: ref('stg_google_sheets__collegeboard__ap_codes')
+        format: sql
+        rows: |
+          select
+            'Exam Codes' as `domain`,
+            '07' as code,
+            'United States History' as description
+      - input: ref('stg_google_sheets__collegeboard__ap_course_crosswalk')
+        format: sql
+        rows: |
+          select
+            'CB File' as data_source,
+            'United States History' as test_name,
+            'AP US History' as ap_course_name,
+            'HIS' as ps_ap_course_subject_code
+    expect:
+      rows:
+        - {
+            ap_number_ap_id: CB1,
+            powerschool_student_number: 101,
+            exam_code: "07",
+            exam_grade: 4,
+          }
