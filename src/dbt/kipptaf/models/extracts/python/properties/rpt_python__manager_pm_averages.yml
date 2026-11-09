@@ -1,67 +1,125 @@
 models:
   - name: rpt_python__manager_pm_averages
+    description: >-
+      One row per observer per performance management round: the observer's
+      average score on each coach scoring rubric measure and overall, across the
+      teachers they scored that round. Rows come from published SchoolMint Grow
+      forms with observation type PM (before 2024) or PMS (2024 onward), so a
+      renamed rubric is still picked up. Input to the PM outlier detection
+      script.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - observer_employee_number
+              - academic_year
+              - form_term
     columns:
       - name: observer_employee_number
         data_type: int64
+        description: Employee number of the observer who scored the forms.
+        data_tests:
+          - not_null
+        config:
+          meta:
+            contains_pii: true
       - name: academic_year
         data_type: int64
+        description: Academic year of the round, as its starting calendar year.
+        data_tests:
+          - not_null
       - name: form_term
         data_type: string
+        description: PM round code from the reporting terms sheet (PM1-PM3).
+        data_tests:
+          - not_null
       - name: term_num
         data_type: int64
+        description: Round number parsed from the last character of form_term.
       - name: etr1a
         data_type: float64
+        description: Average row score on rubric measure ETR1A.
       - name: etr1b
         data_type: float64
+        description: Average row score on rubric measure ETR1B.
       - name: etr2a
         data_type: float64
+        description: Average row score on rubric measure ETR2A.
       - name: etr2b
         data_type: float64
+        description: Average row score on rubric measure ETR2B.
       - name: etr2c
         data_type: float64
+        description: Average row score on rubric measure ETR2C.
       - name: etr2d
         data_type: float64
+        description: Average row score on rubric measure ETR2D.
       - name: etr3a
         data_type: float64
+        description: Average row score on rubric measure ETR3A.
       - name: etr3b
         data_type: float64
+        description: Average row score on rubric measure ETR3B.
       - name: etr3c
         data_type: float64
+        description: Average row score on rubric measure ETR3C.
       - name: etr3d
         data_type: float64
+        description: Average row score on rubric measure ETR3D.
       - name: etr4a
         data_type: float64
+        description: Average row score on rubric measure ETR4A.
       - name: etr4b
         data_type: float64
+        description: Average row score on rubric measure ETR4B.
       - name: etr4c
         data_type: float64
+        description: Average row score on rubric measure ETR4C.
       - name: etr4d
         data_type: float64
+        description: Average row score on rubric measure ETR4D.
       - name: etr4e
         data_type: float64
+        description: Average row score on rubric measure ETR4E.
       - name: etr4f
         data_type: float64
+        description: Average row score on rubric measure ETR4F.
       - name: etr5a
         data_type: float64
+        description: Average row score on rubric measure ETR5A.
       - name: etr5b
         data_type: float64
+        description: Average row score on rubric measure ETR5B.
       - name: etr5c
         data_type: float64
+        description: Average row score on rubric measure ETR5C.
       - name: so1
         data_type: float64
+        description: Average row score on rubric measure SO01.
       - name: so2
         data_type: float64
+        description: Average row score on rubric measure SO02.
       - name: so3
         data_type: float64
+        description: Average row score on rubric measure SO03.
       - name: so4
         data_type: float64
+        description: Average row score on rubric measure SO04.
       - name: so5
         data_type: float64
+        description: Average row score on rubric measure SO05.
       - name: so6
         data_type: float64
+        description: Average row score on rubric measure SO06.
       - name: so7
         data_type: float64
+        description: Average row score on rubric measure SO07.
       - name: so8
         data_type: float64
+        description: Average row score on rubric measure SO08.
       - name: overall_score
         data_type: float64
+        description:
+          Average of observation_score over the measurement rows of every form
+          the observer scored this round, so each form is weighted by its number
+          of measurement rows.
