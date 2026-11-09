@@ -263,9 +263,9 @@ select
 
     rtldap.google_email as reports_to_google_email,
 
-    pbe.plan_name as nj_pension_plan_name,
-
     coalesce(lc.location_grade_band, 'N/A') as home_work_location_grade_band,
+
+    if(w.is_current_record, pbe.plan_name, null) as nj_pension_plan_name,
 
     lower(ldap.sam_account_name) as sam_account_name,
     lower(ldap.user_principal_name) as user_principal_name,
@@ -328,7 +328,6 @@ left join
     {{ ref("stg_adp_workforce_now__pension_and_benefits_enrollments") }} as pbe
     on w.position_id = pbe.position_id
     and pbe.enrollment_status = 'Active'
-    and pbe.rn_enrollment_recent = 1
     and pbe.plan_name in (
         'NJ Pension - DCRP:Eligible Employees(Prudential Financial)',
         'NJ Pension - PERS:Eligible Employees(NJ Pension)',

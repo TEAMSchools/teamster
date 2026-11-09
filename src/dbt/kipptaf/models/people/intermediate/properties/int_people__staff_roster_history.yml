@@ -184,6 +184,13 @@ models:
       - name: home_work_location_grade_band
         data_type: string
         description: First non-null of location_grade_band.
+      - name: nj_pension_plan_name
+        data_type: string
+        description: >-
+          The position's active NJ pension plan (PERS, TPAF, or DCRP) from the
+          ADP pension and benefits enrollments file, on the current record only.
+          ADP sends current enrollments and no history, so past rows are null
+          rather than showing a plan the data cannot date.
       - name: home_work_location_reporting_school_id
         data_type: int64
       - name: home_work_location_powerschool_school_id
