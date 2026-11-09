@@ -3,8 +3,8 @@ revision = 5
 requires-python = ">=3.13, <3.15"
 resolution-markers = [
     "python_full_version >= '3.14' and platform_python_implementation != 'PyPy' and sys_platform != 'emscripten'",
-    "python_full_version < '3.14' and platform_python_implementation != 'PyPy' and sys_platform != 'emscripten'",
     "(python_full_version >= '3.14' and platform_python_implementation == 'PyPy') or (python_full_version >= '3.14' and sys_platform == 'emscripten')",
+    "python_full_version < '3.14' and platform_python_implementation != 'PyPy' and sys_platform != 'emscripten'",
     "(python_full_version < '3.14' and platform_python_implementation == 'PyPy') or (python_full_version < '3.14' and sys_platform == 'emscripten')",
 ]
 
@@ -950,7 +950,7 @@ wheels = [
 
 [[package]]
 name = "dbt-bigquery"
-version = "1.12.1"
+version = "1.12.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "dbt-adapters" },
@@ -964,9 +964,9 @@ dependencies = [
     { name = "google-cloud-storage" },
     { name = "nbformat" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/fc/b9/07cd055f25af8c36f5d0b257cb518ca48bf55aed964883d697236117b327/dbt_bigquery-1.12.1.tar.gz", hash = "sha256:71787ff4495999a26058dffe4da46558acf57bdc409cdb46565d9afb0391c75e", size = 209448, upload-time = "2026-09-15T18:18:40.616Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/48/39/7632574d74524db0eca33000e798e03ee9004674728e925f011a74b6c300/dbt_bigquery-1.12.2.tar.gz", hash = "sha256:c149062dc0008b9cca31fba55f2c8886b0f4a6fcbda8095a39191bc6705a595c", size = 212673, upload-time = "2026-11-05T04:21:38.306Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/70/88/b0000a9701e7facc71432db30d2ac0c5adf6ba24dba7e687e0ee9f5bcbf7/dbt_bigquery-1.12.1-py3-none-any.whl", hash = "sha256:8f7e0eff7f4a5f8a9fea4db4fca65eef885df2f8c75b41699e061ad9b0efd745", size = 114433, upload-time = "2026-09-15T18:18:39.126Z" },
+    { url = "https://files.pythonhosted.org/packages/1b/a3/6ee93aa566f54e4b404b7edd8442af7593cd55a5f2a672e76ccce8af9b9b/dbt_bigquery-1.12.2-py3-none-any.whl", hash = "sha256:fb7d62c0a06d7fac61412ed16a6b6432cf0aabe35463ef4096849d23dd0738f3", size = 114611, upload-time = "2026-11-05T04:21:36.718Z" },
 ]
 
 [[package]]
