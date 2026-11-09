@@ -13,6 +13,11 @@ select
 
     {{ staff_key("lc.head_of_school_employee_number", nullable=true) }}
     as head_of_school_staff_key,
+    {{ staff_key("lc.sl_employee_number", nullable=true) }} as school_leader_staff_key,
+    {{ staff_key("lc.dso_employee_number", nullable=true) }}
+    as operations_director_staff_key,
+
+    if(pl.is_campus, null, pl.powerschool_school_id) as school_id,
 
     coalesce(pl.abbreviation, pl.location_name) as abbreviation,
 from {{ ref("stg_google_sheets__people__locations") }} as pl

@@ -37,6 +37,19 @@ models:
           - not_null
           - unique
 
+      - name: school_id
+        data_type: int64
+        description: >-
+          School ID that student enrollment, attendance and section records
+          carry for this school. Miami schools keep the IDs they had before
+          their student information system changed. Unique per school. Null for
+          campus rows.
+        config:
+          meta:
+            source_column: powerschool_school_id
+        data_tests:
+          - unique
+
       - name: region_key
         data_type: string
         description: >-
@@ -61,6 +74,33 @@ models:
           report to. FK to dim_staff. Current state only, so a past year shows
           today's head of school. Null for campus rows, for schools with no
           school leadership on the roster, and when that manager is not active.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_staff')
+              to_columns: [staff_key]
+
+      - name: school_leader_staff_key
+        data_type: string
+        description: >-
+          Staff key of the school's School Leader, or its School Leader in
+          Residence when it has no School Leader, as the staff roster reports
+          today. FK to dim_staff. Current state only, so a past year shows
+          today's leader. Null for campus rows and while the seat is vacant.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_staff')
+              to_columns: [staff_key]
+
+      - name: operations_director_staff_key
+        data_type: string
+        description: >-
+          Staff key of the school's director of operations — its Director School
+          Operations, or its Director Campus Operations when it has none — as
+          the staff roster reports today. FK to dim_staff. Current state only,
+          so a past year shows today's director. Null for campus rows and while
+          the seat is vacant.
         config:
           meta:
             foreign_key:

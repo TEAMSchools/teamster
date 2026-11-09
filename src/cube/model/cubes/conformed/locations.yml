@@ -13,6 +13,16 @@ cubes:
           "{staff_head_of_school.staff_key} = {CUBE}.head_of_school_staff_key"
         relationship: many_to_one
 
+      - name: staff_school_leader
+        sql: "{staff_school_leader.staff_key} = {CUBE}.school_leader_staff_key"
+        relationship: many_to_one
+
+      - name: staff_operations_director
+        sql:
+          "{staff_operations_director.staff_key} =
+          {CUBE}.operations_director_staff_key"
+        relationship: many_to_one
+
     dimensions:
       - name: location_key
         description: Surrogate key derived from location name.
@@ -41,6 +51,35 @@ cubes:
           school leadership on the roster, and when that manager is not active.
         sql: head_of_school_staff_key
         type: string
+
+      - name: school_leader_staff_key
+        description: >-
+          Staff key of the school's School Leader, or its School Leader in
+          Residence when it has no School Leader, as the staff roster reports
+          today. FK to dim_staff. Current state only, so a past year shows
+          today's leader. Null for campus rows and while the seat is vacant.
+        sql: school_leader_staff_key
+        type: string
+
+      - name: operations_director_staff_key
+        description: >-
+          Staff key of the school's director of operations — its Director School
+          Operations, or its Director Campus Operations when it has none — as
+          the staff roster reports today. FK to dim_staff. Current state only,
+          so a past year shows today's director. Null for campus rows and while
+          the seat is vacant.
+        sql: operations_director_staff_key
+        type: string
+
+      - name: school_id
+        description: >-
+          School ID that student enrollment, attendance and section records
+          carry for this school. Miami schools keep the IDs they had before
+          their student information system changed. Unique per school. Null for
+          campus rows.
+        sql: school_id
+        type: number
+        public: true
 
       - name: location_name
         description: Canonical location name.

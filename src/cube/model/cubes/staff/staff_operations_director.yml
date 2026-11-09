@@ -1,0 +1,8 @@
+cubes:
+  # Role alias for staff, used as the school operations director join target on
+  # locations. Distinct role-play cube (like staff_head_of_school) so its
+  # members can't collide with the other staff roles a view reaches. Inherits
+  # all of staff's dimensions.
+  - name: staff_operations_director
+    extends: staff
+    public: false

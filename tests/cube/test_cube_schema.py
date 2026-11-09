@@ -559,10 +559,15 @@ TWINS.update(
         ),
         ("student_assessments", "title"): ("dim_assessments", "title"),
         ("locations", "grade_band"): ("dim_locations", "grade_band"),
-        ("locations", "head_of_school_staff_key"): (
-            "dim_locations",
-            "head_of_school_staff_key",
-        ),
+        **{
+            ("locations", c): ("dim_locations", c)
+            for c in [
+                "head_of_school_staff_key",
+                "school_leader_staff_key",
+                "operations_director_staff_key",
+                "school_id",
+            ]
+        },
         ("courses", "is_foundations"): ("dim_courses", "is_foundations"),
         ("student_attendance_enrollment_daily", "n_absent_days_rolling_90"): (
             "fct_student_attendance_enrollment_daily",
