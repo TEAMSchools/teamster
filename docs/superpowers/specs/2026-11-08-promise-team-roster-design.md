@@ -195,17 +195,26 @@ them out keeps the sheet's exposure smaller.
 
 ### The weekly snapshot
 
-Roster membership and GPA have no history in the warehouse:
-`int_deanslist__roster_assignments` is current state with no dates, and
-`fct_grades_gpa` holds one row per term. So the weekly tab is a snapshot, not a
-recomputation, and its history starts on go-live day. That is accepted.
+Attendance, discipline, contacts and GPA all have week-level history already.
+Attendance and discipline recompute from the daily and incident facts. GPA comes
+from `snapshot_powerschool__gpa_term` through `int_topline__gpa_term_weekly`,
+which carries the term GPA in effect at each week's close onto the
+enrollment-week spine (`int_extracts__student_enrollments_weeks`). The weekly
+tab is built on that same spine, so every figure except tier goes back to the
+start of the year.
 
-`rpt_gsheets__promise_team_roster_weekly`: a weekly snapshot of the roster
-model, same columns plus `week_start_date`, one row per student per school per
-week since go-live. Taken once per week on a fixed day after the nightly
-extract; a missed night delays the week's row, it does not drop it. Uniqueness
-on `student_number`, `school` and `week_start_date`. The builder picks dbt
-snapshot versus incremental append.
+Roster membership is the one gap: `int_deanslist__roster_assignments` is current
+state with no dates. Add `snapshot_deanslist__roster_assignments` to
+`src/dbt/kipptaf/snapshots/`, a check-strategy snapshot like
+`snapshot_powerschool__gpa_term`, keyed on student, roster and source relation.
+Tier history starts the day the snapshot first runs; earlier weeks show tier as
+null.
+
+`rpt_gsheets__promise_team_roster_weekly`: the roster model's columns plus
+`week_start_date`, one row per student per school per enrolled week of the
+current year, each figure as of the week's close. Uniqueness on
+`student_number`, `school` and `week_start_date`. It depends on the nightly runs
+only through the snapshots, which already carry that dependency.
 
 `rpt_gsheets__promise_team_roster_changes`: the tab the skill reads. One row per
 student per school with this week's figures, last week's, the change, and the
@@ -213,8 +222,8 @@ student per school with this week's figures, last week's, the change, and the
 string). A few hundred rows per school, so the Sheets connector can read it in
 one range. The full weekly tab stays for the one-pager and for analysts.
 
-"Weeks on a Tier 2 or 3 roster", from the first snapshot week the student
-appears there, stands in for cycle start until the stakeholder answers open
+"Weeks on a Tier 2 or 3 roster", from the first week the roster snapshot shows
+the student there, stands in for cycle start until the stakeholder answers open
 question 2.
 
 ### Delivery
@@ -297,8 +306,9 @@ column; the extract ships without it.
   change (`dbt-models` rules, two PRs or the single-PR clone pattern).
 - `days_to_90_pct` is not modeled anywhere today; derive it from year-to-date
   membership and present days.
-- The weekly snapshot's implementation (dbt snapshot or incremental append) and
-  its weekly tick, after the nightly extract.
+- The roster snapshot's `check_cols` (membership has no attributes that change,
+  so the check is on presence of the row) and its tick, aligned with the GPA
+  snapshot.
 - Skill file layout, reference file contents, and distribution.
 
 ## Acceptance
@@ -312,8 +322,9 @@ column; the extract ships without it.
 - The NCA report sheet contains no Lab students, and the Lab sheet no NCA
   students, checked by comparing each sheet's distinct `school` values after the
   first scheduled extract.
-- The weekly tab has one row per student per week since go-live, with no gaps
-  for weeks the student was enrolled.
+- The weekly tab has one row per student per enrolled week of the year, with
+  attendance and GPA filled for every week and tier filled from the snapshot's
+  first run onward.
 - The changes tab for one school is under 1,000 rows.
 - With only the sheet and Cube connectors, the skill returns a flag list for one
   grade with no file upload.
