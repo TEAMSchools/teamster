@@ -18,6 +18,7 @@ with
             is_maher,
             fund_type,
 
+            -- keep in step with the list in stg_kippadb__kipp_aid
             coalesce(
                 fund_type in ('Emergency', 'Enrichment', 'Unclassified'), false
             ) as is_listed_type,

@@ -1,11 +1,31 @@
 models:
   - name: stg_google_sheets__collegeboard__sat_id_crosswalk
+    description: >-
+      One row per College Board ID from the KIPP Forward SAT and PSAT ID
+      crosswalk sheet, mapping it to a PowerSchool student number. The PSAT and
+      SAT unpivots leave out scores whose ID has no row here with a student
+      number.
     columns:
       - name: College_Board_ID
         data_type: int64
+        description: College Board student ID as it appears on score files.
         data_tests:
           - unique:
               config:
                 severity: error
       - name: PowerSchool_Student_Number
         data_type: int64
+        description: PowerSchool student number matched to the College Board ID.
+        config:
+          meta:
+            contains_pii: true
+        data_tests:
+          - not_null:
+              name: sat_id_crosswalk_student_number_not_blank
+              description: >-
+                A crosswalk sheet row has a College Board ID but no PowerSchool
+                student number, so that student's PSAT and SAT scores are left
+                out of reporting. KIPP Forward fills in the student number on
+                the crosswalk sheet.
+              config:
+                severity: warn

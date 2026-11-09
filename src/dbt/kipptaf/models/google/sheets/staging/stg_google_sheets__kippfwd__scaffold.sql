@@ -23,26 +23,23 @@ with
         from {{ source("google_sheets", "src_google_sheets__kippfwd__scaffold") }}
     ),
 
-    ranked as (
-        select
-            *,
-
-            /* duplicate key: the stricter benchmark wins */
-            -- TODO(#6291): KIPP Forward to confirm the stricter benchmark is right
-            row_number() over (
-                partition by
-                    academic_year,
-                    expected_test_type,
-                    expected_scope,
-                    expected_grade_level,
-                    expected_score_type
-                order by
-                    college_ready_min_score desc nulls last,
-                    hs_grad_ready_min_score desc nulls last
-            ) as rn_key,
+    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
+    valid_scaffold as (
+        select *,
         from scaffold
         /* a blank or misspelled row matches nothing correctly, so it is dropped */
         where problem is null
+    ),
+
+    /* duplicate key: the stricter benchmark wins */
+    deduplicate as (
+        {{
+            dbt_utils.deduplicate(
+                relation="valid_scaffold",
+                partition_by="academic_year, expected_test_type, expected_scope, expected_grade_level, expected_score_type",
+                order_by="college_ready_min_score desc, hs_grad_ready_min_score desc, a1_attempt_min_score desc, a2_plus_attempts_min_score desc",
+            )
+        }}
     )
 
 select
@@ -63,5 +60,4 @@ select
     a2_plus_attempts_min_score,
     hs_grad_ready_min_score,
     college_ready_min_score,
-from ranked
-where rn_key = 1
+from deduplicate

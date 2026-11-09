@@ -374,6 +374,20 @@ data_tests:
           ref:
             name: stg_google_appsheet__kfwd_career_conversations__assessments
 
+  - name: test_sf_standardized_test_duplicate
+    description: >-
+      Salesforce Standardized Test records entered more than once for the same
+      contact, test, date and subject. Each row is an extra copy, beyond the
+      most recently edited one. The test reads raw Salesforce data, because
+      stg_kippadb__standardized_test keeps only that most recent copy. KIPP
+      Forward deletes each listed record in Salesforce.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: stg_kippadb__standardized_test
+
   - name: int_assessments__assessments_members__no_cross_source_canonical
     description: >-
       Asserts that every assessment's canonical pick comes from its own source.

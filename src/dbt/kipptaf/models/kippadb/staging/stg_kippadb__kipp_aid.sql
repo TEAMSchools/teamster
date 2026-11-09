@@ -61,7 +61,8 @@ select
     notes_clean,
     academic_year,
 
-    /* a tag with a misspelled or missing type falls back to Unclassified */
+    /* a tag with a misspelled or missing type falls back to Unclassified;
+    keep this list in step with tests/test_sf_kipp_aid_fund_type_unlisted.sql */
     case
         when not is_maher
         then null

@@ -9,7 +9,8 @@ models:
               `date` is null or `date` >= '2000-01-01'
           config:
             severity: warn
-      # TODO(#6291): flip to error once stg_kippadb__standardized_test dedups.
+      # TODO(#6291): flip to error once 2 AP records for 1 exam under subject
+      # spellings the crosswalk maps to 1 course are handled.
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:

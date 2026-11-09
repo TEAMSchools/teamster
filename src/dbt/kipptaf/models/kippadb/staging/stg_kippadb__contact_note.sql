@@ -1,4 +1,5 @@
 with
+    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
     contact_note as (
         select
             id,
@@ -49,23 +50,15 @@ with
         where not isdeleted and id != 'a0LQg00000SOadzMAD'
     ),
 
-    ranked as (
-        select
-            *,
-
-            -- blank comments partition by id: 2 blank call logs can be 2 real calls
-            row_number() over (
-                partition by
-                    contact,
-                    `subject`,
-                    if(comments_normalized != '', comments_normalized, id),
-                    next_steps_normalized,
-                    `date`,
-                    `status`,
-                    `type`
-                order by `name`
-            ) as rn,
-        from contact_note
+    -- blank comments partition by id: 2 blank call logs can be 2 real calls
+    deduplicate as (
+        {{
+            dbt_utils.deduplicate(
+                relation="contact_note",
+                partition_by="contact, `subject`, if(comments_normalized != '', comments_normalized, id), next_steps_normalized, `date`, `status`, `type`",
+                order_by="`name`",
+            )
+        }}
     )
 
 select
@@ -103,5 +96,4 @@ select
     system_modstamp,
     `type`,
     academic_year,
-from ranked
-where rn = 1
+from deduplicate
