@@ -310,8 +310,9 @@ referring staff, status, consequence type, suspension type, days assigned, start
 and end dates, `is_suspension`, `is_reportable`. No free-text context. Sorted by
 student then date, like the contacts tab, so the one-pager reads one student's
 block. Tier 1 referrals are included, since the roster's `n_referrals` counts
-them. The word "lifts" does not appear anywhere in this work: not in the models,
-the sheet, the skill or its reference file.
+them. Vocabulary: every DeansList incident is a "referral" in the models, the
+sheets, the skill and its reference file, whatever tier it carries. No other
+term, including the Paterson hub's, is used.
 
 The weekly tab also carries `n_referrals_week`, `n_referrals_tier_2_plus_week`
 and `n_oss_days_week`, so referral and suspension trends draw from it.
