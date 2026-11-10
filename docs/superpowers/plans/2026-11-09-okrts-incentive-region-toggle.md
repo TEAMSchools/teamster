@@ -497,3 +497,66 @@ They are never handed over.
   - Click "Show Incentives", switch View by, and click "Hide Incentives".
 
   A production publish waits for the user's 2 typed confirmations.
+
+---
+
+## Revision 2026-11-10: add a School Level option
+
+The request in #6332 asked for "region and school-level grains". This plan read
+"school-level" as one row per school, which the tables already showed. The owner
+meant school level: ES, MS, and HS. The owner decided:
+
+- `[Parameter 9]` gains a third member, `"School Level"`. The members read
+  `"School"`, `"Region"`, `"School Level"`, and the default stays `"School"`.
+- In School Level mode the rows are `ES`, `HS`, and `MS`, in the default
+  alphabetical order that the workbook's other `school_level` displays use. The
+  rows cover whatever regions the Region filter keeps.
+- Out-of-district students (`school_level = 'OD'`) count under their home
+  school's level, so the School Level rows cover the same students as the School
+  and Region views.
+
+Values that every revision task uses:
+
+- New calculated field `[Calculation_6332000000000000002]`, caption
+  `Home School Level`, string dimension, formula
+  `{FIXED [academic_year], [school] : MIN(IF [school_level] != 'OD' THEN [school_level] END)}`.
+- `[Calculation_6332000000000000001]` gets the formula
+  `CASE [Parameters].[Parameter 9] WHEN 'Region' THEN [region] WHEN 'School Level' THEN [Calculation_6332000000000000002] ELSE [school] END`.
+- Each incentive worksheet's behavior dependencies add the new calculation and
+  the `[school_level]` column, both in name-sorted position.
+- The Landing Page's dashboard-level `[Parameter 9]` dependency lists all 3
+  members.
+
+### Task R1: Extend the BigQuery reference numbers
+
+- [ ] Add a `school_level` grain to `oracle_quarterly.sql` and
+      `oracle_weekly.sql`, mapping each student's row to the school's non-OD
+      level for that year.
+- [ ] Assert that every school has exactly 1 non-OD level per year. Expected: no
+      school with 0 or with 2 levels.
+
+### Task R2: Edit the workbook and its assertions
+
+- [ ] Extend `check_param`, `check_rows`, and `check_zone` to the values above,
+      and run them against the current `out.twb`. Expected: exit `1`.
+- [ ] Extend `edit_6332.py`, regenerate `out.twb`, and run all assertions,
+      `check_twb.py`, and `geo_diff.sh`. Expected: `0` for each.
+- [ ] Hand-write 2 mutants: the third member missing from the dashboard
+      dependency, and the row formula reading raw `[school_level]` instead of
+      the new calculation. Expected: the assertions exit `1` on each.
+
+### Task R3: Republish and check the numbers
+
+- [ ] Republish the hand-over and RENDER review copies to the same workbook ids.
+- [ ] Export both incentive worksheets under School, Region, and School Level.
+      Expected: School and Region exports equal the previous ones, and School
+      Level exports match the oracle's student-weighted values for Q1 and the
+      week of 11/2/2026.
+- [ ] Expected: both worksheets show the same 3 rows in School Level mode.
+
+### Task R4: Look at the render and report
+
+- [ ] Render the Landing Page with School Level and read the panel crop for
+      `####`, clipped labels, and the `View by` value fitting its control.
+      Expected: `measure_pos.py` still passes.
+- [ ] Post the result on #6332.
