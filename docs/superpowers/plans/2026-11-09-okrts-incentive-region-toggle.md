@@ -560,3 +560,131 @@ Values that every revision task uses:
       `####`, clipped labels, and the `View by` value fitting its control.
       Expected: `measure_pos.py` still passes.
 - [ ] Post the result on #6332.
+
+---
+
+## Revision 2026-11-10 (2): align the weekly table and apply review fixes
+
+The weekly table's rows drift from the quarterly labels, up to 17 screen pixels
+by the last school. The drift exists in production today. The cause is in the
+Landing Page window's viewpoints: `LP - Incentive Quarterly` uses `entire-view`,
+while `LP - Incentive Monthly` uses `fit-height`. Fit-height lets the weekly
+table scroll sideways, and its horizontal scrollbar takes about 17 pixels of
+height, so its rows split a shorter height.
+
+The owner decided:
+
+- The weekly table shows the most recent 9 weeks and stops scrolling. Nine is
+  what fits today without scrolling (a 1074-pixel zone at 108 pixels per week).
+- Both tables then use `entire-view` over the same zone height, so their rows
+  line up exactly in every view.
+- The row field's caption becomes `School / Region / Level`, which hover text
+  and CSV downloads show.
+- The review fixes below ship in the same run. The work stays on #6332.
+
+Values that every task in this revision uses:
+
+- New calculated field `[Calculation_6332000000000000003]`, caption
+  `In Last 9 Weeks`, boolean dimension, formula
+  `[week_start_monday] > DATEADD('day', -63, TODAY())`. Together with the
+  sheet's existing `Is Today or Earlier` filter
+  (`[week_start_monday] <= TODAY()`), the window is the 63 days ending today,
+  which holds exactly 9 Mondays on any weekday. A week with no school days drops
+  out, so a break week shows 8 columns.
+- The Landing Page window's `<viewpoint name='LP - Incentive Monthly'>` changes
+  its zoom from `fit-height` to `entire-view`. That viewpoint is the only copy;
+  the Phone layout has none.
+- `[Calculation_6332000000000000001]` caption: `School / Region / Level`, in its
+  3 places (the behavior data source and both worksheets' dependencies).
+
+### Task S1: Fix the behavior data source's Parameters dependency
+
+The final review of Revision 1 found that the behavior data source reads
+`[Parameter 9]` but its own `Parameters` dependency block does not list it. In
+the base, all 4 data sources list exactly the parameters their calculations
+read.
+
+- [ ] Add `check_datasource_params` to `assert_6332.py`. For each top-level data
+      source, the parameters its formulas reference must equal the parameters in
+      its `Parameters` dependency block. Run it on the current `out.twb`.
+      Expected: exit `1` for `federated.14j3y9x1ckp90b1gn0dte0ypafs6` only.
+- [ ] In `edit_6332.py`, insert a `[Parameter 9]` column after `[Parameter 7]`
+      in that block. Use an 8-space indent and the calculation only, with no
+      members, as its siblings have. Expected: all assertions and `check_twb.py`
+      exit `0`.
+- [ ] Hand-write a mutant without the line. Expected: the check exits `1`.
+
+### Task S2: Rename the row field's caption
+
+- [ ] Change the expected caption in `check_param` and the `check_rows` added
+      chunks, and watch both fail. Change it in `edit_6332.py` and watch both
+      pass.
+
+### Task S3: Show the last 9 weeks without scrolling
+
+- [ ] Add `check_weeks` to `assert_6332.py`:
+  - The new calculation exists at the data-source level with the caption, type,
+    and formula above.
+  - The weekly worksheet's behavior dependencies hold it and its column instance
+    in name-sorted position.
+  - The worksheet carries a categorical filter keeping `true`, cloned from the
+    `Is Today or Earlier` filter, plus its `<slices>` entry.
+  - The weekly viewpoint is `entire-view`, and the quarterly viewpoint is
+    unchanged.
+  - The quarterly worksheet is unchanged by this task.
+
+  Run it. Expected: exit `1`.
+
+- [ ] Implement it in `edit_6332.py`. Expected: all assertions, `check_twb.py`,
+      and `geo_diff.sh` exit `0`.
+- [ ] Hand-write 2 mutants: the viewpoint left at `fit-height`, and the formula
+      at `-70` days. Expected: `check_weeks` exits `1` on each.
+
+### Task S4: Harden the tests
+
+- [ ] Re-run all 3 oracle grains in 1 BigQuery run for Q1 and the week of
+      10/26/2026, a settled week. Rewrite both oracle CSVs from that run only,
+      and point the comparison scripts at 10/26/2026. Expected:
+      `check_oracle.py` passes, and student-weighted and row-weighted values
+      still differ in at least 1 row per grain.
+- [ ] Script the one-level-per-school check (`oracle_levels.sql`, with its
+      result saved) and make `check_oracle.py` read it. Expected: 0 schools with
+      other than 1 non-OD level, in both years.
+- [ ] Add `check_restore` to `assert_6332.py`. It diffs `out.twb` against
+      `base.twb` line by line and requires every changed line to belong to an
+      intended edit. Hand-write a mutant that changes 1 unrelated line in
+      another worksheet. Expected: `check_restore` exits `1` on the mutant and
+      `0` on `out.twb`.
+
+### Task S5: Prove the alignment from renders
+
+- [ ] Write `measure_bands.py`. It finds the row-band edges in the quarterly and
+      weekly tables of a Landing Page render and requires each pair within 2
+      pixels at the 2x render scale. Run it on the current School render
+      (`render-fix-out-school.png`). Expected: exit `1` (drift up to 34 pixels).
+
+### Task S6: Republish, verify, and report
+
+- [ ] Repack, and republish the hand-over and RENDER review copies to the same
+      workbook ids. If a `401002` drops the session, retry the remaining copy in
+      a fresh sign-in.
+- [ ] Export both worksheets under School, Region, and School Level, plus School
+      Level with `vf("Region", "Paterson")`. Expected:
+  - The weekly exports hold exactly 9 weeks, ending with the current week's
+    Monday.
+  - Those weeks' values equal the previous exports.
+  - The quarterly exports are unchanged apart from the header caption.
+  - Q1 and 10/26/2026 match the oracle's student-weighted values for every
+    grain.
+  - Paterson in School Level mode shows ES and MS in both sheets.
+- [ ] Render School, Region, and School Level. Expected: `measure_bands.py`
+      exits `0` for each, `measure_pos.py` passes, and the weekly table shows no
+      scrollbar and no `####`.
+- [ ] Delete the throwaway test file, then post on #6332:
+  - The alignment fix.
+  - The review fixes.
+  - The School Level data assumptions: a school whose only students in a year
+    are out-of-district would show a `Null` row, and a school with 2 non-OD
+    levels would roll up under the alphabetically first one. Neither happens in
+    2025-26 or 2026-27.
+- [ ] Final review: a fresh reviewer checks this revision before hand-over.
