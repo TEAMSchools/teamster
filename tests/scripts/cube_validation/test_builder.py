@@ -883,3 +883,73 @@ def test_inventory_lists_a_code_group_used_only_as_a_filter():
     assert by["Discipline"].role == "filter"
     assert by["Discipline"].sheets == ("Mastery Grid", "Mastery by Week")
     assert by["Discipline"].formula == "ELA = English 100, Text Study; Math = Algebra I"
+
+
+def _measure_names_filter(*members: str, function: str = "union") -> str:
+    groups = "".join(
+        "<groupfilter function='member' level='[:Measure Names]' "
+        f"member='&quot;[ds].[{m}]&quot;' />"
+        for m in members
+    )
+    return (
+        "<filter class='categorical' column='[ds].[:Measure Names]'>"
+        f"<groupfilter function='{function}'>{groups}</groupfilter>"
+        "</filter>"
+    )
+
+
+def test_inventory_lists_a_measure_shown_only_through_measure_values():
+    xml = _twb(
+        _sheet(
+            "S",
+            _dep("school", "None", "none")
+            + _dep("Calc_1", "User", "usr", "measure", "Tardy Rate"),
+            rows="[ds].[none:school:nk]",
+            cols="[ds].[:Measure Names]",
+            body=_measure_names_filter("avg:is_far_below:qk", "usr:Calc_1:qk"),
+        ),
+        _CALC_COLUMNS,
+    )
+
+    uses = _by_name(builder.workbook_inventory(xml))
+
+    assert uses["AVG(is_far_below)"].role == "measure"
+    assert uses["AVG(is_far_below)"].sheets == ("S",)
+    assert uses["Tardy Rate"].role == "measure"
+    assert "Measure Names" not in uses
+
+
+def test_inventory_skips_measures_a_measure_names_filter_excludes():
+    xml = _twb(
+        _sheet(
+            "S",
+            _dep("school", "None", "none"),
+            rows="[ds].[none:school:nk]",
+            body=_measure_names_filter("avg:is_far_below:qk", function="except"),
+        )
+    )
+
+    assert "AVG(is_far_below)" not in _by_name(builder.workbook_inventory(xml))
+
+
+def test_inventory_lists_a_group_on_a_mark_card():
+    xml = _twb(
+        _sheet(
+            "S",
+            _dep("school", "None", "none"),
+            rows="[ds].[none:school:nk]",
+            body="<encodings><color column='[ds].[tardy_code]' /></encodings>",
+        )
+    )
+
+    uses = _by_name(builder.workbook_inventory(xml))
+
+    assert uses["tardy_code"].role == "cut"
+
+
+def test_inventory_lists_a_group_on_a_row_shelf_without_a_derivation():
+    xml = _twb(_sheet("S", "", rows="[ds].[tardy_code]"))
+
+    (use,) = builder.workbook_inventory(xml)
+
+    assert (use.caption, use.role) == ("tardy_code", "cut")

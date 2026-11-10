@@ -249,6 +249,7 @@ with
         from window_calcs
     ),
 
+    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
     final as (
         select
             * except (rn_undergrad, year_in_school, year_in_network),
@@ -267,14 +268,34 @@ with
                 else false
             end as is_retained_year,
         from window_calcs_2
+    ),
+
+    deduped as (
+        -- keep one stint per entrydate; PowerSchool data entry occasionally
+        -- creates two and downstream rn_year = 1 filters assume this row survived
+        {{
+            dbt_utils.deduplicate(
+                relation="final",
+                partition_by="student_number, academic_year, entrydate",
+                order_by="rn_year asc",
+            )
+        }}
+    ),
+
+    with_next_entry as (
+        select
+            *,
+
+            lead(entrydate) over (
+                partition by studentid order by entrydate, exitdate
+            ) as next_entrydate,
+        from deduped
     )
 
-    -- keep one stint per entrydate; PowerSchool data entry occasionally creates two
-    -- and downstream rn_year = 1 filters assume this row survived
-    {{
-        dbt_utils.deduplicate(
-            relation="final",
-            partition_by="student_number, academic_year, entrydate",
-            order_by="rn_year asc",
-        )
-    }}
+select
+    -- trunk-ignore(sqlfluff/AM04)
+    * except (next_entrydate),
+
+    -- overlapping stints: the later stint owns the shared days
+    if(next_entrydate < exitdate, next_entrydate, exitdate) as exitdate_clipped,
+from with_next_entry
