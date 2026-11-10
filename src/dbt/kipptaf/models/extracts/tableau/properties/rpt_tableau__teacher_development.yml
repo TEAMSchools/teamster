@@ -266,3 +266,138 @@ models:
       - name: week_start
         data_type: date
         description: Monday of the observation's week.
+
+unit_tests:
+  - name: unit_rpt_teacher_development_tir_pm_follows_grow
+    description: >-
+      Resident PM scores follow Grow's form score. Teacher 101 (AY2025) scores
+      ETR 3 and 1 (strand 4) and S&O 3, so the ETR average is 2, the strands 1-3
+      average is 3, and tir_pm2 is 2 x 0.8 + 3 x 0.2 = 2.2. Teacher 102 (AY2026)
+      scores ETR 2 and 4, Values 4 and 4, Presence 1 and an unscored goal, so
+      tir_values_pm2 is 4 and tir_pm2 is 3 x 0.8 + 4 x 0.2 = 3.2; Presence and
+      the goal stay out of every average. Scores are chosen so each result is an
+      exact float.
+    model: rpt_tableau__teacher_development
+    given:
+      - input: ref("int_performance_management__observations")
+        rows:
+          - observation_id: tdt_101
+            employee_number: 101
+            academic_year: 2025
+            observed_at: 2025-12-01
+            observation_type_abbreviation: TDT
+          - observation_id: pms_101
+            employee_number: 101
+            academic_year: 2025
+            observed_at: 2025-12-02
+            observation_type_abbreviation: PMS
+            term_code: PM2
+            observation_score: 2.2
+          - observation_id: tdt_102
+            employee_number: 102
+            academic_year: 2026
+            observed_at: 2026-12-01
+            observation_type_abbreviation: TDT
+          - observation_id: pms_102
+            employee_number: 102
+            academic_year: 2026
+            observed_at: 2026-12-02
+            observation_type_abbreviation: PMS
+            term_code: PM2
+            observation_score: 3.2
+      - input: ref("int_performance_management__observation_details")
+        rows:
+          - observation_id: tdt_101
+            observation_type_abbreviation: TDT
+            measurement_name: Lesson Focus
+            row_score: 3.0
+          - observation_id: pms_101
+            observation_type_abbreviation: PMS
+            term_code: PM2
+            measurement_name: "ETR-1A: Plans"
+            row_score: 3.0
+          - observation_id: pms_101
+            observation_type_abbreviation: PMS
+            term_code: PM2
+            measurement_name: "ETR-4A: Culture"
+            row_score: 1.0
+          - observation_id: pms_101
+            observation_type_abbreviation: PMS
+            term_code: PM2
+            measurement_name: "S&O-01: Commitments"
+            strand_name: "Self & Others: Manager Feedback"
+            row_score: 3.0
+          - observation_id: tdt_102
+            observation_type_abbreviation: TDT
+            measurement_name: Lesson Focus
+            row_score: 3.0
+          - observation_id: pms_102
+            observation_type_abbreviation: PMS
+            term_code: PM2
+            measurement_name: "ETR-1A: Plans"
+            strand_name: Practice
+            row_score: 2.0
+          - observation_id: pms_102
+            observation_type_abbreviation: PMS
+            term_code: PM2
+            measurement_name: "ETR-5A: Rigor"
+            strand_name: Practice
+            row_score: 4.0
+          - observation_id: pms_102
+            observation_type_abbreviation: PMS
+            term_code: PM2
+            measurement_name: Excellence
+            strand_name: Values
+            row_score: 4.0
+          - observation_id: pms_102
+            observation_type_abbreviation: PMS
+            term_code: PM2
+            measurement_name: Fun
+            strand_name: Values
+            row_score: 4.0
+          - observation_id: pms_102
+            observation_type_abbreviation: PMS
+            term_code: PM2
+            measurement_name: Presence
+            strand_name: Professionalism and Punctuality
+            row_score: 1.0
+          - observation_id: pms_102
+            observation_type_abbreviation: PMS
+            term_code: PM2
+            measurement_name: Goal 1
+            strand_name: Goal Status
+            row_score: null
+      - input: ref("int_performance_management__teacher_development")
+        rows: []
+      - input: ref("int_people__staff_roster_history")
+        rows:
+          - employee_number: 101
+            job_title: Teacher in Residence
+            primary_indicator: true
+            effective_date_start: 2025-07-01
+            effective_date_end: 9999-12-31
+          - employee_number: 102
+            job_title: Teacher in Residence
+            primary_indicator: true
+            effective_date_start: 2026-07-01
+            effective_date_end: 9999-12-31
+      - input: ref("int_students__teacher_grade_levels")
+        rows: []
+      - input: ref("int_performance_management__overall_scores")
+        rows: []
+      - input: ref("int_people__staff_roster")
+        rows: []
+    expect:
+      rows:
+        - employee_number: 101
+          smg_etr_pm2: 2.0
+          tir_etr_pm2: 3.0
+          tir_so_pm2: 3.0
+          tir_values_pm2: null
+          tir_pm2: 2.2
+        - employee_number: 102
+          smg_etr_pm2: 3.0
+          tir_etr_pm2: 2.0
+          tir_so_pm2: null
+          tir_values_pm2: 4.0
+          tir_pm2: 3.2

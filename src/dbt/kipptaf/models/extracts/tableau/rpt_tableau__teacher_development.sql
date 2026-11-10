@@ -55,7 +55,6 @@ with
 
             od.term_code,
             od.row_score,
-            od.measurement_name,
 
             /* AY2023 on, only ETR measures (named ETR-<n><letter>); earlier forms
             count every non-S&O measure, as they always have */
@@ -64,25 +63,15 @@ with
                 od.measurement_name like 'ETR-%',
                 od.measurement_name not like '%S&O%'
             ) as is_etr_measure,
+
+            -- TIR ETR leaves out ETR strands 4 and 5
+            od.measurement_name not like '%4%'
+            and od.measurement_name not like '%5%' as is_tir_etr_strand,
         from {{ ref("int_performance_management__observations") }} as o
         inner join
             {{ ref("int_performance_management__observation_details") }} as od
             on o.observation_id = od.observation_id
             and od.observation_type_abbreviation in ('PM', 'PMS')
-    ),
-
-    tir_measures as (
-        select
-            employee_number,
-            academic_year,
-            term_code,
-            row_score,
-
-            -- TIR ETR leaves out ETR strands 4 and 5
-            measurement_name not like '%4%'
-            and measurement_name not like '%5%' as is_tir_etr_measure,
-        from pm_measures
-        where is_etr_measure
     ),
 
     tir_etr as (
@@ -93,8 +82,8 @@ with
             avg(case when term_code = 'PM1' then row_score end) as pm1,
             avg(case when term_code = 'PM2' then row_score end) as pm2,
             avg(case when term_code = 'PM3' then row_score end) as pm3,
-        from tir_measures
-        where is_tir_etr_measure
+        from pm_measures
+        where is_etr_measure and is_tir_etr_strand
         group by employee_number, academic_year
     ),
 
