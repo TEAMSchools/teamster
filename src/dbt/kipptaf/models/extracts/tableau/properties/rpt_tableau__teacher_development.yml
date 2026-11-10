@@ -20,16 +20,12 @@ models:
         data_type: string
         description: Grow observation id, or the archive's observation id.
         data_tests:
-          - not_null:
-              config:
-                severity: error
+          - not_null
       - name: measurement_name
         data_type: string
         description: Name of the rubric measurement scored.
         data_tests:
-          - not_null:
-              config:
-                severity: error
+          - not_null
       - name: employee_number
         data_type: int64
         description: Employee number of the teacher observed.
