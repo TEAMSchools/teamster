@@ -6,10 +6,12 @@ models:
       levels below the Microgoals root. A look-for exists in Grow only as the
       assignment's name, tagged with categories, so it takes the assignment name
       and its most specific category under the Lookfors root becomes the strand.
-      An assignment with no goal tag gets one row named from the assignment;
-      when that name starts with a microgoal code such as 2B.04, the strand
-      comes from the code. An assignment can hold more than one goal, such as a
-      microgoal and a look-for together.
+      A look-for tagged with two categories at that depth keeps the
+      alphabetically first. An assignment that holds a microgoal gets no
+      look-for row, because its name is the microgoal's text. An assignment with
+      no goal tag gets one row named from the assignment; when that name starts
+      with a microgoal code such as 2B.04, the strand comes from the code. An
+      assignment tagged with more than one microgoal gets one row per microgoal.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -67,10 +69,11 @@ models:
 unit_tests:
   - name: test_int_schoolmint_grow__assignments__goals_names_every_goal
     description: >-
-      Microgoals keep their tag name, look-fors take the assignment name and
-      their deepest category at two or three levels, a microgoal-and-look-for
-      assignment gives two rows, and untagged assignments get one row whose
-      strand comes from a microgoal code when the name has one.
+      Microgoals keep their tag name; look-fors take the assignment name and
+      their deepest category at one, two, or three levels, the alphabetically
+      first when two share a depth; a microgoal-and-look-for assignment gives
+      only the microgoal row; untagged assignments get one row whose strand
+      comes from a microgoal code when the name has one.
     model: int_schoolmint_grow__assignments__goals
     given:
       - input: ref("stg_schoolmint_grow__generic_tags")
@@ -88,6 +91,7 @@ unit_tests:
           union all select 'l3', 'Math', ['l0'], null, 'tags'
           union all select 'l4', 'K-12 Math', ['l3'], null, 'tags'
           union all select 'l5', 'Monitor Student Thinking', ['l4'], null, 'tags'
+          union all select 'l6', 'Behavioral Engagement', ['l1'], null, 'tags'
       - input: ref("int_schoolmint_grow__assignments__tags")
         format: sql
         rows: |
@@ -104,6 +108,12 @@ unit_tests:
           union all select 'a3', 'l5'
           union all select 'a5', 'm3'
           union all select 'a5', 'l2'
+          union all select 'a7', 'l0'
+          union all select 'a7', 'l1'
+          union all select 'a8', 'l0'
+          union all select 'a8', 'l1'
+          union all select 'a8', 'l2'
+          union all select 'a8', 'l6'
       - input: ref("stg_schoolmint_grow__assignments")
         format: sql
         rows: |
@@ -111,8 +121,10 @@ unit_tests:
           union all select 'a2', 'u1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', 'CVOE-K12-27 Value student voice', null
           union all select 'a3', 'u1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', 'MAT-K12-14 Collects data', null
           union all select 'a4', 'u1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', '2B.04 Pacing. Create the illusion of speed.', '2B'
-          union all select 'a5', 'u1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', 'CVOE-K12-27 Value student voice', null
+          union all select 'a5', 'u1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', '3D.01 Magic ratio. Respond positively.', '3D'
           union all select 'a6', 'u1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', 'Free text goal', null
+          union all select 'a7', 'u1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', 'CVOE-K12-01 Build relationships', null
+          union all select 'a8', 'u1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', 'CVOE-K12-13 Command the room', null
     expect:
       format: sql
       rows: |
@@ -121,5 +133,6 @@ unit_tests:
         union all select 'a3', 'u1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', 'l5', 'Lookfors', 'MAT-K12-14 Collects data', 'Monitor Student Thinking', 'K-12 Math'
         union all select 'a4', 'u1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', null, 'Microgoals', '2B.04 Pacing. Create the illusion of speed.', '2B: On Task', '2: Uphold Excellence'
         union all select 'a5', 'u1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', 'm3', 'Microgoals', '3D.01 Magic ratio.', '3D: Joy', '3: Kids Love Learning'
-        union all select 'a5', 'u1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', 'l2', 'Lookfors', 'CVOE-K12-27 Value student voice', 'Cognitive Engagement', 'CVoE'
         union all select 'a6', 'u1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', null, null, 'Free text goal', null, null
+        union all select 'a7', 'u1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', 'l1', 'Lookfors', 'CVOE-K12-01 Build relationships', 'CVoE', null
+        union all select 'a8', 'u1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', 'l6', 'Lookfors', 'CVOE-K12-13 Command the room', 'Behavioral Engagement', 'CVoE'

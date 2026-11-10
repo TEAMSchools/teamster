@@ -29,8 +29,8 @@ with
                 then 1
                 else 0
             end as depth,
-        /* Grow tag trees are at most three levels below their root */
         from tags as t
+        /* Grow tag trees are at most three levels below their root */
         left join tags as p1 on t.parent_id = p1.tag_id
         left join tags as p2 on p1.parent_id = p2.tag_id
         left join tags as p3 on p2.parent_id = p3.tag_id
@@ -69,7 +69,49 @@ with
             max(if(is_lookfor_category, depth, null)) over (
                 partition by assignment_id
             ) as lookfor_max_depth,
+
+            logical_or(is_microgoal) over (partition by assignment_id) as has_microgoal,
         from assignment_tags
+    ),
+
+    lookfor_candidates as (
+        select
+            assignment_id,
+            tag_id,
+            tag_name,
+            parent_1_name,
+            parent_2_name,
+            root_name,
+            depth,
+            is_microgoal,
+
+            /*
+              a look-for's category is its most specific one; when the assignment
+              holds a microgoal, its name is the microgoal's, so no look-for row
+            */
+            is_lookfor_category
+            and depth = lookfor_max_depth
+            and not has_microgoal as is_lookfor_candidate,
+        from assignment_tags_ranked
+    ),
+
+    lookfor_picks as (
+        select
+            assignment_id,
+            tag_id,
+            tag_name,
+            parent_1_name,
+            parent_2_name,
+            root_name,
+            depth,
+            is_microgoal,
+            is_lookfor_candidate,
+
+            /* two categories at the same depth: keep the alphabetically first */
+            min(if(is_lookfor_candidate, tag_name, null)) over (
+                partition by assignment_id
+            ) as lookfor_category_name,
+        from lookfor_candidates
     ),
 
     goal_tags as (
@@ -83,10 +125,11 @@ with
             depth,
             is_microgoal,
 
-            /* a look-for's goal tag is its most specific category */
             is_microgoal
-            or (is_lookfor_category and depth = lookfor_max_depth) as is_goal_tag,
-        from assignment_tags_ranked
+            or (
+                is_lookfor_candidate and tag_name = lookfor_category_name
+            ) as is_goal_tag,
+        from lookfor_picks
     ),
 
     microgoal_strands as (
