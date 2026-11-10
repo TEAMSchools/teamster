@@ -142,6 +142,22 @@ def test_mixed_partition_fits_each_set():
     assert all(r["pc1_current"] is not None for r in records)
 
 
+def test_global_iqr_flag_stays_in_its_own_round():
+    df = _frame(("etr_so", 2024, "PM1", 10), ("etr_so", 2025, "PM3", 10))
+
+    # the same observer scores in both rounds, extreme only in 2025 PM3
+    observer = int(df.loc[0, "observer_employee_number"])
+    df.loc[10, "observer_employee_number"] = observer
+    df.loc[0, "overall_score"] = 2.5
+    df.loc[10, "overall_score"] = 40.0
+
+    flagged = _by_observer(score_partition(df, 2025, "PM3"))[observer]
+    other_round = _by_observer(score_partition(df, 2024, "PM1"))[observer]
+
+    assert flagged["is_iqr_outlier_global"] is True
+    assert other_round["is_iqr_outlier_global"] is False
+
+
 def test_tree_outliers_repeat_across_runs():
     df = _frame(("etr_so", 2024, "PM1", 30), ("etr_so", 2025, "PM3", 30))
 

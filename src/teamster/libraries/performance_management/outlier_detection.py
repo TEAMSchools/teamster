@@ -65,15 +65,11 @@ def _iqr_outliers(df: pandas.DataFrame) -> pandas.Series:
 
     iqr = q3 - q1
 
-    outliers_array = numpy.where(
-        (df["overall_score"] < q1 - 1.5 * iqr) | (df["overall_score"] > q3 + 1.5 * iqr)
-    )[0]
+    # per row, so an observer's flag in one round does not spread to their others
+    score = df["overall_score"]
 
     return check.inst(
-        obj=df["observer_employee_number"].isin(
-            df.loc[outliers_array]["observer_employee_number"].tolist()
-        ),
-        ttype=pandas.Series,
+        obj=(score < q1 - 1.5 * iqr) | (score > q3 + 1.5 * iqr), ttype=pandas.Series
     )
 
 
