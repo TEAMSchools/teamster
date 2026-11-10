@@ -58,20 +58,37 @@ Verified in #5230 across 13 publishes on REST API 3.25 with
   edit deliberately added. `<worksheets>` and `<dashboards>` list every sheet
   whether publishable or not and are the wrong source. Pass the result as
   `hidden_views` on the `WorkbookItem`.
-- **Embedded connection credentials.** A publish without a `connections=[...]`
-  list drops them. The scratch copy hides this because the packaged extract
-  still renders; the owner sees a failing refresh or a credential prompt later.
-  How to put them back is **not settled**: #5230 reports `update_connection`
-  with `oauth = True`, but in the installed library `oauth` exists only on
-  `ConnectionCredentials` and the request builder `update_connection` uses never
-  emits it; the only path that does is `publish(connections=[...])`, which #5230
-  saw report success on a live-connection workbook while leaving
-  `embed_password` false (a value the library also returns when the server omits
-  the attribute). Until a probe settles the call, say in the hand-over that
-  credentials were not carried, and treat re-embedding a service account's
-  credential as the owner's decision. Never write a key into a throwaway test
-  file; the 1Password fixture in `tests/conftest.py` supplies secrets at run
-  time.
+- **Embedded connection credentials.** A publish drops them: every connection on
+  the published item reads `embed_password=False`. The scratch copy hides this
+  because the packaged extract still renders; the owner sees failing scheduled
+  refreshes later. Put them back in the same session as the publish. Verified on
+  BigQuery connections that sign in with a saved OAuth credential
+  (`server-oauth='server-custom'` on the `.twb` `<connection>`):
+  1. Before the publish, `populate_connections` on the overwrite target and
+     record each connection's `username`.
+  2. After it, set each connection on the published item to that `username`,
+     `embed_password = True` and `password = ""`, then call
+     `server.workbooks.update_connection(item, c)`. No secret passes through the
+     code; the server re-attaches the saved credential that username already has
+     on the site (Inferred mechanism, Verified outcome).
+  3. Read the connections back (`embed_password` True, same `username`), then
+     `server.workbooks.refresh(item.id)` and wait for the job to end in
+     `Success`. Only a successful refresh proves the credential works; an
+     extract-backed render does not need it. Poll as in _Sessions and jobs_.
+
+  ```python
+  for c in item.connections:  # after server.workbooks.populate_connections(item)
+      c.username, c.embed_password, c.password = username, True, ""
+      server.workbooks.update_connection(item, c)
+  ```
+
+  `publish(connections=[...])` cannot do this for BigQuery: the library raises
+  `Connection must have a server address`, and BigQuery connections have none. A
+  connection that signs in with a password or key file instead of a saved OAuth
+  credential is unprobed; say so in the hand-over rather than assuming this
+  works. Never write a key into a throwaway test file; the 1Password fixture in
+  `tests/conftest.py` supplies secrets at run time.
+
 - **Revision number.** Every Overwrite on this site created a revision (131 to
   132, 107 to 108, 45 to 46, 100 to 101). Call `populate_revisions` on the
   target before publishing and record the current number in the hand-over so the
@@ -188,6 +205,19 @@ server.views.populate_image(view, opts)
 Setting a parameter through the render API bypasses the domain check that a real
 click performs. A render once "proved" a parameter action that was still broken.
 
+A blank render (every quick filter reading `None`) is often a filter value with
+no rows, not a broken build: a `vf` location whose region has no rows for the
+selected period empties the whole dashboard. Render an unfiltered control and
+the untouched production view with the same filters before suspecting the edit.
+
+Links you hand to anyone use the public host. `item.webpage_url` from the
+library, and `webpageUrl` from the Tableau MCP, return the internal
+`http://SAC-RPT-02/...` address, which nobody outside the server can open.
+Replace the scheme and host with `https://tableau.kipp.org`, keeping the
+`/#/site/KIPPNJ/...` path. A view link is
+`https://tableau.kipp.org/#/site/KIPPNJ/views/<workbook content_url>/<view url name>`,
+with no `sheets/` segment.
+
 ## Look at the render
 
 - A full 2732x1800 render may trip output scanning as high-entropy content. Crop
@@ -243,13 +273,23 @@ facts checked against the installed source.
   extract-backed workbook renders from the `.hyper` regardless, so a render
   proves nothing and only a refresh counts.
 - **`jobs.get_by_id` on a `create_extract` job returns server code `400031`**
-  (`REST API does not support background job type :create_extracts`). The
-  jobs-list endpoint (`jobs.get()`, `jobs.filter()`) was not tried and may poll
-  it; until then, watch the workbook's size.
+  (`REST API does not support background job type :create_extracts`). Poll a
+  refresh through the jobs list instead (next bullet).
 - **`jobs.get()` with no id returns a tuple** of a `BackgroundJobItem` list and
   a `PaginationItem`. `BackgroundJobItem` has `title`, `subtitle`, `status`,
   `ended_at`; it has no `workbook_name`, `finish_code`, or `completed_at`, so
-  filtering on `workbook_name` raises `AttributeError`.
+  filtering on `workbook_name` raises `AttributeError`. On a `refresh_extracts`
+  job `title` and `subtitle` come back `None`, so nothing names the workbook:
+  sort newest first and match on `type` plus a `created_at` just after your
+  `refresh` call. Run each poll in a fresh `with server.auth.sign_in(auth)`
+  block, so a dropped session costs one poll, not the loop:
+
+  ```python
+  ro = tsc.RequestOptions(pagesize=20)
+  ro.sort.add(tsc.Sort(tsc.RequestOptions.Field.CreatedAt, tsc.RequestOptions.Direction.Desc))
+  jobs, _ = server.jobs.get(ro)
+  ```
+
 - **`populate_csv` on a dashboard returned 0 rows, and so did the control.**
   Export from a worksheet, or render and read the image. The lesson is in
   [failure-catalog.md](failure-catalog.md): the test was wrong before the
