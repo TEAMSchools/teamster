@@ -3,17 +3,17 @@ sources:
     description: >-
       Miami's PowerSchool archive (Miami's SIS moved to Focus). Permanent
       history source for stored grades, attendance, the course enrollments they
-      hang off, section teachers, teacher grade levels, terms, and the calendars
-      the network calendar models read. Enrollment stints are deliberately
-      absent — Focus is Miami's sole enrollment source across all years, so
-      unioning the archive's stints double-counts every row. Terms, calendars
-      and teacher grade levels are the opposite case, and that is why they are
-      here: Focus data starts at the AY2026 SIS cutover, so the archive covers
-      the earlier years. The archive carries the 8400 Focus prefix on
-      student_number and ends at AY2025; the rebuild recipe is in
-      src/dbt/kippmiami/CLAUDE.md. The dataset must not be dropped. Declared
-      BQ-native (plain schema, no target branch) so every target reads the prod
-      tables directly.
+      hang off, special-program enrollments (bucket programs), section teachers,
+      teacher grade levels, terms, and the calendars the network calendar models
+      read. School enrollment stints are deliberately absent — Focus is Miami's
+      sole enrollment source across all years, so unioning the archive's stints
+      double-counts every row. Terms, calendars and teacher grade levels are the
+      opposite case, and that is why they are here: Focus data starts at the
+      AY2026 SIS cutover, so the archive covers the earlier years. The archive
+      carries the 8400 Focus prefix on student_number and ends at AY2025; the
+      rebuild recipe is in src/dbt/kippmiami/CLAUDE.md. The dataset must not be
+      dropped. Declared BQ-native (plain schema, no target branch) so every
+      target reads the prod tables directly.
     schema: kippmiami_powerschool
     tables:
       - name: stg_powerschool__courses
@@ -142,6 +142,15 @@ sources:
                 - kippmiami
                 - powerschool
                 - int_powerschool__teacher_grade_levels
+      - name: int_powerschool__spenrollments
+        config:
+          meta:
+            dagster:
+              group: powerschool
+              asset_key:
+                - kippmiami
+                - powerschool
+                - int_powerschool__spenrollments
       - name: int_powerschool__calendar_day
         config:
           meta:
