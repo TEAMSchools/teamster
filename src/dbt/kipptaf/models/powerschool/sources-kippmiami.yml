@@ -142,6 +142,15 @@ sources:
                 - kippmiami
                 - powerschool
                 - int_powerschool__teacher_grade_levels
+      - name: int_powerschool__spenrollments
+        config:
+          meta:
+            dagster:
+              group: powerschool
+              asset_key:
+                - kippmiami
+                - powerschool
+                - int_powerschool__spenrollments
       - name: int_powerschool__calendar_day
         config:
           meta:

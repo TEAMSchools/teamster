@@ -22,7 +22,7 @@ with
         from {{ ref("int_powerschool__spenrollments") }} as sp
         inner join
             {{ ref("int_extracts__student_enrollments") }} as co
-            on sp.studentid = co.studentid
+            on sp.student_number = co.student_number
             and sp.academic_year = co.academic_year
             and sp._dbt_source_project = co._dbt_source_project
         where sp.specprog_name like 'Bucket%' and co.rn_year = 1
