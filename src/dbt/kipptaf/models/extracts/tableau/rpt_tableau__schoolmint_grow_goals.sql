@@ -41,12 +41,11 @@ select
     rt.end_date,
     rt.is_current,
 
-    m.tag_id as goal_code,
-    m.tag_name as goal_name,
-    m.strand_name,
-    m.bucket_name,
-    m.goal_type_name,
-
+    a.goal_tag_id as goal_code,
+    a.goal_name,
+    a.strand_name,
+    a.bucket_name,
+    a.goal_type_name,
     a.assignment_id,
     a.created as assignment_date,
     a.creator_name as observer,
@@ -71,13 +70,9 @@ left join
     {{ ref("stg_schoolmint_grow__users") }} as u
     on srh.employee_number = u.internal_id_int
 left join
-    {{ ref("stg_schoolmint_grow__assignments") }} as a
+    {{ ref("int_schoolmint_grow__assignments__goals") }} as a
     on u.user_id = a.user_id
     and a.created_date_local between rt.start_date and rt.end_date
-left join
-    {{ ref("int_schoolmint_grow__assignments__tags") }} as t
-    on a.assignment_id = t.assignment_id
-left join {{ ref("int_schoolmint_grow__microgoals") }} as m on t.tag_id = m.tag_id
 left join
     {{ ref("int_students__teacher_grade_levels") }} as tgl
     on srh.powerschool_teacher_number = tgl.teachernumber

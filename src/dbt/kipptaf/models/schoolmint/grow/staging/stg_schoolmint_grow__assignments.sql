@@ -51,5 +51,11 @@ select
     date(
         cast(created as timestamp), '{{ var("local_timezone") }}'
     ) as created_date_local,
+
+    {{ parse_html("`name`") }} as name_text,
+
+    regexp_extract(
+        {{ parse_html("`name`") }}, r'^([1-9][A-Z])\.[0-9]'
+    ) as microgoal_strand_code,
 from deduplicate
 where _dagster_partition_archived = 'f'

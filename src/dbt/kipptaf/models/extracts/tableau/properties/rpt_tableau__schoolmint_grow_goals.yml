@@ -1,5 +1,23 @@
 models:
   - name: rpt_tableau__schoolmint_grow_goals
+    description: >-
+      SchoolMint Grow goal assignments for the SchoolMint Grow Dashboard's
+      Microgoals tab. One row per active teacher, microgoal tracking period,
+      assignment, and goal; a teacher with no assignment in the period keeps one
+      row with is_assigned 0, so completion counts include them.
+    data_tests:
+      # TODO(#6351): a roster record that changes mid-period repeats the
+      # teacher; flip to error once one record wins.
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - employee_number
+              - tracking_code
+              - start_date
+              - assignment_id
+              - goal_code
+          config:
+            severity: warn
     columns:
       - name: location_clean_name
         data_type: string
@@ -18,14 +36,25 @@ models:
           - not_null
       - name: employee_number
         data_type: int64
+        description: The teacher's employee number.
+        config:
+          meta:
+            contains_pii: true
       - name: teammate
         data_type: string
+        description: The teacher's name.
+        config:
+          meta:
+            contains_pii: true
       - name: grade_band
         data_type: string
+        description: Grade band of the teacher's home work location.
       - name: campus_name
         data_type: string
+        description: Campus of the teacher's location.
       - name: home_department_name
         data_type: string
+        description: The teacher's home department in the staff roster.
       - name: job_function
         data_type: string
         description: >-
@@ -33,54 +62,110 @@ models:
           job function for the person.
       - name: job_title
         data_type: string
+        description: The teacher's job title.
       - name: manager
         data_type: string
+        description: Name of the teacher's manager.
+        config:
+          meta:
+            contains_pii: true
       - name: worker_original_hire_date
         data_type: date
+        description: The teacher's original hire date.
+        config:
+          meta:
+            contains_pii: true
       - name: assignment_status
         data_type: string
+        description: The teacher's roster assignment status, always Active here.
       - name: mail
         data_type: string
         description: Post-cutover Tableau identity.
+        config:
+          meta:
+            contains_pii: true
       - name: user_principal_name
         data_type: string
+        description: The teacher's directory sign-in name.
+        config:
+          meta:
+            contains_pii: true
       - name: sam_account_name
         data_type: string
+        description: The teacher's directory account name.
+        config:
+          meta:
+            contains_pii: true
       - name: reports_to_mail
         data_type: string
+        description: Manager's email; drives the Tableau manager gate.
+        config:
+          meta:
+            contains_pii: true
       - name: reports_to_sam_account_name
         data_type: string
+        description: Manager's directory account name; drives the manager gate.
+        config:
+          meta:
+            contains_pii: true
       - name: tracking_type
         data_type: string
+        description: Reporting-term type, always MG (microgoals) here.
       - name: tracking_code
         data_type: string
+        description: Code of the microgoal tracking period.
       - name: tracking_rubric
         data_type: string
+        description: Name of the microgoal tracking period.
       - name: tracking_academic_year
         data_type: int64
+        description: Academic year of the tracking period.
       - name: start_date
         data_type: date
+        description: First day of the tracking period.
       - name: end_date
         data_type: date
+        description: Last day of the tracking period.
       - name: is_current
         data_type: boolean
+        description: Whether the tracking period is the current one.
       - name: goal_code
         data_type: string
+        description: >-
+          Grow tag id of the microgoal or look-for category. Null for an
+          assignment with no goal tag, and on rows with no assignment.
       - name: goal_name
         data_type: string
+        description: >-
+          The goal the coach assigned. A microgoal's tag name, or a look-for's
+          indicator text. See int_schoolmint_grow__assignments__goals.
       - name: strand_name
         data_type: string
+        description: >-
+          Microgoal strand, or a look-for's most specific category.
       - name: bucket_name
         data_type: string
+        description: The category one level above strand_name.
       - name: goal_type_name
         data_type: string
+        description: Root of the goal's tag tree, Microgoals or Lookfors.
       - name: assignment_id
         data_type: string
+        description: >-
+          Grow assignment id. Null when the teacher has no assignment in the
+          period.
       - name: assignment_date
         data_type: timestamp
+        description: When the assignment was created.
       - name: observer
         data_type: string
+        description: Name of the person who made the assignment.
+        config:
+          meta:
+            contains_pii: true
       - name: grade_taught
         data_type: int64
+        description: The grade the teacher teaches most, from PowerSchool.
       - name: is_assigned
         data_type: int64
+        description: 1 when the row has an assignment, 0 otherwise.
