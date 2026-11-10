@@ -3,6 +3,8 @@
 view: student_attendance_enrollment_daily_view
 fact: kipptaf_marts.fct_student_attendance_enrollment_daily
 time_dimension: attendance_date
+tasks:
+  cube_fix: "#6345"
 shared:
   # One row per student and code day, as rpt_tableau__attendance_dashboard
   # keeps them.
