@@ -27,10 +27,11 @@ from teamster.libraries.dlt.probe import (
 
 FOCUS_SOURCE_NAME = "focus"
 FOCUS_DB_SCHEMA = "public"
-# Each chunk becomes one parquet row group, and normalize rewrites one row group
-# at a time, so step-pod peak memory scales with chunk size times row width.
+# Each chunk becomes one parquet row group, and dlt's arrow normalizer rewrites
+# one row group at a time (`REWRITE_ROW_GROUPS`; re-check on a dlt upgrade), so
+# step-pod peak memory scales with chunk size times row width.
 # `custom_field_log_entries` rows are far wider than any other table's and set
-# that peak; a smaller chunk costs no measurable extract time.
+# that peak. A smaller chunk only adds server-side cursor fetch round trips.
 FOCUS_CHUNK_SIZE = 10000
 
 REFRESH_MODES = frozenset(get_args(TRefreshMode))
