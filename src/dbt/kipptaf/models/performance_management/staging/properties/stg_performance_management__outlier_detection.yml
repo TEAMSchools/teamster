@@ -1,98 +1,178 @@
 models:
   - name: stg_performance_management__outlier_detection
+    description: >-
+      One row per observer per PM round: the output of the Dagster
+      performance_management outlier_detection asset, which reads
+      rpt_python__manager_pm_averages and flags observers whose scoring pattern
+      stands out. Each run fits the current round on its own (`_current`) and
+      every round together (`_global`).
     config:
       contract:
         enforced: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - observer_employee_number
+              - academic_year
+              - form_term
+          config:
+            severity: error
     columns:
       - name: observer_employee_number
         data_type: int64
+        description: Employee number of the observer who scored the forms.
+        config:
+          meta:
+            contains_pii: true
       - name: academic_year
         data_type: int64
+        description: Academic year of the round, as its starting calendar year.
       - name: form_term
         data_type: string
+        description: PM round code (PM1-PM3).
       - name: term_num
         data_type: int64
+        description: Round number parsed from form_term.
       - name: is_iqr_outlier_current
         data_type: boolean
+        description:
+          True when the observer falls outside the interquartile-range fence for
+          the current round.
       - name: is_iqr_outlier_global
         data_type: boolean
+        description:
+          True when the observer falls outside the interquartile-range fence
+          across all rounds.
       - name: cluster_current
         data_type: int64
+        description:
+          Cluster label from clustering the current round; -1 marks noise.
       - name: cluster_global
         data_type: int64
+        description: Cluster label from clustering all rounds; -1 marks noise.
       - name: tree_outlier_current
         data_type: int64
+        description:
+          Tree-based detector label for the current round; -1 marks an outlier.
       - name: tree_outlier_global
         data_type: int64
+        description:
+          Tree-based detector label across all rounds; -1 marks an outlier.
       - name: pc1_current
         data_type: float64
+        description:
+          Observer's first principal component score, fit on the current round.
       - name: pc1_global
         data_type: float64
+        description:
+          Observer's first principal component score, fit on all rounds.
       - name: pc1_variance_explained_current
         data_type: float64
+        description:
+          Share of variance the first component explains, current-round fit.
       - name: pc1_variance_explained_global
         data_type: float64
+        description:
+          Share of variance the first component explains, all-rounds fit.
       - name: pc2_current
         data_type: float64
+        description:
+          Observer's second principal component score, fit on the current round.
       - name: pc2_global
         data_type: float64
+        description:
+          Observer's second principal component score, fit on all rounds.
       - name: pc2_variance_explained_current
         data_type: float64
+        description:
+          Share of variance the second component explains, current-round fit.
       - name: pc2_variance_explained_global
         data_type: float64
+        description:
+          Share of variance the second component explains, all-rounds fit.
       - name: overall_score
         data_type: float64
+        description:
+          Observer's overall_score from rpt_python__manager_pm_averages.
       - name: etr1a
         data_type: float64
+        description: Observer's average row score on rubric measure ETR1A.
       - name: etr1b
         data_type: float64
+        description: Observer's average row score on rubric measure ETR1B.
       - name: etr2a
         data_type: float64
+        description: Observer's average row score on rubric measure ETR2A.
       - name: etr2b
         data_type: float64
+        description: Observer's average row score on rubric measure ETR2B.
       - name: etr2c
         data_type: float64
+        description: Observer's average row score on rubric measure ETR2C.
       - name: etr2d
         data_type: float64
+        description: Observer's average row score on rubric measure ETR2D.
       - name: etr3a
         data_type: float64
+        description: Observer's average row score on rubric measure ETR3A.
       - name: etr3b
         data_type: float64
+        description: Observer's average row score on rubric measure ETR3B.
       - name: etr3c
         data_type: float64
+        description: Observer's average row score on rubric measure ETR3C.
       - name: etr3d
         data_type: float64
+        description: Observer's average row score on rubric measure ETR3D.
       - name: etr4a
         data_type: float64
+        description: Observer's average row score on rubric measure ETR4A.
       - name: etr4b
         data_type: float64
+        description: Observer's average row score on rubric measure ETR4B.
       - name: etr4c
         data_type: float64
+        description: Observer's average row score on rubric measure ETR4C.
       - name: etr4d
         data_type: float64
+        description: Observer's average row score on rubric measure ETR4D.
       - name: etr4e
         data_type: float64
+        description: Observer's average row score on rubric measure ETR4E.
       - name: etr4f
         data_type: float64
+        description: Observer's average row score on rubric measure ETR4F.
       - name: etr5a
         data_type: float64
+        description: Observer's average row score on rubric measure ETR5A.
       - name: etr5b
         data_type: float64
+        description: Observer's average row score on rubric measure ETR5B.
       - name: etr5c
         data_type: float64
+        description: Observer's average row score on rubric measure ETR5C.
       - name: so1
         data_type: float64
+        description: Observer's average row score on rubric measure SO01.
       - name: so2
         data_type: float64
+        description: Observer's average row score on rubric measure SO02.
       - name: so3
         data_type: float64
+        description: Observer's average row score on rubric measure SO03.
       - name: so4
         data_type: float64
+        description: Observer's average row score on rubric measure SO04.
       - name: so5
         data_type: float64
+        description: Observer's average row score on rubric measure SO05.
       - name: so6
         data_type: float64
+        description: Observer's average row score on rubric measure SO06.
       - name: so7
         data_type: float64
+        description: Observer's average row score on rubric measure SO07.
       - name: so8
         data_type: float64
+        description: Observer's average row score on rubric measure SO08.

@@ -1,6 +1,14 @@
 with
+    -- regions can close a round on different dates; take 1 end date per round
+    round_end_dates as (
+        select academic_year, code, max(end_date) as end_date,
+        from {{ ref("stg_google_sheets__reporting__terms") }}
+        where type in ('PM', 'PMS') and name in ('Coach ETR', 'Coach Scores')
+        group by academic_year, code
+    ),
+
     score_dates as (
-        select distinct
+        select
             od.observer_employee_number,
             od.academic_year,
             od.form_term as reporting_term,
@@ -50,46 +58,23 @@ with
             timestamp(rt.end_date) as end_date_timestamp,
         from {{ ref("stg_performance_management__outlier_detection") }} as od
         inner join
-            {{ ref("stg_google_sheets__reporting__terms") }} as rt
+            round_end_dates as rt
             on od.academic_year = rt.academic_year
             and od.form_term = rt.code
-            and rt.type in ('PM', 'PMS')
-            and (rt.name = 'Coach ETR' or rt.name = 'Coach Scores')
     ),
 
     score_aggs as (
         select
-            obs.employee_number,
-            obs.observer_employee_number,
-            obs.academic_year,
-            obs.term_code,
+            employee_number,
+            observer_employee_number,
+            academic_year,
+            term_code,
 
-            srh.home_department_name,
-            srh.job_title,
-            srh.home_work_location_name,
-            srh.formatted_name,
-            srh.reports_to_formatted_name,
-
-            avg(obs.observation_score) as overall_score,
-        from {{ ref("int_performance_management__observation_details") }} as obs
-        inner join
-            {{ ref("int_people__staff_roster_history") }} as srh
-            on obs.employee_number = srh.employee_number
-            and obs.observed_at_timestamp
-            between srh.effective_date_start_timestamp
-            and srh.effective_date_end_timestamp
-            and obs.rubric_name
-            in ('Coach ETR', 'Coach ETR and Reflection: Part 1 - Scores')
-        group by
-            obs.employee_number,
-            obs.observer_employee_number,
-            obs.academic_year,
-            obs.term_code,
-            srh.home_department_name,
-            srh.job_title,
-            srh.home_work_location_name,
-            srh.formatted_name,
-            srh.reports_to_formatted_name
+            avg(observation_score) as overall_score,
+            max(observed_at_timestamp) as last_observed_at_timestamp,
+        from {{ ref("int_performance_management__observation_details") }}
+        where observation_type_abbreviation in ('PM', 'PMS')
+        group by employee_number, observer_employee_number, academic_year, term_code
     )
 
 select
@@ -140,19 +125,52 @@ select
     srh.reports_to_formatted_name as observer_manager,
 
     sa.employee_number as teacher_employee_number,
-    sa.formatted_name as teacher_name,
-    sa.home_department_name as teacher_department,
-    sa.job_title as teacher_job_title,
-    sa.home_work_location_name as teacher_location,
-    sa.reports_to_formatted_name as teacher_manager,
     sa.overall_score as teacher_overall_score,
 
-    if(sd.is_iqr_outlier_current, 'outlier', 'not outlier') as iqr_current,
-    if(sd.is_iqr_outlier_global, 'outlier', 'not outlier') as iqr_global,
-    if(sd.cluster_current = -1, 'outlier', 'not outlier') as cluster_current,
-    if(sd.cluster_global = -1, 'outlier', 'not outlier') as cluster_global,
-    if(sd.tree_outlier_current = -1, 'outlier', 'not outlier') as tree_current,
-    if(sd.tree_outlier_global = -1, 'outlier', 'not outlier') as tree_global,
+    tsrh.formatted_name as teacher_name,
+    tsrh.home_department_name as teacher_department,
+    tsrh.job_title as teacher_job_title,
+    tsrh.home_work_location_name as teacher_location,
+    tsrh.reports_to_formatted_name as teacher_manager,
+
+    /* the script leaves these null for a group too small to fit; keep them
+    null rather than reporting "not outlier" */
+    case
+        when sd.is_iqr_outlier_current
+        then 'outlier'
+        when not sd.is_iqr_outlier_current
+        then 'not outlier'
+    end as iqr_current,
+    case
+        when sd.is_iqr_outlier_global
+        then 'outlier'
+        when not sd.is_iqr_outlier_global
+        then 'not outlier'
+    end as iqr_global,
+    case
+        when sd.cluster_current = -1
+        then 'outlier'
+        when sd.cluster_current is not null
+        then 'not outlier'
+    end as cluster_current,
+    case
+        when sd.cluster_global = -1
+        then 'outlier'
+        when sd.cluster_global is not null
+        then 'not outlier'
+    end as cluster_global,
+    case
+        when sd.tree_outlier_current = -1
+        then 'outlier'
+        when sd.tree_outlier_current is not null
+        then 'not outlier'
+    end as tree_current,
+    case
+        when sd.tree_outlier_global = -1
+        then 'outlier'
+        when sd.tree_outlier_global is not null
+        then 'not outlier'
+    end as tree_global,
 from score_dates as sd
 inner join
     {{ ref("int_people__staff_roster_history") }} as srh
@@ -165,3 +183,9 @@ inner join
     on sd.observer_employee_number = sa.observer_employee_number
     and sd.academic_year = sa.academic_year
     and sd.reporting_term = sa.term_code
+left join
+    {{ ref("int_people__staff_roster_history") }} as tsrh
+    on sa.employee_number = tsrh.employee_number
+    and sa.last_observed_at_timestamp
+    between tsrh.effective_date_start_timestamp and tsrh.effective_date_end_timestamp
+    and tsrh.primary_indicator
