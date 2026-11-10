@@ -15,10 +15,10 @@ VS Code tasks and scripts. Human-facing GCloud auth and plugin setup docs are in
   available unless you `source "${HOME}/.local/bin/env"` first
 - Task scripts must also use `uv run` for venv-installed tools (`dbt`,
   `dagster`, etc.) — the venv is not activated in task shells
-- Trunk actions (`post-merge.sh` runs as one) get no `containerEnv` variables,
-  only a bare `HOME` and `PATH`. A script that runs `uv` under trunk exports
-  `UV_CACHE_DIR` and `UV_LINK_MODE` itself, or uv copies the whole `.venv`
-  through `~/.cache/uv`
+- Trunk actions (`post-merge.sh` runs as one) get none of the `containerEnv`
+  variables. A script that runs `uv` under trunk exports `UV_CACHE_DIR` and
+  `UV_LINK_MODE` itself, or uv uses `~/.cache/uv` and copies every package into
+  the `.venv` instead of hardlinking it
 
 ## File Watcher
 

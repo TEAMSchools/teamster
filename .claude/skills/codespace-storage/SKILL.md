@@ -27,24 +27,25 @@ several paths. Report first; delete only what the user picks.
 
 ## What to report, and what each action frees
 
-| Item                          | Action                                              | Frees                                                                          |
-| ----------------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------ |
-| `~/.cache/uv`                 | Find the cause first (below), then `rm -rf`         | All of it                                                                      |
-| `/workspaces/.uv-cache`       | `uv cache clean`                                    | Only the link-count-1 part. `.venv` files survive; next sync re-downloads      |
-| Same, gentler                 | `uv cache prune`                                    | Only entries uv's own index dropped. Old versions it still lists stay. Measure |
-| `~/.npm`                      | `npm cache clean --force` AND `rm -rf ~/.npm/_npx`  | `npm cache clean` skips `_npx` (MCP server packages)                           |
-| `~/.cache/trunk`              | `trunk cache clean --all`                           | Tools re-download on next lint                                                 |
-| `~/.vscode-remote/extensions` | Delete the older of two same-name version folders   | Confirm which version VS Code runs first                                       |
-| `~/.claude/projects`          | Ask. Session transcripts; deleting drops history    | Up to its size                                                                 |
-| A worktree `.venv`            | `rm -rf <worktree>/.venv`; rebuilt on next `uv run` | Less than its `du`: shared files stay                                          |
+| Item                          | Action                                              | Frees                                                                     |
+| ----------------------------- | --------------------------------------------------- | ------------------------------------------------------------------------- |
+| `~/.cache/uv`                 | Find the cause first (below), then `rm -rf`         | All of it                                                                 |
+| `/workspaces/.uv-cache`       | `uv cache clean`                                    | Only the link-count-1 part. `.venv` files survive; next sync re-downloads |
+| Same, gentler                 | `uv cache prune`                                    | Only dangling entries. Old versions uv still indexes stay. Measure        |
+| `~/.npm`                      | `npm cache clean --force` AND `rm -rf ~/.npm/_npx`  | `npm cache clean` skips `_npx` (MCP server packages)                      |
+| `~/.cache/trunk`              | `trunk cache clean --all`                           | Tools re-download on next lint                                            |
+| `~/.vscode-remote/extensions` | Delete the older of two same-name version folders   | Confirm which version VS Code runs first                                  |
+| `~/.claude/projects`          | Ask. Session transcripts; deleting drops history    | Up to its size                                                            |
+| A worktree `.venv`            | `rm -rf <worktree>/.venv`; rebuilt on next `uv run` | Less than its `du`: shared files stay                                     |
 
 ## Worktrees
 
 Removable = merged into a freshly fetched `origin/main` AND
-`git status --porcelain` empty. A branch whose tip equals `origin/main` HEAD
-passes the merged check vacuously: uncommitted files there are new work, so skip
-it. Use `git worktree remove` (no `--force`), then `git worktree prune`. Leave
-the branches alone.
+`git status --porcelain` empty. Removal deletes gitignored files without a
+warning, so list them with `git -C <worktree> status --porcelain --ignored` and
+name any that are not rebuildable (`.claude/scratch/` notes, local data). Use
+`git worktree remove` (no `--force`), then `git worktree prune`. Leave the
+branches alone.
 
 ## `~/.cache/uv` exists: something runs uv without the container's settings
 
