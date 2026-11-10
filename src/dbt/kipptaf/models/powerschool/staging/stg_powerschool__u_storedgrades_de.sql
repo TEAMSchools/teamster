@@ -1,5 +1,6 @@
 with
     union_relations as (
+        -- Paterson disables its stg_powerschool__u_storedgrades_de.
         {{
             dbt_utils.union_relations(
                 relations=[

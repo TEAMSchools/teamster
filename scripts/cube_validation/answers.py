@@ -35,8 +35,10 @@ from .report import (
     _safe_reason,
     defined_comparisons,
     definition_text,
+    mask,
     question_parts,
     question_reason,
+    question_reasons,
     without_sql,
 )
 
@@ -412,12 +414,13 @@ def _shown_number(x: float | None) -> str | None:
     """Mask a whole number under `MASK_BELOW`, whatever the measure is called.
 
     A measure's name does not say whether it counts people, so any whole value
-    under 10 reads `<10`; a rate or other fraction prints as it is.
+    under `MASK_BELOW` reads as `mask` labels it; a rate or other fraction
+    prints as it is.
     """
     if x is None:
         return None
     if float(x).is_integer() and x < MASK_BELOW:
-        return "<10"
+        return mask(int(x))
     return f"{x:g}"
 
 
@@ -773,10 +776,14 @@ def questions_json(
                 ],
                 {(c["view"], c["comparison"]) for c in checks if "none" not in c},
             )
+        # Only a merged question with differing reasons gets the list; a JSON
+        # read without it still has the one `reason` string.
+        reasons = question_reasons(q)
         out.append(
             {
                 "id": f"Q{n}",
                 "reason": question_reason(q),
+                **({"reasons": reasons} if len(reasons) > 1 else {}),
                 "decisions": [d.id for _, d in q["decisions"]],
                 "views": views,
                 "definitions": defs,

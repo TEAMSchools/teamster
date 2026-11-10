@@ -1,0 +1,7 @@
+models:
+  - name: int_focus__apex_band_levels
+    description: >-
+      Kipptaf-level union_relations passthrough of kippmiami's
+      int_focus__apex_band_levels — Focus Assessments band levels of live band
+      sets, one row per band, with its position and mastery flag. Column docs
+      and tests live on the kippmiami source model.

@@ -124,9 +124,11 @@ def mask(n: int) -> str:
         n: A count of rows or students.
 
     Returns:
-        `<10` when `n` is under 10, else the digits.
+        `<` and `MASK_BELOW` (`<10`) when `n` is under `MASK_BELOW`, else the
+        digits. The only place the label is built, so raising `MASK_BELOW`
+        moves every mask and its label together.
     """
-    return "<10" if n < MASK_BELOW else str(n)
+    return f"<{MASK_BELOW}" if n < MASK_BELOW else str(n)
 
 
 SUPPRESSED = "masked"
@@ -158,7 +160,7 @@ def suppress(total: int, parts: list[int]) -> tuple[str, list[str]]:
     ):
         extra.add(shown.pop(0))
     texts = [
-        "<10" if i in hidden else SUPPRESSED if i in extra else str(n)
+        mask(n) if i in hidden else SUPPRESSED if i in extra else str(n)
         for i, n in enumerate(parts)
     ]
     if hidden and not extra and total >= MASK_BELOW:
@@ -647,6 +649,7 @@ def _questions(
             key or (d.reason, d.task),
             {
                 "reason": d.reason,
+                "reasons": [],
                 "task": d.task,
                 "parts": [],
                 "kinds": [],
@@ -659,6 +662,7 @@ def _questions(
         q["kinds"].append(kind)
         q["hidden"] += hidden
         q["decisions"] += [(view, x) for x in decisions]
+        q["reasons"] += [x.reason for x in decisions if x.reason not in q["reasons"]]
         for cid in comparisons:
             if (view, cid) not in [(v, c) for v, c, _ in q["comparisons"]]:
                 q["comparisons"].append((view, cid, kind))
@@ -777,9 +781,23 @@ def also_decided(
     return out
 
 
+def question_reasons(q: dict) -> list[str]:
+    """Every distinct reason behind a question, scrubbed, in decision order.
+
+    A cause proven on several comparisons is one question, and each
+    comparison's decision may carry its own reason.
+    """
+    raw = q["reasons"] or [q["reason"]]
+    return list(dict.fromkeys(_safe_reason(r, q["hidden"]) for r in raw))
+
+
 def question_reason(q: dict) -> str:
-    """The question's reason as the issue shows it, without its task."""
-    return _safe_reason(q["reason"], q["hidden"])
+    """The question's reason as the issue shows it, without its task: each
+    distinct reason, ended once and joined, so none is dropped."""
+    reasons = question_reasons(q)
+    if len(reasons) == 1:
+        return reasons[0]
+    return " ".join(r if r.endswith(("?", "!", ".")) else f"{r}." for r in reasons)
 
 
 def defined_comparisons(questions: list[dict], view: str) -> set[str]:
@@ -1150,7 +1168,7 @@ def _review_body(
         "",
         f"The {domain} team owns the rule behind {n} {plural} in the Cube validation.",
         "Cube and the dashboard disagree on them, or Cube disagrees with a source outside the dashboards.",
-        "Counts under 10 show as `<10`, and identifiers of students and staff are hidden.",
+        f"Counts under {MASK_BELOW} show as `{mask(0)}`, and identifiers of students and staff are hidden.",
         "",
     ]
     out += _bullets(question_lines + anchor_lines, "Nothing needs review.")

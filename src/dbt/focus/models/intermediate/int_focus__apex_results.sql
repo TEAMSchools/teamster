@@ -136,29 +136,6 @@ with
 
             cast(percent_ratio as float64) as percent_correct,
         from scores_ratio
-    ),
-
-    -- levels carry whole-number bounds with gaps (49, 50), so a band runs up to
-    -- the next band's minimum
-    band_levels as (
-        select
-            band_set_id,
-            label,
-            min_score,
-
-            row_number() over (
-                partition by band_set_id order by min_score
-            ) as label_number,
-
-            coalesce(
-                lead(min_score) over (partition by band_set_id order by min_score),
-                1000000
-            ) as upper_bound,
-
-            min(if(label = 'Level 3', min_score, null)) over (
-                partition by band_set_id
-            ) as mastery_min_score,
-        from {{ ref("stg_focus__apex_band_levels") }}
     )
 
 select
@@ -179,12 +156,10 @@ select
 
     bl.label as performance_band_label,
     bl.label_number as performance_band_label_number,
-
-    -- bare comparison keeps null when the set has no Level 3 band
-    bl.min_score >= bl.mastery_min_score as is_mastery,
+    bl.is_mastery,
 from scores_percent as sp
 left join
-    band_levels as bl
+    {{ ref("int_focus__apex_band_levels") }} as bl
     on sp.performance_band_set_id = bl.band_set_id
     and sp.percent_correct >= bl.min_score
     and sp.percent_correct < bl.upper_bound

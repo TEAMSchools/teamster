@@ -298,6 +298,10 @@ exploration that led nowhere (keep only the conclusion).
 - BigQuery MCP (`execute_sql_readonly`): warehouse inspection (raw rows, schema
   diffs, `INFORMATION_SCHEMA`), engineering tasks, and ad-hoc SQL only after
   `cube meta` shows no view covers the columns.
+- Google Sheet contents (a `src_google_sheets__*` source, an Ops sheet fix):
+  `mcp__claude_ai_Google_Sheets__get_values`, not BigQuery. The BigQuery MCP
+  cannot read sheet-backed externals, and the prod `stg_` table is frozen at its
+  last build.
 - dbt MCP `show`: only when `ref()`/`source()` resolution is needed.
 - Dagster: two servers, one tool per job, and `dagster-plus` (Dagster's own
   hosted server) wins any job it covers. `dagster` (homebrew) keeps what

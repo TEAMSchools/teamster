@@ -1,7 +1,7 @@
 with
     itr_response as (
         select
-            employee_number,
+            respondent_employee_number as employee_number,
             answer,
             academic_year,
             max(date_submitted) as last_date_submitted,
@@ -38,21 +38,12 @@ with
                 else answer
             end as answer_short,
         -- trunk-ignore-end(sqlfluff/LT05)
-        from {{ ref("rpt_tableau__survey_responses") }}
+        from {{ ref("int_surveys__survey_responses") }}
         where
-            survey_code = 'ITR'
+            term_code = 'ITR'
             and question_shortname = 'itr_plans'
             and academic_year = {{ var("current_academic_year") }}
-        group by employee_number, answer, academic_year
-    ),
-
-    pm_tier as (
-        select employee_number, overall_tier, max(eval_date) as eval_date,
-
-        from {{ ref("int_performance_management__observations") }}
-        where observation_type_abbreviation = 'PMS'
-        group by employee_number, overall_tier
-
+        group by respondent_employee_number, answer, academic_year
     )
 
 select
@@ -164,7 +155,11 @@ inner join
     {{ ref("int_people__location_crosswalk") }} as lc
     on sr.home_work_location_name = lc.location_name
 left join itr_response as ir on sr.employee_number = ir.employee_number
-left join pm_tier as pm on sr.employee_number = pm.employee_number
+left join
+    {{ ref("int_performance_management__observations") }} as pm
+    on sr.employee_number = pm.employee_number
+    and pm.observation_type_abbreviation = 'PMS'
+    and pm.rn_employee_type = 1
 
 union all
 

@@ -1,5 +1,14 @@
 models:
   - name: rpt_tableau__school_community_diagnostic
+    description: >-
+      School Community Diagnostic (SCD) answers from staff, students, and
+      families for the School Community Diagnostic Results Tableau workbook, one
+      row per response and question. Google Forms and Alchemer responses are
+      unioned with the family questions from PowerSchool InfoSnap enrollment
+      submissions. Only rounds that have closed appear: a response whose survey
+      round in the reporting terms sheet (type SURVEY) ends today or later is
+      held back, so a round shows up the first time the view is read after its
+      end date. PowerSchool submissions find their round by submission date.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -10,39 +19,116 @@ models:
     columns:
       - name: survey_id
         data_type: string
-      - name: survey_title
-        data_type: string
+        description: >-
+          Form or survey id from the survey platform, or the literal PowerSchool
+          for InfoSnap enrollment submissions.
+        data_tests:
+          - not_null
       - name: survey_response_id
         data_type: string
+        description: >-
+          Id of one submission. For PowerSchool, the submission record id.
+        data_tests:
+          - not_null
+      - name: survey_title
+        data_type: string
+        description: >-
+          Survey title. Matches the round name in the reporting terms sheet,
+          which is how the open-round gate finds each response's round.
       - name: question_shortname
         data_type: string
+        description: >-
+          Question code, used to look up the question text and answer value in
+          the SCD crosswalk sheets.
       - name: date_submitted
         data_type: timestamp
+        description: When the response was submitted.
       - name: academic_year
         data_type: int64
+        description: >-
+          Academic year of the survey round, named by its starting fall year
+          (2026 is 2026-27).
       - name: question_text
         data_type: string
+        description: Question wording from the SCD question crosswalk sheet.
       - name: answer_text
         data_type: string
+        description: >-
+          Answer label from the SCD answer crosswalk sheet. Null when the raw
+          answer has no crosswalk row.
+        config:
+          meta:
+            contains_pii: true
       - name: answer_value
         data_type: int64
+        description: >-
+          Numeric score for the answer from the SCD answer crosswalk sheet, used
+          for averages.
+        config:
+          meta:
+            contains_pii: true
       - name: staff_job_title
         data_type: string
+        description: >-
+          Staff respondent's job title on the submission date. Null for students
+          and families.
       - name: student_spedlep
         data_type: string
+        description: >-
+          Special education and English learner status of the student respondent
+          or the family's student.
+        config:
+          meta:
+            contains_pii: true
       - name: respondent_number
         data_type: int64
+        description: >-
+          Employee number for staff, or student number for students and
+          families.
+        config:
+          meta:
+            contains_pii: true
       - name: region
         data_type: string
+        description: Region of the respondent's school or work location.
       - name: location
         data_type: string
+        description: Respondent's school or work location name.
+        config:
+          meta:
+            contains_pii: true
       - name: race_ethnicity
         data_type: string
+        description: >-
+          Race and ethnicity of the staff respondent, or of the student for
+          student and family responses.
+        config:
+          meta:
+            contains_pii: true
       - name: gender
         data_type: string
+        description: >-
+          Gender identity of the staff respondent, or gender of the student for
+          student and family responses.
+        config:
+          meta:
+            contains_pii: true
       - name: grade_band
         data_type: string
+        description: >-
+          School level of the respondent's school or work location (ES, MS, HS),
+          as the staff roster or enrollment records it. Staff outside a school
+          can carry other values, such as OD.
       - name: grade_level
         data_type: int64
+        description: >-
+          Student's grade level, or for teachers the main grade level they
+          teach.
+        config:
+          meta:
+            contains_pii: true
       - name: survey_audience
         data_type: string
+        description: >-
+          Staff, Student, or Family, derived from the survey title. Always
+          Family for PowerSchool submissions.
