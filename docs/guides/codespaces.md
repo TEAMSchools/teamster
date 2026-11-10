@@ -246,11 +246,13 @@ own, so a call that worked under your user credential can still 403 under ADC.
   `/workspaces/.uv-cache` so the cache sits on the same filesystem as the venvs,
   letting `UV_LINK_MODE=hardlink` share package files instead of copying them
   into every worktree `.venv`. Both settings come from `devcontainer.json`, so a
-  change to either needs a container rebuild. The rebuild discards the old cache
-  at `~/.cache/uv` along with the rest of the home directory, so there is
-  nothing to clean up afterwards. If a host ever puts the cache and
-  `/workspaces` on different filesystems, uv warns and falls back to copying
-  rather than failing.
+  change to either needs a container rebuild. Trunk runs actions without these
+  settings, so a script trunk runs must set them itself, as
+  `.vscode/scripts/post-merge.sh` does. Without them, uv falls back to
+  `~/.cache/uv`, which is on a different filesystem, and copies every file. It
+  warns `Failed to hardlink files; falling back to full copy` and keeps going. A
+  `~/.cache/uv` folder that keeps growing means some process is running uv
+  without these settings.
 - **A rebuild wipes the home directory**: `/home/vscode` sits on the container
   overlay and only `/workspaces` is on the persistent volume, so a rebuild
   deletes `~/.claude` — every Claude Code session transcript, the stored
