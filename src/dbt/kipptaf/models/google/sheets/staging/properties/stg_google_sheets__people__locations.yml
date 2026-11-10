@@ -74,6 +74,20 @@ models:
               config:
                 where: focus_school_id is not null
                 severity: error
+          # Defended in dim_locations, which nulls school_id for a repeated id.
+          - unique:
+              name: unique_stg_google_sheets__people__locations_powerschool_school_id_school
+              description: >-
+                Two school rows on the people locations Google Sheet share a
+                school ID. Give each school its own ID on the sheet;
+                dim_locations leaves school_id null for both until then. Scoped
+                to the rows dim_locations keeps.
+              config:
+                where: |
+                  not is_campus
+                  and not is_pathways
+                  and location_name != 'KIPP Whittier Elementary'
+                severity: warn
       - name: focus_school_id
         data_type: string
         description: |

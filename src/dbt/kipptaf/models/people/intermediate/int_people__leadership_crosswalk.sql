@@ -66,40 +66,30 @@ with
             home_work_location_campus_name
     ),
 
-    asl_managers as (
-        -- vacancy stand-in for head of school
+    sheet_heads as (
+        -- a school id that more than one sheet row names a head for gets none
         select
-            a.home_work_location_powerschool_school_id,
-            a.reports_to_employee_number,
+            powerschool_school_id,
 
-            row_number() over (
-                partition by a.home_work_location_powerschool_school_id
-                order by count(*) desc, a.reports_to_employee_number asc
-            ) as rn,
-        from active_roster as a
-        inner join
-            active_roster as m on a.reports_to_employee_number = m.employee_number
-        where a.job_title like 'Assistant School Leader%'
-        group by
-            a.home_work_location_powerschool_school_id, a.reports_to_employee_number
+            max(head_of_schools_employee_number) as head_of_schools_employee_number,
+        from {{ ref("stg_google_sheets__people__locations") }}
+        where head_of_schools_employee_number is not null
+        group by powerschool_school_id
+        having count(*) = 1
     ),
 
     school_leadership_heads as (
         select
             l.*,
 
-            if(
-                l.sl_employee_number is null,
-                am.reports_to_employee_number,
-                sl.reports_to_employee_number
+            coalesce(
+                sl.reports_to_employee_number, sh.head_of_schools_employee_number
             ) as head_of_school_employee_number,
         from school_leadership as l
         left join staff_roster as sl on l.sl_employee_number = sl.employee_number
         left join
-            asl_managers as am
-            on l.home_work_location_powerschool_school_id
-            = am.home_work_location_powerschool_school_id
-            and am.rn = 1
+            sheet_heads as sh
+            on l.home_work_location_powerschool_school_id = sh.powerschool_school_id
     ),
 
     mdo as (
