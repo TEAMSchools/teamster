@@ -252,7 +252,9 @@ own, so a call that worked under your user credential can still 403 under ADC.
   `~/.cache/uv`, which is on a different filesystem, and copies every file. It
   warns `Failed to hardlink files; falling back to full copy` and keeps going. A
   `~/.cache/uv` folder that keeps growing means some process is running uv
-  without these settings.
+  without these settings. Once that process is fixed, delete `~/.cache/uv`. A
+  `.venv` that was built that way keeps its copies until you delete it and run
+  `uv sync` again.
 - **A rebuild wipes the home directory**: `/home/vscode` sits on the container
   overlay and only `/workspaces` is on the persistent volume, so a rebuild
   deletes `~/.claude` — every Claude Code session transcript, the stored
