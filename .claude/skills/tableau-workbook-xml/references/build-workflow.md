@@ -13,11 +13,10 @@ explicit instruction naming production as the target, then a "yes" to your "Are
 you sure?" that spells out that the production workbook will be overwritten. A
 button click on a prompt is neither. Without both, the target is the
 non-production project the user named for this build (ask before the first
-publish; `GPA-monitor-temp`, `c74d8e08-b856-4430-a759-ebacb061e376`, when they
-have no preference). A rollback is another production publish and needs the same
-two confirmations. After a production publish, the user opens and checks the
-production workbook themselves; no checker or render here can guarantee it is
-not corrupted.
+publish; there is no default project). A rollback is another production publish
+and needs the same two confirmations. After a production publish, the user opens
+and checks the production workbook themselves; no checker or render here can
+guarantee it is not corrupted.
 
 The gate has to run before the publish call: by the time `publish` returns, the
 overwrite has already happened on the server, so a check on the returned item
@@ -26,7 +25,7 @@ name prefix on the request object, then keep the post-publish raise as
 confirmation. A raise, not an assert: asserts are stripped under `-O`.
 
 ```python
-if TEMP_PROJECT != "c74d8e08-b856-4430-a759-ebacb061e376":  # or the id the user named
+if TEMP_PROJECT != "<the id the user named>":
     raise RuntimeError("target is not the agreed non-production project")
 if not item.name.startswith("ZZ-REVIEW "):
     raise RuntimeError("review copies carry the ZZ-REVIEW prefix")
