@@ -198,7 +198,7 @@ unit_tests:
               false
           union all
           select
-              cast(null as int64),
+              21,
               84005678,
               2025,
               'Bucket 1 - Math',
