@@ -8,10 +8,10 @@ sources:
       absent — Focus is Miami's sole enrollment source across all years, so
       unioning the archive's stints double-counts every row. Terms, calendars
       and teacher grade levels are the opposite case, and that is why they are
-      here: their kipptaf consumers read Focus only from the AY2026 SIS cutover
-      on, so the archive covers the earlier years. The archive carries the 8400
-      Focus prefix on student_number and ends at AY2025; the rebuild recipe is
-      in src/dbt/kippmiami/CLAUDE.md. The dataset must not be dropped. Declared
+      here: Focus data starts at the AY2026 SIS cutover, so the archive covers
+      the earlier years. The archive carries the 8400 Focus prefix on
+      student_number and ends at AY2025; the rebuild recipe is in
+      src/dbt/kippmiami/CLAUDE.md. The dataset must not be dropped. Declared
       BQ-native (plain schema, no target branch) so every target reads the prod
       tables directly.
     schema: kippmiami_powerschool
