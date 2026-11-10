@@ -489,7 +489,10 @@ Sort each test by what it guards:
   rows reference another feed's file (ParentSquare, Clever) keeps its
   file-to-file check, because the target system rejects a dangling id.
 - The model's own logic: a unit test.
-- A promise an upstream model makes: an `error` test on that model.
+- A promise an upstream model's own SQL makes (a key it builds, a filter it
+  applies): an `error` test on that model. A value a `stg_` passes through from
+  a source or a sheet is source data, the next bullet, even when an existing
+  test on that `stg_` checks it at `error`.
 - Source data: a test on the earliest model that sees it, per _Warn, defend,
   error_. A new gate lands as `warn` and flips after it passes in prod.
 - Build timing: delete it, except the loader-timing `relationships` test under
