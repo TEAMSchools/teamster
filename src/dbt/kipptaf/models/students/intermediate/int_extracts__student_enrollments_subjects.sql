@@ -315,6 +315,7 @@ left join
     and co.academic_year = b.academic_year
     and co._dbt_source_project = b._dbt_source_project
     and sj.iready_subject = b.subject
+    and b.rn_assignment_year_desc = 1
 left join
     {{ ref("int_students__course_enrollments") }} as cc
     on co.student_number = cc.students_student_number
