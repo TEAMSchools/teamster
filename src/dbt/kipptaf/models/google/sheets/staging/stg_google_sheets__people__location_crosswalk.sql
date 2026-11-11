@@ -3,5 +3,7 @@
 select lc.name as `Name`, any_value(lc.clean_name) as `Clean_Name`,
 from
     {{ source("google_sheets", "src_google_sheets__people__location_crosswalk") }} as lc
+where lc.name is not null
 group by lc.name
+-- lc. prefix needed: bare clean_name resolves to the any_value output alias
 having count(distinct format('%T', lc.clean_name)) = 1

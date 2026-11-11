@@ -317,8 +317,9 @@ data_tests:
     description: >-
       Lists location names that appear on more than one row of the location
       crosswalk Google Sheet. The staging model collapses copies that share one
-      clean name and drops a name mapped to 2 clean names, so staff at that
-      location lose their location fields on the roster. To fix, the People team
+      clean name and drops a name mapped to 2 clean names. Staff at that
+      location then lose their location fields on the roster, and temp staff at
+      that office drop out of int_people__temp_staff. To fix, the People team
       deletes the extra row for each listed name.
     config:
       tags:

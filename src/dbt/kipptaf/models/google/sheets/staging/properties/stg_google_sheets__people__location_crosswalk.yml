@@ -5,7 +5,7 @@ models:
       location name. Read from a Google Sheet the People team keeps by hand. One
       row per Name. Sheet rows that repeat a Name with the same Clean_Name
       collapse to 1 row. A Name mapped to 2 different Clean_Names is dropped,
-      because neither is a safe pick.
+      because neither is a safe pick. Rows with no Name are dropped.
     columns:
       - name: Name
         data_type: string
@@ -23,8 +23,9 @@ models:
 unit_tests:
   - name: stg_google_sheets__people__location_crosswalk__defends_sheet_duplicates
     description: |
-      A Name repeated with the same Clean_Name keeps 1 row. A Name mapped to 2
-      Clean_Names is dropped.
+      A Name repeated with the same Clean_Name keeps 1 row, also when that
+      Clean_Name is null. A Name mapped to 2 Clean_Names is dropped, also when
+      one of them is null. A row with no Name is dropped.
     model: stg_google_sheets__people__location_crosswalk
     given:
       - input:
@@ -41,9 +42,21 @@ unit_tests:
             Clean_Name: School C
           - Name: Alias D
             Clean_Name: School D
+          - Name: Alias E
+            Clean_Name: School E
+          - Name: Alias E
+            Clean_Name: null
+          - Name: Alias F
+            Clean_Name: null
+          - Name: Alias F
+            Clean_Name: null
+          - Name: null
+            Clean_Name: School G
     expect:
       rows:
         - Name: Alias A
           Clean_Name: School A
         - Name: Alias D
           Clean_Name: School D
+        - Name: Alias F
+          Clean_Name: null
