@@ -39,6 +39,7 @@ select
     p.ada_term_running,
     p.projected_credits_y1_term,
     p.projected_credits_cum as grades_y1_credits_projected,
+    p.academic_status as promo_status_grades,
 
     ae.athletic_eligibility,
 
@@ -52,26 +53,24 @@ select
         'Off-track - excessive absences',
         p.attendance_status
     ) as promo_status_attendance,
-    if(
-        co.grade_level between 5 and 8 and p.academic_status = 'Off-Track',
-        'Off-Track - 2+ grade levels below',
-        p.academic_status
-    ) as promo_status_grades,
     case
         when
             co.region in ('Newark', 'Camden', 'Paterson')
             and p.overall_status = 'Off-Track'
         then 'At-Risk for Retention'
+        -- K-8 only; grades 9-12 keep the policy overall status
         when
             co.region in ('Newark', 'Camden', 'Paterson')
+            and co.grade_level < 9
             and p.academic_status = 'Off-Track'
-            and co.grade_level < 9
-        then 'Off-Track: 2+ Grade Levels Below'
+            and p.attendance_status = 'On-Track'
+        then 'On-Track (Academic Warning)'
         when
             co.region in ('Newark', 'Camden', 'Paterson')
-            and p.attendance_status = 'Off-Track'
             and co.grade_level < 9
-        then 'Off-Track: Excessive Absences'
+            and p.attendance_status = 'Off-Track'
+            and p.academic_status = 'On-Track'
+        then 'On-Track (Attendance Warning)'
         else p.overall_status
     end as promo_status_overall,
 

@@ -75,10 +75,14 @@ real work.
 - Bad: `students as (select * from {{ ref("stg_powerschool__students") }})`.
 - Enforced by: review.
 
-#### S5. No `order by` in models
+#### S5. No `order by` on a query's result
 
-- Why: ordering belongs to the tool that displays the data.
-- Good: no `order by` in the final select.
+An `order by` inside a function call, such as `over (...)` or `string_agg(...)`,
+decides a value, not the row order, so S5 does not cover it.
+
+- Why: row ordering belongs to the tool that displays the data.
+- Good: no `order by` in the final select;
+  `string_agg(plan_name, '; ' order by plan_name)`.
 - Bad: `order by student_number` at the end of a model.
 - Enforced by: review.
 
