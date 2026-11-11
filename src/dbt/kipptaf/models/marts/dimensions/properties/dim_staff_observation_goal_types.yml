@@ -1,16 +1,16 @@
 models:
   - name: dim_staff_observation_goal_types
     description: >-
-      Goal type dimension. One row per goal in the SchoolMint Grow 4-level
-      taxonomy: goal_type > bucket > strand > goal. Built from generic tags of
-      type tags with three levels of parent relationships. Only includes
-      leaf-level goals (those with all three ancestor levels).
+      Staff observation goal dimension. One row per distinct goal a coach has
+      assigned in SchoolMint Grow. A microgoal is one row per microgoal tag. A
+      look-for is one row per category and indicator text, because a look-for's
+      indicator exists only as text on the assignment. A goal with no goal tag
+      is one row per name.
     columns:
       - name: staff_observation_goal_type_key
         data_type: string
         description: >-
-          Surrogate primary key derived from the goal tag ID. Generated with
-          generate_surrogate_key(["tag_id"]).
+          Surrogate primary key derived from the goal's tag id and goal name.
         constraints:
           - type: primary_key
             warn_unsupported: false
@@ -20,20 +20,57 @@ models:
       - name: goal_name
         data_type: string
         description: >-
-          Display name of the specific goal or look-for.
+          The goal as the coach picked it. A microgoal's name, or a look-for's
+          indicator text.
 
       - name: strand_name
         data_type: string
         description: >-
-          Name of the strand (second level in the taxonomy) this goal belongs
-          to.
+          Microgoal strand, or a look-for's most specific category.
 
       - name: bucket_name
         data_type: string
         description: >-
-          Name of the bucket (third level in the taxonomy) this goal belongs to.
+          The category one level above strand_name. Null when the strand sits
+          directly under the goal type.
 
       - name: goal_type
         data_type: string
         description: >-
-          Top-level goal type category (e.g., Instructional, Cultural).
+          Root of the goal's category tree, Microgoals or Lookfors. Null for a
+          goal with no goal tag and no microgoal code in its name.
+
+unit_tests:
+  - name: test_dim_staff_observation_goal_types_one_row_per_goal
+    description: >-
+      Assignments of the same microgoal share one row; two look-for indicators
+      under one category get a row each; a goal with no goal tag gets a row by
+      its name.
+    model: dim_staff_observation_goal_types
+    given:
+      - input: ref("int_performance_management__observation_goals")
+        format: sql
+        rows: |
+          select 'a1' as assignment_id, 'm3' as goal_tag_id, 'Microgoals' as goal_type_name, '3D.01 Magic ratio.' as goal_name, '3D: Joy' as strand_name, '3: Kids Love Learning' as bucket_name
+          union all select 'a2', 'm3', 'Microgoals', '3D.01 Magic ratio.', '3D: Joy', '3: Kids Love Learning'
+          union all select 'a3', 'l2', 'Lookfors', 'CVOE-K12-27 Value student voice', 'Cognitive Engagement', 'CVoE'
+          union all select 'a4', 'l2', 'Lookfors', 'CVOE-K12-01 Build relationships', 'Cognitive Engagement', 'CVoE'
+          union all select 'a5', null, null, 'Free text goal', null, null
+    expect:
+      rows:
+        - goal_name: 3D.01 Magic ratio.
+          strand_name: "3D: Joy"
+          bucket_name: "3: Kids Love Learning"
+          goal_type: Microgoals
+        - goal_name: CVOE-K12-27 Value student voice
+          strand_name: Cognitive Engagement
+          bucket_name: CVoE
+          goal_type: Lookfors
+        - goal_name: CVOE-K12-01 Build relationships
+          strand_name: Cognitive Engagement
+          bucket_name: CVoE
+          goal_type: Lookfors
+        - goal_name: Free text goal
+          strand_name: null
+          bucket_name: null
+          goal_type: null
