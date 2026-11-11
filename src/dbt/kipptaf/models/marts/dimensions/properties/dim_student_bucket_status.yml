@@ -1,0 +1,199 @@
+models:
+  - name: dim_student_bucket_status
+    description: >-
+      SCD2 dimension of student bucket spans. One row per stored bucket
+      assignment and enrollment stint it overlaps: a span starts on the
+      assignment date and ends the day before the assignment's exit date, then
+      is clipped to the stint's entry and exit window. A span reaches only
+      stints of its own academic year, so an assignment with no exit date never
+      carries into the next year. A student who changes bucket mid-year has 1
+      span per assignment, and a student with 2 stints in a year has a span per
+      stint. The 4-bucket model starts in 2025-26; Bucket 4 is never stored, so
+      a stint with no span here reads Bucket 4 in dim_student_enrollment_status,
+      which rolls these spans up to 1 bucket per stint and subject.
+    config:
+      meta:
+        dagster:
+          group: marts
+          asset_key:
+            - kipptaf
+            - marts
+            - dim_student_bucket_status
+    columns:
+      - name: student_bucket_status_key
+        data_type: string
+        description: >-
+          Surrogate primary key, from the student number, district, academic
+          year, stint entry date, subject, and assignment date.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
+        data_tests:
+          - unique
+
+      - name: _dbt_source_project
+        data_type: string
+        description: >-
+          District context for this span (`kippnewark`, `kippcamden`,
+          `kippmiami`, `kipppaterson`). Student numbers repeat across districts,
+          so consumers joining at student grain include this column.
+
+      - name: subject
+        data_type: string
+        description: >-
+          Reading or Math. Reading pairs with assessments whose bucket_subject
+          is Reading, Math with Math.
+
+      - name: bucket
+        data_type: string
+        description: >-
+          Stored bucket label for this span (Bucket 1, Bucket 2, or Bucket 3).
+        config:
+          meta:
+            contains_pii: true
+
+      - name: bucket_store
+        data_type: string
+        description: >-
+          Which system holds the assignment (powerschool, for NJ and the frozen
+          Miami archive, or focus, for Miami from 2026-27).
+
+      - name: assignment_date
+        data_type: date
+        description: >-
+          Date the assignment was entered, before clipping to the stint. Breaks
+          ties between overlapping spans that start on the same clipped date.
+
+      - name: effective_date_start_key
+        data_type: date
+        description: >-
+          First date this span is valid: the later of the assignment date and
+          the stint's entry date.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_dates')
+              to_columns: [date_key]
+
+      - name: effective_date_end_key
+        data_type: date
+        description: >-
+          Last date this span is valid (inclusive): the earlier of the day
+          before the assignment's exit date and the day before the stint's exit
+          date. `'9999-12-31'` when both are open-ended.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_dates')
+              to_columns: [date_key]
+
+      - name: is_current
+        data_type: boolean
+        description: >-
+          True when `effective_date_end_key = '9999-12-31'` (an open-ended
+          assignment in a currently active stint).
+
+      - name: student_key
+        data_type: string
+        description: Foreign key to `dim_students.student_key`.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_students')
+              to_columns: [student_key]
+
+      - name: student_enrollment_key
+        data_type: string
+        description: >-
+          Foreign key to `dim_student_enrollments.student_enrollment_key`: the
+          stint this span is clipped to. Not unique here; read
+          dim_student_enrollment_status for 1 bucket per stint.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_student_enrollments')
+              to_columns: [student_enrollment_key]
+
+unit_tests:
+  - name: unit_dim_student_bucket_status
+    description: >-
+      Clips a span that crosses 2 stints into 1 row per stint, keeps an
+      assignment with no exit date out of the next year's stints, and drops an
+      assignment entered and exited on the same day.
+    model: dim_student_bucket_status
+    given:
+      - input: ref("int_students__student_enrollment_union")
+        rows:
+          - student_number: 5001
+            _dbt_source_project: kippnewark
+            academic_year: 2025
+            entrydate: 2025-09-03
+            exitdate: 2026-06-30
+          - student_number: 5001
+            _dbt_source_project: kippnewark
+            academic_year: 2026
+            entrydate: 2026-09-02
+            exitdate: 2026-12-01
+          - student_number: 5001
+            _dbt_source_project: kippnewark
+            academic_year: 2026
+            entrydate: 2026-12-01
+            exitdate: null
+      - input: ref("int_students__bucket_assignments")
+        format: sql
+        rows: |
+          select
+              2026 as academic_year,
+              'kippnewark' as _dbt_source_project,
+              5001 as student_number,
+              'Math' as `subject`,
+              'Bucket 2' as bucket,
+              'powerschool' as bucket_store,
+              date '2026-09-10' as assignment_date,
+              cast(null as date) as exit_date,
+              1 as n_active_assignments
+          union all
+          select
+              2025,
+              'kippnewark',
+              5001,
+              'Reading',
+              'Bucket 1',
+              'powerschool',
+              date '2025-09-15',
+              cast(null as date),
+              1
+          union all
+          select
+              2026,
+              'kippnewark',
+              5001,
+              'Reading',
+              'Bucket 3',
+              'powerschool',
+              date '2026-10-01',
+              date '2026-10-01',
+              0
+    expect:
+      rows:
+        - _dbt_source_project: kippnewark
+          subject: Math
+          bucket: Bucket 2
+          assignment_date: 2026-09-10
+          effective_date_start_key: 2026-09-10
+          effective_date_end_key: 2026-11-30
+          is_current: false
+        - _dbt_source_project: kippnewark
+          subject: Math
+          bucket: Bucket 2
+          assignment_date: 2026-09-10
+          effective_date_start_key: 2026-12-01
+          effective_date_end_key: 9999-12-31
+          is_current: true
+        - _dbt_source_project: kippnewark
+          subject: Reading
+          bucket: Bucket 1
+          assignment_date: 2025-09-15
+          effective_date_start_key: 2025-09-15
+          effective_date_end_key: 2026-06-29
+          is_current: false

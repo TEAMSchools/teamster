@@ -126,6 +126,27 @@ with
         select student_enrollment_key, is_meal_eligible, meal_eligibility,
         from meal_miami
         where rn = 1
+    ),
+
+    -- Buckets: latest span per stint and subject (max effective_date_start_key;
+    -- overlapping spans clipped to the same start fall to the later assignment).
+    bucket_ranked as (
+        select
+            student_enrollment_key,
+            `subject`,
+            bucket,
+
+            row_number() over (
+                partition by student_enrollment_key, `subject`
+                order by effective_date_start_key desc, assignment_date desc
+            ) as rn,
+        from {{ ref("dim_student_bucket_status") }}
+    ),
+
+    bucket_latest as (
+        select student_enrollment_key, `subject`, bucket,
+        from bucket_ranked
+        where rn = 1
     )
 
 select
@@ -141,8 +162,30 @@ select
     coalesce(iep.is_iep, false) as is_iep,
     coalesce(meal.is_meal_eligible, false) as is_meal_eligible,
 
+    -- both buckets: 2025-26 is the first year of the 4-bucket model, and grade
+    -- 99 is the graduate placeholder row, which gets no bucket
+    if(
+        enr.academic_year >= 2025 and enr.grade_level != 99,
+        coalesce(rb.bucket, 'Bucket 4'),
+        null
+    ) as ela_bucket,
+
+    if(
+        enr.academic_year >= 2025 and enr.grade_level != 99,
+        coalesce(mb.bucket, 'Bucket 4'),
+        null
+    ) as math_bucket,
+
 from {{ ref("dim_student_enrollments") }} as enr
 left join ell on enr.student_enrollment_key = ell.student_enrollment_key
 left join section_504 as sec on enr.student_enrollment_key = sec.student_enrollment_key
 left join iep on enr.student_enrollment_key = iep.student_enrollment_key
 left join meal on enr.student_enrollment_key = meal.student_enrollment_key
+left join
+    bucket_latest as rb
+    on enr.student_enrollment_key = rb.student_enrollment_key
+    and rb.subject = 'Reading'
+left join
+    bucket_latest as mb
+    on enr.student_enrollment_key = mb.student_enrollment_key
+    and mb.subject = 'Math'

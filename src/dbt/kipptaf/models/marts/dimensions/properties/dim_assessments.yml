@@ -201,8 +201,8 @@ models:
         data_type: string
         description: >-
           Which of a student's buckets applies to scores on this assessment —
-          Reading pairs with `dim_student_enrollments.ela_bucket`, Math with
-          `math_bucket`, and null means no bucket applies (science, social
+          Reading pairs with `dim_student_enrollment_status.ela_bucket`, Math
+          with `math_bucket`, and null means no bucket applies (science, social
           studies, AP exam scores, combined and composite college scores, and
           internal subjects with no course subject crosswalk row). Internal
           assessments take it from the course subject crosswalk's discipline for

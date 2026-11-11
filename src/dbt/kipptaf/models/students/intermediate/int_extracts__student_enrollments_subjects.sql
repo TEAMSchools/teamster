@@ -310,7 +310,7 @@ left join
     and co._dbt_source_project = ips._dbt_source_project
     and sj.iready_subject = ips.iready_subject
 left join
-    {{ ref("int_students__bucket_assignments") }} as b
+    {{ ref("int_students__bucket_assignments_rollup") }} as b
     on co.student_number = b.student_number
     and co.academic_year = b.academic_year
     and co._dbt_source_project = b._dbt_source_project

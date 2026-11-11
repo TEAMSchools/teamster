@@ -50,8 +50,9 @@ with
             end as `subject`,
         from {{ ref("int_focus__student_group_memberships") }}
         -- floor is the SIS cutover year: before it the frozen PowerSchool
-        -- archive owns Miami's buckets, and the latest-wins pick below would
-        -- otherwise let a backfilled Focus group override an archived bucket
+        -- archive owns Miami's buckets, and the latest-wins pick in
+        -- int_students__bucket_assignments_rollup would otherwise let a
+        -- backfilled Focus group override an archived bucket
         where title like 'Bucket%' and syear >= 2026
     ),
 
@@ -110,8 +111,8 @@ with
         {{
             dbt_utils.deduplicate(
                 relation="assignments",
-                partition_by="academic_year, _dbt_source_project, student_number, subject",
-                order_by="assignment_date desc, is_active desc, exit_date desc, bucket desc",
+                partition_by="academic_year, _dbt_source_project, student_number, subject, assignment_date",
+                order_by="is_active desc, exit_date desc, bucket desc",
             )
         }}
     )
@@ -124,5 +125,6 @@ select
     bucket,
     bucket_store,
     assignment_date,
+    exit_date,
     n_active_assignments,
 from deduped

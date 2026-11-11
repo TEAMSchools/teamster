@@ -23,34 +23,8 @@ select
     enr.is_retained_year,
     enr.year_in_network,
 
-    -- both buckets: 2025-26 is the first year of the 4-bucket model, and grade
-    -- 99 is the graduate placeholder row, which gets no bucket
-    if(
-        enr.academic_year >= 2025 and enr.grade_level != 99,
-        coalesce(rb.bucket, 'Bucket 4'),
-        null
-    ) as ela_bucket,
-
-    if(
-        enr.academic_year >= 2025 and enr.grade_level != 99,
-        coalesce(mb.bucket, 'Bucket 4'),
-        null
-    ) as math_bucket,
-
 from {{ ref("int_students__student_enrollment_union") }} as enr
 left join
     {{ ref("int_students__schools") }} as sch
     on enr.schoolid = sch.school_number
     and enr._dbt_source_project = sch._dbt_source_project
-left join
-    {{ ref("int_students__bucket_assignments") }} as rb
-    on enr.student_number = rb.student_number
-    and enr.academic_year = rb.academic_year
-    and enr._dbt_source_project = rb._dbt_source_project
-    and rb.subject = 'Reading'
-left join
-    {{ ref("int_students__bucket_assignments") }} as mb
-    on enr.student_number = mb.student_number
-    and enr.academic_year = mb.academic_year
-    and enr._dbt_source_project = mb._dbt_source_project
-    and mb.subject = 'Math'

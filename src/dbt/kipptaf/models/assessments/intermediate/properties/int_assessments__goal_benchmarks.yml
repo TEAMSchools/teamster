@@ -29,9 +29,10 @@ models:
             config.
           A4: >-
             Shares its (_dbt_source_project, academic_year, student_number,
-            subject) key with int_students__bucket_assignments, but the two hold
-            different facts from different sources (a stored bucket assignment
-            versus a benchmark score panel), so neither extends the other.
+            subject) key with int_students__bucket_assignments_rollup, but the
+            two hold different facts from different sources (a stored bucket
+            assignment versus a benchmark score panel), so neither extends the
+            other.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
