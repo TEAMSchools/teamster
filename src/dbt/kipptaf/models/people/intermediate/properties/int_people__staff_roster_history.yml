@@ -21,6 +21,8 @@ models:
               - employee_number
               - effective_date_start
               - position_id
+          config:
+            severity: error
     columns:
       - name: home_business_unit_name
         data_type: string
@@ -190,7 +192,9 @@ models:
           The position's active NJ pension plan (PERS, TPAF, or DCRP) from the
           ADP pension and benefits enrollments file, on the current record only.
           ADP sends current enrollments and no history, so past rows are null
-          rather than showing a plan the data cannot date.
+          rather than showing a plan the data cannot date. A position with more
+          than 1 active NJ pension, such as during a move from PERS to TPAF,
+          shows every plan, sorted and joined with "; ".
       - name: home_work_location_reporting_school_id
         data_type: int64
       - name: home_work_location_powerschool_school_id

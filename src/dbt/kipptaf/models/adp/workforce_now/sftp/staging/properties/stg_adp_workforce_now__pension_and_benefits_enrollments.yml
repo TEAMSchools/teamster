@@ -16,19 +16,16 @@ models:
       - name: position_id
         data_type: string
         description: >-
-          ADP position ID. Joins to the staff roster, which expects at most one
-          active NJ pension per position.
+          ADP position ID. Joins to the staff roster, which combines a
+          position's active NJ pensions into 1 value.
         data_tests:
           - unique:
               config:
-                severity: error
-                where: |
-                  enrollment_status = 'Active'
-                  and plan_name in (
-                      'NJ Pension - DCRP:Eligible Employees(Prudential Financial)',
-                      'NJ Pension - PERS:Eligible Employees(NJ Pension)',
-                      'NJ Pension - TPAF:Eligible Employees(NJ Pension)'
-                  )
+                severity: warn
+                where: enrollment_status = 'Active' and is_nj_pension
+                description:
+                  A position with more than 1 active NJ pension. End the old
+                  plan's enrollment in ADP Workforce Now.
       - name: employee_number
         data_type: int64
         description: ADP employee number, cast to integer.
@@ -59,6 +56,12 @@ models:
       - name: enrollment_status
         data_type: string
         description: ADP enrollment status, such as Active.
+      - name: is_nj_pension
+        data_type: boolean
+        description: >-
+          True for the 3 NJ pension plans (PERS, TPAF, DCRP). Excludes each
+          plan's Contributory Insurance row, whose name also starts with "NJ
+          Pension -".
       - name: source_file_name
         data_type: string
         description: Name of the SFTP file the row was loaded from.
