@@ -143,9 +143,9 @@ cubes:
         type: string
         public: true
 
-      # Hidden: it exists for student_assessment_scores.bucket, which reads it
-      # to pick the ELA or math bucket. The mapping lives in dbt because
-      # academic_subject is an open vocabulary, so a CASE list here would drift.
+      # student_assessment_scores.bucket reads it to pick the ELA or math
+      # bucket. The mapping lives in dbt because academic_subject is an open
+      # vocabulary, so a CASE list here would drift.
       - name: bucket_subject
         description: >-
           Which of a student's buckets applies to scores on this assessment —
@@ -161,6 +161,12 @@ cubes:
           or Math).
         sql: bucket_subject
         type: string
+        public: true
+        meta:
+          ai_context: >-
+            Filter bucket_subject to split bucket counts or mastery by ELA and
+            math. Use bucket, not ela_bucket or math_bucket, to slice scores:
+            bucket already applies this pairing per score.
 
       - name: is_internal_assessment
         description: >-

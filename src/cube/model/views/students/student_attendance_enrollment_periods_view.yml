@@ -202,6 +202,8 @@ views:
             - special_education_placement
             - is_meal_eligible
             - meal_eligibility
+            - ela_bucket
+            - math_bucket
         - name: Enrollment
           members:
             - student_enrollment_key
@@ -210,8 +212,6 @@ views:
             - entry_date
             - exit_date
             - is_retained_year
-            - ela_bucket
-            - math_bucket
         - name: Teacher
           members:
             - staff_homeroom_teacher_full_name

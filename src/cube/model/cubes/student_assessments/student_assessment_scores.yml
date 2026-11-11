@@ -303,8 +303,10 @@ cubes:
 
       # Reads 2 joined cubes: the assessment's bucket_subject picks the
       # student's ELA or math bucket for the enrollment stint. Both sit on this
-      # cube's only join path to them, so referencing them adds no join and no
-      # diamond.
+      # cube's only join path to them, so there is no diamond, but a query
+      # using bucket joins the section, school and status enrollment cubes. The
+      # pick stays here, not on the fact: the marts' strict-chain rule keeps
+      # dim attributes off fact rows.
       - name: bucket
         description: >-
           The student's bucket for the subject of this assessment, in the
@@ -779,6 +781,9 @@ cubes:
           - student_assessments.assessment_type
           - student_assessments.title
           - student_assessments.academic_subject
+          # bucket_subject is determined by the assessment; it splits the
+          # bucket cuts below into ELA and math.
+          - student_assessments.bucket_subject
           - student_assessments.grade_level_tested
           - student_assessment_administrations.administration_period
           - student_assessment_scores.response_type_code
@@ -801,6 +806,10 @@ cubes:
           # is_iep is the one independent addition (binary, so at most 2x rows);
           # it serves the IEP-vs-gen-ed disparity cut.
           - student_enrollment_status.is_iep
+          # bucket serves the DDI bucket-count and bucket-mastery cuts. It adds
+          # rows only from 2025-26, where buckets start, and stays under the
+          # 2x is_iep bar there.
+          - student_assessment_scores.bucket
           - locations.region_key
           - locations.abbreviation
           # region_name is determined by region_key above; it supports

@@ -61,6 +61,7 @@ views:
         includes:
           - title
           - academic_subject
+          - bucket_subject
           - assessment_type
           - category
           - module_code
@@ -142,8 +143,6 @@ views:
           - special_education_placement
           - is_meal_eligible
           - meal_eligibility
-          - ela_bucket
-          - math_bucket
 
       - join_path: >-
           student_assessment_scores.student_section_enrollments.student_school_enrollments.students
@@ -231,6 +230,7 @@ views:
           members:
             - title
             - academic_subject
+            - bucket_subject
             - assessment_type
             - category
             - module_code
@@ -318,6 +318,7 @@ views:
             - special_education_placement
             - is_meal_eligible
             - meal_eligibility
+            - bucket
         - name: Enrollment
           members:
             - student_section_enrollment_key
@@ -328,9 +329,6 @@ views:
             - graduation_year
             - year_in_network
             - is_retained_year
-            - ela_bucket
-            - math_bucket
-            - bucket
             - is_dropped_section
             - is_dropped_course
         - name: Teacher
