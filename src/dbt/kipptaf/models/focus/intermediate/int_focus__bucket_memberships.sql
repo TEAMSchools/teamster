@@ -51,6 +51,25 @@ with
                 order_by="is_active desc, bucket asc, exit_date desc",
             )
         }}
+    ),
+
+    sequenced as (
+        select
+            academic_year,
+            _dbt_source_project,
+            student_number,
+            `subject`,
+            bucket,
+            assignment_date,
+            exit_date,
+            n_active_assignments,
+
+            lead(assignment_date) over (
+                partition by
+                    academic_year, _dbt_source_project, student_number, `subject`
+                order by assignment_date asc
+            ) as next_assignment_date,
+        from deduped
     )
 
 select
@@ -60,6 +79,8 @@ select
     `subject`,
     bucket,
     assignment_date,
-    exit_date,
     n_active_assignments,
-from deduped
+
+    -- a later assignment ends this one, so 2 never cover the same day
+    (select min(d), from unnest([exit_date, next_assignment_date]) as d) as exit_date,
+from sequenced

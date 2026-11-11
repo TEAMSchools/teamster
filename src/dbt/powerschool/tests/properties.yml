@@ -229,9 +229,10 @@ data_tests:
       means the student was proficient the year before; delete the other
       special-program record in PowerSchool. Until then, kipptaf's
       int_powerschool__bucket_programs keeps the lower-numbered bucket when both
-      share an enter date; overlapping buckets with different enter dates both
-      stay. Back-to-back buckets, where one exits before the next enters, are
-      normal mid-year amendments and are not flagged.
+      share an enter date, and ends the earlier bucket on the later one's enter
+      date when they overlap on different dates. Back-to-back buckets, where one
+      exits before the next enters, are normal mid-year amendments and are not
+      flagged.
     config:
       severity: warn
       meta:

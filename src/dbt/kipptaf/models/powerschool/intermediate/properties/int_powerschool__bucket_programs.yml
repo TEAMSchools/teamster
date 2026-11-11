@@ -6,8 +6,10 @@ models:
       One row per academic_year x _dbt_source_project x student_number x subject
       x assignment_date (the program enter date). When 2 programs share an enter
       date, the active one wins, then the lower-numbered bucket, then the later
-      exit. 2 concurrent buckets for 1 subject are a PowerSchool data-entry
-      error and the lower-numbered one is correct; the PowerSchool package test
+      exit. When programs for 1 subject overlap on different enter dates, the
+      later program ends the earlier one, so no 2 programs cover the same day. 2
+      concurrent buckets for 1 subject are a PowerSchool data-entry error and
+      the lower-numbered one is correct; the PowerSchool package test
       int_powerschool__spenrollments__no_concurrent_bucket_per_subject lists
       them for correction. Read through int_students__bucket_assignments.
     config:
@@ -43,8 +45,9 @@ models:
         description: Program enter date.
       - name: exit_date
         description: >-
-          Program exit date, the first day the program no longer applies. Live
-          programs carry a scheduled year-end exit.
+          The first day the program no longer applies, which is the program exit
+          date or the next program's enter date for the subject, whichever comes
+          first. Live programs carry a scheduled year-end exit.
       - name: n_active_assignments
         description: >-
           Count of the student's programs for the year and subject still active
@@ -59,7 +62,8 @@ unit_tests:
       programs, counts a same-subject double upload, keeps the active one of 2
       programs entered on the same day, and keeps the lower-numbered bucket of 2
       concurrent programs entered on the same day even when the other one exits
-      later.
+      later, and ends a program at the next program's enter date when the 2
+      overlap.
     model: int_powerschool__bucket_programs
     given:
       - input: ref("int_powerschool__spenrollments")
@@ -268,7 +272,7 @@ unit_tests:
           subject: Reading
           bucket: Bucket 1
           assignment_date: 2026-09-01
-          exit_date: 2099-06-30
+          exit_date: 2026-09-05
           n_active_assignments: 2
         - academic_year: 2026
           _dbt_source_project: kippcamden

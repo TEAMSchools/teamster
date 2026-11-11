@@ -12,11 +12,9 @@ models:
       span. The 4-bucket model starts in 2025-26; Bucket 4 is never stored, so a
       stint with no span here reads Bucket 4 in dim_student_enrollment_status,
       which reads the is_latest_in_enrollment span for 1 bucket per stint and
-      subject. Spans for 1 stint and subject can overlap when the source holds 2
-      open assignments stored on different days (a data-entry error the
-      PowerSchool and Focus package tests list for correction), so a
-      point-in-time query can return 2 buckets for 1 student; filter
-      is_latest_in_enrollment for 1 bucket per stint.
+      subject. Spans for 1 stint and subject never overlap, because the source
+      models end each assignment when the next one starts, so a point-in-time
+      query returns at most 1 bucket per student and subject.
     config:
       meta:
         dagster:

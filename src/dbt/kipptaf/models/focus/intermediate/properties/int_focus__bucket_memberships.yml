@@ -7,8 +7,10 @@ models:
       academic_year x _dbt_source_project x student_number x subject x
       assignment_date (the membership's created date). When 2 memberships share
       a created date, the active one wins, then the lower-numbered bucket, then
-      the later end. 2 bucket groups for 1 subject are a Focus data-entry error
-      and the lower-numbered one is correct; the Focus package test
+      the later end. When memberships for 1 subject were created on different
+      days, the later one ends the earlier one, so no 2 cover the same day. 2
+      bucket groups for 1 subject are a Focus data-entry error and the
+      lower-numbered one is correct; the Focus package test
       int_focus__student_group_memberships__one_bucket_per_subject lists them
       for correction. Read through int_students__bucket_assignments.
     config:
@@ -44,8 +46,9 @@ models:
         description: Date the membership was created.
       - name: exit_date
         description: >-
-          The group's end date; a membership has no end date of its own. Null
-          when the group has no end.
+          The group's end date (a membership has no end date of its own), or the
+          creation date of the student's next membership for the subject,
+          whichever comes first. Null when neither exists.
       - name: n_active_assignments
         description: >-
           Count of the student's memberships for the year and subject still
@@ -57,7 +60,8 @@ unit_tests:
     description: >-
       Decodes a bucket group, excludes non-bucket groups and bucket groups
       before the cutover year, and keeps the lower-numbered bucket of 2
-      memberships created on the same day even when the other group ends later.
+      memberships created on the same day even when the other group ends later,
+      and ends a membership on the day the next one is created.
     model: int_focus__bucket_memberships
     given:
       - input: ref("int_focus__student_group_memberships")
@@ -102,6 +106,22 @@ unit_tests:
               'Bucket 1 - Math',
               cast(null as date),
               'kippmiami'
+          union all
+          select
+              84004321,
+              2026,
+              timestamp '2026-09-17 12:00:00',
+              'Bucket 1 - ELA',
+              cast(null as date),
+              'kippmiami'
+          union all
+          select
+              84004321,
+              2026,
+              timestamp '2026-10-01 12:00:00',
+              'Bucket 3 - ELA',
+              cast(null as date),
+              'kippmiami'
     expect:
       rows:
         - academic_year: 2026
@@ -118,5 +138,21 @@ unit_tests:
           subject: Math
           bucket: Bucket 1
           assignment_date: 2026-09-17
+          exit_date: null
+          n_active_assignments: 2
+        - academic_year: 2026
+          _dbt_source_project: kippmiami
+          student_number: 84004321
+          subject: Reading
+          bucket: Bucket 1
+          assignment_date: 2026-09-17
+          exit_date: 2026-10-01
+          n_active_assignments: 2
+        - academic_year: 2026
+          _dbt_source_project: kippmiami
+          student_number: 84004321
+          subject: Reading
+          bucket: Bucket 3
+          assignment_date: 2026-10-01
           exit_date: null
           n_active_assignments: 2
