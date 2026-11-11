@@ -14,9 +14,13 @@ from teamster.code_locations.kipptaf.extracts.jobs import (
     littlesis_extract_asset_job,
 )
 
+# The 03:00 daily jobs across code locations each take a 5-minute slot so their
+# pods do not burst onto new nodes that GKE preempts (#6365). Each slot must
+# finish before the vendor imports the file; check the vendor's import time
+# before moving one.
 branchingminds_extract_assets_schedule = ScheduleDefinition(
     job=branchingminds_extract_asset_job,
-    cron_schedule="0 3 * * *",
+    cron_schedule="15 3 * * *",
     execution_timezone=str(LOCAL_TIMEZONE),
 )
 
@@ -28,7 +32,7 @@ clever_extract_assets_schedule = ScheduleDefinition(
 
 coupa_extract_assets_schedule = ScheduleDefinition(
     job=coupa_extract_asset_job,
-    cron_schedule="0 3 * * *",
+    cron_schedule="30 3 * * *",
     execution_timezone=str(LOCAL_TIMEZONE),
 )
 
@@ -46,7 +50,7 @@ deanslist_continuous_extract_asset_job_schedule = ScheduleDefinition(
 
 egencia_extract_assets_schedule = ScheduleDefinition(
     job=egencia_extract_asset_job,
-    cron_schedule="0 3 * * *",
+    cron_schedule="30 3 * * *",
     execution_timezone=str(LOCAL_TIMEZONE),
 )
 
@@ -58,19 +62,19 @@ idauto_extract_assets_schedule = ScheduleDefinition(
 
 illuminate_extract_assets_schedule = ScheduleDefinition(
     job=illuminate_extract_asset_job,
-    cron_schedule="0 3 * * *",
+    cron_schedule="10 3 * * *",
     execution_timezone=str(LOCAL_TIMEZONE),
 )
 
 lattice_extract_assets_schedule = ScheduleDefinition(
     job=lattice_extract_asset_job,
-    cron_schedule="0 3 * * *",
+    cron_schedule="30 3 * * *",
     execution_timezone=str(LOCAL_TIMEZONE),
 )
 
 littlesis_extract_assets_schedule = ScheduleDefinition(
     job=littlesis_extract_asset_job,
-    cron_schedule="0 3 * * *",
+    cron_schedule="25 3 * * *",
     execution_timezone=str(LOCAL_TIMEZONE),
 )
 
