@@ -688,3 +688,28 @@ read.
     levels would roll up under the alphabetically first one. Neither happens in
     2025-26 or 2026-27.
 - [ ] Final review: a fresh reviewer checks this revision before hand-over.
+
+---
+
+## Revision 2026-11-11: anchor the 9-week window to the selected year
+
+The final review of Revision 2 found that a window counted back from `TODAY()`
+empties the weekly table for any past year chosen in the Landing Page's Academic
+Year dropdown, and for the current year after school ends. The owner chose to
+count the 9 weeks back from the selected year's latest week on or before today.
+
+- `[Calculation_6332000000000000003]` gets the formula
+  `[week_start_monday] > DATEADD('day', -63, {FIXED [academic_year] : MAX(IF [week_start_monday] <= TODAY() THEN [week_start_monday] END)})`.
+  The current year shows the current 9 weeks, the same as before. A past year
+  shows its final 9 weeks; for 2025-26 that is 4/20 to 6/15/2026.
+- The review-copy checks compare against numbers computed from the packaged
+  extract, because live BigQuery drifts from the extract when past enrollment
+  records change.
+- The #6332 hand-over states 3 known behaviors:
+  - Late in a year, narrow IEP or Grade filters can leave a school with students
+    earlier in the year but none in the 9-week window. That school then appears
+    only in the quarterly table and pushes the rows below it out of line.
+  - The first 8 weeks of a year and break weeks show fewer, wider weekly
+    columns.
+  - The weekly zone's layout cache still carries the old fit hint. Server
+    ignores it, and Tableau Desktop should recompute it.
