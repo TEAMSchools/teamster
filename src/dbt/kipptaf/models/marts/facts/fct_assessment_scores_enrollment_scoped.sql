@@ -333,21 +333,6 @@ with
             `type`, code, `name`, `start_date`, end_date, region, school_id, grade_band,
         from {{ ref("stg_google_sheets__reporting__terms") }}
         where `type` = 'RT'
-    ),
-
-    -- The student's enrolled school, year and grade: the inputs the academic
-    -- goals sheet is keyed on.
-    enrollment_context as (
-        select
-            sse.student_section_enrollment_key,
-
-            se.location_key,
-            se.academic_year,
-            se.grade_level,
-        from {{ ref("dim_student_section_enrollments") }} as sse
-        inner join
-            {{ ref("dim_student_enrollments") }} as se
-            on sse.student_enrollment_key = se.student_enrollment_key
     )
 
 /* internal assessments */
@@ -439,20 +424,21 @@ left join
     and sr.region = rt.region
     and ia.assessment_date_key between rt.`start_date` and rt.end_date
 left join
-    enrollment_context as ec
-    on sr.student_section_enrollment_key = ec.student_section_enrollment_key
+    {{ ref("int_students__schools") }} as ss
+    on sr.powerschool_school_id = ss.school_number
+    and sr.cc_source_project = ss._dbt_source_project
 -- the goal for the student's grade; high school goal rows carry no grade and
 -- apply to every grade at the school
 left join
     {{ ref("dim_assessment_goals") }} as gg
-    on ec.location_key = gg.location_key
-    and ec.academic_year = gg.academic_year
-    and ec.grade_level = gg.grade_level
+    on ss.location_key = gg.location_key
+    and sr.enrollment_academic_year = gg.academic_year
+    and sr.grade_level = gg.grade_level
     and sr.subject_area = gg.academic_subject
 left join
     {{ ref("dim_assessment_goals") }} as gs
-    on ec.location_key = gs.location_key
-    and ec.academic_year = gs.academic_year
+    on ss.location_key = gs.location_key
+    and sr.enrollment_academic_year = gs.academic_year
     and sr.subject_area = gs.academic_subject
     and gs.grade_level is null
 
@@ -550,13 +536,14 @@ left join
     and sr.region = rt.region
     and su.test_date between rt.`start_date` and rt.end_date
 left join
-    enrollment_context as ec
-    on sr.student_section_enrollment_key = ec.student_section_enrollment_key
+    {{ ref("int_students__schools") }} as ss
+    on sr.powerschool_school_id = ss.school_number
+    and sr.cc_source_project = ss._dbt_source_project
 -- state goals are keyed on the state test code, not on subject and grade
 left join
     {{ ref("dim_assessment_goals") }} as gc
-    on ec.location_key = gc.location_key
-    and ec.academic_year = gc.academic_year
+    on ss.location_key = gc.location_key
+    and sr.enrollment_academic_year = gc.academic_year
     and su.module_code = gc.state_assessment_code
 
 union all
