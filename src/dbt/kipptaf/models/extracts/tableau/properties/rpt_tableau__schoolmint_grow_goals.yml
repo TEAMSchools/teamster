@@ -138,13 +138,13 @@ models:
       - name: goal_code
         data_type: string
         description: >-
-          Grow tag id of the microgoal or look-for category. Null for an
-          assignment with no goal tag, and on rows with no assignment.
+          Key of the goal in dim_staff_observation_goal_types. Null on rows with
+          no assignment.
       - name: goal_name
         data_type: string
         description: >-
-          The goal the coach assigned. A microgoal's tag name, or a look-for's
-          indicator text. See int_schoolmint_grow__assignments__goals.
+          The goal the coach assigned. A microgoal's name, or a look-for's
+          indicator text.
       - name: strand_name
         data_type: string
         description: >-
@@ -158,14 +158,17 @@ models:
       - name: assignment_id
         data_type: string
         description: >-
-          Grow assignment id. Null when the teacher has no assignment in the
-          period.
+          Key of the Grow assignment, shared by every goal row of one
+          assignment, so a distinct count counts assignments. Null when the
+          teacher has no assignment in the period.
       - name: assignment_date
         data_type: timestamp
         description: When the assignment was created.
       - name: observer
         data_type: string
-        description: Name of the person who made the assignment.
+        description: >-
+          Staff roster name of the person who made the assignment. Null when
+          they have no employee number in Grow.
         config:
           meta:
             contains_pii: true
