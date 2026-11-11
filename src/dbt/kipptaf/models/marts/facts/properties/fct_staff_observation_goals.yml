@@ -89,6 +89,5 @@ unit_tests:
         # trunk-ignore(gitleaks/generic-api-key): md5 test fixture, not a secret
         - staff_observation_assignment_key: 8a8bb7cd343aa2ad99b7d762030857a2
           creator_staff_key: null
-        # trunk-ignore(gitleaks/generic-api-key): md5 test fixture, not a secret
         - staff_observation_assignment_key: 693a9fdd4c2fd0700968fba0d07ff3c0
           creator_staff_key: null
