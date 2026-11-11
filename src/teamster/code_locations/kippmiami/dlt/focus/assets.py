@@ -56,12 +56,9 @@ assets = [
         # memory every 60s and these pods live a few minutes, so any measured
         # peak is a floor, and a pod OOM-killed inside its first minute never
         # trips the limit-utilization alert. Check node `OOMKilling` events
-        # instead. Peak scales with how many tables a tick selects (5
-        # concurrent dlt extract workers, `FOCUS_CHUNK_SIZE` rows buffered
-        # each) and with row width: `custom_field_log_entries` rows are far
-        # wider than any other table's and keep growing, so its chunk sets the
-        # peak. Before raising memory again, consider a smaller chunk for that
-        # table alone (`FOCUS_CHUNK_SIZE` is shared by every Focus table), or a
+        # instead. Peak scales with `FOCUS_CHUNK_SIZE` times row width (see the
+        # constant) and with how many tables a tick selects. Before raising
+        # memory again, consider a smaller `FOCUS_CHUNK_SIZE`, or a
         # `dlt_extract_workers` tag in the intraday sensor's run tags, which
         # sensor-launched runs otherwise never carry.
         op_tags={

@@ -1,117 +1,312 @@
 models:
   - name: rpt_tableau__pm_outlier_detection
+    description: >-
+      One row per observer, PM round, and teacher they scored. Joins the outlier
+      detection script's per-observer results to each teacher's average score
+      from that observer's PM scoring forms (observation type PM before 2024,
+      PMS from 2024). Observer attributes come from their primary roster row on
+      the round's last end date across regions; teacher attributes come from
+      their primary roster row at their last scored form in the round, and are
+      null when no primary row covers that time.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - observer_employee_number
+              - academic_year
+              - reporting_term
+              - teacher_employee_number
     columns:
-      - name: observer_employee_number
-        data_type: int64
-      - name: academic_year
-        data_type: int64
-      - name: reporting_term
-        data_type: string
-      - name: pc1_current
-        data_type: float64
-      - name: pc1_global
-        data_type: float64
-      - name: pc1_variance_explained_current
-        data_type: float64
-      - name: pc1_variance_explained_global
-        data_type: float64
-      - name: pc2_current
-        data_type: float64
-      - name: pc2_global
-        data_type: float64
-      - name: pc2_variance_explained_current
-        data_type: float64
-      - name: pc2_variance_explained_global
-        data_type: float64
-      - name: manager_overall_score
-        data_type: float64
-      - name: etr1a
-        data_type: float64
-      - name: etr1b
-        data_type: float64
-      - name: etr2a
-        data_type: float64
-      - name: etr2b
-        data_type: float64
-      - name: etr2c
-        data_type: float64
-      - name: etr2d
-        data_type: float64
-      - name: etr3a
-        data_type: float64
-      - name: etr3b
-        data_type: float64
-      - name: etr3c
-        data_type: float64
-      - name: etr3d
-        data_type: float64
-      - name: etr4a
-        data_type: float64
-      - name: etr4b
-        data_type: float64
-      - name: etr4c
-        data_type: float64
-      - name: etr4d
-        data_type: float64
-      - name: etr4e
-        data_type: float64
-      - name: etr4f
-        data_type: float64
-      - name: etr5a
-        data_type: float64
-      - name: etr5b
-        data_type: float64
-      - name: etr5c
-        data_type: float64
-      - name: so1
-        data_type: float64
-      - name: so2
-        data_type: float64
-      - name: so3
-        data_type: float64
-      - name: so4
-        data_type: float64
-      - name: so5
-        data_type: float64
-      - name: so6
-        data_type: float64
-      - name: so7
-        data_type: float64
-      - name: so8
-        data_type: float64
-      - name: observer_name
-        data_type: string
-      - name: observer_department
-        data_type: string
-      - name: observer_job_title
-        data_type: string
-      - name: observer_location
-        data_type: string
-      - name: observer_manager
-        data_type: string
       - name: teacher_employee_number
         data_type: int64
+        description: Employee number of the teacher the observer scored.
+        data_tests:
+          - not_null
+        config:
+          meta:
+            contains_pii: true
+      - name: observer_employee_number
+        data_type: int64
+        description: Employee number of the observer who scored the forms.
+        config:
+          meta:
+            contains_pii: true
+      - name: academic_year
+        data_type: int64
+        description: Academic year of the round, as its starting calendar year.
+      - name: reporting_term
+        data_type: string
+        description: PM round code (PM1-PM3).
+      - name: pc1_current
+        data_type: float64
+        description:
+          Observer's first principal component score, fit on the current round.
+      - name: pc1_global
+        data_type: float64
+        description:
+          Observer's first principal component score, fit on all rounds.
+      - name: pc1_variance_explained_current
+        data_type: float64
+        description:
+          Share of variance the first component explains, current-round fit.
+      - name: pc1_variance_explained_global
+        data_type: float64
+        description:
+          Share of variance the first component explains, all-rounds fit.
+      - name: pc2_current
+        data_type: float64
+        description:
+          Observer's second principal component score, fit on the current round.
+      - name: pc2_global
+        data_type: float64
+        description:
+          Observer's second principal component score, fit on all rounds.
+      - name: pc2_variance_explained_current
+        data_type: float64
+        description:
+          Share of variance the second component explains, current-round fit.
+      - name: pc2_variance_explained_global
+        data_type: float64
+        description:
+          Share of variance the second component explains, all-rounds fit.
+      - name: manager_overall_score
+        data_type: float64
+        description:
+          Observer's average overall form score this round, from
+          rpt_python__manager_pm_averages.
+      - name: etr1a
+        data_type: float64
+        description: Observer's average row score on rubric measure ETR1A.
+      - name: etr1b
+        data_type: float64
+        description: Observer's average row score on rubric measure ETR1B.
+      - name: etr2a
+        data_type: float64
+        description: Observer's average row score on rubric measure ETR2A.
+      - name: etr2b
+        data_type: float64
+        description: Observer's average row score on rubric measure ETR2B.
+      - name: etr2c
+        data_type: float64
+        description: Observer's average row score on rubric measure ETR2C.
+      - name: etr2d
+        data_type: float64
+        description: Observer's average row score on rubric measure ETR2D.
+      - name: etr3a
+        data_type: float64
+        description: Observer's average row score on rubric measure ETR3A.
+      - name: etr3b
+        data_type: float64
+        description: Observer's average row score on rubric measure ETR3B.
+      - name: etr3c
+        data_type: float64
+        description: Observer's average row score on rubric measure ETR3C.
+      - name: etr3d
+        data_type: float64
+        description: Observer's average row score on rubric measure ETR3D.
+      - name: etr4a
+        data_type: float64
+        description: Observer's average row score on rubric measure ETR4A.
+      - name: etr4b
+        data_type: float64
+        description: Observer's average row score on rubric measure ETR4B.
+      - name: etr4c
+        data_type: float64
+        description: Observer's average row score on rubric measure ETR4C.
+      - name: etr4d
+        data_type: float64
+        description: Observer's average row score on rubric measure ETR4D.
+      - name: etr4e
+        data_type: float64
+        description: Observer's average row score on rubric measure ETR4E.
+      - name: etr4f
+        data_type: float64
+        description: Observer's average row score on rubric measure ETR4F.
+      - name: etr5a
+        data_type: float64
+        description: Observer's average row score on rubric measure ETR5A.
+      - name: etr5b
+        data_type: float64
+        description: Observer's average row score on rubric measure ETR5B.
+      - name: etr5c
+        data_type: float64
+        description: Observer's average row score on rubric measure ETR5C.
+      - name: so1
+        data_type: float64
+        description: Observer's average row score on rubric measure SO01.
+      - name: so2
+        data_type: float64
+        description: Observer's average row score on rubric measure SO02.
+      - name: so3
+        data_type: float64
+        description: Observer's average row score on rubric measure SO03.
+      - name: so4
+        data_type: float64
+        description: Observer's average row score on rubric measure SO04.
+      - name: so5
+        data_type: float64
+        description: Observer's average row score on rubric measure SO05.
+      - name: so6
+        data_type: float64
+        description: Observer's average row score on rubric measure SO06.
+      - name: so7
+        data_type: float64
+        description: Observer's average row score on rubric measure SO07.
+      - name: so8
+        data_type: float64
+        description: Observer's average row score on rubric measure SO08.
+      - name: observer_name
+        data_type: string
+        description: Observer's formatted name.
+        config:
+          meta:
+            contains_pii: true
+      - name: observer_department
+        data_type: string
+        description: Observer's home department.
+      - name: observer_job_title
+        data_type: string
+        description: Observer's job title.
+      - name: observer_location
+        data_type: string
+        description: Observer's home work location.
+      - name: observer_manager
+        data_type: string
+        description: Formatted name of the observer's manager.
+        config:
+          meta:
+            contains_pii: true
       - name: teacher_name
         data_type: string
+        description: Teacher's formatted name.
+        config:
+          meta:
+            contains_pii: true
       - name: teacher_department
         data_type: string
+        description: Teacher's home department.
       - name: teacher_job_title
         data_type: string
+        description: Teacher's job title.
       - name: teacher_location
         data_type: string
+        description: Teacher's home work location.
       - name: teacher_manager
         data_type: string
+        description: Formatted name of the teacher's manager.
+        config:
+          meta:
+            contains_pii: true
       - name: teacher_overall_score
         data_type: float64
+        description:
+          Average of observation_score over the scored measurement rows of every
+          PM scoring form this observer gave this teacher in the round, so each
+          form is weighted by its number of measurement rows.
       - name: iqr_current
         data_type: string
+        description:
+          outlier when the observer falls outside the interquartile-range fence
+          for the current round, else not outlier; null when the group was too
+          small to fit.
       - name: iqr_global
         data_type: string
+        description:
+          outlier when the observer falls outside the interquartile-range fence
+          across all rounds, else not outlier; null when the group was too small
+          to fit.
       - name: cluster_current
         data_type: string
+        description:
+          outlier when clustering on the current round labels the observer as
+          noise (-1), else not outlier; null when the group was too small to
+          fit.
       - name: cluster_global
         data_type: string
+        description:
+          outlier when clustering across all rounds labels the observer as noise
+          (-1), else not outlier; null when the group was too small to fit.
       - name: tree_current
         data_type: string
+        description:
+          outlier when the tree-based detector flags the observer (-1) on the
+          current round, else not outlier; null when the group was too small to
+          fit.
       - name: tree_global
         data_type: string
+        description:
+          outlier when the tree-based detector flags the observer (-1) across
+          all rounds, else not outlier; null when the group was too small to
+          fit.
+
+unit_tests:
+  - name: unit_rpt_pm_outlier_detection_unfit_rows_stay_null
+    description: >-
+      The outlier script leaves the outlier fields null for a group too small to
+      fit. Observer 1 is such a row and must show null labels, not "not
+      outlier". Observer 2 is flagged by every method and shows "outlier".
+    model: rpt_tableau__pm_outlier_detection
+    given:
+      - input: ref("stg_performance_management__outlier_detection")
+        rows:
+          - observer_employee_number: 1
+            academic_year: 2026
+            form_term: PM2
+          - observer_employee_number: 2
+            academic_year: 2026
+            form_term: PM2
+            is_iqr_outlier_current: true
+            is_iqr_outlier_global: true
+            cluster_current: -1
+            cluster_global: -1
+            tree_outlier_current: -1
+            tree_outlier_global: -1
+      - input: ref("stg_google_sheets__reporting__terms")
+        rows:
+          - academic_year: 2026
+            code: PM2
+            type: PMS
+            name: Coach Scores
+            end_date: 2026-12-18
+      - input: ref("int_performance_management__observation_details")
+        rows:
+          - employee_number: 10
+            observer_employee_number: 1
+            academic_year: 2026
+            term_code: PM2
+            observation_type_abbreviation: PMS
+            observation_score: 3.0
+            observed_at_timestamp: 2026-12-01 12:00:00
+          - employee_number: 20
+            observer_employee_number: 2
+            academic_year: 2026
+            term_code: PM2
+            observation_type_abbreviation: PMS
+            observation_score: 3.0
+            observed_at_timestamp: 2026-12-01 12:00:00
+      - input: ref("int_people__staff_roster_history")
+        rows:
+          - employee_number: 1
+            primary_indicator: true
+            effective_date_start_timestamp: 2026-07-01 00:00:00
+            effective_date_end_timestamp: 9999-12-31 00:00:00
+          - employee_number: 2
+            primary_indicator: true
+            effective_date_start_timestamp: 2026-07-01 00:00:00
+            effective_date_end_timestamp: 9999-12-31 00:00:00
+    expect:
+      rows:
+        - observer_employee_number: 1
+          iqr_current: null
+          iqr_global: null
+          cluster_current: null
+          cluster_global: null
+          tree_current: null
+          tree_global: null
+        - observer_employee_number: 2
+          iqr_current: outlier
+          iqr_global: outlier
+          cluster_current: outlier
+          cluster_global: outlier
+          tree_current: outlier
+          tree_global: outlier

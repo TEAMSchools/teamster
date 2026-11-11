@@ -1,0 +1,44 @@
+models:
+  - name: int_focus__apex_band_levels
+    description: >-
+      Focus Apex band levels of live band sets, one row per band, numbered 1 to
+      N by minimum score within the set, with each band's mastery flag. Focus
+      Assessments mastery is Level 3 and above on every band set.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - band_set_id
+              - label_number
+          config:
+            severity: error
+    columns:
+      - name: band_set_id
+        description: Focus apex_band_sets id the band belongs to.
+        data_type: int64
+      - name: label
+        description: >-
+          Band label shown to teachers (for example Level 3). Not unique within
+          a set: a set can repeat a label.
+        data_type: string
+      - name: min_score
+        description: Lower bound of the band, as a percent score.
+        data_type: numeric
+      - name: band_set_name
+        description: Name of the band set the band belongs to.
+        data_type: string
+      - name: upper_bound
+        description: >-
+          Exclusive upper bound of the band: the next band's minimum score, or
+          1000000 for the top band. Levels carry whole-number bounds with gaps,
+          so a score between 2 levels' stored bounds belongs to the lower one.
+        data_type: numeric
+      - name: label_number
+        description: Band position, 1 to N by minimum score within the set.
+        data_type: int64
+      - name: is_mastery
+        description: >-
+          True when the band is the set's Level 3 band or above it, false when
+          it is below. Decided by band order, not label text. Null when the set
+          has no band labeled Level 3.
+        data_type: boolean

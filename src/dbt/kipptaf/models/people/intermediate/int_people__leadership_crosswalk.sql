@@ -66,6 +66,32 @@ with
             home_work_location_campus_name
     ),
 
+    sheet_heads as (
+        -- a school id that more than one sheet row names a head for gets none
+        select
+            powerschool_school_id,
+
+            max(head_of_schools_employee_number) as head_of_schools_employee_number,
+        from {{ ref("stg_google_sheets__people__locations") }}
+        where head_of_schools_employee_number is not null
+        group by powerschool_school_id
+        having count(*) = 1
+    ),
+
+    school_leadership_heads as (
+        select
+            l.*,
+
+            coalesce(
+                sl.reports_to_employee_number, sh.head_of_schools_employee_number
+            ) as head_of_school_employee_number,
+        from school_leadership as l
+        left join staff_roster as sl on l.sl_employee_number = sl.employee_number
+        left join
+            sheet_heads as sh
+            on l.home_work_location_powerschool_school_id = sh.powerschool_school_id
+    ),
+
     mdo as (
         select
             home_work_location_region,
@@ -119,9 +145,9 @@ select
     mdo.google_email as mdo_google_email,
     mdo.job_title as mdo_job_title,
     mdo.sam_account_name as mdo_sam_account_name,
-from school_leadership as l
+from school_leadership_heads as l
 left join staff_roster as sl on l.sl_employee_number = sl.employee_number
-left join active_roster as hos on sl.reports_to_employee_number = hos.employee_number
+left join active_roster as hos on l.head_of_school_employee_number = hos.employee_number
 left join staff_roster as dso on l.dso_employee_number = dso.employee_number
 left join active_roster as mdso on dso.reports_to_employee_number = mdso.employee_number
 left join mdo as m on l.home_work_location_region = m.home_work_location_region

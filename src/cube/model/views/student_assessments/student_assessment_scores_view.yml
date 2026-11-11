@@ -33,6 +33,10 @@ views:
           - pct_proficient
           - pct_proficient_formative
           - pct_proficient_crq
+          - count_students_banded
+          - pct_students_at_level
+          - pct_students_below
+          - pct_students_far_below
           - avg_percent_correct
           - avg_scale_score
           - assessment_score_key
@@ -41,6 +45,8 @@ views:
           - enrollment_resolution
           - proficiency_level
           - performance_band_label_number
+          - mastery_level
+          - is_far_below
           - is_mastery
           - scale_score
           - percent_correct
@@ -164,6 +170,22 @@ views:
                 use grade_level.
           - campus
           - city
+          - school_id
+          - head_of_school_staff_key
+
+      - join_path: >-
+          student_assessment_scores.student_section_enrollments.student_school_enrollments.locations.staff_head_of_school
+        prefix: true
+        includes:
+          - name: full_name
+            meta:
+              ai_context: >-
+                Stored Last, First. Resolve a name against staff_directory
+                before filtering; a zero-row result is not proof the head of
+                school has no schools.
+          - first_name
+          - last_name
+          - google_email
 
       - join_path: >-
           student_assessment_scores.student_section_enrollments.student_school_enrollments.locations.regions
@@ -221,6 +243,8 @@ views:
             - enrollment_resolution
             - proficiency_level
             - performance_band_label_number
+            - mastery_level
+            - is_far_below
             - is_mastery
             - scale_score
             - percent_correct
@@ -260,8 +284,14 @@ views:
             - grade_band
             - campus
             - city
+            - school_id
             - region_name
             - state
+            - head_of_school_staff_key
+            - staff_head_of_school_full_name
+            - staff_head_of_school_first_name
+            - staff_head_of_school_last_name
+            - staff_head_of_school_google_email
         - name: Student
           members:
             - student_key
