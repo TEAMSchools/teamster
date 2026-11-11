@@ -62,7 +62,7 @@ models:
           Campus the walked school sits on, from int_people__location_crosswalk.
           This is the column the Tableau campus-DSO branch of the location gate
           scopes on, NOT campus_name — that one is the respondent's own campus.
-          Null for a school that is not on a shared campus.
+          Null when the walked school has no row in the campus crosswalk sheet.
       - name: respondent
         data_type: string
       - name: google_email

@@ -399,13 +399,14 @@ NJ campus groups were retired, so NJ campuses have none. To add a campus, add
 one line in the same shape, in every workbook that carries the gate.
 
 On Operations Systems `operations_ekg`, the branch reads `[school_campus_name]`
-(the walked school's campus) and drops the Room test, because the walkthrough
-form lists no Rooms:
+(the walked school's campus) and tests `[school_clean_name]` for Rooms. The form
+lists no Rooms today, but the location crosswalk gives some Rooms a campus, so
+the test stops a Room added to the form from passing:
 
 ```text
-    // CAMPUS DSO: a DSO in a campus group sees walkthroughs of every school on that campus
-    OR (IFNULL([school_campus_name], '') = 'KIPP Miami - North Campus'     AND ISMEMBEROF('KNJ-SG-Tableau All Staff KIPP Miami - North Campus') AND ISMEMBEROF('KNJ-SG-Tableau All DSO'))
-    OR (IFNULL([school_campus_name], '') = 'KIPP Miami - Poinciana Campus' AND ISMEMBEROF('KNJ-SG-Tableau All Staff Poinciana Campus') AND ISMEMBEROF('KNJ-SG-Tableau All DSO'))
+    // CAMPUS DSO: a DSO in a campus group sees walkthroughs of every school on that campus, never its Rooms
+    OR (IFNULL([school_campus_name], '') = 'KIPP Miami - North Campus'     AND NOT STARTSWITH([school_clean_name], 'Room') AND ISMEMBEROF('KNJ-SG-Tableau All Staff KIPP Miami - North Campus') AND ISMEMBEROF('KNJ-SG-Tableau All DSO'))
+    OR (IFNULL([school_campus_name], '') = 'KIPP Miami - Poinciana Campus' AND NOT STARTSWITH([school_clean_name], 'Room') AND ISMEMBEROF('KNJ-SG-Tableau All Staff Poinciana Campus') AND ISMEMBEROF('KNJ-SG-Tableau All DSO'))
 ```
 
 `[campus_name]` on that datasource is the respondent's campus, the same trap as
