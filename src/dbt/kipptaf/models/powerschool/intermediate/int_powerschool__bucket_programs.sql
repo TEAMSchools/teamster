@@ -8,14 +8,7 @@ with
             enter_date as assignment_date,
 
             trim(split(specprog_name, '-')[offset(0)]) as bucket,
-
-            case
-                trim(split(specprog_name, '-')[safe_offset(1)])
-                when 'ELA'
-                then 'Reading'
-                when 'Math'
-                then 'Math'
-            end as `subject`,
+            trim(split(specprog_name, '-')[safe_offset(1)]) as discipline,
         from {{ ref("int_powerschool__spenrollments") }}
         where specprog_name like 'Bucket%'
     ),
@@ -29,17 +22,20 @@ with
             _dbt_source_project,
             assignment_date,
             bucket,
-            `subject`,
 
             exit_date is null
             or exit_date >= current_date('{{ var("local_timezone") }}') as is_active,
+
+            case
+                discipline when 'ELA' then 'Reading' when 'Math' then 'Math'
+            end as `subject`,
 
             countif(
                 exit_date is null
                 or exit_date >= current_date('{{ var("local_timezone") }}')
             ) over (
                 partition by
-                    academic_year, _dbt_source_project, student_number, `subject`
+                    academic_year, _dbt_source_project, student_number, discipline
             ) as n_active_assignments,
         from programs
     ),
@@ -49,7 +45,7 @@ with
             dbt_utils.deduplicate(
                 relation="assignments",
                 partition_by="academic_year, _dbt_source_project, student_number, subject, assignment_date",
-                order_by="is_active desc, exit_date desc, bucket asc",
+                order_by="is_active desc, bucket asc, exit_date desc",
             )
         }}
     )

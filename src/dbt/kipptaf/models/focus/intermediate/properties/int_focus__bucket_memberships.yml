@@ -6,11 +6,11 @@ models:
       frozen PowerSchool archive holds Miami's buckets. One row per
       academic_year x _dbt_source_project x student_number x subject x
       assignment_date (the membership's created date). When 2 memberships share
-      a created date, the active one wins, then the later end, then the
-      lower-numbered bucket. 2 bucket groups for 1 subject are a Focus
-      data-entry error and the lower-numbered one is correct; the Focus package
-      test int_focus__student_group_memberships__one_bucket_per_subject lists
-      them for correction. Read through int_students__bucket_assignments.
+      a created date, the active one wins, then the lower-numbered bucket, then
+      the later end. 2 bucket groups for 1 subject are a Focus data-entry error
+      and the lower-numbered one is correct; the Focus package test
+      int_focus__student_group_memberships__one_bucket_per_subject lists them
+      for correction. Read through int_students__bucket_assignments.
     config:
       meta:
         contains_pii: true
@@ -57,7 +57,7 @@ unit_tests:
     description: >-
       Decodes a bucket group, excludes non-bucket groups and bucket groups
       before the cutover year, and keeps the lower-numbered bucket of 2
-      memberships created on the same day.
+      memberships created on the same day even when the other group ends later.
     model: int_focus__bucket_memberships
     given:
       - input: ref("int_focus__student_group_memberships")
@@ -92,7 +92,7 @@ unit_tests:
               2026,
               timestamp '2026-09-17 09:00:00',
               'Bucket 3 - Math',
-              cast(null as date),
+              date '2099-07-30',
               'kippmiami'
           union all
           select

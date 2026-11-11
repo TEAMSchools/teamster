@@ -5,8 +5,8 @@ models:
       bucket and subject, across the NJ regions and the frozen Miami archive.
       One row per academic_year x _dbt_source_project x student_number x subject
       x assignment_date (the program enter date). When 2 programs share an enter
-      date, the active one wins, then the later exit, then the lower-numbered
-      bucket. 2 concurrent buckets for 1 subject are a PowerSchool data-entry
+      date, the active one wins, then the lower-numbered bucket, then the later
+      exit. 2 concurrent buckets for 1 subject are a PowerSchool data-entry
       error and the lower-numbered one is correct; the PowerSchool package test
       int_powerschool__spenrollments__no_concurrent_bucket_per_subject lists
       them for correction. Read through int_students__bucket_assignments.
@@ -58,7 +58,8 @@ unit_tests:
       live rows and a past exit on amended-out rows), excludes non-bucket
       programs, counts a same-subject double upload, keeps the active one of 2
       programs entered on the same day, and keeps the lower-numbered bucket of 2
-      concurrent programs entered on the same day.
+      concurrent programs entered on the same day even when the other one exits
+      later.
     model: int_powerschool__bucket_programs
     given:
       - input: ref("int_powerschool__spenrollments")
@@ -210,7 +211,7 @@ unit_tests:
               2026,
               'Bucket 3 - Math',
               date '2026-09-01',
-              date '2099-06-30',
+              date '2099-07-30',
               'kippnewark',
               '`t`.`kippnewark_powerschool`.`x`',
               cast(null as int64),

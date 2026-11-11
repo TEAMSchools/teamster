@@ -23,7 +23,6 @@ with
             academic_year,
             `subject`,
             bucket,
-            bucket_store,
             assignment_date,
 
             -- exit_date is half-open, like the enrollment exit
@@ -39,7 +38,6 @@ with
             s._dbt_source_project,
             s.`subject`,
             s.bucket,
-            s.bucket_store,
             s.assignment_date,
 
             e.academic_year,
@@ -56,6 +54,8 @@ with
             and s.academic_year = e.academic_year
             and s.assignment_date <= e.enrollment_end
             and s.span_end >= e.entrydate
+            -- a stint that exits on its entry date covers no date
+            and e.entrydate <= e.enrollment_end
         -- an assignment entered and exited on the same day covers no date
         where s.assignment_date <= s.span_end
     )
@@ -64,7 +64,6 @@ select
     _dbt_source_project,
     `subject`,
     bucket,
-    bucket_store,
     assignment_date,
 
     effective_date_start as effective_date_start_key,
@@ -90,8 +89,6 @@ select
             "student_number", "_dbt_source_project", "academic_year", "entrydate"
         )
     }} as student_enrollment_key,
-
-    effective_date_end = '9999-12-31' as is_current,
 
     row_number() over (
         partition by
