@@ -807,8 +807,9 @@ cubes:
           # it serves the IEP-vs-gen-ed disparity cut.
           - student_enrollment_status.is_iep
           # bucket serves the DDI bucket-count and bucket-mastery cuts. It adds
-          # rows only from 2025-26, where buckets start, and stays under the
-          # 2x is_iep bar there.
+          # rows only from 2025-26, where buckets start. Like is_iep, its values
+          # follow the fact's rebuilds (refresh_key below), not the status
+          # dim's, so a bucket change waits for the next fact rebuild.
           - student_assessment_scores.bucket
           - locations.region_key
           - locations.abbreviation
