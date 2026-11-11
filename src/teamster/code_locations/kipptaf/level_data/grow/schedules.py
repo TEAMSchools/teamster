@@ -19,8 +19,12 @@ from teamster.code_locations.kipptaf.level_data.grow.assets import (
 
 grow_user_sync_schedule = ScheduleDefinition(
     name=f"{grow_user_sync.key.to_python_identifier()}_schedule",
-    target=grow_user_sync,
-    cron_schedule="0 3 * * *",
+    target=define_asset_job(
+        name=f"{grow_user_sync.key.to_python_identifier()}_asset_job",
+        selection=[grow_user_sync],
+        executor_def=in_process_executor,
+    ),
+    cron_schedule="20 3 * * *",
     execution_timezone=str(LOCAL_TIMEZONE),
 )
 
