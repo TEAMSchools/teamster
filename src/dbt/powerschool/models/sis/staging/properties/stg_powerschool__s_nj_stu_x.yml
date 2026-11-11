@@ -718,6 +718,15 @@ models:
         data_type: int64
       - name: pid_504_tf
         data_type: int64
+      - name: is_504
+        data_type: boolean
+        description:
+          True when `pid_504_tf` is 1, the "Section 504" field on the
+          PowerSchool NJ SLA page. False when it is 0 or unset, because the
+          field defaults to No.
+        config:
+          meta:
+            contains_pii: true
       - name: pid_accommodations_a_tf
         data_type: int64
       - name: pid_accommodations_b_tf
