@@ -340,9 +340,9 @@ TEAM employee who oversees Paterson gets Paterson visibility by being added to
 the Paterson group, with no calc change. Deriving entity from the viewer's
 roster row would silently revoke access from every cross-entity supervisor.
 
-Location gate: 26 explicit branches, one per school location. This text is
-byte-identical in all 9 workbooks that carry it — verified by hashing the
-formula on 2026-08-05 — so paste it whole rather than retyping.
+Location gate: 26 explicit branches, one per school location, then one
+campus-DSO branch per campus. This text is byte-identical in all 8 workbooks
+that carry it, so paste it whole rather than retyping.
 
 ```text
 (
@@ -372,11 +372,44 @@ formula on 2026-08-05 — so paste it whole rather than retyping.
     OR ([location_clean_name] = 'KIPP Upper Roseville Academy'    AND ISMEMBEROF('KNJ-SG-Tableau All Staff KIPP Upper Roseville Academy'))
     OR ([location_clean_name] = 'Paterson Prep Elementary School' AND ISMEMBEROF('KNJ-SG-Tableau All Staff KIPP Paterson Prep Elementary'))      // BRIDGE
     OR ([location_clean_name] = 'Paterson Prep Middle School'     AND ISMEMBEROF('KNJ-SG-Tableau All Staff KIPP Paterson Prep Middle'))          // BRIDGE
+    // CAMPUS DSO: a DSO in a campus group sees every school on that campus, never its Rooms
+    OR (IFNULL([campus_name], '') = 'KIPP Miami - North Campus'     AND NOT STARTSWITH([location_clean_name], 'Room') AND ISMEMBEROF('KNJ-SG-Tableau All Staff KIPP Miami - North Campus') AND ISMEMBEROF('KNJ-SG-Tableau All DSO'))
+    OR (IFNULL([campus_name], '') = 'KIPP Miami - Poinciana Campus' AND NOT STARTSWITH([location_clean_name], 'Room') AND ISMEMBEROF('KNJ-SG-Tableau All Staff Poinciana Campus') AND ISMEMBEROF('KNJ-SG-Tableau All DSO'))
 )
 ```
 
 Rooms are absent by design — central office reaches data through Tiers 2 and 4,
 never through location.
+
+The campus-DSO branches give a DSO whose own location is a campus the same view
+as the DSO of each school on that campus. Three conditions do the scoping, and
+each is load-bearing:
+
+- **The campus group** stands in for "the viewer is located at the campus". Its
+  members are the staff whose roster location is the campus itself, not the
+  staff of the schools on it.
+- **`All DSO`** keeps the widening to DSOs. A school leader or AP located at the
+  campus still sees only the campus location's own rows.
+- **`NOT STARTSWITH([location_clean_name], 'Room')`** keeps office staff out.
+  Room 11 carries `campus_name = 'KIPP Miami - North Campus'`, so without it a
+  North Campus DSO would see the Miami regional office.
+
+A campus gets a branch only when its campus group exists on Tableau Server. The
+NJ campus groups were retired, so NJ campuses have none. To add a campus, add
+one line in the same shape, in every workbook that carries the gate.
+
+On Operations Systems `operations_ekg`, the branch reads `[school_campus_name]`
+(the walked school's campus) and drops the Room test, because the walkthrough
+form lists no Rooms:
+
+```text
+    // CAMPUS DSO: a DSO in a campus group sees walkthroughs of every school on that campus
+    OR (IFNULL([school_campus_name], '') = 'KIPP Miami - North Campus'     AND ISMEMBEROF('KNJ-SG-Tableau All Staff KIPP Miami - North Campus') AND ISMEMBEROF('KNJ-SG-Tableau All DSO'))
+    OR (IFNULL([school_campus_name], '') = 'KIPP Miami - Poinciana Campus' AND ISMEMBEROF('KNJ-SG-Tableau All Staff Poinciana Campus') AND ISMEMBEROF('KNJ-SG-Tableau All DSO'))
+```
+
+`[campus_name]` on that datasource is the respondent's campus, the same trap as
+`location_clean_name` versus `school_clean_name` above.
 
 Role gate. **This is the one helper that legitimately differs per workbook** —
 the audit found five distinct shapes across 10 workbooks. The canonical form:
