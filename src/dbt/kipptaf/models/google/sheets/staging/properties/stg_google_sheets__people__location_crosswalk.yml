@@ -1,11 +1,49 @@
 models:
   - name: stg_google_sheets__people__location_crosswalk
+    description: |
+      Maps each location name spelling used by source systems to its canonical
+      location name. Read from a Google Sheet the People team keeps by hand. One
+      row per Name. Sheet rows that repeat a Name with the same Clean_Name
+      collapse to 1 row. A Name mapped to 2 different Clean_Names is dropped,
+      because neither is a safe pick.
     columns:
       - name: Name
         data_type: string
+        description: Location name as a source system spells it.
         data_tests:
           - unique:
               config:
                 severity: error
       - name: Clean_Name
         data_type: string
+        description: |
+          Canonical location name. Join key to
+          stg_google_sheets__people__locations.location_name.
+
+unit_tests:
+  - name: stg_google_sheets__people__location_crosswalk__defends_sheet_duplicates
+    description: |
+      A Name repeated with the same Clean_Name keeps 1 row. A Name mapped to 2
+      Clean_Names is dropped.
+    model: stg_google_sheets__people__location_crosswalk
+    given:
+      - input:
+          source("google_sheets",
+          "src_google_sheets__people__location_crosswalk")
+        rows:
+          - Name: Alias A
+            Clean_Name: School A
+          - Name: Alias A
+            Clean_Name: School A
+          - Name: Alias B
+            Clean_Name: School B
+          - Name: Alias B
+            Clean_Name: School C
+          - Name: Alias D
+            Clean_Name: School D
+    expect:
+      rows:
+        - Name: Alias A
+          Clean_Name: School A
+        - Name: Alias D
+          Clean_Name: School D

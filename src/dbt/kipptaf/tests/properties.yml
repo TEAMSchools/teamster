@@ -312,6 +312,54 @@ data_tests:
           ref:
             name: stg_google_sheets__assessments__academic_goals
 
+  # TODO(#5558): runbook
+  - name: stg_google_sheets__people__location_crosswalk__sheet_duplicates
+    description: >-
+      Lists location names that appear on more than one row of the location
+      crosswalk Google Sheet. The staging model collapses copies that share one
+      clean name and drops a name mapped to 2 clean names, so staff at that
+      location lose their location fields on the roster. To fix, the People team
+      deletes the extra row for each listed name.
+    config:
+      tags:
+        - google_sheet
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: stg_google_sheets__people__location_crosswalk
+
+  # TODO(#5558): runbook
+  - name: stg_google_sheets__people__powerschool_crosswalk__sheet_duplicates
+    description: >-
+      Lists employee numbers with more than one active row on the PowerSchool
+      crosswalk Google Sheet. The staging model drops every active row for a
+      listed number, so that staff member loses their PowerSchool teacher number
+      on the roster. To fix, the sheet owner marks the wrong row inactive or
+      deletes it.
+    config:
+      tags:
+        - google_sheet
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: stg_google_sheets__people__powerschool_crosswalk
+
+  # TODO(#5558): runbook
+  - name: stg_ldap__user_person__source_duplicate_employee_numbers
+    description: >-
+      Lists employee numbers held by more than one Active Directory account. The
+      staging model keeps one account per number, preferring an enabled account
+      with an active IdAuto status, so the roster may show the wrong email or
+      username. To fix, IT clears the employee number from the stale account.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: stg_ldap__user_person
+
   - name: test_sf_contact_note_duplicate
     description: >-
       Salesforce Contact Notes entered more than once for the same student, from
