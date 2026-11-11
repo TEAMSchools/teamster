@@ -198,21 +198,19 @@ with
 
     microgoals_long as (
         select
-            u.internal_id_int as employee_number,
+            ds.staff_unique_id as employee_number,
 
-            m.tag_name as goal_name,
+            gt.goal_name,
 
             date_add(
-                date(timestamp_trunc(timestamp(a.created), week)), interval 1 day
+                date(timestamp_trunc(f.assignment_created_timestamp, week)),
+                interval 1 day
             ) as week_start_monday,
-        from {{ ref("stg_schoolmint_grow__users") }} as u
+        from {{ ref("fct_staff_observation_goals") }} as f
+        inner join {{ ref("dim_staff") }} as ds on f.teacher_staff_key = ds.staff_key
         inner join
-            {{ ref("stg_schoolmint_grow__assignments") }} as a on u.user_id = a.user_id
-        inner join
-            {{ ref("int_schoolmint_grow__assignments__tags") }} as t
-            on a.assignment_id = t.assignment_id
-        inner join
-            {{ ref("int_schoolmint_grow__microgoals") }} as m on t.tag_id = m.tag_id
+            {{ ref("dim_staff_observation_goal_types") }} as gt
+            on f.staff_observation_goal_type_key = gt.staff_observation_goal_type_key
     ),
 
     microgoals as (
