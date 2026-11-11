@@ -112,7 +112,7 @@ with
             dbt_utils.deduplicate(
                 relation="assignments",
                 partition_by="academic_year, _dbt_source_project, student_number, subject, assignment_date",
-                order_by="is_active desc, exit_date desc, bucket desc",
+                order_by="is_active desc, exit_date desc, bucket asc",
             )
         }}
     )

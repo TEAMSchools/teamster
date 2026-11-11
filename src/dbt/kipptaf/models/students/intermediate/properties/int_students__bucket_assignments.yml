@@ -8,9 +8,12 @@ models:
       (academic_year x _dbt_source_project x student_number x subject x
       assignment_date), so a student's mid-year changes and rollout-PD
       amendments (exit and re-enter) all stay. When 2 assignments share an
-      assignment_date, the active one, then the latest exit, then the higher
-      bucket label wins; a true double upload still surfaces through
-      n_active_assignments. Bucket 4 is never stored. The latest assignment per
+      assignment_date, the active one wins, then the later exit, then the
+      lower-numbered bucket: 2 concurrent buckets for 1 subject are a
+      PowerSchool data-entry error, the lower-numbered one is correct, and the
+      PowerSchool package test
+      int_powerschool__spenrollments__no_concurrent_bucket_per_subject lists
+      them for correction. Bucket 4 is never stored. The latest assignment per
       year is int_students__bucket_assignments_rollup, and
       dim_student_bucket_status turns these rows into enrollment spans.
       _dbt_source_project is part of the grain because student numbers repeat
@@ -20,10 +23,12 @@ models:
         contains_pii: true
         standard_exempt:
           A5: >-
-            Picking 1 of 2 assignments stored on the same day is the business
-            rule (an active assignment supersedes one entered and exited that
-            day), not source-duplicate masking; a true double upload still
-            surfaces through n_active_assignments.
+            Picking 1 of 2 assignments stored on the same day is the defense
+            step for a PowerSchool data-entry error that the package test
+            int_powerschool__spenrollments__no_concurrent_bucket_per_subject
+            warns on at the point of entry. An active assignment supersedes one
+            already exited, and between 2 concurrent buckets the lower-numbered
+            one is correct.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -94,10 +99,11 @@ unit_tests:
       Decodes both stores, keeps every assignment on re-assignment (PowerSchool
       stores a scheduled future year-end exit on live rows and a past exit on
       amended-out rows), keeps the active one of 2 assignments stored on the
-      same day, counts a same-subject double upload, excludes non-bucket groups
-      and programs and Focus bucket groups before the 2026-27 cutover, keeps
-      same-number students in different regions apart, and matches Miami archive
-      programs, whose enrollments carry no studentid, on student_number.
+      same day, keeps the lower-numbered bucket of 2 concurrent same-day
+      assignments, counts a same-subject double upload, excludes non-bucket
+      groups and programs and Focus bucket groups before the 2026-27 cutover,
+      keeps same-number students in different regions apart, and matches Miami
+      archive programs, whose enrollments carry no studentid, on student_number.
     model: int_students__bucket_assignments
     given:
       - input: ref("int_powerschool__spenrollments")
@@ -262,6 +268,46 @@ unit_tests:
               false,
               false,
               false
+          union all
+          select
+              15,
+              5004,
+              2026,
+              'Bucket 3 - Math',
+              date '2026-09-01',
+              date '2099-06-30',
+              'kippnewark',
+              '`t`.`kippnewark_powerschool`.`x`',
+              cast(null as int64),
+              cast(null as int64),
+              cast(null as int64),
+              cast(null as int64),
+              cast(null as string),
+              cast(null as string),
+              1,
+              false,
+              false,
+              false
+          union all
+          select
+              15,
+              5004,
+              2026,
+              'Bucket 1 - Math',
+              date '2026-09-01',
+              date '2099-06-30',
+              'kippnewark',
+              '`t`.`kippnewark_powerschool`.`x`',
+              cast(null as int64),
+              cast(null as int64),
+              cast(null as int64),
+              cast(null as int64),
+              cast(null as string),
+              cast(null as string),
+              1,
+              false,
+              false,
+              false
       - input: ref("int_extracts__student_enrollments")
         rows:
           - studentid: 11
@@ -286,6 +332,11 @@ unit_tests:
             _dbt_source_project: kippmiami
           - studentid: 14
             student_number: 5003
+            academic_year: 2026
+            rn_year: 1
+            _dbt_source_project: kippnewark
+          - studentid: 15
+            student_number: 5004
             academic_year: 2026
             rn_year: 1
             _dbt_source_project: kippnewark
@@ -362,6 +413,15 @@ unit_tests:
           assignment_date: 2026-09-01
           exit_date: 2099-06-30
           n_active_assignments: 1
+        - academic_year: 2026
+          _dbt_source_project: kippnewark
+          student_number: 5004
+          subject: Math
+          bucket: Bucket 1
+          bucket_store: powerschool
+          assignment_date: 2026-09-01
+          exit_date: 2099-06-30
+          n_active_assignments: 2
         - academic_year: 2026
           _dbt_source_project: kippmiami
           student_number: 84001234
