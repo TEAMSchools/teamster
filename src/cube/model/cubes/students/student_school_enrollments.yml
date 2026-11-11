@@ -104,39 +104,3 @@ cubes:
         sql: is_retained_year
         type: boolean
         public: true
-
-      - name: ela_bucket
-        description: >-
-          The student's ELA bucket for the academic year — the latest stored
-          assignment, or Bucket 4 when none is stored. Null before 2025-26 and
-          on grade 99 rows. The same on every enrollment row of the year in a
-          region. Use it when the subject being analyzed is ELA or reading; for
-          assessments, pick ela_bucket or math_bucket by the assessment's
-          bucket_subject.
-        sql: ela_bucket
-        type: string
-        public: true
-        meta:
-          ai_context: >-
-            For assessment scores, slice by bucket on
-            student_assessment_scores_view instead; it picks this member or
-            math_bucket by each assessment's subject. A null before 2025-26 is
-            not an unbucketed student: the bucket model starts that year.
-
-      - name: math_bucket
-        description: >-
-          The student's math bucket for the academic year — the latest stored
-          assignment, or Bucket 4 when none is stored. Null before 2025-26 and
-          on grade 99 rows. The same on every enrollment row of the year in a
-          region. Use it when the subject being analyzed is math; for
-          assessments, pick ela_bucket or math_bucket by the assessment's
-          bucket_subject.
-        sql: math_bucket
-        type: string
-        public: true
-        meta:
-          ai_context: >-
-            For assessment scores, slice by bucket on
-            student_assessment_scores_view instead; it picks this member or
-            ela_bucket by each assessment's subject. A null before 2025-26 is
-            not an unbucketed student: the bucket model starts that year.

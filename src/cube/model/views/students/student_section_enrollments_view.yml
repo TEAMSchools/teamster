@@ -51,6 +51,10 @@ views:
           - graduation_year
           - year_in_network
           - is_retained_year
+
+      - join_path: student_section_enrollments.student_school_enrollments.student_enrollment_status
+        prefix: false
+        includes:
           - ela_bucket
           - math_bucket
 

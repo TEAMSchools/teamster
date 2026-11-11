@@ -76,3 +76,37 @@ cubes:
         sql: meal_eligibility
         type: string
         public: true
+
+      - name: ela_bucket
+        description: >-
+          The student's ELA bucket for this enrollment stint — the bucket of the
+          latest span in the stint, or Bucket 4 when the stint has none. Null
+          before 2025-26 and on grade 99 rows. Use it when the subject being
+          analyzed is ELA or reading; for assessments, pick ela_bucket or
+          math_bucket by the assessment's bucket_subject.
+        sql: ela_bucket
+        type: string
+        public: true
+        meta:
+          ai_context: >-
+            For assessment scores, slice by bucket on
+            student_assessment_scores_view instead; it picks this member or
+            math_bucket by each assessment's subject. A null before 2025-26 is
+            not an unbucketed student: the bucket model starts that year.
+
+      - name: math_bucket
+        description: >-
+          The student's math bucket for this enrollment stint — the bucket of
+          the latest span in the stint, or Bucket 4 when the stint has none.
+          Null before 2025-26 and on grade 99 rows. Use it when the subject
+          being analyzed is math; for assessments, pick ela_bucket or
+          math_bucket by the assessment's bucket_subject.
+        sql: math_bucket
+        type: string
+        public: true
+        meta:
+          ai_context: >-
+            For assessment scores, slice by bucket on
+            student_assessment_scores_view instead; it picks this member or
+            ela_bucket by each assessment's subject. A null before 2025-26 is
+            not an unbucketed student: the bucket model starts that year.

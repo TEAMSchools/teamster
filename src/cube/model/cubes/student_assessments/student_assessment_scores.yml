@@ -302,21 +302,22 @@ cubes:
         public: true
 
       # Reads 2 joined cubes: the assessment's bucket_subject picks the
-      # student's ELA or math bucket for the year. Both sit on this cube's only
-      # join path to them, so referencing them adds no join and no diamond.
+      # student's ELA or math bucket for the enrollment stint. Both sit on this
+      # cube's only join path to them, so referencing them adds no join and no
+      # diamond.
       - name: bucket
         description: >-
-          The student's bucket for the subject of this assessment — the ELA
-          bucket on reading and ELA assessments, the math bucket on math
-          assessments, and null where no bucket applies (science, social
-          studies, AP exam scores, combined and composite college scores, and
-          internal subjects with no course subject crosswalk row). Bucket 4 when
-          the student has no stored bucket for that subject; null before 2025-26
-          and on grade 99 rows.
+          The student's bucket for the subject of this assessment, in the
+          enrollment stint the score belongs to — the ELA bucket on reading and
+          ELA assessments, the math bucket on math assessments, and null where
+          no bucket applies (science, social studies, AP exam scores, combined
+          and composite college scores, and internal subjects with no course
+          subject crosswalk row). Bucket 4 when the stint has no bucket for that
+          subject; null before 2025-26 and on grade 99 rows.
         sql: >-
           CASE {student_assessments.bucket_subject}
-            WHEN 'Reading' THEN {student_school_enrollments.ela_bucket}
-            WHEN 'Math' THEN {student_school_enrollments.math_bucket}
+            WHEN 'Reading' THEN {student_enrollment_status.ela_bucket}
+            WHEN 'Math' THEN {student_enrollment_status.math_bucket}
           END
         type: string
         public: true

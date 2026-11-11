@@ -551,7 +551,7 @@ TWINS.update(
             ]
         },
         **{
-            ("student_school_enrollments", c): ("dim_student_enrollments", c)
+            ("student_enrollment_status", c): ("dim_student_enrollment_status", c)
             for c in ["ela_bucket", "math_bucket"]
         },
         ("student_assessment_administrations", "administration_period"): (

@@ -130,8 +130,6 @@ views:
           - graduation_year
           - year_in_network
           - is_retained_year
-          - ela_bucket
-          - math_bucket
 
       - join_path: >-
           student_assessment_scores.student_section_enrollments.student_school_enrollments.student_enrollment_status
@@ -144,6 +142,8 @@ views:
           - special_education_placement
           - is_meal_eligible
           - meal_eligibility
+          - ela_bucket
+          - math_bucket
 
       - join_path: >-
           student_assessment_scores.student_section_enrollments.student_school_enrollments.students

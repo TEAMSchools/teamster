@@ -139,8 +139,6 @@ views:
           - entry_date
           - exit_date
           - is_retained_year
-          - ela_bucket
-          - math_bucket
 
       - join_path: student_attendance_enrollment_daily.student_school_enrollments.student_homeroom_section.staff_homeroom_teacher
         prefix: true
@@ -160,6 +158,8 @@ views:
           - special_education_placement
           - is_meal_eligible
           - meal_eligibility
+          - ela_bucket
+          - math_bucket
 
       - join_path: student_attendance_enrollment_daily.student_school_enrollments.students
         prefix: false
