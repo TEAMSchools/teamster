@@ -141,6 +141,7 @@ with
 select
     a.assignment_id,
     a.user_id,
+    a.creator_id,
     a.creator_name,
     a.created,
     a.created_date_local,
@@ -162,6 +163,7 @@ union all
 select
     a.assignment_id,
     a.user_id,
+    a.creator_id,
     a.creator_name,
     a.created,
     a.created_date_local,

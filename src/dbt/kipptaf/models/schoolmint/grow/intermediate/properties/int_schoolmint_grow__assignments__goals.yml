@@ -27,6 +27,9 @@ models:
       - name: user_id
         data_type: string
         description: Grow user id of the teacher the assignment is for.
+      - name: creator_id
+        data_type: string
+        description: Grow user id of the person who made the assignment.
       - name: creator_name
         data_type: string
         description: Name of the person who made the assignment.
@@ -117,22 +120,22 @@ unit_tests:
       - input: ref("stg_schoolmint_grow__assignments")
         format: sql
         rows: |
-          select 'a1' as assignment_id, 'u1' as user_id, 'Coach' as creator_name, timestamp '2026-11-02 12:00:00' as created, date '2026-11-02' as created_date_local, '3D.01 Magic ratio. Respond positively.' as name_text, '3D' as microgoal_strand_code
-          union all select 'a2', 'u1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', 'CVOE-K12-27 Value student voice', null
-          union all select 'a3', 'u1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', 'MAT-K12-14 Collects data', null
-          union all select 'a4', 'u1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', '2B.04 Pacing. Create the illusion of speed.', '2B'
-          union all select 'a5', 'u1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', '3D.01 Magic ratio. Respond positively.', '3D'
-          union all select 'a6', 'u1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', 'Free text goal', null
-          union all select 'a7', 'u1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', 'CVOE-K12-01 Build relationships', null
-          union all select 'a8', 'u1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', 'CVOE-K12-13 Command the room', null
+          select 'a1' as assignment_id, 'u1' as user_id, 'c1' as creator_id, 'Coach' as creator_name, timestamp '2026-11-02 12:00:00' as created, date '2026-11-02' as created_date_local, '3D.01 Magic ratio. Respond positively.' as name_text, '3D' as microgoal_strand_code
+          union all select 'a2', 'u1', 'c1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', 'CVOE-K12-27 Value student voice', null
+          union all select 'a3', 'u1', 'c1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', 'MAT-K12-14 Collects data', null
+          union all select 'a4', 'u1', 'c1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', '2B.04 Pacing. Create the illusion of speed.', '2B'
+          union all select 'a5', 'u1', 'c1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', '3D.01 Magic ratio. Respond positively.', '3D'
+          union all select 'a6', 'u1', 'c1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', 'Free text goal', null
+          union all select 'a7', 'u1', 'c1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', 'CVOE-K12-01 Build relationships', null
+          union all select 'a8', 'u1', 'c1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', 'CVOE-K12-13 Command the room', null
     expect:
       format: sql
       rows: |
-        select 'a1' as assignment_id, 'u1' as user_id, 'Coach' as creator_name, timestamp '2026-11-02 12:00:00' as created, date '2026-11-02' as created_date_local, 'm3' as goal_tag_id, 'Microgoals' as goal_type_name, '3D.01 Magic ratio.' as goal_name, '3D: Joy' as strand_name, '3: Kids Love Learning' as bucket_name
-        union all select 'a2', 'u1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', 'l2', 'Lookfors', 'CVOE-K12-27 Value student voice', 'Cognitive Engagement', 'CVoE'
-        union all select 'a3', 'u1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', 'l5', 'Lookfors', 'MAT-K12-14 Collects data', 'Monitor Student Thinking', 'K-12 Math'
-        union all select 'a4', 'u1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', null, 'Microgoals', '2B.04 Pacing. Create the illusion of speed.', '2B: On Task', '2: Uphold Excellence'
-        union all select 'a5', 'u1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', 'm3', 'Microgoals', '3D.01 Magic ratio.', '3D: Joy', '3: Kids Love Learning'
-        union all select 'a6', 'u1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', null, null, 'Free text goal', null, null
-        union all select 'a7', 'u1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', 'l1', 'Lookfors', 'CVOE-K12-01 Build relationships', 'CVoE', null
-        union all select 'a8', 'u1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', 'l6', 'Lookfors', 'CVOE-K12-13 Command the room', 'Behavioral Engagement', 'CVoE'
+        select 'a1' as assignment_id, 'u1' as user_id, 'c1' as creator_id, 'Coach' as creator_name, timestamp '2026-11-02 12:00:00' as created, date '2026-11-02' as created_date_local, 'm3' as goal_tag_id, 'Microgoals' as goal_type_name, '3D.01 Magic ratio.' as goal_name, '3D: Joy' as strand_name, '3: Kids Love Learning' as bucket_name
+        union all select 'a2', 'u1', 'c1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', 'l2', 'Lookfors', 'CVOE-K12-27 Value student voice', 'Cognitive Engagement', 'CVoE'
+        union all select 'a3', 'u1', 'c1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', 'l5', 'Lookfors', 'MAT-K12-14 Collects data', 'Monitor Student Thinking', 'K-12 Math'
+        union all select 'a4', 'u1', 'c1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', null, 'Microgoals', '2B.04 Pacing. Create the illusion of speed.', '2B: On Task', '2: Uphold Excellence'
+        union all select 'a5', 'u1', 'c1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', 'm3', 'Microgoals', '3D.01 Magic ratio.', '3D: Joy', '3: Kids Love Learning'
+        union all select 'a6', 'u1', 'c1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', null, null, 'Free text goal', null, null
+        union all select 'a7', 'u1', 'c1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', 'l1', 'Lookfors', 'CVOE-K12-01 Build relationships', 'CVoE', null
+        union all select 'a8', 'u1', 'c1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', 'l6', 'Lookfors', 'CVOE-K12-13 Command the room', 'Behavioral Engagement', 'CVoE'
