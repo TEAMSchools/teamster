@@ -3,18 +3,18 @@ models:
     description: |
       Maps each location name spelling used by source systems to its canonical
       location name. Read from a Google Sheet the People team keeps by hand. One
-      row per Name. Sheet rows that repeat a Name with the same Clean_Name
-      collapse to 1 row. A Name mapped to 2 different Clean_Names is dropped,
-      because neither is a safe pick. Rows with no Name are dropped.
+      row per name. Sheet rows that repeat a name with the same clean_name
+      collapse to 1 row. A name mapped to 2 different clean_names is dropped,
+      because neither is a safe pick. Rows with no name are dropped.
     columns:
-      - name: Name
+      - name: name
         data_type: string
         description: Location name as a source system spells it.
         data_tests:
           - unique:
               config:
                 severity: error
-      - name: Clean_Name
+      - name: clean_name
         data_type: string
         description: |
           Canonical location name. Join key to
@@ -23,9 +23,9 @@ models:
 unit_tests:
   - name: stg_google_sheets__people__location_crosswalk__defends_sheet_duplicates
     description: |
-      A Name repeated with the same Clean_Name keeps 1 row, also when that
-      Clean_Name is null. A Name mapped to 2 Clean_Names is dropped, also when
-      one of them is null. A row with no Name is dropped.
+      A name repeated with the same clean_name keeps 1 row, also when that
+      clean_name is null. A name mapped to 2 clean_names is dropped, also when
+      one of them is null. A row with no name is dropped.
     model: stg_google_sheets__people__location_crosswalk
     given:
       - input:
@@ -54,9 +54,9 @@ unit_tests:
             Clean_Name: School G
     expect:
       rows:
-        - Name: Alias A
-          Clean_Name: School A
-        - Name: Alias D
-          Clean_Name: School D
-        - Name: Alias F
-          Clean_Name: null
+        - name: Alias A
+          clean_name: School A
+        - name: Alias D
+          clean_name: School D
+        - name: Alias F
+          clean_name: null
