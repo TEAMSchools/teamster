@@ -208,6 +208,7 @@ with
         inner join
             {{ ref("dim_staff_observation_goal_types") }} as gt
             on f.staff_observation_goal_type_key = gt.staff_observation_goal_type_key
+            and gt.goal_name != ''
     ),
 
     microgoals as (

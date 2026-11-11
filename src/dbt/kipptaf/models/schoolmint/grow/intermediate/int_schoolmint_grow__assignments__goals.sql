@@ -47,7 +47,11 @@ with
             tp.root_name,
             tp.depth,
 
-            /* tree roots that hold goals: "Microgoals" and "Lookfors" */
+            /*
+              tree roots that hold goals: "Microgoals" and "Lookfors"; a microgoal
+              is always root > bucket > strand > goal, while a look-for category
+              can sit at any level below its root
+            */
             tp.root_name = 'Microgoals' and tp.depth = 3 as is_microgoal,
             tp.root_name = 'Lookfors' and tp.depth >= 1 as is_lookfor_category,
         from {{ ref("int_schoolmint_grow__assignments__tags") }} as ast
@@ -142,7 +146,6 @@ select
     a.assignment_id,
     a.user_id,
     a.creator_id,
-    a.creator_name,
     a.created,
     a.created_date_local,
 
@@ -157,6 +160,8 @@ select
     end as bucket_name,
 from {{ ref("stg_schoolmint_grow__assignments") }} as a
 inner join goal_tags as g on a.assignment_id = g.assignment_id and g.is_goal_tag
+/* action steps and to-dos are not goals */
+where a.type = 'goal'
 
 union all
 
@@ -164,7 +169,6 @@ select
     a.assignment_id,
     a.user_id,
     a.creator_id,
-    a.creator_name,
     a.created,
     a.created_date_local,
 
@@ -181,4 +185,4 @@ left join goal_tags as g on a.assignment_id = g.assignment_id and g.is_goal_tag
 left join
     microgoal_strands as ms
     on starts_with(ms.tag_name, concat(a.microgoal_strand_code, ':'))
-where g.assignment_id is null
+where a.type = 'goal' and g.assignment_id is null
