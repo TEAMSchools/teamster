@@ -99,6 +99,38 @@ and re-installs Claude Code plugins if the plugin list changed. It does not
 refresh credentials; run **GCloud: Application Default Login** if a GCP call
 fails with an auth error.
 
+## Walking away from a session
+
+A Claude Code session can keep working with your laptop closed, for up to 4
+hours. It runs in the terminal inside `tmux`, which keeps it alive when VS Code
+disconnects.
+
+One-time setup:
+
+1. In GitHub, go to **Settings → Codespaces → Default idle timeout** and set it
+   to 240 minutes.
+2. Reopen the page and check the saved value. An organization policy can cap it
+   lower, and that cap is how long you can be away.
+
+Each time:
+
+1. Open a terminal and run `tmux new -s claude`.
+2. Run `claude` and start the work. To follow along and answer prompts from the
+   Claude mobile app, run `claude --remote-control` instead.
+3. Leave: press ++ctrl+b++ then ++d++ to detach, or just close the laptop.
+4. Come back: open a terminal and run `tmux attach -t claude`. If
+   `tmux new -s claude` says "duplicate session", the session is still running;
+   attach to it the same way.
+
+!!! warning
+
+    - Only the terminal session keeps running. A session in the Claude Code
+      panel stops when VS Code disconnects.
+    - When the Codespace stops, the `tmux` session ends with it. Run
+      `claude --resume` to reopen the conversation.
+    - The Codespace bills for the whole time it is idle. Stop it when the work
+      is done.
+
 ## Container Internals
 
 ### Setup Lifecycle
