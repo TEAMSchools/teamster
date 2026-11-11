@@ -205,9 +205,8 @@ MCP, Python with pandas for the worklist.
 
 **Files:**
 
-- Create:
-  `/tmp/claude-1000/-workspaces-teamster/816b78a1-39db-4978-adc1-136bb689ca74/scratchpad/504cmp/worklist.py`
-  (scratch, never committed; reuse `load.py` in the same folder)
+- Create: `worklist.py` in the executor's session scratchpad (never committed),
+  with a `load.py` beside it that reads the EdPlan exports
 - Output: a Google Sheet named `NJ 504 worklist <build date>` in the user's
   Drive, unshared.
 
@@ -217,10 +216,9 @@ MCP, Python with pandas for the worklist.
   not need Task 1, so it can run as soon as the user is ready.
 - EdPlan inputs, Newark only:
   - Google Sheet "TEAM 504 - 20261110" (`Sheet1` and `EDPlan-504StudentReport`),
-    saved as
-    `/home/vscode/.claude/projects/-workspaces-teamster/816b78a1-39db-4978-adc1-136bb689ca74/tool-results/mcp-claude_ai_Google_Drive-blob-1794343092103-x99e4i.xlsx`.
-  - The R100 report at
-    `/workspaces/teamster/.claude/scratch/R100!njteamcharter!15-25-00-647345!11-10-26.xls`.
+    downloaded as `.xlsx` through the Drive connector.
+  - EdPlan's R100 504 eligibility report for `njteamcharter`, dated 2026-11-10,
+    supplied by the user as a local file.
   - At task start, ask the user whether newer exports or a Camden export exist.
 
 - [ ] **Step 1: Pull PowerSchool current students for all 3 regions**
@@ -417,3 +415,8 @@ MCP, Python with pandas for the worklist.
   - Post the region totals on #6354, with no cell under 10.
   - If #6284 has merged, comment there that `is_504` values changed and that its
     DDI Suite comparison needs a rerun.
+
+## Revisions
+
+- 2026-11-11, PR #6355 review: Task 3 names its inputs and scratch script by
+  description instead of machine-local paths. The design is unchanged.
