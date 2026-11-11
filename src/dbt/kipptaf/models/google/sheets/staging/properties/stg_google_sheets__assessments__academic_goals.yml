@@ -24,9 +24,12 @@ models:
           name: stg_google_sheets__assessments__academic_goals__subject_grade_match
           description: >-
             The Academic Goals sheet has 2 rows for one school, year, grade and
-            subject. Scores match goals on these 4 columns, so a repeat stops
-            fct_assessment_scores_enrollment_scoped from building. Remove one of
-            the rows on the sheet.
+            subject. Scores match goals on these 4 columns, so each matching
+            score repeats in fct_assessment_scores_enrollment_scoped and its
+            unique test on assessment_score_key fails. Keep 1 row per school,
+            year, grade and subject on the sheet; ask the data team if a goal
+            needs more than one. DIBELS benchmark-window rows (BOY, MOY, EOY in
+            the state code column) match no score and are left out.
           arguments:
             combination_of_columns:
               - Academic_Year
@@ -35,13 +38,19 @@ models:
               - Illuminate_Subject_Area
           config:
             severity: warn
+            where:
+              coalesce(State_Assessment_Code, '') not in ('BOY', 'MOY', 'EOY')
       - dbt_utils.unique_combination_of_columns:
           name: stg_google_sheets__assessments__academic_goals__state_code_match
           description: >-
             The Academic Goals sheet has 2 rows for one school, year and state
             assessment code. State test scores match goals on these 3 columns,
-            so a repeat stops fct_assessment_scores_enrollment_scoped from
-            building. Remove one of the rows on the sheet.
+            so each matching score repeats in
+            fct_assessment_scores_enrollment_scoped and its unique test on
+            assessment_score_key fails. Keep 1 row per school, year and state
+            code on the sheet; ask the data team if a goal needs more than one.
+            DIBELS benchmark-window rows (BOY, MOY, EOY) match no score and are
+            left out.
           arguments:
             combination_of_columns:
               - Academic_Year
@@ -49,7 +58,9 @@ models:
               - State_Assessment_Code
           config:
             severity: warn
-            where: State_Assessment_Code is not null
+            where: |
+              State_Assessment_Code is not null
+              and State_Assessment_Code not in ('BOY', 'MOY', 'EOY')
     columns:
       - name: Academic_Year
         data_type: int64

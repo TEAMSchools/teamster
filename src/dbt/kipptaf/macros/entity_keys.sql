@@ -131,6 +131,30 @@
     }}
 {% endmacro %}
 
+{% macro assessment_goal_key(
+    academic_year,
+    school_id,
+    state_assessment_code,
+    grade_level,
+    subject_area,
+    nullable=false
+) %}
+    {{
+        return(
+            _entity_key(
+                [
+                    academic_year,
+                    school_id,
+                    state_assessment_code,
+                    grade_level,
+                    subject_area,
+                ],
+                nullable,
+            )
+        )
+    }}
+{% endmacro %}
+
 {% macro term_key(
     term_type,
     term_code,
