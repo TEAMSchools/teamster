@@ -283,3 +283,12 @@ sources:
                 - kippmiami
                 - focus
                 - int_focus__apex_results
+      - name: int_focus__apex_band_levels
+        config:
+          meta:
+            dagster:
+              group: focus
+              asset_key:
+                - kippmiami
+                - focus
+                - int_focus__apex_band_levels

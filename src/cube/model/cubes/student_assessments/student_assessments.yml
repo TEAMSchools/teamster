@@ -14,7 +14,10 @@ cubes:
         primary_key: true
 
       - name: title
-        description: Display name of the assessment.
+        description: >-
+          Display name of the assessment (Ed-Fi
+          edFi_assessment.assessmentTitle). For state tests, the test name, such
+          as NJSLA, NJSLA Science, NJGPA, FAST or EOC.
         sql: title
         type: string
         public: true
