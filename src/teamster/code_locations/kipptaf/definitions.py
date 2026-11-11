@@ -74,6 +74,7 @@ defs = Definitions(
                     performance_management,
                     smartrecruiters,
                     tableau,
+                    zendesk,
                 ]
             ),
         ],

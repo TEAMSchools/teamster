@@ -1,18 +1,82 @@
 models:
   - name: stg_google_sheets__people__powerschool_crosswalk
+    description: |
+      Maps ADP employee numbers to PowerSchool teacher numbers. Read from a
+      Google Sheet kept by hand. Inactive rows keep the history of past
+      mappings. When an employee number has 2 or more active rows, all of its
+      active rows are dropped, because none is a safe pick.
     columns:
       - name: Employee_Number
         data_type: int64
+        description: ADP employee number. Join key to the staff roster.
         data_tests:
           - unique:
               config:
                 where: Is_Active
                 severity: error
+        config:
+          meta:
+            contains_pii: true
       - name: ADP_Worker_ID
         data_type: string
+        description: ADP worker ID for the employee.
       - name: PowerSchool_Teacher_Number
         data_type: string
+        description: Teacher number the employee holds in PowerSchool.
+        config:
+          meta:
+            contains_pii: true
       - name: Name
         data_type: string
+        description: Staff member's name, for the sheet owner's reference.
+        config:
+          meta:
+            contains_pii: true
       - name: Is_Active
         data_type: boolean
+        description: True for the mapping in use now.
+
+unit_tests:
+  - name: stg_google_sheets__people__powerschool_crosswalk__drops_duplicate_active_rows
+    description: |
+      Both active rows for a duplicated employee number are dropped. Its
+      inactive row, a single active row, and active rows with no employee
+      number stay.
+    model: stg_google_sheets__people__powerschool_crosswalk
+    given:
+      - input:
+          source("google_sheets",
+          "src_google_sheets__people__powerschool_crosswalk")
+        rows:
+          - Employee_Number: 100
+            PowerSchool_Teacher_Number: T1
+            Is_Active: true
+          - Employee_Number: 100
+            PowerSchool_Teacher_Number: T2
+            Is_Active: true
+          - Employee_Number: 100
+            PowerSchool_Teacher_Number: T0
+            Is_Active: false
+          - Employee_Number: 200
+            PowerSchool_Teacher_Number: T3
+            Is_Active: true
+          - Employee_Number: null
+            PowerSchool_Teacher_Number: T4
+            Is_Active: true
+          - Employee_Number: null
+            PowerSchool_Teacher_Number: T5
+            Is_Active: true
+    expect:
+      rows:
+        - Employee_Number: 100
+          PowerSchool_Teacher_Number: T0
+          Is_Active: false
+        - Employee_Number: 200
+          PowerSchool_Teacher_Number: T3
+          Is_Active: true
+        - Employee_Number: null
+          PowerSchool_Teacher_Number: T4
+          Is_Active: true
+        - Employee_Number: null
+          PowerSchool_Teacher_Number: T5
+          Is_Active: true

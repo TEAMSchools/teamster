@@ -1,9 +1,17 @@
+with
+    goals as (
+        /* grain projection, not dup-masking: one row per (goal_tag_id, goal_name) */
+        select distinct
+            goal_tag_id, goal_name, strand_name, bucket_name, goal_type_name,
+        from {{ ref("int_performance_management__observation_goals") }}
+    )
+
 select
-    {{ dbt_utils.generate_surrogate_key(["tag_id"]) }}
+    {{ staff_observation_goal_type_key("goal_tag_id", "goal_name") }}
     as staff_observation_goal_type_key,
 
-    tag_name as goal_name,
+    goal_name,
     strand_name,
     bucket_name,
     goal_type_name as goal_type,
-from {{ ref("int_schoolmint_grow__microgoals") }}
+from goals
