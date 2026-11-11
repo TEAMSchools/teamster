@@ -19,6 +19,12 @@ common_dir="$(git rev-parse --path-format=absolute --git-common-dir)"
 # trunk-ignore(shellcheck/SC1091): sourced file created at runtime by uv installer
 source "${HOME}/.local/bin/env"
 
+# trunk runs actions without the container's environment variables, and uv's
+# default cache is on another filesystem, so every install copies instead of
+# hardlinking; keep in step with containerEnv in .devcontainer/devcontainer.json
+export UV_CACHE_DIR="${UV_CACHE_DIR:-/workspaces/.uv-cache}"
+export UV_LINK_MODE="${UV_LINK_MODE:-hardlink}"
+
 # --all (the VS Code task) parses everything; the trunk post-merge action passes
 # no args and parses only projects whose inputs the merge changed. git merge sets
 # ORIG_HEAD to the pre-merge commit; without it, parse everything.

@@ -8,6 +8,21 @@ cubes:
         sql: "{regions.region_key} = {CUBE}.region_key"
         relationship: many_to_one
 
+      - name: staff_head_of_school
+        sql:
+          "{staff_head_of_school.staff_key} = {CUBE}.head_of_school_staff_key"
+        relationship: many_to_one
+
+      - name: staff_school_leader
+        sql: "{staff_school_leader.staff_key} = {CUBE}.school_leader_staff_key"
+        relationship: many_to_one
+
+      - name: staff_operations_director
+        sql:
+          "{staff_operations_director.staff_key} =
+          {CUBE}.operations_director_staff_key"
+        relationship: many_to_one
+
     dimensions:
       - name: location_key
         description: Surrogate key derived from location name.
@@ -23,6 +38,50 @@ cubes:
           to KIPP_TAF.
         sql: region_key
         type: string
+
+      - name: head_of_school_staff_key
+        description: >-
+          Staff key of the school's head of school — the manager of the school's
+          School Leader (or School Leader in Residence), as the staff roster
+          reports today. Usually a Head of Schools; sometimes a Managing
+          Director or Chief Academic Officer. When the roster names no manager
+          for the school's leader, the head of schools the locations sheet lists
+          for the school. FK to dim_staff. Current state only, so a past year
+          shows today's head of school. Null for campus rows, for schools with
+          no school leadership on the roster, and when that manager is not
+          active.
+        sql: head_of_school_staff_key
+        type: string
+
+      - name: school_leader_staff_key
+        description: >-
+          Staff key of the school's School Leader, or its School Leader in
+          Residence when it has no School Leader, as the staff roster reports
+          today. FK to dim_staff. Current state only, so a past year shows
+          today's leader. Null for campus rows and while the seat is vacant.
+        sql: school_leader_staff_key
+        type: string
+
+      - name: operations_director_staff_key
+        description: >-
+          Staff key of the school's director of operations — its Director School
+          Operations, or its Director Campus Operations when it has none — as
+          the staff roster reports today. FK to dim_staff. Current state only,
+          so a past year shows today's director. Null for campus rows and while
+          the seat is vacant.
+        sql: operations_director_staff_key
+        type: string
+
+      - name: school_id
+        description: >-
+          School ID that student enrollment, attendance and section records
+          carry for this school. Miami schools keep the IDs they had before
+          their student information system changed. Null for campus rows, and
+          for any school whose ID the locations sheet repeats on another school
+          row.
+        sql: school_id
+        type: number
+        public: true
 
       - name: location_name
         description: Canonical location name.
