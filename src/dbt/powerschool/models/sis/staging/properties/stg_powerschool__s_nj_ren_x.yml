@@ -195,3 +195,6 @@ models:
         data_type: int64
       - name: pid_504_tf
         data_type: boolean
+        config:
+          meta:
+            contains_pii: true
