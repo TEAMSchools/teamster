@@ -2,14 +2,15 @@ models:
   - name: dim_student_enrollment_status
     description: >-
       Enrollment-grain status rollup. One row per student_enrollment_key.
-      Derives a single ELL, IEP, and meal eligibility value per enrollment stint
-      from the three SCD2 status dims, following the enrollment-grain
-      aggregation rules: ELL via LEFT JOIN (one span per stint); IEP via latest
-      span; meal via NJ Oct-15 span or earliest fallback, Miami via latest span.
-      504 has no source dates, so it comes from the enrollment stint's own flag.
-      Absence of a status row is normalized to false/null — not missing data.
-      Consumed by the Cube semantic layer as a snowflake sub-dim joined
-      one-to-one to dim_student_enrollments.
+      Derives a single ELL, IEP, meal eligibility, ELA bucket and math bucket
+      value per enrollment stint from the SCD2 status dims, following the
+      enrollment-grain aggregation rules: ELL via LEFT JOIN (one span per
+      stint); IEP via latest span; meal via NJ Oct-15 span or earliest fallback,
+      Miami via latest span; each bucket via latest span, Bucket 4 when the
+      stint has none. 504 has no source dates, so it comes from the enrollment
+      stint's own flag. Absence of a status row is normalized to false/null —
+      not missing data. Consumed by the Cube semantic layer as a snowflake
+      sub-dim joined one-to-one to dim_student_enrollments.
     columns:
       - name: student_enrollment_key
         data_type: string
@@ -68,8 +69,7 @@ models:
         description: >-
           TRUE if the student had a Section 504 plan during this enrollment
           stint. FALSE otherwise, including when the source system leaves the
-          flag unset, as it does for most Miami students and every current-year
-          Paterson student. This is the enrollment 504 status the assessment
+          flag unset. This is the enrollment 504 status the assessment
           dashboards show; state test files carry their own 504 flag, which can
           differ.
         config:
@@ -92,3 +92,88 @@ models:
           meal span covering Oct 15 of the academic year, or the earliest span
           if none covers Oct 15. Miami: derived from the latest span. Coalesced
           from NULL to false.
+
+      - name: ela_bucket
+        data_type: string
+        description: >-
+          The student's ELA bucket for this enrollment stint — the bucket of the
+          latest span in the stint, or Bucket 4 when the stint has none. Null
+          before 2025-26 and on grade 99 rows. Use it when the subject being
+          analyzed is ELA or reading; for assessments, pick ela_bucket or
+          math_bucket by the assessment's bucket_subject.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: math_bucket
+        data_type: string
+        description: >-
+          The student's math bucket for this enrollment stint — the bucket of
+          the latest span in the stint, or Bucket 4 when the stint has none.
+          Null before 2025-26 and on grade 99 rows. Use it when the subject
+          being analyzed is math; for assessments, pick ela_bucket or
+          math_bucket by the assessment's bucket_subject.
+        config:
+          meta:
+            contains_pii: true
+
+unit_tests:
+  - name: unit_dim_student_enrollment_status_buckets
+    description: >-
+      Gives each stint from 2025-26 on the bucket of its is_latest_in_enrollment
+      span per subject, and Bucket 4 when the stint has no span; leaves both
+      buckets null before 2025-26 and on grade 99 rows.
+    model: dim_student_enrollment_status
+    given:
+      - input: ref("dim_student_enrollments")
+        rows:
+          - student_enrollment_key: k1
+            academic_year: 2025
+            grade_level: 5
+          - student_enrollment_key: k2
+            academic_year: 2024
+            grade_level: 5
+          - student_enrollment_key: k3
+            academic_year: 2026
+            grade_level: 99
+          - student_enrollment_key: k4
+            academic_year: 2026
+            grade_level: 6
+      - input: ref("dim_student_ell_status")
+        rows: []
+      - input: ref("int_students__student_enrollments")
+        rows: []
+      - input: ref("dim_student_iep_status")
+        rows: []
+      - input: ref("dim_student_meal_eligibility_status")
+        rows: []
+      - input: ref("dim_student_bucket_status")
+        format: sql
+        rows: |
+          select
+              'k1' as student_enrollment_key,
+              'Reading' as `subject`,
+              'Bucket 2' as bucket,
+              true as is_latest_in_enrollment
+          union all
+          select 'k2', 'Reading', 'Bucket 1', true
+          union all
+          select 'k3', 'Math', 'Bucket 1', true
+          union all
+          select 'k4', 'Math', 'Bucket 1', false
+          union all
+          select 'k4', 'Math', 'Bucket 3', true
+    expect:
+      rows:
+        - student_enrollment_key: k1
+          ela_bucket: Bucket 2
+          math_bucket: Bucket 4
+        - student_enrollment_key: k2
+          ela_bucket: null
+          math_bucket: null
+        - student_enrollment_key: k3
+          ela_bucket: null
+          math_bucket: null
+        - student_enrollment_key: k4
+          ela_bucket: Bucket 4
+          math_bucket: Bucket 3

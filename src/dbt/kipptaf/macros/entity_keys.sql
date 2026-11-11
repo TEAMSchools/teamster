@@ -54,8 +54,8 @@
     {{ return(_entity_key([rubric_id], nullable)) }}
 {% endmacro %}
 
-{% macro staff_observation_goal_type_key(tag_id, nullable=false) %}
-    {{ return(_entity_key([tag_id], nullable)) }}
+{% macro staff_observation_goal_type_key(goal_tag_id, goal_name, nullable=false) %}
+    {{ return(_entity_key([goal_tag_id, goal_name], nullable)) }}
 {% endmacro %}
 
 {% macro course_section_key(sections_dcid, source_project, nullable=false) %}

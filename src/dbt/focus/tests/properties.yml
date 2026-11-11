@@ -101,6 +101,23 @@ data_tests:
           ref:
             name: stg_focus__student_enrollment
             package: focus
+  - name: int_focus__student_group_memberships__one_bucket_per_subject
+    description: >-
+      A Focus student is in 2 or more Bucket student groups for the same subject
+      and school year. A membership has no end date of its own, so both apply at
+      once. The lower-numbered bucket is correct, because Bucket 1 means the
+      student was proficient the year before; remove the student from the other
+      bucket group in Focus. Until then, int_focus__bucket_memberships keeps the
+      lower-numbered bucket when both memberships were created on the same day,
+      and ends the earlier membership on the day the later one was created. One
+      row per student, year, and subject.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: int_focus__student_group_memberships
+            package: focus
   - name: int_focus__student_enrollment__no_overlapping_stints
     description: >-
       A student holds one enrollment stint at a time. Focus accepts a second

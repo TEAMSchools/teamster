@@ -8,8 +8,12 @@ from teamster.code_locations.kipptaf.tableau.assets import (
 
 teacher_gradebook_group_sync_schedule = ScheduleDefinition(
     name=f"{tableau_teacher_gradebook_group_sync.key.to_python_identifier()}_schedule",
-    target=tableau_teacher_gradebook_group_sync,
-    cron_schedule="0 3 * * *",
+    target=define_asset_job(
+        name=f"{tableau_teacher_gradebook_group_sync.key.to_python_identifier()}_asset_job",
+        selection=[tableau_teacher_gradebook_group_sync],
+        executor_def=in_process_executor,
+    ),
+    cron_schedule="20 3 * * *",
     execution_timezone=str(LOCAL_TIMEZONE),
 )
 

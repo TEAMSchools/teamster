@@ -56,6 +56,13 @@ models:
           every region. Null on the same rows as school_clean_name.
         data_tests:
           - not_null
+      - name: school_campus_name
+        data_type: string
+        description: >-
+          Campus the walked school sits on, from int_people__location_crosswalk.
+          This is the column the Tableau campus-DSO branch of the location gate
+          scopes on, NOT campus_name — that one is the respondent's own campus.
+          Null when the walked school has no row in the campus crosswalk sheet.
       - name: respondent
         data_type: string
       - name: google_email

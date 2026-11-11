@@ -9,6 +9,9 @@ models:
       internal PM method's score source; the aimline method reads
       int_amplify__mclass__pm_student_summary_aimline.
     config:
+      # table, not view: as a view, the DIBELS dashboard's plan re-expands this
+      # union and its crosswalk join and passes BigQuery's query-planning limit
+      materialized: table
       meta:
         contains_pii: true
     columns:

@@ -45,7 +45,9 @@ You see a row if **any one** of these is true. They are additive.
 Route 5 needs all three of the right entity, the right school, and a qualifying
 role. Missing any one of them means no access by that route. On most workbooks
 an assistant principal's route 5 reaches only the teachers and learning
-specialists at their school, not every row there.
+specialists at their school, not every row there. A DSO located at a campus
+reaches every school on the campus; see _A campus DSO sees every school on the
+campus_.
 
 Most workbooks follow these five routes exactly. The ones that do not are listed
 under _Where a workbook differs_.
@@ -308,6 +310,22 @@ The broader operations groups — the data team, TEAM Council, managing director
 and the Syndicate — see every region here on purpose, because walkthroughs are a
 cross-regional practice.
 
+### A campus DSO sees every school on the campus
+
+A DSO whose own location is a campus, rather than one school, sees the staff of
+every school on that campus — the same rows each school's own DSO sees. This
+matches how AppSheet scopes campus DSOs.
+
+It needs two groups: the campus's group (for example
+`KNJ-SG-Tableau All Staff Poinciana Campus`) and `KNJ-SG-Tableau All DSO`. A
+school leader or AP located at a campus does not get the wider view. Office
+Rooms that share a campus, such as Room 11 on the North Campus, stay out.
+
+On the walkthrough sheets the same rule applies to the school that was walked.
+
+Today this covers the two Miami campuses, the only campuses with a Tableau
+group.
+
 ### Rooms do not grant access
 
 Working in a Room — the office locations rather than a school — does not grant
@@ -473,7 +491,7 @@ shielded from each other.
 | Field                            | Answers                                                                           |
 | -------------------------------- | --------------------------------------------------------------------------------- |
 | `RLS - Entity Gate`              | Is the viewer in the staff group for this row's entity?                           |
-| `RLS - Location Gate`            | Is the viewer in the staff group for this row's location?                         |
+| `RLS - Location Gate`            | Is the viewer in the staff group for this row's location, or its campus's DSO?    |
 | `RLS - Role Gate`                | Does the viewer hold a role that may see school-based rows?                       |
 | `RLS - Subject Is Senior Leader` | Should this row be shielded from peers?                                           |
 | `Permissions`                    | The five routes from Part 1. **This is the field that gets applied as a filter.** |
