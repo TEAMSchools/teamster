@@ -165,8 +165,7 @@ cubes:
         meta:
           ai_context: >-
             Filter bucket_subject to split bucket counts or mastery by ELA and
-            math. Use bucket, not ela_bucket or math_bucket, to slice scores:
-            bucket already applies this pairing per score.
+            math.
 
       - name: is_internal_assessment
         description: >-
