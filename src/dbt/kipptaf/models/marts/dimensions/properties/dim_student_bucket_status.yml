@@ -10,7 +10,8 @@ models:
       span per assignment, and a student with 2 stints in a year has a span per
       stint. The 4-bucket model starts in 2025-26; Bucket 4 is never stored, so
       a stint with no span here reads Bucket 4 in dim_student_enrollment_status,
-      which rolls these spans up to 1 bucket per stint and subject.
+      which reads the is_latest_in_enrollment span for 1 bucket per stint and
+      subject.
     config:
       meta:
         dagster:
@@ -93,6 +94,14 @@ models:
           True when `effective_date_end_key = '9999-12-31'` (an open-ended
           assignment in a currently active stint).
 
+      - name: is_latest_in_enrollment
+        data_type: boolean
+        description: >-
+          True on the stint's latest span for the subject: the latest
+          effective_date_start_key, then the later assignment_date when 2 spans
+          are clipped to the same start. Exactly 1 span per stint and subject is
+          true; it gives the stint's bucket in dim_student_enrollment_status.
+
       - name: student_key
         data_type: string
         description: Foreign key to `dim_students.student_key`.
@@ -118,8 +127,10 @@ unit_tests:
   - name: unit_dim_student_bucket_status
     description: >-
       Clips a span that crosses 2 stints into 1 row per stint, keeps an
-      assignment with no exit date out of the next year's stints, and drops an
-      assignment entered and exited on the same day.
+      assignment with no exit date out of the next year's stints, drops an
+      assignment entered and exited on the same day, flags the latest span per
+      stint and subject, and breaks a tie on the clipped start date by the later
+      assignment.
     model: dim_student_bucket_status
     given:
       - input: ref("int_students__student_enrollment_union")
@@ -151,7 +162,8 @@ unit_tests:
               'powerschool' as bucket_store,
               date '2026-09-10' as assignment_date,
               cast(null as date) as exit_date,
-              1 as n_active_assignments
+              1 as n_active_assignments,
+              1 as rn_assignment_year_desc
           union all
           select
               2025,
@@ -162,6 +174,7 @@ unit_tests:
               'powerschool',
               date '2025-09-15',
               cast(null as date),
+              1,
               1
           union all
           select
@@ -173,7 +186,32 @@ unit_tests:
               'powerschool',
               date '2026-10-01',
               date '2026-10-01',
-              0
+              0,
+              1
+          union all
+          select
+              2025,
+              'kippnewark',
+              5001,
+              'Math',
+              'Bucket 1',
+              'powerschool',
+              date '2025-08-20',
+              date '2025-09-20',
+              1,
+              2
+          union all
+          select
+              2025,
+              'kippnewark',
+              5001,
+              'Math',
+              'Bucket 2',
+              'powerschool',
+              date '2025-08-25',
+              cast(null as date),
+              1,
+              1
     expect:
       rows:
         - _dbt_source_project: kippnewark
@@ -183,6 +221,7 @@ unit_tests:
           effective_date_start_key: 2026-09-10
           effective_date_end_key: 2026-11-30
           is_current: false
+          is_latest_in_enrollment: true
         - _dbt_source_project: kippnewark
           subject: Math
           bucket: Bucket 2
@@ -190,6 +229,7 @@ unit_tests:
           effective_date_start_key: 2026-12-01
           effective_date_end_key: 9999-12-31
           is_current: true
+          is_latest_in_enrollment: true
         - _dbt_source_project: kippnewark
           subject: Reading
           bucket: Bucket 1
@@ -197,3 +237,20 @@ unit_tests:
           effective_date_start_key: 2025-09-15
           effective_date_end_key: 2026-06-29
           is_current: false
+          is_latest_in_enrollment: true
+        - _dbt_source_project: kippnewark
+          subject: Math
+          bucket: Bucket 1
+          assignment_date: 2025-08-20
+          effective_date_start_key: 2025-09-03
+          effective_date_end_key: 2025-09-19
+          is_current: false
+          is_latest_in_enrollment: false
+        - _dbt_source_project: kippnewark
+          subject: Math
+          bucket: Bucket 2
+          assignment_date: 2025-08-25
+          effective_date_start_key: 2025-09-03
+          effective_date_end_key: 2026-06-29
+          is_current: false
+          is_latest_in_enrollment: true

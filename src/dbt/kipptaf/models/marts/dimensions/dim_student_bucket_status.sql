@@ -92,4 +92,11 @@ select
     }} as student_enrollment_key,
 
     effective_date_end = '9999-12-31' as is_current,
+
+    row_number() over (
+        partition by
+            student_number, _dbt_source_project, academic_year, entrydate, `subject`
+        order by effective_date_start desc, assignment_date desc
+    )
+    = 1 as is_latest_in_enrollment,
 from clipped

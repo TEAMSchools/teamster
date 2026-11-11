@@ -1,0 +1,122 @@
+models:
+  - name: int_focus__bucket_memberships
+    description: >-
+      Focus custom student groups named for a bucket ("Bucket 1 - ELA"), decoded
+      to a bucket and subject, from Miami's Focus cutover year on; before it the
+      frozen PowerSchool archive holds Miami's buckets. One row per
+      academic_year x _dbt_source_project x student_number x subject x
+      assignment_date (the membership's created date). When 2 memberships share
+      a created date, the active one wins, then the later end, then the
+      lower-numbered bucket. 2 bucket groups for 1 subject are a Focus
+      data-entry error and the lower-numbered one is correct; the Focus package
+      test int_focus__student_group_memberships__one_bucket_per_subject lists
+      them for correction. Read through int_students__bucket_assignments.
+    config:
+      meta:
+        contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - academic_year
+              - _dbt_source_project
+              - student_number
+              - subject
+              - assignment_date
+          config:
+            severity: error
+    columns:
+      - name: academic_year
+        description: Focus syear as-is (the school year's start year).
+      - name: _dbt_source_project
+        description: >-
+          District code location the membership came from, carried through from
+          int_focus__student_group_memberships.
+      - name: student_number
+        description: The Focus student_id.
+      - name: subject
+        description: >-
+          Reading or Math, decoded from the group title; null when the title has
+          no hyphenated discipline token or the token is neither ELA nor Math.
+      - name: bucket
+        description: Bucket label, the group title before the hyphen.
+      - name: assignment_date
+        description: Date the membership was created.
+      - name: exit_date
+        description: >-
+          The group's end date; a membership has no end date of its own. Null
+          when the group has no end.
+      - name: n_active_assignments
+        description: >-
+          Count of the student's memberships for the year and subject still
+          active today (no end date, or a future one), counted before the
+          same-day pick. More than 1 means a double upload.
+
+unit_tests:
+  - name: unit_int_focus__bucket_memberships
+    description: >-
+      Decodes a bucket group, excludes non-bucket groups and bucket groups
+      before the cutover year, and keeps the lower-numbered bucket of 2
+      memberships created on the same day.
+    model: int_focus__bucket_memberships
+    given:
+      - input: ref("int_focus__student_group_memberships")
+        format: sql
+        rows: |
+          select
+              84001234 as student_id,
+              2026 as syear,
+              timestamp '2026-09-17 12:00:00' as created_at,
+              'Bucket 2 - ELA' as title,
+              cast(null as date) as end_date,
+              'kippmiami' as _dbt_source_project
+          union all
+          select
+              84001234,
+              2026,
+              timestamp '2026-09-17 12:00:00',
+              'Advisory 5A',
+              cast(null as date),
+              'kippmiami'
+          union all
+          select
+              84005678,
+              2025,
+              timestamp '2025-09-17 12:00:00',
+              'Bucket 3 - Math',
+              cast(null as date),
+              'kippmiami'
+          union all
+          select
+              84009999,
+              2026,
+              timestamp '2026-09-17 09:00:00',
+              'Bucket 3 - Math',
+              cast(null as date),
+              'kippmiami'
+          union all
+          select
+              84009999,
+              2026,
+              timestamp '2026-09-17 10:00:00',
+              'Bucket 1 - Math',
+              cast(null as date),
+              'kippmiami'
+    expect:
+      rows:
+        - academic_year: 2026
+          _dbt_source_project: kippmiami
+          student_number: 84001234
+          subject: Reading
+          bucket: Bucket 2
+          assignment_date: 2026-09-17
+          exit_date: null
+          n_active_assignments: 1
+        - academic_year: 2026
+          _dbt_source_project: kippmiami
+          student_number: 84009999
+          subject: Math
+          bucket: Bucket 1
+          assignment_date: 2026-09-17
+          exit_date: null
+          n_active_assignments: 2

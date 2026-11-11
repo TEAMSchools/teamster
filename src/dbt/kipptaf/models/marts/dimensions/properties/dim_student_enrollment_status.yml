@@ -11,13 +11,6 @@ models:
       stint's own flag. Absence of a status row is normalized to false/null —
       not missing data. Consumed by the Cube semantic layer as a snowflake
       sub-dim joined one-to-one to dim_student_enrollments.
-    config:
-      meta:
-        standard_exempt:
-          A5: >-
-            Each latest-span pick is the documented per-stint rollup rule for a
-            status dim with several spans per stint, not source-duplicate
-            masking; the span dims keep every span.
     columns:
       - name: student_enrollment_key
         data_type: string
@@ -128,10 +121,9 @@ models:
 unit_tests:
   - name: unit_dim_student_enrollment_status_buckets
     description: >-
-      Gives each stint from 2025-26 on the bucket of its latest span per
-      subject, breaking a tie on the clipped start date by the later assignment,
-      and Bucket 4 when the stint has no span; leaves both buckets null before
-      2025-26 and on grade 99 rows.
+      Gives each stint from 2025-26 on the bucket of its is_latest_in_enrollment
+      span per subject, and Bucket 4 when the stint has no span; leaves both
+      buckets null before 2025-26 and on grade 99 rows.
     model: dim_student_enrollment_status
     given:
       - input: ref("dim_student_enrollments")
@@ -148,9 +140,6 @@ unit_tests:
           - student_enrollment_key: k4
             academic_year: 2026
             grade_level: 6
-          - student_enrollment_key: k5
-            academic_year: 2026
-            grade_level: 7
       - input: ref("dim_student_ell_status")
         rows: []
       - input: ref("int_students__student_enrollments")
@@ -166,20 +155,15 @@ unit_tests:
               'k1' as student_enrollment_key,
               'Reading' as `subject`,
               'Bucket 2' as bucket,
-              date '2025-09-10' as effective_date_start_key,
-              date '2025-09-10' as assignment_date
+              true as is_latest_in_enrollment
           union all
-          select 'k2', 'Reading', 'Bucket 1', date '2024-09-10', date '2024-09-10'
+          select 'k2', 'Reading', 'Bucket 1', true
           union all
-          select 'k3', 'Math', 'Bucket 1', date '2026-09-10', date '2026-09-10'
+          select 'k3', 'Math', 'Bucket 1', true
           union all
-          select 'k4', 'Math', 'Bucket 1', date '2026-09-10', date '2026-09-10'
+          select 'k4', 'Math', 'Bucket 1', false
           union all
-          select 'k4', 'Math', 'Bucket 3', date '2026-11-01', date '2026-11-01'
-          union all
-          select 'k5', 'Math', 'Bucket 1', date '2026-09-02', date '2026-08-20'
-          union all
-          select 'k5', 'Math', 'Bucket 2', date '2026-09-02', date '2026-08-25'
+          select 'k4', 'Math', 'Bucket 3', true
     expect:
       rows:
         - student_enrollment_key: k1
@@ -194,6 +178,3 @@ unit_tests:
         - student_enrollment_key: k4
           ela_bucket: Bucket 4
           math_bucket: Bucket 3
-        - student_enrollment_key: k5
-          ela_bucket: Bucket 4
-          math_bucket: Bucket 2

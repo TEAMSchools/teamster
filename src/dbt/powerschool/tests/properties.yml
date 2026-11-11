@@ -227,8 +227,8 @@ data_tests:
       same subject and school year at the same time (overlapping dates, or the
       same enter date). The lower-numbered bucket is correct, because Bucket 1
       means the student was proficient the year before; delete the other
-      special-program record in PowerSchool. Until then,
-      int_students__bucket_assignments keeps the lower-numbered bucket when both
+      special-program record in PowerSchool. Until then, kipptaf's
+      int_powerschool__bucket_programs keeps the lower-numbered bucket when both
       share an enter date; overlapping buckets with different enter dates both
       stay. Back-to-back buckets, where one exits before the next enters, are
       normal mid-year amendments and are not flagged.
