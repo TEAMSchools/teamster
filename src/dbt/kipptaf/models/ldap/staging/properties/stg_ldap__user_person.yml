@@ -1,8 +1,24 @@
 models:
   - name: stg_ldap__user_person
+    description: |
+      One row per Active Directory user account, read from LDAP. When 2 or more
+      accounts share an employee number, only one is kept, so employee_number
+      is unique wherever it is set. The kept account is the enabled one, then
+      the one with an active IdAuto status, then the first distinguished name.
+      Accounts with no employee number are all kept.
     columns:
+      - name: distinguished_name
+        data_type: string
+        description: Full LDAP path of the account. One row per value.
+        data_tests:
+          - unique:
+              config:
+                severity: error
       - name: physical_delivery_office_name
         data_type: string
+        description: |
+          Office the account is assigned to. Matches a location alias in
+          int_people__location_crosswalk.
         data_tests:
           - relationships:
               arguments:
@@ -16,39 +32,127 @@ models:
                   idauto_status = 'A' and uac_account_disable = 0 and
                   employee_id like 'TMP%' and physical_delivery_office_name !=
                   'Other'
-      - name: distinguished_name
-        data_type: string
       - name: user_principal_name
         data_type: string
+        description: Sign-in name of the account.
+        config:
+          meta:
+            contains_pii: true
       - name: mail
         data_type: string
+        description: Email address on the account.
+        config:
+          meta:
+            contains_pii: true
       - name: sam_account_name
         data_type: string
+        description: Pre-Windows 2000 logon name.
+        config:
+          meta:
+            contains_pii: true
       - name: employee_number
         data_type: int64
+        description: |
+          ADP employee number, cast to an integer. Null when blank or not
+          numeric. Join key to the staff roster.
+        config:
+          meta:
+            contains_pii: true
       - name: uac_account_disable
         data_type: int64
+        description: |
+          The account-disabled bit of userAccountControl. 0 when the account is
+          enabled, 2 when it is disabled.
       - name: google_email
         data_type: string
+        description: |
+          Google Workspace email derived from the user principal name, with the
+          domain rewritten to the region's Google domain.
+        config:
+          meta:
+            contains_pii: true
       - name: company
         data_type: string
+        description: Company field on the account.
       - name: department
         data_type: string
+        description: Department field on the account.
       - name: display_name
         data_type: string
+        description: Display name on the account.
+        config:
+          meta:
+            contains_pii: true
       - name: employee_id
         data_type: string
+        description: |
+          Employee ID field on the account. Temp staff not in ADP carry a value
+          starting with TMP.
+        config:
+          meta:
+            contains_pii: true
       - name: given_name
         data_type: string
+        description: First name on the account.
+        config:
+          meta:
+            contains_pii: true
       - name: idauto_person_alternate_id
         data_type: string
+        description: Alternate person ID set by IdAuto.
       - name: idauto_person_end_date
         data_type: float64
+        description: Person end date set by IdAuto, as LDAP sends it.
       - name: idauto_person_term_date
         data_type: string
+        description: Person termination date set by IdAuto, as LDAP sends it.
       - name: idauto_status
         data_type: string
+        description: IdAuto person status. A means active.
       - name: sn
         data_type: string
+        description: Surname on the account.
+        config:
+          meta:
+            contains_pii: true
       - name: title
         data_type: string
+        description: Job title on the account.
+
+unit_tests:
+  - name: stg_ldap__user_person__keeps_one_account_per_employee_number
+    description: |
+      Of 3 accounts sharing an employee number, the enabled account with an
+      active IdAuto status is kept. Accounts with no employee number all stay.
+    model: stg_ldap__user_person
+    given:
+      - input: source("ldap", "src_ldap__user_person")
+        rows:
+          - distinguishedname: cn=disabled
+            employeenumber: "100"
+            useraccountcontrol: 514
+            idautostatus: A
+          - distinguishedname: cn=enabled_inactive
+            employeenumber: "100"
+            useraccountcontrol: 512
+            idautostatus: I
+          - distinguishedname: cn=enabled_active
+            employeenumber: "100"
+            useraccountcontrol: 512
+            idautostatus: A
+          - distinguishedname: cn=no_number_1
+            employeenumber: null
+            useraccountcontrol: 512
+            idautostatus: A
+          - distinguishedname: cn=no_number_2
+            employeenumber: null
+            useraccountcontrol: 512
+            idautostatus: A
+    expect:
+      rows:
+        - distinguished_name: cn=enabled_active
+          employee_number: 100
+        - distinguished_name: cn=no_number_1
+          employee_number: null
+        - distinguished_name: cn=no_number_2
+          employee_number: null

@@ -8,6 +8,9 @@ models:
       location through the location crosswalk on school_name, and puts Miami's
       pre-Focus student ids onto the network student number.
     config:
+      # table, not view: as a view, the DIBELS dashboard's plan re-expands this
+      # union and its crosswalk join and passes BigQuery's query-planning limit
+      materialized: table
       meta:
         contains_pii: true
     columns:
