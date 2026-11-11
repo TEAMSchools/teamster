@@ -9,11 +9,16 @@ with
                 order_by="_dagster_partition_date desc",
             )
         }}
+    ),
+
+    with_name_text as (
+        select *, {{ parse_html("`name`") }} as name_text, from deduplicate
     )
 
 select
     _id as assignment_id,
     `name`,
+    name_text,
     coachingactivity as coaching_activity,
     excludefrombank as exclude_from_bank,
     locked,
@@ -51,5 +56,7 @@ select
     date(
         cast(created as timestamp), '{{ var("local_timezone") }}'
     ) as created_date_local,
-from deduplicate
+
+    regexp_extract(name_text, r'^([1-9][A-Z])\.[0-9]') as microgoal_strand_code,
+from with_name_text
 where _dagster_partition_archived = 'f'
