@@ -43,6 +43,7 @@ exposures:
       - ref("dim_student_contact_persons")
       - ref("dim_student_enrollments")
       - ref("dim_student_section_enrollments")
+      - ref("dim_student_bucket_status")
       - ref("dim_student_ell_status")
       - ref("dim_student_enrollment_status")
       - ref("dim_student_iep_status")
