@@ -1458,6 +1458,40 @@ def test_export_cells_reads_an_unquoted_numeric_alias_key_back():
     assert totals == 1
 
 
+def test_export_cells_count_identical_pane_rows_once():
+    # A dual axis exports one row per pane; identical rows are one cell.
+    comparison = Comparison(
+        id="c",
+        measure="m",
+        dims=[ColumnPair(dashboard="region", cube="region_name")],
+    )
+    rows = [
+        {"Region": "Camden", "Title": "A", "Distance": "0.12"},
+        {"Region": "Camden", "Title": "A", "Distance": "0.12"},
+        {"Region": "Newark", "Title": "A", "Distance": "0.3"},
+        {"Region": "Newark", "Title": "B", "Distance": "0.3"},
+    ]
+
+    cells, _, _ = pipeline._export_cells(
+        comparison, rows, {"Region": "region"}, "Distance", [], []
+    )
+
+    assert cells == [
+        {"region": "Camden", "value": "0.12"},
+        {"region": "Newark", "value": "0.3"},
+        {"region": "Newark", "value": "0.3"},
+    ]
+
+
+def test_cell_keys_read_tableau_export_dates_as_the_same_day():
+    # Tableau's export writes a date as M/D/YYYY; the probe and Cube write ISO.
+    assert pipeline._key("9/21/2026") == "2026-09-21"
+    assert pipeline._key("09/07/2026") == pipeline._key("2026-09-07")
+    assert pipeline._key("2026-09-21T00:00:00.000") == "2026-09-21"
+    assert pipeline._key("9/21") == "9/21"
+    assert pipeline._key("13/45/2026") == "13/45/2026"
+
+
 def test_prove_keeps_a_real_all_member(fakes, tmp_path, capsys):
     fakes.bq.probe = [{"region": "All", "value": 0.9001}]
     fakes.tbl.exports = [[{"Region": "All", "Rate": "0.9001"}] for _ in range(2)]
@@ -2338,7 +2372,10 @@ def test_prove_reshapes_the_copy_and_records_it(fakes, tmp_path, capsys):
     )
 
     assert "<rows />" in fakes.tbl.edited
-    assert "+ [federated.0sample].[usr:Calculation_1002:qk]) / " in fakes.tbl.edited
+    # Region crosses in front of the measures, as Tableau writes a dimension
+    # against measures.
+    assert "([federated.0sample].[none:region:nk] * (" in fakes.tbl.edited
+    assert "+ [federated.0sample].[usr:Calculation_1002:qk]))" in fakes.tbl.edited
     proof = load_view_config(path).comparisons[0].proof
     assert proof.shelves == {"drop": ["Team", "Region"], "add": {"cols": ["Region"]}}
     # Team left the copy's shelves, so it is no longer a missing cut.

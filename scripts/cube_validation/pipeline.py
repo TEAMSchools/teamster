@@ -441,10 +441,19 @@ def wrap_cube(
 
 
 def _key(value: Any) -> str:
-    """Cell key text: dates by day, numbers by value, else the text."""
+    """Cell key text: dates by day, numbers by value, else the text.
+
+    Tableau's export writes a date as M/D/YYYY (the server's en-US format),
+    the probe and Cube as ISO, so both read as the same day.
+    """
     if isinstance(value, str) and re.match(r"\d{4}-\d{2}-\d{2}", value):
         try:
             value = datetime.fromisoformat(value)
+        except ValueError:
+            pass
+    elif isinstance(value, str) and re.fullmatch(r"\d{1,2}/\d{1,2}/\d{4}", value):
+        try:
+            value = datetime.strptime(value, "%m/%d/%Y")
         except ValueError:
             pass
     if isinstance(value, datetime):
@@ -2237,7 +2246,14 @@ def _export_cells(
     }
     cells: list[dict] = []
     totals = 0
+    # A dual axis exports one row per pane, identical in every column: count
+    # it once. A row that differs anywhere still reads as a repeat.
+    seen: set[tuple] = set()
     for r in rows:
+        whole = tuple(sorted((k, str(v)) for k, v in r.items()))
+        if whole in seen:
+            continue
+        seen.add(whole)
         dims = {d: r[h] for h, d in mapping.items()}
         if any(v == TOTAL_LABEL and d not in real_all for d, v in dims.items()):
             totals += 1

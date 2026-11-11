@@ -17,7 +17,10 @@ from cube_validation.discover import sheet_shape
 from cube_validation.tableau import (
     RefreshMovedError,
     Tableau,
+    _key_text,
     _number,
+    _parse_shelf,
+    _shelf_text,
     displayed_decimals,
     drop_number_formats,
     expose_sheet,
@@ -706,6 +709,55 @@ def test_set_shelves_fills_an_empty_shelf_and_keeps_its_attributes():
     out = set_shelves(src, "Mastery Grid", {"add": {"cols": ["School"]}}).xml
 
     assert "<cols onLeft='true'>[federated.0ddi (copy)].[none:school:nk]</cols>" in out
+
+
+def test_proof_keys_read_an_export_date_as_the_probe_date():
+    # Tableau's export writes M/D/YYYY; the probe returns a DATE.
+    assert (
+        _key_text("9/21/2026")
+        == _key_text(datetime(2026, 9, 21).date())
+        == "2026-09-21"
+    )
+    assert _key_text("2026-09-21") == "2026-09-21"
+    assert _key_text("1,234") == "1234"
+    assert _key_text("13/45/2026") == "13/45/2026"
+
+
+def test_shelf_parser_reads_the_cross_operator():
+    text = "([d].[none:a:nk] * ([d].[avg:b:qk] + [d].[avg:b:qk]))"
+
+    assert _shelf_text(_parse_shelf(text)) == text
+
+
+def test_set_shelves_crosses_added_rows_in_front_of_a_dual_axis():
+    # A line chart: School crossed with a dual-axis measure, weeks on columns.
+    ds = "[federated.0ddi (copy)]"
+    measures = f"({ds}.[avg:is_mastery_int:qk] + {ds}.[avg:is_mastery_int:qk])"
+    lines = SHELVES_TWB.replace(
+        f"<rows onTop='true'>({ds}.[none:Calculation_4901:nk] / "
+        f"{ds}.[none:week_start_monday:ok])</rows>",
+        f"<rows onTop='true'>({ds}.[none:school:nk] * {measures})</rows>",
+    ).replace(
+        f"<cols onLeft='true'>({ds}.[none:module_code:nk] / "
+        f"{ds}.[none:school:nk])</cols>",
+        f"<cols onLeft='true'>{ds}.[none:week_start_monday:ok]</cols>",
+    )
+    assert lines.count(" * ") == 1
+
+    out = set_shelves(
+        lines,
+        "Mastery Grid",
+        {
+            "drop": ["Week Start Monday", "School"],
+            "add": {"rows": ["School", "Grade Level"]},
+        },
+    ).xml
+
+    ET.fromstring(out)
+    assert (
+        f"<rows onTop='true'>(({ds}.[none:school:nk] / "
+        f"{ds}.[none:grade_level:ok]) * {measures})</rows>"
+    ) in out
 
 
 def test_set_shelves_refuses_a_drop_off_the_shelves_and_an_unknown_add():
