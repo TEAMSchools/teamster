@@ -206,10 +206,11 @@ turns spans into 1 bucket per enrollment gets 1 home.
   `bucket_store`, `assignment_date`, and `exit_date`. It stays the 1 home that
   decodes the 3 stores (NJ PowerSchool programs, the Miami archive, and Miami
   Focus groups).
-- The Miami archive branch joins the archive's `int_powerschool__ada` on
-  `studentid`, `academic_year`, and `_dbt_source_project`, with no `distinct`.
-  That join drops 1 archive row, whose student has no assessment scores that
-  year. The analyst accepted the drop.
+- [#6349](https://github.com/TEAMSchools/teamster/pull/6349) already put the
+  Miami archive in the spenrollments union and keyed the PowerSchool branch on
+  the `student_number` that the package model now carries. That replaces this
+  design's archive source entry, its union change, and its `studentid` to
+  `student_number` path through `int_powerschool__ada`.
 - The latest-wins pick moves to `int_students__bucket_assignments_rollup`, at
   the old grain (`academic_year` x `_dbt_source_project` x `student_number` x
   `subject`). `int_extracts__student_enrollments_subjects` reads the rollup, so
