@@ -20,7 +20,7 @@ from teamster.code_locations.kipptaf.extracts.jobs import (
 # before moving one.
 branchingminds_extract_assets_schedule = ScheduleDefinition(
     job=branchingminds_extract_asset_job,
-    cron_schedule="15 3 * * *",
+    cron_schedule="5 3 * * *",
     execution_timezone=str(LOCAL_TIMEZONE),
 )
 
