@@ -45,7 +45,7 @@ unit_tests:
     description: >-
       Assignments of the same microgoal share one row; two look-for indicators
       under one category get a row each; a goal with no goal tag gets a row by
-      its name.
+      its name, including a null or empty name.
     model: dim_staff_observation_goal_types
     given:
       - input: ref("int_performance_management__observation_goals")
@@ -56,6 +56,8 @@ unit_tests:
           union all select 'a3', 'l2', 'Lookfors', 'CVOE-K12-27 Value student voice', 'Cognitive Engagement', 'CVoE'
           union all select 'a4', 'l2', 'Lookfors', 'CVOE-K12-01 Build relationships', 'Cognitive Engagement', 'CVoE'
           union all select 'a5', null, null, 'Free text goal', null, null
+          union all select 'a6', null, null, null, null, null
+          union all select 'a7', null, null, '', null, null
     expect:
       rows:
         - goal_name: 3D.01 Magic ratio.
@@ -71,6 +73,14 @@ unit_tests:
           bucket_name: CVoE
           goal_type: Lookfors
         - goal_name: Free text goal
+          strand_name: null
+          bucket_name: null
+          goal_type: null
+        - goal_name: null
+          strand_name: null
+          bucket_name: null
+          goal_type: null
+        - goal_name: ""
           strand_name: null
           bucket_name: null
           goal_type: null

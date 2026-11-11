@@ -3,8 +3,9 @@ models:
     description: >-
       Staff observation goal assignment fact table. One row per goal assigned to
       a teacher through SchoolMint Grow; an assignment that holds several
-      microgoals has a row per microgoal. Foreign keys to dim_staff (teacher and
-      creator as role-playing dimensions) and dim_staff_observation_goal_types.
+      microgoals has a row per microgoal, and a look-for or untagged goal is one
+      row. Foreign keys to dim_staff (teacher and creator as role-playing
+      dimensions) and dim_staff_observation_goal_types.
     columns:
       - name: staff_observation_goal_key
         data_type: string
@@ -75,18 +76,22 @@ unit_tests:
   - name: test_fct_staff_observation_goals_keys
     description: >-
       A creator with no employee number gives a null creator_staff_key, and each
-      assignment, tagged or not, gets its own assignment key.
+      assignment, tagged or not, gets its own assignment key. An assignment with
+      two microgoals gives two rows that share one assignment key.
     model: fct_staff_observation_goals
     given:
       - input: ref("int_performance_management__observation_goals")
         format: sql
         rows: |
           select 'a1' as assignment_id, 'm3' as goal_tag_id, 101 as teacher_employee_number, cast(null as int64) as creator_employee_number, timestamp '2026-11-02 12:00:00' as assignment_created_timestamp, date '2026-11-02' as assignment_date, '3D.01 Magic ratio.' as goal_name
+          union all select 'a1', 'm4', 101, null, timestamp '2026-11-02 12:00:00', date '2026-11-02', '3D.02 Smile.'
           union all select 'a2', null, 101, null, timestamp '2026-11-02 12:00:00', date '2026-11-02', 'Free text goal'
     expect:
       rows:
         # md5 of the assignment id, the assignment key's hash
         # trunk-ignore(gitleaks/generic-api-key): md5 test fixture, not a secret
+        - staff_observation_assignment_key: 8a8bb7cd343aa2ad99b7d762030857a2
+          creator_staff_key: null
         - staff_observation_assignment_key: 8a8bb7cd343aa2ad99b7d762030857a2
           creator_staff_key: null
         - staff_observation_assignment_key: 693a9fdd4c2fd0700968fba0d07ff3c0

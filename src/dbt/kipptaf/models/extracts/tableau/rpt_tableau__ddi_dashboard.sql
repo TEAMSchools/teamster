@@ -202,10 +202,7 @@ with
 
             gt.goal_name,
 
-            date_add(
-                date(timestamp_trunc(f.assignment_created_timestamp, week)),
-                interval 1 day
-            ) as week_start_monday,
+            date(timestamp_trunc(f.assignment_created_timestamp, week)) as week_start,
         from {{ ref("fct_staff_observation_goals") }} as f
         inner join {{ ref("dim_staff") }} as ds on f.teacher_staff_key = ds.staff_key
         inner join
@@ -216,11 +213,12 @@ with
     microgoals as (
         select
             employee_number,
-            week_start_monday,
+
+            date_add(week_start, interval 1 day) as week_start_monday,
 
             string_agg(goal_name, ', ') as microgoals,
         from microgoals_long
-        group by employee_number, week_start_monday
+        group by employee_number, week_start
     )
 
 /* ES/MS assessments */
