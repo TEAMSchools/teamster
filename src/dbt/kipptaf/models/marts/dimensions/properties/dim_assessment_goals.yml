@@ -92,6 +92,7 @@ models:
       - name: quarterly_assessment_goal
         data_type: float64
         description: >-
-          Target mastery rate on quarterly assessment (QA) and CRQ modules for
-          this grade and subject. Null where no quarterly assessment goal is
-          set. A row that carries only this goal has every other goal blank.
+          Target mastery rate on quarterly assessment (QA) and Constructed
+          Response Questions (CRQ) modules for this grade and subject. Null
+          where no quarterly assessment goal is set. A row that carries only
+          this goal has every other goal blank.
