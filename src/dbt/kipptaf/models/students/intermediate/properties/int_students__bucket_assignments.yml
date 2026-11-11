@@ -2,19 +2,16 @@ models:
   - name: int_students__bucket_assignments
     description: >-
       The single home for stored student bucket assignments. PowerSchool special
-      programs (NJ); the frozen Miami PowerSchool archive (2024-25 and 2025-26),
-      matched to student numbers through the archive's ADA rows because Miami
-      enrollments carry no PowerSchool studentid; and Focus custom student
-      groups (Miami from 2026-27). Each is decoded from the program or group
-      name ("Bucket 1 - ELA"). One row per academic_year x _dbt_source_project x
-      student_number x subject; where a student has assignment history
-      (rollout-PD amendments exit and re-enter), the latest assignment_date
-      wins. That pick is a business rule (the newest stored assignment is the
-      official one), not source-duplicate masking, which is why it lives in this
-      domain model rather than staging; a true double upload still surfaces
-      through n_active_assignments. Bucket 4 is never stored - consumers
-      coalesce a missing row to Bucket 4. _dbt_source_project is part of the
-      grain because student numbers repeat across regions.
+      programs (NJ) and Focus custom student groups (Miami), decoded from the
+      program or group name ("Bucket 1 - ELA"). One row per academic_year x
+      _dbt_source_project x student_number x subject; where a student has
+      assignment history (rollout-PD amendments exit and re-enter), the latest
+      assignment_date wins. That pick is a business rule (the newest stored
+      assignment is the official one), not source-duplicate masking, which is
+      why it lives in this domain model rather than staging; a true double
+      upload still surfaces through n_active_assignments. Bucket 4 is never
+      stored - consumers coalesce a missing row to Bucket 4. _dbt_source_project
+      is part of the grain because student numbers repeat across regions.
     config:
       meta:
         contains_pii: true
@@ -92,73 +89,133 @@ unit_tests:
       Decodes both stores, picks the latest assignment on re-assignment
       (PowerSchool stores a scheduled future year-end exit on live rows and a
       past exit on amended-out rows), counts a same-subject double upload,
-      excludes non-bucket groups and programs, and keeps same-number students in
-      different regions apart. Reads the Miami PowerSchool archive through its
-      ADA rows' student numbers, drops an archive row with no ADA match, never
-      lets an NJ ADA row replace an enrollment-resolved number, and ignores a
-      Focus group from before the SIS cutover year, so it cannot override an
-      archived bucket.
+      excludes non-bucket groups and programs, keeps same-number students in
+      different regions apart, and matches Miami archive programs, whose
+      enrollments carry no studentid, on student_number.
     model: int_students__bucket_assignments
     given:
       - input: ref("int_powerschool__spenrollments")
-        rows:
-          - studentid: 11
-            academic_year: 2026
-            specprog_name: Bucket 2 - Math
-            enter_date: 2026-09-01
-            exit_date: 2026-10-01
-            _dbt_source_relation: "`t`.`kippnewark_powerschool`.`x`"
-            _dbt_source_project: kippnewark
-          - studentid: 11
-            academic_year: 2026
-            specprog_name: Bucket 3 - Math
-            enter_date: 2026-10-02
-            exit_date: 2099-06-30
-            _dbt_source_relation: "`t`.`kippnewark_powerschool`.`x`"
-            _dbt_source_project: kippnewark
-          - studentid: 12
-            academic_year: 2026
-            specprog_name: MTSS Math
-            enter_date: 2026-09-01
-            exit_date: null
-            _dbt_source_relation: "`t`.`kippnewark_powerschool`.`x`"
-            _dbt_source_project: kippnewark
-          - studentid: 13
-            academic_year: 2026
-            specprog_name: Bucket 1 - ELA
-            enter_date: 2026-09-01
-            exit_date: 2099-06-30
-            _dbt_source_relation: "`t`.`kippcamden_powerschool`.`x`"
-            _dbt_source_project: kippcamden
-          - studentid: 13
-            academic_year: 2026
-            specprog_name: Bucket 2 - ELA
-            enter_date: 2026-09-05
-            exit_date: 2099-06-30
-            _dbt_source_relation: "`t`.`kippcamden_powerschool`.`x`"
-            _dbt_source_project: kippcamden
-          - studentid: 21
-            academic_year: 2025
-            specprog_name: Bucket 1 - ELA
-            enter_date: 2025-09-15
-            exit_date: 2026-06-30
-            _dbt_source_relation: "`t`.`kippmiami_powerschool`.`x`"
-            _dbt_source_project: kippmiami
-          - studentid: 22
-            academic_year: 2025
-            specprog_name: Bucket 2 - Math
-            enter_date: 2025-09-15
-            exit_date: 2026-06-30
-            _dbt_source_relation: "`t`.`kippmiami_powerschool`.`x`"
-            _dbt_source_project: kippmiami
-      - input: ref("int_powerschool__ada")
-        rows:
-          - studentid: 21
-            student_number: 84005678
-            _dbt_source_project: kippmiami
-          - studentid: 11
-            student_number: 9999
-            _dbt_source_project: kippnewark
+        format: sql
+        rows: |
+          select
+              11 as studentid,
+              5001 as student_number,
+              2026 as academic_year,
+              'Bucket 2 - Math' as specprog_name,
+              date '2026-09-01' as enter_date,
+              date '2026-10-01' as exit_date,
+              'kippnewark' as _dbt_source_project,
+              '`t`.`kippnewark_powerschool`.`x`' as _dbt_source_relation,
+              cast(null as int64) as dcid,
+              cast(null as int64) as id,
+              cast(null as int64) as programid,
+              cast(null as int64) as gradelevel,
+              cast(null as string) as sp_comment,
+              cast(null as string) as exitcode,
+              1 as rn_student_program_year_desc,
+              false as is_current,
+              false as is_out_of_district,
+              false as is_self_contained
+          union all
+          select
+              11,
+              5001,
+              2026,
+              'Bucket 3 - Math',
+              date '2026-10-02',
+              date '2099-06-30',
+              'kippnewark',
+              '`t`.`kippnewark_powerschool`.`x`',
+              cast(null as int64),
+              cast(null as int64),
+              cast(null as int64),
+              cast(null as int64),
+              cast(null as string),
+              cast(null as string),
+              1,
+              false,
+              false,
+              false
+          union all
+          select
+              12,
+              5002,
+              2026,
+              'MTSS Math',
+              date '2026-09-01',
+              cast(null as date),
+              'kippnewark',
+              '`t`.`kippnewark_powerschool`.`x`',
+              cast(null as int64),
+              cast(null as int64),
+              cast(null as int64),
+              cast(null as int64),
+              cast(null as string),
+              cast(null as string),
+              1,
+              false,
+              false,
+              false
+          union all
+          select
+              13,
+              5001,
+              2026,
+              'Bucket 1 - ELA',
+              date '2026-09-01',
+              date '2099-06-30',
+              'kippcamden',
+              '`t`.`kippcamden_powerschool`.`x`',
+              cast(null as int64),
+              cast(null as int64),
+              cast(null as int64),
+              cast(null as int64),
+              cast(null as string),
+              cast(null as string),
+              1,
+              false,
+              false,
+              false
+          union all
+          select
+              13,
+              5001,
+              2026,
+              'Bucket 2 - ELA',
+              date '2026-09-05',
+              date '2099-06-30',
+              'kippcamden',
+              '`t`.`kippcamden_powerschool`.`x`',
+              cast(null as int64),
+              cast(null as int64),
+              cast(null as int64),
+              cast(null as int64),
+              cast(null as string),
+              cast(null as string),
+              1,
+              false,
+              false,
+              false
+          union all
+          select
+              21,
+              84005678,
+              2025,
+              'Bucket 1 - Math',
+              date '2024-09-10',
+              date '2025-06-04',
+              'kippmiami',
+              '`t`.`kippmiami_powerschool`.`x`',
+              cast(null as int64),
+              cast(null as int64),
+              cast(null as int64),
+              cast(null as int64),
+              cast(null as string),
+              cast(null as string),
+              1,
+              false,
+              false,
+              false
       - input: ref("int_extracts__student_enrollments")
         rows:
           - studentid: 11
@@ -176,6 +233,11 @@ unit_tests:
             academic_year: 2026
             rn_year: 1
             _dbt_source_project: kippcamden
+          - studentid: null
+            student_number: 84005678
+            academic_year: 2025
+            rn_year: 1
+            _dbt_source_project: kippmiami
       - input: ref("int_focus__student_group_memberships")
         format: sql
         rows: |
@@ -192,14 +254,6 @@ unit_tests:
               2026,
               timestamp '2026-09-17 12:00:00',
               'Advisory 5A',
-              cast(null as date),
-              'kippmiami'
-          union all
-          select
-              84005678,
-              2025,
-              timestamp '2026-08-01 12:00:00',
-              'Bucket 3 - ELA',
               cast(null as date),
               'kippmiami'
     expect:
@@ -231,8 +285,8 @@ unit_tests:
         - academic_year: 2025
           _dbt_source_project: kippmiami
           student_number: 84005678
-          subject: Reading
+          subject: Math
           bucket: Bucket 1
           bucket_store: powerschool
-          assignment_date: 2025-09-15
+          assignment_date: 2024-09-10
           n_active_assignments: 0

@@ -1,21 +1,19 @@
 sources:
   - name: kippmiami_powerschool
     description: >-
-      Miami's PowerSchool archive (final ODBC pull 2026-07-01; Miami's SIS moved
-      to Focus). Permanent history source for stored grades, attendance, the
-      course enrollments they hang off (#5193), section teachers (#5260), terms
-      (#5397), the calendars the network calendar models read, and special
-      programs (the ELA and math bucket assignments) — 17 permanent tables in
-      total. Enrollment stints are deliberately absent: Focus is Miami's sole
-      enrollment source across all years, so unioning the archive's stints
-      double-counts every row. Terms and calendars are the opposite case, and
-      that is why they are here — int_students__terms,
-      int_students__calendar_day and int_students__calendar_week all floor their
-      Focus branch at the SIS cutover year, so the archive covers the pre-AY2026
-      years Focus does not. Rebuilt from the frozen externals with the 8400
-      Focus prefix on student_number and an AY2025 bound applied (#5012). The
-      dataset must not be dropped. Declared BQ-native (plain schema, no target
-      branch) so every target reads the prod tables directly.
+      Miami's PowerSchool archive (Miami's SIS moved to Focus). Permanent
+      history source for stored grades, attendance, the course enrollments they
+      hang off, special-program enrollments (bucket programs), section teachers,
+      teacher grade levels, terms, and the calendars the network calendar models
+      read. School enrollment stints are deliberately absent — Focus is Miami's
+      sole enrollment source across all years, so unioning the archive's stints
+      double-counts every row. Terms, calendars and teacher grade levels are the
+      opposite case, and that is why they are here: Focus data starts at the
+      AY2026 SIS cutover, so the archive covers the earlier years. The archive
+      carries the 8400 Focus prefix on student_number and ends at AY2025; the
+      rebuild recipe is in src/dbt/kippmiami/CLAUDE.md. The dataset must not be
+      dropped. Declared BQ-native (plain schema, no target branch) so every
+      target reads the prod tables directly.
     schema: kippmiami_powerschool
     tables:
       - name: stg_powerschool__courses
@@ -135,6 +133,24 @@ sources:
                 - kippmiami
                 - powerschool
                 - int_powerschool__section_teachers
+      - name: int_powerschool__teacher_grade_levels
+        config:
+          meta:
+            dagster:
+              group: powerschool
+              asset_key:
+                - kippmiami
+                - powerschool
+                - int_powerschool__teacher_grade_levels
+      - name: int_powerschool__spenrollments
+        config:
+          meta:
+            dagster:
+              group: powerschool
+              asset_key:
+                - kippmiami
+                - powerschool
+                - int_powerschool__spenrollments
       - name: int_powerschool__calendar_day
         config:
           meta:
@@ -162,12 +178,3 @@ sources:
                 - kippmiami
                 - powerschool
                 - int_powerschool__terms_spine
-      - name: int_powerschool__spenrollments
-        config:
-          meta:
-            dagster:
-              group: powerschool
-              asset_key:
-                - kippmiami
-                - powerschool
-                - int_powerschool__spenrollments
