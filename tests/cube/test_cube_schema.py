@@ -568,6 +568,19 @@ TWINS.update(
                 "school_id",
             ]
         },
+        **{
+            ("student_assessment_goals", c): ("dim_assessment_goals", c)
+            for c in [
+                "assessment_goal_key",
+                "grade_goal",
+                "school_goal",
+                "region_goal",
+                "organization_goal",
+                "grade_band_goal",
+                "assessment_band_goal",
+                "quarterly_assessment_goal",
+            ]
+        },
         ("courses", "is_foundations"): ("dim_courses", "is_foundations"),
         ("student_attendance_enrollment_daily", "n_absent_days_rolling_90"): (
             "fct_student_attendance_enrollment_daily",

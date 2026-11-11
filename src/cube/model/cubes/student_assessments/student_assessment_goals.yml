@@ -1,0 +1,79 @@
+cubes:
+  - name: student_assessment_goals
+    public: false
+    sql_table: kipptaf_marts.dim_assessment_goals
+
+    # Reached only from student_assessment_scores, on the fact's
+    # assessment_goal_key. No join to locations: the goal row's school is the
+    # score's enrolled school by construction (the dbt match keys on it), and
+    # a second path would make a diamond with
+    # student_section_enrollments.student_school_enrollments.locations.
+
+    dimensions:
+      - name: assessment_goal_key
+        description: >-
+          Surrogate key derived from academic_year, school_id,
+          state_assessment_code, grade_level, and illuminate_subject_area.
+          Primary key.
+        sql: assessment_goal_key
+        type: string
+        primary_key: true
+
+      - name: grade_goal
+        description: >-
+          Target percent proficient for this grade level.
+        sql: grade_goal
+        type: number
+        format: percent
+        public: true
+
+      - name: school_goal
+        description: >-
+          Target percent proficient for this school.
+        sql: school_goal
+        type: number
+        format: percent
+        public: true
+
+      - name: region_goal
+        description: >-
+          Target percent proficient for this region.
+        sql: region_goal
+        type: number
+        format: percent
+        public: true
+
+      - name: organization_goal
+        description: >-
+          Organization-wide target percent proficient.
+        sql: organization_goal
+        type: number
+        format: percent
+        public: true
+
+      - name: grade_band_goal
+        description: >-
+          Target percent proficient for this grade band (ES, MS, HS).
+        sql: grade_band_goal
+        type: number
+        format: percent
+        public: true
+
+      - name: assessment_band_goal
+        description: >-
+          Target percent proficient for this assessment band.
+        sql: assessment_band_goal
+        type: number
+        format: percent
+        public: true
+
+      - name: quarterly_assessment_goal
+        description: >-
+          Target mastery rate on quarterly assessment (QA) and Constructed
+          Response Questions (CRQ) modules for this grade and subject. Null
+          where no quarterly assessment goal is set. A row that carries only
+          this goal has every other goal blank.
+        sql: quarterly_assessment_goal
+        type: number
+        format: percent
+        public: true

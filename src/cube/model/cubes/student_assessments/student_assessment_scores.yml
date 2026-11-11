@@ -36,6 +36,14 @@ cubes:
         sql: "{terms.term_key} = {CUBE}.term_key"
         relationship: many_to_one
 
+      # The goal row matched in dbt (school, year, grade and subject for
+      # internal assessments; school, year and state test code for state tests).
+      - name: student_assessment_goals
+        sql: >
+          {student_assessment_goals.assessment_goal_key} =
+          {CUBE}.assessment_goal_key
+        relationship: many_to_one
+
     dimensions:
       - name: assessment_score_key
         description: Surrogate key. Primary key for this fact.
@@ -300,6 +308,183 @@ cubes:
         sql: is_replacement
         type: boolean
         public: true
+
+      # The DDI Suite's "Grade/School/Region Goal (Differentiated)" workbook
+      # calculations, kept rule for rule so the dashboard comparison holds,
+      # including its grade 9 ET gap (grade < 9 ELA, grade > 9 any subject).
+      # The subject lists are the workbook's Discipline group. The 3 members
+      # differ only in the base goal column. K-2 QA and CRQ take the
+      # quarterly assessment goal where one is set, the rule
+      # rpt_tableau__ddi_dashboard applies.
+      - name: grade_goal_differentiated
+        description: >-
+          Grade-level goal adjusted by module type, as the DDI Suite applies it.
+          In Camden, Newark and Paterson: ET is 0.8 for ELA below grade 9 and
+          for every subject above grade 9; K-2 ELA and Math QA and CRQ use the
+          quarterly assessment goal where one is set; Math CRQ in grades 1-8,
+          and ELA, Math and Science TP above grade 2, add 0.1 to the grade goal.
+          Every other score, and every Miami score, uses the grade goal.
+        sql: >
+          CASE
+            WHEN {regions.region_name} IN ('Camden', 'Newark', 'Paterson')
+              AND {student_school_enrollments.grade_level} < 9
+              AND {student_assessments.academic_subject} IN ('AP Language',
+                'English 100', 'English 200', 'English 300', 'English 400',
+                'Text Study')
+              AND {student_assessments.module_type} = 'ET'
+            THEN 0.8
+            WHEN {regions.region_name} IN ('Camden', 'Newark', 'Paterson')
+              AND {student_school_enrollments.grade_level} > 9
+              AND {student_assessments.module_type} = 'ET'
+            THEN 0.8
+            WHEN {regions.region_name} IN ('Camden', 'Newark', 'Paterson')
+              AND {student_school_enrollments.grade_level} <= 2
+              AND {student_assessments.academic_subject} IN ('Text Study',
+                'Mathematics')
+              AND {student_assessments.module_type} IN ('QA', 'CRQ')
+            THEN COALESCE({student_assessment_goals.quarterly_assessment_goal},
+              {student_assessment_goals.grade_goal})
+            WHEN {regions.region_name} IN ('Camden', 'Newark', 'Paterson')
+              AND {student_school_enrollments.grade_level} BETWEEN 1 AND 8
+              AND {student_assessments.academic_subject} IN ('Algebra I',
+                'Algebra I MS', 'Algebra II', 'AP Pre Calculus', 'Geometry',
+                'Geometry Honors', 'Math 4', 'Mathematics')
+              AND {student_assessments.module_type} = 'CRQ'
+            THEN {student_assessment_goals.grade_goal} + 0.1
+            WHEN {regions.region_name} IN ('Camden', 'Newark', 'Paterson')
+              AND {student_school_enrollments.grade_level} > 2
+              AND {student_assessments.academic_subject} IN ('AP Language',
+                'English 100', 'English 200', 'English 300', 'English 400',
+                'Text Study', 'Algebra I', 'Algebra I MS', 'Algebra II',
+                'AP Pre Calculus', 'Geometry', 'Geometry Honors', 'Math 4',
+                'Mathematics', 'Biology', 'Chemistry',
+                'Human Anatomy and Physiology', 'Physics', 'Science')
+              AND {student_assessments.module_type} = 'TP'
+            THEN {student_assessment_goals.grade_goal} + 0.1
+            ELSE {student_assessment_goals.grade_goal}
+          END
+        type: number
+        format: percent
+        public: true
+        meta:
+          ai_context: >-
+            The goal the DDI Suite compares internal assessment mastery against.
+            Compare it with pct_proficient at one grade, subject and module, or
+            use grade_goal_distance and grade_goal_status, which do that
+            comparison. For state test goals use grade_goal, school_goal,
+            region_goal or assessment_band_goal instead.
+
+      - name: school_goal_differentiated
+        description: >-
+          School-level goal adjusted by module type, as the DDI Suite applies
+          it. In Camden, Newark and Paterson: ET is 0.8 for ELA below grade 9
+          and for every subject above grade 9; K-2 ELA and Math QA and CRQ use
+          the quarterly assessment goal where one is set; Math CRQ in grades
+          1-8, and ELA, Math and Science TP above grade 2, add 0.1 to the school
+          goal. Every other score, and every Miami score, uses the school goal.
+        sql: >
+          CASE
+            WHEN {regions.region_name} IN ('Camden', 'Newark', 'Paterson')
+              AND {student_school_enrollments.grade_level} < 9
+              AND {student_assessments.academic_subject} IN ('AP Language',
+                'English 100', 'English 200', 'English 300', 'English 400',
+                'Text Study')
+              AND {student_assessments.module_type} = 'ET'
+            THEN 0.8
+            WHEN {regions.region_name} IN ('Camden', 'Newark', 'Paterson')
+              AND {student_school_enrollments.grade_level} > 9
+              AND {student_assessments.module_type} = 'ET'
+            THEN 0.8
+            WHEN {regions.region_name} IN ('Camden', 'Newark', 'Paterson')
+              AND {student_school_enrollments.grade_level} <= 2
+              AND {student_assessments.academic_subject} IN ('Text Study',
+                'Mathematics')
+              AND {student_assessments.module_type} IN ('QA', 'CRQ')
+            THEN COALESCE({student_assessment_goals.quarterly_assessment_goal},
+              {student_assessment_goals.school_goal})
+            WHEN {regions.region_name} IN ('Camden', 'Newark', 'Paterson')
+              AND {student_school_enrollments.grade_level} BETWEEN 1 AND 8
+              AND {student_assessments.academic_subject} IN ('Algebra I',
+                'Algebra I MS', 'Algebra II', 'AP Pre Calculus', 'Geometry',
+                'Geometry Honors', 'Math 4', 'Mathematics')
+              AND {student_assessments.module_type} = 'CRQ'
+            THEN {student_assessment_goals.school_goal} + 0.1
+            WHEN {regions.region_name} IN ('Camden', 'Newark', 'Paterson')
+              AND {student_school_enrollments.grade_level} > 2
+              AND {student_assessments.academic_subject} IN ('AP Language',
+                'English 100', 'English 200', 'English 300', 'English 400',
+                'Text Study', 'Algebra I', 'Algebra I MS', 'Algebra II',
+                'AP Pre Calculus', 'Geometry', 'Geometry Honors', 'Math 4',
+                'Mathematics', 'Biology', 'Chemistry',
+                'Human Anatomy and Physiology', 'Physics', 'Science')
+              AND {student_assessments.module_type} = 'TP'
+            THEN {student_assessment_goals.school_goal} + 0.1
+            ELSE {student_assessment_goals.school_goal}
+          END
+        type: number
+        format: percent
+        public: true
+        meta:
+          ai_context: >-
+            The school goal the DDI Suite compares internal assessment mastery
+            against. Compare it with pct_proficient for one school, subject and
+            module, or use school_goal_distance.
+
+      - name: region_goal_differentiated
+        description: >-
+          Region-level goal adjusted by module type, as the DDI Suite applies
+          it. In Camden, Newark and Paterson: ET is 0.8 for ELA below grade 9
+          and for every subject above grade 9; K-2 ELA and Math QA and CRQ use
+          the quarterly assessment goal where one is set; Math CRQ in grades
+          1-8, and ELA, Math and Science TP above grade 2, add 0.1 to the region
+          goal. Every other score, and every Miami score, uses the region goal.
+        sql: >
+          CASE
+            WHEN {regions.region_name} IN ('Camden', 'Newark', 'Paterson')
+              AND {student_school_enrollments.grade_level} < 9
+              AND {student_assessments.academic_subject} IN ('AP Language',
+                'English 100', 'English 200', 'English 300', 'English 400',
+                'Text Study')
+              AND {student_assessments.module_type} = 'ET'
+            THEN 0.8
+            WHEN {regions.region_name} IN ('Camden', 'Newark', 'Paterson')
+              AND {student_school_enrollments.grade_level} > 9
+              AND {student_assessments.module_type} = 'ET'
+            THEN 0.8
+            WHEN {regions.region_name} IN ('Camden', 'Newark', 'Paterson')
+              AND {student_school_enrollments.grade_level} <= 2
+              AND {student_assessments.academic_subject} IN ('Text Study',
+                'Mathematics')
+              AND {student_assessments.module_type} IN ('QA', 'CRQ')
+            THEN COALESCE({student_assessment_goals.quarterly_assessment_goal},
+              {student_assessment_goals.region_goal})
+            WHEN {regions.region_name} IN ('Camden', 'Newark', 'Paterson')
+              AND {student_school_enrollments.grade_level} BETWEEN 1 AND 8
+              AND {student_assessments.academic_subject} IN ('Algebra I',
+                'Algebra I MS', 'Algebra II', 'AP Pre Calculus', 'Geometry',
+                'Geometry Honors', 'Math 4', 'Mathematics')
+              AND {student_assessments.module_type} = 'CRQ'
+            THEN {student_assessment_goals.region_goal} + 0.1
+            WHEN {regions.region_name} IN ('Camden', 'Newark', 'Paterson')
+              AND {student_school_enrollments.grade_level} > 2
+              AND {student_assessments.academic_subject} IN ('AP Language',
+                'English 100', 'English 200', 'English 300', 'English 400',
+                'Text Study', 'Algebra I', 'Algebra I MS', 'Algebra II',
+                'AP Pre Calculus', 'Geometry', 'Geometry Honors', 'Math 4',
+                'Mathematics', 'Biology', 'Chemistry',
+                'Human Anatomy and Physiology', 'Physics', 'Science')
+              AND {student_assessments.module_type} = 'TP'
+            THEN {student_assessment_goals.region_goal} + 0.1
+            ELSE {student_assessment_goals.region_goal}
+          END
+        type: number
+        format: percent
+        public: true
+        meta:
+          ai_context: >-
+            The region goal the DDI Suite compares internal assessment mastery
+            against. Compare it with pct_proficient for one region, subject and
+            module, or use region_goal_distance.
 
     measures:
       # Three nested counts, widest first: assigned contains taken contains
@@ -718,6 +903,90 @@ cubes:
         sql: "1.0 * {_sum_proficient_crq} / NULLIF({_count_scored_crq}, 0)"
         type: number
         format: percent
+        public: true
+
+      # Goal measures follow the DDI Suite workbook: the highest goal in the
+      # slice against the slice's proficiency rate. None of them is in
+      # proficiency_rollup, so a query using them reads the fact.
+      - name: _max_grade_goal_differentiated
+        description: >-
+          Highest grade_goal_differentiated in the slice. Building block for
+          grade_goal_distance and grade_goal_status.
+        sql: "{grade_goal_differentiated}"
+        type: max
+        public: false
+
+      - name: _max_school_goal_differentiated
+        description: >-
+          Highest school_goal_differentiated in the slice. Building block for
+          school_goal_distance.
+        sql: "{school_goal_differentiated}"
+        type: max
+        public: false
+
+      - name: _max_region_goal_differentiated
+        description: >-
+          Highest region_goal_differentiated in the slice. Building block for
+          region_goal_distance.
+        sql: "{region_goal_differentiated}"
+        type: max
+        public: false
+
+      - name: grade_goal_distance
+        description: >-
+          Grain: meaningful only within one grade, subject and module, where the
+          goal is a single value; across grades it compares the highest goal in
+          the slice with a pooled rate, a silent-failure trap. How far the
+          proficiency rate falls short of the differentiated grade goal: the
+          goal minus pct_proficient. Positive means below goal; negative means
+          above it.
+        sql: "{_max_grade_goal_differentiated} - {pct_proficient}"
+        type: number
+        format: percent
+        public: true
+
+      - name: school_goal_distance
+        description: >-
+          Grain: meaningful only within one school, subject and module, where
+          the goal is a single value; across schools or grades it compares the
+          highest goal in the slice with a pooled rate, a silent-failure trap.
+          How far the proficiency rate falls short of the differentiated school
+          goal: the goal minus pct_proficient. Positive means below goal;
+          negative means above it.
+        sql: "{_max_school_goal_differentiated} - {pct_proficient}"
+        type: number
+        format: percent
+        public: true
+
+      - name: region_goal_distance
+        description: >-
+          Grain: meaningful only within one region, subject and module, where
+          the goal is a single value; across regions it compares the highest
+          goal in the slice with a pooled rate, a silent-failure trap. How far
+          the proficiency rate falls short of the differentiated region goal:
+          the goal minus pct_proficient. Positive means below goal; negative
+          means above it.
+        sql: "{_max_region_goal_differentiated} - {pct_proficient}"
+        type: number
+        format: percent
+        public: true
+
+      - name: grade_goal_status
+        description: >-
+          Grain: meaningful only within one grade, subject and module, like
+          grade_goal_distance. Whether pct_proficient beat the differentiated
+          grade goal: exceeded (above the goal), met (equal to it) or not met
+          (below it). Null where the slice has no goal or no proficiency rate.
+        sql: >
+          CASE
+            WHEN {_max_grade_goal_differentiated} < {pct_proficient}
+            THEN 'exceeded'
+            WHEN {_max_grade_goal_differentiated} = {pct_proficient}
+            THEN 'met'
+            WHEN {_max_grade_goal_differentiated} > {pct_proficient}
+            THEN 'not met'
+          END
+        type: string
         public: true
 
     pre_aggregations:
