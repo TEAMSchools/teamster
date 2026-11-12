@@ -62,6 +62,22 @@ right student in mCLASS.
   until Amplify moves the results. Teaching and Learning confirms the rule.
 - Dedup stays in the source `int_` (A5).
 
+## Revision 2026-11-12: found while planning
+
+- **Count collisions per file with both source columns.** In kipptaf,
+  `_dbt_source_relation` separates the network file from the kipppaterson
+  archive, and `_dbt_source_relation_2` separates SFTP from API. The partition
+  uses both, so a row arriving through both files still fails at error.
+- **The aimline intermediate gets its own defense.**
+  `int_amplify__mclass__pm_student_summary_aimline` reads PM staging directly,
+  not `int_amplify__mclass__pm_student_summary`, so it drops PM key collisions
+  itself. `int_amplify__mclass__pm_student_summary` has no uniqueness test yet;
+  it gets one at error.
+- **The same-day rule also drops 4 AY2023 BOY students (8 API rows).** Each sat
+  an on-grade and an off-grade benchmark on 1 day. The user confirmed these are
+  mistakes too, so the rule stays grade-blind. Prod check: the rule drops 12
+  benchmark rows and leaves 0 duplicates on either key.
+
 ## Left to the builder
 
 - Whether a dbt unit test can mock refs feeding `union_relations`. If not, the
