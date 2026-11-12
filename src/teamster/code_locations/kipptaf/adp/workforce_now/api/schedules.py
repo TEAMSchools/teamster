@@ -16,8 +16,12 @@ from teamster.code_locations.kipptaf.adp.workforce_now.api.assets import (
 
 adp_workforce_now_workers_sync_schedule = ScheduleDefinition(
     name=f"{adp_workforce_now_workers_update.key.to_python_identifier()}_schedule",
-    target=adp_workforce_now_workers_update,
-    cron_schedule="0 3 * * *",
+    target=define_asset_job(
+        name=f"{adp_workforce_now_workers_update.key.to_python_identifier()}_asset_job",
+        selection=[adp_workforce_now_workers_update],
+        executor_def=in_process_executor,
+    ),
+    cron_schedule="25 3 * * *",
     execution_timezone=str(LOCAL_TIMEZONE),
 )
 

@@ -1,32 +1,26 @@
 select
     {{
         dbt_utils.generate_surrogate_key(
-            ["gu.internal_id_int", "a.assignment_id", "m.tag_id"]
+            ["teacher_employee_number", "assignment_id", "goal_tag_id"]
         )
     }} as staff_observation_goal_key,
 
-    {{ staff_key("gu.internal_id_int") }} as teacher_staff_key,
+    {{ staff_key("teacher_employee_number") }} as teacher_staff_key,
 
-    {{ staff_key("cu.internal_id_int", nullable=true) }} as creator_staff_key,
+    {{ staff_key("creator_employee_number", nullable=true) }} as creator_staff_key,
 
-    {{ staff_observation_goal_type_key("m.tag_id") }}
+    {{ staff_observation_goal_type_key("goal_tag_id", "goal_name") }}
     as staff_observation_goal_type_key,
 
-    a.created_date_local as assignment_date,
-    a.created as assignment_created_timestamp,
+    {{ dbt_utils.generate_surrogate_key(["assignment_id"]) }}
+    as staff_observation_assignment_key,
+
+    assignment_date,
+    assignment_created_timestamp,
 
     {{
         date_to_fiscal_year(
-            date_field="a.created_date_local",
-            start_month=7,
-            year_source="start",
+            date_field="assignment_date", start_month=7, year_source="start"
         )
     }} as academic_year,
-from {{ ref("stg_schoolmint_grow__assignments") }} as a
-inner join {{ ref("stg_schoolmint_grow__users") }} as gu on a.user_id = gu.user_id
-inner join
-    {{ ref("int_schoolmint_grow__assignments__tags") }} as t
-    on a.assignment_id = t.assignment_id
-inner join {{ ref("int_schoolmint_grow__microgoals") }} as m on t.tag_id = m.tag_id
-left join {{ ref("stg_schoolmint_grow__users") }} as cu on a.creator_id = cu.user_id
-where gu.internal_id_int is not null
+from {{ ref("int_performance_management__observation_goals") }}

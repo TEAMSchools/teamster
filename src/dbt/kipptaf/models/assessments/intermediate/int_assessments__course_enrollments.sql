@@ -57,6 +57,8 @@ with
             ce._dbt_source_project,
 
             co.region,
+            co.academic_year as enrollment_academic_year,
+            co.grade_level,
 
             ce.cc_academic_year + 1 as academic_year,
 
@@ -118,6 +120,8 @@ with
 
             co._dbt_source_project,
             co.region,
+            co.academic_year as enrollment_academic_year,
+            co.grade_level,
 
             co.academic_year + 1 as academic_year,
             co.grade_level + 1 as grade_level_id,

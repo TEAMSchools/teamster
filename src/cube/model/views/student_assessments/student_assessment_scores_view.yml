@@ -62,11 +62,13 @@ views:
           - response_type_description
           - response_type_root_description
           - is_replacement
+          - bucket
 
       - join_path: student_assessment_scores.student_assessment_administrations.student_assessments
         includes:
           - title
           - academic_subject
+          - bucket_subject
           - assessment_type
           - category
           - module_code
@@ -153,6 +155,7 @@ views:
         includes:
           - is_ell
           - is_iep
+          - is_504
           - iep_classification
           - special_education_code
           - special_education_name
@@ -246,6 +249,7 @@ views:
           members:
             - title
             - academic_subject
+            - bucket_subject
             - assessment_type
             - category
             - module_code
@@ -340,12 +344,14 @@ views:
           members:
             - is_ell
             - is_iep
+            - is_504
             - iep_classification
             - special_education_code
             - special_education_name
             - special_education_placement
             - is_meal_eligible
             - meal_eligibility
+            - bucket
         - name: Enrollment
           members:
             - student_section_enrollment_key

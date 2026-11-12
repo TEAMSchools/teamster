@@ -309,6 +309,34 @@ cubes:
         type: boolean
         public: true
 
+      # Reads 2 joined cubes: the assessment's bucket_subject picks the
+      # student's ELA or math bucket for the enrollment stint. Both sit on this
+      # cube's only join path to them, so there is no diamond, but a query
+      # using bucket joins the section, school and status enrollment cubes. The
+      # pick stays here, not on the fact: the marts' strict-chain rule keeps
+      # dim attributes off fact rows.
+      - name: bucket
+        description: >-
+          The student's bucket for the subject of this assessment, in the
+          enrollment stint the score belongs to — the ELA bucket on reading and
+          ELA assessments, the math bucket on math assessments, and null where
+          no bucket applies (science, social studies, AP exam scores, combined
+          and composite college scores, and internal subjects with no course
+          subject crosswalk row). Bucket 4 when the stint has no bucket for that
+          subject; null before 2025-26 and on grade 99 rows.
+        sql: >-
+          CASE {student_assessments.bucket_subject}
+            WHEN 'Reading' THEN {student_enrollment_status.ela_bucket}
+            WHEN 'Math' THEN {student_enrollment_status.math_bucket}
+          END
+        type: string
+        public: true
+        meta:
+          ai_context: >-
+            Values are Bucket 1 to Bucket 4. For a bucket's mastery rate, filter
+            bucket and read pct_proficient. To leave out scores with no bucket,
+            filter bucket set. Every score before 2025-26 reads null, because
+            the bucket model starts that year.
       # The DDI Suite's "Grade/School/Region Goal (Differentiated)" workbook
       # calculations, kept rule for rule so the dashboard comparison holds,
       # including its grade 9 ET gap (grade < 9 ELA, grade > 9 any subject).
@@ -1021,6 +1049,9 @@ cubes:
           - student_assessments.assessment_type
           - student_assessments.title
           - student_assessments.academic_subject
+          # bucket_subject is determined by the assessment; it splits the
+          # bucket cuts below into ELA and math.
+          - student_assessments.bucket_subject
           - student_assessments.grade_level_tested
           - student_assessment_administrations.administration_period
           - student_assessment_scores.response_type_code
@@ -1043,6 +1074,11 @@ cubes:
           # is_iep is the one independent addition (binary, so at most 2x rows);
           # it serves the IEP-vs-gen-ed disparity cut.
           - student_enrollment_status.is_iep
+          # bucket serves the DDI bucket-count and bucket-mastery cuts. It adds
+          # rows only from 2025-26, where buckets start. Like is_iep, its values
+          # follow the fact's rebuilds (refresh_key below), not the status
+          # dim's, so a bucket change waits for the next fact rebuild.
+          - student_assessment_scores.bucket
           - locations.region_key
           - locations.abbreviation
           # region_name is determined by region_key above; it supports
