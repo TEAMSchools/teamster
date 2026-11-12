@@ -326,3 +326,18 @@ copies. The full list is on the Regional dates tab of the tagging work list
    doc changes with the answer.
 2. **Camden Literacy G1 UA2 lands in Q2.** No override is planned. Teaching &
    Learning has not yet confirmed the quarter.
+
+## Approval, 2026-11-12
+
+Approved by the Data Team on 2026-11-12, with open item 1 decided:
+
+- **Performance bands follow the regional group.** Section 5 is built as
+  written: the band set becomes regional and the standard merge stays on the tag
+  group.
+- **It may be rolled back.** The decision is flagged to stakeholders as a
+  question in the stakeholder doc. Build the band change as its own commit,
+  after the group change, so it can be reverted without touching the regional
+  grouping. Reverted, the band model reads `tag_group_assessment_id` and labels
+  do not change from today.
+
+Open item 2 stays open and does not block the build.
