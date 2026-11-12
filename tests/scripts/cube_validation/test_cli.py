@@ -184,6 +184,7 @@ class FakeCube:
         self.exprs: dict[str, str] = {}
         self.schools = ["A", "B"]
         self.dataset = "kipptaf_marts"
+        self.dropped: set[str] = set()
 
     def compiled(self, query):
         self.compiled_queries.append(query)
@@ -211,7 +212,28 @@ class FakeCube:
         return self._load(query)
 
     def meta(self):
-        return {"cubes": []}
+        return {
+            "cubes": [
+                {
+                    "name": "v",
+                    "measures": [{"name": m} for m in CUBE_MEASURES - self.dropped],
+                    "dimensions": [{"name": d} for d in CUBE_DIMENSIONS - self.dropped],
+                }
+            ]
+        }
+
+
+# The members the fake Cube model has; a test drops one through `dropped`.
+CUBE_MEASURES = {"v.avg_daily_attendance", "v.sum_attendance_value"}
+CUBE_DIMENSIONS = {
+    "v.academic_subject",
+    "v.attendance_date",
+    "v.attendance_value",
+    "v.dates_academic_year",
+    "v.lea_student_identifier",
+    "v.membership_value",
+    "v.regions_region_name",
+}
 
 
 def _load_row(query, value):
@@ -349,6 +371,16 @@ def test_run_uses_start_for_dashboard_and_end_for_cube(fakes, tmp_path):
     assert len(probes) == len(cells) == 2
     assert {_literal_after(s, "rpt_d") for s in probes} == {utc_literal(START)}
     assert {_literal_after(s, "fct_f") for s in cells} == {utc_literal(END)}
+
+
+def test_run_refuses_a_member_cube_dropped_before_it_spends(fakes, tmp_path, capsys):
+    fakes.cube.dropped = {"v.attendance_value"}
+
+    assert cli.main(["run", str(_file(tmp_path))]) == 1
+
+    err = capsys.readouterr().err
+    assert "ada-region" in err and "v.attendance_value" in err
+    assert fakes.bq.ran == [] and fakes.cube.compiled_queries == []
 
 
 def test_run_emits_date_grains_as_date_on_both_sides(fakes, tmp_path):
@@ -1547,6 +1579,16 @@ def test_prove_check_lists_stale_proofs(fakes, tmp_path, capsys):
 def test_prove_check_quiet_when_current(fakes, tmp_path, capsys):
     assert cli.main(["prove", str(_file(tmp_path)), "--check"]) == 0
     assert "current" in capsys.readouterr().out
+
+
+def test_prove_check_lists_a_member_cube_dropped(fakes, tmp_path, capsys):
+    fakes.cube.dropped = {"v.regions_region_name"}
+
+    assert cli.main(["prove", str(_file(tmp_path)), "--check"]) == 0
+
+    out = capsys.readouterr().out
+    assert "ada-region" in out and "v.regions_region_name" in out
+    assert "re-prove" in out and "Every proof is current" not in out
 
 
 DS_END = "        <calculation class='tableau' formula='COUNTD([row_key])' />\n      </column>\n    </datasource>"
