@@ -21,6 +21,10 @@ models:
         contains_pii: true
     data_tests:
       - dbt_utils.unique_combination_of_columns:
+          description: >-
+            Proves the collision drop held. A failure here is a row that arrived
+            through both the network file and Paterson's archive file, which the
+            drop does not remove, or a new fan-out in this model.
           arguments:
             combination_of_columns:
               - student_primary_id

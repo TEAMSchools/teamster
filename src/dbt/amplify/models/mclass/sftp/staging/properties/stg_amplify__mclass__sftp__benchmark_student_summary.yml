@@ -42,6 +42,17 @@ models:
             severity: warn
             where: device_date is not null
     columns:
+      - name: student_primary_id
+        data_type: int64
+        description: >-
+          Student number, the student's primary id in Amplify. Null when Amplify
+          renames the id header and the staging model no longer reads it.
+        data_tests:
+          # gate: the kipptaf intermediate drops colliding rows, which would
+          # hide a whole file of null ids
+          - not_null:
+              config:
+                severity: error
       - name: school_name
         data_type: string
       - name: _dagster_partition_key
@@ -199,8 +210,6 @@ models:
       - name: secondary_student_id_stateid
         data_type: string
       - name: academic_year
-        data_type: int64
-      - name: student_primary_id
         data_type: int64
       - name: device_date
         data_type: date
