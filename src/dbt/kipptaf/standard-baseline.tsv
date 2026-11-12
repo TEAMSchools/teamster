@@ -128,6 +128,7 @@ kipptaf.fct_staff_observations	A1	kipptaf.int_schoolmint_grow__observations	#580
 kipptaf.fct_student_attendance_enrollment_daily	A12	kipptaf.int_extracts__student_enrollments	#6398
 kipptaf.fct_student_attendance_enrollment_periods	A12	kipptaf.int_extracts__student_enrollments	#6398
 kipptaf.fct_student_attendance_interventions	A1	kipptaf.int_deanslist__comm_log	#5809
+kipptaf.fct_student_subjects_annual	A12	kipptaf.int_extracts__student_enrollments	#6398
 kipptaf.fct_support_tickets	A1	kipptaf.int_zendesk__tickets__custom_fields_pivot	#5809
 kipptaf.fct_support_tickets	A1	kipptaf.stg_zendesk__ticket_audits__events	#5809
 kipptaf.fct_support_tickets	A1	kipptaf.stg_zendesk__ticket_metrics	#5809

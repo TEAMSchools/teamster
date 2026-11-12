@@ -476,12 +476,16 @@ _COMPILER = (
 )
 
 
-@pytest.mark.skipif(
+_NEEDS_CUBE = pytest.mark.skipif(
     not _COMPILER.exists() or shutil.which("node") is None,
     reason="Cube node_modules not installed (npm ci in src/cube)",
 )
-def test_model_compiles_with_cube() -> None:
-    out = subprocess.run(
+
+
+@functools.cache
+def _compile_model() -> subprocess.CompletedProcess:
+    # One compile per session; the tests below share it.
+    return subprocess.run(
         [
             "node",
             str(REPO_ROOT / "src" / "cube" / "compile-meta.js"),
@@ -492,6 +496,11 @@ def test_model_compiles_with_cube() -> None:
         timeout=180,
         check=False,
     )
+
+
+@_NEEDS_CUBE
+def test_model_compiles_with_cube() -> None:
+    out = _compile_model()
     assert out.returncode == 0, out.stderr[-2000:]
     compiled = {c["name"]: c for c in json.loads(out.stdout)["cubes"]}
     assert "student_assessment_scores_view" in compiled
@@ -513,6 +522,81 @@ def test_model_compiles_with_cube() -> None:
                 if _norm(got) != _norm(inc["meta"].get("ai_context")):
                     misplaced.append(name)
     assert not misplaced, "overrides not served as aiContext:\n" + "\n".join(misplaced)
+
+
+# Dimensions the DDI Suite workbook's sheets read, which Cube must serve on the
+# assessment-scores view (spec: 2026-11-11-ddi-suite-student-dimensions).
+DDI_SUITE_VIEW_MEMBERS = [
+    "school_week_start_date",
+    "school_week_end_date",
+    "is_sipps",
+    "is_tutoring",
+    "is_self_contained",
+    "homeroom_name",
+    "homeroom_section_number",
+    "is_low_25",
+    "state_test_proficiency",
+    "dibels_most_recent_composite",
+]
+
+# Each subject-picked flag on the scores cube: the column it reads from the ELA
+# and math role cubes of fct_student_subjects_annual.
+DDI_SUITE_SUBJECT_FLAGS = {
+    "is_low_25": "is_prior_year_low_25",
+    "state_test_proficiency": "prior_year_state_test_proficiency",
+}
+
+
+def test_subject_flags_pick_their_role_cube_by_bucket_subject() -> None:
+    cubes = _cube_docs()
+    scores = {d["name"]: d for d in cubes["student_assessment_scores"]["dimensions"]}
+    problems: list[str] = []
+    for member, col in DDI_SUITE_SUBJECT_FLAGS.items():
+        sql = _norm(scores.get(member, {}).get("sql"))
+        if "CASE {student_assessments.bucket_subject}" not in sql:
+            problems.append(f"{member}: does not pick by bucket_subject")
+        if "ELSE" in sql.upper().split():
+            problems.append(f"{member}: has an ELSE; other subjects must be null")
+        if f"WHEN 'Reading' THEN {{student_subjects_annual_ela.{col}}}" not in sql:
+            problems.append(f"{member}: Reading does not read the ELA role cube")
+        if f"WHEN 'Math' THEN {{student_subjects_annual_math.{col}}}" not in sql:
+            problems.append(f"{member}: Math does not read the math role cube")
+    assert not problems, "\n".join(problems)
+
+
+def test_subject_role_cubes_join_on_their_discipline() -> None:
+    cubes = _cube_docs()
+    joins = {j["name"]: j for j in cubes["student_school_enrollments"]["joins"]}
+    for role, disc in (("ela", "ELA"), ("math", "Math")):
+        name = f"student_subjects_annual_{role}"
+        sql = _norm(joins[name]["sql"])
+        assert f"{{{name}.discipline}} = '{disc}'" in sql
+        assert joins[name]["relationship"] == "many_to_one"
+        assert cubes[name]["sql_table"] == "kipptaf_marts.fct_student_subjects_annual"
+
+
+def test_dibels_composite_reads_the_ela_role_cube() -> None:
+    cubes = _cube_docs()
+    scores = {d["name"]: d for d in cubes["student_assessment_scores"]["dimensions"]}
+    sql = _norm(scores["dibels_most_recent_composite"]["sql"])
+    assert "CASE {student_assessments.bucket_subject}" in sql
+    assert "{student_subjects_annual_ela.latest_dibels_composite_level}" in sql
+    assert "WHEN 'Math' THEN 'No Composite Score Available'" in sql
+    assert "ELSE" not in sql.upper().split()
+
+
+@_NEEDS_CUBE
+def test_assessment_view_exposes_ddi_suite_members() -> None:
+    out = _compile_model()
+    assert out.returncode == 0, out.stderr[-2000:]
+    view = next(
+        c
+        for c in json.loads(out.stdout)["cubes"]
+        if c["name"] == "student_assessment_scores_view"
+    )
+    exposed = {d["name"].split(".", 1)[1] for d in view["dimensions"]}
+    missing = [m for m in DDI_SUITE_VIEW_MEMBERS if m not in exposed]
+    assert not missing, f"missing from student_assessment_scores_view: {missing}"
 
 
 _SCORES_FACT = "fct_assessment_scores_enrollment_scoped"
@@ -576,6 +660,32 @@ TWINS.update(
         ("student_enrollment_status", "is_504"): (
             "dim_student_enrollment_status",
             "is_504",
+        ),
+        **{
+            ("student_enrollment_status", c): ("dim_student_enrollment_status", c)
+            for c in [
+                "is_sipps",
+                "is_tutoring",
+                "is_self_contained",
+                "homeroom_name",
+                "homeroom_section_number",
+            ]
+        },
+        **{
+            (f"student_subjects_annual_{role}", c): ("fct_student_subjects_annual", c)
+            for role in ("ela", "math")
+            for c in [
+                "student_subject_annual_key",
+                "student_key",
+                "academic_year",
+                "discipline",
+                "prior_year_state_test_proficiency",
+                "is_prior_year_low_25",
+            ]
+        },
+        ("student_subjects_annual_ela", "latest_dibels_composite_level"): (
+            "fct_student_subjects_annual",
+            "latest_dibels_composite_level",
         ),
         ("courses", "is_foundations"): ("dim_courses", "is_foundations"),
         ("student_attendance_enrollment_daily", "n_absent_days_rolling_90"): (

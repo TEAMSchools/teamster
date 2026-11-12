@@ -330,6 +330,73 @@ cubes:
             filter bucket set. Every score before 2025-26 reads null, because
             the bucket model starts that year.
 
+      # The 3 DDI Suite subject flags pick the student's ELA or math value the
+      # same way bucket does, so a flag and bucket always agree on subject.
+      # They stay out of proficiency_rollup; a query using them reads the fact.
+      - name: is_low_25
+        description: >-
+          TRUE if the student's score on last spring's Florida FAST (PM3), in
+          the subject of this assessment, ranks below the 25.5th percentile —
+          the ELA score on reading and ELA assessments, the math score on math
+          assessments. Miami only; FALSE in NJ regions. Null where the
+          assessment's subject is neither reading nor math.
+        sql: >-
+          CASE {student_assessments.bucket_subject}
+            WHEN 'Reading' THEN
+          {student_subjects_annual_ela.is_prior_year_low_25}
+            WHEN 'Math' THEN {student_subjects_annual_math.is_prior_year_low_25}
+          END
+        type: boolean
+        public: true
+        meta:
+          ai_context: >-
+            The DDI Suite's Low 25 (FL) filter. Miami only, so an NJ filter on
+            it returns no TRUE rows.
+
+      - name: state_test_proficiency
+        description: >-
+          The student's proficiency level on last school year's annual state
+          test, in the subject of this assessment — ELA on reading and ELA
+          assessments, math on math assessments — or No Test when there is none.
+          Null where the assessment's subject is neither reading nor math.
+        sql: |-
+          CASE {student_assessments.bucket_subject}
+            WHEN 'Reading'
+              THEN {student_subjects_annual_ela.prior_year_state_test_proficiency}
+            WHEN 'Math'
+              THEN {student_subjects_annual_math.prior_year_state_test_proficiency}
+          END
+        type: string
+        public: true
+        meta:
+          ai_context: >-
+            Prior-year proficiency, fixed for the school year, not the result of
+            this assessment. For this assessment's own level, use
+            proficiency_level.
+
+      - name: dibels_most_recent_composite
+        description: >-
+          The student's most recent DIBELS composite benchmark level in the
+          school year of the enrollment, on reading and ELA assessments, or No
+          Composite Score Available when the student has none; No Composite
+          Score Available on math assessments; null wherever the assessment's
+          subject is neither reading nor math.
+        sql: |-
+          CASE {student_assessments.bucket_subject}
+            WHEN 'Reading'
+              THEN COALESCE(
+                {student_subjects_annual_ela.latest_dibels_composite_level},
+                'No Composite Score Available'
+              )
+            WHEN 'Math' THEN 'No Composite Score Available'
+          END
+        type: string
+        public: true
+        meta:
+          ai_context: >-
+            The latest composite in the school year, not the one in force on the
+            assessment date, so it can postdate the score it sits beside.
+
     measures:
       # Three nested counts, widest first: assigned contains taken contains
       # scored. Each answers a different question and they are not

@@ -4,10 +4,16 @@ with
         select student_enrollment_key, is_ell, from {{ ref("dim_student_ell_status") }}
     ),
 
-    -- 504: no source dates, so read the stint flag; one row per stint.
-    section_504 as (
+    -- Stint-level flags with no source dates (504, SIPPS, tutoring,
+    -- self-contained) and homeroom: one row per stint.
+    stint_flags as (
         select
             is_504,
+            is_sipps,
+            is_tutoring,
+            is_self_contained,
+            advisory_name,
+            advisory_section_number,
 
             {{
                 student_enrollment_key(
@@ -136,8 +142,14 @@ select
     iep.special_education_placement,
     meal.meal_eligibility,
 
+    sf.is_sipps,
+    sf.is_tutoring,
+    sf.is_self_contained,
+    sf.advisory_name as homeroom_name,
+    sf.advisory_section_number as homeroom_section_number,
+
     coalesce(ell.is_ell, false) as is_ell,
-    coalesce(sec.is_504, false) as is_504,
+    coalesce(sf.is_504, false) as is_504,
     coalesce(iep.is_iep, false) as is_iep,
     coalesce(meal.is_meal_eligible, false) as is_meal_eligible,
 
@@ -157,7 +169,7 @@ select
 
 from {{ ref("dim_student_enrollments") }} as enr
 left join ell on enr.student_enrollment_key = ell.student_enrollment_key
-left join section_504 as sec on enr.student_enrollment_key = sec.student_enrollment_key
+left join stint_flags as sf on enr.student_enrollment_key = sf.student_enrollment_key
 left join iep on enr.student_enrollment_key = iep.student_enrollment_key
 left join meal on enr.student_enrollment_key = meal.student_enrollment_key
 left join
