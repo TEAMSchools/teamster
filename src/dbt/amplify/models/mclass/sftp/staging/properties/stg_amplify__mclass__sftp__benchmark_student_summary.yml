@@ -1,15 +1,22 @@
 models:
   - name: stg_amplify__mclass__sftp__benchmark_student_summary
     description: >-
-      Amplify mCLASS DIBELS benchmark scores from the SFTP file. One row per
-      student, school year, benchmark period and assessment grade. The file is a
-      network-wide export of the Amplify account, so a district's copy can carry
-      other regions' schools.
+      Amplify mCLASS DIBELS benchmark scores from the SFTP file. Meant to hold
+      one row per student, school year, benchmark period and assessment grade;
+      Amplify filing errors can break that, and the tests below warn. The file
+      is a network-wide export of the Amplify account, so a district's copy can
+      carry other regions' schools.
     config:
       meta:
         contains_pii: true
     data_tests:
       - dbt_utils.unique_combination_of_columns:
+          description: >-
+            Amplify mCLASS filed more than one benchmark result under one
+            student ID for the same school year, period and grade, usually 2
+            children sharing an account. The kipptaf mCLASS benchmark
+            intermediate drops every colliding row, so the student shows as Not
+            Tested. Fix it in mCLASS by moving the result to the right student.
           arguments:
             combination_of_columns:
               - student_primary_id
@@ -17,8 +24,35 @@ models:
               - benchmark_period
               - assessment_grade
           config:
-            severity: error
+            severity: warn
+      - dbt_utils.unique_combination_of_columns:
+          description: >-
+            Amplify mCLASS filed 2 benchmark sittings under one student ID on
+            the same day, usually 2 children sharing an account, often at
+            different grades. The kipptaf mCLASS benchmark intermediate drops
+            both rows, so the student shows as Not Tested. Fix it in mCLASS by
+            moving the result to the right student.
+          arguments:
+            combination_of_columns:
+              - student_primary_id
+              - school_year
+              - benchmark_period
+              - device_date
+          config:
+            severity: warn
+            where: device_date is not null
     columns:
+      - name: student_primary_id
+        data_type: int64
+        description: >-
+          Student number, the student's primary id in Amplify. Null when Amplify
+          renames the id header and the staging model no longer reads it.
+        data_tests:
+          # gate: the kipptaf intermediate drops colliding rows, which would
+          # hide a whole file of null ids
+          - not_null:
+              config:
+                severity: error
       - name: school_name
         data_type: string
       - name: _dagster_partition_key
@@ -176,8 +210,6 @@ models:
       - name: secondary_student_id_stateid
         data_type: string
       - name: academic_year
-        data_type: int64
-      - name: student_primary_id
         data_type: int64
       - name: device_date
         data_type: date
