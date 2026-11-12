@@ -26,6 +26,17 @@ shared:
       Grade Level: { dashboard: grade_level, cube: grade_level }
       Subject Area: { dashboard: subject_area, cube: academic_subject }
       Module Code: { dashboard: module_code, cube: module_code }
+      # The student flags (Refs #6375). Cube picks the ELA or math value by the
+      # assessment's subject, as the dashboard's columns do.
+      is_sipps: { dashboard: is_sipps, cube: is_sipps }
+      is_low_25_fl: { dashboard: is_low_25_fl, cube: is_low_25 }
+      state_test_proficiency:
+        { dashboard: state_test_proficiency, cube: state_test_proficiency }
+      Dibels Most Recent Composite:
+        {
+          dashboard: dibels_most_recent_composite,
+          cube: dibels_most_recent_composite,
+        }
     defaults: { Academic Year: "2026" }
     cuts: [{ Response Type: overall }, { Response Type: standard }]
     # The DDI datasource holds only assessments tagged into the stack
@@ -96,6 +107,17 @@ shared:
       Module Number Raw: { dashboard: module_number, cube: module_code }
       Subject Area: { dashboard: subject_area, cube: academic_subject }
       nj_student_tier: { dashboard: nj_student_tier, cube: bucket }
+      # The student flags (Refs #6375).
+      is_sipps: { dashboard: is_sipps, cube: is_sipps }
+      NJ Tutoring: { dashboard: tutoring_nj, cube: is_tutoring }
+      is_low_25_fl: { dashboard: is_low_25_fl, cube: is_low_25 }
+      state_test_proficiency:
+        { dashboard: state_test_proficiency, cube: state_test_proficiency }
+      dibels_most_recent_composite:
+        {
+          dashboard: dibels_most_recent_composite,
+          cube: dibels_most_recent_composite,
+        }
     defaults: { Academic Year: "2026" }
     cuts: [{ Response Type: overall }]
     dims:
@@ -153,17 +175,31 @@ comparisons:
     measure: pct_proficient
     sheet_field: Avg. Is Mastery Int
     probe: avg(is_mastery_int)
+    # The student-flag cuts sit here alone: one sheet proves each mapping.
+    # SIPPS and Low 25 have no true rows in 2026, so they get no cut.
+    cuts:
+      - { Response Type: overall }
+      - { Response Type: standard }
+      - { Response Type: overall, state_test_proficiency: Below/Far Below }
+      - {
+          Response Type: overall,
+          Dibels Most Recent Composite: Well Below Benchmark,
+        }
     proof:
       fingerprint: 3c570b06fff00569956ab30062ec5971502aa895511df28e3e73d894b00496c6
-      cells: 2585
-      proven_at: "2026-11-08T21:40:00.320191+00:00"
-      workbook_updated_at: "2026-11-08T06:42:06+00:00"
+      cells: 3282
+      proven_at: "2026-11-12T02:07:25.912551+00:00"
+      workbook_updated_at: "2026-11-11T23:42:08+00:00"
       probe_fingerprint: 8cce34f2bea64e939a9602b9d87589092767700b09df9bfe33a340e2df35b104
       source_fingerprint: 0f04e5bc396bc10f77f44b8ef651a385c4eb60d3a8d925755e8ebbb36c7d3b6e
       cuts:
         - '{"Response Type": "overall"}'
         - '{"Response Type": "standard"}'
-      totals_skipped: 360
+        - '{"Response Type": "overall", "state_test_proficiency": "Below/Far
+          Below"}'
+        - '{"Dibels Most Recent Composite": "Well Below Benchmark", "Response
+          Type": "overall"}'
+      totals_skipped: 538
       shelves:
         drop:
           - Week Start Monday
@@ -180,7 +216,6 @@ comparisons:
             - Subject Area
       missing_cuts: []
       missing_filters:
-        - Dibels Most Recent Composite
         - Discipline
         - Exclude Future Assessments
         - Grade/Subject
@@ -191,24 +226,17 @@ comparisons:
         - Term
         - Week Start Monday
         - gifted_and_talented
-        - is_low_25_fl
-        - is_sipps
-        - state_test_proficiency
       restricting_filters:
         - Exclude Future Assessments
       filter_notes: {}
       missing_columns:
-        Ml Status: ml_status
-        Head Of School: head_of_school
-        state_test_proficiency: state_test_proficiency
-        is_sipps: is_sipps
         IEP Status: iep_status
-        gifted_and_talented: gifted_and_talented
-        Term: term
-        Dibels Most Recent Composite: dibels_most_recent_composite
-        School Level: school_level
-        is_low_25_fl: is_low_25_fl
         Week Start Monday: week_start_monday
+        Head Of School: head_of_school
+        Ml Status: ml_status
+        Term: term
+        gifted_and_talented: gifted_and_talented
+        School Level: school_level
   - id: mastery-dki-region
     <<: *region
     measure: pct_proficient
@@ -1470,6 +1498,15 @@ comparisons:
   - id: mastery-bucket-1-module
     <<: *bucket_mastery
     sheet_field: Bucket 1
+    # The student-flag cuts for the assessment dashboard's datasource. SIPPS,
+    # NJ Tutoring and Low 25 have no true rows in 2026, so they get no cut.
+    cuts:
+      - { Response Type: overall }
+      - { Response Type: overall, state_test_proficiency: Below/Far Below }
+      - {
+          Response Type: overall,
+          dibels_most_recent_composite: Well Below Benchmark,
+        }
     scope:
       - { cube: is_internal_assessment, values: [true] }
       - { cube: bucket, values: [Bucket 1] }
@@ -1479,13 +1516,17 @@ comparisons:
       dashboard_scope: [{ dashboard: nj_student_tier, values: [Bucket 1] }]
     proof:
       fingerprint: 34fdc3edfd57cab4a2496f461bac09732d7ed4a29aa42fb7f56b7a95c4166098
-      cells: 492
-      proven_at: "2026-11-08T21:55:32.494357+00:00"
-      workbook_updated_at: "2026-11-08T06:42:06+00:00"
+      cells: 720
+      proven_at: "2026-11-12T02:11:09.192561+00:00"
+      workbook_updated_at: "2026-11-11T23:42:08+00:00"
       probe_fingerprint: 80998b8bfacc04e0083331967c542e38ffe69cd21d355087d4b6b4fdbbbf4fa3
       source_fingerprint: 04be9335ed594489d483384947c2521c87f3d1b070ec97d8f4ea38c63f69f74a
       cuts:
         - '{"Response Type": "overall"}'
+        - '{"Response Type": "overall", "state_test_proficiency": "Below/Far
+          Below"}'
+        - '{"Response Type": "overall", "dibels_most_recent_composite": "Well
+          Below Benchmark"}'
       totals_skipped: 0
       shelves:
         clear_filters:
@@ -1509,33 +1550,24 @@ comparisons:
         - Is Foundations
         - Is Replacement
         - Lep Status
-        - NJ Tutoring
         - School Level (School)
         - Schoolid
         - Subject Area (group)
         - Team
         - Territory
-        - dibels_most_recent_composite
         - head_of_school
-        - is_low_25_fl
-        - is_sipps
-        - state_test_proficiency
       restricting_filters:
         - "% Completion"
       filter_notes: {}
       missing_columns:
-        dibels_most_recent_composite: dibels_most_recent_composite
-        is_low_25_fl: is_low_25_fl
-        head_of_school: head_of_school
-        Is Replacement: is_replacement
         Is Foundations: is_foundations
-        is_sipps: is_sipps
-        Territory: territory
-        C 504 Status: c_504_status
-        Lep Status: lep_status
-        state_test_proficiency: state_test_proficiency
-        Team: team
         Schoolid: schoolid
+        head_of_school: head_of_school
+        Territory: territory
+        Team: team
+        Lep Status: lep_status
+        C 504 Status: c_504_status
+        Is Replacement: is_replacement
   - id: mastery-bucket-2-module
     <<: *bucket_mastery
     sheet_field: Bucket 2
