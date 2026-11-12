@@ -2,8 +2,9 @@ models:
   - name: stg_amplify__mclass__sftp__pm_student_summary
     description: >-
       Amplify mCLASS DIBELS progress monitoring scores from the PM SFTP file.
-      One row per student, school year, PM period, measure, probe, device date
-      and assessment grade. The file is a network-wide export of the Amplify
+      Meant to hold one row per student, school year, PM period, measure, probe,
+      device date and assessment grade; Amplify filing errors can break that,
+      and the test below warns. The file is a network-wide export of the Amplify
       account, so a district's copy can carry other regions' schools.
     config:
       meta:

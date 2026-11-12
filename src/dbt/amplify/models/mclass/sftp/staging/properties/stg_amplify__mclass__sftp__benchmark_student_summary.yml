@@ -1,10 +1,11 @@
 models:
   - name: stg_amplify__mclass__sftp__benchmark_student_summary
     description: >-
-      Amplify mCLASS DIBELS benchmark scores from the SFTP file. One row per
-      student, school year, benchmark period and assessment grade. The file is a
-      network-wide export of the Amplify account, so a district's copy can carry
-      other regions' schools.
+      Amplify mCLASS DIBELS benchmark scores from the SFTP file. Meant to hold
+      one row per student, school year, benchmark period and assessment grade;
+      Amplify filing errors can break that, and the tests below warn. The file
+      is a network-wide export of the Amplify account, so a district's copy can
+      carry other regions' schools.
     config:
       meta:
         contains_pii: true

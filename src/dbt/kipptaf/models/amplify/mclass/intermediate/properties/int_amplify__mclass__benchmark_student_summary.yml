@@ -21,6 +21,10 @@ models:
         contains_pii: true
     data_tests:
       - dbt_utils.unique_combination_of_columns:
+          description: >-
+            One benchmark sitting per student, period and grade. Proves the
+            collision drop held. A double that arrives through both the network
+            file and the kipppaterson archive file still fails here.
           arguments:
             combination_of_columns:
               - student_primary_id

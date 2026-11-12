@@ -31,6 +31,7 @@ with
                 partition by
                     ur._dbt_source_relation,
                     ur._dbt_source_relation_2,
+                    x.location_dagster_code_location,
                     ur.student_primary_id_studentnumber,
                     ur.school_year,
                     ur.pm_period,

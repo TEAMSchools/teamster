@@ -27,6 +27,7 @@ with
                 partition by
                     ur._dbt_source_relation,
                     ur._dbt_source_relation_2,
+                    x.location_dagster_code_location,
                     ur.student_primary_id,
                     ur.school_year,
                     ur.benchmark_period,
@@ -40,6 +41,7 @@ with
                     partition by
                         ur._dbt_source_relation,
                         ur._dbt_source_relation_2,
+                        x.location_dagster_code_location,
                         ur.student_primary_id,
                         ur.school_year,
                         ur.benchmark_period,

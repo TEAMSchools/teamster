@@ -29,19 +29,9 @@ with
             _dagster_partition_key,
             source_file_name,
             aimline_status,
-            cast(aimline_value_by_date as numeric) as aimline_value_by_date,
+            _dbt_source_relation,
 
-            count(*) over (
-                partition by
-                    _dbt_source_relation,
-                    student_primary_id_studentnumber,
-                    school_year,
-                    pm_period,
-                    measure,
-                    probe_number,
-                    device_date,
-                    assessment_grade
-            ) as n_key_collisions,
+            cast(aimline_value_by_date as numeric) as aimline_value_by_date,
         from {{ ref("stg_amplify__mclass__sftp__pm_student_summary") }}
     ),
 
@@ -57,6 +47,20 @@ with
             aimline_status,
             aimline_value_by_date,
             goal,
+
+            -- the wrapper's _dbt_source_relation is region-coded, so a
+            -- pre-Focus Miami id never collides with an NJ id
+            count(*) over (
+                partition by
+                    _dbt_source_relation,
+                    student_primary_id,
+                    school_year,
+                    pm_period,
+                    measure,
+                    probe_number,
+                    device_date,
+                    assessment_grade
+            ) as n_aimline_collisions,
         from {{ ref("stg_amplify__mclass__sftp__pm_student_summary_aimline") }}
     ),
 
@@ -89,6 +93,7 @@ with
             b.section_504,
             b._dagster_partition_key,
             b.source_file_name,
+            b._dbt_source_relation,
 
             a.goal as aimline_season_student_goal,
 
@@ -111,12 +116,12 @@ with
             and b.probe_number = a.probe_number
             and b.device_date = a.device_date
             and b.assessment_grade = a.assessment_grade
-        where b.n_key_collisions = 1
+            and a.n_aimline_collisions = 1
     ),
 
     enriched as (
         select
-            c.* except (student_primary_id),
+            c.* except (student_primary_id, _dbt_source_relation),
 
             lc.location_abbreviation as school,
             lc.location_powerschool_school_id as schoolid,
@@ -142,11 +147,25 @@ with
                 regexp_extract(lc.location_dagster_code_location, r'kipp(\w+)')
             ) as region,
 
+            count(*) over (
+                partition by
+                    c._dbt_source_relation,
+                    lc.location_dagster_code_location,
+                    c.student_primary_id,
+                    c.school_year,
+                    c.pm_period,
+                    c.measure,
+                    c.probe_number,
+                    c.device_date,
+                    c.assessment_grade
+            ) as n_key_collisions,
+
         from combined as c
         left join
             {{ ref("int_people__location_crosswalk") }} as lc
             on c.school_name = lc.location_name
     )
 
-select *,
+select * except (n_key_collisions),
 from enriched
+where n_key_collisions = 1
