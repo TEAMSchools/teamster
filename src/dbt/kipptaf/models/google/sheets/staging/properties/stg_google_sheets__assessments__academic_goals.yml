@@ -104,8 +104,8 @@ models:
       - name: QA_Goal
         data_type: float64
         description: >-
-          Quarterly assessment (QA) mastery goal for this grade and subject. The
-          DDI Suite uses it in place of the grade, school and region goals on QA
-          and CRQ modules; null where no QA goal is set. A row that carries only
-          this goal leaves every other goal column blank, so the Academic Goal
+          Quarterly assessment (QA) mastery goal for this grade and subject;
+          null where no QA goal is set. `rpt_tableau__ddi_dashboard` applies it
+          in its `*_goal_differentiated` columns. A row that carries only this
+          goal leaves every other goal column blank, so the Academic Goal
           Roll-Up does not count it.

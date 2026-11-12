@@ -163,9 +163,9 @@ models:
         data_type: float64
         description: >-
           Grade-level goal for this module type. A fixed goal from the Module
-          Goal Rules sheet wins; otherwise the sheet's QA goal on QA and CRQ
-          modules where one is set; otherwise `grade_goal` plus the rule's
-          offset; otherwise `grade_goal`.
+          Goal Rules sheet wins; otherwise the Academic Goals sheet's QA goal on
+          QA and CRQ modules where one is set; otherwise `grade_goal` plus the
+          rule's offset; otherwise `grade_goal`.
       - name: school_goal_differentiated
         data_type: float64
         description: >-

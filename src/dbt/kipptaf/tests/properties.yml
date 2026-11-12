@@ -317,13 +317,13 @@ data_tests:
       Lists pairs of rows on the Module Goal Rules tab of the Assessments sheet
       that would both apply to the same DDI row: same region and module type,
       overlapping grade ranges, and the same discipline or a blank discipline on
-      either row. A DDI row matching 2 rules would duplicate in
-      `rpt_tableau__ddi_dashboard`. To fix, the sheet owner narrows one row's
-      grade range or deletes the duplicate rule.
+      either row. `int_assessments__module_goal_rules` drops both rows, so the
+      DDI Suite shows the plain lookup goal for them. To fix, the sheet owner
+      narrows one row's grade range or deletes the duplicate rule.
     config:
       tags:
         - google_sheet
-      severity: error
+      severity: warn
 
   # TODO(#5558): runbook
   - name: stg_google_sheets__people__location_crosswalk__sheet_duplicates

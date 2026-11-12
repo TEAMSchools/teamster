@@ -7,8 +7,16 @@ models:
       discipline and grade range. `rpt_tableau__ddi_dashboard` applies them in
       its differentiated goal columns. One row per region, module type,
       discipline and lowest grade; blank rows in the sheet grid are dropped.
+      Every test here warns: `int_assessments__module_goal_rules` drops the rows
+      they flag, so a bad row costs its rule, not the run.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
+          name: stg_google_sheets__assessments__module_goal_rules__unique_rule
+          description: >-
+            The Module Goal Rules tab has 2 rows with the same region, module
+            type, discipline and Grade Min. Both rows are dropped, so the DDI
+            Suite shows the plain lookup goal for that rule. Delete the extra
+            row on the tab.
           arguments:
             combination_of_columns:
               - region
@@ -16,17 +24,40 @@ models:
               - discipline
               - grade_min
           config:
-            severity: error
+            severity: warn
       - dbt_utils.expression_is_true:
+          name: stg_google_sheets__assessments__module_goal_rules__goal_or_offset
+          description: >-
+            A Module Goal Rules row fills both Goal and Goal Offset, or neither.
+            The row is dropped, so the DDI Suite shows the plain lookup goal.
+            Fill exactly one of the 2 cells on the tab.
           arguments:
             expression: (goal is null) != (goal_offset is null)
           config:
-            severity: error
+            severity: warn
       - dbt_utils.expression_is_true:
+          name: stg_google_sheets__assessments__module_goal_rules__goal_range
+          description: >-
+            A Module Goal Rules row has a Goal outside 0 to 1, or a Goal Offset
+            of 1 or more (for example 80 typed for 0.8). The row is dropped, so
+            the DDI Suite shows the plain lookup goal. Enter goals and offsets
+            as decimals.
+          arguments:
+            expression: |
+              (goal is null or goal between 0 and 1)
+              and (goal_offset is null or abs(goal_offset) < 1)
+          config:
+            severity: warn
+      - dbt_utils.expression_is_true:
+          name: stg_google_sheets__assessments__module_goal_rules__grade_order
+          description: >-
+            A Module Goal Rules row has a Grade Min above its Grade Max. The row
+            is dropped, so the DDI Suite shows the plain lookup goal. Swap or
+            fix the 2 grades on the tab.
           arguments:
             expression: grade_min <= grade_max
           config:
-            severity: error
+            severity: warn
     columns:
       - name: module_type
         data_type: string
@@ -35,31 +66,70 @@ models:
           the DDI extract (for example ET, CRQ, TP).
         data_tests:
           - not_null:
+              description: >-
+                A Module Goal Rules row has a blank Module Type, so it matches
+                no assessment and is dropped. Fill in the module type.
               config:
-                severity: error
+                severity: warn
+          - accepted_values:
+              description: >-
+                A Module Goal Rules row has a Module Type that no DDI assessment
+                uses, often a typo, so the rule never applies. Fix the cell, or
+                add the new module type to this list if T&L created one.
+              arguments:
+                values: [QA, MQQ, CRQ, UA, TP, ET, WPP, BL]
+              config:
+                severity: warn
       - name: grade_min
         data_type: int64
         description: Lowest grade level the rule applies to (0 is kindergarten).
         data_tests:
           - not_null:
+              description: >-
+                A Module Goal Rules row has a blank Grade Min, so it is dropped.
+                Fill in the lowest grade.
               config:
-                severity: error
+                severity: warn
       - name: grade_max
         data_type: int64
         description: Highest grade level the rule applies to, inclusive.
         data_tests:
           - not_null:
+              description: >-
+                A Module Goal Rules row has a blank Grade Max, so it is dropped.
+                Fill in the highest grade.
               config:
-                severity: error
+                severity: warn
       - name: region
         data_type: string
         description: >-
           Region the rule applies to, matching `region` on the DDI extract.
+        data_tests:
+          - accepted_values:
+              description: >-
+                A Module Goal Rules row has a Region the DDI extract does not
+                use, often a typo, so the rule never applies. Fix the cell.
+              arguments:
+                values: [Newark, Camden, Paterson, Miami]
+              config:
+                severity: warn
       - name: discipline
         data_type: string
         description: >-
           Discipline the rule applies to, matching `Discipline` on the course
           subject crosswalk. Blank means every subject.
+        data_tests:
+          - relationships:
+              description: >-
+                A Module Goal Rules row names a Discipline the course subject
+                crosswalk does not use, often a typo, so the rule matches no
+                subject. Fix the cell, or leave it blank for every subject.
+              arguments:
+                to: ref('stg_google_sheets__assessments__course_subject_crosswalk')
+                field: Discipline
+              config:
+                severity: warn
+                where: discipline is not null
       - name: goal
         data_type: float64
         description: >-

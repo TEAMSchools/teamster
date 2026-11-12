@@ -281,9 +281,15 @@ the owner's walkthrough or a workbook download.
   (known issue).
 - **Reads**: `int_extracts__student_enrollments_weeks`,
   `int_assessments__response_rollup`, the standard-domains and QBLs sheets,
-  `int_assessments__academic_goals`, courses, the iReady lesson union, and the
-  SchoolMint Grow/performance-management chain.
+  `int_assessments__academic_goals`, `int_assessments__module_goal_rules`,
+  courses, the iReady lesson union, and the SchoolMint
+  Grow/performance-management chain.
 - **Worth knowing**:
+  - `grade_goal`, `school_goal` and `region_goal` are the plain academic goals
+    lookup values. `grade_goal_differentiated`, `school_goal_differentiated` and
+    `region_goal_differentiated` apply, in order, a fixed goal from the Module
+    Goal Rules tab, the Academic Goals tab's QA goal on QA and CRQ modules, and
+    the raw goal plus a rule's offset.
   - Eligibility is enrollment as of the week end (`is_enrolled_week_end`,
     `enroll_status in (0, 2, 3)`), not current status — pinning to
     `enroll_status = 0` retroactively erased withdrawn students' history

@@ -70,9 +70,9 @@ models:
       - name: qa_goal
         data_type: float64
         description: >-
-          Quarterly assessment (QA) mastery goal, from the sheet. The DDI Suite
-          uses it in place of the grade, school and region goals on QA and CRQ
-          modules; null where no QA goal is set.
+          Quarterly assessment (QA) mastery goal, from the sheet; null where no
+          QA goal is set. `rpt_tableau__ddi_dashboard` applies it in its
+          `*_goal_differentiated` columns.
       - name: school_level
         data_type: string
         description: School level (ES, MS, HS), from `int_students__schools`.
