@@ -3,9 +3,9 @@ models:
     description: >-
       DDI goal rules by module type. One row per region, module type, subject
       area and grade range, holding either a fixed goal that replaces an
-      assessment's lookup goal or an offset added to it. Sourced from the Module
-      Goal Rules Google Sheet; malformed and overlapping rules are dropped
-      upstream.
+      assessment's lookup goal or an offset added to it. A rule that is
+      malformed or overlaps another rule is left out, so the scores it would
+      match keep their lookup goal.
     columns:
       - name: assessment_module_goal_rule_key
         data_type: string
