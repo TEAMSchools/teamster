@@ -1022,12 +1022,15 @@ comparisons:
         - { dashboard: response_type, cube: response_type }
         - { dashboard: response_type_code, cube: response_type_code }
       values:
-        - { dashboard: performance_band_label_number, cube: band_number }
+        - {
+            dashboard: performance_band_label_number,
+            cube: performance_band_label_number,
+          }
     proof:
       fingerprint: 8be8411cbf75a6f2141e46e61238e18c998d4fcd1f58de2bdefc33d3cc0d6be5
-      cells: 3503
-      proven_at: "2026-11-09T17:12:17.618125+00:00"
-      workbook_updated_at: "2026-11-09T06:45:19+00:00"
+      cells: 3678
+      proven_at: "2026-11-12T01:26:29.592041+00:00"
+      workbook_updated_at: "2026-11-11T23:42:08+00:00"
       probe_fingerprint: 6cb975f2ee4bfed6a84cb005bec5f07cf8ce032140d4133f9792be5321da7362
       source_fingerprint: 0f04e5bc396bc10f77f44b8ef651a385c4eb60d3a8d925755e8ebbb36c7d3b6e
       cuts:
@@ -1065,17 +1068,17 @@ comparisons:
         - Exclude Future Assessments
       filter_notes: {}
       missing_columns:
-        is_low_25_fl: is_low_25_fl
-        Head Of School: head_of_school
-        Dibels Most Recent Composite: dibels_most_recent_composite
-        is_sipps: is_sipps
-        state_test_proficiency: state_test_proficiency
+        gifted_and_talented: gifted_and_talented
         IEP Status: iep_status
+        state_test_proficiency: state_test_proficiency
+        is_low_25_fl: is_low_25_fl
+        Dibels Most Recent Composite: dibels_most_recent_composite
+        Head Of School: head_of_school
+        is_sipps: is_sipps
         Week Start Monday: week_start_monday
-        Term: term
         Student Tier: nj_student_tier
         School Level: school_level
-        gifted_and_talented: gifted_and_talented
+        Term: term
         Ml Status: ml_status
   # DKI - Assessment Mastery Table shows AVG(Is Far Below) through Measure
   # Values: band 1 is 1, any higher band 0. Module Code joins the rows so each
@@ -1108,12 +1111,15 @@ comparisons:
         - { dashboard: response_type, cube: response_type }
         - { dashboard: response_type_code, cube: response_type_code }
       values:
-        - { dashboard: performance_band_label_number, cube: band_number }
+        - {
+            dashboard: performance_band_label_number,
+            cube: performance_band_label_number,
+          }
     proof:
       fingerprint: f7cc9a4cf8b0e25ef9bdd1b83c04756558f1039486d7d46734fbe3b6b8ce422d
-      cells: 1303
-      proven_at: "2026-11-05T22:09:03.658665+00:00"
-      workbook_updated_at: "2026-11-05T06:41:01+00:00"
+      cells: 1427
+      proven_at: "2026-11-12T01:28:16.841132+00:00"
+      workbook_updated_at: "2026-11-11T23:42:08+00:00"
       probe_fingerprint: dbe399bbffffb1f5edd68acf45cd392b3f41997cfa72370e110aee110754381c
       source_fingerprint: 0f04e5bc396bc10f77f44b8ef651a385c4eb60d3a8d925755e8ebbb36c7d3b6e
       cuts:
@@ -1152,19 +1158,19 @@ comparisons:
         - Exclude Future Assessments
       filter_notes: {}
       missing_columns:
+        gifted_and_talented: gifted_and_talented
+        IEP Status: iep_status
+        state_test_proficiency: state_test_proficiency
+        is_low_25_fl: is_low_25_fl
+        Dibels Most Recent Composite: dibels_most_recent_composite
         Head Of School: head_of_school
+        is_sipps: is_sipps
         Student Tier: nj_student_tier
         School Level: school_level
         Week Start Monday: week_start_monday
-        Performance Band Label: performance_band_label
-        is_sipps: is_sipps
-        gifted_and_talented: gifted_and_talented
-        IEP Status: iep_status
-        is_low_25_fl: is_low_25_fl
         Term: term
+        Performance Band Label: performance_band_label
         Ml Status: ml_status
-        state_test_proficiency: state_test_proficiency
-        Dibels Most Recent Composite: dibels_most_recent_composite
   - id: students-bucket-1-module
     <<: *bucket_students
     sheet_field: Bucket 1 Students
