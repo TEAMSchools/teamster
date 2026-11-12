@@ -776,11 +776,15 @@ models:
       - name: is_504
         data_type: boolean
         description:
-          For the New Jersey regions, first non-null of `pid_504_tf`, `is_504`.
-          For Miami, `int_focus__students.is_504`, read from the Focus "Section
-          504 Eligible" field (custom_621), which is unset for nearly every
-          student today. Null means unknown 504 status, not the absence of a
-          plan.
+          For the New Jersey regions, `pid_504_tf` from
+          `stg_powerschool__s_nj_ren_x` for a row from a past-enrollment record,
+          else `is_504` from `stg_powerschool__s_nj_stu_x`, else false.
+          `stg_powerschool__s_nj_stu_x` holds the student's current value, so a
+          past-year row with no past-enrollment record takes the current flag,
+          which can reflect a plan written after that year. For Miami,
+          `int_focus__students.is_504`, read from the Focus "Section 504
+          Eligible" field (custom_621). Null means unknown 504 status, not the
+          absence of a plan.
         config:
           meta:
             contains_pii: true
