@@ -388,7 +388,24 @@ with
             r.response_type_code,
             r.response_type_description,
             r.response_type_root_description,
-            r.date_taken,
+
+            -- same window as sanitized_responses; inline because union branches
+            -- match by position
+            case
+                when r.date_taken is null
+                then null
+                when
+                    s.administered_at is not null
+                    and date_diff(r.date_taken, s.administered_at, day)
+                    between -365 and 365
+                then r.date_taken
+                when
+                    s.administered_at is null
+                    and extract(year from r.date_taken)
+                    between s.academic_year - 1 and s.academic_year + 1
+                then r.date_taken
+            end as date_taken,
+
             r.points,
             r.points_possible,
 

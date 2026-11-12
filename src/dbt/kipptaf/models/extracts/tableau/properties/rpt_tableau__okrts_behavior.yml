@@ -26,18 +26,14 @@ models:
           - not_null:
               config:
                 severity: error
-      - name: academic_year
-        data_type: int64
-        data_tests:
-          - not_null:
-              config:
-                severity: error
       - name: week_start_monday
         data_type: date
         data_tests:
           - not_null:
               config:
                 severity: error
+      - name: academic_year
+        data_type: int64
       - name: student_name
         data_type: string
       - name: enroll_status

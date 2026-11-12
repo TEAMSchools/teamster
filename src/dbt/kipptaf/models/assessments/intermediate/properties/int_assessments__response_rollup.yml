@@ -8,11 +8,11 @@ models:
       null response columns. Responses that `int_assessments__performance_bands`
       groups under one `canonical_response_type_id` (a standard Illuminate keeps
       in several standards sets) are summed into one row per sitting.
-      `date_taken` is nulled when it falls more than 365 days from the canonical
-      administered date, or, when there is no administered date, outside
-      `academic_year` plus or minus one year. For internal assessments,
-      multipart member assessments (sharing the scaffold's regional
-      `canonical_assessment_id`) are aggregated to one row per student,
+      `date_taken` (Illuminate and Apex alike) is nulled when it falls more than
+      365 days from the canonical administered date, or, when there is no
+      administered date, outside `academic_year` plus or minus one year. For
+      internal assessments, multipart member assessments (sharing the scaffold's
+      regional `canonical_assessment_id`) are aggregated to one row per student,
       `is_replacement`, and response with summed points, the earliest
       `date_taken`, and a deterministic single school/region selection. External
       assessments pass through one row per scaffold row and response.
@@ -25,6 +25,18 @@ models:
       scaffold row and response, and carries the scaffold's section match.
     config:
       materialized: table
+      # Downstream reports and their tests filter on academic_year with a
+      # literal, which prunes to 1-2 partitions instead of a full scan.
+      partition_by:
+        field: academic_year
+        data_type: int64
+        range:
+          start: 2010
+          end: 2050
+          interval: 1
+      cluster_by:
+        - response_type
+        - source
       meta:
         contains_pii: true
         dagster:
@@ -52,6 +64,8 @@ models:
               - response_type
               - response_type_id
               - is_replacement
+          config:
+            severity: error
       # Standard-domain averages read the standard rows as one row per standard
       # code and description; a split standard that misses its canonical id
       # would count twice there.
@@ -67,24 +81,6 @@ models:
           config:
             severity: error
             where: response_type = 'standard'
-      # Asserts the relative invariant the model now enforces: a sitting date is
-      # judged against its own administration, not an absolute calendar floor.
-      # Kept at warn so a source regression surfaces without blocking CI.
-      - dbt_utils.expression_is_true:
-          arguments:
-            expression: |-
-              date_taken is null
-              or (
-                administered_at is not null
-                and abs(date_diff(date_taken, administered_at, day)) <= 365
-              )
-              or (
-                administered_at is null
-                and extract(year from date_taken)
-                  between academic_year - 1 and academic_year + 1
-              )
-          config:
-            severity: warn
     columns:
       - name: source
         description: >-
@@ -636,3 +632,132 @@ unit_tests:
             percent_correct: 100.0,
             performance_band_label: null,
           }
+  - name: test_int_assessments__response_rollup_date_taken_window
+    description: >-
+      Illuminate and Apex sitting dates are nulled outside their window. With an
+      administered date, the window is 365 days either side, so Illuminate 401
+      and Apex 405 are nulled. Without one, it is the academic year plus or
+      minus one, so 402 and Apex 406 are kept and 403 is nulled. Internal member
+      dates are cleaned before the rollup takes the earliest, so 404's junk 2001
+      member date does not become the canonical date.
+    model: int_assessments__response_rollup
+    given:
+      - input: ref('int_assessments__scaffold')
+        format: sql
+        rows: |
+          select
+              401 as illuminate_student_id,
+              401 as student_number,
+              'illuminate' as source,
+              9101 as assessment_id,
+              'Unit Check' as title,
+              cast(null as string) as scope,
+              'Mathematics' as subject_area,
+              'Math' as discipline,
+              2026 as academic_year,
+              date('2026-09-28') as administered_at,
+              cast(null as string) as module_type,
+              cast(null as string) as module_code,
+              'Newark' as region,
+              'kippnewark' as _dbt_source_project,
+              73252 as powerschool_school_id,
+              7 as grade_level_id,
+              false as is_internal_assessment,
+              false as is_replacement,
+              11 as student_assessment_id,
+              9101 as canonical_assessment_id,
+              date('2001-01-01') as date_taken,
+              cast(null as int64) as cc_dcid,
+              cast(null as string) as section_match_method
+          union all
+          select
+              402, 402, 'illuminate', 9102, 'Unit Check', null, 'Mathematics',
+              'Math', 2026, null, null, null, 'Newark', 'kippnewark', 73252, 7,
+              false, false, 12, 9102, date('2026-10-01'), null, null
+          union all
+          select
+              403, 403, 'illuminate', 9103, 'Unit Check', null, 'Mathematics',
+              'Math', 2026, null, null, null, 'Newark', 'kippnewark', 73252, 7,
+              false, false, 13, 9103, date('2030-01-01'), null, null
+          union all
+          select
+              404, 404, 'illuminate', 9104, 'CRA Part 1', null, 'Mathematics',
+              'Math', 2026, date('2026-09-28'), null, null, 'Newark',
+              'kippnewark', 73252, 7, true, false, 14, 9100, date('2001-01-01'),
+              null, null
+          union all
+          select
+              404, 404, 'illuminate', 9105, 'CRA Part 2', null, 'Mathematics',
+              'Math', 2026, date('2026-09-28'), null, null, 'Newark',
+              'kippnewark', 73252, 7, true, false, 15, 9100, date('2026-10-01'),
+              null, null
+          union all
+          select
+              null, 405, 'apex', 9106, 'Apex Math Check', null, 'Mathematics',
+              'Math', 2026, date('2026-09-28'), null, null, 'Miami', 'kippmiami',
+              30200803, 7, true, false, 16, 9106, date('2026-10-01'), 5001,
+              'single'
+          union all
+          select
+              null, 406, 'apex', 9107, 'Apex Math Check', null, 'Mathematics',
+              'Math', 2026, null, null, null, 'Miami', 'kippmiami', 30200803, 7,
+              true, false, 17, 9107, date('2026-10-01'), 5001, 'single'
+      - input: ref('int_focus__apex_results')
+        format: sql
+        rows: |
+          select
+              405 as student_number,
+              9106 as assessment_id,
+              16 as session_id,
+              date('4024-12-04') as date_taken,
+              'overall' as response_type,
+              9106 as response_type_id,
+              cast(null as string) as response_type_code,
+              cast(null as string) as response_type_description,
+              cast(null as string) as response_type_root_description,
+              18.0 as points,
+              25.0 as points_possible,
+              72.0 as percent_correct,
+              5 as performance_band_set_id,
+              'Level 3' as performance_band_label,
+              3 as performance_band_label_number,
+              true as is_mastery,
+              'kippmiami' as _dbt_source_project
+          union all
+          select
+              406, 9107, 17, date('2026-10-01'), 'overall', 9107, null, null,
+              null, 18.0, 25.0, 72.0, 5, 'Level 3', 3, true, 'kippmiami'
+      - input: ref('int_illuminate__agg_student_responses')
+        rows: []
+      - input: ref('int_assessments__performance_bands')
+        format: sql
+        rows: |
+          select
+              cast(null as int64) as assessment_id,
+              cast(null as string) as region,
+              cast(null as int64) as canonical_assessment_id,
+              cast(null as string) as response_type,
+              cast(null as int64) as response_type_id,
+              cast(null as int64) as canonical_response_type_id,
+              cast(null as int64) as canonical_performance_band_set_id
+      - input: ref('int_illuminate__performance_band_sets')
+        rows: []
+      - input: ref('int_assessments__assessments_canonical')
+        format: sql
+        rows: |
+          select
+              'illuminate' as source,
+              9100 as canonical_assessment_id,
+              'CRA' as title,
+              date('2026-09-28') as administered_date,
+              7 as grade_level_id
+      - input: ref('stg_google_sheets__reporting__terms')
+        rows: []
+    expect:
+      rows:
+        - { student_number: 401, assessment_id: 9101, date_taken: null }
+        - { student_number: 402, assessment_id: 9102, date_taken: 2026-10-01 }
+        - { student_number: 403, assessment_id: 9103, date_taken: null }
+        - { student_number: 404, assessment_id: 9100, date_taken: 2026-10-01 }
+        - { student_number: 405, assessment_id: 9106, date_taken: null }
+        - { student_number: 406, assessment_id: 9107, date_taken: 2026-10-01 }

@@ -32,6 +32,14 @@ models:
               - response_type
               - response_type_description
               - standard_domain
+      # grain columns this model's own SQL does not keep non-null; a null
+      # grain value leaves the row without its key
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: |-
+              academic_year is not null
+              and subject_area is not null
+              and assessment_id is not null
     columns:
       - name: source_model
         data_type: string
