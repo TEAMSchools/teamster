@@ -730,7 +730,16 @@ unit_tests:
       - input: ref('int_illuminate__agg_student_responses')
         rows: []
       - input: ref('int_assessments__performance_bands')
-        rows: []
+        format: sql
+        rows: |
+          select
+              cast(null as int64) as assessment_id,
+              cast(null as string) as region,
+              cast(null as int64) as canonical_assessment_id,
+              cast(null as string) as response_type,
+              cast(null as int64) as response_type_id,
+              cast(null as int64) as canonical_response_type_id,
+              cast(null as int64) as canonical_performance_band_set_id
       - input: ref('int_illuminate__performance_band_sets')
         rows: []
       - input: ref('int_assessments__assessments_canonical')

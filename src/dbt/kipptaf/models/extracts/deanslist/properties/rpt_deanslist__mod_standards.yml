@@ -26,8 +26,8 @@ models:
               - subject_area
               - term
               - standard_description
-      # grain columns this model's own SQL does not keep non-null; unique
-      # skips nulls
+      # grain columns this model's own SQL does not keep non-null; a null
+      # grain value leaves the row without its key
       - dbt_utils.expression_is_true:
           arguments:
             expression: |-
