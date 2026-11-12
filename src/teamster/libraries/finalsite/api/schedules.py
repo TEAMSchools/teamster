@@ -6,6 +6,8 @@ from dagster import (
     RunRequest,
     ScheduleDefinition,
     ScheduleEvaluationContext,
+    define_asset_job,
+    in_process_executor,
     schedule,
 )
 
@@ -29,11 +31,20 @@ def build_finalsite_contacts_schedule(
     and tick history -- so "daily" now means twice a day.
     """
 
+    # In process: a step pod adds a pod to the 00:15 burst that GKE preempts on
+    # new nodes (#6225) and buys nothing for a one-asset run. A wider selection
+    # keeps the default executor so its steps stay parallel.
+    job = define_asset_job(
+        name=f"{code_location}__finalsite__contacts__daily_asset_job",
+        selection=asset_selection,
+        executor_def=in_process_executor if len(asset_selection) == 1 else None,
+    )
+
     @schedule(
         name=f"{code_location}__finalsite__contacts__daily_asset_job_schedule",
         cron_schedule=list(cron_schedule),
         execution_timezone=execution_timezone,
-        target=asset_selection,
+        target=job,
     )
     def _schedule(context: ScheduleEvaluationContext):
         # run_key stays None: both daily ticks share a partition key, and a

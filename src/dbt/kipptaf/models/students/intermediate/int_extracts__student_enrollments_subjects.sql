@@ -34,11 +34,11 @@ with
         from unnest(['Reading', 'Math']) as iready_subject
     ),
 
-    intervention_nj as (
+    intervention_powerschool as (
         select
             _dbt_source_relation,
             _dbt_source_project,
-            studentid,
+            student_number,
             academic_year,
 
             if(specprog_name = 'Bucket 2 - ELA', 'Reading', 'Math') as iready_subject,
@@ -47,28 +47,6 @@ with
         where
             specprog_name in ('Bucket 2 - ELA', 'Bucket 2 - Math')
             and rn_student_program_year_desc = 1
-    ),
-
-    prev_yr_state_test as (
-        select
-            _dbt_source_project,
-
-            state_student_id as statestudentidentifier,
-            aggregated_proficiency as state_test_aggregated_proficiency,
-            illuminate_subject_area as `subject`,
-
-            academic_year + 1 as academic_year_plus,
-        from {{ ref("int_assessments__state_scores") }}
-        where
-            /* NJSLA is the only Pearson assessment carrying a proficiency, and
-               it runs one window a year; NJGPA's Fall and Spring rows carry none. */
-            (score_source = 'state_nj' and assessment_name = 'NJSLA')
-            or (
-                score_source = 'state_fl'
-                and scale_score is not null
-                and assessment_name = 'FAST'
-                and administration_period = 'PM3'
-            )
     ),
 
     prev_yr_iready as (
@@ -105,6 +83,22 @@ with
             and rn_course_number_year = 1
             and sections_section_number in ('mgmath', 'mgela')
             and not is_dropped_section
+    ),
+
+    algebra_i_ms as (
+        -- grain projection, not dup-masking: one row per project, student, year
+        select distinct
+            _dbt_source_project,
+            students_student_number as student_number,
+            cc_academic_year as academic_year,
+
+            'Math' as iready_subject,
+        from {{ ref("int_students__course_enrollments") }}
+        where
+            illuminate_subject_area = 'Algebra I MS'
+            and not is_dropped_section
+            -- the goal generator applies this exclusion to NJ regions only
+            and _dbt_source_project in ('kippnewark', 'kippcamden', 'kipppaterson')
     ),
 
     dibels as (
@@ -201,7 +195,7 @@ select
 
     coalesce(a.is_iep_eligible, false) as is_grad_iep_exempt,
 
-    coalesce(py.state_test_aggregated_proficiency, 'No Test') as state_test_proficiency,
+    coalesce(py.aggregated_proficiency, 'No Test') as state_test_proficiency,
 
     coalesce(pr.iready_proficiency, 'No Test') as iready_proficiency_eoy,
 
@@ -217,12 +211,14 @@ select
 
     if(ie.student_number is not null, true, false) as is_magoosh,
 
-    if(nj.iready_subject is not null, true, false) as bucket_two,
+    if(am.student_number is not null, true, false) as is_algebra_i_ms,
+
+    if(ips.iready_subject is not null, true, false) as bucket_two,
 
     if(ie.student_number is not null or co.is_sipps, true, false) as is_exempt_iready,
 
     if(
-        co.grade_level <= 3, pr.iready_proficiency, py.state_test_aggregated_proficiency
+        co.grade_level <= 3, pr.iready_proficiency, py.aggregated_proficiency
     ) as bucket_one,
 
     if(
@@ -270,12 +266,13 @@ left join
     and co._dbt_source_project = fp._dbt_source_project
     and sj.discipline = fp.discipline
 left join
-    prev_yr_state_test as py
+    {{ ref("int_assessments__state_scores") }} as py
     /* TODO: find records that only match on SID */
-    on co.state_studentnumber = py.statestudentidentifier
-    and co.academic_year = py.academic_year_plus
+    on co.state_studentnumber = py.state_student_id
+    and co.academic_year = py.benchmark_academic_year
     and co._dbt_source_project = py._dbt_source_project
-    and sj.illuminate_subject_area = py.subject
+    and sj.illuminate_subject_area = py.illuminate_subject_area
+    and py.is_annual_state_test
 left join
     prev_yr_iready as pr
     on co.student_number = pr.student_id
@@ -301,17 +298,24 @@ left join
     and co._dbt_source_project = ie._dbt_source_project
     and sj.iready_subject = ie.iready_subject
 left join
-    intervention_nj as nj
-    on co.studentid = nj.studentid
-    and co.academic_year = nj.academic_year
-    and co._dbt_source_project = nj._dbt_source_project
-    and sj.iready_subject = nj.iready_subject
+    algebra_i_ms as am
+    on co.student_number = am.student_number
+    and co.academic_year = am.academic_year
+    and co._dbt_source_project = am._dbt_source_project
+    and sj.iready_subject = am.iready_subject
+left join
+    intervention_powerschool as ips
+    on co.student_number = ips.student_number
+    and co.academic_year = ips.academic_year
+    and co._dbt_source_project = ips._dbt_source_project
+    and sj.iready_subject = ips.iready_subject
 left join
     {{ ref("int_students__bucket_assignments") }} as b
     on co.student_number = b.student_number
     and co.academic_year = b.academic_year
     and co._dbt_source_project = b._dbt_source_project
     and sj.iready_subject = b.subject
+    and b.rn_assignment_year_desc = 1
 left join
     {{ ref("int_students__course_enrollments") }} as cc
     on co.student_number = cc.students_student_number

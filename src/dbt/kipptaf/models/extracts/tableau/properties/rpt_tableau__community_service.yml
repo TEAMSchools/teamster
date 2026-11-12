@@ -20,6 +20,12 @@ models:
             combination_of_columns:
               - student_number
               - dl_said
+      # grain columns this model's own SQL does not keep non-null; a null
+      # grain value leaves the row without its key
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: |-
+              student_number is not null
     columns:
       - name: student_number
         data_type: int64

@@ -1,13 +1,19 @@
 models:
   - name: rpt_appsheet__kfwd_career_launch_survey
     description:
-      One row per KIPP Forward alumnus (HSG or TAF status, cohort up to the
-      current year) for the career launch survey AppSheet app, with their
-      contact details, current enrollment, and how many survey responses they
-      have submitted. A response counts for an alumnus when its respondent email
-      matches their primary or secondary Salesforce email, or when the career
-      launch reconciliation sheet maps it to their contact. Responses the
-      reconciliation sheet marks Exclude never count.
+      One row per KIPP Forward alumnus (HSG or TAF status) on the Career Launch
+      app roster, with their contact details, current enrollment, Career Launch
+      inputs, and how many survey responses they have submitted. An alumnus is
+      on the roster when is_career_launch_active is true (the inclusion rules on
+      int_surveys__kfwd_career_launch_contacts), or when they already have a
+      saved Career Launch assessment, so their history keeps a name after they
+      age out. A response counts for an alumnus when its respondent email
+      matches their primary or secondary Salesforce email, when its respondent
+      Salesforce id is their contact id (Alchemer responses carrying an id, and
+      every row on the career launch bulk-add sheet), or when the career launch
+      reconciliation sheet maps it to their contact. These are the same matches
+      the Tableau career launch extract uses. Responses the reconciliation sheet
+      marks Exclude never count.
     config:
       contract:
         enforced: true
@@ -16,7 +22,9 @@ models:
         data_type: string
         description: Salesforce contact id of the alumnus.
         data_tests:
-          - unique
+          - unique:
+              config:
+                severity: error
       - name: first_name
         data_type: string
         description: Alumnus first name from Salesforce.
@@ -54,6 +62,53 @@ models:
       - name: current_college_cumulative_gpa
         data_type: numeric
         description: Current cumulative college GPA from Salesforce.
+        config:
+          meta:
+            contains_pii: true
+      - name: current_college_cumulative_gpa_source
+        data_type: string
+        description: >-
+          Source__c of the Salesforce GPA record behind the current college GPA,
+          such as Unofficial Transcript or Student Portal. Null when there is no
+          current college GPA.
+        config:
+          meta:
+            contains_pii: true
+      - name: gpa_band
+        data_type: string
+        description: >-
+          Career Launch GPA band the current college GPA falls in, from the
+          Career Launch Scoring Rubric sheet. Null when there is no current
+          college GPA.
+        config:
+          meta:
+            contains_pii: true
+      - name: gpa_points
+        data_type: int64
+        description: >-
+          Points the GPA band adds to the Career Launch score; 0 when there is
+          no current college GPA. The app adds these to the four indicator
+          points.
+        config:
+          meta:
+            contains_pii: true
+      - name: ecc
+        data_type: numeric
+        description: >-
+          Adjusted six-year minority graduation rate of the college the alumnus
+          graduated from. Null when they have not graduated. Context next to
+          GPA; not scored.
+        config:
+          meta:
+            contains_pii: true
+      - name: is_career_launch_active
+        data_type: boolean
+        description: >-
+          True when the alumnus meets a Career Launch roster rule: on a listed
+          caseload, 4 to 6 years past high school graduation, or in the newest
+          class outside the Collab, and not opted out of contact. False for an
+          alumnus kept only because they have a saved assessment; the app should
+          not offer them for new scores.
         config:
           meta:
             contains_pii: true

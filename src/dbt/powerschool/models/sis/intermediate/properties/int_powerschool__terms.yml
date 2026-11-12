@@ -19,6 +19,17 @@ models:
               - term
           config:
             severity: error
+      # Downstream joins quarters on a date range, so two quarters sharing a day
+      # would double that day. End dates are inclusive, which is why gaps are
+      # required rather than allowed.
+      - dbt_utils.mutually_exclusive_ranges:
+          arguments:
+            lower_bound_column: term_start_date
+            upper_bound_column: term_end_date
+            partition_by: schoolid
+            gaps: required
+          config:
+            severity: error
     columns:
       - name: schoolid
         description: The School_Number of the school the quarter belongs to.

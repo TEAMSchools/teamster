@@ -115,9 +115,6 @@ with
             enr.year_in_school,
             enr.year_in_network,
             enr.is_enrolled_fdos,
-            enr.is_enrolled_oct01,
-            enr.is_enrolled_oct15,
-            enr.is_enrolled_mar15,
             enr.dob,
             enr.state,
             enr.school_abbreviation,
@@ -287,7 +284,8 @@ with
 
             regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as _dbt_source_project,
 
-            date_sub(exitdate, interval 1 day) as last_enrolled_date,
+            -- clipped so an overlapping earlier stint ends before the next starts
+            date_sub(exitdate_clipped, interval 1 day) as last_enrolled_date,
 
             initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
         from union_relations
@@ -330,9 +328,6 @@ with
             year_in_school,
             year_in_network,
             is_enrolled_y1,
-            is_enrolled_oct01,
-            is_enrolled_oct15,
-            is_enrolled_mar15,
             is_enrolled_recent,
             is_enrolled_fdos,
             is_retained_year,
@@ -425,9 +420,6 @@ with
             year_in_school,
             year_in_network,
             is_enrolled_y1,
-            is_enrolled_oct01,
-            is_enrolled_oct15,
-            is_enrolled_mar15,
             is_enrolled_recent,
             is_enrolled_fdos,
             is_retained_year,
@@ -481,6 +473,35 @@ with
             fleid,
             is_504,
         from focus_final
+    ),
+
+    -- Built from last_enrolled_date: PowerSchool's exitdate is the first day
+    -- the student is gone (#6058).
+    stint_flags as (
+        select
+            *,
+
+            if(
+                entrydate <= date(academic_year, 10, 1)
+                and last_enrolled_date >= date(academic_year, 10, 1),
+                true,
+                false
+            ) as is_enrolled_oct01_stint,
+
+            if(
+                entrydate <= date(academic_year, 10, 15)
+                and last_enrolled_date >= date(academic_year, 10, 15),
+                true,
+                false
+            ) as is_enrolled_oct15_stint,
+
+            if(
+                entrydate <= date(academic_year + 1, 3, 15)
+                and last_enrolled_date >= date(academic_year + 1, 3, 15),
+                true,
+                false
+            ) as is_enrolled_mar15_stint,
+        from with_region
     )
 
 select
@@ -564,11 +585,12 @@ select
         njs.gifted_and_talented, ar.gifted_and_talented, 'N'
     ) as gifted_and_talented,
 
-    -- njr and suf join through students_dcid, which Focus never populates, so
-    -- Miami reads int_focus__students.is_504 (Section 504 Eligible). Null
-    -- there means unset, not the fabricated negative false would imply.
+    -- NJ reads PID_504_TF: the past-enrollment copy (njr, joined on
+    -- reenrollments_dcid) when one exists, else the student record (njs). Focus
+    -- never populates those dcids, so Miami reads int_focus__students.is_504;
+    -- null there means unset, not the fabricated negative false would imply.
     if(
-        ar.region = 'Miami', ar.is_504, coalesce(njr.pid_504_tf, suf.is_504, false)
+        ar.region = 'Miami', ar.is_504, coalesce(njr.pid_504_tf, njs.is_504, false)
     ) as is_504,
 
     coalesce(adb.kipp_hs_class, ar.cohort) as ktc_cohort,
@@ -698,7 +720,19 @@ select
         + 1
     ) as salesforce_graduation_year,
 
-from with_region as ar
+    max(ar.is_enrolled_oct01_stint) over (
+        partition by ar.student_number, ar.academic_year, ar._dbt_source_project
+    ) as is_enrolled_oct01,
+
+    max(ar.is_enrolled_oct15_stint) over (
+        partition by ar.student_number, ar.academic_year, ar._dbt_source_project
+    ) as is_enrolled_oct15,
+
+    max(ar.is_enrolled_mar15_stint) over (
+        partition by ar.student_number, ar.academic_year, ar._dbt_source_project
+    ) as is_enrolled_mar15,
+
+from stint_flags as ar
 left join
     {{ ref("stg_powerschool__u_studentsuserfields") }} as suf
     on ar.students_dcid = suf.studentsdcid

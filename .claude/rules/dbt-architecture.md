@@ -37,7 +37,7 @@ extracts. Cross-region business logic lives only in kipptaf.
 | `stg_`        | `source()`, except a district `int_` or `base_`                                                                                                                                                                            |
 | Source `int_` | `stg_`, source `int_`, and `snapshot_` of a model in the same source folder; `source()` for district union wrappers                                                                                                        |
 | Domain `int_` | `stg_`, any source `int_`, domain `int_`, `snapshot_`                                                                                                                                                                      |
-| Marts         | Domain `int_`, other marts                                                                                                                                                                                                 |
+| Marts         | Domain `int_` other than `int_extracts__` (A12), other marts                                                                                                                                                               |
 | `rpt_`        | Marts, domain `int_`; in a district project, its kipptaf `rpt_` through `source("kipptaf_extracts", …)`; a wrapper that reconciles against its target system (kippmiami `rpt_focus__*`) may also read that system's `stg_` |
 | Exposures     | `rpt_`, marts; Cube reads marts only                                                                                                                                                                                       |
 
@@ -149,11 +149,17 @@ A tool reads an `rpt_` or a mart. Cube reads marts only.
 - Bad: a Tableau exposure `depends_on: ref("int_topline__student_metrics")`.
 - Enforced by: `dbt-layer-check`, with a baseline.
 
-#### A9. No `select *` in the final select of an `rpt_` or mart
+#### A9. No `select *` in the final select of an `rpt_`, a mart, or a view
 
-- Why: the column list is the consumer's contract; a star hides it.
+The view rule covers every layer. A `dbt_utils.union_relations` wrapper is
+exempt, because its star is the column superset and it rebuilds on its own.
+
+- Why: the column list is the consumer's contract; a star hides it. A view also
+  fixes its columns when it is created, and a view whose own SQL never changes
+  is never recreated, so a star view never picks up a column added upstream.
 - Good: `select student_key, academic_year, … from final`.
-- Bad: `select * from final`.
+- Bad: `select * from final`; `select u.*, c.days_in_term from u left join c` in
+  a view.
 - Enforced by: `dbt-layer-check` (lines the PR changes).
 
 #### A10. Join unioned regional models on `_dbt_source_project`
@@ -180,14 +186,28 @@ domain is normal: add the folder and its list entry in 1 PR.
 - Bad: a new `enrollments/` folder of cross-source models missing from the list.
 - Enforced by: `dbt-layer-check`.
 
+#### A12. Marts never depend on `int_extracts__` models
+
+An `int_extracts__` model is a wide roster shaped for the `rpt_` layer. A mart
+does not read one, directly or through any intermediate. When a mart needs logic
+an extract holds, move that logic into the domain `int_` both read.
+
+- Why: an extract changes when a dashboard changes; a mart that depends on it
+  changes with every dashboard edit, and its meaning follows the dashboard's.
+- Good: `int_extracts__student_enrollments` and a mart both read
+  `int_students__student_enrollments`.
+- Bad: a domain `int_` reads `int_extracts__student_enrollments` and a mart
+  reads that `int_`.
+- Enforced by: `dbt-layer-check`, with a baseline.
+
 <!-- --8<-- [end:architecture] -->
 
 ## Claude-only notes
 
 - Apply the A, S, and R rules only to lines you add or change. Never propose a
-  sweep of untouched models. An existing A1, A2, or A8 edge is not a finding. A1
-  and A8 edges are tracked in `standard-baseline.tsv`; nothing records A2 edges,
-  so never call one tracked.
+  sweep of untouched models. An existing A1, A2, A8, or A12 edge is not a
+  finding. A1, A8, and A12 edges are tracked in `standard-baseline.tsv`; nothing
+  records A2 edges, so never call one tracked.
 - Key macros live in `src/dbt/kipptaf/macros/`; an entity with none yet uses
   `generate_surrogate_key`.
 - Mart column naming, strict-chain traversal, and PK/FK shapes:

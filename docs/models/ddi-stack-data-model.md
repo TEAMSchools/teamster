@@ -112,13 +112,16 @@ A new score therefore reaches a consumer only after:
   ones. An untagged assessment is otherwise invisible to every consumer below
   except the raw Illuminate intermediates.
 - **Canonical assessment** (`canonical_assessment_id`): internal assessments are
-  created once per region/variant in Illuminate, so members that share
+  created as several Illuminate copies when one assessment is too big for one
+  (multi-part assessments), so within each region tagged in `regions_assessed`,
+  members that share
   `(academic_year, scope, subject_area, module_code, grade_level_id)` are
-  grouped, and the lowest member `assessment_id` names the group. Miami-only
-  Florida copies (AppSheet `regions_assessed` exactly `Miami`) group separately,
-  so New Jersey rows never inherit a Florida title or date. Non-internal
-  assessments are their own canonical. Known defect: inconsistent SY25-26
-  tagging destabilizes the grouping
+  grouped, and the lowest member `assessment_id` names the group. Groups never
+  span regions: a copy tagged for 2 regions sits in 2 groups, one per region,
+  and each region keeps its own title, date and band set. Miami-only Florida
+  copies (AppSheet `regions_assessed` exactly `Miami`) also group apart.
+  Non-internal and Apex assessments are their own canonical. Known defect:
+  inconsistent SY25-26 tagging destabilizes the grouping
   ([#5654](https://github.com/TEAMSchools/teamster/issues/5654)).
 - **Scope**: Illuminate's assessment category (decoded from `dna_scopes`) — Unit
   Assessment ("UA"), Cumulative Review Quizzes ("CRQ"), Cold Read Quizzes, Sight
@@ -276,13 +279,20 @@ the owner's walkthrough or a workbook download.
 - **Grain**: three unioned branches — ES/MS (grades 0-8) and HS (9-12) at
   student x week x response row; walkthrough rows at observation-row grain with
   student columns nulled and staff overloaded into them (`student_name` is the
-  staff member, `subject_area` is their microgoals, `response_type` is the
-  literal `walkthrough`). No uniqueness test (known issue).
+  staff member, `subject_area` is their assigned Grow goals, microgoals and
+  look-fors, `response_type` is the literal `walkthrough`). No uniqueness test
+  (known issue).
 - **Reads**: `int_extracts__student_enrollments_weeks`,
   `int_assessments__response_rollup`, the standard-domains and QBLs sheets,
-  `int_assessments__academic_goals`, courses, the iReady lesson union, and the
-  SchoolMint Grow/performance-management chain.
+  `int_assessments__academic_goals`, `int_assessments__module_goal_rules`,
+  courses, the iReady lesson union, and the SchoolMint
+  Grow/performance-management chain.
 - **Worth knowing**:
+  - `grade_goal`, `school_goal` and `region_goal` are the plain academic goals
+    lookup values. `grade_goal_differentiated`, `school_goal_differentiated` and
+    `region_goal_differentiated` apply, in order, a fixed goal from the Module
+    Goal Rules tab, the Academic Goals tab's QA goal on QA and CRQ modules, and
+    the raw goal plus a rule's offset.
   - Eligibility is enrollment as of the week end (`is_enrolled_week_end`,
     `enroll_status in (0, 2, 3)`), not current status — pinning to
     `enroll_status = 0` retroactively erased withdrawn students' history
@@ -466,14 +476,15 @@ here moves those consumers too):
 
 ## Inputs (hand-maintained)
 
-| Input                              | Maintainer            | Feeds                                                | Update rhythm                            |
-| ---------------------------------- | --------------------- | ---------------------------------------------------- | ---------------------------------------- |
-| AppSheet assessment tagging        | ADs; QC: Marya Shukla | everything (`is_internal_assessment`)                | frequent; turned over every year         |
-| Standard domains named range       | Marya Shukla          | report-card domains, DDI dashboard                   | largely static                           |
-| Academic goals named range         | data team             | goals on the DDI dashboard, `dim_assessment_goals`   | once a year in theory, several each fall |
-| Course subject crosswalk           | data team             | `int_assessments__course_enrollments`, `dim_courses` | annual audit (below)                     |
-| Vendor subject crosswalk           | data team             | state/vendor branches of the star                    | rare                                     |
-| QBLs / Power Standards named range | nobody (retired)      | `rpt_tableau__ddi_dashboard.is_qbl` ([#5656])        | none                                     |
+| Input                              | Maintainer            | Feeds                                                                                      | Update rhythm                            |
+| ---------------------------------- | --------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------- |
+| AppSheet assessment tagging        | ADs; QC: Marya Shukla | everything (`is_internal_assessment`)                                                      | frequent; turned over every year         |
+| Standard domains named range       | Marya Shukla          | report-card domains, DDI dashboard                                                         | largely static                           |
+| Academic goals named range         | data team             | goals on the DDI dashboard, `dim_assessment_goals`                                         | once a year in theory, several each fall |
+| Module goal rules named range      | data team, with T&L   | `*_goal_differentiated` on the DDI dashboard                                               | when T&L change an ET, CRQ or TP rule    |
+| Course subject crosswalk           | data team             | `int_assessments__course_enrollments`, `dim_courses`, `int_assessments__module_goal_rules` | annual audit (below)                     |
+| Vendor subject crosswalk           | data team             | state/vendor branches of the star                                                          | rare                                     |
+| QBLs / Power Standards named range | nobody (retired)      | `rpt_tableau__ddi_dashboard.is_qbl` ([#5656])                                              | none                                     |
 
 The course subject crosswalk's annual audit is worth systematizing (the family
 skill should carry it as a procedure): list new courses with current-year
@@ -489,10 +500,10 @@ state testing results, both, or eventually Focus Assessments.
   what is a DDI assessment. This keeps the stack robust to Illuminate's messy
   catalog (duplicates, "Copy of" titles) at the cost of making the tags a single
   point of failure.
-- **Canonical grouping by attributes, not region.** Network policy is one shared
-  internal assessment per module, so regional copies share a canonical id via
-  their shared attributes. The one exception is Miami's own Florida versions,
-  which stay in a separate group.
+- **Canonical grouping per region.** Grouping exists only to merge the parts of
+  a multi-part assessment that Illuminate forces into separate copies. Regional
+  variants are distinct assessments, so a group never spans regions, even when
+  copies share every other attribute.
 - **Replacement sittings are visible but unscored.** Off-grade sittings show on
   rosters and the student-scoped bridge but never anchor scores — the section
   resolver cannot place them.
@@ -616,7 +627,10 @@ Found during the documentation run, not yet tracked separately:
 2. Before the first administration: achievement directors create the year's
    assessments in Illuminate and tag them in the AppSheet; Marya Shukla QCs the
    tags. Nothing shows anywhere until this happens.
-3. Goals: add the new year's rows to the academic-goals named range.
+3. Goals: add the new year's rows to the academic-goals named range, including
+   T&L's QA goals in its `QA Goal` column. Review the Module Goal Rules tab with
+   T&L too: its rules carry no year, so a change applies to every year the DDI
+   Suite shows.
 4. Standard domains: update the named range when standards or domains change.
 5. Reporting terms: confirm the year's RT rows exist (shared hub, but this
    family breaks visibly when they lag).

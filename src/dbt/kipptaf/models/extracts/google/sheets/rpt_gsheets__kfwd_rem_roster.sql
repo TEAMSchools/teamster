@@ -90,6 +90,12 @@ select
     r.contact_kipp_hs_graduate as is_kipp_hs_grad,
     r.contact_expected_college_graduation as expected_college_graduation,
 
+    if(
+        r.contact_advising_provider = 'KIPP NYC',
+        'Collab',
+        r.contact_postsec_advisor_name
+    ) as postsecondary_advisor,
+
     if(r.contact_advising_provider = 'KIPP NYC', true, false) as is_collab,
 
     rs.date as most_recent_rem_status,

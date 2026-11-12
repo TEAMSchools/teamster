@@ -52,6 +52,11 @@ def test_tier_one_rejects_bad_fields(mutate, fragment):
     assert any(fragment in e for e in errors), errors
 
 
+def test_a_google_drive_folder_is_a_known_system():
+    entry = {**GOOD_ENTRY, "system": "google-folder"}
+    assert validate(make_catalog(entries=[entry]), []) == []
+
+
 def test_duplicate_ids_are_rejected():
     errors = validate(make_catalog(entries=[dict(GOOD_ENTRY), dict(GOOD_ENTRY)]), [])
     assert any("duplicate" in e for e in errors)

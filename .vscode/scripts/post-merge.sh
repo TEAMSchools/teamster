@@ -19,7 +19,36 @@ common_dir="$(git rev-parse --path-format=absolute --git-common-dir)"
 # trunk-ignore(shellcheck/SC1091): sourced file created at runtime by uv installer
 source "${HOME}/.local/bin/env"
 
+# trunk runs actions without the container's environment variables, and uv's
+# default cache is on another filesystem, so every install copies instead of
+# hardlinking; keep in step with containerEnv in .devcontainer/devcontainer.json
+export UV_CACHE_DIR="${UV_CACHE_DIR:-/workspaces/.uv-cache}"
+export UV_LINK_MODE="${UV_LINK_MODE:-hardlink}"
+
+# --all (the VS Code task) parses everything; the trunk post-merge action passes
+# no args and parses only projects whose inputs the merge changed. git merge sets
+# ORIG_HEAD to the pre-merge commit; without it, parse everything.
+if [[ ${1-} == --all ]]; then
+	changed="*"
+else
+	# --no-renames lists a moved file's old path too, so its source project re-parses
+	changed="$(git diff --name-only --no-renames ORIG_HEAD HEAD 2>/dev/null)" || changed="*"
+fi
+
+needs_parse() {
+	local project="$1" dir
+	[[ ${changed} == "*" ]] && return 0
+	[[ -f "src/dbt/${project}/target/prod/manifest.json" ]] || return 0
+	# the dbt version and profiles feed every project
+	grep -qE '^(uv\.lock|\.dbt/)' <<<"${changed}" && return 0
+	for dir in "${project}" $(sed -n 's|^ *- local: \.\./\([^ #]*\).*|\1|p' "src/dbt/${project}/packages.yml"); do
+		grep -q "^src/dbt/${dir}/" <<<"${changed}" && return 0
+	done
+	return 1
+}
+
 for project in kipptaf kippnewark kippcamden kippmiami kipppaterson; do
+	needs_parse "${project}" || continue
 	uv run dbt parse --target prod \
 		--project-dir "src/dbt/${project}" \
 		--profiles-dir .dbt \

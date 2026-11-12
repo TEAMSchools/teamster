@@ -180,6 +180,26 @@ models:
           Score type of the student's matching results. Null when there are
           none.
         data_type: string
+      - name: nj_student_tier_ela
+        data_type: string
+        description: >-
+          The student's ELA bucket this year, from
+          int_students__college_assessment_buckets_pivot — Bucket 1, 2, 3 or 4,
+          or No Bucket Assigned for a senior with no stored bucket. Repeated on
+          every row for the student.
+        config:
+          meta:
+            contains_pii: true
+      - name: nj_student_tier_math
+        data_type: string
+        description: >-
+          The student's Math bucket this year, from
+          int_students__college_assessment_buckets_pivot — Bucket 1, 2, 3 or 4,
+          or No Bucket Assigned for a senior with no stored bucket. Repeated on
+          every row for the student.
+        config:
+          meta:
+            contains_pii: true
       - name: score
         data_type: float64
         description: >-

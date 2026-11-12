@@ -6,8 +6,8 @@ with
             _dbt_source_project,
             region,
             school_level,
-            `quarter`,
-            week_number_quarter,
+            term as `quarter`,
+            week_number_term as week_number_quarter,
             week_start_monday,
             week_end_sunday,
 

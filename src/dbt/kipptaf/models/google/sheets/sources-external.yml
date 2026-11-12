@@ -1347,7 +1347,7 @@ sources:
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
-            sheet_range: src_assessments__academic_goals_v2
+            sheet_range: src_assessments__academic_goals_v3
             skip_leading_rows: 1
         config:
           meta:
@@ -1359,10 +1359,10 @@ sources:
                 - assessments
                 - academic_goals
         # Declared, not autodetected: autodetect drops a column that is empty
-        # in the rows it samples, and Region_Grade_Goal is set on few rows.
-        # Order must match sheet columns A:L. BigQuery maps declared columns
-        # by position, so an inserted or reordered sheet column silently
-        # shifts values under the wrong names.
+        # in the rows it samples, and Region_Grade_Goal and QA_Goal are set on
+        # few rows. Order must match sheet columns A:M. BigQuery maps declared
+        # columns by position, so an inserted or reordered sheet column
+        # silently shifts values under the wrong names.
         columns:
           - name: Academic_Year
             data_type: int64
@@ -1387,6 +1387,43 @@ sources:
           - name: Assessment_Band_Goal
             data_type: float64
           - name: Region_Grade_Goal
+            data_type: float64
+          - name: QA_Goal
+            data_type: float64
+      - name: src_google_sheets__assessments__module_goal_rules
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
+            sheet_range: src_assessments__module_goal_rules
+            skip_leading_rows: 1
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - assessments
+                - module_goal_rules
+        # Declared, not autodetected: discipline, goal and goal_offset are
+        # blank on some rows. Order must match sheet columns A:G; BigQuery maps
+        # declared columns by position, so the names need not match the headers.
+        columns:
+          - name: region
+            data_type: string
+          - name: module_type
+            data_type: string
+          - name: discipline
+            data_type: string
+          - name: grade_min
+            data_type: int64
+          - name: grade_max
+            data_type: int64
+          - name: goal
+            data_type: float64
+          - name: goal_offset
             data_type: float64
       - name: src_google_sheets__assessments__qbls_power_standards
         external:
@@ -1851,9 +1888,8 @@ sources:
               - https://docs.google.com/spreadsheets/d/1azcq9FsGDjYpvK7VBIHtGOsY8Yd-E5hFrxWuk5hFLH0
             sheet_range: src_reporting__gradebook_expectations
             skip_leading_rows: 1
-      - name: src_google_sheets__reporting__promo_status_cutoffs
+      - name: src_google_sheets__reporting__promo_status_policies
         config:
-          enabled: false
           meta:
             dagster:
               asset_key:
@@ -1861,14 +1897,39 @@ sources:
                 - google
                 - sheets
                 - reporting
-                - promo_status_cutoffs
+                - promo_status_policies
         external:
           options:
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1bRd3cI3WlTdizm5ja7IxGxGjJDzXrOX6i2G731h9yr8
-            sheet_range: src_reporting__promo_status_cutoffs
+            sheet_range: src_google_sheets__reporting__promo_status_policies
             skip_leading_rows: 1
+        columns:
+          - name: academic_year
+            data_type: INT64
+          - name: region
+            data_type: STRING
+          - name: grade_min
+            data_type: INT64
+          - name: grade_max
+            data_type: INT64
+          - name: term_name
+            data_type: STRING
+          - name: domain
+            data_type: STRING
+          - name: rule_group
+            data_type: INT64
+          - name: metric
+            data_type: STRING
+          - name: comparator
+            data_type: STRING
+          - name: value
+            data_type: FLOAT64
+          - name: if_missing
+            data_type: STRING
+          - name: detail_label
+            data_type: STRING
       - name: src_google_sheets__reporting__gradebook_flags
         config:
           enabled: false
@@ -2234,6 +2295,190 @@ sources:
                 - sheets
                 - kfwd
                 - career_launch_bulk_add
+      - name: src_google_sheets__kfwd__career_launch_rubric
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1vk6gkwZnh-Q_5uuOftkzt38hC3xyeTpHwSEUfzhfGIc
+            sheet_range: career_launch_rubric_v1
+            skip_leading_rows: 1
+        columns:
+          - name: rubric_key
+            data_type: string
+          - name: indicator
+            data_type: string
+          - name: level
+            data_type: int64
+          - name: label
+            data_type: string
+          - name: points
+            data_type: int64
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - kfwd
+                - career_launch_rubric
+      - name: src_google_sheets__kfwd__career_launch_stages
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1vk6gkwZnh-Q_5uuOftkzt38hC3xyeTpHwSEUfzhfGIc
+            sheet_range: career_launch_stages_v1
+            skip_leading_rows: 1
+        columns:
+          - name: stage_key
+            data_type: string
+          - name: stage
+            data_type: string
+          - name: min_score
+            data_type: int64
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - kfwd
+                - career_launch_stages
+      - name: src_google_sheets__kfwd__career_launch_gpa_bands
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1vk6gkwZnh-Q_5uuOftkzt38hC3xyeTpHwSEUfzhfGIc
+            sheet_range: career_launch_gpa_bands_v1
+            skip_leading_rows: 1
+        columns:
+          - name: band_key
+            data_type: string
+          - name: label
+            data_type: string
+          - name: min_gpa
+            data_type: float64
+          - name: points
+            data_type: int64
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - kfwd
+                - career_launch_gpa_bands
+      - name: src_google_sheets__kfwd__career_launch_caseloads
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1vk6gkwZnh-Q_5uuOftkzt38hC3xyeTpHwSEUfzhfGIc
+            sheet_range: career_launch_caseloads_v1
+            skip_leading_rows: 1
+        columns:
+          - name: advisor_name
+            data_type: string
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - kfwd
+                - career_launch_caseloads
+      - name: src_google_sheets__kfwd__early_apps_goals
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1_qb4Ldmbs0x_SqHIEcgzFK-Y1MJWjNK-PqfCtSPGiGk
+            sheet_range: early_apps_goals_v1
+            skip_leading_rows: 1
+        columns:
+          - name: criterion_code
+            data_type: string
+          - name: criterion_sort
+            data_type: int64
+          - name: gpa_band
+            data_type: string
+          - name: criterion_label
+            data_type: string
+          - name: required_type
+            data_type: string
+          - name: type_label
+            data_type: string
+          - name: urm_bar
+            data_type: int64
+          - name: required_count
+            data_type: int64
+          - name: requires_full_need
+            data_type: boolean
+          - name: sets_aside_full_need
+            data_type: boolean
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - kfwd
+                - early_apps_goals
+      - name: src_google_sheets__kfwd__early_apps_gpa_bands
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1_qb4Ldmbs0x_SqHIEcgzFK-Y1MJWjNK-PqfCtSPGiGk
+            sheet_range: early_apps_gpa_bands_v1
+            skip_leading_rows: 1
+        columns:
+          - name: gpa_band
+            data_type: string
+          - name: band_sort
+            data_type: int64
+          - name: min_gpa
+            data_type: numeric
+          - name: summary_group
+            data_type: string
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - kfwd
+                - early_apps_gpa_bands
+      - name: src_google_sheets__kfwd__early_apps_schools
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1_qb4Ldmbs0x_SqHIEcgzFK-Y1MJWjNK-PqfCtSPGiGk
+            sheet_range: early_apps_schools_v1
+            skip_leading_rows: 1
+        columns:
+          - name: overgrad_school_name
+            data_type: string
+          - name: school_key
+            data_type: string
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - kfwd
+                - early_apps_schools
       - name: src_google_sheets__focus__language_code_crosswalk
         external:
           options:

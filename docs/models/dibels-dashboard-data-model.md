@@ -297,6 +297,19 @@ bucket a file landed in. A school the crosswalk does not know reads as a null
 region rather than as missing rows; Ops fixes it by adding the school to the
 locations sheet.
 
+Amplify sometimes files results for 2 children under 1 student ID, or files 2
+benchmark sittings for 1 ID on the same day. The mCLASS intermediates
+(`int_amplify__mclass__benchmark_student_summary`,
+`int_amplify__mclass__pm_student_summary` and its `_aimline`) drop every row in
+such a collision, since neither row can be trusted. This is a data-team defense,
+awaiting T&L's confirmation. The student shows as Not Tested until Amplify or
+the school moves the result to the right student in mCLASS. When the collision
+is only in the aimline file, the probe stays, and its aimline status comes from
+the base PM file alone. The mCLASS staging warn tests list the collisions to
+fix. A row that arrives through both the network file and Paterson's archive
+file is not dropped. It fails the intermediates' uniqueness tests instead,
+because that double is ours to fix, not Amplify's.
+
 The aimline file is only unioned from the Newark account. The aimline model also
 reads `aimline_status` and `aimline_value_by_date` from the base PM file and
 takes whichever file carries them, because Amplify has moved those columns
@@ -443,10 +456,18 @@ The Tableau workbook is the `literacy_dashboard` exposure in
   `int_extracts__student_enrollments_subjects` (Reading, one row per student per
   year).
 - Worth knowing: it is not DIBELS data; it shares the workbook. Paterson is
-  excluded. Its data flows automatically from Illuminate, so upkeep is only
-  asking the Managing Director of Teaching & Learning (Sabine Vilsaint) at
-  rollover whether it is still used, then moving the dashboard's academic year
-  to the current year in the workbook. It has no year filter in SQL.
+  excluded. It has no year filter in SQL.
+- New quizzes: each quiz Teaching & Learning creates in Illuminate is a new
+  repository, and the data team adds each one by hand in the places listed in
+  `src/dbt/kipptaf/models/illuminate/CLAUDE.md`. A quiz nobody added still
+  appears, because its words and grade load for every repository, but every
+  student shows as untested and the DeansList sight words extract leaves it out.
+  The warn test
+  `stg_illuminate__dna_repositories__repositories__sight_words_have_scores`
+  flags a current-year quiz with no scores a week after its date administered.
+- Rollover: ask the Managing Director of Teaching & Learning (Sabine Vilsaint)
+  whether the dashboard is still used, then move its academic year to the
+  current year in the workbook.
 
 ## Process: PM goal setting
 
@@ -1068,7 +1089,9 @@ for editing the sheets safely.
     matching between Expected Assessments and the PM goals sheet.
 11. Sight words: ask the Managing Director of Teaching & Learning (Sabine
     Vilsaint) whether the dashboard is still used, then move its academic year
-    to the current year in the workbook.
+    to the current year in the workbook. The year's quizzes are new Illuminate
+    repositories; add each one as it appears (see
+    `rpt_tableau__sight_words_dashboard` above).
 12. NJDOE screener: see its own page,
     [NJDOE universal screener](njdoe-universal-screener-data-model.md).
 

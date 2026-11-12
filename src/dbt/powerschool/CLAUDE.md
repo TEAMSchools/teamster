@@ -73,21 +73,22 @@ columns at once — dbt reports only the first.
 
 ## GPA Gotchas
 
-- **`storecode = 'Y1'` only**: Q1–Q4 records have `gpa_points = 0` by design —
-  only `storecode = 'Y1'` rows are used in GPA calculations.
+- **`storecode = 'Y1'` only**: Q1–Q4 records carry scale `gpa_points` too, but
+  only `storecode = 'Y1'` rows are used in GPA calculations. Filter on
+  `storecode`, never on `gpa_points != 0`.
 - **`districtentrydate` null placeholder**: PowerSchool stores null/missing
   dates as `1899-xx-xx`. Derive network tenure from `MIN(academic_year)` in
   storedgrades instead.
 
 ## FTE & Sentinel Gotchas
 
-- **FTE scoping**: `stg_powerschool__fte` is per `(schoolid, yearid)`. An
-  enrollment's `fteid` must reference an FTE whose `schoolid` and `yearid` match
-  — otherwise `(fteid, attendance_conversion_id)` joins to nothing in
-  `stg_powerschool__attendance_conversion_items` and `attendancevalue` is
-  silently NULL in `int_powerschool__ps_adaadm_daily_ctod`. PS does not enforce;
-  guarded by
-  `test_int_powerschool__ps_enrollment_all__fteid_belongs_to_school_year`.
+- **NULL `attendancevalue`**: the causes are listed in the `attendancevalue`
+  description on `int_powerschool__ps_adaadm_daily_ctod`, and each one is a
+  PowerSchool setup or data-entry gap flagged by a warn test in
+  `tests/properties.yml`. Read both before calling a NULL day a modeling bug.
+- **`fteid = 0`** on `stg_powerschool__attendance_conversion_items` means no
+  FTE. Those rows repeat the conversion key and match no enrollment, so the key
+  test excludes them; do not dedupe them.
 - **`schoolid = 999999`**: graduated-students sentinel, not a "no school"
   marker. Already excluded in `int_powerschool__district_entry_date`. Students
   at 999999 commonly retain a real-school FTE from prior placement. They get no

@@ -14,6 +14,10 @@ with
             rt.code as term_code,
             rt.name as term_name,
 
+            ss.subject_employee_number,
+            ss.respondent_student_number,
+            ss.subject_answer,
+
             coalesce(
                 srh.employee_number, srh_alias.employee_number
             ) as respondent_employee_number,
@@ -27,10 +31,6 @@ with
                 srh.user_principal_name, srh_alias.user_principal_name
             ) as respondent_userprincipalname,
 
-            dense_rank() over (
-                partition by r.respondent_email, rt.academic_year, rt.code, r.form_id
-                order by r.last_submitted_timestamp desc
-            ) as round_rn,
         from {{ ref("stg_google_forms__responses") }} as r
         inner join {{ ref("stg_google_forms__form") }} as f on r.form_id = f.form_id
         /*
@@ -42,7 +42,7 @@ with
         left join
             {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on f.info_title = rt.name
-            and r.last_submitted_date between rt.start_date and rt.end_date
+            and r.last_submitted_date_local between rt.start_date and rt.end_date
             and rt.type = 'SURVEY'
         left join
             {{ ref("int_people__staff_roster_history") }} as srh
@@ -65,6 +65,41 @@ with
             between srh_alias.effective_date_start_timestamp
             and srh_alias.effective_date_end_timestamp
             and srh_alias.primary_indicator
+        left join
+            {{ ref("int_surveys__submission_subjects") }} as ss
+            on r.form_id = ss.survey_id
+            and r.response_id = ss.survey_response_id
+    ),
+
+    gforms_cast as (
+        select
+            *,
+
+            cast(
+                respondent_student_number as string
+            ) as respondent_student_number_string,
+            cast(
+                respondent_employee_number as string
+            ) as respondent_employee_number_string,
+            cast(subject_employee_number as string) as subject_employee_number_string,
+        from live_gforms
+    ),
+
+    gforms_keyed as (
+        select
+            *,
+
+            coalesce(
+                respondent_employee_number_string, respondent_email
+            ) as respondent_identifier,
+            coalesce(
+                respondent_student_number_string,
+                respondent_employee_number_string,
+                respondent_email,
+                survey_response_id
+            ) as rank_respondent,
+            coalesce(subject_employee_number_string, subject_answer) as rank_subject,
+        from gforms_cast
     )
 
 select
@@ -82,15 +117,27 @@ select
     term_code,
     term_name,
     survey_response_link,
-    round_rn,
 
-    coalesce(
-        cast(respondent_employee_number as string), respondent_email
-    ) as respondent_identifier,
+    respondent_student_number,
+    subject_employee_number,
+    respondent_identifier,
+    rank_respondent,
+    rank_subject,
 
     {{ dbt_utils.generate_surrogate_key(["survey_id", "survey_response_id"]) }}
     as survey_submission_key,
-from live_gforms
+
+    -- no administration: never ranked
+    if(
+        term_code is null,
+        1,
+        row_number() over (
+            partition by
+                survey_title, academic_year, term_code, rank_respondent, rank_subject
+            order by date_submitted desc, survey_response_id desc
+        )
+    ) as round_rn,
+from gforms_keyed
 
 union all
 
@@ -109,7 +156,11 @@ select
     term_code,
     term_name,
     survey_response_link,
-    round_rn,
+    respondent_student_number,
+    subject_employee_number,
     respondent_identifier,
+    rank_respondent,
+    rank_subject,
     survey_submission_key,
+    round_rn,
 from {{ source("surveys", "int_surveys__alchemer_submissions") }}

@@ -8,9 +8,8 @@ models:
     data_tests:
       # Source `academic_year` (year of June end) sometimes disagrees with the
       # AY derived from `administered_at`. Caused by "Copy of …" duplication in
-      # Illuminate carrying the prior year's tag. Downstream effect: wrong
-      # canonicalization → cross-school groups in response_rollup. Tracked in
-      # #3801 for academic ops cleanup; failures land in dbt_test__audit.
+      # Illuminate carrying the prior year's tag. Tracked in #3801 for academic
+      # ops cleanup; failures land in dbt_test__audit.
       - dbt_utils.expression_is_true:
           name: int_illuminate__assessments__academic_year_matches_administered_at
           arguments:

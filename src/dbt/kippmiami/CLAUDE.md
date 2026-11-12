@@ -19,11 +19,10 @@ column, or the server's data needs a fix. The loop: turn the Dagster assets on
 (`src/teamster/code_locations/kippmiami/CLAUDE.md`), materialize the tables that
 need a fresh pull, re-include the package, build, then remove it again.
 
-Restore the recipe from #6012 rather than rewriting it: the PR ref outlives the
-squash merge, and `063c2a5414` is the commit that removed the working config.
+Restore the recipe from #6012 rather than rewriting it: `063c2a5414` on `main`
+is the commit that removed the working config.
 
 ```bash
-git fetch origin pull/6012/head
 git checkout 063c2a5414^ -- src/dbt/kippmiami/
 ```
 

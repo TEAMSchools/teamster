@@ -196,7 +196,7 @@ When all tasks are complete, Claude:
 2. **Commits and pushes** the feature branch. Claude never pushes to `main`.
 3. **Opens a PR** — using the repository's
    [pull request template](https://github.com/TEAMSchools/teamster/blob/main/.github/pull_request_template.md).
-   The PR merges with squash merge.
+   The PR merges with a merge commit.
 4. **Offers to watch CI** and respond to the `claude-review` findings once they
    post.
 

@@ -11,6 +11,10 @@ on:
       - .claude/rules/dbt-yaml.md
       - .claude/rules/dbt-sql.md
       - tests/launch/**
+      - scripts/cube_validation/**
+      - tests/scripts/cube_validation/**
+      - src/dbt/dbt_overrides/**
+      - tests/test_dbt_overrides.py
       - mkdocs.yml
       - pyproject.toml
       - uv.lock
@@ -39,7 +43,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       # https://github.com/astral-sh/setup-uv
-      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
 
       - name: Run the launch page tests
         run: uv run --group docs pytest tests/launch -v
@@ -56,3 +60,43 @@ jobs:
           # Below the publication threshold no page is generated. The
           # default (warn) would print a confusing warning on every PR.
           if-no-files-found: ignore
+
+  cube-validation:
+    name: cube-validation
+    # Same dependabot reasoning as `launch` above: a uv.lock bump (sqlglot,
+    # the BigQuery client) is what most often breaks the validator.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read # For repo checkout. Nothing here writes.
+
+    steps:
+      # https://github.com/actions/checkout
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # https://github.com/astral-sh/setup-uv
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+
+      # Offline: fake tables and DuckDB, no warehouse or credentials.
+      - name: Run the Cube validator tests
+        run: uv run --with duckdb pytest tests/scripts/cube_validation -q
+
+  dbt-overrides:
+    name: dbt-overrides
+    # Fails when a uv.lock dbt bump (usually dependabot) changes the built-in
+    # test materialization that src/dbt/dbt_overrides forks. Re-sync per
+    # src/dbt/dbt_overrides/CLAUDE.md.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read # For repo checkout. Nothing here writes.
+
+    steps:
+      # https://github.com/actions/checkout
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # https://github.com/astral-sh/setup-uv
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+
+      - name: Compare the fork against the installed built-in
+        run: uv run pytest tests/test_dbt_overrides.py -q

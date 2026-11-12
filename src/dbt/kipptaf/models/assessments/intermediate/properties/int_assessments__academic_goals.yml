@@ -2,9 +2,11 @@ models:
   - name: int_assessments__academic_goals
     description: >-
       Assessment goal targets from the academic goals Google Sheet, one row per
-      sheet row. INNER JOINs `int_students__schools` on `school_id =
-      school_number` to add the school level and region, so sheet rows whose
-      `school_id` matches no school are dropped.
+      academic year, school, grade, state assessment code and subject (the
+      staging model resolves repeated sheet keys). INNER JOINs
+      `int_students__schools` on `school_id = school_number` to add the school
+      level and region, so sheet rows whose `school_id` matches no school are
+      dropped.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -14,6 +16,8 @@ models:
               - grade_level
               - state_assessment_code
               - illuminate_subject_area
+          config:
+            severity: error
     columns:
       - name: academic_year
         data_type: int64
@@ -63,6 +67,12 @@ models:
         description: >-
           Region-level goal for this one grade, from the sheet; set only where
           it differs from the grade-band goal, null otherwise.
+      - name: qa_goal
+        data_type: float64
+        description: >-
+          Quarterly assessment (QA) mastery goal, from the sheet; null where no
+          QA goal is set. `rpt_tableau__ddi_dashboard` applies it in its
+          `*_goal_differentiated` columns.
       - name: school_level
         data_type: string
         description: School level (ES, MS, HS), from `int_students__schools`.

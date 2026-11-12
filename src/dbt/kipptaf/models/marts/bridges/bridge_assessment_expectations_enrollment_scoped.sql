@@ -3,7 +3,7 @@ with
        which doesn't match the value hashed into
        `dim_assessment_administrations.assessment_administration_key`.
        Re-join to int_assessments__assessments_members to recover the raw
-       `academic_year`. The canonical_* columns also flow from this join. */
+       `academic_year`. */
     expectations as (
         select
             sc.cc_dcid,
@@ -12,10 +12,10 @@ with
             sc.assessment_id,
             sc.administered_at,
             sc._dbt_source_project,
+            sc.canonical_assessment_id,
 
             a.module_code,
             a.academic_year,
-            a.canonical_assessment_id,
 
             c.administered_date as canonical_administered_at,
         from {{ ref("int_assessments__scaffold") }} as sc
@@ -25,8 +25,8 @@ with
             and sc.assessment_id = a.assessment_id
         inner join
             {{ ref("int_assessments__assessments_canonical") }} as c
-            on a.source = c.source
-            and a.canonical_assessment_id = c.canonical_assessment_id
+            on sc.source = c.source
+            and sc.canonical_assessment_id = c.canonical_assessment_id
         -- ES Writing and other NULL-cc_dcid rows are excluded here because
         -- cc_dcid + _dbt_source_project form the student_section_enrollment_key
         -- and NULL cc_dcid would collide on the placeholder hash. Those rows

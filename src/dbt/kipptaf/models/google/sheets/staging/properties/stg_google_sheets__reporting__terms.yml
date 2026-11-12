@@ -49,6 +49,20 @@ models:
           config:
             severity: error
             where: start_date is not null and end_date is not null
+      # RT consumers match a date against every RT term at a school, so 2
+      # quarters at one school must not share a date. The test above
+      # partitions by code and name, so it only compares a term with itself.
+      - dbt_utils.mutually_exclusive_ranges:
+          arguments:
+            lower_bound_column: start_date
+            upper_bound_column: end_date
+            partition_by: type, region, school_id, grade_band, academic_year
+            gaps: allowed
+            zero_length_range_allowed: true
+          config:
+            severity: error
+            where: >-
+              type = 'RT' and start_date is not null and end_date is not null
     columns:
       - name: type
         data_type: string

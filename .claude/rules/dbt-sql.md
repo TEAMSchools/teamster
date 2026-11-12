@@ -34,7 +34,9 @@ formatting. The rules below are where we add to or differ from that guide.
 ### Rules
 
 Common remedy for S3, S8, S9, and S10: derive the expression as a named column
-in an upstream CTE, then reference the plain column.
+upstream, then reference the plain column. A value derived from 1 source column
+goes in the staging model that reads it (S9); anything else goes in an upstream
+CTE.
 
 #### S1. ANSI SQL or a dbt macro first
 
@@ -73,10 +75,14 @@ real work.
 - Bad: `students as (select * from {{ ref("stg_powerschool__students") }})`.
 - Enforced by: review.
 
-#### S5. No `order by` in models
+#### S5. No `order by` on a query's result
 
-- Why: ordering belongs to the tool that displays the data.
-- Good: no `order by` in the final select.
+An `order by` inside a function call, such as `over (...)` or `string_agg(...)`,
+decides a value, not the row order, so S5 does not cover it.
+
+- Why: row ordering belongs to the tool that displays the data.
+- Good: no `order by` in the final select;
+  `string_agg(plan_name, '; ' order by plan_name)`.
 - Bad: `order by student_number` at the end of a model.
 - Enforced by: review.
 
@@ -120,37 +126,48 @@ Aggregates passed as direct arguments do not count.
 - Bad: `if(coalesce(cast(x as int64), 0) > 0, 'a', 'b')`.
 - Enforced by: review.
 
-#### S9. Cast early, once, with an alias
+#### S9. Cast and derive at the point of entry, once, with an alias
 
-Cast in staging or where the raw value first appears, as a named column. Never
-nest `cast()` inside another function.
+Cast, round, trim, or parse a source column in the staging model that first
+reads it, as a named column. Never nest `cast()` inside another function.
 
-- Why: 1 typed column downstream; an unaliased `cast()` is named `f0_` by
-  BigQuery.
-- Good: `cast(student_id as string) as student_id` in staging.
-- Bad: `date(cast(entry_ts as timestamp))` in a mart.
+- Why: 1 typed or derived column downstream that every consumer joins and
+  filters on; an unaliased `cast()` is named `f0_` by BigQuery.
+- Good: `cast(student_id as string) as student_id` and
+  `round(gpa__c, 2) as gpa_rounded` in staging.
+- Bad: `date(cast(entry_ts as timestamp))` in a mart; a CTE in an intermediate
+  that only rounds a staging column so a join can match on it.
 - Enforced by: review.
 
-#### S10. No calculations on table columns in `where` or 1-sided in `on`
+#### S10. `where` and `on` hold only plain comparisons
 
-Precompute them as named columns upstream. Literals, `{{ var(...) }}`, and
-`current_date(...)` on the other side are fine; so are expressions that combine
-both join sides.
+A filter in `where`, or 1-sided in `on`, compares a column to a literal, a
+variable, or another column. Two kinds of logic become a named column upstream
+instead: a calculation on a column, and a rule built from several conditions
+(any `or`, or 3 or more literal comparisons on one table). Name a rule column
+with `is_` (S14). Literals, `{{ var(...) }}`, and `current_date(...)` on the
+other side are fine; so are expressions that combine both join sides.
 
-- Why: the filter or join reads as plain columns, and the derived value can be
-  tested.
-- Good: `where is_enrolled`.
-- Bad: `where date_diff(exit_date, entry_date, day) > 0`.
+- Why: the join or filter reads as keys plus a named condition, and the rule has
+  1 home where it can be tested.
+- Good: `where is_enrolled`; `and py.is_annual_state_test`.
+- Bad: `where date_diff(exit_date, entry_date, day) > 0`;
+  `and ((py.score_source = 'state_nj' and ...) or (...))`.
 - Enforced by: review.
 
-#### S11. Row filters on the preserved table go in `where`
+#### S11. A row filter goes with the table it filters
 
-For a `left join`, a filter in `on` keeps non-matching rows. Exception: a
+A filter on the `from` table goes in `where`; for a `left join`, a filter in
+`on` keeps non-matching rows. A 1-sided filter on a joined table goes in that
+join's `on`, for an `inner join` as well as a `left join`. Exception: a
 `full join` condition on 1 side stays in `on`.
 
-- Why: `on` decides matches; `where` decides rows.
-- Good: `left join t on a.id = t.id where a.is_active`.
-- Bad: `left join t on a.id = t.id and a.is_active`.
+- Why: `on` decides matches; `where` decides rows. Each filter sits next to the
+  table it narrows.
+- Good: `left join t on a.id = t.id where a.is_active`;
+  `inner join rt on g.record_type_id = rt.id and rt.name = 'College'`.
+- Bad: `left join t on a.id = t.id and a.is_active`;
+  `inner join rt on g.record_type_id = rt.id where rt.name = 'College'`.
 - Enforced by: review.
 
 #### S12. `distinct` only for grain projection
@@ -230,6 +247,17 @@ Rationale and background go in the model's YAML `description:`.
 - Bad: `from a full join b on ...`, then `coalesce(a.x, b.x)` for every column.
 - Enforced by: review.
 
+#### S20. A literal that encodes a business rule gets a comment
+
+A cutover year, threshold, or id in logic gets a one-line comment naming what it
+is. A value that changes every year belongs in a `var()` instead.
+
+- Why: a bare `2026` cannot tell a reader whether it is a cutover, a start year,
+  or a value someone forgot to roll over.
+- Good: `-- Miami's Focus cutover year.` above `where syear >= 2026`.
+- Bad: a bare `where syear >= 2026`.
+- Enforced by: review.
+
 ### Review rubric
 
 Reviewers, human or Claude, check these and cite the rule ID:
@@ -243,7 +271,8 @@ Reviewers, human or Claude, check these and cite the rule ID:
    correctly (S10, S11, S19).
 6. Date-range joins are half-open where ranges touch (S13).
 7. Nested logic is split into named columns past 1 level (S8, S9).
-8. Comments say only what the line cannot show (S18).
+8. Comments say only what the line cannot show, and every business-rule literal
+   has one (S18, S20).
 
 <!-- --8<-- [end:sql-style] -->
 
@@ -319,6 +348,14 @@ validation/profiling goes through BigQuery MCP, not `dbt show`.
   select only key columns. Once a non-key column is added, a `distinct` returns
   one row per stint again, and a later dedup on the old key then picks among
   them unpredictably.
+- S12: the annotation is a claim to verify before you write it, not a label.
+  Query the CTE's input and show that rows repeat on the named key and that
+  every projected column is constant within it. Nothing repeats: the `distinct`
+  is dead code; delete it and let the grain uniqueness test guard the key.
+  Repeats come from a join or `unnest` in this model: that is masking; carry the
+  fanned-out column (region, section) into the grain and key the downstream
+  joins on it. Repeats come from a source defect: dedup in `stg_` (A5) with its
+  warn test. Never justify a `distinct` with a case not seen in the data.
 - S10: expressions that inherently combine columns from both join sides
   (`st_distance(a.geo, b.geo)`, `st_dwithin(...)`) cannot be hoisted and are
   allowed. Column-to-column inequality comparisons (half-open date-range joins)
@@ -349,8 +386,10 @@ validation/profiling goes through BigQuery MCP, not `dbt show`.
 
 ## `select *` and UNION branches
 
-- No `select *` in the final `select` of `rpt_`/mart models (A9). Get the
-  authoritative column list via `INFORMATION_SCHEMA.COLUMNS`:
+- No `select *` in the final `select` of `rpt_`, mart, or view models, union
+  wrappers excepted (A9). Staging and other table models may still end in a
+  star, so the `select *,` and `select * except` staging patterns below stand.
+  Get the authoritative column list via `INFORMATION_SCHEMA.COLUMNS`:
 
   ```sql
   select column_name

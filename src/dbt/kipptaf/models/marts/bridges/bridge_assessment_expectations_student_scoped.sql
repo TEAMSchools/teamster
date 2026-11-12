@@ -8,10 +8,10 @@ with
             sc.region,
             sc.powerschool_school_id,
             sc._dbt_source_project,
+            sc.canonical_assessment_id,
 
             a.module_code,
             a.academic_year,
-            a.canonical_assessment_id,
 
             c.administered_date as canonical_administered_at,
 
@@ -29,20 +29,15 @@ with
             and sc.assessment_id = a.assessment_id
         inner join
             {{ ref("int_assessments__assessments_canonical") }} as c
-            on a.source = c.source
-            and a.canonical_assessment_id = c.canonical_assessment_id
+            on sc.source = c.source
+            and sc.canonical_assessment_id = c.canonical_assessment_id
         left join
             {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on sc.administered_at between rt.start_date and rt.end_date
             and sc.powerschool_school_id = rt.school_id
             and sc.region = rt.region
             and rt.type = 'RT'
-        where
-            sc.is_internal_assessment
-            and (sc.is_replacement or sc.cc_dcid is null)
-            -- the warn test int_assessments__scaffold__replacement_region_untagged
-            -- lists the rows this drops
-            and (not sc.is_replacement or sc.is_region_tagged)
+        where sc.is_internal_assessment and (sc.is_replacement or sc.cc_dcid is null)
     )
 
 select

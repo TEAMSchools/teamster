@@ -19,6 +19,21 @@ models:
               - response_type_id
           config:
             severity: error
+      # The kipptaf rollup judges a date against the scaffold's administered date
+      # when one exists, which this model lacks, so the two counts can differ.
+      - dbt_utils.expression_is_true:
+          description: >-
+            Lists Apex sessions in Focus whose completed date falls outside
+            their school year, plus or minus one year. Fix the session's
+            completed date in Focus. Until then,
+            int_assessments__response_rollup blanks the date.
+          arguments:
+            expression: |-
+              extract(year from date_taken)
+                between academic_year - 1 and academic_year + 1
+          config:
+            severity: warn
+            where: date_taken is not null
     columns:
       - name: is_mastery
         description: >-

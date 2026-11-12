@@ -5,6 +5,7 @@ with
             performance_band_set_id,
 
             'overall' as response_type,
+            '-1' as merge_key,
             -1 as response_type_id,
         from {{ ref("int_assessments__assessments_members") }}
         where source = 'illuminate'
@@ -12,12 +13,19 @@ with
 
     standards as (
         select
-            assessment_id,
-            standard_id as response_type_id,
-            performance_band_set_id,
+            ast.assessment_id,
+            ast.standard_id as response_type_id,
+            ast.performance_band_set_id,
 
             'standard' as response_type,
-        from {{ ref("stg_illuminate__dna_assessments__assessment_standards") }}
+
+            -- Illuminate copies a standard into several standards sets, so one
+            -- standard can arrive as 2 records with the same code and text
+            format('%T|%T', std.custom_code, std.description) as merge_key,
+        from {{ ref("stg_illuminate__dna_assessments__assessment_standards") }} as ast
+        inner join
+            {{ ref("stg_illuminate__standards__standards") }} as std
+            on ast.standard_id = std.standard_id
     ),
 
     reporting_groups as (
@@ -27,40 +35,101 @@ with
             performance_band_set_id,
 
             'group' as response_type,
+
+            cast(reporting_group_id as string) as merge_key,
         from {{ ref("stg_illuminate__dna_assessments__assessments_reporting_groups") }}
     ),
 
     unioned as (
-        select assessment_id, response_type, response_type_id, performance_band_set_id,
+        select
+            assessment_id,
+            response_type,
+            response_type_id,
+            performance_band_set_id,
+            merge_key,
         from overall
         union all
-        select assessment_id, response_type, response_type_id, performance_band_set_id,
+        select
+            assessment_id,
+            response_type,
+            response_type_id,
+            performance_band_set_id,
+            merge_key,
         from standards
         union all
-        select assessment_id, response_type, response_type_id, performance_band_set_id,
+        select
+            assessment_id,
+            response_type,
+            response_type_id,
+            performance_band_set_id,
+            merge_key,
         from reporting_groups
+    ),
+
+    -- one row per copy and region; external and untagged copies get one row
+    -- with a null region
+    copy_groups as (
+        select
+            a.assessment_id,
+            a.is_internal_assessment,
+
+            rg.region,
+
+            -- external and untagged copies are their own group
+            coalesce(
+                rg.canonical_assessment_id, a.assessment_id
+            ) as canonical_assessment_id,
+        from {{ ref("int_assessments__assessments_members") }} as a
+        left join unnest(a.region_groups) as rg
+        where a.source = 'illuminate'
+    ),
+
+    grouped as (
+        select
+            u.assessment_id,
+            u.response_type,
+            u.response_type_id,
+            u.performance_band_set_id,
+
+            g.region,
+            g.canonical_assessment_id,
+            g.is_internal_assessment,
+
+            min(u.response_type_id) over w_merge as canonical_response_type_id,
+            max(u.response_type_id) over w_merge as max_response_type_id,
+            min(u.performance_band_set_id) over w_merge as min_band_set_id,
+            max(u.performance_band_set_id) over w_merge as max_band_set_id,
+            countif(u.performance_band_set_id is null) over w_merge as n_null_band_sets,
+            first_value(u.performance_band_set_id) over (
+                w_merge order by u.assessment_id, u.response_type_id
+            ) as first_band_set_id,
+        from unioned as u
+        inner join copy_groups as g on u.assessment_id = g.assessment_id
+        window
+            w_merge as (
+                partition by
+                    g.canonical_assessment_id, g.region, u.response_type, u.merge_key
+            )
     )
 
 select
-    u.assessment_id,
-    u.response_type,
-    u.response_type_id,
-    u.performance_band_set_id,
+    assessment_id,
+    region,
+    canonical_assessment_id,
+    response_type,
+    response_type_id,
+    performance_band_set_id,
+    canonical_response_type_id,
 
-    if(
-        a.is_internal_assessment,
-        first_value(u.performance_band_set_id) over (
-            partition by
-                a.is_internal_assessment,
-                a.canonical_assessment_id,
-                u.response_type,
-                u.response_type_id
-            order by u.assessment_id
-        ),
-        u.performance_band_set_id
-    ) as canonical_performance_band_set_id,
-from unioned as u
-inner join
-    {{ ref("int_assessments__assessments_members") }} as a
-    on u.assessment_id = a.assessment_id
-where a.source = 'illuminate'
+    case
+        -- one standard split across records on different band sets: no single
+        -- set can label the merged score (min/max skip nulls, so count them)
+        when
+            canonical_response_type_id != max_response_type_id
+            and (min_band_set_id != max_band_set_id or n_null_band_sets > 0)
+        then null
+        when is_internal_assessment
+        then first_band_set_id
+        else performance_band_set_id
+    end as canonical_performance_band_set_id,
+from grouped

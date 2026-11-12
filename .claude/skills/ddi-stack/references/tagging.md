@@ -6,6 +6,9 @@ assessment, prior tags included); edits land in a BigQuery table read as
 `stg_google_appsheet__illuminate_assessments_extension`. Having a row there IS
 `is_internal_assessment` — the tag is membership.
 
+An "already tagged" error for an assessment missing from the app is a year
+problem, not a tag problem: [item-bank-year.md](item-bank-year.md).
+
 ## What each tag field controls
 
 | Field                            | Controls                                                                                                                                                                                                                           |
@@ -34,16 +37,18 @@ job.
 
 ## Canonical grouping
 
-Internal members sharing
+Within each region in `regions_assessed`, internal members sharing
 `(academic_year, scope, subject_area, module_code, grade_level_id)` group under
-the lowest member `assessment_id`. Consequences:
+the lowest member `assessment_id` (stored per copy in `region_groups`).
+Consequences:
 
 - One mistagged copy (wrong module or grade) splits or merges a group — the
   instability behind [#5654].
-- Copies from different regions merge by design, except Miami-only Florida
-  copies (`regions_assessed` exactly `Miami`), which group apart. A Florida copy
-  also tagged with another region falls back into the New Jersey group, and its
-  title or date can leak onto New Jersey rows.
+- Groups never span regions. A copy tagged for 2 regions joins 2 groups, so
+  adding or removing a region tag can change which copy names a group.
+- A copy with no `regions_assessed` tag belongs to no group: its scores never
+  reach the scaffold, the response rollup or the star. A score from a region the
+  copy is not tagged for drops the same way.
 - A tag edit changes `canonical_assessment_id`s, which are hash inputs in the
   assessment star: expect administration and score keys to churn on the next
   tick.

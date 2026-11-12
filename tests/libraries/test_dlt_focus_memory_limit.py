@@ -31,10 +31,10 @@ from teamster.libraries.dlt.probe import ProbeTable
 CREDENTIALS = ConnectionStringCredentials("postgresql+psycopg://localhost:5432/db")
 
 K8S_CONFIG_KEY = "dagster-k8s/config"
-EXPECTED_MEMORY_LIMIT = "3.5Gi"
-EXPECTED_MEMORY_REQUEST = "3.0Gi"
+EXPECTED_MEMORY_LIMIT = "5.0Gi"
+EXPECTED_MEMORY_REQUEST = "4.0Gi"
 # Scale-Out requires an exact 1:4 cpu:memory request ratio.
-EXPECTED_CPU_REQUEST = "750m"
+EXPECTED_CPU_REQUEST = "1000m"
 
 CODE_LOCATION_ASSETS = (
     pathlib.Path(__file__).parents[2]

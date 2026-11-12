@@ -14,7 +14,10 @@ cubes:
         primary_key: true
 
       - name: title
-        description: Display name of the assessment.
+        description: >-
+          Display name of the assessment (Ed-Fi
+          edFi_assessment.assessmentTitle). For state tests, the test name, such
+          as NJSLA, NJSLA Science, NJGPA, FAST or EOC.
         sql: title
         type: string
         public: true
@@ -60,15 +63,14 @@ cubes:
         public: true
         meta:
           ai_context: >-
-            Use this member to select a source. For internal results in general,
-            filter is_internal_assessment instead: a school can move from
-            illuminate to apex between years, so filtering 1 of them drops that
-            school's other years. college, ap, state_nj_parcc, state_fl_fsa and
-            the _unknown fallbacks carry no scores on this view today, so zero
-            rows for them is coverage, not a failure; treat that list as
-            current, not closed. Flag any NJSLA or NJGPA comparison that crosses
-            spring 2026 as possibly comparing 2 scales; never present that trend
-            as settled.
+            Use this member to select a source. To select a kind of source,
+            filter assessment_family instead: a school can move from illuminate
+            to apex between years, so filtering 1 of them drops that school's
+            other years. college, ap, state_nj_parcc, state_fl_fsa and the
+            _unknown fallbacks carry no scores on this view today, so zero rows
+            for them is coverage, not a failure; treat that list as current, not
+            closed. Flag any NJSLA or NJGPA comparison that crosses spring 2026
+            as possibly comparing 2 scales; never present that trend as settled.
 
       - name: category
         description: >-
@@ -141,6 +143,30 @@ cubes:
         type: string
         public: true
 
+      # student_assessment_scores.bucket reads it to pick the ELA or math
+      # bucket. The mapping lives in dbt because academic_subject is an open
+      # vocabulary, so a CASE list here would drift.
+      - name: bucket_subject
+        description: >-
+          Which of a student's buckets applies to scores on this assessment —
+          Reading pairs with `dim_student_enrollment_status.ela_bucket`, Math
+          with `math_bucket`, and null means no bucket applies (science, social
+          studies, AP exam scores, combined and composite college scores, and
+          internal subjects with no course subject crosswalk row). Internal
+          assessments take it from the course subject crosswalk's discipline for
+          their subject; state tests from their ELA or Math discipline; i-Ready
+          from its subject; STAR is Math or else Reading; DIBELS is Reading;
+          Official college scores from their credit category (ENG or MATH);
+          Practice college scores from their subject (EBRW, English and Reading,
+          or Math).
+        sql: bucket_subject
+        type: string
+        public: true
+        meta:
+          ai_context: >-
+            Filter bucket_subject to split bucket counts or mastery by ELA and
+            math.
+
       - name: is_internal_assessment
         description: >-
           TRUE for the KIPP-authored interims, Illuminate and Focus Assessments;
@@ -151,7 +177,27 @@ cubes:
         public: true
         meta:
           ai_context: >-
-            Filter it to TRUE for internal results in any region or year, since
-            a school's internal source can change between years. FALSE groups
-            vendor diagnostics with state tests, so filter assessment_type to
-            select an external source.
+            Filter assessment_family instead to select any kind of source,
+            internal included: assessment_family = internal returns exactly the
+            rows where this member is TRUE. A school's internal source can
+            change between years, so select internal results by kind, not by
+            source. FALSE groups vendor diagnostics with state tests.
+
+      - name: assessment_family
+        description: >-
+          Kind of assessment, grouping the source system into 5 values —
+          internal (illuminate and apex, the KIPP-authored interims from
+          Illuminate and Focus Assessments); vendor_diagnostic (iready, dibels
+          and star); state (every NJ and FL state test type); college (SAT, ACT
+          and PSAT, Official and Practice); and ap.
+        sql: assessment_family
+        type: string
+        public: true
+        meta:
+          ai_context: >-
+            Use this member to select a kind of source, such as
+            vendor_diagnostic for the i-Ready, DIBELS and STAR diagnostics
+            together, or state for every state test. Within a kind, filter
+            assessment_type to select 1 source. Rates from different sources
+            within a kind use different scales and bars, so report them per
+            source rather than pooled.

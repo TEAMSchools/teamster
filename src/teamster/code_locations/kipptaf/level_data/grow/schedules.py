@@ -3,6 +3,8 @@ from dagster import (
     RunRequest,
     ScheduleDefinition,
     ScheduleEvaluationContext,
+    define_asset_job,
+    in_process_executor,
     schedule,
 )
 from dagster_shared import check
@@ -17,15 +19,30 @@ from teamster.code_locations.kipptaf.level_data.grow.assets import (
 
 grow_user_sync_schedule = ScheduleDefinition(
     name=f"{grow_user_sync.key.to_python_identifier()}_schedule",
-    target=grow_user_sync,
-    cron_schedule="0 3 * * *",
+    target=define_asset_job(
+        name=f"{grow_user_sync.key.to_python_identifier()}_asset_job",
+        selection=[grow_user_sync],
+        executor_def=in_process_executor,
+    ),
+    cron_schedule="20 3 * * *",
     execution_timezone=str(LOCAL_TIMEZONE),
+)
+
+
+# In process: a step pod per asset adds to the 02:00 pod burst that GKE preempts
+# on new nodes (#6225). Each step is a few seconds of API work, so loading the
+# code location once and running the steps in turn is faster than a child process
+# per step, and the default run pod fits on an existing node.
+grow_static_partition_asset_job = define_asset_job(
+    name=f"{CODE_LOCATION}__grow__static_partition_assets_job",
+    selection=grow_static_partition_assets,
+    executor_def=in_process_executor,
 )
 
 
 @schedule(
     name=f"{CODE_LOCATION}__grow__static_partition_assets_schedule",
-    target=grow_static_partition_assets,
+    target=grow_static_partition_asset_job,
     cron_schedule="0 2 * * *",
     execution_timezone=str(LOCAL_TIMEZONE),
 )

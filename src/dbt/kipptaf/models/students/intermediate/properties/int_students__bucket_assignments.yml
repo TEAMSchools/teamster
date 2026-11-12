@@ -1,30 +1,22 @@
 models:
   - name: int_students__bucket_assignments
     description: >-
-      The single home for stored student bucket assignments. PowerSchool special
-      programs (NJ) and Focus custom student groups (Miami), decoded from the
-      program or group name ("Bucket 1 - ELA"). One row per academic_year x
-      _dbt_source_project x student_number x subject; where a student has
-      assignment history (rollout-PD amendments exit and re-enter), the latest
-      assignment_date wins. That pick is a business rule (the newest stored
-      assignment is the official one), not source-duplicate masking, which is
-      why it lives in this domain model rather than staging; a true double
-      upload still surfaces through n_active_assignments. Bucket 4 is never
-      stored - consumers coalesce a missing row to Bucket 4. _dbt_source_project
-      is part of the grain because student numbers repeat across regions.
+      The single home for stored student bucket assignments. Unions PowerSchool
+      special programs (NJ, and the frozen Miami archive for 2024-25 and
+      2025-26) from int_powerschool__bucket_programs with Focus custom student
+      groups (Miami from 2026-27) from int_focus__bucket_memberships, keeping
+      PowerSchool programs only for students enrolled in that region and year.
+      One row per stored assignment (academic_year x _dbt_source_project x
+      student_number x subject x assignment_date), so a student's mid-year
+      changes and rollout-PD amendments (exit and re-enter) all stay; the source
+      models settle 2 assignments stored on the same day. Bucket 4 is never
+      stored. rn_assignment_year_desc = 1 is the student's latest assignment for
+      the year, and dim_student_bucket_status turns these rows into enrollment
+      spans. _dbt_source_project is part of the grain because student numbers
+      repeat across regions.
     config:
       meta:
         contains_pii: true
-        standard_exempt:
-          A5: >-
-            Latest-assignment-wins is the business rule (the newest stored
-            assignment is the official one), not source-duplicate masking; a
-            true double upload still surfaces through n_active_assignments.
-          A4: >-
-            Shares its (_dbt_source_project, academic_year, student_number,
-            subject) key with int_assessments__goal_benchmarks, but the two hold
-            different facts from different sources (a stored bucket assignment
-            versus a benchmark score panel), so neither extends the other.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -33,6 +25,7 @@ models:
               - _dbt_source_project
               - student_number
               - subject
+              - assignment_date
           config:
             severity: error
     columns:
@@ -56,11 +49,11 @@ models:
                 values: [Bucket 1, Bucket 2, Bucket 3]
       - name: n_active_assignments
         description: >-
-          Count of assignments on this grain still active today (no exit date,
-          or a future one). The exit date is per-assignment in PowerSchool (live
-          rows carry a scheduled year-end exit) but is the GROUP's end date in
-          Focus, where a membership has no end date of its own. More than 1
-          means a double upload that the latest-wins pick is masking.
+          Count of the student's assignments for the year and subject still
+          active today (no exit date, or a future one). The exit date is
+          per-assignment in PowerSchool (live rows carry a scheduled year-end
+          exit) but is the GROUP's end date in Focus, where a membership has no
+          end date of its own. More than 1 means a double upload.
         data_tests:
           - dbt_utils.expression_is_true:
               arguments:
@@ -72,8 +65,7 @@ models:
       - name: _dbt_source_project
         description: >-
           District code location the assignment came from, carried through from
-          int_powerschool__spenrollments or
-          int_focus__student_group_memberships.
+          int_powerschool__bucket_programs or int_focus__bucket_memberships.
       - name: student_number
         description: Network student number (the Focus student_id for Miami).
       - name: bucket_store
@@ -82,91 +74,116 @@ models:
         description: >-
           Program enter date (PowerSchool) or group-membership created date
           (Focus).
+      - name: exit_date
+        description: >-
+          Program exit date (PowerSchool), the first day the assignment no
+          longer applies, or the group's end date (Focus). Null when the
+          assignment has no end.
+      - name: rn_assignment_year_desc
+        description: >-
+          Rank of the assignment within the student's year and subject, latest
+          assignment_date first. 1 is the student's bucket for the year, the
+          dashboards' year rule.
 
 unit_tests:
   - name: unit_int_students__bucket_assignments
     description: >-
-      Decodes both stores, picks the latest assignment on re-assignment
-      (PowerSchool stores a scheduled future year-end exit on live rows and a
-      past exit on amended-out rows), counts a same-subject double upload,
-      excludes non-bucket groups and programs, and keeps same-number students in
-      different regions apart.
+      Keeps PowerSchool programs only for students enrolled in that region and
+      year, keeps same-number students in different regions apart, matches Miami
+      archive programs on student_number, passes Focus memberships through, and
+      ranks a student's mid-year change latest first.
     model: int_students__bucket_assignments
     given:
-      - input: ref("int_powerschool__spenrollments")
-        rows:
-          - studentid: 11
-            academic_year: 2026
-            specprog_name: Bucket 2 - Math
-            enter_date: 2026-09-01
-            exit_date: 2026-10-01
-            _dbt_source_relation: "`t`.`kippnewark_powerschool`.`x`"
-            _dbt_source_project: kippnewark
-          - studentid: 11
-            academic_year: 2026
-            specprog_name: Bucket 3 - Math
-            enter_date: 2026-10-02
-            exit_date: 2099-06-30
-            _dbt_source_relation: "`t`.`kippnewark_powerschool`.`x`"
-            _dbt_source_project: kippnewark
-          - studentid: 12
-            academic_year: 2026
-            specprog_name: MTSS Math
-            enter_date: 2026-09-01
-            exit_date: null
-            _dbt_source_relation: "`t`.`kippnewark_powerschool`.`x`"
-            _dbt_source_project: kippnewark
-          - studentid: 13
-            academic_year: 2026
-            specprog_name: Bucket 1 - ELA
-            enter_date: 2026-09-01
-            exit_date: 2099-06-30
-            _dbt_source_relation: "`t`.`kippcamden_powerschool`.`x`"
-            _dbt_source_project: kippcamden
-          - studentid: 13
-            academic_year: 2026
-            specprog_name: Bucket 2 - ELA
-            enter_date: 2026-09-05
-            exit_date: 2099-06-30
-            _dbt_source_relation: "`t`.`kippcamden_powerschool`.`x`"
-            _dbt_source_project: kippcamden
-      - input: ref("int_extracts__student_enrollments")
-        rows:
-          - studentid: 11
-            student_number: 5001
-            academic_year: 2026
-            rn_year: 1
-            _dbt_source_project: kippnewark
-          - studentid: 12
-            student_number: 5002
-            academic_year: 2026
-            rn_year: 1
-            _dbt_source_project: kippnewark
-          - studentid: 13
-            student_number: 5001
-            academic_year: 2026
-            rn_year: 1
-            _dbt_source_project: kippcamden
-      - input: ref("int_focus__student_group_memberships")
+      - input: ref("int_powerschool__bucket_programs")
         format: sql
         rows: |
           select
-              84001234 as student_id,
-              2026 as syear,
-              timestamp '2026-09-17 12:00:00' as created_at,
-              'Bucket 2 - ELA' as title,
-              cast(null as date) as end_date,
-              'kippmiami' as _dbt_source_project
+              2026 as academic_year,
+              'kippnewark' as _dbt_source_project,
+              5001 as student_number,
+              'Math' as `subject`,
+              'Bucket 2' as bucket,
+              date '2026-09-01' as assignment_date,
+              date '2026-10-01' as exit_date,
+              1 as n_active_assignments
           union all
           select
-              84001234,
               2026,
-              timestamp '2026-09-17 12:00:00',
-              'Advisory 5A',
-              cast(null as date),
-              'kippmiami'
+              'kippnewark',
+              5001,
+              'Math',
+              'Bucket 3',
+              date '2026-10-02',
+              date '2099-06-30',
+              1
+          union all
+          select
+              2026,
+              'kippcamden',
+              5001,
+              'Reading',
+              'Bucket 1',
+              date '2026-09-01',
+              date '2099-06-30',
+              1
+          union all
+          select
+              2026,
+              'kippnewark',
+              5009,
+              'Reading',
+              'Bucket 2',
+              date '2026-09-01',
+              date '2099-06-30',
+              1
+          union all
+          select
+              2025,
+              'kippmiami',
+              84005678,
+              'Math',
+              'Bucket 1',
+              date '2024-09-10',
+              date '2025-06-04',
+              0
+      - input: ref("int_extracts__student_enrollments")
+        rows:
+          - student_number: 5001
+            academic_year: 2026
+            rn_year: 1
+            _dbt_source_project: kippnewark
+          - student_number: 5001
+            academic_year: 2026
+            rn_year: 1
+            _dbt_source_project: kippcamden
+          - student_number: 84005678
+            academic_year: 2025
+            rn_year: 1
+            _dbt_source_project: kippmiami
+      - input: ref("int_focus__bucket_memberships")
+        format: sql
+        rows: |
+          select
+              2026 as academic_year,
+              'kippmiami' as _dbt_source_project,
+              84001234 as student_number,
+              'Reading' as `subject`,
+              'Bucket 2' as bucket,
+              date '2026-09-17' as assignment_date,
+              cast(null as date) as exit_date,
+              1 as n_active_assignments
     expect:
       rows:
+        - academic_year: 2026
+          _dbt_source_project: kippnewark
+          student_number: 5001
+          subject: Math
+          bucket: Bucket 2
+          bucket_store: powerschool
+          assignment_date: 2026-09-01
+          exit_date: 2026-10-01
+          n_active_assignments: 1
+          rn_assignment_year_desc: 2
         - academic_year: 2026
           _dbt_source_project: kippnewark
           student_number: 5001
@@ -174,15 +191,29 @@ unit_tests:
           bucket: Bucket 3
           bucket_store: powerschool
           assignment_date: 2026-10-02
+          exit_date: 2099-06-30
           n_active_assignments: 1
+          rn_assignment_year_desc: 1
         - academic_year: 2026
           _dbt_source_project: kippcamden
           student_number: 5001
           subject: Reading
-          bucket: Bucket 2
+          bucket: Bucket 1
           bucket_store: powerschool
-          assignment_date: 2026-09-05
-          n_active_assignments: 2
+          assignment_date: 2026-09-01
+          exit_date: 2099-06-30
+          n_active_assignments: 1
+          rn_assignment_year_desc: 1
+        - academic_year: 2025
+          _dbt_source_project: kippmiami
+          student_number: 84005678
+          subject: Math
+          bucket: Bucket 1
+          bucket_store: powerschool
+          assignment_date: 2024-09-10
+          exit_date: 2025-06-04
+          n_active_assignments: 0
+          rn_assignment_year_desc: 1
         - academic_year: 2026
           _dbt_source_project: kippmiami
           student_number: 84001234
@@ -190,4 +221,6 @@ unit_tests:
           bucket: Bucket 2
           bucket_store: focus
           assignment_date: 2026-09-17
+          exit_date: null
           n_active_assignments: 1
+          rn_assignment_year_desc: 1

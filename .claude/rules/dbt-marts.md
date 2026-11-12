@@ -17,8 +17,22 @@ materialization, FK constraints, pre-merge checklist):
 ## Marts
 
 Dimensional marts (star schema) are consumed by Cube, Tableau, and the `rpt_`
-layer. Bridge models (`bridge_*`) are factless facts that link 2 or more
-dimensions many-to-many.
+layer. Bridge models (`bridge_*`) resolve a many-to-many relationship. They have
+3 uses: link 2 dimensions, link a fact to a group of dimension rows, or list
+every path through a ragged hierarchy. A bridge whose relationship changes over
+time carries effective dates, like a type 2 dimension.
+
+### Grain
+
+- A dimension holds attributes of its own entity, 1 value per row at its own
+  grain. A value that varies by subject, assessment, or period goes in a fact at
+  that grain, not on the dimension.
+- Name a fact by its grain (`fct_student_subjects_annual`), never by a row pick
+  (`_latest`). A "latest" or "as of" value per period belongs in a periodic
+  snapshot fact: the period is the grain, and an upstream `is_latest_*` flag
+  picks the row (A5).
+- A fact stores its values. It never carries a key to another fact's row to
+  reach a value, because consumers would then join 2 facts.
 
 ### Column-naming rubric
 
@@ -43,7 +57,9 @@ Applied to every mart column a PR adds, renames, or changes.
   acronyms (`dcid`, `oid`, `lep`) get spelled out or removed.
 - R8. Plumbing removed from mart SELECTs — see definition below.
 - R9. Remove dimension attributes reachable via FK. Includes natural keys that
-  duplicate a surrogate FK, and date columns that duplicate a date-key FK.
+  duplicate a surrogate FK, and date columns that duplicate a date-key FK. When
+  another dimension owns the attribute but no FK to it exists yet, add the FK;
+  do not copy the attribute.
 - R10. Entity qualification. Qualify a descriptive column with the model's
   entity prefix only when removing it creates a real downstream-join ambiguity
   (e.g. `full_name` on every person dim — not `student_name`). Otherwise default

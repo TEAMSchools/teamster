@@ -1,61 +1,459 @@
 models:
   - name: rpt_deanslist__promo_status
+    description:
+      One row per student and quarter (Q1-Q4) of the current academic year for
+      every NJ student enrolled this year; Miami is excluded. The
+      deanslist-annual extract uploads it to DeansList as the PROMOSTAT custom
+      data object, which the report cards, progress reports and
+      promotion-in-doubt letters read. Statuses come from the retention policy
+      in int_students__promotional_status, and the K-8 overall label matches the
+      Promotional Status dashboard.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - term
+          config:
+            severity: error
     columns:
       - name: student_number
+        description: Student number. With term, the grain of the model.
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        data_tests:
+          - not_null:
+              config:
+                severity: error
       - name: academic_year
+        description: Academic year (fall year); always the current year.
         data_type: int64
       - name: term
+        description:
+          Quarter the row describes, Q1 through Q4. Every student gets all four;
+          a quarter with no promotional status has null status columns.
         data_type: string
       - name: gpa_cum
+        description:
+          Cumulative GPA across completed years, from the enrollment record.
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: gpa_cum_projected
+        description: Cumulative GPA including projected current-year grades.
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: grades_y1_credits_projected
+        description: Cumulative credits including this year's projected credits.
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: gpa_term
+        description: GPA for the quarter.
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: gpa_y1
+        description: Year-to-date GPA as of the quarter.
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: promo_status_overall
+        description:
+          Overall promotional status printed on report cards and letters. NJ
+          students off track under the retention policy read At-Risk for
+          Retention. K-8 students off track in academics only read On-Track
+          (Academic Warning), and in attendance only read On-Track (Attendance
+          Warning), matching the Promotional Status dashboard. Everyone else
+          gets the policy overall status.
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: promo_status_attendance
+        description:
+          Attendance status under the retention policy. On-Track, or 'Off-track
+          - excessive absences' when attendance is below the threshold the
+          policy sets for the student's region and grade.
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: promo_status_grades
+        description:
+          Academic status under the retention policy, On-Track or Off-Track. The
+          policy sets the measure per grade (DIBELS, i-Ready, core course
+          failures, credits).
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: grades_y1_failing_projected
+        description:
+          Courses the student is projected to fail for the year, as of the
+          quarter.
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
       - name: n_failing_core
+        description:
+          Core content courses the student is failing, as of the quarter.
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
       - name: ada_term_running
+        description:
+          Average daily attendance from the start of the year through the
+          quarter, as a decimal (0.92 is 92%).
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: projected_credits_y1_term
+        description:
+          Credits the student is projected to earn this year, as of the quarter.
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: promo_status_lit
+        description:
+          Reading status. Grades K-2 use the academic status; grade 3 and up are
+          Off-Track when the latest i-Ready reading placement is 2 or more grade
+          levels below or missing, otherwise On-Track.
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: promo_status_qa_math
+        description:
+          Unused placeholder the DeansList data object still expects; always
+          null.
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
       - name: grades_y1_credits_enrolled
+        description:
+          Unused placeholder the DeansList data object still expects; always
+          null.
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
       - name: promo_credits_needed
+        description:
+          Cumulative credits needed for promotion in grades 9-12; null below
+          grade 9.
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
       - name: dibels_composite_recent
+        description: Most recent DIBELS composite level, or (No Data).
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: iready_reading_recent
+        description:
+          Most recent i-Ready reading overall relative placement, or (No Data).
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: iready_math_recent
+        description:
+          Most recent i-Ready math overall relative placement, or (No Data).
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: star_reading_level_recent
+        description: Most recent STAR reading level as Level N, or (No Data).
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: star_math_level_recent
+        description: Most recent STAR math level as Level N, or (No Data).
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: fast_ela_level_recent
+        description: Most recent FAST ELA level as Level N, or (No Data).
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: fast_math_level_recent
+        description: Most recent FAST math level as Level N, or (No Data).
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: athletic_eligibility
+        description: High school athletic eligibility status for the quarter.
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: promo_status_math
+        description:
+          Math status. Off-Track when the latest i-Ready math placement is 2 or
+          more grade levels below or missing, otherwise On-Track.
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: is_summer_school_eligible
+        description:
+          True when the student has an ARFR (Summer School) PowerSchool log
+          entry this year.
         data_type: boolean
+        config:
+          meta:
+            contains_pii: true
+
+unit_tests:
+  - name: test_rpt_deanslist__promo_status_labels
+    description: >-
+      Seven NJ students in Q1 cover each label rule. Students 2 and 4 are off
+      track in academics only and student 3 in attendance only, so their K-8
+      Overall row reads On-Track with a warning; student 5 is the same academic
+      case in grade 10 and keeps the policy status. Students 1 and 7 are off
+      track overall and read At-Risk for Retention. The Academics row carries
+      the plain policy status for every grade. Q2-Q4 have no promotional status
+      rows, so both status columns are null there.
+    model: rpt_deanslist__promo_status
+    overrides:
+      vars:
+        current_academic_year: 2026
+    given:
+      - input: ref('int_extracts__student_enrollments')
+        format: sql
+        rows: |
+          select
+              s.student_number,
+              2026 as academic_year,
+              cast(null as float64) as cumulative_y1_gpa,
+              cast(null as float64) as cumulative_y1_gpa_projected,
+              s.student_number + 1000 as studentid,
+              3600 as yearid,
+              'kippnewark' as _dbt_source_project,
+              'Newark' as region,
+              s.grade_level,
+              1 as rn_year,
+          from
+              unnest(
+                  [
+                      struct(1 as student_number, 6 as grade_level),
+                      struct(2, 6),
+                      struct(3, 2),
+                      struct(4, 1),
+                      struct(5, 10),
+                      struct(6, 4),
+                      struct(7, 7)
+                  ]
+              ) as s
+      - input: ref('int_powerschool__gpa_term')
+        format: sql
+        rows: |
+          select
+              1 as studentid,
+              1 as yearid,
+              'Q1' as term_name,
+              'kippnewark' as _dbt_source_project,
+              cast(null as float64) as gpa_term,
+              cast(null as float64) as gpa_y1,
+          from unnest([1])
+          where false
+      - input: ref('int_students__promotional_status')
+        format: sql
+        rows: |
+          select
+              p.student_number,
+              2026 as academic_year,
+              'Q1' as term_name,
+              cast(null as int64) as n_failing,
+              cast(null as int64) as n_failing_core,
+              cast(null as float64) as ada_term_running,
+              cast(null as float64) as projected_credits_y1_term,
+              cast(null as float64) as projected_credits_cum,
+              p.overall_status,
+              p.academic_status,
+              p.attendance_status,
+              cast(null as string) as iready_reading_recent,
+              cast(null as string) as iready_math_recent,
+              cast(null as string) as dibels_composite_level_recent_str,
+              cast(null as string) as star_reading_level_recent,
+              cast(null as string) as star_math_level_recent,
+              cast(null as string) as fast_ela_level_recent,
+              cast(null as string) as fast_math_level_recent,
+          from
+              unnest(
+                  [
+                      struct(
+                          1 as student_number,
+                          'Off-Track' as overall_status,
+                          'Off-Track' as academic_status,
+                          'Off-Track' as attendance_status
+                      ),
+                      struct(2, 'On-Track', 'Off-Track', 'On-Track'),
+                      struct(3, 'On-Track', 'On-Track', 'Off-Track'),
+                      struct(4, 'On-Track', 'Off-Track', 'On-Track'),
+                      struct(5, 'On-Track', 'Off-Track', 'On-Track'),
+                      struct(6, 'On-Track', 'On-Track', 'On-Track'),
+                      struct(7, 'Off-Track', 'On-Track', 'On-Track')
+                  ]
+              ) as p
+      - input: ref('int_students__athletic_eligibility')
+        format: sql
+        rows: |
+          select
+              2026 as academic_year,
+              1 as student_number,
+              cast(null as string) as q1_ae_status,
+              cast(null as string) as q2_ae_status,
+              cast(null as string) as q3_ae_status,
+              cast(null as string) as q4_ae_status,
+          from unnest([1])
+          where false
+      - input: ref('int_powerschool__log')
+        format: sql
+        rows: |
+          select
+              'kippnewark_powerschool.log' as _dbt_source_relation,
+              'kippnewark' as _dbt_source_project,
+              1 as dcid,
+              1 as studentid,
+              'ARFR (Summer School)' as log_type,
+              2026 as academic_year,
+              current_date() as entry_date,
+          from unnest([1])
+          where false
+    expect:
+      rows:
+        - student_number: 1
+          term: Q1
+          promo_status_overall: At-Risk for Retention
+          promo_status_grades: Off-Track
+        - student_number: 2
+          term: Q1
+          promo_status_overall: On-Track (Academic Warning)
+          promo_status_grades: Off-Track
+        - student_number: 3
+          term: Q1
+          promo_status_overall: On-Track (Attendance Warning)
+          promo_status_grades: On-Track
+        - student_number: 4
+          term: Q1
+          promo_status_overall: On-Track (Academic Warning)
+          promo_status_grades: Off-Track
+        - student_number: 5
+          term: Q1
+          promo_status_overall: On-Track
+          promo_status_grades: Off-Track
+        - student_number: 6
+          term: Q1
+          promo_status_overall: On-Track
+          promo_status_grades: On-Track
+        - student_number: 7
+          term: Q1
+          promo_status_overall: At-Risk for Retention
+          promo_status_grades: On-Track
+        - student_number: 1
+          term: Q2
+          promo_status_overall: null
+          promo_status_grades: null
+        - student_number: 2
+          term: Q2
+          promo_status_overall: null
+          promo_status_grades: null
+        - student_number: 3
+          term: Q2
+          promo_status_overall: null
+          promo_status_grades: null
+        - student_number: 4
+          term: Q2
+          promo_status_overall: null
+          promo_status_grades: null
+        - student_number: 5
+          term: Q2
+          promo_status_overall: null
+          promo_status_grades: null
+        - student_number: 6
+          term: Q2
+          promo_status_overall: null
+          promo_status_grades: null
+        - student_number: 7
+          term: Q2
+          promo_status_overall: null
+          promo_status_grades: null
+        - student_number: 1
+          term: Q3
+          promo_status_overall: null
+          promo_status_grades: null
+        - student_number: 2
+          term: Q3
+          promo_status_overall: null
+          promo_status_grades: null
+        - student_number: 3
+          term: Q3
+          promo_status_overall: null
+          promo_status_grades: null
+        - student_number: 4
+          term: Q3
+          promo_status_overall: null
+          promo_status_grades: null
+        - student_number: 5
+          term: Q3
+          promo_status_overall: null
+          promo_status_grades: null
+        - student_number: 6
+          term: Q3
+          promo_status_overall: null
+          promo_status_grades: null
+        - student_number: 7
+          term: Q3
+          promo_status_overall: null
+          promo_status_grades: null
+        - student_number: 1
+          term: Q4
+          promo_status_overall: null
+          promo_status_grades: null
+        - student_number: 2
+          term: Q4
+          promo_status_overall: null
+          promo_status_grades: null
+        - student_number: 3
+          term: Q4
+          promo_status_overall: null
+          promo_status_grades: null
+        - student_number: 4
+          term: Q4
+          promo_status_overall: null
+          promo_status_grades: null
+        - student_number: 5
+          term: Q4
+          promo_status_overall: null
+          promo_status_grades: null
+        - student_number: 6
+          term: Q4
+          promo_status_overall: null
+          promo_status_grades: null
+        - student_number: 7
+          term: Q4
+          promo_status_overall: null
+          promo_status_grades: null

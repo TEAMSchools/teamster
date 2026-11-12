@@ -142,7 +142,35 @@ cubes:
             Compare band numbers within one assessment and one response_type.
             There, prefer this number to proficiency_level text for grouping and
             ordering; on standard and group rows a few bands carry more than one
-            label spelling.
+            label spelling. To compare bands across assessments, compare
+            mastery_level instead.
+
+      - name: mastery_level
+        description: >-
+          The band's level relative to its set's mastery band, the same on every
+          set. At/Above is the mastery band and every band above it; Approaching
+          is the band directly below the mastery band; Below is every band under
+          that. Illuminate and Focus Assessments only; null for every other
+          source, for not-taken rows, and when the band set's setup breaks the
+          rule's assumptions.
+        sql: "{CUBE}.mastery_level"
+        type: string
+        public: true
+        meta:
+          ai_context: >-
+            Compares across assessments, where band numbers do not. To see
+            whether a student moved between bands on 2 assessments, compare
+            mastery_level on each, and name both assessments.
+
+      - name: is_far_below
+        description: >-
+          True for the lowest band of a set when it is not a mastery band.
+          Illuminate and Focus Assessments only; null for every other source,
+          for not-taken rows, and when the band set's setup breaks the level
+          rule's assumptions.
+        sql: "{CUBE}.is_far_below"
+        type: boolean
+        public: true
 
       - name: is_mastery
         description: >-
@@ -272,6 +300,35 @@ cubes:
         sql: is_replacement
         type: boolean
         public: true
+
+      # Reads 2 joined cubes: the assessment's bucket_subject picks the
+      # student's ELA or math bucket for the enrollment stint. Both sit on this
+      # cube's only join path to them, so there is no diamond, but a query
+      # using bucket joins the section, school and status enrollment cubes. The
+      # pick stays here, not on the fact: the marts' strict-chain rule keeps
+      # dim attributes off fact rows.
+      - name: bucket
+        description: >-
+          The student's bucket for the subject of this assessment, in the
+          enrollment stint the score belongs to — the ELA bucket on reading and
+          ELA assessments, the math bucket on math assessments, and null where
+          no bucket applies (science, social studies, AP exam scores, combined
+          and composite college scores, and internal subjects with no course
+          subject crosswalk row). Bucket 4 when the stint has no bucket for that
+          subject; null before 2025-26 and on grade 99 rows.
+        sql: >-
+          CASE {student_assessments.bucket_subject}
+            WHEN 'Reading' THEN {student_enrollment_status.ela_bucket}
+            WHEN 'Math' THEN {student_enrollment_status.math_bucket}
+          END
+        type: string
+        public: true
+        meta:
+          ai_context: >-
+            Values are Bucket 1 to Bucket 4. For a bucket's mastery rate, filter
+            bucket and read pct_proficient. To leave out scores with no bucket,
+            filter bucket set. Every score before 2025-26 reads null, because
+            the bucket model starts that year.
 
     measures:
       # Three nested counts, widest first: assigned contains taken contains
@@ -436,6 +493,119 @@ cubes:
           ai_context: >-
             Pair it with count_scored; never multiply it by count_assigned to
             get a proficient count.
+
+      # Below and Far Below shares are percents of students, counted on the
+      # same key as count_students. The denominator filters on mastery_level and
+      # the numerators on mastery_level or is_far_below, both null for a band
+      # set that fails the level rule, so such a set drops out of both sides.
+      - name: count_students_banded
+        description: >-
+          Distinct students (per student-year) with a score that fell in a
+          performance band with a mastery level. Illuminate and Focus
+          Assessments only. Denominator of pct_students_below and
+          pct_students_far_below, and numerator of pct_students_at_level.
+        sql: "{student_section_enrollments.student_enrollment_key}"
+        type: count_distinct
+        public: true
+        filters:
+          - sql: "{CUBE}.mastery_level IS NOT NULL"
+        meta:
+          ai_context: >-
+            Group by mastery_level for the number of students at each level. A
+            student with scores at 2 levels in the slice counts at both, so the
+            level rows can add up to more than the ungrouped total; filter to 1
+            assessment and response_type overall for 1 level per student.
+
+      # Denominator of pct_students_at_level: count_students_banded with
+      # mastery_level dropped from the query's grain.
+      - name: _count_students_banded_all_levels
+        description: >-
+          count_students_banded over every mastery level of the query's other
+          dimensions. Denominator of pct_students_at_level.
+        multi_stage: true
+        sql: "{count_students_banded}"
+        type: sum
+        reduce_by:
+          - mastery_level
+        public: false
+
+      - name: pct_students_at_level
+        description: >-
+          Of the students with a banded score in a slice, the percent at each
+          mastery_level. Illuminate and Focus Assessments only. Read it grouped
+          by mastery_level.
+        multi_stage: true
+        sql:
+          "1.0 * {count_students_banded} /
+          NULLIF({_count_students_banded_all_levels}, 0)"
+        type: number
+        format: percent
+        public: true
+        meta:
+          ai_context: >-
+            Group by mastery_level and filter response_type to overall. The
+            levels of a slice add to 100% only when each student has 1 score in
+            it, so also group by assessment (title, or grade_level,
+            academic_subject and module_code); a slice spanning several
+            assessments counts a student at every level they reached. Group by
+            mastery_level rather than filtering on it: a filter can reach the
+            denominator and read 100%. For the Below share alone, use
+            pct_students_below.
+
+      - name: _count_students_below
+        description: >-
+          Distinct students (per student-year) with a score at the Below level.
+          Numerator of pct_students_below.
+        sql: "{student_section_enrollments.student_enrollment_key}"
+        type: count_distinct
+        public: false
+        filters:
+          - sql: "{CUBE}.mastery_level = 'Below'"
+
+      - name: _count_students_far_below
+        description: >-
+          Distinct students (per student-year) with a score in the lowest band
+          of its set. Numerator of pct_students_far_below.
+        sql: "{student_section_enrollments.student_enrollment_key}"
+        type: count_distinct
+        public: false
+        filters:
+          - sql: "{CUBE}.is_far_below"
+
+      - name: pct_students_below
+        description: >-
+          The percent of students with a score at the Below level (Far Below
+          included), out of students with a banded score in the slice.
+          Illuminate and Focus Assessments only. A level is relative to the
+          mastery band of the band set that scored the row, so it means the same
+          on every set. A student counts once if any of their scores in the
+          slice is Below.
+        sql:
+          "1.0 * {_count_students_below} / NULLIF({count_students_banded}, 0)"
+        type: number
+        format: percent
+        public: true
+        meta:
+          ai_context: &band_share_context >-
+            Filter response_type to overall for a share of students by their
+            overall score. With response_type open, a student counts as Below
+            when any standard or group score is Below; for standards, filter
+            response_type to standard and group by response_type_description.
+
+      - name: pct_students_far_below
+        description: >-
+          The percent of students with a score in the lowest band of its set,
+          when that band is not a mastery band, out of students with a banded
+          score in the slice. Illuminate and Focus Assessments only. A student
+          counts once if any of their scores in the slice is Far Below.
+        sql:
+          "1.0 * {_count_students_far_below} / NULLIF({count_students_banded},
+          0)"
+        type: number
+        format: percent
+        public: true
+        meta:
+          ai_context: *band_share_context
 
       - name: _sum_percent_correct
         description: >-
@@ -611,6 +781,9 @@ cubes:
           - student_assessments.assessment_type
           - student_assessments.title
           - student_assessments.academic_subject
+          # bucket_subject is determined by the assessment; it splits the
+          # bucket cuts below into ELA and math.
+          - student_assessments.bucket_subject
           - student_assessments.grade_level_tested
           - student_assessment_administrations.administration_period
           - student_assessment_scores.response_type_code
@@ -633,6 +806,11 @@ cubes:
           # is_iep is the one independent addition (binary, so at most 2x rows);
           # it serves the IEP-vs-gen-ed disparity cut.
           - student_enrollment_status.is_iep
+          # bucket serves the DDI bucket-count and bucket-mastery cuts. It adds
+          # rows only from 2025-26, where buckets start. Like is_iep, its values
+          # follow the fact's rebuilds (refresh_key below), not the status
+          # dim's, so a bucket change waits for the next fact rebuild.
+          - student_assessment_scores.bucket
           - locations.region_key
           - locations.abbreviation
           # region_name is determined by region_key above; it supports
@@ -674,16 +852,29 @@ cubes:
         # derives the range from the time_dimension's min and max, so one stray
         # far-past or far-future assessment_date_key would add empty
         # partitions (#4460). The floor sits below the earliest
-        # assessment_date_key carrying a score; rows outside [floor, today] fall
-        # back to the fact.
+        # assessment_date_key carrying a score. The ceiling is June 30 of the
+        # current school year, not today: an administration date can sit
+        # months after the students took the test (#5883). A query the rollup
+        # serves never reads the fact, so a score dated outside the range is
+        # missing from every rollup-served answer; it does not fall back.
         build_range_start:
           sql: SELECT DATE('2015-07-01')
         build_range_end:
-          sql: SELECT CURRENT_DATE('America/New_York')
+          # Literal block (|-) so the formatter cannot reflow it.
+          # test_refresh_key_window_ends_at_build_range_end guards the copy in
+          # refresh_key below.
+          sql: |-
+            SELECT DATE(
+              EXTRACT(YEAR FROM DATE_ADD(CURRENT_DATE('America/New_York'), INTERVAL 6 MONTH)),
+              6,
+              30
+            )
         # Rebuild a partition when the fact rebuilds (a full CREATE OR REPLACE,
-        # on the cron in its properties yml), but only partitions on or after
-        # July 1 of the previous school year. The window start is today minus
-        # 18 months, truncated to January 1, plus 6 months. Cube runs this key
+        # on the cron in its properties yml), but only partitions from July 1
+        # of the previous school year through build_range_end. The window start
+        # is today minus 18 months, truncated to January 1, plus 6 months. The
+        # window end must match build_range_end, or a future-dated partition
+        # reads 'frozen' and never picks up new scores. Cube runs this key
         # once per partition every 30 minutes, with FILTER_PARAMS bound to that
         # partition's date range. Late state results land in the previous
         # school year at the latest; older partitions return a constant and
@@ -709,7 +900,11 @@ cubes:
                     ),
                     INTERVAL 6 MONTH
                   ),
-                  CURRENT_DATE('America/New_York')
+                  DATE(
+                    EXTRACT(YEAR FROM DATE_ADD(CURRENT_DATE('America/New_York'), INTERVAL 6 MONTH)),
+                    6,
+                    30
+                  )
                 )) AS d
                 WHERE {FILTER_PARAMS.student_assessment_scores.assessment_date.filter('TIMESTAMP(d)')}
               ),

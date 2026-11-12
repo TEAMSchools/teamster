@@ -9,6 +9,7 @@ from teamster.core.automation_conditions import (
     dbt_table_automation_condition,
     dbt_union_relations_automation_condition,
     dbt_view_automation_condition,
+    with_failed_deps_guard,
 )
 
 
@@ -58,12 +59,14 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
     ) -> AutomationCondition | None:
         materialized = dbt_resource_props.get("config", {}).get("materialized", "view")
 
-        # per-model override: meta.dagster.automation_condition.cron_schedule
-        # puts an expensive table on a cron cadence instead of the eager
-        # (rebuild-on-any-upstream-update) table condition. Tables only —
-        # views/ephemerals keep their view or union_relations condition
+        # per-model overrides under meta.dagster.automation_condition, tables
+        # only — views/ephemerals keep their view or union_relations condition
         # (a union_relations view losing ancestor code-version detection
-        # goes stale non-self-healingly; see core/CLAUDE.md)
+        # goes stale non-self-healingly; see core/CLAUDE.md):
+        # - cron_schedule puts an expensive table on a cron cadence instead of
+        #   the eager (rebuild-on-any-upstream-update) table condition
+        # - block_on_failed_deps holds the table while any dep partition's
+        #   latest attempt failed, so it never builds over an incomplete pull
         if materialized not in ("view", "ephemeral"):
             condition_meta = (
                 _get_dbt_meta(dbt_resource_props)
@@ -73,11 +76,18 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
             cron_schedule = condition_meta.get("cron_schedule")
 
             if cron_schedule:
-                return dbt_cron_automation_condition(
+                condition = dbt_cron_automation_condition(
                     cron_schedule=cron_schedule,
                     cron_timezone=condition_meta.get("cron_timezone")
                     or self.local_timezone,
                 )
+            else:
+                condition = dbt_table_automation_condition()
+
+            if condition_meta.get("block_on_failed_deps"):
+                return with_failed_deps_guard(condition)
+
+            return condition
 
         # union_relations views need dep-aware refresh: their compiled SQL
         # resolves columns at run time via the macro and becomes stale when
@@ -87,10 +97,7 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
         ):
             return dbt_union_relations_automation_condition()
 
-        if materialized in ["view", "ephemeral"]:
-            return dbt_view_automation_condition()
-        else:
-            return dbt_table_automation_condition()
+        return dbt_view_automation_condition()
 
     def get_group_name(self, dbt_resource_props: Mapping[str, Any]) -> str | None:
         group = super().get_group_name(dbt_resource_props)

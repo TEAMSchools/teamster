@@ -4,33 +4,37 @@ models:
       Assessment-definition layer, one row per `source` and `assessment_id`.
       LEFT JOINs Illuminate `assessments` to the AppSheet `Illuminate
       Assessments Extension` overrides and to an `agl_dedup` CTE (lowest
-      `grade_level_id` per assessment). Exposes `canonical_assessment_id` — for
-      internal assessments, `first_value(assessment_id) over (partition by
-      is_internal_assessment, is_florida_assessment, academic_year, scope,
-      subject_area, module_code, grade_level_id order by assessment_id)`; for
-      external assessments, the row's own `assessment_id`. Consumers needing
-      canonical attrs (title, administered date, grade level, etc.) join
-      `int_assessments__assessments_canonical` on that FK. Network policy is one
-      shared internal assessment per module across regions, so copies merge
-      across regions by design. The exception is Miami, which built its own
-      Florida versions of internal assessments in SY24-25 and SY25-26 (before it
-      left Illuminate). `is_florida_assessment`, an internal flag that is not
-      projected (true when AppSheet `regions_assessed` is exactly `Miami`),
-      keeps those copies out of New Jersey canonical groups, so New Jersey
-      students never inherit a Florida title or administered date. Assessments
-      tagged with Miami alongside other regions stay on the New Jersey side.
-      Canonical groups never span sources, because Illuminate and Apex ids share
-      one integer space. Miami Apex assessments (2026-27 on) come from Focus;
-      each is internal, Florida, and its own canonical group, because untagged
-      Apex assessments share null module and scope and would otherwise merge.
-      AppSheet tags join on source and assessment_id, so an Apex tag fills its
-      module, grade, subject, date, and regions; Apex scope is always null.
+      `grade_level_id` per assessment). Exposes `region_groups`, the canonical
+      group the copy belongs to in each region it is tagged for. Illuminate
+      limits force a multi-part assessment to be built as several copies, so
+      copies that share tags (Florida flag, academic year, scope, subject area,
+      module code, grade level) and a region roll up as one assessment. Regional
+      variants are distinct assessments, so copies never merge across regions. A
+      copy tagged for 2 regions can sit in a different group in each. Miami
+      built its own Florida versions of internal assessments in SY24-25 and
+      SY25-26 (before it left Illuminate); `is_florida_assessment`, an internal
+      flag that is not projected (true when AppSheet `regions_assessed` is
+      exactly `Miami`), keeps those copies out of a group that also holds a
+      Miami-tagged New Jersey copy. Consumers needing a group's title, date, or
+      grade join `int_assessments__assessments_canonical` on `source` and the
+      group id. Canonical groups never span sources, because Illuminate and Apex
+      ids share one integer space. Miami Apex assessments (2026-27 on) come from
+      Focus; each is internal, Florida, and its own canonical group, because
+      untagged Apex assessments share null module and scope and would otherwise
+      merge. AppSheet tags join on source and assessment_id, so an Apex tag
+      fills its module, grade, subject, date, and regions; Apex scope is always
+      null.
     data_tests:
+      # error, not the project's warn: dim_assessments dedupes on its own key,
+      # so a duplicate member (a crosswalk subject with 2 disciplines) would
+      # vanish there and keep an arbitrary bucket_subject
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
               - source
               - assessment_id
+          config:
+            severity: error
     columns:
       - name: assessment_id
         data_tests:
@@ -111,10 +115,9 @@ models:
       - name: regions_assessed_array
         data_type: array<string>
         description: >-
-          `regions_assessed` with all whitespace stripped, then split on comma.
-          Within-row duplicates and empty-string elements (from leading or
-          trailing commas) are not removed. Consumers can `cross join
-          unnest(regions_assessed_array)` to get one row per (assessment,
+          `regions_assessed` split into distinct regions, from the AppSheet
+          staging model. Each region appears once, so `cross join
+          unnest(regions_assessed_array)` gives one row per (assessment,
           region).
       - name: administered_at
         data_type: date
@@ -139,25 +142,28 @@ models:
           True when the assessment has an AppSheet extension row; always true on
           Apex assessments.
 
-      - name: canonical_assessment_id
-        data_type: int64
+      - name: region_groups
+        data_type: array<struct<region string, canonical_assessment_id int64>>
         description: >-
-          FK to `int_assessments__assessments_canonical` for internal
-          assessments — the lowest `assessment_id` among internal assessments in
-          the partition `(is_florida_assessment, academic_year, scope,
-          subject_area, module_code, grade_level_id)`. Multipart administrations
-          (e.g., the CRA + CRA-Essay halves of one logical Unit Quarterly
-          Assessment) share a `canonical_assessment_id`. Solo internal
-          assessments, Apex assessments, and every external assessment equal
-          their own `assessment_id`; external ids have no row in the canonical
-          model.
+          One entry per region in `regions_assessed_array`, ordered by region.
+          `canonical_assessment_id` is the lowest Illuminate `assessment_id`
+          among internal copies tagged for that region with the same Florida
+          flag, academic year, scope, subject area, module code, and grade
+          level. Each Apex assessment is its own group. Null for external
+          assessments and for internal copies with no region tag.
+      - name: bucket_subject
+        data_type: string
+        description: >-
+          Reading or Math when the course subject crosswalk maps `subject_area`
+          to the ELA or Math discipline; null otherwise, including subject areas
+          with no crosswalk row. Tells a consumer which of a student's buckets
+          (ELA or math) applies to the assessment.
 
 unit_tests:
-  - name: test_apex_assessments_are_their_own_canonical
+  - name: test_apex_assessments_are_internal_and_miami
     description: >-
-      Two untagged Apex Math assessments from the same year each stay their own
-      canonical group instead of merging on their shared null tags, are internal
-      and Miami-assessed, and an Illuminate assessment sharing an id with one of
+      Two untagged Apex Math assessments from the same year are internal and
+      Miami-assessed, and an Illuminate assessment sharing an id with one of
       them stays separate. Apex years before 2026 are excluded.
     model: int_assessments__assessments_members
     given:
@@ -205,6 +211,8 @@ unit_tests:
           select 9002, 'Apex Math B', 2026, 7, 'Mathematics', date('2026-10-05')
           union all
           select 8001, 'Apex Old', 2025, 7, 'Mathematics', date('2025-10-05')
+      - input: ref('stg_google_sheets__assessments__course_subject_crosswalk')
+        rows: []
     expect:
       rows:
         - {
@@ -215,7 +223,6 @@ unit_tests:
             performance_band_set_id: null,
             regions_assessed: null,
             is_internal_assessment: false,
-            canonical_assessment_id: 9001,
           }
         - {
             source: apex,
@@ -225,7 +232,6 @@ unit_tests:
             performance_band_set_id: 7,
             regions_assessed: Miami,
             is_internal_assessment: true,
-            canonical_assessment_id: 9001,
           }
         - {
             source: apex,
@@ -235,8 +241,138 @@ unit_tests:
             performance_band_set_id: 7,
             regions_assessed: Miami,
             is_internal_assessment: true,
-            canonical_assessment_id: 9002,
           }
+  - name: test_region_groups_split_by_region
+    description: >-
+      Illuminate copies that share every tag roll up per region and never across
+      regions. A Newark and Paterson copy joins the lower-id Newark copy in
+      Newark and leads its own group in Paterson; a Camden copy with the same
+      tags stays alone.
+    model: int_assessments__assessments_members
+    given:
+      - input: ref('int_illuminate__assessments')
+        rows:
+          - {
+              assessment_id: 101,
+              title: Part A,
+              academic_year: 2027,
+              academic_year_clean: 2026,
+              scope: CMA,
+              subject_area: Text Study,
+              administered_at: 2026-10-01,
+            }
+          - {
+              assessment_id: 102,
+              title: Part B,
+              academic_year: 2027,
+              academic_year_clean: 2026,
+              scope: CMA,
+              subject_area: Text Study,
+              administered_at: 2026-10-02,
+            }
+          - {
+              assessment_id: 103,
+              title: Camden,
+              academic_year: 2027,
+              academic_year_clean: 2026,
+              scope: CMA,
+              subject_area: Text Study,
+              administered_at: 2026-11-01,
+            }
+      - input: ref('stg_google_appsheet__illuminate_assessments_extension')
+        format: sql
+        rows: |
+          select
+              'illuminate' as `source`,
+              101 as assessment_id,
+              'QA' as module_type,
+              1 as module_sequence,
+              'QA1' as module_code,
+              4 as illuminate_grade_level_id,
+              'Newark' as regions_assessed,
+              ['Newark'] as regions_assessed_array,
+              cast(null as string) as regions_report_card,
+              cast(null as string) as regions_progress_report,
+              cast(null as date) as administered_at,
+              cast(null as string) as subject
+          union all
+          select
+              'illuminate', 102, 'QA', 1, 'QA1', 4, 'Newark, Paterson',
+              ['Newark', 'Paterson'], null, null, null, null
+          union all
+          select
+              'illuminate', 103, 'QA', 1, 'QA1', 4, 'Camden', ['Camden'], null,
+              null, null, null
+      - input: ref('stg_illuminate__dna_assessments__assessment_grade_levels')
+        rows: []
+      - input: ref('int_focus__apex_assessments')
+        format: sql
+        rows: |
+          select
+              9001 as assessment_id,
+              'Apex Math A' as title,
+              2026 as academic_year,
+              7 as band_set_id,
+              'Mathematics' as subject_area,
+              date('2026-09-28') as administered_at
+          union all
+          select 9002, 'Apex Math B', 2026, 7, 'Mathematics', date('2026-10-05')
+      - input: ref('stg_google_sheets__assessments__course_subject_crosswalk')
+        rows: []
+    expect:
+      format: sql
+      rows: |
+        select
+            'illuminate' as `source`,
+            101 as assessment_id,
+            'Part A' as title,
+            2027 as academic_year,
+            2026 as academic_year_clean,
+            'CMA' as scope,
+            cast(null as string) as creator_first_name,
+            cast(null as string) as creator_last_name,
+            cast(null as int64) as performance_band_set_id,
+            cast(null as string) as assessment_type,
+            cast(null as string) as tags,
+            'QA1' as module_code,
+            'QA' as module_type,
+            1 as module_sequence,
+            4 as tagged_grade_level_id,
+            'Newark' as regions_assessed,
+            ['Newark'] as regions_assessed_array,
+            cast(null as string) as regions_report_card,
+            cast(null as string) as regions_progress_report,
+            date('2026-10-01') as administered_at,
+            'Text Study' as subject_area,
+            4 as grade_level_id,
+            true as is_internal_assessment,
+            [struct('Newark' as region, 101 as canonical_assessment_id)]
+            as region_groups,
+            cast(null as string) as bucket_subject
+        union all
+        select
+            'illuminate', 102, 'Part B', 2027, 2026, 'CMA', null, null, null,
+            null, null, 'QA1', 'QA', 1, 4, 'Newark, Paterson',
+            ['Newark', 'Paterson'], null, null, date('2026-10-02'), 'Text Study',
+            4, true, [struct('Newark', 101), struct('Paterson', 102)], null
+        union all
+        select
+            'illuminate', 103, 'Camden', 2027, 2026, 'CMA', null, null, null,
+            null, null, 'QA1', 'QA', 1, 4, 'Camden', ['Camden'], null, null,
+            date('2026-11-01'), 'Text Study', 4, true, [struct('Camden', 103)],
+            null
+        union all
+        select
+            'apex', 9001, 'Apex Math A', 2027, 2026, null, null, null, 7, null,
+            null, null, null, null, null, 'Miami', ['Miami'], null, null,
+            date('2026-09-28'), 'Mathematics', null, true,
+            [struct('Miami', 9001)], null
+        union all
+        select
+            'apex', 9002, 'Apex Math B', 2027, 2026, null, null, null, 7, null,
+            null, null, null, null, null, 'Miami', ['Miami'], null, null,
+            date('2026-10-05'), 'Mathematics', null, true,
+            [struct('Miami', 9002)], null
   - name: test_apex_tags_join_on_source
     description: >-
       An AppSheet tag reaches only the assessment in its own source — the Apex
@@ -289,6 +425,8 @@ unit_tests:
               date('2026-09-28') as administered_at
           union all
           select 9002, 'Apex Math B', 2026, 7, 'Mathematics', date('2026-10-05')
+      - input: ref('stg_google_sheets__assessments__course_subject_crosswalk')
+        rows: []
     expect:
       rows:
         - {
@@ -321,3 +459,112 @@ unit_tests:
             subject_area: Algebra I,
             administered_at: 2026-10-10,
           }
+  - name: test_bucket_subject_from_course_subject_crosswalk
+    description: >-
+      Maps an assessment's subject area to Reading or Math through the course
+      subject crosswalk's ELA and Math disciplines, on Illuminate and Apex
+      alike; a subject in another discipline or with no crosswalk row gets no
+      bucket subject, and Focus rows with no Illuminate subject area are
+      ignored.
+    model: int_assessments__assessments_members
+    given:
+      - input: ref('int_illuminate__assessments')
+        rows:
+          - assessment_id: 9101
+            title: Text Study Quiz
+            academic_year: 2027
+            academic_year_clean: 2026
+            subject_area: Text Study
+            administered_at: 2026-09-01
+          - assessment_id: 9102
+            title: Algebra Quiz
+            academic_year: 2027
+            academic_year_clean: 2026
+            subject_area: Algebra I
+            administered_at: 2026-09-01
+          - assessment_id: 9103
+            title: Science Quiz
+            academic_year: 2027
+            academic_year_clean: 2026
+            subject_area: Science
+            administered_at: 2026-09-01
+          - assessment_id: 9104
+            title: Word Work Quiz
+            academic_year: 2027
+            academic_year_clean: 2026
+            subject_area: Word Work
+            administered_at: 2026-09-01
+      - input: ref('stg_google_appsheet__illuminate_assessments_extension')
+        format: sql
+        rows: |
+          select
+              cast(null as string) as `source`,
+              cast(null as int64) as assessment_id,
+              cast(null as string) as module_type,
+              cast(null as int64) as module_sequence,
+              cast(null as string) as module_code,
+              cast(null as int64) as illuminate_grade_level_id,
+              cast(null as string) as regions_assessed,
+              cast(null as array<string>) as regions_assessed_array,
+              cast(null as string) as regions_report_card,
+              cast(null as string) as regions_progress_report,
+              cast(null as date) as administered_at,
+              cast(null as string) as subject
+          from unnest([1])
+          where false
+      - input: ref('stg_illuminate__dna_assessments__assessment_grade_levels')
+        rows: []
+      - input: ref('int_focus__apex_assessments')
+        format: sql
+        rows: |
+          select
+              9201 as assessment_id,
+              'Apex Text Study' as title,
+              2026 as academic_year,
+              7 as band_set_id,
+              'Text Study' as subject_area,
+              date('2026-09-28') as administered_at
+      - input: ref('stg_google_sheets__assessments__course_subject_crosswalk')
+        rows:
+          - SIS: PowerSchool
+            PowerSchool_Course_Number: ENG10
+            Standard_Course_Name: English 100
+            Illuminate_Subject_Area: Text Study
+            Discipline: ELA
+          - SIS: PowerSchool
+            PowerSchool_Course_Number: MATH30
+            Standard_Course_Name: Algebra I
+            Illuminate_Subject_Area: Algebra I
+            Discipline: Math
+          - SIS: PowerSchool
+            PowerSchool_Course_Number: SCI10
+            Standard_Course_Name: Science
+            Illuminate_Subject_Area: Science
+            Discipline: Science
+          - SIS: Focus
+            PowerSchool_Course_Number: "1001010"
+            Standard_Course_Name: ELA Gr6
+            Illuminate_Subject_Area: null
+            Discipline: null
+    expect:
+      rows:
+        - source: illuminate
+          assessment_id: 9101
+          subject_area: Text Study
+          bucket_subject: Reading
+        - source: illuminate
+          assessment_id: 9102
+          subject_area: Algebra I
+          bucket_subject: Math
+        - source: illuminate
+          assessment_id: 9103
+          subject_area: Science
+          bucket_subject: null
+        - source: illuminate
+          assessment_id: 9104
+          subject_area: Word Work
+          bucket_subject: null
+        - source: apex
+          assessment_id: 9201
+          subject_area: Text Study
+          bucket_subject: Reading

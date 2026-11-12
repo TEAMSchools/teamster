@@ -26,6 +26,12 @@ models:
               config:
                 severity: error
           - relationships:
+              description: >-
+                A Focus test-history score whose administration no longer exists
+                in Focus. Its test administration was deleted but the score row
+                was left behind, so the score has no test date or sitting. To
+                fix in Focus, delete the orphaned score or re-create its
+                administration.
               arguments:
                 to: ref('stg_focus__test_history_administrations')
                 field: id

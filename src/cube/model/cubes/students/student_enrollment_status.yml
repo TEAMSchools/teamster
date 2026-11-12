@@ -28,6 +28,17 @@ cubes:
         type: boolean
         public: true
 
+      - name: is_504
+        description: >-
+          TRUE if the student had a Section 504 plan during this enrollment
+          stint. FALSE otherwise, including when the source system leaves the
+          flag unset. This is the enrollment 504 status the assessment
+          dashboards show; state test files carry their own 504 flag, which can
+          differ.
+        sql: is_504
+        type: boolean
+        public: true
+
       - name: iep_classification
         description: >-
           IEP placement classification for this enrollment stint (latest span).
@@ -76,3 +87,37 @@ cubes:
         sql: meal_eligibility
         type: string
         public: true
+
+      - name: ela_bucket
+        description: >-
+          The student's ELA bucket for this enrollment stint — the bucket of the
+          latest span in the stint, or Bucket 4 when the stint has none. Null
+          before 2025-26 and on grade 99 rows. Use it when the subject being
+          analyzed is ELA or reading; for assessments, pick ela_bucket or
+          math_bucket by the assessment's bucket_subject.
+        sql: ela_bucket
+        type: string
+        public: true
+        meta:
+          ai_context: >-
+            For assessment scores, slice by bucket on
+            student_assessment_scores_view instead; it picks this member or
+            math_bucket by each assessment's subject. A null before 2025-26 is
+            not an unbucketed student: the bucket model starts that year.
+
+      - name: math_bucket
+        description: >-
+          The student's math bucket for this enrollment stint — the bucket of
+          the latest span in the stint, or Bucket 4 when the stint has none.
+          Null before 2025-26 and on grade 99 rows. Use it when the subject
+          being analyzed is math; for assessments, pick ela_bucket or
+          math_bucket by the assessment's bucket_subject.
+        sql: math_bucket
+        type: string
+        public: true
+        meta:
+          ai_context: >-
+            For assessment scores, slice by bucket on
+            student_assessment_scores_view instead; it picks this member or
+            ela_bucket by each assessment's subject. A null before 2025-26 is
+            not an unbucketed student: the bucket model starts that year.

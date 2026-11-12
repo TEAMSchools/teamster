@@ -195,3 +195,6 @@ assets:
     cursor_column: null
   - table_name: apex_assignment_gradebook_assignment
     cursor_column: null
+  # State Reporting. No updated_at column, so the 04:00 tier reloads it nightly.
+  - table_name: florida_fast_report_students
+    cursor_column: null

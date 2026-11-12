@@ -1,0 +1,59 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<workbook xmlns:user='http://www.tableausoftware.com/xml/user'>
+  <datasources>
+    <datasource name='federated.x'>
+      <column caption='Membership' name='[membershipvalue]' role='measure' />
+      <column caption='Student Number' name='[student_number]' role='dimension' />
+      <column caption='Region' name='[region]' role='dimension' />
+      <column caption='Enroll Status' name='[enroll_status]' role='dimension' />
+      <column name='[Att Code (group)]' role='dimension'>
+        <calculation class='categorical-bin' column='[att_code]' new-bin='true'>
+          <bin value='&quot;Tardy&quot;'><value>&quot;T&quot;</value><value>&quot;ET&quot;</value></bin>
+          <bin value='&quot;Absent&quot;'><value>&quot;A&quot;</value></bin>
+        </calculation>
+      </column>
+      <column caption='# Tardy' name='[Calculation_1]' role='measure'>
+        <calculation class='tableau' formula='SUM(IF [Att Code (group)] = &quot;Tardy&quot; THEN 1 ELSE 0 END)' />
+      </column>
+    </datasource>
+  </datasources>
+  <worksheets>
+    <worksheet name='Roster'>
+      <table>
+        <view>
+          <datasource-dependencies datasource='federated.x'>
+            <column caption='Membership' name='[membershipvalue]' role='measure' />
+            <column caption='Student Number' name='[student_number]' role='dimension' />
+            <column caption='Region' name='[region]' role='dimension' />
+            <column caption='Enroll Status' name='[enroll_status]' role='dimension' />
+            <column caption='# Tardy' name='[Calculation_1]' role='measure' />
+            <column-instance column='[membershipvalue]' derivation='Sum' name='[sum:membershipvalue:qk]' />
+            <column-instance column='[student_number]' derivation='CountD' name='[ctd:student_number:qk]' />
+            <column-instance column='[Calculation_1]' derivation='User' name='[usr:Calculation_1:qk]' />
+            <column-instance column='[student_number]' derivation='None' name='[none:student_number:ok]' />
+          </datasource-dependencies>
+          <filter class='categorical' column='[federated.x].[none:enroll_status:ok]'>
+            <groupfilter function='member' level='[none:enroll_status:ok]' member='0' />
+          </filter>
+          <filter class='categorical' column='[federated.x].[none:region:nk]'>
+            <groupfilter function='level-members' level='[none:region:nk]' user:ui-enumeration='all' />
+          </filter>
+          <filter class='categorical' column='[federated.x].[none:student_number:ok]'>
+            <groupfilter function='except'>
+              <groupfilter function='level-members' level='[none:student_number:ok]' />
+              <groupfilter function='member' level='[none:student_number:ok]' member='999999' />
+            </groupfilter>
+          </filter>
+        </view>
+        <style>
+          <style-rule element='cell'>
+            <format attr='text-format' field='[federated.x].[usr:Calculation_1:qk]' value='n#,##0' />
+            <format attr='text-format' field='[federated.x].[sum:membershipvalue:qk]' value='p0.0%' />
+          </style-rule>
+        </style>
+        <rows>([federated.x].[none:region:nk] / [federated.x].[none:student_number:ok])</rows>
+        <cols>[federated.x].[:Measure Names]</cols>
+      </table>
+    </worksheet>
+  </worksheets>
+</workbook>
