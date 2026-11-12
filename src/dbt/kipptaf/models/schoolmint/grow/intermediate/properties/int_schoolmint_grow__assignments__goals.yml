@@ -1,0 +1,138 @@
+models:
+  - name: int_schoolmint_grow__assignments__goals
+    description: >-
+      One row per SchoolMint Grow goal assignment and the goal it assigns, named
+      the way a coach sees it. Action steps and to-dos are left out. A microgoal
+      takes its name from its Grow tag, three levels below the Microgoals root.
+      A look-for exists in Grow only as the assignment's name, tagged with
+      categories, so it takes the assignment name and its most specific category
+      under the Lookfors root becomes the strand. A look-for tagged with two
+      categories at that depth keeps the alphabetically first. An assignment
+      that holds a microgoal gets no look-for row, because its name is the
+      microgoal's text. An assignment with no goal tag gets one row named from
+      the assignment; when that name starts with a microgoal code such as 2B.04,
+      the strand comes from the code. An assignment tagged with more than one
+      microgoal gets one row per microgoal.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - assignment_id
+              - goal_tag_id
+          config:
+            severity: error
+    columns:
+      - name: assignment_id
+        data_type: string
+        description: Grow assignment id.
+      - name: user_id
+        data_type: string
+        description: Grow user id of the teacher the assignment is for.
+      - name: creator_id
+        data_type: string
+        description: Grow user id of the person who made the assignment.
+      - name: created
+        data_type: timestamp
+        description: When the assignment was created.
+      - name: created_date_local
+        data_type: date
+        description: Creation date in the local timezone.
+      - name: goal_tag_id
+        data_type: string
+        description: >-
+          Grow tag id of the microgoal or look-for category this row is for.
+          Null on the one row of an assignment with no goal tag.
+      - name: goal_type_name
+        data_type: string
+        description: >-
+          Root of the goal's tag tree, Microgoals or Lookfors. Null when an
+          untagged assignment has no microgoal code.
+      - name: goal_name
+        data_type: string
+        description: >-
+          The goal as the coach picked it. The microgoal tag name for a
+          microgoal; otherwise the assignment name as plain text.
+      - name: strand_name
+        data_type: string
+        description: >-
+          For a microgoal, its strand (for example 3D Joy). For a look-for, its
+          most specific category tag. For an untagged assignment, the strand its
+          microgoal code points to.
+      - name: bucket_name
+        data_type: string
+        description: >-
+          The category one level above strand_name. Null when strand_name sits
+          directly under the root.
+
+unit_tests:
+  - name: test_int_schoolmint_grow__assignments__goals_names_every_goal
+    description: >-
+      Microgoals keep their tag name; look-fors take the assignment name and
+      their deepest category at one, two, or three levels, the alphabetically
+      first when two share a depth; a microgoal-and-look-for assignment gives
+      only the microgoal row; untagged assignments get one row whose strand
+      comes from a microgoal code when the name has one; an action step or to-do
+      gets no row.
+    model: int_schoolmint_grow__assignments__goals
+    given:
+      - input: ref("stg_schoolmint_grow__generic_tags")
+        format: sql
+        rows: |
+          select 'm0' as tag_id, 'Microgoals' as name, cast([] as array<string>) as parents, cast(null as string) as archived_at, 'tags' as tag_type
+          union all select 'm1', '3: Kids Love Learning', ['m0'], null, 'tags'
+          union all select 'm2', '3D: Joy', ['m1'], null, 'tags'
+          union all select 'm3', '3D.01 Magic ratio.', ['m2'], null, 'tags'
+          union all select 'm4', '2: Uphold Excellence', ['m0'], null, 'tags'
+          union all select 'm5', '2B: On Task', ['m4'], null, 'tags'
+          union all select 'l0', 'Lookfors', [], null, 'tags'
+          union all select 'l1', 'CVoE', ['l0'], null, 'tags'
+          union all select 'l2', 'Cognitive Engagement', ['l1'], null, 'tags'
+          union all select 'l3', 'Math', ['l0'], null, 'tags'
+          union all select 'l4', 'K-12 Math', ['l3'], null, 'tags'
+          union all select 'l5', 'Monitor Student Thinking', ['l4'], null, 'tags'
+          union all select 'l6', 'Behavioral Engagement', ['l1'], null, 'tags'
+      - input: ref("int_schoolmint_grow__assignments__tags")
+        format: sql
+        rows: |
+          select 'a1' as assignment_id, 'm0' as tag_id
+          union all select 'a1', 'm1'
+          union all select 'a1', 'm2'
+          union all select 'a1', 'm3'
+          union all select 'a2', 'l0'
+          union all select 'a2', 'l1'
+          union all select 'a2', 'l2'
+          union all select 'a3', 'l0'
+          union all select 'a3', 'l3'
+          union all select 'a3', 'l4'
+          union all select 'a3', 'l5'
+          union all select 'a5', 'm3'
+          union all select 'a5', 'l2'
+          union all select 'a7', 'l0'
+          union all select 'a7', 'l1'
+          union all select 'a8', 'l0'
+          union all select 'a8', 'l1'
+          union all select 'a8', 'l2'
+          union all select 'a8', 'l6'
+      - input: ref("stg_schoolmint_grow__assignments")
+        format: sql
+        rows: |
+          select 'a1' as assignment_id, 'u1' as user_id, 'c1' as creator_id, 'Coach' as creator_name, timestamp '2026-11-02 12:00:00' as created, date '2026-11-02' as created_date_local, '3D.01 Magic ratio. Respond positively.' as name_text, '3D' as microgoal_strand_code, 'goal' as type
+          union all select 'a2', 'u1', 'c1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', 'CVOE-K12-27 Value student voice', null, 'goal'
+          union all select 'a3', 'u1', 'c1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', 'MAT-K12-14 Collects data', null, 'goal'
+          union all select 'a4', 'u1', 'c1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', '2B.04 Pacing. Create the illusion of speed.', '2B', 'goal'
+          union all select 'a5', 'u1', 'c1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', '3D.01 Magic ratio. Respond positively.', '3D', 'goal'
+          union all select 'a6', 'u1', 'c1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', 'Free text goal', null, 'goal'
+          union all select 'a7', 'u1', 'c1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', 'CVOE-K12-01 Build relationships', null, 'goal'
+          union all select 'a8', 'u1', 'c1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', 'CVOE-K12-13 Command the room', null, 'goal'
+          union all select 'a9', 'u1', 'c1', 'Coach', timestamp '2026-11-02 12:00:00', date '2026-11-02', 'Follow up on exit tickets', null, 'actionStep'
+    expect:
+      format: sql
+      rows: |
+        select 'a1' as assignment_id, 'u1' as user_id, 'c1' as creator_id, timestamp '2026-11-02 12:00:00' as created, date '2026-11-02' as created_date_local, 'm3' as goal_tag_id, 'Microgoals' as goal_type_name, '3D.01 Magic ratio.' as goal_name, '3D: Joy' as strand_name, '3: Kids Love Learning' as bucket_name
+        union all select 'a2', 'u1', 'c1', timestamp '2026-11-02 12:00:00', date '2026-11-02', 'l2', 'Lookfors', 'CVOE-K12-27 Value student voice', 'Cognitive Engagement', 'CVoE'
+        union all select 'a3', 'u1', 'c1', timestamp '2026-11-02 12:00:00', date '2026-11-02', 'l5', 'Lookfors', 'MAT-K12-14 Collects data', 'Monitor Student Thinking', 'K-12 Math'
+        union all select 'a4', 'u1', 'c1', timestamp '2026-11-02 12:00:00', date '2026-11-02', null, 'Microgoals', '2B.04 Pacing. Create the illusion of speed.', '2B: On Task', '2: Uphold Excellence'
+        union all select 'a5', 'u1', 'c1', timestamp '2026-11-02 12:00:00', date '2026-11-02', 'm3', 'Microgoals', '3D.01 Magic ratio.', '3D: Joy', '3: Kids Love Learning'
+        union all select 'a6', 'u1', 'c1', timestamp '2026-11-02 12:00:00', date '2026-11-02', null, null, 'Free text goal', null, null
+        union all select 'a7', 'u1', 'c1', timestamp '2026-11-02 12:00:00', date '2026-11-02', 'l1', 'Lookfors', 'CVOE-K12-01 Build relationships', 'CVoE', null
+        union all select 'a8', 'u1', 'c1', timestamp '2026-11-02 12:00:00', date '2026-11-02', 'l6', 'Lookfors', 'CVOE-K12-13 Command the room', 'Behavioral Engagement', 'CVoE'

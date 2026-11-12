@@ -14,7 +14,9 @@ models:
       - name: location_name
         data_type: string
         data_tests:
-          - unique
+          - unique:
+              config:
+                severity: error
       - name: location_key
         data_type: string
         description: |
