@@ -154,6 +154,20 @@ models:
               to: ref('dim_assessment_goals')
               to_columns: [assessment_goal_key]
 
+      - name: assessment_module_goal_rule_key
+        data_type: string
+        description: >-
+          FK to dim_assessment_module_goal_rules. The DDI goal rule for the
+          score's module type, matched on the student's region and enrolled
+          grade and the assessment's subject; a rule with no subject covers
+          every subject. Internal assessments only; null for state and vendor
+          assessments, and wherever no rule applies.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_assessment_module_goal_rules')
+              to_columns: [assessment_module_goal_rule_key]
+
       - name: test_date_key
         data_type: date
         description: >-

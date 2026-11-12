@@ -1,0 +1,57 @@
+models:
+  - name: dim_assessment_module_goal_rules
+    description: >-
+      DDI goal rules by module type. One row per region, module type, subject
+      area and grade range. A rule either replaces an assessment's goal with a
+      fixed goal (for example 0.8 on ET modules) or adds an offset to it (for
+      example 0.1 on CRQ modules). A score's differentiated goal is the rule's
+      fixed goal; otherwise, on QA and CRQ modules, the quarterly assessment
+      goal; otherwise the lookup goal plus the rule's offset (0 with no rule).
+      Sourced from the Module Goal Rules Google Sheet; malformed and overlapping
+      rules are dropped upstream.
+    columns:
+      - name: assessment_module_goal_rule_key
+        data_type: string
+        description: >-
+          Surrogate key derived from region, module_type,
+          illuminate_subject_area, and grade_min. Primary key.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
+        data_tests:
+          - unique:
+              config:
+                severity: error
+
+      - name: region
+        data_type: string
+        description: Region the rule applies to.
+
+      - name: module_type
+        data_type: string
+        description: Assessment module type the rule applies to (ET, CRQ, TP).
+
+      - name: academic_subject
+        data_type: string
+        description: >-
+          Subject area the rule applies to (Ed-Fi academic_subject_descriptor).
+          Null when the rule applies to every subject.
+
+      - name: grade_min
+        data_type: int64
+        description: Lowest grade level the rule applies to (0 is kindergarten).
+
+      - name: grade_max
+        data_type: int64
+        description: Highest grade level the rule applies to, inclusive.
+
+      - name: goal
+        data_type: float64
+        description: >-
+          Fixed goal that replaces the lookup goal; null when the rule is an
+          offset.
+
+      - name: goal_offset
+        data_type: float64
+        description: >-
+          Amount added to the lookup goal; null when the rule sets a fixed goal.
