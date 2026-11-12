@@ -176,3 +176,49 @@ cubes:
             student_assessment_scores_view instead; it picks this member or
             ela_bucket by each assessment's subject. A null before 2025-26 is
             not an unbucketed student: the bucket model starts that year.
+
+      # The ELA and math pairs below feed the subject-picked members on
+      # student_assessment_scores (is_low_25, state_test_proficiency,
+      # dibels_most_recent_composite). Private: only those members read them.
+      - name: is_ela_low_25
+        description: >-
+          TRUE if the student's ELA score on last spring's Florida FAST (PM3)
+          ranks below the 25.5th percentile. Miami only; FALSE in NJ regions.
+          Null when the stint has no ELA row in the enrollment extract.
+        sql: is_ela_low_25
+        type: boolean
+        public: false
+
+      - name: is_math_low_25
+        description: >-
+          TRUE if the student's math score on last spring's Florida FAST (PM3)
+          ranks below the 25.5th percentile. Miami only; FALSE in NJ regions.
+          Null when the stint has no math row in the enrollment extract.
+        sql: is_math_low_25
+        type: boolean
+        public: false
+
+      - name: ela_state_test_proficiency
+        description: >-
+          The student's proficiency level on last school year's annual ELA state
+          test, or No Test when there is none.
+        sql: ela_state_test_proficiency
+        type: string
+        public: false
+
+      - name: math_state_test_proficiency
+        description: >-
+          The student's proficiency level on last school year's annual math
+          state test, or No Test when there is none.
+        sql: math_state_test_proficiency
+        type: string
+        public: false
+
+      - name: dibels_most_recent_composite
+        description: >-
+          The student's most recent DIBELS composite benchmark level this school
+          year, or No Composite Score Available when there is none. DIBELS is a
+          reading assessment, so there is no math counterpart.
+        sql: dibels_most_recent_composite
+        type: string
+        public: false

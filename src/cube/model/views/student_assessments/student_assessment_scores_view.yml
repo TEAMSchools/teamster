@@ -56,6 +56,9 @@ views:
           - response_type_root_description
           - is_replacement
           - bucket
+          - is_low_25
+          - state_test_proficiency
+          - dibels_most_recent_composite
 
       - join_path: student_assessment_scores.student_assessment_administrations.student_assessments
         includes:
@@ -335,6 +338,9 @@ views:
             - is_self_contained
             - homeroom_name
             - homeroom_section_number
+            - is_low_25
+            - state_test_proficiency
+            - dibels_most_recent_composite
         - name: Enrollment
           members:
             - student_section_enrollment_key
