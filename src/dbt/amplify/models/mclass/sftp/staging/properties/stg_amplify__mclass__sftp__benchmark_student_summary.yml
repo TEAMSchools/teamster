@@ -10,6 +10,12 @@ models:
         contains_pii: true
     data_tests:
       - dbt_utils.unique_combination_of_columns:
+          description: >-
+            Amplify mCLASS filed more than one benchmark result under one
+            student ID for the same school year, period and grade, usually 2
+            children sharing an account. The kipptaf mCLASS benchmark
+            intermediate drops every colliding row, so the student shows as Not
+            Tested. Fix it in mCLASS by moving the result to the right student.
           arguments:
             combination_of_columns:
               - student_primary_id
@@ -17,7 +23,7 @@ models:
               - benchmark_period
               - assessment_grade
           config:
-            severity: error
+            severity: warn
     columns:
       - name: school_name
         data_type: string
