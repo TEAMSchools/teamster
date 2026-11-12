@@ -2,13 +2,10 @@ models:
   - name: dim_assessment_module_goal_rules
     description: >-
       DDI goal rules by module type. One row per region, module type, subject
-      area and grade range. A rule either replaces an assessment's goal with a
-      fixed goal (for example 0.8 on ET modules) or adds an offset to it (for
-      example 0.1 on CRQ modules). A score's differentiated goal is the rule's
-      fixed goal; otherwise, on QA and CRQ modules, the quarterly assessment
-      goal; otherwise the lookup goal plus the rule's offset (0 with no rule).
-      Sourced from the Module Goal Rules Google Sheet; malformed and overlapping
-      rules are dropped upstream.
+      area and grade range, holding either a fixed goal that replaces an
+      assessment's lookup goal or an offset added to it. Sourced from the Module
+      Goal Rules Google Sheet; malformed and overlapping rules are dropped
+      upstream.
     columns:
       - name: assessment_module_goal_rule_key
         data_type: string
