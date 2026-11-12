@@ -302,6 +302,15 @@ models:
           is Yes or No for BOY and MOY and null for EOY. On an Internal PM row
           it is 'Yes'; on an Aimline PM row it carries the composite level
           instead, which is the cohort key the by-levels gate is split on.
+      - name: is_latest_in_year
+        data_type: boolean
+        description:
+          True on a Benchmark row that is the student's latest sitting of this
+          measure in the academic year, within one region. A higher score wins a
+          same-day tie. Null on PM rows.
+        config:
+          meta:
+            contains_pii: true
       - name: actual_row_count
         data_type: int64
         description:

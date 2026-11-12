@@ -62,6 +62,7 @@ exposures:
       - ref("dim_work_assignment_status")
       - ref("dim_work_assignment_types")
       - ref("fct_assessment_scores_enrollment_scoped")
+      - ref("fct_student_subjects_annual")
       - ref("fct_assessment_scores_student_scoped")
       - ref("fct_behavioral_consequences")
       - ref("fct_behavioral_incidents")

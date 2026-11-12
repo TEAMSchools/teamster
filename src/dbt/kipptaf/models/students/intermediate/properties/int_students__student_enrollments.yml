@@ -788,6 +788,26 @@ models:
         config:
           meta:
             contains_pii: true
+      - name: is_tutoring
+        data_type: boolean
+        description: >-
+          TRUE if today's date falls inside the student's Tutoring program
+          enrollment for this school year; FALSE otherwise, so every past school
+          year reads FALSE. NJ regions only; Miami is always FALSE.
+        config:
+          meta:
+            contains_pii: true
+            source_column: int_powerschool__spenrollments.specprog_name
+      - name: is_sipps
+        data_type: boolean
+        description: >-
+          TRUE if the student is enrolled in the SIPPS foundational reading
+          intervention course this school year and has not dropped it. One value
+          for the school year, as the assessment dashboards show it.
+        config:
+          meta:
+            contains_pii: true
+            source_column: base_powerschool__course_enrollments.courses_course_number
       - name: is_fldoe_fte_2
         data_type: boolean
         description: Conditional on region, survey_2.
