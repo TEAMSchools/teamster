@@ -184,7 +184,7 @@ cubes:
         description: >-
           TRUE if the student's ELA score on last spring's Florida FAST (PM3)
           ranks below the 25.5th percentile. Miami only; FALSE in NJ regions.
-          Null when the stint has no ELA row in the enrollment extract.
+          Null when the stint has no ELA subject record.
         sql: is_ela_low_25
         type: boolean
         public: false
@@ -193,7 +193,7 @@ cubes:
         description: >-
           TRUE if the student's math score on last spring's Florida FAST (PM3)
           ranks below the 25.5th percentile. Miami only; FALSE in NJ regions.
-          Null when the stint has no math row in the enrollment extract.
+          Null when the stint has no math subject record.
         sql: is_math_low_25
         type: boolean
         public: false

@@ -476,12 +476,16 @@ _COMPILER = (
 )
 
 
-@pytest.mark.skipif(
+_NEEDS_CUBE = pytest.mark.skipif(
     not _COMPILER.exists() or shutil.which("node") is None,
     reason="Cube node_modules not installed (npm ci in src/cube)",
 )
-def test_model_compiles_with_cube() -> None:
-    out = subprocess.run(
+
+
+@functools.cache
+def _compile_model() -> subprocess.CompletedProcess:
+    # One compile per session; the tests below share it.
+    return subprocess.run(
         [
             "node",
             str(REPO_ROOT / "src" / "cube" / "compile-meta.js"),
@@ -492,6 +496,11 @@ def test_model_compiles_with_cube() -> None:
         timeout=180,
         check=False,
     )
+
+
+@_NEEDS_CUBE
+def test_model_compiles_with_cube() -> None:
+    out = _compile_model()
     assert out.returncode == 0, out.stderr[-2000:]
     compiled = {c["name"]: c for c in json.loads(out.stdout)["cubes"]}
     assert "student_assessment_scores_view" in compiled
@@ -568,18 +577,9 @@ def test_subject_flags_pick_their_pair_by_bucket_subject() -> None:
     assert not problems, "\n".join(problems)
 
 
+@_NEEDS_CUBE
 def test_assessment_view_exposes_ddi_suite_members() -> None:
-    out = subprocess.run(
-        [
-            "node",
-            str(REPO_ROOT / "src" / "cube" / "compile-meta.js"),
-            str(CUBE_MODEL_DIR),
-        ],
-        capture_output=True,
-        text=True,
-        timeout=180,
-        check=False,
-    )
+    out = _compile_model()
     assert out.returncode == 0, out.stderr[-2000:]
     view = next(
         c

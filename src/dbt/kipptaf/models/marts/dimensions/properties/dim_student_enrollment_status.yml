@@ -186,7 +186,7 @@ models:
         description: >-
           TRUE if the student's ELA score on last spring's Florida FAST (PM3)
           ranks below the 25.5th percentile. Miami only; FALSE in NJ regions.
-          Null when the stint has no ELA row in the enrollment extract.
+          Null when the stint has no ELA subject record.
         config:
           meta:
             contains_pii: true
@@ -197,7 +197,7 @@ models:
         description: >-
           TRUE if the student's math score on last spring's Florida FAST (PM3)
           ranks below the 25.5th percentile. Miami only; FALSE in NJ regions.
-          Null when the stint has no math row in the enrollment extract.
+          Null when the stint has no math subject record.
         config:
           meta:
             contains_pii: true
@@ -316,7 +316,7 @@ unit_tests:
               2026 as academic_year,
               5 as grade_level
           union all
-          select to_hex(md5('1001-kippmiami-2026-2026-08-11')), 2026, 5
+          select to_hex(md5('1001-kippmiami-2026-2026-09-02')), 2026, 5
           union all
           select to_hex(md5('1002-kippnewark-2026-2026-09-02')), 2026, 6
           union all
@@ -355,7 +355,7 @@ unit_tests:
           - _dbt_source_project: kippmiami
             student_number: 1001
             academic_year: 2026
-            entrydate: 2026-08-11
+            entrydate: 2026-09-02
             is_sipps: false
             is_tutoring: false
             is_self_contained: null
@@ -390,7 +390,8 @@ unit_tests:
           is_self_contained: true
           homeroom_name: Harvard
           homeroom_section_number: 5HAR
-        - student_enrollment_key: ed0ecafeb7cd0e6adc89b3ce337dd4a8
+        # trunk-ignore(gitleaks/generic-api-key): md5 fixture key, not a secret
+        - student_enrollment_key: c9b0cfb2aef5d75d43b5d1b8c4f7ffe1
           is_sipps: false
           is_tutoring: false
           is_self_contained: null
