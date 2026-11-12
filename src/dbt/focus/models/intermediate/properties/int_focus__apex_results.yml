@@ -19,6 +19,17 @@ models:
               - response_type_id
           config:
             severity: error
+      # Flags an Apex session in Focus whose completed date sits outside its
+      # school year; fix the session date in Focus. int_assessments__response_rollup
+      # nulls these dates.
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: |-
+              extract(year from date_taken)
+                between academic_year - 1 and academic_year + 1
+          config:
+            severity: warn
+            where: date_taken is not null
     columns:
       - name: is_mastery
         description: >-

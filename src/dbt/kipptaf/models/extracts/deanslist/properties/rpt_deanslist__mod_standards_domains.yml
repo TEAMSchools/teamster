@@ -27,6 +27,12 @@ models:
               - subject_area
               - term_administered
               - standard_domain
+      # grain columns this model's own SQL does not keep non-null; unique
+      # skips nulls
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: |-
+              subject_area is not null
     columns:
       - name: report_type
         data_type: string
