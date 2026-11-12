@@ -26,6 +26,19 @@ with
             initcap(
                 regexp_extract(x.location_dagster_code_location, r'kipp(\w+)')
             ) as region,
+
+            count(*) over (
+                partition by
+                    ur._dbt_source_relation,
+                    ur._dbt_source_relation_2,
+                    ur.student_primary_id_studentnumber,
+                    ur.school_year,
+                    ur.pm_period,
+                    ur.measure,
+                    ur.probe_number,
+                    ur.device_date,
+                    ur.assessment_grade
+            ) as n_key_collisions,
         from union_relations as ur
         left join
             {{ ref("int_people__location_crosswalk") }} as x
@@ -34,7 +47,11 @@ with
 
 select
     * except (
-        schoolid, school_primary_id, primary_school_id, student_primary_id_studentnumber
+        schoolid,
+        school_primary_id,
+        primary_school_id,
+        student_primary_id_studentnumber,
+        n_key_collisions
     ),
 
     coalesce(schoolid, school_primary_id) as school_primary_id,
@@ -48,3 +65,4 @@ select
     if(pm_period = 'BOY->MOY', 'MOY', 'EOY') as matching_season,
 
 from location_xref
+where n_key_collisions = 1
