@@ -82,11 +82,17 @@ models:
           followed by "Section 504 Plan", "Section 504 Eligibility
           Determination", or "Section 504 Non-Eligibility Determination".
           Currently Valid marks the student's current record of that type.
+        config:
+          meta:
+            contains_pii: true
       - name: event_type
         data_type: string
         description:
           The event type from event_selector without its Currently Valid or
           Previous prefix.
+        config:
+          meta:
+            contains_pii: true
       - name: document_id
         data_type: string
         description:
