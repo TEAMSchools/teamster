@@ -183,6 +183,21 @@ with
             ) as rn_highest,
 
         from pm_scores
+    ),
+
+    benchmark_latest as (
+        select
+            *,
+
+            -- the latest sitting of each measure in a student's year; the
+            -- score breaks a same-day tie
+            row_number() over (
+                partition by
+                    _dbt_source_project, student_number, academic_year, measure_standard
+                order by client_date desc, measure_standard_score desc
+            )
+            = 1 as is_latest_in_year,
+        from {{ ref("int_amplify__benchmark_student_summary") }}
     )
 
 select
@@ -233,9 +248,10 @@ select
     aggregated_measure_standard_level,
     foundation_measure_standard_level,
     overall_probe_eligible,
+    is_latest_in_year,
     actual_row_count,
 
-from {{ ref("int_amplify__benchmark_student_summary") }}
+from benchmark_latest
 
 union all
 
@@ -298,6 +314,9 @@ select
     -- UNION ALL binds by position and every column here is STRING, so a
     -- misplacement is accepted silently rather than failing on type.
     s.pm_eligible as overall_probe_eligible,
+
+    -- benchmark-only
+    cast(null as bool) as is_latest_in_year,
 
     -- model_type is in the partition so each method counts only its own rows.
     -- Without it the two methods count each other and a round that expects at
