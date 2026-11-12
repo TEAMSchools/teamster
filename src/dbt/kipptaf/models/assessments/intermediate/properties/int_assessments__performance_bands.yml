@@ -10,10 +10,9 @@ models:
       standard (same code and description) through several `standard_id`s. Rows
       that score the same response are grouped (per tag group for internal
       assessments, per assessment otherwise) and share one
-      `canonical_response_type_id` and one `canonical_performance_band_set_id`,
-      so the rollup scores them once. `int_assessments__response_rollup` and
-      `rpt_deanslist__mod_standards` label scores with
-      `canonical_performance_band_set_id`.
+      `canonical_response_type_id` and one `canonical_performance_band_set_id`.
+      The band set a score is labeled with comes from
+      `int_assessments__group_performance_bands`, not from this model.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -51,14 +50,11 @@ models:
       - name: canonical_performance_band_set_id
         data_type: int64
         description: >-
-          Band set that labels the grouped response, chosen over its tag group.
-          Null when one standard is split across records that carry different
-          band sets, since no single set fits the merged score. Otherwise, for
-          internal assessments, the set of the row with the lowest
-          `assessment_id` and `response_type_id` in the group, which is the tag
-          group's first copy's set whenever it carries the response (`overall`
-          always does). For external assessments, the row's own
-          `performance_band_set_id`.
+          Band set chosen for the grouped response over its tag group. Null when
+          one standard is split across records that carry different band sets.
+          Otherwise, for internal assessments, the set of the row with the
+          lowest `assessment_id` and `response_type_id` in the group. For
+          external assessments, the row's own `performance_band_set_id`.
 unit_tests:
   - name: test_int_assessments__performance_bands_split_standards
     description: >-
