@@ -333,6 +333,27 @@ with
             `type`, code, `name`, `start_date`, end_date, region, school_id, grade_band,
         from {{ ref("stg_google_sheets__reporting__terms") }}
         where `type` = 'RT'
+    ),
+
+    -- dim_assessment_goals' rows, with its key rebuilt through the same macro
+    academic_goals as (
+        select
+            academic_year,
+            school_id,
+            grade_level,
+            state_assessment_code,
+            illuminate_subject_area,
+
+            {{
+                assessment_goal_key(
+                    "academic_year",
+                    "school_id",
+                    "state_assessment_code",
+                    "grade_level",
+                    "illuminate_subject_area",
+                )
+            }} as assessment_goal_key,
+        from {{ ref("int_assessments__academic_goals") }}
     )
 
 /* internal assessments */
@@ -382,6 +403,8 @@ select
         cast(null as string)
     ) as term_key,
 
+    coalesce(gg.assessment_goal_key, gs.assessment_goal_key) as assessment_goal_key,
+
     sr.student_section_enrollment_key,
 
     ia.test_date as test_date_key,
@@ -421,6 +444,20 @@ left join
     on sr.powerschool_school_id = rt.school_id
     and sr.region = rt.region
     and ia.assessment_date_key between rt.`start_date` and rt.end_date
+-- the goal for the student's grade; high school goal rows carry no grade and
+-- apply to every grade at the school
+left join
+    academic_goals as gg
+    on sr.powerschool_school_id = gg.school_id
+    and sr.enrollment_academic_year = gg.academic_year
+    and sr.grade_level = gg.grade_level
+    and sr.subject_area = gg.illuminate_subject_area
+left join
+    academic_goals as gs
+    on sr.powerschool_school_id = gs.school_id
+    and sr.enrollment_academic_year = gs.academic_year
+    and sr.subject_area = gs.illuminate_subject_area
+    and gs.grade_level is null
 
 union all
 
@@ -471,6 +508,8 @@ select
         cast(null as string)
     ) as term_key,
 
+    gc.assessment_goal_key,
+
     sr.student_section_enrollment_key,
 
     su.test_date as test_date_key,
@@ -513,6 +552,12 @@ left join
     on sr.powerschool_school_id = rt.school_id
     and sr.region = rt.region
     and su.test_date between rt.`start_date` and rt.end_date
+-- state goals are keyed on the state test code, not on subject and grade
+left join
+    academic_goals as gc
+    on sr.powerschool_school_id = gc.school_id
+    and sr.enrollment_academic_year = gc.academic_year
+    and su.module_code = gc.state_assessment_code
 
 union all
 
@@ -565,6 +610,8 @@ select
         }},
         cast(null as string)
     ) as term_key,
+
+    cast(null as string) as assessment_goal_key,
 
     sr.student_section_enrollment_key,
 
