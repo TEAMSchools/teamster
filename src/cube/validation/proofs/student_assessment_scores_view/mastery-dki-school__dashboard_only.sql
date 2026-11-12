@@ -4,6 +4,7 @@
 -- cause D2 = cube: the student has a section in the subject, but none spans the assessment's anchor date, and no homeroom does
 -- cause D3 = cube: the student has no section in the subject and no homeroom on the anchor date
 -- cause D4 = cube: the resolved section's student enrollment key has no row in dim_student_enrollments, so Cube cannot reach the student's school
+-- cause D6 = cube: no subject section spans the anchor date, and none of the student's Focus sections is a homeroom (Focus has no credit type and no section title starts with Homeroom), so the resolver's homeroom tier has nothing to match
 -- reproduce D1:
 --  SELECT d.school, COUNT(*) AS n_rows
 --  FROM `teamster-332318`.`kipptaf_tableau`.`rpt_tableau__ddi_dashboard` AS d
@@ -72,6 +73,27 @@
 --        AND s.canonical_assessment_id = r.canonical_assessment_id
 --        AND s._dbt_source_project = r._dbt_source_project)
 --  GROUP BY r.region
+-- reproduce D6:
+--  WITH anchors AS (
+--    SELECT * FROM `teamster-332318`.`kipptaf_assessments`.`int_assessments__score_anchors`
+--    WHERE source_type = 'internal' AND anchor_date >= DATE '2026-07-01'),
+--  sections AS (
+--    SELECT * FROM `teamster-332318`.`kipptaf_assessments`.`int_assessments__course_enrollments` WHERE cc_dcid IS NOT NULL)
+--  SELECT s._dbt_source_project, COUNT(*) AS n_scores
+--  FROM anchors AS s
+--  WHERE EXISTS (
+--      SELECT ce.subject_area FROM sections AS ce
+--      WHERE ce.student_number = s.student_number AND ce._dbt_source_project = s._dbt_source_project)
+--    AND NOT EXISTS (
+--      SELECT ce.subject_area FROM sections AS ce
+--      WHERE ce.student_number = s.student_number AND ce._dbt_source_project = s._dbt_source_project
+--        AND ce.courses_credittype IS NOT NULL)
+--    AND NOT EXISTS (
+--      SELECT ce.subject_area FROM sections AS ce
+--      WHERE ce.student_number = s.student_number AND ce._dbt_source_project = s._dbt_source_project
+--        AND ce.subject_area = s.subject_area
+--        AND s.anchor_date >= ce.cc_dateenrolled AND s.anchor_date < ce.cc_dateleft)
+--  GROUP BY s._dbt_source_project
 
 with
     -- the dashboard's rows for the comparison's year, by the row key
@@ -111,6 +133,10 @@ with
                 and s.anchor_date >= ce.cc_dateenrolled
                 and s.anchor_date < ce.cc_dateleft
             ) as has_homeroom_on_date,
+            -- course_enrollments: coalesce(courses_credittype, if(is_homeroom, 'HR', null));
+            -- Focus has no credit type, so a section the title test misses stays null
+            logical_or(ce.cc_dcid is not null) as has_any_section,
+            countif(ce.cc_dcid is not null and ce.courses_credittype is not null) as n_typed_sections,
         from `teamster-332318`.`kipptaf_assessments`.`int_assessments__score_anchors` as s
         left join
             `teamster-332318`.`kipptaf_assessments`.`int_assessments__course_enrollments` as ce
@@ -154,6 +180,10 @@ with
             logical_or(a.has_subject_section) as any_has_subject_section,
             logical_or(a.has_subject_section_on_date) as any_subject_on_date,
             logical_or(a.has_homeroom_on_date) as any_homeroom_on_date,
+            -- every anchor's student has sections, and none carries a credit type
+            logical_and(
+                coalesce(a.has_any_section, false) and a.n_typed_sections = 0
+            ) as all_sections_untyped,
         from anchors as a
         left join
             resolved as r
@@ -191,6 +221,17 @@ select
             and c.any_section_row
             and not coalesce(c.any_enrollment_row, false)
         then 'D4'
+        -- resolver: no subject section spans the anchor date (candidates_subject),
+        -- and the homeroom tier's ce.courses_credittype = 'HR' cannot match a
+        -- student whose every section has a null credit type. D2 and D3 miss
+        -- these rows: has_homeroom_on_date is null, not false, when every
+        -- section spans the date
+        when
+            c.n_anchors > 0
+            and c.n_resolved = 0
+            and not coalesce(c.any_subject_on_date, false)
+            and c.all_sections_untyped
+        then 'D6'
         else 'UNEXPLAINED'
     end as cause,
 from {unmatched} as u
