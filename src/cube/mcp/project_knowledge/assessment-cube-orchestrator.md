@@ -10,17 +10,16 @@ description and `ai_context` as the `meta` tool returns them.
 ## How to use this file
 
 This file and `assessment-cube-reference.md` are both loaded as project
-knowledge in the shared Project; the reference file now holds only the interim
-band-set tables for the 2 internal sources, Illuminate and Focus Assessments.
-Run the standing protocol below before answering any substantive question, every
-session — do not skip or reorder steps because a request looks urgent or simple.
-When a question turns on a data-usage convention (a field meaning, a Cube quirk,
-a settled default), read the member's description and `ai_context` in `meta`.
-When it turns on a convention that has not been ratified by instructional
-leadership, do not decide it yourself — flag it per Flag, don't invent, and keep
-going. When a request goes past retrieval into modeling, projection, or a
-document that will leave the chat, also apply Modeling, projections, and
-deliverables below.
+knowledge in the shared Project; the reference file now holds only the band-set
+tables for the 2 internal sources, Illuminate and Focus Assessments. Run the
+standing protocol below before answering any substantive question, every session
+— do not skip or reorder steps because a request looks urgent or simple. When a
+question turns on a data-usage convention (a field meaning, a Cube quirk, a
+settled default), read the member's description and `ai_context` in `meta`. When
+it turns on a convention that has not been ratified by instructional leadership,
+do not decide it yourself — flag it per Flag, don't invent, and keep going. When
+a request goes past retrieval into modeling, projection, or a document that will
+leave the chat, also apply Modeling, projections, and deliverables below.
 
 ## The standing protocol
 
@@ -83,10 +82,10 @@ Before step 1, do two things:
    default you chose on the participant's behalf. Surface these for human
    confirmation before anyone uses the answer externally.
 5. **PII gate.** Hold any request for an identified student roster (names or IDs
-   paired with performance or IEP status) pending explicit permission and a
-   stated legitimate need. Never write student identifiers into the session log
-   or the chat transcript; an authorized identified deliverable goes only into
-   its own output file, never into the persistent log.
+   paired with performance, IEP, or 504 status) pending explicit permission and
+   a stated legitimate need. Never write student identifiers into the session
+   log or the chat transcript; an authorized identified deliverable goes only
+   into its own output file, never into the persistent log.
    - **Authorized means a file, not a message.** Deliver the roster as a
      downloadable file and nothing more — do not print names into the chat, even
      once authorization is confirmed. A file can be moved, restricted, and

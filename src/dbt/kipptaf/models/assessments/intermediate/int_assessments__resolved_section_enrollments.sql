@@ -17,6 +17,8 @@ with
             ce.cc_dateleft,
             ce.powerschool_school_id,
             ce.region,
+            ce.enrollment_academic_year,
+            ce.grade_level,
 
             1 as tier,
 
@@ -77,6 +79,8 @@ with
             ce.cc_dateleft,
             ce.powerschool_school_id,
             ce.region,
+            ce.enrollment_academic_year,
+            ce.grade_level,
 
             2 as tier,
 
@@ -111,6 +115,8 @@ with
             ce.cc_dateleft,
             ce.powerschool_school_id,
             ce.region,
+            ce.enrollment_academic_year,
+            ce.grade_level,
 
             3 as tier,
 
@@ -171,6 +177,8 @@ with
             cc_source_project,
             powerschool_school_id,
             region,
+            enrollment_academic_year,
+            grade_level,
         from all_candidates_ranked
         where rn = 1
     )
@@ -193,6 +201,8 @@ select
     -- date of every score row sharing that grain.
     powerschool_school_id,
     region,
+    enrollment_academic_year,
+    grade_level,
 
     {{ dbt_utils.generate_surrogate_key(["cc_dcid", "cc_source_project"]) }}
     as student_section_enrollment_key,

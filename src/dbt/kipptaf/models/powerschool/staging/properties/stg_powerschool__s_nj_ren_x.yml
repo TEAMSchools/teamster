@@ -1,2 +1,5 @@
 models:
   - name: stg_powerschool__s_nj_ren_x
+    config:
+      meta:
+        contains_pii: true

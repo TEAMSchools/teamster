@@ -34,11 +34,11 @@ with
         from unnest(['Reading', 'Math']) as iready_subject
     ),
 
-    intervention_nj as (
+    intervention_powerschool as (
         select
             _dbt_source_relation,
             _dbt_source_project,
-            studentid,
+            student_number,
             academic_year,
 
             if(specprog_name = 'Bucket 2 - ELA', 'Reading', 'Math') as iready_subject,
@@ -213,7 +213,7 @@ select
 
     if(am.student_number is not null, true, false) as is_algebra_i_ms,
 
-    if(nj.iready_subject is not null, true, false) as bucket_two,
+    if(ips.iready_subject is not null, true, false) as bucket_two,
 
     if(ie.student_number is not null or co.is_sipps, true, false) as is_exempt_iready,
 
@@ -304,17 +304,18 @@ left join
     and co._dbt_source_project = am._dbt_source_project
     and sj.iready_subject = am.iready_subject
 left join
-    intervention_nj as nj
-    on co.studentid = nj.studentid
-    and co.academic_year = nj.academic_year
-    and co._dbt_source_project = nj._dbt_source_project
-    and sj.iready_subject = nj.iready_subject
+    intervention_powerschool as ips
+    on co.student_number = ips.student_number
+    and co.academic_year = ips.academic_year
+    and co._dbt_source_project = ips._dbt_source_project
+    and sj.iready_subject = ips.iready_subject
 left join
     {{ ref("int_students__bucket_assignments") }} as b
     on co.student_number = b.student_number
     and co.academic_year = b.academic_year
     and co._dbt_source_project = b._dbt_source_project
     and sj.iready_subject = b.subject
+    and b.rn_assignment_year_desc = 1
 left join
     {{ ref("int_students__course_enrollments") }} as cc
     on co.student_number = cc.students_student_number

@@ -585,11 +585,12 @@ select
         njs.gifted_and_talented, ar.gifted_and_talented, 'N'
     ) as gifted_and_talented,
 
-    -- njr and suf join through students_dcid, which Focus never populates, so
-    -- Miami reads int_focus__students.is_504 (Section 504 Eligible). Null
-    -- there means unset, not the fabricated negative false would imply.
+    -- NJ reads PID_504_TF: the past-enrollment copy (njr, joined on
+    -- reenrollments_dcid) when one exists, else the student record (njs). Focus
+    -- never populates those dcids, so Miami reads int_focus__students.is_504;
+    -- null there means unset, not the fabricated negative false would imply.
     if(
-        ar.region = 'Miami', ar.is_504, coalesce(njr.pid_504_tf, suf.is_504, false)
+        ar.region = 'Miami', ar.is_504, coalesce(njr.pid_504_tf, njs.is_504, false)
     ) as is_504,
 
     coalesce(adb.kipp_hs_class, ar.cohort) as ktc_cohort,

@@ -10,7 +10,7 @@
         order_by=(
             "School_Goal desc, Grade_Goal desc, Region_Goal desc, "
             "Organization_Goal desc, Grade_Band_Goal desc, "
-            "Assessment_Band_Goal desc, Region_Grade_Goal desc"
+            "Assessment_Band_Goal desc, Region_Grade_Goal desc, QA_Goal desc"
         ),
     )
 }}

@@ -48,42 +48,56 @@ with
         group by employee_number, academic_year
     ),
 
-    tir_etr as (
+    pm_measures as (
         select
             o.employee_number,
             o.academic_year,
 
-            avg(case when od.term_code = 'PM1' then od.row_score end) as pm1,
-            avg(case when od.term_code = 'PM2' then od.row_score end) as pm2,
-            avg(case when od.term_code = 'PM3' then od.row_score end) as pm3,
+            od.term_code,
+            od.row_score,
+
+            /* AY2023 on, only ETR measures (named ETR-<n><letter>); earlier forms
+            count every non-S&O measure, as they always have */
+            if(
+                o.academic_year >= 2023,
+                od.measurement_name like 'ETR-%',
+                od.measurement_name not like '%S&O%'
+            ) as is_etr_measure,
+
+            -- TIR ETR leaves out ETR strands 4 and 5
+            od.measurement_name not like '%4%'
+            and od.measurement_name not like '%5%' as is_tir_etr_strand,
         from {{ ref("int_performance_management__observations") }} as o
-        left join
+        inner join
             {{ ref("int_performance_management__observation_details") }} as od
             on o.observation_id = od.observation_id
-        where
-            od.observation_type_abbreviation in ('PM', 'PMS')
-            and od.measurement_name not like '%4%'
-            and od.measurement_name not like '%5%'
-            and od.measurement_name not like '%S&O%'
-        group by o.employee_number, o.academic_year
+            and od.observation_type_abbreviation in ('PM', 'PMS')
+    ),
+
+    tir_etr as (
+        select
+            employee_number,
+            academic_year,
+
+            avg(case when term_code = 'PM1' then row_score end) as pm1,
+            avg(case when term_code = 'PM2' then row_score end) as pm2,
+            avg(case when term_code = 'PM3' then row_score end) as pm3,
+        from pm_measures
+        where is_etr_measure and is_tir_etr_strand
+        group by employee_number, academic_year
     ),
 
     pm_etr as (
         select
-            o.employee_number,
-            o.academic_year,
+            employee_number,
+            academic_year,
 
-            avg(case when od.term_code = 'PM1' then od.row_score end) as pm1,
-            avg(case when od.term_code = 'PM2' then od.row_score end) as pm2,
-            avg(case when od.term_code = 'PM3' then od.row_score end) as pm3,
-        from {{ ref("int_performance_management__observations") }} as o
-        left join
-            {{ ref("int_performance_management__observation_details") }} as od
-            on o.observation_id = od.observation_id
-        where
-            od.observation_type_abbreviation in ('PM', 'PMS')
-            and od.measurement_name not like '%S&O%'
-        group by o.employee_number, o.academic_year
+            avg(case when term_code = 'PM1' then row_score end) as pm1,
+            avg(case when term_code = 'PM2' then row_score end) as pm2,
+            avg(case when term_code = 'PM3' then row_score end) as pm3,
+        from pm_measures
+        where is_etr_measure
+        group by employee_number, academic_year
     ),
 
     tir_so as (
@@ -101,6 +115,23 @@ with
         where
             od.observation_type_abbreviation = 'PMS'
             and od.measurement_name like '%S&O%'
+        group by o.employee_number, o.academic_year
+    ),
+
+    tir_values as (
+        select
+            o.employee_number,
+            o.academic_year,
+
+            avg(case when od.term_code = 'PM1' then od.row_score end) as pm1,
+            avg(case when od.term_code = 'PM2' then od.row_score end) as pm2,
+            avg(case when od.term_code = 'PM3' then od.row_score end) as pm3,
+        from {{ ref("int_performance_management__observations") }} as o
+        inner join
+            {{ ref("int_performance_management__observation_details") }} as od
+            on o.observation_id = od.observation_id
+            and od.observation_type_abbreviation = 'PMS'
+            and od.strand_name = 'Values'
         group by o.employee_number, o.academic_year
     ),
 
@@ -229,9 +260,18 @@ select
     so.pm2 as tir_so_pm2,
     so.pm3 as tir_so_pm3,
 
-    (etr.pm1 * .8 + so.pm1 * .2) as tir_pm1,
-    (etr.pm2 * .8 + so.pm2 * .2) as tir_pm2,
-    (etr.pm3 * .8 + so.pm3 * .2) as tir_pm3,
+    v.pm1 as tir_values_pm1,
+    v.pm2 as tir_values_pm2,
+    v.pm3 as tir_values_pm3,
+
+    /* Grow's form score: 80% ETR, 20% S&O (Values from AY2026). AY2023 on,
+    the ETR side is every ETR measure, matching Grow */
+    if(td.academic_year >= 2023, pme.pm1, etr.pm1) * .8
+    + coalesce(so.pm1, v.pm1) * .2 as tir_pm1,
+    if(td.academic_year >= 2023, pme.pm2, etr.pm2) * .8
+    + coalesce(so.pm2, v.pm2) * .2 as tir_pm2,
+    if(td.academic_year >= 2023, pme.pm3, etr.pm3) * .8
+    + coalesce(so.pm3, v.pm3) * .2 as tir_pm3,
 
     if(sr.home_department_name = 'Teacher Development', 'TDT', 'NTNC') as observer_team,
 
@@ -242,6 +282,7 @@ left join
     {{ ref("int_people__staff_roster_history") }} as srh
     on td.employee_number = srh.employee_number
     and td.observed_at between srh.effective_date_start and srh.effective_date_end
+    and srh.primary_indicator
 left join
     {{ ref("int_students__teacher_grade_levels") }} as tgl
     on srh.powerschool_teacher_number = tgl.teachernumber
@@ -272,4 +313,9 @@ left join
     tir_so as so
     on td.employee_number = so.employee_number
     and td.academic_year = so.academic_year
+    and srh.job_title = 'Teacher in Residence'
+left join
+    tir_values as v
+    on td.employee_number = v.employee_number
+    and td.academic_year = v.academic_year
     and srh.job_title = 'Teacher in Residence'

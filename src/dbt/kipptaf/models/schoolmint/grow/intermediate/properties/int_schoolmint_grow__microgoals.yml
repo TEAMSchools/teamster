@@ -3,6 +3,8 @@ models:
     description:
       table to unnest generic tags using parent relationships to get goal,
       strand, bucket, and type
+    config:
+      enabled: false
     columns:
       - name: goal_tag_id
         data_type: string

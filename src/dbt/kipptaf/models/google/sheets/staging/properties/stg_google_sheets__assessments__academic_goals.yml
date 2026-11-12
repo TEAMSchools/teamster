@@ -20,6 +20,47 @@ models:
               - Illuminate_Subject_Area
           config:
             severity: error
+      - dbt_utils.unique_combination_of_columns:
+          name: stg_google_sheets__assessments__academic_goals__subject_grade_match
+          description: >-
+            The Academic Goals sheet has 2 rows for one school, year, grade and
+            subject. Scores match goals on these 4 columns, so each matching
+            score repeats in fct_assessment_scores_enrollment_scoped and its
+            unique test on assessment_score_key fails. Keep 1 row per school,
+            year, grade and subject on the sheet; ask the data team if a goal
+            needs more than one. DIBELS benchmark-window rows (BOY, MOY, EOY in
+            the state code column) match no score and are left out.
+          arguments:
+            combination_of_columns:
+              - Academic_Year
+              - School_ID
+              - Grade_Level
+              - Illuminate_Subject_Area
+          config:
+            severity: warn
+            where:
+              coalesce(State_Assessment_Code, '') not in ('BOY', 'MOY', 'EOY')
+      - dbt_utils.unique_combination_of_columns:
+          name: stg_google_sheets__assessments__academic_goals__state_code_match
+          description: >-
+            The Academic Goals sheet has 2 rows for one school, year and state
+            assessment code. State test scores match goals on these 3 columns,
+            so each matching score repeats in
+            fct_assessment_scores_enrollment_scoped and its unique test on
+            assessment_score_key fails. Keep 1 row per school, year and state
+            code on the sheet; ask the data team if a goal needs more than one.
+            DIBELS benchmark-window rows (BOY, MOY, EOY) match no score and are
+            left out.
+          arguments:
+            combination_of_columns:
+              - Academic_Year
+              - School_ID
+              - State_Assessment_Code
+          config:
+            severity: warn
+            where: |
+              State_Assessment_Code is not null
+              and State_Assessment_Code not in ('BOY', 'MOY', 'EOY')
     columns:
       - name: Academic_Year
         data_type: int64
@@ -60,3 +101,11 @@ models:
           Region-level goal for this one grade, set only where it differs from
           the grade-band goal (for example a city grade 3 goal inside a grades
           3-8 band); null otherwise.
+      - name: QA_Goal
+        data_type: float64
+        description: >-
+          Quarterly assessment (QA) mastery goal for this grade and subject;
+          null where no QA goal is set. `rpt_tableau__ddi_dashboard` applies it
+          in its `*_goal_differentiated` columns. A row that carries only this
+          goal leaves every other goal column blank, so the Academic Goal
+          Roll-Up does not count it.

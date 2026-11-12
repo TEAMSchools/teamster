@@ -527,6 +527,8 @@ TWINS.update(
                 "response_type_description",
                 "response_type_root_description",
                 "performance_band_label_number",
+                "mastery_level",
+                "is_far_below",
                 "proficiency_level",
                 "is_mastery",
                 "scale_score",
@@ -545,7 +547,12 @@ TWINS.update(
                 "module_code",
                 "academic_subject",
                 "grade_level_tested",
+                "bucket_subject",
             ]
+        },
+        **{
+            ("student_enrollment_status", c): ("dim_student_enrollment_status", c)
+            for c in ["ela_bucket", "math_bucket"]
         },
         ("student_assessment_administrations", "administration_period"): (
             "dim_assessment_administrations",
@@ -555,7 +562,21 @@ TWINS.update(
             "dim_assessment_administrations",
             "source_assessment_id",
         ),
+        ("student_assessments", "title"): ("dim_assessments", "title"),
         ("locations", "grade_band"): ("dim_locations", "grade_band"),
+        **{
+            ("locations", c): ("dim_locations", c)
+            for c in [
+                "head_of_school_staff_key",
+                "school_leader_staff_key",
+                "operations_director_staff_key",
+                "school_id",
+            ]
+        },
+        ("student_enrollment_status", "is_504"): (
+            "dim_student_enrollment_status",
+            "is_504",
+        ),
         ("courses", "is_foundations"): ("dim_courses", "is_foundations"),
         ("student_attendance_enrollment_daily", "n_absent_days_rolling_90"): (
             "fct_student_attendance_enrollment_daily",
@@ -593,6 +614,28 @@ PHRASES.update(
             "Illuminate and Focus Assessments only; null for every other source",
             "Not comparable across assessments",
             "across response types",
+            "compare mastery_level instead",
+        ],
+        "student_assessment_scores.pct_students_below": [
+            "percent of students",
+            "Far Below included",
+            "Filter response_type to overall",
+        ],
+        "student_assessment_scores.pct_students_far_below": [
+            "Filter response_type to overall",
+        ],
+        "student_assessment_scores.mastery_level": [
+            "band numbers do not",
+            "name both assessments",
+        ],
+        "student_assessment_scores.pct_students_at_level": [
+            "Group by mastery_level",
+            "add to 100% only when each student has 1 score",
+            "rather than filtering on it",
+        ],
+        "student_assessment_scores.count_students_banded": [
+            "Group by mastery_level",
+            "can add up to more than the ungrouped total",
         ],
         "student_assessment_scores.proficiency_level": [
             "Tested Out",

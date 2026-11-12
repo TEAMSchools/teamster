@@ -1,67 +1,233 @@
 models:
   - name: rpt_python__manager_pm_averages
+    description: >-
+      One row per observer per performance management round: the observer's
+      average score on each coach scoring rubric measure and overall, across the
+      teachers they scored that round. Rows come from published SchoolMint Grow
+      forms with observation type PM (before 2024) or PMS (2024 onward), so a
+      renamed rubric is still picked up. Input to the PM outlier detection
+      script.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - observer_employee_number
+              - academic_year
+              - form_term
     columns:
       - name: observer_employee_number
         data_type: int64
+        description: Employee number of the observer who scored the forms.
+        config:
+          meta:
+            contains_pii: true
       - name: academic_year
         data_type: int64
+        description: Academic year of the round, as its starting calendar year.
       - name: form_term
         data_type: string
+        description: PM round code from the reporting terms sheet (PM1-PM3).
       - name: term_num
         data_type: int64
+        description: Round number parsed from the last character of form_term.
+      - name: measure_set
+        data_type: string
+        description:
+          Which rubric measures the observer's forms scored this round —
+          etr_values when any form scored a core value (the Values or
+          Professionalism and Punctuality strands, from AY2026), otherwise
+          etr_so (ETR plus S&O). The outlier detection script fits each set
+          separately.
       - name: etr1a
         data_type: float64
+        description: Average row score on rubric measure ETR1A.
       - name: etr1b
         data_type: float64
+        description: Average row score on rubric measure ETR1B.
       - name: etr2a
         data_type: float64
+        description: Average row score on rubric measure ETR2A.
       - name: etr2b
         data_type: float64
+        description: Average row score on rubric measure ETR2B.
       - name: etr2c
         data_type: float64
+        description: Average row score on rubric measure ETR2C.
       - name: etr2d
         data_type: float64
+        description: Average row score on rubric measure ETR2D.
       - name: etr3a
         data_type: float64
+        description: Average row score on rubric measure ETR3A.
       - name: etr3b
         data_type: float64
+        description: Average row score on rubric measure ETR3B.
       - name: etr3c
         data_type: float64
+        description: Average row score on rubric measure ETR3C.
       - name: etr3d
         data_type: float64
+        description: Average row score on rubric measure ETR3D.
       - name: etr4a
         data_type: float64
+        description: Average row score on rubric measure ETR4A.
       - name: etr4b
         data_type: float64
+        description: Average row score on rubric measure ETR4B.
       - name: etr4c
         data_type: float64
+        description: Average row score on rubric measure ETR4C.
       - name: etr4d
         data_type: float64
+        description: Average row score on rubric measure ETR4D.
       - name: etr4e
         data_type: float64
+        description: Average row score on rubric measure ETR4E.
       - name: etr4f
         data_type: float64
+        description: Average row score on rubric measure ETR4F.
       - name: etr5a
         data_type: float64
+        description: Average row score on rubric measure ETR5A.
       - name: etr5b
         data_type: float64
+        description: Average row score on rubric measure ETR5B.
       - name: etr5c
         data_type: float64
+        description: Average row score on rubric measure ETR5C.
       - name: so1
         data_type: float64
+        description: Average row score on rubric measure SO01.
       - name: so2
         data_type: float64
+        description: Average row score on rubric measure SO02.
       - name: so3
         data_type: float64
+        description: Average row score on rubric measure SO03.
       - name: so4
         data_type: float64
+        description: Average row score on rubric measure SO04.
       - name: so5
         data_type: float64
+        description: Average row score on rubric measure SO05.
       - name: so6
         data_type: float64
+        description: Average row score on rubric measure SO06.
       - name: so7
         data_type: float64
+        description: Average row score on rubric measure SO07.
       - name: so8
         data_type: float64
+        description: Average row score on rubric measure SO08.
+      - name: excellence
+        data_type: float64
+        description: Average row score on core value Excellence (Values strand).
+      - name: fun
+        data_type: float64
+        description: Average row score on core value Fun (Values strand).
+      - name: kid_focus
+        data_type: float64
+        description: Average row score on core value Kid Focus (Values strand).
+      - name: presence
+        data_type: float64
+        description:
+          Average row score on Presence (Professionalism and Punctuality
+          strand).
+      - name: punctuality
+        data_type: float64
+        description:
+          Average row score on Punctuality (Professionalism and Punctuality
+          strand).
+      - name: radical_love
+        data_type: float64
+        description:
+          Average row score on core value Radical Love (Values strand).
+      - name: team
+        data_type: float64
+        description: Average row score on core value TEAM (Values strand).
       - name: overall_score
         data_type: float64
+        description:
+          Average of observation_score over the measurement rows of every form
+          the observer scored this round, so each form is weighted by its number
+          of measurement rows.
+
+unit_tests:
+  - name: unit_rpt_manager_pm_averages_measure_set
+    description: >-
+      measure_set names the rubric an observer-round was scored on. Observer 1
+      (AY2025) scored S&O, so etr_so. Observer 2 (AY2026) scored a Values
+      measure and observer 3 (AY2026) only Presence, so both are etr_values.
+      Each core value lands in its own column.
+    model: rpt_python__manager_pm_averages
+    given:
+      - input: ref("int_performance_management__observation_details")
+        rows:
+          - observer_employee_number: 1
+            academic_year: 2025
+            term_code: PM2
+            observation_type_abbreviation: PMS
+            observation_score: 3.0
+            measurement_name: "ETR-1A: Plans"
+            strand_name: Excellent Teaching Rubric
+            row_score: 3.0
+          - observer_employee_number: 1
+            academic_year: 2025
+            term_code: PM2
+            observation_type_abbreviation: PMS
+            observation_score: 3.0
+            measurement_name: "S&O-01: Commitments"
+            strand_name: "Self & Others: Manager Feedback"
+            row_score: 4.0
+          - observer_employee_number: 2
+            academic_year: 2026
+            term_code: PM2
+            observation_type_abbreviation: PMS
+            observation_score: 3.0
+            measurement_name: "ETR-1A: Plans"
+            strand_name: Practice
+            row_score: 2.0
+          - observer_employee_number: 2
+            academic_year: 2026
+            term_code: PM2
+            observation_type_abbreviation: PMS
+            observation_score: 3.0
+            measurement_name: Kid Focus
+            strand_name: Values
+            row_score: 4.0
+          - observer_employee_number: 3
+            academic_year: 2026
+            term_code: PM2
+            observation_type_abbreviation: PMS
+            observation_score: 3.0
+            measurement_name: "ETR-1A: Plans"
+            strand_name: Practice
+            row_score: 3.0
+          - observer_employee_number: 3
+            academic_year: 2026
+            term_code: PM2
+            observation_type_abbreviation: PMS
+            observation_score: 3.0
+            measurement_name: Presence
+            strand_name: Professionalism and Punctuality
+            row_score: 2.0
+    expect:
+      rows:
+        - observer_employee_number: 1
+          measure_set: etr_so
+          etr1a: 3.0
+          so1: 4.0
+          kid_focus: null
+          presence: null
+        - observer_employee_number: 2
+          measure_set: etr_values
+          etr1a: 2.0
+          so1: null
+          kid_focus: 4.0
+          presence: null
+        - observer_employee_number: 3
+          measure_set: etr_values
+          etr1a: 3.0
+          so1: null
+          kid_focus: null
+          presence: 2.0

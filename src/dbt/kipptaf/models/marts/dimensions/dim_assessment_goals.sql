@@ -1,13 +1,11 @@
 select
     {{
-        dbt_utils.generate_surrogate_key(
-            [
-                "g.academic_year",
-                "g.school_id",
-                "g.state_assessment_code",
-                "g.grade_level",
-                "g.illuminate_subject_area",
-            ]
+        assessment_goal_key(
+            "g.academic_year",
+            "g.school_id",
+            "g.state_assessment_code",
+            "g.grade_level",
+            "g.illuminate_subject_area",
         )
     }} as assessment_goal_key,
 
@@ -23,5 +21,6 @@ select
     g.organization_goal,
     g.grade_band_goal,
     g.assessment_band_goal,
+    g.qa_goal as quarterly_assessment_goal,
 from {{ ref("stg_google_sheets__assessments__academic_goals") }} as g
 inner join {{ ref("int_students__schools") }} as s on g.school_id = s.school_number
