@@ -1,4 +1,15 @@
 with
+    -- the scaffold has one row per sitting; an external copy's bands carry no
+    -- region, so its sittings match on a null region
+    sitting_groups as (
+        select
+            student_assessment_id,
+
+            if(is_internal_assessment, region, null) as band_region,
+        from {{ ref("int_assessments__scaffold") }}
+        where source = 'illuminate' and student_assessment_id is not null
+    ),
+
     responses_keyed as (
         select
             asr.student_assessment_id,
@@ -16,11 +27,14 @@ with
                 pb.canonical_response_type_id, asr.response_type_id
             ) as response_type_id,
         from {{ ref("int_illuminate__agg_student_responses") }} as asr
+        inner join
+            sitting_groups as sg on asr.student_assessment_id = sg.student_assessment_id
         left join
             {{ ref("int_assessments__performance_bands") }} as pb
             on asr.assessment_id = pb.assessment_id
             and asr.response_type = pb.response_type
             and asr.response_type_id = pb.response_type_id
+            and sg.band_region is not distinct from pb.region
     ),
 
     -- one sitting scores a split standard once per record; sum the records back
