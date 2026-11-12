@@ -28,7 +28,7 @@ with
         inner join
             {{ ref("int_assessments__assessments_canonical") }} as c
             on m.source = c.source
-            and m.canonical_assessment_id = c.canonical_assessment_id
+            and m.tag_group_assessment_id = c.canonical_assessment_id
         where m.is_internal_assessment
     ),
 

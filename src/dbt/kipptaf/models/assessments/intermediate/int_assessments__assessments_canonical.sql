@@ -3,7 +3,7 @@ with
         {{
             dbt_utils.deduplicate(
                 relation=ref("int_assessments__assessments_members"),
-                partition_by="source, canonical_assessment_id",
+                partition_by="source, tag_group_assessment_id",
                 order_by="assessment_id",
             )
         }}
@@ -12,19 +12,19 @@ with
     canonical_regions as (
         select
             source,
-            canonical_assessment_id,
+            tag_group_assessment_id,
 
             array_agg(distinct region) as regions_array,
         from
             {{ ref("int_assessments__assessments_members") }},
             unnest(regions_assessed_array) as region
         where is_internal_assessment
-        group by source, canonical_assessment_id
+        group by source, tag_group_assessment_id
     )
 
 select
     p.source,
-    p.canonical_assessment_id,
+    p.tag_group_assessment_id as canonical_assessment_id,
     p.title,
     p.administered_at as administered_date,
     p.subject_area,
@@ -41,5 +41,5 @@ from canonical_picks as p
 left join
     canonical_regions as r
     on p.source = r.source
-    and p.canonical_assessment_id = r.canonical_assessment_id
+    and p.tag_group_assessment_id = r.tag_group_assessment_id
 where p.is_internal_assessment

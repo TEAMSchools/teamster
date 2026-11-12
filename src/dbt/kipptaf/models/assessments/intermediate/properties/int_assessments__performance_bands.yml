@@ -69,28 +69,18 @@ unit_tests:
     model: int_assessments__performance_bands
     given:
       - input: ref('int_assessments__assessments_members')
-        rows:
-          - {
-              assessment_id: 9001,
-              source: illuminate,
-              performance_band_set_id: 1,
-              is_internal_assessment: false,
-              canonical_assessment_id: 9001,
-            }
-          - {
-              assessment_id: 9100,
-              source: illuminate,
-              performance_band_set_id: 2,
-              is_internal_assessment: true,
-              canonical_assessment_id: 9100,
-            }
-          - {
-              assessment_id: 9101,
-              source: illuminate,
-              performance_band_set_id: 3,
-              is_internal_assessment: true,
-              canonical_assessment_id: 9100,
-            }
+        format: sql
+        rows: |
+          select
+              9001 as assessment_id,
+              'illuminate' as source,
+              1 as performance_band_set_id,
+              false as is_internal_assessment,
+              9001 as tag_group_assessment_id
+          union all
+          select 9100, 'illuminate', 2, true, 9100
+          union all
+          select 9101, 'illuminate', 3, true, 9100
       - input: ref('stg_illuminate__dna_assessments__assessment_standards')
         rows:
           - { assessment_id: 9001, standard_id: 11, performance_band_set_id: 5 }

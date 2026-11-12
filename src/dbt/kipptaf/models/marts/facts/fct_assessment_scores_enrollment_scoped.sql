@@ -54,7 +54,7 @@ with
         inner join
             {{ ref("int_assessments__assessments_canonical") }} as c
             on a.source = c.source
-            and a.canonical_assessment_id = c.canonical_assessment_id
+            and a.tag_group_assessment_id = c.canonical_assessment_id
         -- LEFT: a score with no band set or no band has no level
         left join
             {{ ref("int_assessments__performance_band_union") }} as pb

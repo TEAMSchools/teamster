@@ -94,7 +94,7 @@ with
                     a.is_internal_assessment,
                     if(
                         a.is_internal_assessment,
-                        a.canonical_assessment_id,
+                        a.tag_group_assessment_id,
                         u.assessment_id
                     ),
                     u.response_type,

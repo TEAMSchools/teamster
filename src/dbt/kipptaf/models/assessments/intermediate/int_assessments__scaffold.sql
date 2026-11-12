@@ -12,7 +12,7 @@ with
             a.scope,
             a.module_type,
             a.module_code,
-            a.canonical_assessment_id,
+            a.tag_group_assessment_id as canonical_assessment_id,
 
             region,
 
@@ -201,7 +201,7 @@ with
             a.scope,
             a.module_type,
             a.module_code,
-            a.canonical_assessment_id,
+            a.tag_group_assessment_id as canonical_assessment_id,
         from {{ ref("int_focus__apex_results") }} as r
         inner join
             {{ ref("int_assessments__assessments_members") }} as a
@@ -351,7 +351,7 @@ select
 
     str.dagster_code_location as _dbt_source_project,
 
-    a.canonical_assessment_id,
+    a.tag_group_assessment_id as canonical_assessment_id,
 
     sa.student_assessment_id,
     sa.date_taken,
@@ -378,7 +378,7 @@ left join school_to_region as str on ssa.site_id = str.powerschool_school_id
 left join
     {{ ref("int_assessments__assessments_canonical") }} as c
     on a.source = c.source
-    and a.canonical_assessment_id = c.canonical_assessment_id
+    and a.tag_group_assessment_id = c.canonical_assessment_id
 where
     a.is_internal_assessment
     and a.source = 'illuminate'
@@ -424,7 +424,7 @@ select
 
     str.dagster_code_location as _dbt_source_project,
 
-    a.canonical_assessment_id,
+    a.tag_group_assessment_id as canonical_assessment_id,
 
     sa.student_assessment_id,
     sa.date_taken,

@@ -3,7 +3,7 @@ with
         select
             a.source,
             a.assessment_id as member_assessment_id,
-            a.canonical_assessment_id,
+            a.tag_group_assessment_id as canonical_assessment_id,
             a.module_code,
             a.academic_year,
 
@@ -16,7 +16,7 @@ with
         inner join
             {{ ref("int_assessments__assessments_canonical") }} as c
             on a.source = c.source
-            and a.canonical_assessment_id = c.canonical_assessment_id
+            and a.tag_group_assessment_id = c.canonical_assessment_id
         cross join unnest(a.regions_assessed_array) as region
         where a.is_internal_assessment
     )

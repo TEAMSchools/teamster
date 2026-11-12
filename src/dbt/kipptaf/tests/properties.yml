@@ -381,7 +381,7 @@ data_tests:
       Asserts that every assessment's canonical pick comes from its own source.
       Illuminate and Apex assessment ids share one integer space, so a canonical
       group keyed on id alone could merge an Apex assessment into an Illuminate
-      one. Returns members whose (source, canonical_assessment_id) matches no
+      one. Returns members whose (source, tag_group_assessment_id) matches no
       member's (source, assessment_id).
     config:
       meta:

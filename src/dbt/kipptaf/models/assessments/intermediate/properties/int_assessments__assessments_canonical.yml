@@ -30,7 +30,7 @@ models:
           assessments in the canonical partition `(source, academic_year, scope,
           subject_area, module_code, grade_level_id)`. Internal members of
           `int_assessments__assessments_members` FK here via their own `source`
-          and `canonical_assessment_id`.
+          and `tag_group_assessment_id`.
       - name: source
         data_type: string
         description: >-

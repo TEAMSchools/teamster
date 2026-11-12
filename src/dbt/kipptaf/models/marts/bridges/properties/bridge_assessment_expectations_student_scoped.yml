@@ -102,12 +102,14 @@ unit_tests:
             is_region_tagged: null
             cc_dcid: null
       - input: ref('int_assessments__assessments_members')
-        rows:
-          - source: illuminate
-            assessment_id: 1
-            module_code: QA1
-            academic_year: 2026
-            canonical_assessment_id: 1
+        format: sql
+        rows: |
+          select
+            'illuminate' as source,
+            1 as assessment_id,
+            'QA1' as module_code,
+            2026 as academic_year,
+            1 as tag_group_assessment_id
       - input: ref('int_assessments__assessments_canonical')
         format: sql
         rows: |

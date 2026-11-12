@@ -11,7 +11,7 @@ models:
       `date_taken` is nulled when it falls more than 365 days from the canonical
       administered date, or, when there is no administered date, outside
       `academic_year` plus or minus one year. For internal assessments,
-      multipart member assessments (sharing a `canonical_assessment_id` per
+      multipart member assessments (sharing a `tag_group_assessment_id` per
       `int_assessments__assessments_members`) are aggregated to one row per
       student, `is_replacement`, and response with summed points, the earliest
       `date_taken`, and a deterministic single school/region selection. External
@@ -231,7 +231,7 @@ models:
       - name: assessment_id
         data_type: int64
         description: >-
-          `canonical_assessment_id` from `int_assessments__assessments_members`
+          `tag_group_assessment_id` from `int_assessments__assessments_members`
           — the lowest member id within the canonical partition for internal
           assessments, the assessment's own id for external ones. Use
           `assessment_ids` for the underlying member ids.

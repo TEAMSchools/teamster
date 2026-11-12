@@ -4,7 +4,7 @@ models:
       Assessment-definition layer, one row per `source` and `assessment_id`.
       LEFT JOINs Illuminate `assessments` to the AppSheet `Illuminate
       Assessments Extension` overrides and to an `agl_dedup` CTE (lowest
-      `grade_level_id` per assessment). Exposes `canonical_assessment_id` — for
+      `grade_level_id` per assessment). Exposes `tag_group_assessment_id` — for
       internal assessments, `first_value(assessment_id) over (partition by
       is_internal_assessment, is_florida_assessment, academic_year, scope,
       subject_area, module_code, grade_level_id order by assessment_id)`; for
@@ -144,18 +144,17 @@ models:
           True when the assessment has an AppSheet extension row; always true on
           Apex assessments.
 
-      - name: canonical_assessment_id
+      - name: tag_group_assessment_id
         data_type: int64
         description: >-
-          FK to `int_assessments__assessments_canonical` for internal
-          assessments — the lowest `assessment_id` among internal assessments in
-          the partition `(is_florida_assessment, academic_year, scope,
-          subject_area, module_code, grade_level_id)`. Multipart administrations
-          (e.g., the CRA + CRA-Essay halves of one logical Unit Quarterly
-          Assessment) share a `canonical_assessment_id`. Solo internal
+          The lowest `assessment_id` among copies that share tags — internal
+          assessments in the partition `(is_florida_assessment, academic_year,
+          scope, subject_area, module_code, grade_level_id)`. Multipart
+          administrations (e.g., the CRA + CRA-Essay halves of one logical Unit
+          Quarterly Assessment) share a `tag_group_assessment_id`. Solo internal
           assessments, Apex assessments, and every external assessment equal
-          their own `assessment_id`; external ids have no row in the canonical
-          model.
+          their own `assessment_id`. The regional group lives in
+          `int_assessments__assessment_region_groups`.
       - name: bucket_subject
         data_type: string
         description: >-
@@ -229,7 +228,7 @@ unit_tests:
             performance_band_set_id: null,
             regions_assessed: null,
             is_internal_assessment: false,
-            canonical_assessment_id: 9001,
+            tag_group_assessment_id: 9001,
           }
         - {
             source: apex,
@@ -239,7 +238,7 @@ unit_tests:
             performance_band_set_id: 7,
             regions_assessed: Miami,
             is_internal_assessment: true,
-            canonical_assessment_id: 9001,
+            tag_group_assessment_id: 9001,
           }
         - {
             source: apex,
@@ -249,7 +248,7 @@ unit_tests:
             performance_band_set_id: 7,
             regions_assessed: Miami,
             is_internal_assessment: true,
-            canonical_assessment_id: 9002,
+            tag_group_assessment_id: 9002,
           }
   - name: test_apex_tags_join_on_source
     description: >-

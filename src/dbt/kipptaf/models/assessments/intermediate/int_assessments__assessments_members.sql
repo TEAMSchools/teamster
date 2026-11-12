@@ -125,7 +125,7 @@ with
                 is_internal_assessment and source = 'illuminate',
                 first_value(assessment_id) over canonical_w,
                 assessment_id
-            ) as canonical_assessment_id,
+            ) as tag_group_assessment_id,
         from extended
         window
             canonical_w as (
@@ -174,7 +174,7 @@ select
     c.subject_area,
     c.grade_level_id,
     c.is_internal_assessment,
-    c.canonical_assessment_id,
+    c.tag_group_assessment_id,
 
     case
         sd.discipline when 'ELA' then 'Reading' when 'Math' then 'Math'

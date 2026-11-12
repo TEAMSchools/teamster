@@ -234,7 +234,7 @@ unit_tests:
               'QA' as module_type,
               true as is_internal_assessment,
               'illuminate' as `source`,
-              9101 as canonical_assessment_id,
+              9101 as tag_group_assessment_id,
               'Reading' as bucket_subject
           union all
           select
