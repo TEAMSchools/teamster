@@ -357,7 +357,8 @@ cubes:
           The student's proficiency level on last school year's annual state
           test, in the subject of this assessment — ELA on reading and ELA
           assessments, math on math assessments — or No Test when there is none.
-          Null where the assessment's subject is neither reading nor math.
+          Null where the assessment's subject is neither reading nor math, or
+          where the stint has no subject record.
         sql: |-
           CASE {student_assessments.bucket_subject}
             WHEN 'Reading'
@@ -378,8 +379,9 @@ cubes:
           The student's most recent DIBELS composite benchmark level this school
           year, on reading and ELA assessments, or No Composite Score Available
           when the student has none; No Composite Score Available on math
-          assessments; null where the assessment's subject is neither reading
-          nor math.
+          assessments; null on reading and ELA assessments when the stint has no
+          subject record, and wherever the assessment's subject is neither
+          reading nor math.
         sql: |-
           CASE {student_assessments.bucket_subject}
             WHEN 'Reading'
