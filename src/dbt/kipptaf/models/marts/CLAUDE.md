@@ -140,7 +140,15 @@ trap — field names end in `_date` but values are full ISO timestamps.
 
 Source-system internal field names (`cc_dateleft`, `WorkAssignment.jobTitle`,
 `powerschool_student_number`, etc.) belong in `config.meta.source_column`, not
-in the user-visible `description:`.
+in the user-visible `description:`. The same holds for lineage and timing: a
+description says what a value means, never which upstream model, extract, or
+build schedule feeds it.
+
+## Graduate placeholders in per-year facts
+
+A fact driven from primary stints (`rn_year = 1`) filters out
+`grade_level = 99`: those rows mark NJ graduates, not enrollments.
+`dim_student_enrollments` keeps them, per `kipptaf/CLAUDE.md`.
 
 ## Table-materialized marts
 
@@ -328,6 +336,11 @@ Mart-focused PRs may edit upstream files (`staging/`, `intermediate/`, source
 packages) but those edits must be **additive only**. Wider upstream refactors
 require a compelling reason called out in the spec; otherwise split into a
 separate PR.
+
+When a spec rebuilds a dashboard on the marts, matching the dashboard is a
+validation goal, not a design rule. Design from the marts; where the dashboard's
+extract and the marts disagree, list each difference for the domain owner to
+decide instead of copying the extract's logic into a mart.
 
 Before proposing a new structural mart change, check the open items on the
 [Data Team project board](https://github.com/orgs/TEAMSchools/projects/4) — the

@@ -6,7 +6,7 @@ meta keys) goes in its own script, not here.
 Usage: uv run scripts/check_dbt_standard.py --project-dir src/dbt/<project>
     [--diff <git diff -U0 file>] [--write-baseline] [--check-issues]
 
-Edge rules (A1, A8) run over the whole manifest against a per-project baseline
+Edge rules (A1, A8, A12) run over the whole manifest against a per-project baseline
 of known violations; a baseline line must name an open tracking issue
 (--check-issues looks each one up) and is removed once fixed. Changed-line rules
 (A3, A4, A5, A7, A9) need --diff. A model opts out of a rule with
@@ -177,7 +177,8 @@ def _allowed(
 def check_edges(
     manifest: dict, project: str, domain_folders: set[str]
 ) -> list[Violation]:
-    """A1 for every forbidden model edge, A8 for every forbidden exposure edge."""
+    """A1 for every forbidden model edge, A8 for every forbidden exposure edge,
+    A12 for every mart whose lineage reaches an extract model."""
     out = []
     for node in manifest.get("nodes", {}).values():
         if node["resource_type"] != "model" or not node["config"].get("enabled", True):
@@ -199,7 +200,47 @@ def check_edges(
             p_layer = layer_of(parent, project, domain_folders)
             if p_layer != "other" and p_layer not in ALLOWED[layer]:
                 out.append(_violation(exp, "A8", parent, layer, p_layer))
+    if project == "kipptaf":
+        out.extend(_extract_lineage(manifest, project, domain_folders))
     return sorted(out, key=lambda v: (v.model, v.rule, v.detail))
+
+
+_EXTRACT_PREFIX = "int_extracts__"
+
+
+def _extract_lineage(
+    manifest: dict, project: str, domain_folders: set[str]
+) -> list[Violation]:
+    """A12: a mart whose lineage reaches an int_extracts__ model, directly or
+    through intermediates. The walk stops at other marts, which get their own
+    finding, and at extract models."""
+    out = []
+    for node in manifest.get("nodes", {}).values():
+        if node["resource_type"] != "model" or not node["config"].get("enabled", True):
+            continue
+        if layer_of(node, project, domain_folders) != "mart":
+            continue
+        seen: set[str] = set()
+        stack = _parents(manifest, node)
+        while stack:
+            parent = stack.pop()
+            if parent["resource_type"] != "model" or parent["unique_id"] in seen:
+                continue
+            seen.add(parent["unique_id"])
+            if parent["name"].startswith(_EXTRACT_PREFIX):
+                child, detail = _key(node), _key(parent)
+                out.append(
+                    Violation(
+                        child,
+                        "A12",
+                        detail,
+                        "error",
+                        f"mart {child} depends on extract model {detail}",
+                    )
+                )
+            elif layer_of(parent, project, domain_folders) != "mart":
+                stack.extend(_parents(manifest, parent))
+    return out
 
 
 def _violation(
