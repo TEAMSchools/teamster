@@ -144,6 +144,11 @@ views:
           - special_education_placement
           - is_meal_eligible
           - meal_eligibility
+          - is_sipps
+          - is_tutoring
+          - is_self_contained
+          - homeroom_name
+          - homeroom_section_number
 
       - join_path: >-
           student_assessment_scores.student_section_enrollments.student_school_enrollments.students
@@ -321,6 +326,11 @@ views:
             - special_education_placement
             - is_meal_eligible
             - meal_eligibility
+            - is_sipps
+            - is_tutoring
+            - is_self_contained
+            - homeroom_name
+            - homeroom_section_number
         - name: Enrollment
           members:
             - student_section_enrollment_key

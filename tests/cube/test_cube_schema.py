@@ -520,6 +520,11 @@ def test_model_compiles_with_cube() -> None:
 DDI_SUITE_VIEW_MEMBERS = [
     "school_week_start_date",
     "school_week_end_date",
+    "is_sipps",
+    "is_tutoring",
+    "is_self_contained",
+    "homeroom_name",
+    "homeroom_section_number",
 ]
 
 
@@ -603,6 +608,16 @@ TWINS.update(
             "dim_student_enrollment_status",
             "is_504",
         ),
+        **{
+            ("student_enrollment_status", c): ("dim_student_enrollment_status", c)
+            for c in [
+                "is_sipps",
+                "is_tutoring",
+                "is_self_contained",
+                "homeroom_name",
+                "homeroom_section_number",
+            ]
+        },
         ("courses", "is_foundations"): ("dim_courses", "is_foundations"),
         ("student_attendance_enrollment_daily", "n_absent_days_rolling_90"): (
             "fct_student_attendance_enrollment_daily",
