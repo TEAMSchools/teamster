@@ -30,6 +30,18 @@ with
             source_file_name,
             aimline_status,
             cast(aimline_value_by_date as numeric) as aimline_value_by_date,
+
+            count(*) over (
+                partition by
+                    _dbt_source_relation,
+                    student_primary_id_studentnumber,
+                    school_year,
+                    pm_period,
+                    measure,
+                    probe_number,
+                    device_date,
+                    assessment_grade
+            ) as n_key_collisions,
         from {{ ref("stg_amplify__mclass__sftp__pm_student_summary") }}
     ),
 
@@ -99,6 +111,7 @@ with
             and b.probe_number = a.probe_number
             and b.device_date = a.device_date
             and b.assessment_grade = a.assessment_grade
+        where b.n_key_collisions = 1
     ),
 
     enriched as (

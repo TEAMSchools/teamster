@@ -10,7 +10,11 @@ models:
       both files, because Amplify has moved them between the two files mid-year
       without notice. One row per student, measure, and probe attempt within a
       PM period. There is no grade filter, since both PM methods run K-8 and
-      int_amplify__all_assessments tells them apart by model_type.
+      int_amplify__all_assessments tells them apart by model_type. Drops every
+      base-file row that shares its natural key with another row from the same
+      file, the same rule int_amplify__mclass__pm_student_summary applies. These
+      are Amplify filing errors, usually 2 children on one account, so the probe
+      shows as not taken until the result is moved in mCLASS.
     config:
       materialized: table
     data_tests:
