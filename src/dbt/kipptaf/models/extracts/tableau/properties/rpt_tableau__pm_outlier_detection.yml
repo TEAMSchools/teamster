@@ -28,9 +28,7 @@ models:
           Canonical name of the observer's home work location, from the location
           crosswalk. Drives the Tableau location gate.
         data_tests:
-          - not_null:
-              config:
-                severity: error
+          - not_null
       - name: home_business_unit_name
         data_type: string
         description: >-
@@ -38,9 +36,7 @@ models:
           location_region, which is a property of the location rather than the
           person.
         data_tests:
-          - not_null:
-              config:
-                severity: error
+          - not_null
           - accepted_values:
               arguments:
                 values:
@@ -49,8 +45,6 @@ models:
                   - KIPP Miami
                   - KIPP Paterson
                   - KIPP TEAM and Family Schools Inc.
-              config:
-                severity: error
       - name: teacher_employee_number
         data_type: int64
         description: Employee number of the teacher the observer scored.
