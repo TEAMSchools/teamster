@@ -152,6 +152,24 @@ models:
         config:
           meta:
             source_column: int_assessments__course_enrollments.region
+      - name: enrollment_academic_year
+        data_type: int64
+        description: >-
+          Academic year of the student's school enrollment behind the resolved
+          section, in the SIS convention, as the academic goals sheet keys it.
+          Set for every source, internal assessments included, where
+          academic_year is null.
+        config:
+          meta:
+            source_column: int_assessments__course_enrollments.enrollment_academic_year
+      - name: grade_level
+        data_type: int64
+        description: >-
+          The student's enrolled grade level that academic year (0 is
+          kindergarten), from the school enrollment behind the resolved section.
+        config:
+          meta:
+            source_column: int_assessments__course_enrollments.grade_level
 
 unit_tests:
   - name: test_subject_section_in_window_wins
