@@ -66,12 +66,14 @@ with
         from reporting_groups
     ),
 
-    -- grain projection, not dup-masking: a copy tagged for 2 regions that share
-    -- a group repeats (assessment_id, canonical_assessment_id)
+    -- one row per copy and region; external and untagged copies get one row
+    -- with a null region
     copy_groups as (
-        select distinct
+        select
             a.assessment_id,
             a.is_internal_assessment,
+
+            rg.region,
 
             -- external and untagged copies are their own group
             coalesce(
@@ -89,6 +91,7 @@ with
             u.response_type_id,
             u.performance_band_set_id,
 
+            g.region,
             g.canonical_assessment_id,
             g.is_internal_assessment,
 
@@ -104,12 +107,14 @@ with
         inner join copy_groups as g on u.assessment_id = g.assessment_id
         window
             w_merge as (
-                partition by g.canonical_assessment_id, u.response_type, u.merge_key
+                partition by
+                    g.canonical_assessment_id, g.region, u.response_type, u.merge_key
             )
     )
 
 select
     assessment_id,
+    region,
     canonical_assessment_id,
     response_type,
     response_type_id,

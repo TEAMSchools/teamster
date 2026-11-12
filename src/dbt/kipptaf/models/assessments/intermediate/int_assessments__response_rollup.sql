@@ -1,8 +1,12 @@
 with
-    -- grain projection, not dup-masking: a sitting repeats on scaffold rows for
-    -- each of its student's sections
+    -- the scaffold has one row per sitting; an external copy's bands carry no
+    -- region, so its sittings match on a null region
     sitting_groups as (
-        select distinct student_assessment_id, canonical_assessment_id,
+        select
+            student_assessment_id,
+            canonical_assessment_id,
+
+            if(is_internal_assessment, region, null) as band_region,
         from {{ ref("int_assessments__scaffold") }}
         where source = 'illuminate' and student_assessment_id is not null
     ),
@@ -33,7 +37,7 @@ with
             on asr.assessment_id = pb.assessment_id
             and asr.response_type = pb.response_type
             and asr.response_type_id = pb.response_type_id
-            and sg.canonical_assessment_id = pb.canonical_assessment_id
+            and sg.band_region is not distinct from pb.region
     ),
 
     -- one sitting scores a split standard once per record; sum the records back

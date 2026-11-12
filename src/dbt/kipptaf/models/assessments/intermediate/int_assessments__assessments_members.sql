@@ -93,11 +93,8 @@ with
         where aa.academic_year >= 2026
     ),
 
-    -- grain projection, not dup-masking: a region typed twice on one copy
-    -- repeats every column, and the window is fixed by (source, assessment_id,
-    -- region)
     region_copies as (
-        select distinct
+        select
             source,
             assessment_id,
             region,

@@ -115,10 +115,9 @@ models:
       - name: regions_assessed_array
         data_type: array<string>
         description: >-
-          `regions_assessed` with all whitespace stripped, then split on comma.
-          Within-row duplicates and empty-string elements (from leading or
-          trailing commas) are not removed. Consumers can `cross join
-          unnest(regions_assessed_array)` to get one row per (assessment,
+          `regions_assessed` split into distinct regions, from the AppSheet
+          staging model. Each region appears once, so `cross join
+          unnest(regions_assessed_array)` gives one row per (assessment,
           region).
       - name: administered_at
         data_type: date

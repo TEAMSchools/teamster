@@ -2,23 +2,23 @@ models:
   - name: int_assessments__performance_bands
     description: >-
       Performance band set assignments at the response-level grain
-      (assessment_id × canonical_assessment_id × response_type ×
-      response_type_id). A copy in 2 regional groups has a row per group. Unions
-      overall assessment-level bands with per-standard and per-reporting-group
-      bands so every response in `int_illuminate__agg_student_responses` has a
-      single authoritative `performance_band_set_id` to look up. Illuminate
-      copies some standards into more than one standards set, so an assessment
-      can score one standard (same code and description) through several
-      `standard_id`s. Rows that score the same response are grouped (per
-      regional group for internal assessments, per assessment otherwise) and
-      share one `canonical_response_type_id` and one
-      `canonical_performance_band_set_id`, so the rollup scores them once.
+      (assessment_id × region × response_type × response_type_id). A copy tagged
+      for 2 regions has a row per region. Unions overall assessment-level bands
+      with per-standard and per-reporting-group bands so every response in
+      `int_illuminate__agg_student_responses` has a single authoritative
+      `performance_band_set_id` to look up. Illuminate copies some standards
+      into more than one standards set, so an assessment can score one standard
+      (same code and description) through several `standard_id`s. Rows that
+      score the same response are grouped (per group and region for internal
+      assessments, per assessment otherwise) and share one
+      `canonical_response_type_id` and one `canonical_performance_band_set_id`,
+      so the rollup scores them once.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
               - assessment_id
-              - canonical_assessment_id
+              - region
               - response_type
               - response_type_id
           config:
@@ -27,12 +27,19 @@ models:
       - name: assessment_id
         data_type: int64
         description: Illuminate assessment id.
+      - name: region
+        data_type: string
+        description: >-
+          Region of the copy's regional group, from `region_groups` on
+          `int_assessments__assessments_members`. Null for external assessments
+          and internal copies with no region tag.
       - name: canonical_assessment_id
         data_type: int64
         description: >-
-          Regional group the row's scores roll up into, from `region_groups` on
-          `int_assessments__assessments_members`. External assessments and
-          internal copies with no region tag are their own group.
+          Group ID of the copy's regional group. The same ID can name groups in
+          2 regions, so a group is (`canonical_assessment_id`, `region`).
+          External assessments and internal copies with no region tag are their
+          own group.
       - name: response_type
         data_type: string
         description: One of `overall`, `standard`, or `group`.
@@ -150,6 +157,7 @@ unit_tests:
       rows:
         - {
             assessment_id: 9001,
+            region: null,
             canonical_assessment_id: 9001,
             response_type: overall,
             response_type_id: -1,
@@ -158,6 +166,7 @@ unit_tests:
           }
         - {
             assessment_id: 9100,
+            region: Newark,
             canonical_assessment_id: 9100,
             response_type: overall,
             response_type_id: -1,
@@ -166,6 +175,7 @@ unit_tests:
           }
         - {
             assessment_id: 9101,
+            region: Newark,
             canonical_assessment_id: 9100,
             response_type: overall,
             response_type_id: -1,
@@ -174,6 +184,7 @@ unit_tests:
           }
         - {
             assessment_id: 9101,
+            region: Camden,
             canonical_assessment_id: 9101,
             response_type: overall,
             response_type_id: -1,
@@ -182,6 +193,7 @@ unit_tests:
           }
         - {
             assessment_id: 9001,
+            region: null,
             canonical_assessment_id: 9001,
             response_type: standard,
             response_type_id: 11,
@@ -190,6 +202,7 @@ unit_tests:
           }
         - {
             assessment_id: 9001,
+            region: null,
             canonical_assessment_id: 9001,
             response_type: standard,
             response_type_id: 12,
@@ -198,6 +211,7 @@ unit_tests:
           }
         - {
             assessment_id: 9001,
+            region: null,
             canonical_assessment_id: 9001,
             response_type: standard,
             response_type_id: 13,
@@ -206,6 +220,7 @@ unit_tests:
           }
         - {
             assessment_id: 9001,
+            region: null,
             canonical_assessment_id: 9001,
             response_type: standard,
             response_type_id: 14,
@@ -214,6 +229,7 @@ unit_tests:
           }
         - {
             assessment_id: 9001,
+            region: null,
             canonical_assessment_id: 9001,
             response_type: standard,
             response_type_id: 15,
@@ -222,6 +238,7 @@ unit_tests:
           }
         - {
             assessment_id: 9001,
+            region: null,
             canonical_assessment_id: 9001,
             response_type: standard,
             response_type_id: 16,
@@ -230,6 +247,7 @@ unit_tests:
           }
         - {
             assessment_id: 9100,
+            region: Newark,
             canonical_assessment_id: 9100,
             response_type: standard,
             response_type_id: 21,
@@ -238,6 +256,7 @@ unit_tests:
           }
         - {
             assessment_id: 9101,
+            region: Newark,
             canonical_assessment_id: 9100,
             response_type: standard,
             response_type_id: 22,
@@ -246,6 +265,7 @@ unit_tests:
           }
         - {
             assessment_id: 9101,
+            region: Camden,
             canonical_assessment_id: 9101,
             response_type: standard,
             response_type_id: 22,

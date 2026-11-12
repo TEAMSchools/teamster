@@ -52,6 +52,16 @@ models:
               - source
               - assessment_id
     columns:
+      - name: student_assessment_id
+        data_type: int64
+        description: >-
+          Illuminate student-assessment id of the sitting. Null on the internal
+          branch when the student has not taken the assessment.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+                where: source = 'illuminate'
       - name: section_match_method
         data_type: string
         description: >-
@@ -207,11 +217,6 @@ models:
           kipppaterson). Null when `region` is null. Carried into downstream
           hashes so consumers join/hash on a stable column rather than
           re-deriving it at each call.
-      - name: student_assessment_id
-        data_type: int64
-        description: >-
-          Illuminate student-assessment id of the sitting. Null on the internal
-          branch when the student has not taken the assessment.
       - name: date_taken
         data_type: date
         description: >-
