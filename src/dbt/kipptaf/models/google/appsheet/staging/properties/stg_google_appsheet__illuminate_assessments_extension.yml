@@ -86,7 +86,7 @@ models:
       - name: regions_assessed_array
         data_type: array<string>
         description: >-
-          regions_assessed with all whitespace stripped, then split on comma.
-          Within-row duplicates and empty-string elements (from leading or
-          trailing commas) are kept here. Consumers cross join unnest the array
-          to get one row per assessment and region.
+          regions_assessed with all whitespace stripped, split on comma, with
+          duplicates and empty strings removed, sorted. Each region appears
+          once, so a cross join unnest of the array gives one row per assessment
+          and region.

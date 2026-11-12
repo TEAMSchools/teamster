@@ -70,7 +70,12 @@ with
             iae.illuminate_grade_level_id as tagged_grade_level_id,
 
             coalesce(iae.regions_assessed, 'Miami') as regions_assessed,
-            coalesce(iae.regions_assessed_array, ['Miami']) as regions_assessed_array,
+            -- staging gives [] for a blank cell, which coalesce would keep
+            if(
+                array_length(iae.regions_assessed_array) > 0,
+                iae.regions_assessed_array,
+                ['Miami']
+            ) as regions_assessed_array,
 
             iae.regions_report_card,
             iae.regions_progress_report,
@@ -93,53 +98,44 @@ with
         where aa.academic_year >= 2026
     ),
 
-    canonical as (
+    region_copies as (
         select
             source,
             assessment_id,
-            title,
-            academic_year,
-            academic_year_clean,
-            scope,
-            creator_first_name,
-            creator_last_name,
-            performance_band_set_id,
-            assessment_type,
-            tags,
-            module_code,
-            module_type,
-            module_sequence,
-            tagged_grade_level_id,
-            regions_assessed,
-            regions_assessed_array,
-            regions_report_card,
-            regions_progress_report,
-            administered_at,
-            subject_area,
-            grade_level_id,
-            is_internal_assessment,
+            region,
 
             -- untagged Apex assessments share null tags, so grouping them would
             -- merge unrelated assessments; each is its own canonical group
             if(
-                is_internal_assessment and source = 'illuminate',
-                first_value(assessment_id) over canonical_w,
+                source = 'illuminate',
+                min(assessment_id) over (
+                    partition by
+                        source,
+                        is_florida_assessment,
+                        academic_year,
+                        scope,
+                        subject_area,
+                        module_code,
+                        grade_level_id,
+                        region
+                ),
                 assessment_id
             ) as canonical_assessment_id,
         from extended
-        window
-            canonical_w as (
-                partition by
-                    source,
-                    is_internal_assessment,
-                    is_florida_assessment,
-                    academic_year,
-                    scope,
-                    subject_area,
-                    module_code,
-                    grade_level_id
-                order by assessment_id
-            )
+        cross join unnest(regions_assessed_array) as region
+        where is_internal_assessment
+    ),
+
+    region_groups as (
+        select
+            source,
+            assessment_id,
+
+            array_agg(
+                struct(region, canonical_assessment_id) order by region
+            ) as region_groups,
+        from region_copies
+        group by source, assessment_id
     ),
 
     -- grain projection, not dup-masking: the crosswalk maps each subject area
@@ -174,10 +170,13 @@ select
     c.subject_area,
     c.grade_level_id,
     c.is_internal_assessment,
-    c.canonical_assessment_id,
+
+    rg.region_groups,
 
     case
         sd.discipline when 'ELA' then 'Reading' when 'Math' then 'Math'
     end as bucket_subject,
-from canonical as c
+from extended as c
+left join
+    region_groups as rg on c.source = rg.source and c.assessment_id = rg.assessment_id
 left join subject_disciplines as sd on c.subject_area = sd.subject_area

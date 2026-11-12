@@ -52,6 +52,16 @@ models:
               - source
               - assessment_id
     columns:
+      - name: student_assessment_id
+        data_type: int64
+        description: >-
+          Illuminate student-assessment id of the sitting. Null on the internal
+          branch when the student has not taken the assessment.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+                where: source = 'illuminate'
       - name: section_match_method
         data_type: string
         description: >-
@@ -207,11 +217,6 @@ models:
           kipppaterson). Null when `region` is null. Carried into downstream
           hashes so consumers join/hash on a stable column rather than
           re-deriving it at each call.
-      - name: student_assessment_id
-        data_type: int64
-        description: >-
-          Illuminate student-assessment id of the sitting. Null on the internal
-          branch when the student has not taken the assessment.
       - name: date_taken
         data_type: date
         description: >-
@@ -226,27 +231,17 @@ models:
       - name: is_replacement
         data_type: boolean
         description: True on the replacement branch only.
-      - name: is_region_tagged
-        data_type: boolean
-        description: >-
-          Replacement rows only — true when the row's region is one of the
-          assessment's tagged regions (int_assessments__assessments_canonical
-          regions_array), the regions dim_assessment_administrations builds
-          administrations for. False when the region is untagged or null. Null
-          on every other branch, whose region comes from the assessment's own
-          tags or is not reported against a tagged administration.
       - name: canonical_assessment_id
         data_type: int64
         description: >-
-          Pass-through of
-          int_assessments__assessments_members.canonical_assessment_id — the
-          lead assessment_id within the partition (academic_year, scope,
-          subject_area, module_code, grade_level_id) for internal assessments,
-          and the row's own assessment_id for external assessments. See parent
-          column for full semantics. Consumers needing the canonical title,
-          administered date, or grade level join
-          int_assessments__assessments_canonical via this key (internal rows
-          only).
+          Group the row's scores roll up into. Internal Illuminate rows take the
+          group of the row's region from
+          int_assessments__assessments_members.region_groups; Apex and external
+          rows are their own group. A replacement row from a region the
+          assessment is not tagged for has no group and is left out. Consumers
+          needing the group's title, administered date, or grade join
+          int_assessments__assessments_canonical on source and this key
+          (internal rows only).
 
 unit_tests:
   - name: test_apex_section_match_methods
@@ -275,10 +270,11 @@ unit_tests:
               cast(null as string) as scope,
               cast(null as string) as module_type,
               cast(null as string) as module_code,
-              9001 as canonical_assessment_id,
               cast(null as int64) as tagged_grade_level_id,
               cast(null as int64) as grade_level_id,
               ['Miami'] as regions_assessed_array,
+              [struct('Miami' as region, 9001 as canonical_assessment_id)]
+              as region_groups,
               true as is_internal_assessment
       - input: ref('int_focus__apex_results')
         format: sql
@@ -433,8 +429,6 @@ unit_tests:
         rows: []
       - input: ref('stg_illuminate__dna_assessments__students_assessments')
         rows: []
-      - input: ref('int_assessments__assessments_canonical')
-        rows: []
     expect:
       rows:
         - {
@@ -514,13 +508,14 @@ unit_tests:
             is_replacement: false,
           }
 
-  - name: test_replacement_region_tagged
+  - name: test_replacement_regional_group
     description: >-
       Three students take a grade 5 Illuminate Math assessment from a different
-      grade, so each lands on the replacement branch. The assessment is tagged
-      Camden and Newark. The Newark student is tagged; the Paterson student is
-      not; the student whose school is missing from the locations sheet has no
-      region and counts as untagged.
+      grade, so each lands on the replacement branch. The copy is tagged Camden
+      and Newark and sits in a different group in each. The Newark student takes
+      the Newark group. The Paterson student's region is untagged and the
+      student whose school is missing from the locations sheet has no region, so
+      neither has a group and both are left out.
     model: int_assessments__scaffold
     given:
       - input: ref('int_assessments__assessments_members')
@@ -528,7 +523,7 @@ unit_tests:
         rows: |
           select
               'illuminate' as source,
-              1 as assessment_id,
+              5 as assessment_id,
               'Math Unit 1' as title,
               2027 as academic_year,
               2026 as academic_year_clean,
@@ -538,23 +533,19 @@ unit_tests:
               cast(null as string) as scope,
               cast(null as string) as module_type,
               cast(null as string) as module_code,
-              1 as canonical_assessment_id,
               6 as tagged_grade_level_id,
               6 as grade_level_id,
-              ['Newark'] as regions_assessed_array,
+              ['Camden', 'Newark'] as regions_assessed_array,
+              [
+                  struct('Camden' as region, 5 as canonical_assessment_id),
+                  struct('Newark', 3)
+              ] as region_groups,
               true as is_internal_assessment
-      - input: ref('int_assessments__assessments_canonical')
-        format: sql
-        rows: |
-          select
-              'illuminate' as source,
-              1 as canonical_assessment_id,
-              ['Camden', 'Newark'] as regions_array
       - input: ref('stg_illuminate__dna_assessments__students_assessments')
         rows:
-          - { student_assessment_id: 21, student_id: 11, assessment_id: 1 }
-          - { student_assessment_id: 22, student_id: 12, assessment_id: 1 }
-          - { student_assessment_id: 23, student_id: 13, assessment_id: 1 }
+          - { student_assessment_id: 21, student_id: 11, assessment_id: 5 }
+          - { student_assessment_id: 22, student_id: 12, assessment_id: 5 }
+          - { student_assessment_id: 23, student_id: 13, assessment_id: 5 }
       - input: ref('stg_illuminate__public__students')
         rows:
           - { student_id: 11, local_student_id: 1001 }
@@ -615,17 +606,5 @@ unit_tests:
             student_number: 1001,
             region: Newark,
             is_replacement: true,
-            is_region_tagged: true,
-          }
-        - {
-            student_number: 1002,
-            region: Paterson,
-            is_replacement: true,
-            is_region_tagged: false,
-          }
-        - {
-            student_number: 1003,
-            region: null,
-            is_replacement: true,
-            is_region_tagged: false,
+            canonical_assessment_id: 3,
           }

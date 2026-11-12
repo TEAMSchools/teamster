@@ -66,6 +66,24 @@ with
         from reporting_groups
     ),
 
+    -- one row per copy and region; external and untagged copies get one row
+    -- with a null region
+    copy_groups as (
+        select
+            a.assessment_id,
+            a.is_internal_assessment,
+
+            rg.region,
+
+            -- external and untagged copies are their own group
+            coalesce(
+                rg.canonical_assessment_id, a.assessment_id
+            ) as canonical_assessment_id,
+        from {{ ref("int_assessments__assessments_members") }} as a
+        left join unnest(a.region_groups) as rg
+        where a.source = 'illuminate'
+    ),
+
     grouped as (
         select
             u.assessment_id,
@@ -73,7 +91,9 @@ with
             u.response_type_id,
             u.performance_band_set_id,
 
-            a.is_internal_assessment,
+            g.region,
+            g.canonical_assessment_id,
+            g.is_internal_assessment,
 
             min(u.response_type_id) over w_merge as canonical_response_type_id,
             max(u.response_type_id) over w_merge as max_response_type_id,
@@ -84,26 +104,18 @@ with
                 w_merge order by u.assessment_id, u.response_type_id
             ) as first_band_set_id,
         from unioned as u
-        inner join
-            {{ ref("int_assessments__assessments_members") }} as a
-            on u.assessment_id = a.assessment_id
-        where a.source = 'illuminate'
+        inner join copy_groups as g on u.assessment_id = g.assessment_id
         window
             w_merge as (
                 partition by
-                    a.is_internal_assessment,
-                    if(
-                        a.is_internal_assessment,
-                        a.canonical_assessment_id,
-                        u.assessment_id
-                    ),
-                    u.response_type,
-                    u.merge_key
+                    g.canonical_assessment_id, g.region, u.response_type, u.merge_key
             )
     )
 
 select
     assessment_id,
+    region,
+    canonical_assessment_id,
     response_type,
     response_type_id,
     performance_band_set_id,

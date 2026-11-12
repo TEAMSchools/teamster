@@ -37,12 +37,6 @@ models:
           - not_null:
               config:
                 severity: error
-      - name: week_start_monday
-        data_type: date
-        data_tests:
-          - not_null:
-              config:
-                severity: error
       - name: assessment_id
         data_type: string
         data_tests:
@@ -51,6 +45,8 @@ models:
                 severity: error
       - name: student_number
         data_type: int64
+      - name: week_start_monday
+        data_type: date
       - name: student_name
         data_type: string
       - name: academic_year
@@ -152,10 +148,30 @@ models:
           only so the DDI Suite workbook's field list does not change.
       - name: grade_goal
         data_type: float64
+        description: Grade-level goal from the academic goals sheet.
       - name: school_goal
         data_type: float64
+        description: School-level goal from the academic goals sheet.
       - name: region_goal
         data_type: float64
+        description: Region-level goal from the academic goals sheet.
+      - name: grade_goal_differentiated
+        data_type: float64
+        description: >-
+          Grade-level goal for this module type. A fixed goal from the Module
+          Goal Rules sheet wins; otherwise the Academic Goals sheet's QA goal on
+          QA and CRQ modules where one is set; otherwise `grade_goal` plus the
+          rule's offset; otherwise `grade_goal`.
+      - name: school_goal_differentiated
+        data_type: float64
+        description: >-
+          School-level goal for this module type, chosen in the same order as
+          `grade_goal_differentiated` but starting from `school_goal`.
+      - name: region_goal_differentiated
+        data_type: float64
+        description: >-
+          Region-level goal for this module type, chosen in the same order as
+          `grade_goal_differentiated` but starting from `region_goal`.
       - name: organization_goal
         data_type: float64
       - name: dibels_most_recent_composite

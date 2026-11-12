@@ -192,8 +192,9 @@ When a business user needs to validate changes before merge:
     The task and Claude's invocation are the same command with the same
     configuration, so they are interchangeable. Use the task when you want the
     server visible in a terminal panel or under your own control; let Claude
-    start one when it is verifying its own work. Claude stops it with
-    `pkill -f 'cubejs[-]server'`.
+    start one when it is verifying its own work. Claude stops it by its port,
+    `fuser -k 4000/tcp`, so another session's server on another port keeps
+    running.
 
     Two servers cannot both bind port 4000 — if Claude reports the port in use,
     one of you already has it running.

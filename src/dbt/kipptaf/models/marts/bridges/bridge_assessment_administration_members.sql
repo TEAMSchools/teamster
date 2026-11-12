@@ -3,22 +3,21 @@ with
         select
             a.source,
             a.assessment_id as member_assessment_id,
-            a.canonical_assessment_id,
             a.module_code,
             a.academic_year,
 
+            rg.region,
+            rg.canonical_assessment_id,
+
             c.administered_date as canonical_administered_date,
 
-            region,
-
-            concat('kipp', lower(region)) as _dbt_source_project,
+            concat('kipp', lower(rg.region)) as _dbt_source_project,
         from {{ ref("int_assessments__assessments_members") }} as a
+        cross join unnest(a.region_groups) as rg
         inner join
             {{ ref("int_assessments__assessments_canonical") }} as c
             on a.source = c.source
-            and a.canonical_assessment_id = c.canonical_assessment_id
-        cross join unnest(a.regions_assessed_array) as region
-        where a.is_internal_assessment
+            and rg.canonical_assessment_id = c.canonical_assessment_id
     )
 
 select

@@ -93,9 +93,10 @@ before merge:
    FOREGROUND call fails (a server never exits, so it hangs to timeout). The VS
    Code task runs the identical command and injects no extra configuration, so
    prefer it only when the user wants the server visible in a terminal panel.
-   Stop it with `pkill -f 'cubejs[-]server'` — the bracket is required, or the
-   pattern matches the killing shell's own command line and kills it instead. Or
-   commit+push for Cube Cloud Dev Mode.
+   Stop it by the port it listens on, `fuser -k 4000/tcp` (or the port you gave
+   it). A pattern kill such as `pkill -f cubejs-server` also stops every other
+   session's Cube server and the validator runs reading it. Or commit+push for
+   Cube Cloud Dev Mode.
 4. Revert all dev-schema redirects to `kipptaf_marts.<table>` before committing.
    Verify with `grep -r "zz_" src/cube/` before pushing.
 

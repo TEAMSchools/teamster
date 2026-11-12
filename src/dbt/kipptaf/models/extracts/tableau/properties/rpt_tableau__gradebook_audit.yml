@@ -32,6 +32,13 @@ models:
               - quarter
               - assignment_category_code
               - assignmentid
+      # grain columns this model's own SQL does not keep non-null; a null
+      # grain value leaves the row without its key
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: |-
+              sectionid is not null
+              and assignment_category_code is not null
     columns:
       - name: _dbt_source_project
         data_type: string
