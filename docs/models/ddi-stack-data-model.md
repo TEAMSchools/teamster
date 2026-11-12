@@ -466,14 +466,15 @@ here moves those consumers too):
 
 ## Inputs (hand-maintained)
 
-| Input                              | Maintainer            | Feeds                                                | Update rhythm                            |
-| ---------------------------------- | --------------------- | ---------------------------------------------------- | ---------------------------------------- |
-| AppSheet assessment tagging        | ADs; QC: Marya Shukla | everything (`is_internal_assessment`)                | frequent; turned over every year         |
-| Standard domains named range       | Marya Shukla          | report-card domains, DDI dashboard                   | largely static                           |
-| Academic goals named range         | data team             | goals on the DDI dashboard, `dim_assessment_goals`   | once a year in theory, several each fall |
-| Course subject crosswalk           | data team             | `int_assessments__course_enrollments`, `dim_courses` | annual audit (below)                     |
-| Vendor subject crosswalk           | data team             | state/vendor branches of the star                    | rare                                     |
-| QBLs / Power Standards named range | nobody (retired)      | `rpt_tableau__ddi_dashboard.is_qbl` ([#5656])        | none                                     |
+| Input                              | Maintainer            | Feeds                                                                                      | Update rhythm                            |
+| ---------------------------------- | --------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------- |
+| AppSheet assessment tagging        | ADs; QC: Marya Shukla | everything (`is_internal_assessment`)                                                      | frequent; turned over every year         |
+| Standard domains named range       | Marya Shukla          | report-card domains, DDI dashboard                                                         | largely static                           |
+| Academic goals named range         | data team             | goals on the DDI dashboard, `dim_assessment_goals`                                         | once a year in theory, several each fall |
+| Module goal rules named range      | data team, with T&L   | `*_goal_differentiated` on the DDI dashboard                                               | when T&L change an ET, CRQ or TP rule    |
+| Course subject crosswalk           | data team             | `int_assessments__course_enrollments`, `dim_courses`, `int_assessments__module_goal_rules` | annual audit (below)                     |
+| Vendor subject crosswalk           | data team             | state/vendor branches of the star                                                          | rare                                     |
+| QBLs / Power Standards named range | nobody (retired)      | `rpt_tableau__ddi_dashboard.is_qbl` ([#5656])                                              | none                                     |
 
 The course subject crosswalk's annual audit is worth systematizing (the family
 skill should carry it as a procedure): list new courses with current-year
@@ -616,7 +617,10 @@ Found during the documentation run, not yet tracked separately:
 2. Before the first administration: achievement directors create the year's
    assessments in Illuminate and tag them in the AppSheet; Marya Shukla QCs the
    tags. Nothing shows anywhere until this happens.
-3. Goals: add the new year's rows to the academic-goals named range.
+3. Goals: add the new year's rows to the academic-goals named range, including
+   T&L's QA goals in its `QA Goal` column. Review the Module Goal Rules tab with
+   T&L too: its rules carry no year, so a change applies to every year the DDI
+   Suite shows.
 4. Standard domains: update the named range when standards or domains change.
 5. Reporting terms: confirm the year's RT rows exist (shared hub, but this
    family breaks visibly when they lag).
