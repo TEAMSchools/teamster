@@ -7,9 +7,12 @@ models:
       PMS from 2024). Observer attributes come from their primary roster row on
       the round's last end date across regions; teacher attributes come from
       their primary roster row at their last scored form in the round, and are
-      null when no primary row covers that time. The Tableau row-level security
-      columns (location_clean_name through reports_to_sam_account_name) describe
-      the observer, because the outlier results judge the observer's scoring.
+      null when no primary row covers that time. The 11 Tableau row-level
+      security columns (location_clean_name, campus_name,
+      home_business_unit_name, home_department_name, job_function, job_title,
+      mail, user_principal_name, sam_account_name, reports_to_mail,
+      reports_to_sam_account_name) describe the observer, because the outlier
+      results judge the observer's scoring.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -241,8 +244,8 @@ models:
       - name: sam_account_name
         data_type: string
         description: >-
-          Observer's Active Directory account name. Tableau identity match
-          before the Entra cutover.
+          Observer's Active Directory account name. Tableau identity match on
+          the Active Directory login.
         config:
           meta:
             contains_pii: true
@@ -257,7 +260,7 @@ models:
         data_type: string
         description: >-
           Active Directory account name of the observer's manager. Tableau
-          manager match before the Entra cutover.
+          manager match on the Active Directory login.
         config:
           meta:
             contains_pii: true
