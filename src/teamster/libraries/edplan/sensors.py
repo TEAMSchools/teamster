@@ -83,7 +83,7 @@ def build_edplan_sftp_sensor(
                         )
                     )
 
-                cursor[asset_identifier] = now_timestamp
+            cursor[asset_identifier] = now_timestamp
 
         return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))
 

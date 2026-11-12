@@ -1,3 +1,4 @@
+import json
 from collections.abc import Sequence
 from unittest.mock import MagicMock
 
@@ -11,7 +12,9 @@ NJSMART_KEY = AssetKey(["kippnewark", "edplan", "njsmart_powerschool"])
 SECTION_504_KEY = AssetKey(["kippnewark", "edplan", "section_504_student_report"])
 
 
-def _run_sensor(filenames: list[str], sensor=sftp_sensor) -> Sequence[RunRequest]:
+def _run_sensor(
+    filenames: list[str], sensor=sftp_sensor, cursor: str | None = None
+) -> Sequence[RunRequest]:
     files = []
     for filename in filenames:
         attr = SFTPAttributes()
@@ -25,7 +28,7 @@ def _run_sensor(filenames: list[str], sensor=sftp_sensor) -> Sequence[RunRequest
 
     result = check.inst(
         sensor(
-            context=build_sensor_context(sensor_name=sensor.name),
+            context=build_sensor_context(sensor_name=sensor.name, cursor=cursor),
             ssh_edplan=ssh,
         ),
         SensorResult,
@@ -61,6 +64,17 @@ def test_paterson_export_requests_its_njsmart_asset():
     assert run_requests[0].asset_selection == [
         AssetKey(["kipppaterson", "edplan", "njsmart_powerschool"])
     ]
+
+
+def test_one_asset_cursor_does_not_suppress_the_other():
+    cursor = json.dumps({NJSMART_KEY.to_python_identifier(): 9e9})
+
+    run_requests = _run_sensor(
+        ["NJSMART-PowerSchool.txt", "EDPlan-504StudentReport.csv"], cursor=cursor
+    )
+
+    assert len(run_requests) == 1
+    assert run_requests[0].asset_selection == [SECTION_504_KEY]
 
 
 def test_only_njsmart_file_requests_only_njsmart():
