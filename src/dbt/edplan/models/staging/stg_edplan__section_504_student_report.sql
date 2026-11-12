@@ -30,7 +30,6 @@ with
             date(parse_datetime('%Y/%m/%d %k:%M:%S', begin_date)) as begin_date,
             date(parse_datetime('%Y/%m/%d %k:%M:%S', end_date)) as end_date,
 
-            -- each daily file is a full export with its own event history
             max(_dagster_partition_date) over () as latest_report_date,
         from {{ source("edplan", "src_edplan__section_504_student_report") }}
     )

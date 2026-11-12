@@ -1,11 +1,10 @@
 models:
   - name: stg_edplan__section_504_student_report
     description:
-      EdPlan's 504 student report (EDPlan-504StudentReport.csv), one row per
-      student per Section 504 event — eligibility determinations,
-      non-eligibility determinations, and 504 plans, current and previous. Each
-      daily file is a full export carrying its own event history, so only the
-      latest file is kept.
+      EdPlan's 504 student report, one row per student per Section 504 event —
+      eligibility determinations, non-eligibility determinations, and 504 plans,
+      current and previous. Each daily file is a full export carrying its own
+      event history, so only the latest file is kept.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -17,6 +16,19 @@ models:
           config:
             severity: error
     columns:
+      - name: student_number
+        data_type: int64
+        description: PowerSchool student number (EdPlan's Student ID).
+        data_tests:
+          - not_null:
+              description:
+                EdPlan's Student ID is blank or not a number for these rows. Fix
+                the student's Student ID in EdPlan to match PowerSchool.
+              config:
+                severity: warn
+        config:
+          meta:
+            contains_pii: true
       - name: internal_student_id
         data_type: string
         description: EdPlan's internal student id.
@@ -119,12 +131,6 @@ models:
       - name: report_date
         data_type: date
         description: Date of the EdPlan export this row came from.
-      - name: student_number
-        data_type: int64
-        description: PowerSchool student number (EdPlan's Student ID).
-        config:
-          meta:
-            contains_pii: true
       - name: state_studentnumber
         data_type: int64
         description: NJ state student id (SID).

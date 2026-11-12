@@ -11,7 +11,7 @@ NJSMART_KEY = AssetKey(["kippnewark", "edplan", "njsmart_powerschool"])
 SECTION_504_KEY = AssetKey(["kippnewark", "edplan", "section_504_student_report"])
 
 
-def _run_sensor(filenames: list[str]) -> Sequence[RunRequest]:
+def _run_sensor(filenames: list[str], sensor=sftp_sensor) -> Sequence[RunRequest]:
     files = []
     for filename in filenames:
         attr = SFTPAttributes()
@@ -24,8 +24,8 @@ def _run_sensor(filenames: list[str]) -> Sequence[RunRequest]:
     ssh.listdir_attr_r_or_skip.return_value = files
 
     result = check.inst(
-        sftp_sensor(
-            context=build_sensor_context(sensor_name=sftp_sensor.name),
+        sensor(
+            context=build_sensor_context(sensor_name=sensor.name),
             ssh_edplan=ssh,
         ),
         SensorResult,
@@ -45,6 +45,22 @@ def test_both_files_request_one_run_per_asset():
         (SECTION_504_KEY,),
     }
     assert len({r.run_key for r in run_requests}) == 2
+
+
+def test_paterson_export_requests_its_njsmart_asset():
+    from teamster.code_locations.kipppaterson.edplan.sensors import (
+        sftp_sensor as paterson_sensor,
+    )
+
+    run_requests = _run_sensor(
+        ["EDPlan Special Education Data Export.txt", "NJSMART-PowerSchool.txt"],
+        sensor=paterson_sensor,
+    )
+
+    assert len(run_requests) == 1
+    assert run_requests[0].asset_selection == [
+        AssetKey(["kipppaterson", "edplan", "njsmart_powerschool"])
+    ]
 
 
 def test_only_njsmart_file_requests_only_njsmart():
