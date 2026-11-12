@@ -376,16 +376,18 @@ cubes:
 
       - name: dibels_most_recent_composite
         description: >-
-          The student's most recent DIBELS composite benchmark level this school
-          year, on reading and ELA assessments, or No Composite Score Available
-          when the student has none; No Composite Score Available on math
-          assessments; null on reading and ELA assessments when the stint has no
-          subject record, and wherever the assessment's subject is neither
-          reading nor math.
+          The student's most recent DIBELS composite benchmark level in the
+          school year of the enrollment, on reading and ELA assessments, or No
+          Composite Score Available when the student has none; No Composite
+          Score Available on math assessments; null wherever the assessment's
+          subject is neither reading nor math.
         sql: |-
           CASE {student_assessments.bucket_subject}
             WHEN 'Reading'
-              THEN {student_enrollment_status.dibels_most_recent_composite}
+              THEN COALESCE(
+                {student_dibels_latest_composite.proficiency_level},
+                'No Composite Score Available'
+              )
             WHEN 'Math' THEN 'No Composite Score Available'
           END
         type: string

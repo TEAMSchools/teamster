@@ -539,15 +539,13 @@ DDI_SUITE_VIEW_MEMBERS = [
     "dibels_most_recent_composite",
 ]
 
-# Each subject-picked flag on the scores cube: the ELA and math pair it reads,
-# or None where Math gets a fixed literal instead of a column.
+# Each subject-picked flag on the scores cube: the ELA and math pair it reads.
 DDI_SUITE_SUBJECT_FLAGS = {
     "is_low_25": ("is_ela_low_25", "is_math_low_25"),
     "state_test_proficiency": (
         "ela_state_test_proficiency",
         "math_state_test_proficiency",
     ),
-    "dibels_most_recent_composite": ("dibels_most_recent_composite", None),
 }
 
 
@@ -564,17 +562,22 @@ def test_subject_flags_pick_their_pair_by_bucket_subject() -> None:
             problems.append(f"{member}: has an ELSE; other subjects must be null")
         if f"WHEN 'Reading' THEN {{student_enrollment_status.{ela}}}" not in sql:
             problems.append(f"{member}: Reading does not read {ela}")
-        math_branch = (
-            f"WHEN 'Math' THEN {{student_enrollment_status.{math}}}"
-            if math
-            else "WHEN 'Math' THEN 'No Composite Score Available'"
-        )
-        if math_branch not in sql:
-            problems.append(f"{member}: Math branch is not {math_branch!r}")
-        for col in filter(None, (ela, math)):
+        if f"WHEN 'Math' THEN {{student_enrollment_status.{math}}}" not in sql:
+            problems.append(f"{member}: Math does not read {math}")
+        for col in (ela, math):
             if status.get(col, {}).get("public", False):
                 problems.append(f"student_enrollment_status.{col}: must be private")
     assert not problems, "\n".join(problems)
+
+
+def test_dibels_composite_reads_the_latest_annual_fact() -> None:
+    cubes = _cube_docs()
+    scores = {d["name"]: d for d in cubes["student_assessment_scores"]["dimensions"]}
+    sql = _norm(scores["dibels_most_recent_composite"]["sql"])
+    assert "CASE {student_assessments.bucket_subject}" in sql
+    assert "{student_dibels_latest_composite.proficiency_level}" in sql
+    assert "WHEN 'Math' THEN 'No Composite Score Available'" in sql
+    assert "ELSE" not in sql.upper().split()
 
 
 @_NEEDS_CUBE
@@ -665,7 +668,18 @@ TWINS.update(
                 "is_math_low_25",
                 "ela_state_test_proficiency",
                 "math_state_test_proficiency",
-                "dibels_most_recent_composite",
+            ]
+        },
+        **{
+            ("student_dibels_latest_composite", c): (
+                "fct_assessment_scores_latest_annual",
+                c,
+            )
+            for c in [
+                "assessment_score_latest_annual_key",
+                "student_key",
+                "academic_year",
+                "proficiency_level",
             ]
         },
         ("courses", "is_foundations"): ("dim_courses", "is_foundations"),

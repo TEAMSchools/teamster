@@ -46,7 +46,6 @@ with
             discipline,
             is_low_25_fl,
             state_test_proficiency,
-            dibels_most_recent_composite,
 
             {{
                 student_enrollment_key(
@@ -183,7 +182,6 @@ select
 
     ela.is_low_25_fl as is_ela_low_25,
     ela.state_test_proficiency as ela_state_test_proficiency,
-    ela.dibels_most_recent_composite,
 
     mth.is_low_25_fl as is_math_low_25,
     mth.state_test_proficiency as math_state_test_proficiency,

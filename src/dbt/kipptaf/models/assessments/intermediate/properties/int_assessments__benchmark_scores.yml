@@ -132,6 +132,15 @@ models:
         description: >-
           iReady rank of the sitting among a student's same-subject sittings in
           the same test round; 1 is the kept sitting. Null for STAR and DIBELS.
+      - name: is_latest_in_year
+        data_type: boolean
+        description: >-
+          DIBELS only. True on the student's latest sitting of this measure in
+          the academic year, from int_amplify__all_assessments. Null for iReady
+          and STAR.
+        config:
+          meta:
+            contains_pii: true
       - name: assessment_id
         data_type: string
         description: >-
@@ -174,7 +183,8 @@ unit_tests:
               'At/Above' as aggregated_measure_standard_level,
               'Composite' as measure_standard,
               'Composite' as measure_name,
-              'Benchmark' as assessment_type
+              'Benchmark' as assessment_type,
+              true as is_latest_in_year
           union all
           select
               'kippnewark' as _dbt_source_project,
@@ -189,7 +199,8 @@ unit_tests:
               'Below/Well Below' as aggregated_measure_standard_level,
               'ORF' as measure_standard,
               'Oral Reading Fluency' as measure_name,
-              'Benchmark' as assessment_type
+              'Benchmark' as assessment_type,
+              true as is_latest_in_year
           union all
           select
               'kippnewark' as _dbt_source_project,
@@ -204,7 +215,8 @@ unit_tests:
               'Below/Well Below' as aggregated_measure_standard_level,
               'ORF' as measure_standard,
               'Oral Reading Fluency' as measure_name,
-              'PM' as assessment_type
+              'PM' as assessment_type,
+              cast(null as bool) as is_latest_in_year
       - input: ref('stg_google_sheets__assessments__vendor_subject_crosswalk')
         rows:
           - {

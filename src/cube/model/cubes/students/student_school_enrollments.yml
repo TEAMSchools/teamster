@@ -31,6 +31,15 @@ cubes:
           {student_homeroom_section.is_current_homeroom}
         relationship: one_to_one
 
+      # The student's latest DIBELS composite in the stint's school year. A
+      # student with 2 stints in a year reads the same row from both.
+      - name: student_dibels_latest_composite
+        sql: >
+          {student_dibels_latest_composite.student_key} = {CUBE}.student_key AND
+          {student_dibels_latest_composite.academic_year} = {CUBE}.academic_year
+          AND {student_dibels_latest_composite.is_dibels_composite}
+        relationship: many_to_one
+
     dimensions:
       - name: student_enrollment_key
         description: >-

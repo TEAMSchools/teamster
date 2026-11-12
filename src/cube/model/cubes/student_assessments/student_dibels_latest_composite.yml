@@ -1,0 +1,49 @@
+cubes:
+  # The DIBELS composite role of fct_assessment_scores_latest_annual. Joined
+  # from student_school_enrollments on student and academic year, narrowed to
+  # the DIBELS composite assessment by is_dibels_composite, so each stint
+  # matches at most one row.
+  - name: student_dibels_latest_composite
+    public: false
+    sql_table: kipptaf_marts.fct_assessment_scores_latest_annual
+
+    dimensions:
+      - name: assessment_score_latest_annual_key
+        description: >-
+          Surrogate key over student, academic year and assessment. Primary key.
+        sql: assessment_score_latest_annual_key
+        type: string
+        primary_key: true
+        public: false
+
+      - name: student_key
+        description: FK to dim_students.
+        sql: student_key
+        type: string
+        public: false
+
+      - name: academic_year
+        description: >-
+          Starting calendar year of the school year the score falls in. Part of
+          the grain.
+        sql: academic_year
+        type: number
+        public: false
+
+      # Mirrors the dbt assessment_key macro for ('dibels', 'Composite', null,
+      # null), the key dim_assessments gives the DIBELS composite.
+      - name: is_dibels_composite
+        description: True on the DIBELS composite assessment's rows.
+        sql: >-
+          {CUBE}.assessment_key = TO_HEX(MD5(
+          'dibels-Composite-_dbt_utils_surrogate_key_null_-_dbt_utils_surrogate_key_null_'
+          ))
+        type: boolean
+        public: false
+
+      - name: proficiency_level
+        description: >-
+          Performance level of the latest sitting, as the vendor labels it.
+        sql: proficiency_level
+        type: string
+        public: false
