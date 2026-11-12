@@ -92,13 +92,13 @@ unit_tests:
           select
               101, 2026, 'Q1', 9002, true, 'group', 'MC', 1,
               cast(80 as numeric), 'Text Study'
-      - input: ref('int_assessments__group_performance_bands')
+      - input: ref('int_assessments__performance_bands')
         format: sql
         rows: |
           select
-              9001 as canonical_assessment_id,
+              9001 as assessment_id,
               'overall' as response_type,
-              500 as performance_band_set_id
+              500 as canonical_performance_band_set_id
           union all
           select 9002, 'overall', 500
       - input: ref('int_illuminate__performance_band_sets')

@@ -50,13 +50,8 @@ group)                                v
        |                              v
        |                int_assessments__scaffold  <-- course enrollments,
        |                 ("expected to take")          Illuminate sessions
-       |                              |
-       |                              |   int_assessments__performance_bands
-       |                              |        |            |
-       |                              |        |            v
-       |                              |        |   int_assessments__group_performance_bands
-       v                              |        |            |
-int_assessments__response_rollup  <---+--------+------------+  <-- reporting terms
+       v                              |
+int_assessments__response_rollup  <---+  <-- performance bands, reporting terms
        |         |          |         |
        v         v          v         v
 DDI Suite    DeansList   mod audit   assessment star (dim_assessments,
@@ -67,11 +62,7 @@ extracts)    (4 CDO      + tier      fct_assessment_scores_*) --> Cube view
 
 `int_assessments__assessment_region_groups` reads the members model; the
 canonical model reads both, and the scaffold reads the crosswalk and the
-canonical model. `int_assessments__performance_bands` feeds the response rollup
-the canonical response type ID that merges one standard across copies, and feeds
-`int_assessments__group_performance_bands`. That model also reads the crosswalk,
-the canonical model and the members model, and the response rollup reads it for
-the band set each score is labeled with.
+canonical model.
 
 `int_illuminate__repository_data` (custom student-data tables) feeds the sight
 words dashboard and the DeansList sight-words extract on a separate track from
@@ -90,9 +81,9 @@ sheet staging models, and the AppSheet staging table), as are
 `int_illuminate__root_standards`, and the table marts of the assessment star.
 The remaining intermediates (`int_illuminate__*` apart from `root_standards`;
 `int_assessments__assessments_members`, `__assessment_region_groups`,
-`__assessments_canonical`, `__performance_bands`, `__group_performance_bands`,
-`__academic_goals`) and `dim_assessment_goals` are views. A new score therefore
-reaches a consumer only after:
+`__assessments_canonical`, `__performance_bands`, `__academic_goals`) and
+`dim_assessment_goals` are views. A new score therefore reaches a consumer only
+after:
 
 1. The Illuminate dlt sync lands it. The assessment tables
    (`agg_student_responses*`, `students_assessments`) sync at midnight and 5pm
@@ -138,17 +129,17 @@ reaches a consumer only after:
   anchors, `assessment_id` on the roll-up, and `source_assessment_id` in the
   scores fact's administration key and on `dim_assessment_administrations`. A
   copy tagged for several regions sits in each region's group. Each region's
-  scores carry the title, date, report card and progress report tags, and band
-  set of its own first copy. Two copies tagged for the same region combine,
-  which is how multi-part assessments and alternate versions become one result
-  per student. A wrong module tag combines different tests for the regions
-  tagged on both copies. A tag edit that changes which copy is a region's first
-  changes that region's group ID, and with it the administration and score keys.
-  Miami-only Florida copies (AppSheet `regions_assessed` exactly `Miami`) form
-  their own tag group, so New Jersey rows never inherit a Florida title or date.
-  Non-internal assessments are their own canonical. Known defect: inconsistent
-  SY25-26 tagging destabilizes the grouping
-  ([#5654](https://github.com/TEAMSchools/teamster/issues/5654)).
+  scores carry the title, date, and report card and progress report tags of its
+  own first copy, and the band set on the tag group's first copy. Two copies
+  tagged for the same region combine, which is how multi-part assessments and
+  alternate versions become one result per student. A wrong module tag combines
+  different tests for the regions tagged on both copies. A tag edit that changes
+  which copy is a region's first changes that region's group ID, and with it the
+  administration and score keys. Miami-only Florida copies (AppSheet
+  `regions_assessed` exactly `Miami`) form their own tag group, so New Jersey
+  rows never inherit a Florida title or date. Non-internal assessments are their
+  own canonical. Known defect: inconsistent SY25-26 tagging destabilizes the
+  grouping ([#5654](https://github.com/TEAMSchools/teamster/issues/5654)).
 - **Scope**: Illuminate's assessment category (decoded from `dna_scopes`) — Unit
   Assessment ("UA"), Cumulative Review Quizzes ("CRQ"), Cold Read Quizzes, Sight
   Words Quiz, and so on. K-1 cumulative-review and cold-read quizzes are
@@ -188,15 +179,12 @@ reaches a consumer only after:
   the column name for the analogous off-grade-quiz case; the two are computed
   independently.
 - **Performance bands**: Illuminate band sets attached per response type in
-  `int_assessments__performance_bands`; the roll-up reads a group's band set
-  from `int_assessments__group_performance_bands`, which takes the band set on
-  the group's first copy (for a standard or reporting group, the first copy that
-  carries it). `int_illuminate__performance_band_sets` computes each band's
-  range as `[minimum_value, next band's minimum - 0.1)`, top band capped at
-  9998.9. Each band also carries Illuminate's own `is_mastery` flag, so on
-  band-driven surfaces the band set defines which labels count as mastery. The
-  DeansList feeds are the exception: they hardcode their own ladders and cut
-  points (see their section).
+  `int_assessments__performance_bands`. `int_illuminate__performance_band_sets`
+  computes each band's range as `[minimum_value, next band's minimum - 0.1)`,
+  top band capped at 9998.9. Each band also carries Illuminate's own
+  `is_mastery` flag, so on band-driven surfaces the band set defines which
+  labels count as mastery. The DeansList feeds are the exception: they hardcode
+  their own ladders and cut points (see their section).
 - **DDI tiers** (`nj_student_tier`), called **"buckets"** by every stakeholder
   ("Bucket 1 and 2" in tickets): the student intervention tier the tier roster
   publishes. The ladder is **not** in this family — it lives in the shared hub
@@ -532,10 +520,10 @@ state testing results, both, or eventually Focus Assessments.
 - **Canonical grouping by attributes within a region.** Network policy is one
   internal assessment per module, but each region creates its own copy. Copies
   with the same tags combine for a region only when both are tagged for that
-  region, so a region's title, date, report card tags and band set come from its
-  own first copy and never from another region's. Rejected: grouping copies only
-  when their region lists match exactly, which splits one combined score in two
-  for students whose copies are tagged for different region lists.
+  region, so a region's title, date and report card tags come from its own first
+  copy and never from another region's. Rejected: grouping copies only when
+  their region lists match exactly, which splits one combined score in two for
+  students whose copies are tagged for different region lists.
 - **Replacement sittings are visible but unscored.** Off-grade sittings show on
   rosters and the student-scoped bridge but never anchor scores — the section
   resolver cannot place them.
