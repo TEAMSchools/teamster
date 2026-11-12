@@ -66,28 +66,28 @@ models:
       - name: subject_area
         data_type: string
         description: >-
-          Constant within the canonical partition. Picked from the canonical
-          member.
+          Constant within the tag group. Taken from the copy whose
+          `assessment_id` is the row's ID.
       - name: scope
         data_type: string
         description: >-
-          Constant within the canonical partition. Picked from the canonical
-          member.
+          Constant within the tag group. Taken from the copy whose
+          `assessment_id` is the row's ID.
       - name: module_code
         data_type: string
         description: >-
-          Constant within the canonical partition. Picked from the canonical
-          member.
+          Constant within the tag group. Taken from the copy whose
+          `assessment_id` is the row's ID.
       - name: academic_year
         data_type: int64
         description: >-
-          Constant within the canonical partition. Picked from the canonical
-          member.
+          Constant within the tag group. Taken from the copy whose
+          `assessment_id` is the row's ID.
       - name: academic_year_clean
         data_type: int64
         description: >-
-          Constant within the canonical partition. Picked from the canonical
-          member.
+          Constant within the tag group. Taken from the copy whose
+          `assessment_id` is the row's ID.
 
 unit_tests:
   - name: test_canonical_one_row_per_regional_group

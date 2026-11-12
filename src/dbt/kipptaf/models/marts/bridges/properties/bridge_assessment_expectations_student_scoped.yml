@@ -127,3 +127,47 @@ unit_tests:
         - assessment_expectation_key: 26e913105f4ab32f98c5a17a5a538725
         # trunk-ignore(gitleaks/generic-api-key): surrogate key fixture, not a secret
         - assessment_expectation_key: 5e6753698640e0de72f3cf353f2d238e
+  - name: test_bridge_assessment_expectations_student_scoped_keys_regional_group
+    description:
+      A sitting of copy 2 whose region's group is 1 hashes its administration
+      key from group 1 and group 1's date, not from copy 2's own id and date.
+      Copy 2 also leads a group of its own with a later date, so a key built
+      from the copy would differ.
+    model: bridge_assessment_expectations_student_scoped
+    given:
+      - input: ref('int_assessments__scaffold')
+        rows:
+          - student_number: 1001
+            source: illuminate
+            assessment_id: 2
+            administered_at: 2026-01-28
+            region: Newark
+            _dbt_source_project: kippnewark
+            is_internal_assessment: true
+            is_replacement: true
+            is_region_tagged: true
+            cc_dcid: null
+            canonical_assessment_id: 1
+      - input: ref('int_assessments__assessments_members')
+        format: sql
+        rows: |
+          select
+            'illuminate' as source,
+            2 as assessment_id,
+            'QA1' as module_code,
+            2026 as academic_year
+      - input: ref('int_assessments__assessments_canonical')
+        format: sql
+        rows: |
+          select
+            'illuminate' as source,
+            1 as canonical_assessment_id,
+            date '2025-10-08' as administered_date
+          union all
+          select 'illuminate', 2, date '2026-01-28'
+      - input: ref('stg_google_sheets__reporting__terms')
+        rows: []
+    expect:
+      rows:
+        # trunk-ignore(gitleaks/generic-api-key): surrogate key fixture, not a secret
+        - assessment_administration_key: 8a0261c22795b67819aa3b1e8d559d22

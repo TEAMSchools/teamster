@@ -4,17 +4,20 @@ models:
       Assessment-definition layer, one row per `source` and `assessment_id`.
       LEFT JOINs Illuminate `assessments` to the AppSheet `Illuminate
       Assessments Extension` overrides and to an `agl_dedup` CTE (lowest
-      `grade_level_id` per assessment). Exposes `tag_group_assessment_id` — for
-      internal assessments, `first_value(assessment_id) over (partition by
-      is_internal_assessment, is_florida_assessment, academic_year, scope,
-      subject_area, module_code, grade_level_id order by assessment_id)`; for
-      external assessments, the row's own `assessment_id`. Consumers needing
-      canonical attrs (title, administered date, grade level, etc.) join
-      `int_assessments__assessments_canonical` on that FK. Network policy is one
-      shared internal assessment per module across regions, so copies merge
-      across regions by design. The exception is Miami, which built its own
-      Florida versions of internal assessments in SY24-25 and SY25-26 (before it
-      left Illuminate). `is_florida_assessment`, an internal flag that is not
+      `grade_level_id` per assessment). Carries the tag group,
+      `tag_group_assessment_id` — for internal assessments,
+      `first_value(assessment_id) over (partition by is_internal_assessment,
+      is_florida_assessment, academic_year, scope, subject_area, module_code,
+      grade_level_id order by assessment_id)`; for external assessments, the
+      row's own `assessment_id`. The regional group a score rolls up to is in
+      `int_assessments__assessment_region_groups`. A consumer that wants a
+      region's title and administered date joins
+      `int_assessments__assessments_canonical` on that regional
+      `canonical_assessment_id`, not on the tag group. Network policy is one
+      shared internal assessment per module across regions, so a tag group can
+      span regions. The exception is Miami, which built its own Florida versions
+      of internal assessments in SY24-25 and SY25-26 (before it left
+      Illuminate). `is_florida_assessment`, an internal flag that is not
       projected (true when AppSheet `regions_assessed` is exactly `Miami`),
       keeps those copies out of New Jersey canonical groups, so New Jersey
       students never inherit a Florida title or administered date. Assessments
