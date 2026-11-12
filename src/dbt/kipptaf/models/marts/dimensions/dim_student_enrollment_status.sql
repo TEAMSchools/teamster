@@ -20,6 +20,26 @@ with
         from {{ ref("int_students__student_enrollments") }}
     ),
 
+    -- DDI Suite flags and homeroom: the extract's values, one row per stint.
+    student_flags as (
+        select
+            is_sipps,
+            is_tutoring,
+            is_self_contained,
+            advisory_name,
+            team,
+
+            {{
+                student_enrollment_key(
+                    "student_number",
+                    "_dbt_source_project",
+                    "academic_year",
+                    "entrydate",
+                )
+            }} as student_enrollment_key,
+        from {{ ref("int_extracts__student_enrollments") }}
+    ),
+
     -- IEP: latest span per stint (max effective_date_start_key).
     -- All five IEP columns come from the same row.
     iep_ranked as (
@@ -136,6 +156,12 @@ select
     iep.special_education_placement,
     meal.meal_eligibility,
 
+    sf.is_sipps,
+    sf.is_tutoring,
+    sf.is_self_contained,
+    sf.advisory_name as homeroom_name,
+    sf.team as homeroom_section_number,
+
     coalesce(ell.is_ell, false) as is_ell,
     coalesce(sec.is_504, false) as is_504,
     coalesce(iep.is_iep, false) as is_iep,
@@ -170,3 +196,4 @@ left join
     on enr.student_enrollment_key = mb.student_enrollment_key
     and mb.subject = 'Math'
     and mb.is_latest_in_enrollment
+left join student_flags as sf on enr.student_enrollment_key = sf.student_enrollment_key
