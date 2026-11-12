@@ -539,43 +539,48 @@ DDI_SUITE_VIEW_MEMBERS = [
     "dibels_most_recent_composite",
 ]
 
-# Each subject-picked flag on the scores cube: the ELA and math pair it reads.
+# Each subject-picked flag on the scores cube: the column it reads from the ELA
+# and math role cubes of fct_student_subjects_annual.
 DDI_SUITE_SUBJECT_FLAGS = {
-    "is_low_25": ("is_ela_low_25", "is_math_low_25"),
-    "state_test_proficiency": (
-        "ela_state_test_proficiency",
-        "math_state_test_proficiency",
-    ),
+    "is_low_25": "is_prior_year_low_25",
+    "state_test_proficiency": "prior_year_state_test_proficiency",
 }
 
 
-def test_subject_flags_pick_their_pair_by_bucket_subject() -> None:
+def test_subject_flags_pick_their_role_cube_by_bucket_subject() -> None:
     cubes = _cube_docs()
     scores = {d["name"]: d for d in cubes["student_assessment_scores"]["dimensions"]}
-    status = {d["name"]: d for d in cubes["student_enrollment_status"]["dimensions"]}
     problems: list[str] = []
-    for member, (ela, math) in DDI_SUITE_SUBJECT_FLAGS.items():
+    for member, col in DDI_SUITE_SUBJECT_FLAGS.items():
         sql = _norm(scores.get(member, {}).get("sql"))
         if "CASE {student_assessments.bucket_subject}" not in sql:
             problems.append(f"{member}: does not pick by bucket_subject")
         if "ELSE" in sql.upper().split():
             problems.append(f"{member}: has an ELSE; other subjects must be null")
-        if f"WHEN 'Reading' THEN {{student_enrollment_status.{ela}}}" not in sql:
-            problems.append(f"{member}: Reading does not read {ela}")
-        if f"WHEN 'Math' THEN {{student_enrollment_status.{math}}}" not in sql:
-            problems.append(f"{member}: Math does not read {math}")
-        for col in (ela, math):
-            if status.get(col, {}).get("public", False):
-                problems.append(f"student_enrollment_status.{col}: must be private")
+        if f"WHEN 'Reading' THEN {{student_subjects_annual_ela.{col}}}" not in sql:
+            problems.append(f"{member}: Reading does not read the ELA role cube")
+        if f"WHEN 'Math' THEN {{student_subjects_annual_math.{col}}}" not in sql:
+            problems.append(f"{member}: Math does not read the math role cube")
     assert not problems, "\n".join(problems)
 
 
-def test_dibels_composite_reads_the_latest_annual_fact() -> None:
+def test_subject_role_cubes_join_on_their_discipline() -> None:
+    cubes = _cube_docs()
+    joins = {j["name"]: j for j in cubes["student_school_enrollments"]["joins"]}
+    for role, disc in (("ela", "ELA"), ("math", "Math")):
+        name = f"student_subjects_annual_{role}"
+        sql = _norm(joins[name]["sql"])
+        assert f"{{{name}.discipline}} = '{disc}'" in sql
+        assert joins[name]["relationship"] == "many_to_one"
+        assert cubes[name]["sql_table"] == "kipptaf_marts.fct_student_subjects_annual"
+
+
+def test_dibels_composite_reads_the_ela_role_cube() -> None:
     cubes = _cube_docs()
     scores = {d["name"]: d for d in cubes["student_assessment_scores"]["dimensions"]}
     sql = _norm(scores["dibels_most_recent_composite"]["sql"])
     assert "CASE {student_assessments.bucket_subject}" in sql
-    assert "{student_dibels_latest_composite.proficiency_level}" in sql
+    assert "{student_subjects_annual_ela.latest_dibels_composite_level}" in sql
     assert "WHEN 'Math' THEN 'No Composite Score Available'" in sql
     assert "ELSE" not in sql.upper().split()
 
@@ -664,24 +669,24 @@ TWINS.update(
                 "is_self_contained",
                 "homeroom_name",
                 "homeroom_section_number",
-                "is_ela_low_25",
-                "is_math_low_25",
-                "ela_state_test_proficiency",
-                "math_state_test_proficiency",
             ]
         },
         **{
-            ("student_dibels_latest_composite", c): (
-                "fct_assessment_scores_latest_annual",
-                c,
-            )
+            (f"student_subjects_annual_{role}", c): ("fct_student_subjects_annual", c)
+            for role in ("ela", "math")
             for c in [
-                "assessment_score_latest_annual_key",
+                "student_subject_annual_key",
                 "student_key",
                 "academic_year",
-                "proficiency_level",
+                "discipline",
+                "prior_year_state_test_proficiency",
+                "is_prior_year_low_25",
             ]
         },
+        ("student_subjects_annual_ela", "latest_dibels_composite_level"): (
+            "fct_student_subjects_annual",
+            "latest_dibels_composite_level",
+        ),
         ("courses", "is_foundations"): ("dim_courses", "is_foundations"),
         ("student_attendance_enrollment_daily", "n_absent_days_rolling_90"): (
             "fct_student_attendance_enrollment_daily",

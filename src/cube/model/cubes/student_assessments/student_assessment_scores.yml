@@ -342,8 +342,9 @@ cubes:
           assessment's subject is neither reading nor math.
         sql: >-
           CASE {student_assessments.bucket_subject}
-            WHEN 'Reading' THEN {student_enrollment_status.is_ela_low_25}
-            WHEN 'Math' THEN {student_enrollment_status.is_math_low_25}
+            WHEN 'Reading' THEN
+          {student_subjects_annual_ela.is_prior_year_low_25}
+            WHEN 'Math' THEN {student_subjects_annual_math.is_prior_year_low_25}
           END
         type: boolean
         public: true
@@ -357,14 +358,13 @@ cubes:
           The student's proficiency level on last school year's annual state
           test, in the subject of this assessment — ELA on reading and ELA
           assessments, math on math assessments — or No Test when there is none.
-          Null where the assessment's subject is neither reading nor math, or
-          where the stint has no subject record.
+          Null where the assessment's subject is neither reading nor math.
         sql: |-
           CASE {student_assessments.bucket_subject}
             WHEN 'Reading'
-              THEN {student_enrollment_status.ela_state_test_proficiency}
+              THEN {student_subjects_annual_ela.prior_year_state_test_proficiency}
             WHEN 'Math'
-              THEN {student_enrollment_status.math_state_test_proficiency}
+              THEN {student_subjects_annual_math.prior_year_state_test_proficiency}
           END
         type: string
         public: true
@@ -385,7 +385,7 @@ cubes:
           CASE {student_assessments.bucket_subject}
             WHEN 'Reading'
               THEN COALESCE(
-                {student_dibels_latest_composite.proficiency_level},
+                {student_subjects_annual_ela.latest_dibels_composite_level},
                 'No Composite Score Available'
               )
             WHEN 'Math' THEN 'No Composite Score Available'

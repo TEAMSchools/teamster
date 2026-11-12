@@ -357,15 +357,6 @@ select
     ) as is_student_athlete,
 
     if(
-        current_date('{{ var("local_timezone") }}')
-        between tut.enter_date and tut.exit_date,
-        true,
-        false
-    ) as is_tutoring,
-
-    if(sip.students_student_number is not null, true, false) as is_sipps,
-
-    if(
         gc.cumulative_y1_gpa_projected_unweighted_band
         < gc.cumulative_y1_gpa_unweighted_band,
         true,
@@ -536,13 +527,6 @@ left join
     and ath.specprog_name = 'Student Athlete'
     and ath.rn_student_program_year_desc = 1
 left join
-    {{ ref("int_powerschool__spenrollments") }} as tut
-    on e.studentid = tut.studentid
-    and e.academic_year = tut.academic_year
-    and e._dbt_source_project = tut._dbt_source_project
-    and tut.specprog_name = 'Tutoring'
-    and tut.rn_student_program_year_desc = 1
-left join
     {{ ref("int_powerschool__spenrollments") }} as hi
     on e.studentid = hi.studentid
     and e.academic_year = hi.academic_year
@@ -583,14 +567,6 @@ left join
     graduation_pathway_m as mc
     on e.students_dcid = mc.studentsdcid
     and e._dbt_source_project = mc._dbt_source_project
-left join
-    {{ ref("base_powerschool__course_enrollments") }} as sip
-    on e.student_number = sip.students_student_number
-    and e.academic_year = sip.cc_academic_year
-    and e._dbt_source_project = sip._dbt_source_project
-    and sip.courses_course_number = 'SEM01099G1'
-    and sip.rn_course_number_year = 1
-    and not sip.is_dropped_section
 left join
     {{ ref("int_students__contacts_pivot") }} as sc
     on e.student_number = sc.student_number

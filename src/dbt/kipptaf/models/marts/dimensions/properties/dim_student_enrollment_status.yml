@@ -9,13 +9,10 @@ models:
       Miami via latest span; each bucket via latest span, Bucket 4 when the
       stint has none. 504 has no source dates, so it comes from the enrollment
       stint's own flag. Absence of a status row is normalized to false/null —
-      not missing data. SIPPS, tutoring, self-contained and homeroom come from
-      the enrollment extract the assessment dashboards read, unchanged, so they
-      match those dashboards. The ELA and math Low 25 and prior-year state test
-      columns come the same way from the enrollment-by-subject extract, which
-      rebuilds on its own schedule, so a stint newer than that extract's last
-      build reads null until it rebuilds. Consumed by the Cube semantic layer as
-      a snowflake sub-dim joined one-to-one to dim_student_enrollments.
+      not missing data. SIPPS, tutoring, self-contained and homeroom also come
+      from the enrollment stint, as the assessment dashboards show them.
+      Consumed by the Cube semantic layer as a snowflake sub-dim joined
+      one-to-one to dim_student_enrollments.
     columns:
       - name: student_enrollment_key
         data_type: string
@@ -131,20 +128,18 @@ models:
         config:
           meta:
             contains_pii: true
-            source_column: int_extracts__student_enrollments.is_sipps
+            source_column: int_students__student_enrollments.is_sipps
 
       - name: is_tutoring
         data_type: boolean
         description: >-
-          TRUE if the date of the enrollment extract's last build falls inside
-          the student's Tutoring program enrollment for this school year; FALSE
-          otherwise, so every past school year reads FALSE. NJ regions only;
-          Miami is always FALSE. This is the NJ Tutoring status the assessment
-          dashboards show.
+          TRUE if today's date falls inside the student's Tutoring program
+          enrollment for this school year; FALSE otherwise, so every past school
+          year reads FALSE. NJ regions only; Miami is always FALSE.
         config:
           meta:
             contains_pii: true
-            source_column: int_extracts__student_enrollments.is_tutoring
+            source_column: int_students__student_enrollments.is_tutoring
 
       - name: is_self_contained
         data_type: boolean
@@ -155,7 +150,7 @@ models:
         config:
           meta:
             contains_pii: true
-            source_column: int_extracts__student_enrollments.is_self_contained
+            source_column: int_students__student_enrollments.is_self_contained
 
       - name: homeroom_name
         data_type: string
@@ -169,7 +164,7 @@ models:
         config:
           meta:
             contains_pii: true
-            source_column: int_extracts__student_enrollments.advisory_name
+            source_column: int_students__student_enrollments.advisory_name
 
       - name: homeroom_section_number
         data_type: string
@@ -180,51 +175,7 @@ models:
         config:
           meta:
             contains_pii: true
-            source_column: int_extracts__student_enrollments.team
-
-      - name: is_ela_low_25
-        data_type: boolean
-        description: >-
-          TRUE if the student's ELA score on last spring's Florida FAST (PM3)
-          ranks below the 25.5th percentile. Miami only; FALSE in NJ regions.
-          Null when the stint has no ELA subject record.
-        config:
-          meta:
-            contains_pii: true
-            source_column: int_extracts__student_enrollments_subjects.is_low_25_fl
-
-      - name: is_math_low_25
-        data_type: boolean
-        description: >-
-          TRUE if the student's math score on last spring's Florida FAST (PM3)
-          ranks below the 25.5th percentile. Miami only; FALSE in NJ regions.
-          Null when the stint has no math subject record.
-        config:
-          meta:
-            contains_pii: true
-            source_column: int_extracts__student_enrollments_subjects.is_low_25_fl
-
-      - name: ela_state_test_proficiency
-        data_type: string
-        description: >-
-          The student's proficiency level on last school year's annual ELA state
-          test, or No Test when there is none. Null when the stint has no ELA
-          subject record.
-        config:
-          meta:
-            contains_pii: true
-            source_column: int_extracts__student_enrollments_subjects.state_test_proficiency
-
-      - name: math_state_test_proficiency
-        data_type: string
-        description: >-
-          The student's proficiency level on last school year's annual math
-          state test, or No Test when there is none. Null when the stint has no
-          math subject record.
-        config:
-          meta:
-            contains_pii: true
-            source_column: int_extracts__student_enrollments_subjects.state_test_proficiency
+            source_column: int_students__student_enrollments.advisory_section_number
 
 unit_tests:
   - name: unit_dim_student_enrollment_status_buckets
@@ -251,14 +202,24 @@ unit_tests:
       - input: ref("dim_student_ell_status")
         rows: []
       - input: ref("int_students__student_enrollments")
-        rows: []
+        format: sql
+        rows: |
+          select
+              cast(null as string) as _dbt_source_project,
+              cast(null as int64) as student_number,
+              cast(null as int64) as academic_year,
+              cast(null as date) as entrydate,
+              cast(null as bool) as is_504,
+              cast(null as bool) as is_sipps,
+              cast(null as bool) as is_tutoring,
+              cast(null as bool) as is_self_contained,
+              cast(null as string) as advisory_name,
+              cast(null as string) as advisory_section_number,
+          from unnest([1])
+          where false
       - input: ref("dim_student_iep_status")
         rows: []
       - input: ref("dim_student_meal_eligibility_status")
-        rows: []
-      - input: ref("int_extracts__student_enrollments")
-        rows: []
-      - input: ref("int_extracts__student_enrollments_subjects")
         rows: []
       - input: ref("dim_student_bucket_status")
         format: sql
@@ -294,10 +255,10 @@ unit_tests:
   - name: unit_dim_student_enrollment_status_student_flags
     description: >-
       Copies each stint's SIPPS, tutoring, self-contained and homeroom values
-      from its own extract row, matched by region, student, year and entry date.
-      A student number reused in another region keeps that region's values, 2
-      stints in 1 year keep their own values, Miami's null self-contained stays
-      null, and a stint with no extract row gets nulls.
+      from its own enrollment row, matched by region, student, year and entry
+      date. A student number reused in another region keeps that region's
+      values, 2 stints in 1 year keep their own values, Miami's null
+      self-contained stays null, and a stint with no enrollment row gets nulls.
     model: dim_student_enrollment_status
     given:
       - input: ref("dim_student_enrollments")
@@ -318,7 +279,31 @@ unit_tests:
       - input: ref("dim_student_ell_status")
         rows: []
       - input: ref("int_students__student_enrollments")
-        rows: []
+        format: sql
+        rows: |
+          select
+              'kippnewark' as _dbt_source_project,
+              1001 as student_number,
+              2026 as academic_year,
+              cast('2026-09-02' as date) as entrydate,
+              false as is_504,
+              true as is_sipps,
+              true as is_tutoring,
+              true as is_self_contained,
+              'Harvard' as advisory_name,
+              '5HAR' as advisory_section_number,
+          union all
+          select
+              'kippmiami', 1001, 2026, cast('2026-09-02' as date), false, false, false,
+              null, 'Rm 12', 'HR12'
+          union all
+          select
+              'kippnewark', 1002, 2026, cast('2026-09-02' as date), false, false, false,
+              false, 'Yale', '6YAL'
+          union all
+          select
+              'kippnewark', 1002, 2026, cast('2027-01-10' as date), false, false, false,
+              false, 'Penn', '6PEN'
       - input: ref("dim_student_iep_status")
         rows: []
       - input: ref("dim_student_meal_eligibility_status")
@@ -333,46 +318,6 @@ unit_tests:
               cast(null as bool) as is_latest_in_enrollment
           from unnest([1])
           where false
-      - input: ref("int_extracts__student_enrollments")
-        rows:
-          - _dbt_source_project: kippnewark
-            student_number: 1001
-            academic_year: 2026
-            entrydate: 2026-09-02
-            is_sipps: true
-            is_tutoring: true
-            is_self_contained: true
-            advisory_name: Harvard
-            team: 5HAR
-          - _dbt_source_project: kippmiami
-            student_number: 1001
-            academic_year: 2026
-            entrydate: 2026-09-02
-            is_sipps: false
-            is_tutoring: false
-            is_self_contained: null
-            advisory_name: Rm 12
-            team: HR12
-          - _dbt_source_project: kippnewark
-            student_number: 1002
-            academic_year: 2026
-            entrydate: 2026-09-02
-            is_sipps: false
-            is_tutoring: false
-            is_self_contained: false
-            advisory_name: Yale
-            team: 6YAL
-          - _dbt_source_project: kippnewark
-            student_number: 1002
-            academic_year: 2026
-            entrydate: 2027-01-10
-            is_sipps: false
-            is_tutoring: false
-            is_self_contained: false
-            advisory_name: Penn
-            team: 6PEN
-      - input: ref("int_extracts__student_enrollments_subjects")
-        rows: []
     expect:
       rows:
         # trunk-ignore(gitleaks/generic-api-key): md5 fixture key, not a secret
@@ -410,92 +355,3 @@ unit_tests:
           is_self_contained: null
           homeroom_name: null
           homeroom_section_number: null
-
-  - name: unit_dim_student_enrollment_status_subject_flags
-    description: >-
-      Spreads each stint's ELA and Math extract rows into ELA and math columns
-      for Low 25 and prior-year state test proficiency, and leaves all 4 null on
-      a stint with no subject rows.
-    model: dim_student_enrollment_status
-    given:
-      - input: ref("dim_student_enrollments")
-        format: sql
-        rows: |
-          select
-              to_hex(md5('2001-kippnewark-2026-2026-09-02')) as student_enrollment_key,
-              2026 as academic_year,
-              4 as grade_level
-          union all
-          select to_hex(md5('2002-kippmiami-2026-2026-08-11')), 2026, 4
-          union all
-          select to_hex(md5('2003-kippcamden-2026-2026-09-02')), 2026, 4
-      - input: ref("dim_student_ell_status")
-        rows: []
-      - input: ref("int_students__student_enrollments")
-        rows: []
-      - input: ref("dim_student_iep_status")
-        rows: []
-      - input: ref("dim_student_meal_eligibility_status")
-        rows: []
-      - input: ref("dim_student_bucket_status")
-        format: sql
-        rows: |
-          select
-              cast(null as string) as student_enrollment_key,
-              cast(null as string) as `subject`,
-              cast(null as string) as bucket,
-              cast(null as bool) as is_latest_in_enrollment
-          from unnest([1])
-          where false
-      - input: ref("int_extracts__student_enrollments")
-        rows: []
-      - input: ref("int_extracts__student_enrollments_subjects")
-        rows:
-          - _dbt_source_project: kippnewark
-            student_number: 2001
-            academic_year: 2026
-            entrydate: 2026-09-02
-            discipline: ELA
-            is_low_25_fl: false
-            state_test_proficiency: Met Expectations
-          - _dbt_source_project: kippnewark
-            student_number: 2001
-            academic_year: 2026
-            entrydate: 2026-09-02
-            discipline: Math
-            is_low_25_fl: false
-            state_test_proficiency: Partially Met
-          - _dbt_source_project: kippmiami
-            student_number: 2002
-            academic_year: 2026
-            entrydate: 2026-08-11
-            discipline: ELA
-            is_low_25_fl: true
-            state_test_proficiency: Level 1
-          - _dbt_source_project: kippmiami
-            student_number: 2002
-            academic_year: 2026
-            entrydate: 2026-08-11
-            discipline: Math
-            is_low_25_fl: false
-            state_test_proficiency: Level 3
-    expect:
-      rows:
-        # trunk-ignore(gitleaks/generic-api-key): md5 fixture key, not a secret
-        - student_enrollment_key: 8985ad974dcf8f057ef4cc4caa3d9175
-          is_ela_low_25: false
-          is_math_low_25: false
-          ela_state_test_proficiency: Met Expectations
-          math_state_test_proficiency: Partially Met
-        # trunk-ignore(gitleaks/generic-api-key): md5 fixture key, not a secret
-        - student_enrollment_key: d848038ee262b8ac4f174f7792fe45e2
-          is_ela_low_25: true
-          is_math_low_25: false
-          ela_state_test_proficiency: Level 1
-          math_state_test_proficiency: Level 3
-        # trunk-ignore(gitleaks/generic-api-key): md5 fixture key, not a secret
-        - student_enrollment_key: 16a85d541ab52c4379360fd973f964c6
-          is_ela_low_25: null
-          is_math_low_25: null
-          ela_state_test_proficiency: null
-          math_state_test_proficiency: null
