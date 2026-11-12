@@ -28,6 +28,29 @@ sources:
               }}/edplan/njsmart_powerschool/"
             format: AVRO
             enable_logical_types: true
+      - name: src_edplan__section_504_student_report
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - edplan
+                - section_504_student_report
+        external:
+          location:
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/edplan/section_504_student_report/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base',
+              env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+              }}/edplan/section_504_student_report/"
+            format: AVRO
+            enable_logical_types: true
       - name: src_edplan__njsmart_powerschool_archive
         config:
           enabled: false

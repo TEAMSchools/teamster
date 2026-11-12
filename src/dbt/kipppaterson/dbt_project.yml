@@ -102,6 +102,9 @@ models:
     staging:
       stg_edplan__njsmart_powerschool_archive:
         +enabled: false
+      # The 504 student report is ingested for Newark only
+      stg_edplan__section_504_student_report:
+        +enabled: false
   cambium:
     +materialized: table
     staging:
@@ -182,6 +185,10 @@ models:
         +enabled: false
 
 sources:
+  edplan:
+    edplan:
+      src_edplan__section_504_student_report:
+        +enabled: false
   amplify:
     mclass:
       api:
