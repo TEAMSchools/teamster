@@ -178,6 +178,59 @@ models:
             contains_pii: true
             source_column: int_extracts__student_enrollments.team
 
+      - name: is_ela_low_25
+        data_type: boolean
+        description: >-
+          TRUE if the student's ELA score on last spring's Florida FAST (PM3)
+          ranks below the 25.5th percentile. Miami only; FALSE in NJ regions.
+          Null when the stint has no ELA row in the enrollment extract.
+        config:
+          meta:
+            contains_pii: true
+            source_column: int_extracts__student_enrollments_subjects.is_low_25_fl
+
+      - name: is_math_low_25
+        data_type: boolean
+        description: >-
+          TRUE if the student's math score on last spring's Florida FAST (PM3)
+          ranks below the 25.5th percentile. Miami only; FALSE in NJ regions.
+          Null when the stint has no math row in the enrollment extract.
+        config:
+          meta:
+            contains_pii: true
+            source_column: int_extracts__student_enrollments_subjects.is_low_25_fl
+
+      - name: ela_state_test_proficiency
+        data_type: string
+        description: >-
+          The student's proficiency level on last school year's annual ELA state
+          test, or No Test when there is none.
+        config:
+          meta:
+            contains_pii: true
+            source_column: int_extracts__student_enrollments_subjects.state_test_proficiency
+
+      - name: math_state_test_proficiency
+        data_type: string
+        description: >-
+          The student's proficiency level on last school year's annual math
+          state test, or No Test when there is none.
+        config:
+          meta:
+            contains_pii: true
+            source_column: int_extracts__student_enrollments_subjects.state_test_proficiency
+
+      - name: dibels_most_recent_composite
+        data_type: string
+        description: >-
+          The student's most recent DIBELS composite benchmark level this school
+          year, or No Composite Score Available when there is none. DIBELS is a
+          reading assessment, so there is no math counterpart.
+        config:
+          meta:
+            contains_pii: true
+            source_column: int_extracts__student_enrollments_subjects.dibels_most_recent_composite
+
 unit_tests:
   - name: unit_dim_student_enrollment_status_buckets
     description: >-
@@ -209,6 +262,8 @@ unit_tests:
       - input: ref("dim_student_meal_eligibility_status")
         rows: []
       - input: ref("int_extracts__student_enrollments")
+        rows: []
+      - input: ref("int_extracts__student_enrollments_subjects")
         rows: []
       - input: ref("dim_student_bucket_status")
         format: sql
@@ -321,6 +376,8 @@ unit_tests:
             is_self_contained: false
             advisory_name: Penn
             team: 6PEN
+      - input: ref("int_extracts__student_enrollments_subjects")
+        rows: []
     expect:
       rows:
         # trunk-ignore(gitleaks/generic-api-key): md5 fixture key, not a secret
@@ -357,3 +414,100 @@ unit_tests:
           is_self_contained: null
           homeroom_name: null
           homeroom_section_number: null
+
+  - name: unit_dim_student_enrollment_status_subject_flags
+    description: >-
+      Spreads each stint's ELA and Math extract rows into ELA and math columns
+      for Low 25 and prior-year state test proficiency, takes the DIBELS
+      composite from the ELA row only, and leaves all 5 null on a stint with no
+      subject rows.
+    model: dim_student_enrollment_status
+    given:
+      - input: ref("dim_student_enrollments")
+        format: sql
+        rows: |
+          select
+              to_hex(md5('2001-kippnewark-2026-2026-09-02')) as student_enrollment_key,
+              2026 as academic_year,
+              4 as grade_level
+          union all
+          select to_hex(md5('2002-kippmiami-2026-2026-08-11')), 2026, 4
+          union all
+          select to_hex(md5('2003-kippcamden-2026-2026-09-02')), 2026, 4
+      - input: ref("dim_student_ell_status")
+        rows: []
+      - input: ref("int_students__student_enrollments")
+        rows: []
+      - input: ref("dim_student_iep_status")
+        rows: []
+      - input: ref("dim_student_meal_eligibility_status")
+        rows: []
+      - input: ref("dim_student_bucket_status")
+        format: sql
+        rows: |
+          select
+              cast(null as string) as student_enrollment_key,
+              cast(null as string) as `subject`,
+              cast(null as string) as bucket,
+              cast(null as bool) as is_latest_in_enrollment
+          from unnest([1])
+          where false
+      - input: ref("int_extracts__student_enrollments")
+        rows: []
+      - input: ref("int_extracts__student_enrollments_subjects")
+        rows:
+          - _dbt_source_project: kippnewark
+            student_number: 2001
+            academic_year: 2026
+            entrydate: 2026-09-02
+            discipline: ELA
+            is_low_25_fl: false
+            state_test_proficiency: Met Expectations
+            dibels_most_recent_composite: At Benchmark
+          - _dbt_source_project: kippnewark
+            student_number: 2001
+            academic_year: 2026
+            entrydate: 2026-09-02
+            discipline: Math
+            is_low_25_fl: false
+            state_test_proficiency: Partially Met
+            dibels_most_recent_composite: No Composite Score Available
+          - _dbt_source_project: kippmiami
+            student_number: 2002
+            academic_year: 2026
+            entrydate: 2026-08-11
+            discipline: ELA
+            is_low_25_fl: true
+            state_test_proficiency: Level 1
+            dibels_most_recent_composite: Well Below Benchmark
+          - _dbt_source_project: kippmiami
+            student_number: 2002
+            academic_year: 2026
+            entrydate: 2026-08-11
+            discipline: Math
+            is_low_25_fl: false
+            state_test_proficiency: Level 3
+            dibels_most_recent_composite: No Composite Score Available
+    expect:
+      rows:
+        # trunk-ignore(gitleaks/generic-api-key): md5 fixture key, not a secret
+        - student_enrollment_key: 8985ad974dcf8f057ef4cc4caa3d9175
+          is_ela_low_25: false
+          is_math_low_25: false
+          ela_state_test_proficiency: Met Expectations
+          math_state_test_proficiency: Partially Met
+          dibels_most_recent_composite: At Benchmark
+        # trunk-ignore(gitleaks/generic-api-key): md5 fixture key, not a secret
+        - student_enrollment_key: d848038ee262b8ac4f174f7792fe45e2
+          is_ela_low_25: true
+          is_math_low_25: false
+          ela_state_test_proficiency: Level 1
+          math_state_test_proficiency: Level 3
+          dibels_most_recent_composite: Well Below Benchmark
+        # trunk-ignore(gitleaks/generic-api-key): md5 fixture key, not a secret
+        - student_enrollment_key: 16a85d541ab52c4379360fd973f964c6
+          is_ela_low_25: null
+          is_math_low_25: null
+          ela_state_test_proficiency: null
+          math_state_test_proficiency: null
+          dibels_most_recent_composite: null

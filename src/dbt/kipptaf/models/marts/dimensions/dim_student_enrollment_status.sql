@@ -40,6 +40,25 @@ with
         from {{ ref("int_extracts__student_enrollments") }}
     ),
 
+    -- DDI Suite subject flags: one row per stint and discipline (ELA, Math).
+    subject_flags as (
+        select
+            discipline,
+            is_low_25_fl,
+            state_test_proficiency,
+            dibels_most_recent_composite,
+
+            {{
+                student_enrollment_key(
+                    "student_number",
+                    "_dbt_source_project",
+                    "academic_year",
+                    "entrydate",
+                )
+            }} as student_enrollment_key,
+        from {{ ref("int_extracts__student_enrollments_subjects") }}
+    ),
+
     -- IEP: latest span per stint (max effective_date_start_key).
     -- All five IEP columns come from the same row.
     iep_ranked as (
@@ -162,6 +181,13 @@ select
     sf.advisory_name as homeroom_name,
     sf.team as homeroom_section_number,
 
+    ela.is_low_25_fl as is_ela_low_25,
+    ela.state_test_proficiency as ela_state_test_proficiency,
+    ela.dibels_most_recent_composite,
+
+    mth.is_low_25_fl as is_math_low_25,
+    mth.state_test_proficiency as math_state_test_proficiency,
+
     coalesce(ell.is_ell, false) as is_ell,
     coalesce(sec.is_504, false) as is_504,
     coalesce(iep.is_iep, false) as is_iep,
@@ -197,3 +223,11 @@ left join
     and mb.subject = 'Math'
     and mb.is_latest_in_enrollment
 left join student_flags as sf on enr.student_enrollment_key = sf.student_enrollment_key
+left join
+    subject_flags as ela
+    on enr.student_enrollment_key = ela.student_enrollment_key
+    and ela.discipline = 'ELA'
+left join
+    subject_flags as mth
+    on enr.student_enrollment_key = mth.student_enrollment_key
+    and mth.discipline = 'Math'
