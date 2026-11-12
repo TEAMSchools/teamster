@@ -188,6 +188,9 @@ with
             sf.nj_student_tier,
             sf.is_low_25_fl,
 
+            coalesce(mgs.goal, mga.goal) as module_goal,
+            coalesce(mgs.goal_offset, mga.goal_offset) as module_goal_offset,
+
             -- T&L's QA goals apply to QA modules and to CRQ modules
             r.module_type in ('QA', 'CRQ') as is_qa_goal_module,
         from responses as r
@@ -197,6 +200,18 @@ with
             and r.academic_year = sf.academic_year
             and r.course_credittype = sf.powerschool_credittype
             and sf.rn_year = 1
+        left join
+            {{ ref("int_assessments__module_goal_rules") }} as mgs
+            on r.region = mgs.region
+            and r.module_type = mgs.module_type
+            and r.subject_area = mgs.illuminate_subject_area
+            and r.grade_level between mgs.grade_min and mgs.grade_max
+        left join
+            {{ ref("int_assessments__module_goal_rules") }} as mga
+            on r.region = mga.region
+            and r.module_type = mga.module_type
+            and r.grade_level between mga.grade_min and mga.grade_max
+            and mga.illuminate_subject_area is null
     ),
 
     microgoals_long as (
@@ -294,6 +309,9 @@ select
     cast(null as string) as qbl,
 
     g.organization_goal,
+    g.grade_goal,
+    g.school_goal,
+    g.region_goal,
 
     coalesce(
         ip.total_iready_lessons_passed_reading, 0
@@ -309,15 +327,33 @@ select
     coalesce(ip.is_pass_2_lessons_int_math, 0) as is_passed_iready_2plus_math_int,
     coalesce(ip.is_pass_4_lessons_int_math, 0) as is_passed_iready_4plus_math_int,
 
-    if(
-        co.is_qa_goal_module, coalesce(g.qa_goal, g.grade_goal), g.grade_goal
-    ) as grade_goal,
-    if(
-        co.is_qa_goal_module, coalesce(g.qa_goal, g.school_goal), g.school_goal
-    ) as school_goal,
-    if(
-        co.is_qa_goal_module, coalesce(g.qa_goal, g.region_goal), g.region_goal
-    ) as region_goal,
+    case
+        when co.module_goal is not null
+        then co.module_goal
+        when co.is_qa_goal_module and g.qa_goal is not null
+        then g.qa_goal
+        when co.module_goal_offset is not null
+        then g.grade_goal + co.module_goal_offset
+        else g.grade_goal
+    end as grade_goal_differentiated,
+    case
+        when co.module_goal is not null
+        then co.module_goal
+        when co.is_qa_goal_module and g.qa_goal is not null
+        then g.qa_goal
+        when co.module_goal_offset is not null
+        then g.school_goal + co.module_goal_offset
+        else g.school_goal
+    end as school_goal_differentiated,
+    case
+        when co.module_goal is not null
+        then co.module_goal
+        when co.is_qa_goal_module and g.qa_goal is not null
+        then g.qa_goal
+        when co.module_goal_offset is not null
+        then g.region_goal + co.module_goal_offset
+        else g.region_goal
+    end as region_goal_differentiated,
 from identifiers as co
 left join
     {{ ref("int_assessments__academic_goals") }} as g
@@ -400,6 +436,9 @@ select
     cast(null as string) as qbl,
 
     g.organization_goal,
+    g.grade_goal,
+    g.school_goal,
+    g.region_goal,
 
     null as total_iready_lessons_passed_reading,
     null as total_iready_lessons_passed_math,
@@ -411,15 +450,33 @@ select
     null as is_passed_iready_2plus_math_int,
     null as is_passed_iready_4plus_math_int,
 
-    if(
-        co.is_qa_goal_module, coalesce(g.qa_goal, g.grade_goal), g.grade_goal
-    ) as grade_goal,
-    if(
-        co.is_qa_goal_module, coalesce(g.qa_goal, g.school_goal), g.school_goal
-    ) as school_goal,
-    if(
-        co.is_qa_goal_module, coalesce(g.qa_goal, g.region_goal), g.region_goal
-    ) as region_goal,
+    case
+        when co.module_goal is not null
+        then co.module_goal
+        when co.is_qa_goal_module and g.qa_goal is not null
+        then g.qa_goal
+        when co.module_goal_offset is not null
+        then g.grade_goal + co.module_goal_offset
+        else g.grade_goal
+    end as grade_goal_differentiated,
+    case
+        when co.module_goal is not null
+        then co.module_goal
+        when co.is_qa_goal_module and g.qa_goal is not null
+        then g.qa_goal
+        when co.module_goal_offset is not null
+        then g.school_goal + co.module_goal_offset
+        else g.school_goal
+    end as school_goal_differentiated,
+    case
+        when co.module_goal is not null
+        then co.module_goal
+        when co.is_qa_goal_module and g.qa_goal is not null
+        then g.qa_goal
+        when co.module_goal_offset is not null
+        then g.region_goal + co.module_goal_offset
+        else g.region_goal
+    end as region_goal_differentiated,
 from identifiers as co
 left join
     {{ ref("int_assessments__academic_goals") }} as g
@@ -530,6 +587,9 @@ select
     null as is_low_25_fl,
     null as qbl,
     null as organization_goal,
+    null as grade_goal,
+    null as school_goal,
+    null as region_goal,
     null as total_iready_lessons_passed_reading,
     null as total_iready_lessons_passed_math,
     null as is_qbl,
@@ -537,9 +597,9 @@ select
     null as is_passed_iready_4plus_reading_int,
     null as is_passed_iready_2plus_math_int,
     null as is_passed_iready_4plus_math_int,
-    null as grade_goal,
-    null as school_goal,
-    null as region_goal,
+    null as grade_goal_differentiated,
+    null as school_goal_differentiated,
+    null as region_goal_differentiated,
 from {{ ref("int_performance_management__observation_details") }} as o
 inner join
     {{ ref("int_people__staff_roster") }} as r on o.employee_number = r.employee_number
