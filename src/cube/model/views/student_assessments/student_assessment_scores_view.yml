@@ -82,6 +82,8 @@ views:
           - academic_year_label
           - month_number
           - month_name
+          - school_week_start_date
+          - school_week_end_date
 
       - join_path: student_assessment_scores.student_section_enrollments.course_sections.courses
         includes:
@@ -262,6 +264,8 @@ views:
             - academic_year_label
             - month_number
             - month_name
+            - school_week_start_date
+            - school_week_end_date
         - name: Course
           members:
             - discipline

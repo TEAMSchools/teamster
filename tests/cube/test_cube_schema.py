@@ -515,6 +515,37 @@ def test_model_compiles_with_cube() -> None:
     assert not misplaced, "overrides not served as aiContext:\n" + "\n".join(misplaced)
 
 
+# Dimensions the DDI Suite workbook's sheets read, which Cube must serve on the
+# assessment-scores view (spec: 2026-11-11-ddi-suite-student-dimensions).
+DDI_SUITE_VIEW_MEMBERS = [
+    "school_week_start_date",
+    "school_week_end_date",
+]
+
+
+def test_assessment_view_exposes_ddi_suite_members() -> None:
+    out = subprocess.run(
+        [
+            "node",
+            str(REPO_ROOT / "src" / "cube" / "compile-meta.js"),
+            str(CUBE_MODEL_DIR),
+        ],
+        capture_output=True,
+        text=True,
+        timeout=180,
+        check=False,
+    )
+    assert out.returncode == 0, out.stderr[-2000:]
+    view = next(
+        c
+        for c in json.loads(out.stdout)["cubes"]
+        if c["name"] == "student_assessment_scores_view"
+    )
+    exposed = {d["name"].split(".", 1)[1] for d in view["dimensions"]}
+    missing = [m for m in DDI_SUITE_VIEW_MEMBERS if m not in exposed]
+    assert not missing, f"missing from student_assessment_scores_view: {missing}"
+
+
 _SCORES_FACT = "fct_assessment_scores_enrollment_scoped"
 
 TWINS.update(
