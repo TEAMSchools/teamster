@@ -1515,6 +1515,28 @@ def test_export_cells_count_identical_pane_rows_once():
     ]
 
 
+def test_export_cells_sum_every_split_row_even_identical_ones():
+    # Summed split rows count each row: 2 that match in every exported column
+    # are 2 rows of the split, not 2 panes of 1 row.
+    comparison = Comparison(
+        id="c",
+        measure="m",
+        dims=[ColumnPair(dashboard="region", cube="region_name")],
+        split_rows="sum",
+    )
+    rows = [
+        {"Region": "Camden", "Count": "5"},
+        {"Region": "Camden", "Count": "5"},
+    ]
+
+    cells, _, summed = pipeline._export_cells(
+        comparison, rows, {"Region": "region"}, "Count", [], []
+    )
+
+    assert cells == [{"region": "Camden", "value": "10"}]
+    assert summed == 1
+
+
 def test_cell_keys_read_tableau_export_dates_as_the_same_day():
     # Tableau's export writes a date as M/D/YYYY; the probe and Cube write ISO.
     assert pipeline._key("9/21/2026") == "2026-09-21"

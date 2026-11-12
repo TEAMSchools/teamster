@@ -2296,11 +2296,13 @@ def _export_cells(
     cells: list[dict] = []
     totals = 0
     # A dual axis exports one row per pane, identical in every column: count
-    # it once. A row that differs anywhere still reads as a repeat.
+    # it once. A row that differs anywhere still reads as a repeat. Summed
+    # split rows keep every row, since 2 rows of a split field the export
+    # does not show can match in every column.
     seen: set[tuple] = set()
     for r in rows:
         whole = tuple(sorted((k, str(v)) for k, v in r.items()))
-        if whole in seen:
+        if whole in seen and comparison.split_rows != "sum":
             continue
         seen.add(whole)
         dims = {d: r[h] for h, d in mapping.items()}
