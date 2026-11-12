@@ -21,6 +21,8 @@ models:
               - canonical_assessment_id
               - response_type
               - response_type_id
+          config:
+            severity: error
     columns:
       - name: assessment_id
         data_type: int64

@@ -402,6 +402,22 @@ data_tests:
           ref:
             name: int_assessments__assessments_members
 
+  - name: int_assessments__assessments_members__replacement_region_untagged
+    description: >-
+      A student on a replacement curriculum took an Illuminate assessment that
+      is not tagged for the student's region, or the student's school maps to no
+      region. Fix each row in one of two ways. If the region should give this
+      assessment, add the region to the assessment's regions_assessed tag in the
+      AppSheet Illuminate assessments extension. If the student should not have
+      taken it, remove the student's assessment in Illuminate. Until then,
+      int_assessments__scaffold drops the sitting, so its scores are missing
+      from the response roll-up, the report card feeds and the assessment star.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: int_assessments__assessments_members
+
   - name: stg_illuminate__dna_assessments__students_assessments__taken_before_academic_year
     description: >-
       A student took an Illuminate assessment before the assessment's academic
