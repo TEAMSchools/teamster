@@ -11,8 +11,11 @@ family needs no code change at rollover beyond the items below.
    for the new year's assessment ids (`module_type`, `administered_at`, the
    three `regions_*` fields populated).
 2. **Goals sheet.** New-year rows in the academic-goals named range of the
-   Assessments spreadsheet. The staging and intermediate uniqueness tests warn
-   on duplicate keys — check them after the paste.
+   Assessments spreadsheet, including T&L's QA goals in its `QA Goal` column.
+   The staging and intermediate uniqueness tests warn on duplicate keys — check
+   them after the paste. Then review the Module Goal Rules tab with T&L: its
+   rules carry no year, so they apply to the new year as written
+   ([goals.md](goals.md)).
 3. **Standard domains.** Update the standard-domains named range (Marya Shukla)
    when standards or domains change for the year; largely static otherwise.
 4. **Reporting terms.** Confirm the year's RT rows exist (shared hub; the feeds'
