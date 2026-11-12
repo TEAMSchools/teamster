@@ -70,7 +70,12 @@ with
             iae.illuminate_grade_level_id as tagged_grade_level_id,
 
             coalesce(iae.regions_assessed, 'Miami') as regions_assessed,
-            coalesce(iae.regions_assessed_array, ['Miami']) as regions_assessed_array,
+            -- staging gives [] for a blank cell, which coalesce would keep
+            if(
+                array_length(iae.regions_assessed_array) > 0,
+                iae.regions_assessed_array,
+                ['Miami']
+            ) as regions_assessed_array,
 
             iae.regions_report_card,
             iae.regions_progress_report,

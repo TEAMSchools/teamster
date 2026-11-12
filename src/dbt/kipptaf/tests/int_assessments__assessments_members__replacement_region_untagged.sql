@@ -1,5 +1,6 @@
--- mirrors the replacement branch of int_assessments__scaffold, before its
--- inner join to region_groups drops these sittings
+-- keep in step with int_assessments__scaffold (school_to_region and the
+-- replacement branch): this reads that branch before its inner join to
+-- region_groups drops these sittings
 select
     a.source,
     a.assessment_id,
@@ -24,6 +25,7 @@ left join
     on ssa.site_id = loc.powerschool_school_id
     and not loc.is_campus
     and not loc.is_pathways
+    -- the canonical mart-scope location filter (#3751 / #3754)
     and loc.location_name != 'KIPP Whittier Elementary'
 left join unnest(a.region_groups) as rg on loc.city = rg.region
 where

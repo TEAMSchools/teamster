@@ -372,7 +372,7 @@ inner join
     and a.academic_year = ssa.academic_year
     and a.tagged_grade_level_id != ssa.grade_level_id
     and ssa.rn_student_session_desc = 1
-left join school_to_region as str on ssa.site_id = str.powerschool_school_id
+inner join school_to_region as str on ssa.site_id = str.powerschool_school_id
 -- INNER: a score from a region the copy is not tagged for has no group
 inner join unnest(a.region_groups) as rg on str.region = rg.region
 where

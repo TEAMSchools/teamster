@@ -4,7 +4,6 @@ with
     sitting_groups as (
         select
             student_assessment_id,
-            canonical_assessment_id,
 
             if(is_internal_assessment, region, null) as band_region,
         from {{ ref("int_assessments__scaffold") }}
@@ -21,8 +20,6 @@ with
             asr.points_possible,
             asr.points,
             asr.percent_correct,
-
-            sg.canonical_assessment_id,
 
             pb.canonical_performance_band_set_id,
 
@@ -45,7 +42,6 @@ with
     responses_merged as (
         select
             student_assessment_id,
-            canonical_assessment_id,
             response_type,
             response_type_id,
             response_type_code,
@@ -64,7 +60,6 @@ with
         from responses_keyed
         group by
             student_assessment_id,
-            canonical_assessment_id,
             response_type,
             response_type_id,
             response_type_code,
@@ -122,7 +117,6 @@ with
         left join
             responses_merged as asr
             on s.student_assessment_id = asr.student_assessment_id
-            and s.canonical_assessment_id = asr.canonical_assessment_id
         left join
             {{ ref("int_assessments__assessments_canonical") }} as c
             on s.source = c.source
