@@ -81,6 +81,7 @@ unit_tests:
             is_replacement: true
             is_region_tagged: true
             cc_dcid: null
+            canonical_assessment_id: 1
           - student_number: 1002
             source: illuminate
             assessment_id: 1
@@ -91,6 +92,7 @@ unit_tests:
             is_replacement: true
             is_region_tagged: false
             cc_dcid: null
+            canonical_assessment_id: 1
           - student_number: 1003
             source: illuminate
             assessment_id: 1
@@ -101,6 +103,7 @@ unit_tests:
             is_replacement: false
             is_region_tagged: null
             cc_dcid: null
+            canonical_assessment_id: 1
       - input: ref('int_assessments__assessments_members')
         format: sql
         rows: |
@@ -108,8 +111,7 @@ unit_tests:
             'illuminate' as source,
             1 as assessment_id,
             'QA1' as module_code,
-            2026 as academic_year,
-            1 as tag_group_assessment_id
+            2026 as academic_year
       - input: ref('int_assessments__assessments_canonical')
         format: sql
         rows: |

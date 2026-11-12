@@ -10,13 +10,14 @@ models:
       in several standards sets) are summed into one row per sitting.
       `date_taken` is nulled when it falls more than 365 days from the canonical
       administered date, or, when there is no administered date, outside
-      `academic_year` plus or minus one year. For internal assessments,
-      multipart member assessments (sharing a `tag_group_assessment_id` per
-      `int_assessments__assessments_members`) are aggregated to one row per
+      `academic_year` plus or minus one year. For internal assessments, the
+      copies in one regional group (the scaffold's `canonical_assessment_id` —
+      the copies of one tag group tagged for one region, per
+      `int_assessments__assessment_region_groups`) are aggregated to one row per
       student, `is_replacement`, and response with summed points, the earliest
       `date_taken`, and a deterministic single school/region selection. External
       assessments pass through one row per scaffold row and response.
-      `assessment_id` here is the canonical id, not the per-row member id;
+      `assessment_id` here is the regional group id, not the per-row member id;
       `assessment_ids` (array) preserves the underlying member ids for
       drilldown. Performance band labels and the reporting terms of the
       administered and taken dates are joined last. Apex rows (`source =
@@ -231,10 +232,12 @@ models:
       - name: assessment_id
         data_type: int64
         description: >-
-          `tag_group_assessment_id` from `int_assessments__assessments_members`
-          — the lowest member id within the canonical partition for internal
-          assessments, the assessment's own id for external ones. Use
-          `assessment_ids` for the underlying member ids.
+          The scaffold's `canonical_assessment_id`. For internal assessments,
+          the regional group id — the lowest `assessment_id` among the copies of
+          the tag group tagged for the row's region, or the tag group id on a
+          replacement row whose region no copy is tagged for. The assessment's
+          own id for external and Apex ones. Use `assessment_ids` for the
+          underlying member ids.
       - name: administered_at
         data_type: date
         description: >-

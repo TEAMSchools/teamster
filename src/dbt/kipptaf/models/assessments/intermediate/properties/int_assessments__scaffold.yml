@@ -229,23 +229,28 @@ models:
       - name: is_region_tagged
         data_type: boolean
         description: >-
-          Replacement rows only — true when the row's region is one of the
-          assessment's tagged regions (int_assessments__assessments_canonical
-          regions_array), the regions dim_assessment_administrations builds
-          administrations for. False when the region is untagged or null. Null
-          on every other branch, whose region comes from the assessment's own
-          tags or is not reported against a tagged administration.
+          Replacement rows only — true when some copy in the assessment's tag
+          group is tagged for the row's region, so the region has a regional
+          group (an int_assessments__assessments_canonical row whose
+          regions_array lists it), which dim_assessment_administrations builds
+          an administration for. False when no copy in the tag group is tagged
+          for the region, or the region is null. Null on every other branch,
+          whose region comes from the assessment's own tags or is not reported
+          against a tagged administration.
       - name: canonical_assessment_id
         data_type: int64
         description: >-
-          Pass-through of
-          int_assessments__assessments_members.tag_group_assessment_id — the
-          lead assessment_id within the partition (academic_year, scope,
-          subject_area, module_code, grade_level_id) for internal assessments,
-          and the row's own assessment_id for external assessments. See parent
-          column for full semantics. Consumers needing the canonical title,
-          administered date, or grade level join
-          int_assessments__assessments_canonical via this key (internal rows
+          The group the row rolls up into. On the internal branch, the copy's
+          regional group for the row's region, from
+          int_assessments__assessment_region_groups — the lowest assessment_id
+          among the copies in its tag group tagged for that region. On the
+          replacement branch, the regional group for the student's region in the
+          copy's tag group, or the copy's tag_group_assessment_id when no copy
+          in the tag group is tagged for that region (is_region_tagged false).
+          On the external and Apex branches, the copy's own
+          tag_group_assessment_id, which is its assessment_id. Consumers needing
+          the group's title, administered date, or grade level join
+          int_assessments__assessments_canonical on this key (internal rows
           only).
 
 unit_tests:
@@ -433,8 +438,27 @@ unit_tests:
         rows: []
       - input: ref('stg_illuminate__dna_assessments__students_assessments')
         rows: []
+      - input: ref('int_assessments__assessment_region_groups')
+        format: sql
+        rows: |
+          select
+              cast(null as string) as source,
+              cast(null as int64) as assessment_id,
+              cast(null as string) as region,
+              cast(null as int64) as tag_group_assessment_id,
+              cast(null as int64) as canonical_assessment_id
+          from unnest([1])
+          where false
       - input: ref('int_assessments__assessments_canonical')
-        rows: []
+        format: sql
+        rows: |
+          select
+              cast(null as string) as source,
+              cast(null as int64) as canonical_assessment_id,
+              cast(null as int64) as tag_group_assessment_id,
+              cast(null as array<string>) as regions_array
+          from unnest([1])
+          where false
     expect:
       rows:
         - {
@@ -541,14 +565,26 @@ unit_tests:
               1 as tag_group_assessment_id,
               6 as tagged_grade_level_id,
               6 as grade_level_id,
-              ['Newark'] as regions_assessed_array,
+              ['Camden', 'Newark'] as regions_assessed_array,
               true as is_internal_assessment
+      - input: ref('int_assessments__assessment_region_groups')
+        format: sql
+        rows: |
+          select
+              'illuminate' as source,
+              1 as assessment_id,
+              'Camden' as region,
+              1 as tag_group_assessment_id,
+              1 as canonical_assessment_id
+          union all
+          select 'illuminate', 1, 'Newark', 1, 1
       - input: ref('int_assessments__assessments_canonical')
         format: sql
         rows: |
           select
               'illuminate' as source,
               1 as canonical_assessment_id,
+              1 as tag_group_assessment_id,
               ['Camden', 'Newark'] as regions_array
       - input: ref('stg_illuminate__dna_assessments__students_assessments')
         rows:
@@ -627,5 +663,192 @@ unit_tests:
             student_number: 1003,
             region: null,
             is_replacement: true,
+            is_region_tagged: false,
+          }
+
+  - name: test_rows_take_regional_group
+    description: >-
+      Tag group 1 holds a grade 5 Math copy tagged Newark (1) and one tagged
+      Camden (2), so each region is its own group. A Newark student and a Camden
+      student rostered to their region's copy take their own copy's group. Two
+      students sit copy 1 from another grade. The one at a Camden school takes
+      Camden's group (2) and is tagged; the one at a Paterson school, whose
+      region has no group in the tag group, falls back to the tag group (1) and
+      is not tagged.
+    model: int_assessments__scaffold
+    given:
+      - input: ref('int_assessments__assessments_members')
+        format: sql
+        rows: |
+          select
+              'illuminate' as source,
+              1 as assessment_id,
+              'Math Unit 1 Newark' as title,
+              2027 as academic_year,
+              2026 as academic_year_clean,
+              date('2026-10-08') as administered_at,
+              'Mathematics' as subject_area,
+              7 as performance_band_set_id,
+              cast(null as string) as scope,
+              cast(null as string) as module_type,
+              cast(null as string) as module_code,
+              1 as tag_group_assessment_id,
+              6 as tagged_grade_level_id,
+              6 as grade_level_id,
+              true as is_internal_assessment
+          union all
+          select
+              'illuminate', 2, 'Math Unit 1 Camden', 2027, 2026,
+              date('2026-10-15'), 'Mathematics', 7, null, null, null, 1, 6, 6,
+              true
+      - input: ref('int_assessments__assessment_region_groups')
+        format: sql
+        rows: |
+          select
+              'illuminate' as source,
+              1 as assessment_id,
+              'Newark' as region,
+              1 as tag_group_assessment_id,
+              1 as canonical_assessment_id
+          union all
+          select 'illuminate', 2, 'Camden', 1, 2
+      - input: ref('int_assessments__assessments_canonical')
+        format: sql
+        rows: |
+          select
+              'illuminate' as source,
+              1 as canonical_assessment_id,
+              1 as tag_group_assessment_id,
+              ['Newark'] as regions_array
+          union all
+          select 'illuminate', 2, 1, ['Camden']
+      - input: ref('stg_illuminate__dna_assessments__students_assessments')
+        rows:
+          - { student_assessment_id: 33, student_id: 13, assessment_id: 1 }
+          - { student_assessment_id: 34, student_id: 14, assessment_id: 1 }
+      - input: ref('stg_illuminate__public__students')
+        rows:
+          - { student_id: 11, local_student_id: 1001 }
+          - { student_id: 12, local_student_id: 1002 }
+          - { student_id: 13, local_student_id: 1003 }
+          - { student_id: 14, local_student_id: 1004 }
+      - input: ref('int_illuminate__student_session_aff')
+        rows:
+          - {
+              student_id: 11,
+              academic_year: 2027,
+              grade_level_id: 6,
+              site_id: 100,
+              rn_student_session_desc: 1,
+            }
+          - {
+              student_id: 12,
+              academic_year: 2027,
+              grade_level_id: 6,
+              site_id: 300,
+              rn_student_session_desc: 1,
+            }
+          - {
+              student_id: 13,
+              academic_year: 2027,
+              grade_level_id: 4,
+              site_id: 300,
+              rn_student_session_desc: 1,
+            }
+          - {
+              student_id: 14,
+              academic_year: 2027,
+              grade_level_id: 4,
+              site_id: 200,
+              rn_student_session_desc: 1,
+            }
+      - input: ref('int_assessments__course_enrollments')
+        rows:
+          - {
+              student_number: 1001,
+              _dbt_source_project: kippnewark,
+              region: Newark,
+              subject_area: Mathematics,
+              discipline: Math,
+              cc_dcid: 5001,
+              powerschool_school_id: 100,
+              grade_level_id: 6,
+              cc_dateenrolled: 2026-08-10,
+              cc_dateleft: 2027-06-01,
+              is_advanced_math_student: false,
+            }
+          - {
+              student_number: 1002,
+              _dbt_source_project: kippcamden,
+              region: Camden,
+              subject_area: Mathematics,
+              discipline: Math,
+              cc_dcid: 5002,
+              powerschool_school_id: 300,
+              grade_level_id: 6,
+              cc_dateenrolled: 2026-08-10,
+              cc_dateleft: 2027-06-01,
+              is_advanced_math_student: false,
+            }
+      - input: ref('stg_google_sheets__people__locations')
+        rows:
+          - {
+              powerschool_school_id: 100,
+              dagster_code_location: kippnewark,
+              city: Newark,
+              is_campus: false,
+              is_pathways: false,
+              location_name: Newark School,
+            }
+          - {
+              powerschool_school_id: 200,
+              dagster_code_location: kipppaterson,
+              city: Paterson,
+              is_campus: false,
+              is_pathways: false,
+              location_name: Paterson School,
+            }
+          - {
+              powerschool_school_id: 300,
+              dagster_code_location: kippcamden,
+              city: Camden,
+              is_campus: false,
+              is_pathways: false,
+              location_name: Camden School,
+            }
+      - input: ref('stg_illuminate__dna_assessments__assessment_grade_levels')
+        rows: []
+      - input: ref('int_extracts__student_enrollments')
+        rows: []
+      - input: ref('int_focus__apex_results')
+        rows: []
+    expect:
+      rows:
+        - {
+            student_number: 1001,
+            assessment_id: 1,
+            is_replacement: false,
+            canonical_assessment_id: 1,
+            is_region_tagged: null,
+          }
+        - {
+            student_number: 1002,
+            assessment_id: 2,
+            is_replacement: false,
+            canonical_assessment_id: 2,
+            is_region_tagged: null,
+          }
+        - {
+            student_number: 1003,
+            assessment_id: 1,
+            is_replacement: true,
+            canonical_assessment_id: 2,
+            is_region_tagged: true,
+          }
+        - {
+            student_number: 1004,
+            assessment_id: 1,
+            is_replacement: true,
+            canonical_assessment_id: 1,
             is_region_tagged: false,
           }

@@ -73,9 +73,9 @@ models:
       - name: canonical_assessment_id
         data_type: int64
         description: >-
-          Canonical assessment identifier grouping member assessments into one
-          logical assessment. Populated only for internal scores; NULL for state
-          and vendor rows.
+          Regional group id from the scaffold, grouping the copies of one tag
+          group tagged for one region into one logical assessment. Populated
+          only for internal scores; NULL for state and vendor rows.
         config:
           meta:
             source_column: int_assessments__scaffold.canonical_assessment_id

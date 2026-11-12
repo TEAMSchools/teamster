@@ -8,10 +8,10 @@ with
             sc.region,
             sc.powerschool_school_id,
             sc._dbt_source_project,
+            sc.canonical_assessment_id,
 
             a.module_code,
             a.academic_year,
-            a.tag_group_assessment_id as canonical_assessment_id,
 
             c.administered_date as canonical_administered_at,
 
@@ -29,8 +29,8 @@ with
             and sc.assessment_id = a.assessment_id
         inner join
             {{ ref("int_assessments__assessments_canonical") }} as c
-            on a.source = c.source
-            and a.tag_group_assessment_id = c.canonical_assessment_id
+            on sc.source = c.source
+            and sc.canonical_assessment_id = c.canonical_assessment_id
         left join
             {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on sc.administered_at between rt.start_date and rt.end_date

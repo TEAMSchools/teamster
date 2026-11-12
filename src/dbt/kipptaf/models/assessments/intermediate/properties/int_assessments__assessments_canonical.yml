@@ -1,19 +1,17 @@
 models:
   - name: int_assessments__assessments_canonical
     description: >-
-      Canonical-grain projection of `int_assessments__assessments_members`. One
-      row per `source` and `canonical_assessment_id` — the logical assessment
-      that may span multiple regional members (e.g., the four regional copies of
-      the same Q2 ELA module collapse to one canonical row). Canonical attrs
-      (`title`, `administered_date`, `grade_level_id`) are picked from the
-      member with the lowest `assessment_id` in the canonical group via
-      `dbt_utils.deduplicate(partition_by="source, canonical_assessment_id",
-      order_by="assessment_id")`, matching the `first_value(... order by
-      assessment_id) over canonical_w` window in the upstream model.
-      `regions_array` is the union of `regions_assessed_array` across all
-      internal members of the group. Internal assessments only — this model
-      filters to `is_internal_assessment`, so external (non-AppSheet)
-      assessments have no canonical row.
+      One row per `source` and `canonical_assessment_id` for internal
+      assessments. The ids are every regional group id in
+      `int_assessments__assessment_region_groups` plus every tag group id
+      (`tag_group_assessment_id` in `int_assessments__assessments_members`). A
+      tag group whose first copy has no region tagged leads no regional group,
+      but keeps its row with an empty `regions_array`, so a replacement row that
+      falls back to the tag group still finds a title and date. Every attribute
+      (`title`, `administered_date`, `grade_level_id`, and the rest) comes from
+      the copy whose `assessment_id` is the row's id, so regions that give one
+      tag group's copies on different dates keep their own dates. External
+      assessments have no row.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -26,42 +24,41 @@ models:
           - not_null
         data_type: int64
         description: >-
-          Key, together with `source`. The lowest `assessment_id` among internal
-          assessments in the canonical partition `(source, academic_year, scope,
-          subject_area, module_code, grade_level_id)`. Internal members of
-          `int_assessments__assessments_members` FK here via their own `source`
-          and `tag_group_assessment_id`.
+          Key, together with `source`. The `assessment_id` of the copy that
+          leads a regional group or a tag group. Every internal member's
+          `tag_group_assessment_id` has a row here.
       - name: source
         data_type: string
         description: >-
           System the assessment comes from (`illuminate` or `apex`). Part of the
           key.
+      - name: tag_group_assessment_id
+        data_type: int64
+        description: >-
+          The row's tag group, from `int_assessments__assessments_members`.
+          Equals `canonical_assessment_id` when the row leads its tag group.
       - name: regions_array
         data_type: array<string>
         description: >-
-          Union of `regions_assessed_array` across all internal members of the
-          canonical group, computed via `array_agg(distinct region)` after
-          `unnest`. Consumers `cross join unnest(regions_array) as region` to
-          fan out to one row per (canonical assessment, region). The model LEFT
-          JOINs `canonical_regions` and coalesces a missing match to an empty
-          array, so every canonical group is kept — a group whose internal
-          members all have null `regions_assessed` gets `[]` and produces no
-          rows when unnested. Empty-string elements from stray commas are not
-          removed here.
+          The regions whose regional group this row is, from
+          `int_assessments__assessment_region_groups`, in alphabetical order.
+          Empty when the row is a tag group id that leads no region's group.
+          Consumers `cross join unnest(regions_array) as region` to fan out to
+          one row per group and region; an empty array produces no rows.
+          Empty-string elements from stray commas are not removed here.
       - name: title
         data_type: string
         description: >-
-          `title` from the canonical member (lowest `assessment_id` in the
-          group).
+          `title` from the copy whose `assessment_id` is the row's id.
       - name: administered_date
         data_type: date
         description: >-
-          `administered_at` from the canonical member, renamed. Already DATE
-          precision upstream — no cast applied.
+          `administered_at` from the copy whose `assessment_id` is the row's id,
+          renamed. Already DATE precision upstream — no cast applied.
       - name: grade_level_id
         data_type: int64
         description: >-
-          `grade_level_id` from the canonical member.
+          `grade_level_id` from the copy whose `assessment_id` is the row's id.
       - name: grade_level
         data_type: int64
         description: >-
@@ -91,3 +88,85 @@ models:
         description: >-
           Constant within the canonical partition. Picked from the canonical
           member.
+
+unit_tests:
+  - name: test_canonical_one_row_per_regional_group
+    description: >-
+      Tag group 101 holds a Camden copy (101) and a Newark copy (102), so each
+      region gets its own row with its own copy's title and date. Tag group 401
+      leads with an untagged copy (401) and holds a Camden copy (402). The
+      untagged lead keeps a row with no regions, so the replacement fallback to
+      the tag group still finds a title and date, and Camden's row is 402.
+    model: int_assessments__assessments_canonical
+    given:
+      - input: ref('int_assessments__assessments_members')
+        format: sql
+        rows: |
+          select
+              'illuminate' as source,
+              101 as assessment_id,
+              101 as tag_group_assessment_id,
+              'Camden Math U1' as title,
+              date('2025-10-01') as administered_at,
+              'Mathematics' as subject_area,
+              'CMA' as scope,
+              'U1' as module_code,
+              2026 as academic_year,
+              2025 as academic_year_clean,
+              6 as grade_level_id,
+              true as is_internal_assessment
+          union all
+          select
+              'illuminate', 102, 101, 'Newark Math U1', date('2025-10-15'),
+              'Mathematics', 'CMA', 'U1', 2026, 2025, 6, true
+          union all
+          select
+              'illuminate', 401, 401, 'Math U2', date('2026-01-10'),
+              'Mathematics', 'CMA', 'U2', 2026, 2025, 6, true
+          union all
+          select
+              'illuminate', 402, 401, 'Camden Math U2', date('2026-01-20'),
+              'Mathematics', 'CMA', 'U2', 2026, 2025, 6, true
+      - input: ref('int_assessments__assessment_region_groups')
+        format: sql
+        rows: |
+          select
+              'illuminate' as source,
+              101 as assessment_id,
+              'Camden' as region,
+              101 as tag_group_assessment_id,
+              101 as canonical_assessment_id
+          union all
+          select 'illuminate', 102, 'Newark', 101, 102
+          union all
+          select 'illuminate', 402, 'Camden', 401, 402
+    expect:
+      rows:
+        - {
+            canonical_assessment_id: 101,
+            tag_group_assessment_id: 101,
+            title: Camden Math U1,
+            administered_date: 2025-10-01,
+            regions_array: [Camden],
+          }
+        - {
+            canonical_assessment_id: 102,
+            tag_group_assessment_id: 101,
+            title: Newark Math U1,
+            administered_date: 2025-10-15,
+            regions_array: [Newark],
+          }
+        - {
+            canonical_assessment_id: 401,
+            tag_group_assessment_id: 401,
+            title: Math U2,
+            administered_date: 2026-01-10,
+            regions_array: [],
+          }
+        - {
+            canonical_assessment_id: 402,
+            tag_group_assessment_id: 401,
+            title: Camden Math U2,
+            administered_date: 2026-01-20,
+            regions_array: [Camden],
+          }

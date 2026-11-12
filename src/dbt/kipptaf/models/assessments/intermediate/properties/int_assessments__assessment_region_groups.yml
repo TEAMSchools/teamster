@@ -1,0 +1,148 @@
+models:
+  - name: int_assessments__assessment_region_groups
+    description: >-
+      Crosswalk from an internal assessment copy and a region it is tagged for
+      to that region's group. One row per `source`, `assessment_id`, and region
+      in the copy's `regions_assessed_array`. A tag group is the copies in
+      `int_assessments__assessments_members` that share a
+      `tag_group_assessment_id`. Its regional group for a region is every copy
+      in it whose tags list that region, and the regional group's id,
+      `canonical_assessment_id`, is the lowest `assessment_id` among them, so
+      one copy tagged for two regions can belong to two regional groups. A
+      region typed twice on one copy yields one row, and an empty-string element
+      from a stray comma is kept as its own region. Copies with no region tagged
+      have no rows. Each Apex assessment is its own tag group with region Miami.
+      Internal assessments only.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - source
+              - assessment_id
+              - region
+          config:
+            severity: error
+    columns:
+      - name: source
+        data_type: string
+        description: >-
+          System the assessment comes from (`illuminate` or `apex`). Part of the
+          key, because the two systems' assessment ids can collide.
+      - name: assessment_id
+        data_type: int64
+        description: >-
+          The copy's assessment id within `source`. Part of the key.
+      - name: region
+        data_type: string
+        description: >-
+          One element of the copy's `regions_assessed_array`. Part of the key.
+      - name: tag_group_assessment_id
+        data_type: int64
+        description: >-
+          The copy's tag group, from `int_assessments__assessments_members`.
+      - name: canonical_assessment_id
+        data_type: int64
+        description: >-
+          The regional group id: the lowest `assessment_id` among the copies in
+          this tag group tagged for this region. Equals
+          `tag_group_assessment_id` when the tag group's first copy is tagged
+          for the region. Keys `int_assessments__assessments_canonical`.
+
+unit_tests:
+  - name: test_region_groups_split_by_region
+    description: >-
+      Tag group 101 holds a Camden copy, a Newark and Camden copy, and a copy
+      with Newark typed twice; Camden's group is 101 and Newark's is 102, and
+      the twice-typed region yields one row. Tag group 201 holds a copy tagged
+      Newark plus an empty string and a Miami and Newark copy; the empty string
+      is its own region, and Newark's group is 201 though one of its copies is
+      202. An external copy has no rows, and an Apex copy that shares an
+      Illuminate id stays in its own source.
+    model: int_assessments__assessment_region_groups
+    given:
+      - input: ref('int_assessments__assessments_members')
+        format: sql
+        rows: |
+          select
+              'illuminate' as source,
+              101 as assessment_id,
+              101 as tag_group_assessment_id,
+              ['Camden'] as regions_assessed_array,
+              true as is_internal_assessment
+          union all
+          select 'illuminate', 102, 101, ['Newark', 'Camden'], true
+          union all
+          select 'illuminate', 103, 101, ['Newark', 'Newark'], true
+          union all
+          select 'illuminate', 201, 201, ['Newark', ''], true
+          union all
+          select 'illuminate', 202, 201, ['Miami', 'Newark'], true
+          union all
+          select 'illuminate', 301, 301, ['Camden'], false
+          union all
+          select 'apex', 101, 101, ['Miami'], true
+    expect:
+      rows:
+        - {
+            source: illuminate,
+            assessment_id: 101,
+            region: Camden,
+            tag_group_assessment_id: 101,
+            canonical_assessment_id: 101,
+          }
+        - {
+            source: illuminate,
+            assessment_id: 102,
+            region: Camden,
+            tag_group_assessment_id: 101,
+            canonical_assessment_id: 101,
+          }
+        - {
+            source: illuminate,
+            assessment_id: 102,
+            region: Newark,
+            tag_group_assessment_id: 101,
+            canonical_assessment_id: 102,
+          }
+        - {
+            source: illuminate,
+            assessment_id: 103,
+            region: Newark,
+            tag_group_assessment_id: 101,
+            canonical_assessment_id: 102,
+          }
+        - {
+            source: illuminate,
+            assessment_id: 201,
+            region: Newark,
+            tag_group_assessment_id: 201,
+            canonical_assessment_id: 201,
+          }
+        - {
+            source: illuminate,
+            assessment_id: 201,
+            region: "",
+            tag_group_assessment_id: 201,
+            canonical_assessment_id: 201,
+          }
+        - {
+            source: illuminate,
+            assessment_id: 202,
+            region: Miami,
+            tag_group_assessment_id: 201,
+            canonical_assessment_id: 202,
+          }
+        - {
+            source: illuminate,
+            assessment_id: 202,
+            region: Newark,
+            tag_group_assessment_id: 201,
+            canonical_assessment_id: 201,
+          }
+        - {
+            source: apex,
+            assessment_id: 101,
+            region: Miami,
+            tag_group_assessment_id: 101,
+            canonical_assessment_id: 101,
+          }

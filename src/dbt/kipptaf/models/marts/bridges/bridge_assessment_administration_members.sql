@@ -1,23 +1,26 @@
 with
-    members_unnested as (
+    member_regions as (
         select
             a.source,
             a.assessment_id as member_assessment_id,
-            a.tag_group_assessment_id as canonical_assessment_id,
             a.module_code,
             a.academic_year,
 
+            rg.region,
+            rg.canonical_assessment_id,
+
             c.administered_date as canonical_administered_date,
 
-            region,
-
-            concat('kipp', lower(region)) as _dbt_source_project,
+            concat('kipp', lower(rg.region)) as _dbt_source_project,
         from {{ ref("int_assessments__assessments_members") }} as a
         inner join
+            {{ ref("int_assessments__assessment_region_groups") }} as rg
+            on a.source = rg.source
+            and a.assessment_id = rg.assessment_id
+        inner join
             {{ ref("int_assessments__assessments_canonical") }} as c
-            on a.source = c.source
-            and a.tag_group_assessment_id = c.canonical_assessment_id
-        cross join unnest(a.regions_assessed_array) as region
+            on rg.source = c.source
+            and rg.canonical_assessment_id = c.canonical_assessment_id
         where a.is_internal_assessment
     )
 
@@ -47,4 +50,4 @@ select
             ]
         )
     }} as assessment_key,
-from members_unnested
+from member_regions

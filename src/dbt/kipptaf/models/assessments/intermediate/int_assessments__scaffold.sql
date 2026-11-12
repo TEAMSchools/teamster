@@ -12,14 +12,17 @@ with
             a.scope,
             a.module_type,
             a.module_code,
-            a.tag_group_assessment_id as canonical_assessment_id,
 
-            region,
+            rg.region,
+            rg.canonical_assessment_id,
 
             coalesce(a.tagged_grade_level_id, agl.grade_level_id) as grade_level_id,
-            concat('kipp', lower(region)) as _dbt_source_project,
+            concat('kipp', lower(rg.region)) as _dbt_source_project,
         from {{ ref("int_assessments__assessments_members") }} as a
-        cross join unnest(a.regions_assessed_array) as region
+        inner join
+            {{ ref("int_assessments__assessment_region_groups") }} as rg
+            on a.source = rg.source
+            and a.assessment_id = rg.assessment_id
         left join
             {{ ref("stg_illuminate__dna_assessments__assessment_grade_levels") }} as agl
             on a.assessment_id = agl.assessment_id
@@ -351,7 +354,9 @@ select
 
     str.dagster_code_location as _dbt_source_project,
 
-    a.tag_group_assessment_id as canonical_assessment_id,
+    coalesce(
+        c.canonical_assessment_id, a.tag_group_assessment_id
+    ) as canonical_assessment_id,
 
     sa.student_assessment_id,
     sa.date_taken,
@@ -361,7 +366,7 @@ select
 
     cast(null as string) as section_match_method,
 
-    coalesce(str.region in unnest(c.regions_array), false) as is_region_tagged,
+    c.canonical_assessment_id is not null as is_region_tagged,
 from {{ ref("int_assessments__assessments_members") }} as a
 inner join
     {{ ref("stg_illuminate__dna_assessments__students_assessments") }} as sa
@@ -378,7 +383,8 @@ left join school_to_region as str on ssa.site_id = str.powerschool_school_id
 left join
     {{ ref("int_assessments__assessments_canonical") }} as c
     on a.source = c.source
-    and a.tag_group_assessment_id = c.canonical_assessment_id
+    and a.tag_group_assessment_id = c.tag_group_assessment_id
+    and str.region in unnest(c.regions_array)
 where
     a.is_internal_assessment
     and a.source = 'illuminate'
