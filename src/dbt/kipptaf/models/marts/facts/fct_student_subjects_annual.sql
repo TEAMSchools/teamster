@@ -21,11 +21,12 @@ with
                 _dbt_source_project = 'kippmiami', fleid, state_studentnumber
             ) as state_test_student_id,
         from {{ ref("int_students__student_enrollments") }}
-        where rn_year = 1
+        -- grade 99 marks a graduate placeholder row, not an enrollment
+        where rn_year = 1 and grade_level != 99
     ),
 
     dibels_composite as (
-        select student_number, academic_year, proficiency_level,
+        select student_number, academic_year, _dbt_source_project, proficiency_level,
         from {{ ref("int_assessments__benchmark_scores") }}
         where
             is_latest_in_year
@@ -38,8 +39,6 @@ select
 
     sj.discipline,
 
-    db.proficiency_level as latest_dibels_composite_level,
-
     {{
         dbt_utils.generate_surrogate_key(
             ["enr.student_number", "enr.academic_year", "sj.discipline"]
@@ -49,6 +48,11 @@ select
     {{ student_key("enr.student_number") }} as student_key,
 
     coalesce(py.aggregated_proficiency, 'No Test') as prior_year_state_test_proficiency,
+
+    -- DIBELS is an ELA measure
+    if(
+        sj.discipline = 'ELA', db.proficiency_level, null
+    ) as latest_dibels_composite_level,
 
     -- Low 25: below the 25.5th percentile on last spring's FAST PM3
     if(fp.fldoe_dynamic_percentile_rank < .255, true, false) as is_prior_year_low_25,
@@ -71,4 +75,4 @@ left join
     dibels_composite as db
     on enr.student_number = db.student_number
     and enr.academic_year = db.academic_year
-    and sj.discipline = 'ELA'
+    and enr._dbt_source_project = db._dbt_source_project

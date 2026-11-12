@@ -76,10 +76,11 @@ unit_tests:
   - name: test_fct_student_subjects_annual_by_discipline
     description: >-
       Gives each student 1 ELA and 1 Math row from the primary stint. A Miami
-      student's state score matches on the Florida Education Identifier. DIBELS
-      reaches only the ELA row, a missing state score reads No Test, the Low 25
-      flag turns on below the 25.5th percentile, and a second stint adds no
-      rows.
+      student's state score matches on the Florida Education Identifier and an
+      NJ student's on the state student number. DIBELS reaches only the ELA row
+      and only from the stint's region, a missing state score reads No Test, the
+      Low 25 flag turns on below the 25.5th percentile, and a second stint or a
+      graduate placeholder adds no rows.
     model: fct_student_subjects_annual
     given:
       - input: ref("int_students__student_enrollments")
@@ -91,9 +92,14 @@ unit_tests:
               'kippmiami' as _dbt_source_project,
               'NJ7' as state_studentnumber,
               'S7' as fleid,
-              1 as rn_year
+              1 as rn_year,
+              5 as grade_level
           union all
-          select 7, 2025, 'kippmiami', 'NJ7', 'S7', 2
+          select 7, 2025, 'kippmiami', 'NJ7', 'S7', 2, 5
+          union all
+          select 8, 2025, 'kippnewark', 'NJ8', null, 1, 6
+          union all
+          select 9, 2025, 'kippnewark', 'NJ9', null, 1, 99
       - input: ref("int_assessments__state_scores")
         format: sql
         rows: |
@@ -104,6 +110,8 @@ unit_tests:
               'Text Study' as illuminate_subject_area,
               true as is_annual_state_test,
               'Level 3' as aggregated_proficiency
+          union all
+          select 'NJ8', 2025, 'kippnewark', 'Text Study', true, 'Level 4'
       - input: ref("int_assessments__fast_previous_year")
         format: sql
         rows: |
@@ -121,12 +129,15 @@ unit_tests:
           select
               7 as student_number,
               2025 as academic_year,
+              'kippmiami' as _dbt_source_project,
               'Composite' as module_code,
               'overall' as response_type,
               true as is_latest_in_year,
               'At Benchmark' as proficiency_level
           union all
-          select 7, 2025, 'Composite', 'overall', false, 'Below Benchmark'
+          select 7, 2025, 'kippmiami', 'Composite', 'overall', false, 'Below Benchmark'
+          union all
+          select 7, 2025, 'kippnewark', 'Composite', 'overall', true, 'Well Below Benchmark'
     expect:
       rows:
         - discipline: ELA
@@ -137,3 +148,11 @@ unit_tests:
           latest_dibels_composite_level: null
           prior_year_state_test_proficiency: No Test
           is_prior_year_low_25: true
+        - discipline: ELA
+          latest_dibels_composite_level: null
+          prior_year_state_test_proficiency: Level 4
+          is_prior_year_low_25: false
+        - discipline: Math
+          latest_dibels_composite_level: null
+          prior_year_state_test_proficiency: No Test
+          is_prior_year_low_25: false
