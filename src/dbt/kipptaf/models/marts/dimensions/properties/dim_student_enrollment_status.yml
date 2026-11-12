@@ -11,8 +11,11 @@ models:
       stint's own flag. Absence of a status row is normalized to false/null —
       not missing data. SIPPS, tutoring, self-contained and homeroom come from
       the enrollment extract the assessment dashboards read, unchanged, so they
-      match those dashboards. Consumed by the Cube semantic layer as a snowflake
-      sub-dim joined one-to-one to dim_student_enrollments.
+      match those dashboards. The ELA and math Low 25, prior-year state test and
+      DIBELS columns come the same way from the enrollment-by-subject extract,
+      which rebuilds on its own schedule, so a stint newer than that extract's
+      last build reads null until it rebuilds. Consumed by the Cube semantic
+      layer as a snowflake sub-dim joined one-to-one to dim_student_enrollments.
     columns:
       - name: student_enrollment_key
         data_type: string
