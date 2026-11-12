@@ -297,6 +297,18 @@ bucket a file landed in. A school the crosswalk does not know reads as a null
 region rather than as missing rows; Ops fixes it by adding the school to the
 locations sheet.
 
+Amplify sometimes files results for 2 children under 1 student ID, or files 2
+benchmark sittings for 1 ID on the same day. The mCLASS intermediates
+(`int_amplify__mclass__benchmark_student_summary`,
+`int_amplify__mclass__pm_student_summary` and its `_aimline`) drop every row in
+such a collision, since neither row can be trusted. This is a data-team defense,
+awaiting T&L's confirmation. The student shows as Not Tested until Amplify or
+the school moves the result to the right student in mCLASS. The mCLASS staging
+warn tests list the collisions to fix. A row that arrives through both the
+network file and Paterson's archive file is not dropped. It fails the
+intermediates' uniqueness tests instead, because that double is ours to fix, not
+Amplify's.
+
 The aimline file is only unioned from the Newark account. The aimline model also
 reads `aimline_status` and `aimline_value_by_date` from the base PM file and
 takes whichever file carries them, because Amplify has moved those columns
