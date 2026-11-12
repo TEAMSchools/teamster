@@ -216,8 +216,10 @@ cause, do not retry around it.
    After a republish it compares the sheet's formulas and filters and its
    datasources' connection and filters with the proof's, and keeps a proof
    neither changed ("republished ..., sheet unchanged"). A proof saved before
-   the datasource check is listed once ("re-prove once"). `run` warns when a
-   proof is more than 7 days old.
+   the datasource check is listed once ("re-prove once"). It also lists each
+   proven comparison that maps a member Cube's `/meta` lacks, and `run` refuses
+   on one before it spends: fix the mapping, or wait for the PR that adds the
+   member to deploy. `run` warns when a proof is more than 7 days old.
 7. `run <file>` (add `--moment <ISO time>` for a build within the last 7 days).
    It prices queries first and stops over `--max-usd`. Every run on this machine
    also shares a daily cap, `--max-usd-per-day` (UTC day), and view versions

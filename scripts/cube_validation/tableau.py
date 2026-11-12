@@ -456,7 +456,13 @@ _SHELF_TAG = re.compile(
 _BRACKETED = r"\[(?:[^\]]|\]\])*\]"
 _SHELF_TOKEN = re.compile(
     rf"\s*(?:(?P<ref>{_BRACKETED}(?:\.{_BRACKETED})?)"
-    r"|(?P<op>[/+])|(?P<open>\()|(?P<close>\)))"
+    r"|(?P<op>[/+*])|(?P<open>\()|(?P<close>\)))"
+)
+# An aggregated pill (`[avg:x:qk]`, `[usr:Calculation_1:qk]`): a measure on the
+# shelf. A continuous date part (`[tdy:x:qk]`) is a dimension.
+_MEASURE_PILL = re.compile(r"\[(?P<derivation>[a-z]+):[^\]]*:qk(?::\d+)?\]$")
+_DATE_PARTS = frozenset(
+    "yr qr mn wk dy hr mi sc wd md my tyr tqr tmn twk tdy thr tmi tsc".split()
 )
 _DEPENDENCIES = re.compile(
     r"<datasource-dependencies\b[^>]*>.*?</datasource-dependencies>", re.DOTALL
@@ -467,7 +473,10 @@ SHELF_NAMES = {"rows": "rows", "cols": "columns"}
 
 @dataclass
 class _Group:
-    """A parenthesized shelf expression: fields nested (`/`) or side by side (`+`)."""
+    """A parenthesized shelf expression: fields nested (`/`), side by side
+    (`+`), or crossed (`*`, a dimension against measures, as a line chart's
+    dual axis writes it).
+    """
 
     items: list[_Group | str]
     ops: list[str]
@@ -552,10 +561,28 @@ def _without(
     return items[0] if len(items) == 1 else _Group(items, ops)
 
 
+def _is_measures(node: _Group | str | None) -> bool:
+    """Every field of `node` is an aggregated measure pill."""
+    leaves = _shelf_leaves(node)
+    matches = [_MEASURE_PILL.search(leaf) for leaf in leaves]
+    return bool(leaves) and all(
+        m is not None and m["derivation"] not in _DATE_PARTS | {"none"} for m in matches
+    )
+
+
 def _nested_under(node: _Group | str | None, ref: str) -> _Group | str:
-    """The shelf with `ref` nested innermost, as Tableau writes `(A / (B / C))`."""
+    """The shelf with `ref` nested innermost, as Tableau writes `(A / (B / C))`.
+
+    Measures stay last: a dimension added to a shelf of measures crosses in
+    front of them (`(A / B) * (M1 + M2)`), as Tableau writes a dimension
+    against a dual axis.
+    """
     if node is None:
         return ref
+    if _is_measures(node):
+        return _Group([ref, node], ["*"])
+    if isinstance(node, _Group) and node.ops == ["*"] and _is_measures(node.items[-1]):
+        return _Group([_nested_under(node.items[0], ref), node.items[-1]], ["*"])
     if isinstance(node, _Group) and set(node.ops) == {"/"}:
         return _Group([*node.items[:-1], _nested_under(node.items[-1], ref)], node.ops)
     return _Group([node, ref], ["/"])
@@ -1166,10 +1193,17 @@ class Proof:
 
 
 def _key_text(value: Any) -> str:
-    """Key text that treats 2026, 2026.0 and '2026' alike."""
+    """Key text that treats 2026, 2026.0 and '2026' alike, and reads the
+    export's M/D/YYYY date (the server's en-US format) as the probe's ISO date.
+    """
     if value is None:
         return ""
     text = str(value).strip()
+    if re.fullmatch(r"\d{1,2}/\d{1,2}/\d{4}", text):
+        try:
+            return datetime.strptime(text, "%m/%d/%Y").date().isoformat()
+        except ValueError:
+            return text
     if _THOUSANDS.fullmatch(text):
         text = text.replace(",", "")
     try:

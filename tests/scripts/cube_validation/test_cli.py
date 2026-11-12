@@ -184,6 +184,7 @@ class FakeCube:
         self.exprs: dict[str, str] = {}
         self.schools = ["A", "B"]
         self.dataset = "kipptaf_marts"
+        self.dropped: set[str] = set()
 
     def compiled(self, query):
         self.compiled_queries.append(query)
@@ -211,7 +212,28 @@ class FakeCube:
         return self._load(query)
 
     def meta(self):
-        return {"cubes": []}
+        return {
+            "cubes": [
+                {
+                    "name": "v",
+                    "measures": [{"name": m} for m in CUBE_MEASURES - self.dropped],
+                    "dimensions": [{"name": d} for d in CUBE_DIMENSIONS - self.dropped],
+                }
+            ]
+        }
+
+
+# The members the fake Cube model has; a test drops one through `dropped`.
+CUBE_MEASURES = {"v.avg_daily_attendance", "v.sum_attendance_value"}
+CUBE_DIMENSIONS = {
+    "v.academic_subject",
+    "v.attendance_date",
+    "v.attendance_value",
+    "v.dates_academic_year",
+    "v.lea_student_identifier",
+    "v.membership_value",
+    "v.regions_region_name",
+}
 
 
 def _load_row(query, value):
@@ -349,6 +371,16 @@ def test_run_uses_start_for_dashboard_and_end_for_cube(fakes, tmp_path):
     assert len(probes) == len(cells) == 2
     assert {_literal_after(s, "rpt_d") for s in probes} == {utc_literal(START)}
     assert {_literal_after(s, "fct_f") for s in cells} == {utc_literal(END)}
+
+
+def test_run_refuses_a_member_cube_dropped_before_it_spends(fakes, tmp_path, capsys):
+    fakes.cube.dropped = {"v.attendance_value"}
+
+    assert cli.main(["run", str(_file(tmp_path))]) == 1
+
+    err = capsys.readouterr().err
+    assert "ada-region" in err and "v.attendance_value" in err
+    assert fakes.bq.ran == [] and fakes.cube.compiled_queries == []
 
 
 def test_run_emits_date_grains_as_date_on_both_sides(fakes, tmp_path):
@@ -1458,6 +1490,62 @@ def test_export_cells_reads_an_unquoted_numeric_alias_key_back():
     assert totals == 1
 
 
+def test_export_cells_count_identical_pane_rows_once():
+    # A dual axis exports one row per pane; identical rows are one cell.
+    comparison = Comparison(
+        id="c",
+        measure="m",
+        dims=[ColumnPair(dashboard="region", cube="region_name")],
+    )
+    rows = [
+        {"Region": "Camden", "Title": "A", "Distance": "0.12"},
+        {"Region": "Camden", "Title": "A", "Distance": "0.12"},
+        {"Region": "Newark", "Title": "A", "Distance": "0.3"},
+        {"Region": "Newark", "Title": "B", "Distance": "0.3"},
+    ]
+
+    cells, _, _ = pipeline._export_cells(
+        comparison, rows, {"Region": "region"}, "Distance", [], []
+    )
+
+    assert cells == [
+        {"region": "Camden", "value": "0.12"},
+        {"region": "Newark", "value": "0.3"},
+        {"region": "Newark", "value": "0.3"},
+    ]
+
+
+def test_export_cells_sum_every_split_row_even_identical_ones():
+    # Summed split rows count each row: 2 that match in every exported column
+    # are 2 rows of the split, not 2 panes of 1 row.
+    comparison = Comparison(
+        id="c",
+        measure="m",
+        dims=[ColumnPair(dashboard="region", cube="region_name")],
+        split_rows="sum",
+    )
+    rows = [
+        {"Region": "Camden", "Count": "5"},
+        {"Region": "Camden", "Count": "5"},
+    ]
+
+    cells, _, summed = pipeline._export_cells(
+        comparison, rows, {"Region": "region"}, "Count", [], []
+    )
+
+    assert cells == [{"region": "Camden", "value": "10"}]
+    assert summed == 1
+
+
+def test_cell_keys_read_tableau_export_dates_as_the_same_day():
+    # Tableau's export writes a date as M/D/YYYY; the probe and Cube write ISO.
+    assert pipeline._key("9/21/2026") == "2026-09-21"
+    assert pipeline._key("09/07/2026") == pipeline._key("2026-09-07")
+    assert pipeline._key("2026-09-21T00:00:00.000") == "2026-09-21"
+    assert pipeline._key("9/21") == "9/21"
+    assert pipeline._key("13/45/2026") == "13/45/2026"
+
+
 def test_prove_keeps_a_real_all_member(fakes, tmp_path, capsys):
     fakes.bq.probe = [{"region": "All", "value": 0.9001}]
     fakes.tbl.exports = [[{"Region": "All", "Rate": "0.9001"}] for _ in range(2)]
@@ -1513,6 +1601,16 @@ def test_prove_check_lists_stale_proofs(fakes, tmp_path, capsys):
 def test_prove_check_quiet_when_current(fakes, tmp_path, capsys):
     assert cli.main(["prove", str(_file(tmp_path)), "--check"]) == 0
     assert "current" in capsys.readouterr().out
+
+
+def test_prove_check_lists_a_member_cube_dropped(fakes, tmp_path, capsys):
+    fakes.cube.dropped = {"v.regions_region_name"}
+
+    assert cli.main(["prove", str(_file(tmp_path)), "--check"]) == 0
+
+    out = capsys.readouterr().out
+    assert "ada-region" in out and "v.regions_region_name" in out
+    assert "re-prove" in out and "Every proof is current" not in out
 
 
 DS_END = "        <calculation class='tableau' formula='COUNTD([row_key])' />\n      </column>\n    </datasource>"
@@ -2338,7 +2436,10 @@ def test_prove_reshapes_the_copy_and_records_it(fakes, tmp_path, capsys):
     )
 
     assert "<rows />" in fakes.tbl.edited
-    assert "+ [federated.0sample].[usr:Calculation_1002:qk]) / " in fakes.tbl.edited
+    # Region crosses in front of the measures, as Tableau writes a dimension
+    # against measures.
+    assert "([federated.0sample].[none:region:nk] * (" in fakes.tbl.edited
+    assert "+ [federated.0sample].[usr:Calculation_1002:qk]))" in fakes.tbl.edited
     proof = load_view_config(path).comparisons[0].proof
     assert proof.shelves == {"drop": ["Team", "Region"], "add": {"cols": ["Region"]}}
     # Team left the copy's shelves, so it is no longer a missing cut.

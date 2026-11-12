@@ -196,3 +196,118 @@ models:
           Focus Assessments, state, and AP rows. Discriminator in
           `assessment_key` so Official and Practice sittings of the same test
           family don't collide.
+
+      - name: bucket_subject
+        data_type: string
+        description: >-
+          Which of a student's buckets applies to scores on this assessment —
+          Reading pairs with `dim_student_enrollment_status.ela_bucket`, Math
+          with `math_bucket`, and null means no bucket applies (science, social
+          studies, AP exam scores, combined and composite college scores, and
+          internal subjects with no course subject crosswalk row). Internal
+          assessments take it from the course subject crosswalk's discipline for
+          their subject; state tests from their ELA or Math discipline; i-Ready
+          from its subject; STAR is Math or else Reading; DIBELS is Reading;
+          Official college scores from their credit category (ENG or MATH);
+          Practice college scores from their subject (EBRW, English and Reading,
+          or Math).
+
+unit_tests:
+  - name: test_bucket_subject_by_family
+    description: >-
+      Each family names the bucket that applies to its scores — internal
+      assessments read the members model's crosswalk mapping, i-Ready reads its
+      subject, Official college scores read the credit category, and Practice
+      college scores read the subject area — and a score with no ELA or math
+      bucket (science, combined) gets none.
+    model: dim_assessments
+    given:
+      - input: ref("int_assessments__assessments_members")
+        format: sql
+        rows: |
+          select
+              9101 as assessment_id,
+              'Text Study Quiz' as title,
+              'Text Study' as subject_area,
+              cast(null as string) as scope,
+              'QA1' as module_code,
+              'QA' as module_type,
+              true as is_internal_assessment,
+              'illuminate' as `source`,
+              9101 as canonical_assessment_id,
+              'Reading' as bucket_subject
+          union all
+          select
+              9103, 'Science Quiz', 'Science', null, 'QA1', 'QA', true,
+              'illuminate', 9103, null
+      - input: ref("int_assessments__assessments_canonical")
+        format: sql
+        rows: |
+          select
+              'illuminate' as `source`,
+              9101 as canonical_assessment_id,
+              5 as grade_level
+          union all
+          select 'illuminate', 9103, 5
+      - input: ref("int_assessments__state_nj_scores")
+        rows: []
+      - input: ref("int_fldoe__all_assessments")
+        rows: []
+      - input: ref("int_iready__diagnostic_results")
+        rows:
+          - subject: Math
+            overall_scale_score: 450
+          - subject: Reading
+            overall_scale_score: 520
+      - input: ref("stg_renlearn__star")
+        rows: []
+      - input: ref("int_amplify__all_assessments")
+        rows: []
+      - input: ref("int_assessments__college_assessment")
+        rows:
+          - scope: SAT
+            subject_area: EBRW
+            score_type: sat_ebrw
+            aligned_subject: EBRW/Reading
+            aligned_subject_area: EBRW
+            course_discipline: ENG
+      - input: ref("int_assessments__college_assessment_practice")
+        rows:
+          - scope: SAT
+            subject_area: EBRW
+            module_code: sat_ebrw
+          - scope: SAT
+            subject_area: Combined
+            module_code: sat_combined
+      - input: ref("int_assessments__ap_assessments")
+        rows: []
+    expect:
+      rows:
+        - type: illuminate
+          test_type: null
+          academic_subject: Text Study
+          bucket_subject: Reading
+        - type: illuminate
+          test_type: null
+          academic_subject: Science
+          bucket_subject: null
+        - type: iready
+          test_type: null
+          academic_subject: Math
+          bucket_subject: Math
+        - type: iready
+          test_type: null
+          academic_subject: Reading
+          bucket_subject: Reading
+        - type: college
+          test_type: Official
+          academic_subject: EBRW
+          bucket_subject: Reading
+        - type: college
+          test_type: Practice
+          academic_subject: EBRW
+          bucket_subject: Reading
+        - type: college
+          test_type: Practice
+          academic_subject: Combined
+          bucket_subject: null

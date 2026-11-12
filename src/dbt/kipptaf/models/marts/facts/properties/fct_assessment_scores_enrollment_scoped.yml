@@ -139,6 +139,21 @@ models:
               to: ref('dim_terms')
               to_columns: [term_key]
 
+      - name: assessment_goal_key
+        data_type: string
+        description: >-
+          FK to dim_assessment_goals. The goal set for the student's enrolled
+          school and academic year. Internal assessments (Illuminate and Focus
+          Assessments) match on the assessment's subject and the student's
+          enrolled grade; a goal row with no grade, as at high schools, covers
+          every grade at its school. State assessments match on the state test
+          code. Null for vendor assessments, and wherever no goal is set.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_assessment_goals')
+              to_columns: [assessment_goal_key]
+
       - name: test_date_key
         data_type: date
         description: >-

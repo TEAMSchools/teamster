@@ -276,8 +276,9 @@ the owner's walkthrough or a workbook download.
 - **Grain**: three unioned branches — ES/MS (grades 0-8) and HS (9-12) at
   student x week x response row; walkthrough rows at observation-row grain with
   student columns nulled and staff overloaded into them (`student_name` is the
-  staff member, `subject_area` is their microgoals, `response_type` is the
-  literal `walkthrough`). No uniqueness test (known issue).
+  staff member, `subject_area` is their assigned Grow goals, microgoals and
+  look-fors, `response_type` is the literal `walkthrough`). No uniqueness test
+  (known issue).
 - **Reads**: `int_extracts__student_enrollments_weeks`,
   `int_assessments__response_rollup`, the standard-domains and QBLs sheets,
   `int_assessments__academic_goals`, courses, the iReady lesson union, and the
