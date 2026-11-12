@@ -97,10 +97,11 @@ unit_tests:
         rows: |
           select
               9001 as assessment_id,
+              9001 as canonical_assessment_id,
               'overall' as response_type,
               500 as canonical_performance_band_set_id
           union all
-          select 9002, 'overall', 500
+          select 9002, 9002, 'overall', 500
       - input: ref('int_illuminate__performance_band_sets')
         format: sql
         rows: |

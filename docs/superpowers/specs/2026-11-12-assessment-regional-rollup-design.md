@@ -341,3 +341,26 @@ Approved by the Data Team on 2026-11-12, with open item 1 decided:
   do not change from today.
 
 Open item 2 stays open and does not block the build.
+
+## Revision, 2026-11-12: built inside existing models
+
+The PR's new owner changed the design before build. Where this section and the
+sections above disagree, this section wins.
+
+- **Region is part of the canonical definition.** `canonical_assessment_id`
+  keeps its name and now groups per region. No `tag_group_assessment_id`.
+  Grouping exists only to merge the parts of a multi-part assessment; regional
+  variants are distinct assessments and never merge across regions.
+- **No new model.** `int_assessments__assessments_members` carries
+  `region_groups`, an array of `(region, canonical_assessment_id)` per copy.
+  Consumers unnest it. Section 2's `int_assessments__assessment_region_groups`
+  is not built.
+- **No fallback for untagged regions.** A replacement score from a region the
+  copy is not tagged for drops in the scaffold. The
+  `replacement_region_untagged` warn test and `is_region_tagged` are not built.
+- **Bands and standards both follow the regional group.**
+  `int_assessments__performance_bands` adds `canonical_assessment_id` to its
+  grain and merges per group, so each region keeps its own band set. The band
+  change ships in the same PR, not as a separate revertible commit.
+- **`dim_assessments` grade** comes from each copy's own `grade_level_id`, not
+  from the canonical row.

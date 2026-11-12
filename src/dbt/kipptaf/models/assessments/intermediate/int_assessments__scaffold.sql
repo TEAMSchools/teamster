@@ -19,10 +19,7 @@ with
             coalesce(a.tagged_grade_level_id, agl.grade_level_id) as grade_level_id,
             concat('kipp', lower(rg.region)) as _dbt_source_project,
         from {{ ref("int_assessments__assessments_members") }} as a
-        inner join
-            {{ ref("int_assessments__assessment_region_groups") }} as rg
-            on a.source = rg.source
-            and a.assessment_id = rg.assessment_id
+        cross join unnest(a.region_groups) as rg
         left join
             {{ ref("stg_illuminate__dna_assessments__assessment_grade_levels") }} as agl
             on a.assessment_id = agl.assessment_id
@@ -204,7 +201,9 @@ with
             a.scope,
             a.module_type,
             a.module_code,
-            a.tag_group_assessment_id as canonical_assessment_id,
+
+            -- each Apex assessment is its own canonical group
+            a.assessment_id as canonical_assessment_id,
         from {{ ref("int_focus__apex_results") }} as r
         inner join
             {{ ref("int_assessments__assessments_members") }} as a
@@ -308,8 +307,6 @@ select
     false as is_replacement,
 
     cast(null as string) as section_match_method,
-
-    null as is_region_tagged,
 from internal_assessments_deduped as ia
 left join
     {{ ref("stg_illuminate__dna_assessments__students_assessments") }} as sa
@@ -354,9 +351,7 @@ select
 
     str.dagster_code_location as _dbt_source_project,
 
-    coalesce(
-        c.canonical_assessment_id, a.tag_group_assessment_id
-    ) as canonical_assessment_id,
+    rg.canonical_assessment_id,
 
     sa.student_assessment_id,
     sa.date_taken,
@@ -365,8 +360,6 @@ select
     true as is_replacement,
 
     cast(null as string) as section_match_method,
-
-    c.canonical_assessment_id is not null as is_region_tagged,
 from {{ ref("int_assessments__assessments_members") }} as a
 inner join
     {{ ref("stg_illuminate__dna_assessments__students_assessments") }} as sa
@@ -380,11 +373,8 @@ inner join
     and a.tagged_grade_level_id != ssa.grade_level_id
     and ssa.rn_student_session_desc = 1
 left join school_to_region as str on ssa.site_id = str.powerschool_school_id
-left join
-    {{ ref("int_assessments__assessments_canonical") }} as c
-    on a.source = c.source
-    and a.tag_group_assessment_id = c.tag_group_assessment_id
-    and str.region in unnest(c.regions_array)
+-- INNER: a score from a region the copy is not tagged for has no group
+inner join unnest(a.region_groups) as rg on str.region = rg.region
 where
     a.is_internal_assessment
     and a.source = 'illuminate'
@@ -430,7 +420,8 @@ select
 
     str.dagster_code_location as _dbt_source_project,
 
-    a.tag_group_assessment_id as canonical_assessment_id,
+    -- each external assessment is its own canonical group
+    a.assessment_id as canonical_assessment_id,
 
     sa.student_assessment_id,
     sa.date_taken,
@@ -439,8 +430,6 @@ select
     false as is_replacement,
 
     cast(null as string) as section_match_method,
-
-    null as is_region_tagged,
 from {{ ref("int_assessments__assessments_members") }} as a
 inner join
     {{ ref("stg_illuminate__dna_assessments__students_assessments") }} as sa
@@ -501,8 +490,6 @@ select
         then 'single'
         else 'multiple'
     end as section_match_method,
-
-    null as is_region_tagged,
 from apex_tested as t
 left join
     apex_sections as sc

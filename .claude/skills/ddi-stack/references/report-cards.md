@@ -32,9 +32,7 @@ path only, in order:
    `mod_assessment` require the student's region in `regions_report_card` (or
    `regions_progress_report` for the PR branch). Untagged Unit Assessments pass
    the enrichment feed anyway; `mod_standards` needs only
-   `is_internal_assessment`, no region tag. The tags read are those of the
-   student's region's own first copy (the lowest `assessment_id` tagged for that
-   region), so a tag fixed on a later copy does not reach that region's feeds.
+   `is_internal_assessment`, no region tag.
 2. **The population.** `mod_assessment` and `mod_standards_domains` are K-4 only
    (enrollment `grade_level < 5`, `rn_year = 1`); `mod_assessment` and
    `mod_standards` are current-year only.

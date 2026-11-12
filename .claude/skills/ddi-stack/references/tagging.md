@@ -14,11 +14,11 @@ problem, not a tag problem: [item-bank-year.md](item-bank-year.md).
 | Field                            | Controls                                                                                                                                                                                                                           |
 | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | row exists                       | `is_internal_assessment` / "normed": DKI + Module Dashboard display, the feeds, the star's internal branch                                                                                                                         |
-| `module_type`, `module_sequence` | `module_code` (for example `UA3`); tag grouping; the DDI dashboard drops `module_type = 'WPP'`                                                                                                                                     |
+| `module_type`, `module_sequence` | `module_code` (for example `UA3`); canonical grouping; the DDI dashboard drops `module_type = 'WPP'`                                                                                                                               |
 | `administered_at`                | Overrides Illuminate's date: which week/term the assessment lands in everywhere                                                                                                                                                    |
 | `subject`                        | Overrides Illuminate's subject area                                                                                                                                                                                                |
-| `grade_level`                    | `illuminate_grade_level_id`; tag grouping; `is_replacement` (no grade tag means never a replacement)                                                                                                                               |
-| `regions_assessed`               | Which regions' students are expected to take it (the scaffold fans on this); which regional group a copy sits in; canonical `regions_array`                                                                                        |
+| `grade_level`                    | `illuminate_grade_level_id`; canonical grouping; `is_replacement` (no grade tag means never a replacement)                                                                                                                         |
+| `regions_assessed`               | Which regions' students are expected to take it (the scaffold fans on this); canonical `regions_array`                                                                                                                             |
 | `regions_report_card`            | Report-card eligibility for `mod_assessment` non-UA scopes and `mod_standards_domains`' report-card branch — and nothing else: untagged Unit Assessments pass the enrichment feed anyway, and `mod_standards` checks no region tag |
 | `regions_progress_report`        | `mod_standards_domains`' progress-report branch                                                                                                                                                                                    |
 
@@ -37,28 +37,21 @@ job.
 
 ## Canonical grouping
 
-Internal copies sharing
-`(source, academic_year, scope, subject_area, module_code, grade_level_id)` and
-the internal and Florida flags form a tag group. Within it, the copies tagged
-for one region in `regions_assessed` form that region's group, named by its
-lowest `assessment_id`; that ID is `canonical_assessment_id`. A copy tagged for
-several regions sits in each region's group. Consequences:
+Within each region in `regions_assessed`, internal members sharing
+`(academic_year, scope, subject_area, module_code, grade_level_id)` group under
+the lowest member `assessment_id` (stored per copy in `region_groups`).
+Consequences:
 
-- Each region's scores carry the title, date, and report card and progress
-  report tags of its own first copy. A Camden copy created after Newark's keeps
-  Camden's own date. The band set is the one on the tag group's first copy.
-- Two copies tagged for the same region combine: multi-part assessments and
-  alternate versions become one result per student.
-- One mistagged copy (wrong module or grade) splits or merges a tag group, the
-  instability behind [#5654]. A wrong module tag combines different tests for
-  the regions tagged on both copies.
-- Miami-only Florida copies (`regions_assessed` exactly `Miami`) form their own
-  tag group. A Florida copy also tagged with another region falls into the New
-  Jersey tag group, and sits in the group of each region it is tagged for.
-- A tag edit that changes which copy is a region's first changes that region's
-  `canonical_assessment_id`, which is a hash input in the assessment star:
-  expect administration and score keys to churn on the next tick. Editing
-  `regions_assessed` can do the same.
+- One mistagged copy (wrong module or grade) splits or merges a group — the
+  instability behind [#5654].
+- Groups never span regions. A copy tagged for 2 regions joins 2 groups, so
+  adding or removing a region tag can change which copy names a group.
+- A copy with no `regions_assessed` tag belongs to no group: its scores never
+  reach the scaffold, the response rollup or the star. A score from a region the
+  copy is not tagged for drops the same way.
+- A tag edit changes `canonical_assessment_id`s, which are hash inputs in the
+  assessment star: expect administration and score keys to churn on the next
+  tick.
 
 [#5654]: https://github.com/TEAMSchools/teamster/issues/5654
 

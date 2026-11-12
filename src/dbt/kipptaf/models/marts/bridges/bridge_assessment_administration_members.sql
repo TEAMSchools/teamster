@@ -1,5 +1,5 @@
 with
-    member_regions as (
+    members_unnested as (
         select
             a.source,
             a.assessment_id as member_assessment_id,
@@ -13,13 +13,10 @@ with
 
             concat('kipp', lower(rg.region)) as _dbt_source_project,
         from {{ ref("int_assessments__assessments_members") }} as a
-        inner join
-            {{ ref("int_assessments__assessment_region_groups") }} as rg
-            on a.source = rg.source
-            and a.assessment_id = rg.assessment_id
+        cross join unnest(a.region_groups) as rg
         inner join
             {{ ref("int_assessments__assessments_canonical") }} as c
-            on rg.source = c.source
+            on a.source = c.source
             and rg.canonical_assessment_id = c.canonical_assessment_id
     )
 
@@ -49,4 +46,4 @@ select
             ]
         )
     }} as assessment_key,
-from member_regions
+from members_unnested

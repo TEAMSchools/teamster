@@ -19,7 +19,7 @@ ladder in order; most cases end at step 1.
    No row — it is untagged and invisible to DKI/Module Dashboard, the feeds, and
    the star. Wrong `administered_at` — it lands in the wrong week/term. Missing
    region in `regions_assessed` — that region's students are never expected to
-   take it. Grade or module wrong — the grouping breaks
+   take it. Grade or module wrong — canonical grouping breaks
    ([tagging.md](tagging.md)).
 
 2. **Illuminate landed it.** The assessment tables sync at 00:00 and 17:00

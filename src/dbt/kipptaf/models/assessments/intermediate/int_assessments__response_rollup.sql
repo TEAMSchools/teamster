@@ -1,4 +1,12 @@
 with
+    -- grain projection, not dup-masking: a sitting repeats on scaffold rows for
+    -- each of its student's sections
+    sitting_groups as (
+        select distinct student_assessment_id, canonical_assessment_id,
+        from {{ ref("int_assessments__scaffold") }}
+        where source = 'illuminate' and student_assessment_id is not null
+    ),
+
     responses_keyed as (
         select
             asr.student_assessment_id,
@@ -10,17 +18,22 @@ with
             asr.points,
             asr.percent_correct,
 
+            sg.canonical_assessment_id,
+
             pb.canonical_performance_band_set_id,
 
             coalesce(
                 pb.canonical_response_type_id, asr.response_type_id
             ) as response_type_id,
         from {{ ref("int_illuminate__agg_student_responses") }} as asr
+        inner join
+            sitting_groups as sg on asr.student_assessment_id = sg.student_assessment_id
         left join
             {{ ref("int_assessments__performance_bands") }} as pb
             on asr.assessment_id = pb.assessment_id
             and asr.response_type = pb.response_type
             and asr.response_type_id = pb.response_type_id
+            and sg.canonical_assessment_id = pb.canonical_assessment_id
     ),
 
     -- one sitting scores a split standard once per record; sum the records back
@@ -28,6 +41,7 @@ with
     responses_merged as (
         select
             student_assessment_id,
+            canonical_assessment_id,
             response_type,
             response_type_id,
             response_type_code,
@@ -46,6 +60,7 @@ with
         from responses_keyed
         group by
             student_assessment_id,
+            canonical_assessment_id,
             response_type,
             response_type_id,
             response_type_code,
@@ -103,6 +118,7 @@ with
         left join
             responses_merged as asr
             on s.student_assessment_id = asr.student_assessment_id
+            and s.canonical_assessment_id = asr.canonical_assessment_id
         left join
             {{ ref("int_assessments__assessments_canonical") }} as c
             on s.source = c.source

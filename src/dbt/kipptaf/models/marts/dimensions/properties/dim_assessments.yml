@@ -234,21 +234,12 @@ unit_tests:
               'QA' as module_type,
               true as is_internal_assessment,
               'illuminate' as `source`,
-              9101 as tag_group_assessment_id,
+              6 as grade_level_id,
               'Reading' as bucket_subject
           union all
           select
               9103, 'Science Quiz', 'Science', null, 'QA1', 'QA', true,
-              'illuminate', 9103, null
-      - input: ref("int_assessments__assessments_canonical")
-        format: sql
-        rows: |
-          select
-              'illuminate' as `source`,
-              9101 as canonical_assessment_id,
-              5 as grade_level
-          union all
-          select 'illuminate', 9103, 5
+              'illuminate', 6, null
       - input: ref("int_assessments__state_nj_scores")
         rows: []
       - input: ref("int_fldoe__all_assessments")

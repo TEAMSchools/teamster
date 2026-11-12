@@ -30,12 +30,11 @@ models:
       expected_total_subjects_tested and a null assessment_id.
 
 
-      assessment_id is response_rollup's assessment_id — the assessment's own
-      id, or on a tagged internal assessment its regional group id (the lowest
-      id among the copies that share its tags and are tagged for the student's
-      region). No practice assessment shares tags with another copy, so each
-      sheet id equals its response_rollup id. A multipart practice
-      administration would need the sheet to reference the regional group id.
+      assessment_id is canonical_assessment_id, since response_rollup is
+      canonical-grain. Practice assessments are not grouped into multi-member
+      canonicals, so each sheet id equals its canonical id. A multipart practice
+      administration would need the sheet to reference the canonical (lowest)
+      id.
 
 
       See docs/models/carat-dashboard-data-model.md.
@@ -121,8 +120,7 @@ models:
       - name: assessment_id
         data_type: int64
         description: >-
-          Illuminate assessment id from response_rollup (the regional group id
-          on a tagged internal assessment), and the key joining to the
+          Illuminate canonical assessment id, and the key joining to the
           conversion sheet. On Apex rows, the Illuminate assessment whose bands
           converted the summed modules, so it keeps one id per section. Null on
           Total rows, which aggregate across assessments.

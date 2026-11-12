@@ -42,12 +42,9 @@ Illuminate DnA (dlt sync)        AppSheet tagging app          Assessments
 int_illuminate__assessments --> int_assessments__assessments_members    (catalog
        |                              |                                  feed)
        |                              v
-int_illuminate__agg_student_    int_assessments__assessment_region_groups
+int_illuminate__agg_student_    int_assessments__assessments_canonical
 responses (overall/standard/          |
 group)                                v
-       |                int_assessments__assessments_canonical
-       |                              |
-       |                              v
        |                int_assessments__scaffold  <-- course enrollments,
        |                 ("expected to take")          Illuminate sessions
        v                              |
@@ -59,10 +56,6 @@ DDI Suite    DeansList   mod audit   assessment star (dim_assessments,
 extracts)    (4 CDO      + tier      fct_assessment_scores_*) --> Cube view
              feeds)      roster
 ```
-
-`int_assessments__assessment_region_groups` reads the members model; the
-canonical model reads both, and the scaffold reads the crosswalk and the
-canonical model.
 
 `int_illuminate__repository_data` (custom student-data tables) feeds the sight
 words dashboard and the DeansList sight-words extract on a separate track from
@@ -80,10 +73,9 @@ sheet staging models, and the AppSheet staging table), as are
 `__resolved_section_enrollments`, `__score_anchors`,
 `int_illuminate__root_standards`, and the table marts of the assessment star.
 The remaining intermediates (`int_illuminate__*` apart from `root_standards`;
-`int_assessments__assessments_members`, `__assessment_region_groups`,
-`__assessments_canonical`, `__performance_bands`, `__academic_goals`) and
-`dim_assessment_goals` are views. A new score therefore reaches a consumer only
-after:
+`int_assessments__assessments_members`, `__assessments_canonical`,
+`__performance_bands`, `__academic_goals`) and `dim_assessment_goals` are views.
+A new score therefore reaches a consumer only after:
 
 1. The Illuminate dlt sync lands it. The assessment tables
    (`agg_student_responses*`, `students_assessments`) sync at midnight and 5pm
@@ -120,26 +112,17 @@ after:
   ones. An untagged assessment is otherwise invisible to every consumer below
   except the raw Illuminate intermediates.
 - **Canonical assessment** (`canonical_assessment_id`): internal assessments are
-  created once per region/variant in Illuminate, so copies that share
-  `(source, academic_year, scope, subject_area, module_code, grade_level_id)`
-  and the internal and Florida flags form a **tag group**. Within a tag group,
-  the copies tagged for one region (`regions_assessed`) form that region's
-  **regional group**, and the lowest `assessment_id` among them names it. The
-  regional group ID is `canonical_assessment_id` on the scaffold and score
-  anchors, `assessment_id` on the roll-up, and `source_assessment_id` in the
-  scores fact's administration key and on `dim_assessment_administrations`. A
-  copy tagged for several regions sits in each region's group. Each region's
-  scores carry the title, date, and report card and progress report tags of its
-  own first copy, and the band set on the tag group's first copy. Two copies
-  tagged for the same region combine, which is how multi-part assessments and
-  alternate versions become one result per student. A wrong module tag combines
-  different tests for the regions tagged on both copies. A tag edit that changes
-  which copy is a region's first changes that region's group ID, and with it the
-  administration and score keys. Miami-only Florida copies (AppSheet
-  `regions_assessed` exactly `Miami`) form their own tag group, so New Jersey
-  rows never inherit a Florida title or date. Non-internal assessments are their
-  own canonical. Known defect: inconsistent SY25-26 tagging destabilizes the
-  grouping ([#5654](https://github.com/TEAMSchools/teamster/issues/5654)).
+  created as several Illuminate copies when one assessment is too big for one
+  (multi-part assessments), so within each region tagged in `regions_assessed`,
+  members that share
+  `(academic_year, scope, subject_area, module_code, grade_level_id)` are
+  grouped, and the lowest member `assessment_id` names the group. Groups never
+  span regions: a copy tagged for 2 regions sits in 2 groups, one per region,
+  and each region keeps its own title, date and band set. Miami-only Florida
+  copies (AppSheet `regions_assessed` exactly `Miami`) also group apart.
+  Non-internal and Apex assessments are their own canonical. Known defect:
+  inconsistent SY25-26 tagging destabilizes the grouping
+  ([#5654](https://github.com/TEAMSchools/teamster/issues/5654)).
 - **Scope**: Illuminate's assessment category (decoded from `dna_scopes`) — Unit
   Assessment ("UA"), Cumulative Review Quizzes ("CRQ"), Cold Read Quizzes, Sight
   Words Quiz, and so on. K-1 cumulative-review and cold-read quizzes are
@@ -517,13 +500,10 @@ state testing results, both, or eventually Focus Assessments.
   what is a DDI assessment. This keeps the stack robust to Illuminate's messy
   catalog (duplicates, "Copy of" titles) at the cost of making the tags a single
   point of failure.
-- **Canonical grouping by attributes within a region.** Network policy is one
-  internal assessment per module, but each region creates its own copy. Copies
-  with the same tags combine for a region only when both are tagged for that
-  region, so a region's title, date and report card tags come from its own first
-  copy and never from another region's. Rejected: grouping copies only when
-  their region lists match exactly, which splits one combined score in two for
-  students whose copies are tagged for different region lists.
+- **Canonical grouping per region.** Grouping exists only to merge the parts of
+  a multi-part assessment that Illuminate forces into separate copies. Regional
+  variants are distinct assessments, so a group never spans regions, even when
+  copies share every other attribute.
 - **Replacement sittings are visible but unscored.** Off-grade sittings show on
   rosters and the student-scoped bridge but never anchor scores — the section
   resolver cannot place them.
@@ -589,7 +569,7 @@ roll). That is a workbook/extract change, not a data defect.
 Tracked elsewhere:
 
 - [#5654](https://github.com/TEAMSchools/teamster/issues/5654) — inconsistent
-  SY25-26 scope/module tagging destabilizes the grouping.
+  SY25-26 scope/module tagging destabilizes canonical groups.
 - [#5399](https://github.com/TEAMSchools/teamster/issues/5399) — performance
   band tables sync only at midnight; same-day scores stay unscored intraday.
 - [#4808](https://github.com/TEAMSchools/teamster/issues/4808) — DDI dashboard

@@ -1,50 +1,32 @@
 with
-    group_regions as (
+    canonical_regions as (
         select
-            source,
-            canonical_assessment_id,
+            m.source,
+            rg.canonical_assessment_id,
 
-            array_agg(distinct region order by region) as regions_array,
-        from {{ ref("int_assessments__assessment_region_groups") }}
-        group by source, canonical_assessment_id
-    ),
-
-    -- grain projection, not dup-masking: a tag group id that is also a
-    -- regional group id is one group
-    group_ids as (
-        select source, canonical_assessment_id,
-        from group_regions
-
-        union distinct
-
-        select source, tag_group_assessment_id as canonical_assessment_id,
-        from {{ ref("int_assessments__assessments_members") }}
-        where is_internal_assessment
+            array_agg(distinct rg.region order by rg.region) as regions_array,
+        from {{ ref("int_assessments__assessments_members") }} as m
+        cross join unnest(m.region_groups) as rg
+        group by m.source, rg.canonical_assessment_id
     )
 
 select
-    g.source,
-    g.canonical_assessment_id,
+    r.source,
+    r.canonical_assessment_id,
+    r.regions_array,
 
-    m.tag_group_assessment_id,
-    m.title,
-    m.administered_at as administered_date,
-    m.subject_area,
-    m.scope,
-    m.module_code,
-    m.academic_year,
-    m.academic_year_clean,
-    m.grade_level_id,
+    p.title,
+    p.administered_at as administered_date,
+    p.subject_area,
+    p.scope,
+    p.module_code,
+    p.academic_year,
+    p.academic_year_clean,
+    p.grade_level_id,
 
-    coalesce(r.regions_array, []) as regions_array,
-
-    m.grade_level_id - 1 as grade_level,
-from group_ids as g
+    p.grade_level_id - 1 as grade_level,
+from canonical_regions as r
 inner join
-    {{ ref("int_assessments__assessments_members") }} as m
-    on g.source = m.source
-    and g.canonical_assessment_id = m.assessment_id
-left join
-    group_regions as r
-    on g.source = r.source
-    and g.canonical_assessment_id = r.canonical_assessment_id
+    {{ ref("int_assessments__assessments_members") }} as p
+    on r.source = p.source
+    and r.canonical_assessment_id = p.assessment_id

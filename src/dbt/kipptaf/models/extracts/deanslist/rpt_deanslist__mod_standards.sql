@@ -18,6 +18,7 @@ with
         inner join
             {{ ref("int_assessments__performance_bands") }} as pb
             on r.assessment_id = pb.assessment_id
+            and r.assessment_id = pb.canonical_assessment_id
             and pb.response_type = 'overall'
         where
             r.is_internal_assessment

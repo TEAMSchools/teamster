@@ -2,29 +2,35 @@ models:
   - name: int_assessments__performance_bands
     description: >-
       Performance band set assignments at the response-level grain
-      (assessment_id × response_type × response_type_id). Unions overall
-      assessment-level bands with per-standard and per-reporting-group bands so
-      every response in `int_illuminate__agg_student_responses` has a single
-      authoritative `performance_band_set_id` to look up. Illuminate copies some
-      standards into more than one standards set, so an assessment can score one
-      standard (same code and description) through several `standard_id`s. Rows
-      that score the same response are grouped (per tag group for internal
-      assessments, per assessment otherwise) and share one
-      `canonical_response_type_id` and one `canonical_performance_band_set_id`,
-      so the rollup scores them once. `int_assessments__response_rollup` and
-      `rpt_deanslist__mod_standards` label scores with
-      `canonical_performance_band_set_id`.
+      (assessment_id × canonical_assessment_id × response_type ×
+      response_type_id). A copy in 2 regional groups has a row per group. Unions
+      overall assessment-level bands with per-standard and per-reporting-group
+      bands so every response in `int_illuminate__agg_student_responses` has a
+      single authoritative `performance_band_set_id` to look up. Illuminate
+      copies some standards into more than one standards set, so an assessment
+      can score one standard (same code and description) through several
+      `standard_id`s. Rows that score the same response are grouped (per
+      regional group for internal assessments, per assessment otherwise) and
+      share one `canonical_response_type_id` and one
+      `canonical_performance_band_set_id`, so the rollup scores them once.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
               - assessment_id
+              - canonical_assessment_id
               - response_type
               - response_type_id
     columns:
       - name: assessment_id
         data_type: int64
         description: Illuminate assessment id.
+      - name: canonical_assessment_id
+        data_type: int64
+        description: >-
+          Regional group the row's scores roll up into, from `region_groups` on
+          `int_assessments__assessments_members`. External assessments and
+          internal copies with no region tag are their own group.
       - name: response_type
         data_type: string
         description: One of `overall`, `standard`, or `group`.
@@ -45,44 +51,73 @@ models:
         description: >-
           The lowest `response_type_id` among rows that score the same response.
           A standard groups by its code and description, a reporting group by
-          its id, and `overall` by assessment. Groups span the copies of a tag
-          group for internal assessments and stay within one assessment
+          its id, and `overall` by assessment. Groups span the members of a
+          regional group for internal assessments and stay within one assessment
           otherwise. Equals `response_type_id` when the response has one record.
       - name: canonical_performance_band_set_id
         data_type: int64
         description: >-
-          Band set that labels the grouped response, chosen over its tag group.
-          Null when one standard is split across records that carry different
-          band sets, since no single set fits the merged score. Otherwise, for
-          internal assessments, the set of the row with the lowest
-          `assessment_id` and `response_type_id` in the group, which is the tag
-          group's first copy's set whenever it carries the response (`overall`
-          always does). For external assessments, the row's own
-          `performance_band_set_id`.
+          Band set that labels the grouped response. Null when one standard is
+          split across records that carry different band sets, since no single
+          set fits the merged score. Otherwise, for internal assessments, the
+          set of the row with the lowest `assessment_id` and `response_type_id`
+          in the group, which is the regional group's first copy's set whenever
+          it carries the response (`overall` always does), so each region's
+          scores use the band set of that region's own copy. For external
+          assessments, the row's own `performance_band_set_id`.
 unit_tests:
   - name: test_int_assessments__performance_bands_split_standards
     description: >-
       External assessment 9001 aligns CODE.A to records 11 and 12 on one band
       set, so both take id 11 and set 5. CODE.B (13, 14) and CODE.C (15, 16)
       each split across records whose sets differ, one of them null, so both
-      groups get no band. Internal copies 9100 and 9101 of one tag group score
-      CODE.D through records 21 and 22, so both take id 21 and the first copy's
-      set.
+      groups get no band. Internal copies 9100 (Newark) and 9101 (Newark and
+      Camden) form one Newark group that scores CODE.D through records 21 and
+      22, so both take id 21 and 9100's overall set. In Camden, 9101 is its own
+      group, so its overall score keeps 9101's own set.
     model: int_assessments__performance_bands
     given:
       - input: ref('int_assessments__assessments_members')
         format: sql
         rows: |
           select
+              'illuminate' as `source`,
               9001 as assessment_id,
-              'illuminate' as source,
+              cast(null as string) as title,
+              cast(null as int64) as academic_year,
+              cast(null as int64) as academic_year_clean,
+              cast(null as string) as scope,
+              cast(null as string) as creator_first_name,
+              cast(null as string) as creator_last_name,
               1 as performance_band_set_id,
+              cast(null as string) as assessment_type,
+              cast(null as string) as tags,
+              cast(null as string) as module_code,
+              cast(null as string) as module_type,
+              cast(null as int64) as module_sequence,
+              cast(null as int64) as tagged_grade_level_id,
+              cast(null as string) as regions_assessed,
+              cast(null as array<string>) as regions_assessed_array,
+              cast(null as string) as regions_report_card,
+              cast(null as string) as regions_progress_report,
+              cast(null as date) as administered_at,
+              cast(null as string) as subject_area,
+              cast(null as int64) as grade_level_id,
               false as is_internal_assessment,
-              9001 as tag_group_assessment_id
+              cast(
+                  null as array<struct<region string, canonical_assessment_id int64>>
+              ) as region_groups,
+              cast(null as string) as bucket_subject
           union all
-          select 9100, 'illuminate', 2, true, 9100
+          select
+              'illuminate', 9100, null, null, null, null, null, null, 2, null,
+              null, null, null, null, null, null, null, null, null, null, null,
+              null, true, [struct('Newark', 9100)], null
           union all
-          select 9101, 'illuminate', 3, true, 9100
+          select
+              'illuminate', 9101, null, null, null, null, null, null, 3, null,
+              null, null, null, null, null, null, null, null, null, null, null,
+              null, true, [struct('Camden', 9101), struct('Newark', 9100)], null
       - input: ref('stg_illuminate__dna_assessments__assessment_standards')
         rows:
           - { assessment_id: 9001, standard_id: 11, performance_band_set_id: 5 }
@@ -113,6 +148,7 @@ unit_tests:
       rows:
         - {
             assessment_id: 9001,
+            canonical_assessment_id: 9001,
             response_type: overall,
             response_type_id: -1,
             canonical_response_type_id: -1,
@@ -120,6 +156,7 @@ unit_tests:
           }
         - {
             assessment_id: 9100,
+            canonical_assessment_id: 9100,
             response_type: overall,
             response_type_id: -1,
             canonical_response_type_id: -1,
@@ -127,13 +164,23 @@ unit_tests:
           }
         - {
             assessment_id: 9101,
+            canonical_assessment_id: 9100,
             response_type: overall,
             response_type_id: -1,
             canonical_response_type_id: -1,
             canonical_performance_band_set_id: 2,
           }
         - {
+            assessment_id: 9101,
+            canonical_assessment_id: 9101,
+            response_type: overall,
+            response_type_id: -1,
+            canonical_response_type_id: -1,
+            canonical_performance_band_set_id: 3,
+          }
+        - {
             assessment_id: 9001,
+            canonical_assessment_id: 9001,
             response_type: standard,
             response_type_id: 11,
             canonical_response_type_id: 11,
@@ -141,6 +188,7 @@ unit_tests:
           }
         - {
             assessment_id: 9001,
+            canonical_assessment_id: 9001,
             response_type: standard,
             response_type_id: 12,
             canonical_response_type_id: 11,
@@ -148,6 +196,7 @@ unit_tests:
           }
         - {
             assessment_id: 9001,
+            canonical_assessment_id: 9001,
             response_type: standard,
             response_type_id: 13,
             canonical_response_type_id: 13,
@@ -155,6 +204,7 @@ unit_tests:
           }
         - {
             assessment_id: 9001,
+            canonical_assessment_id: 9001,
             response_type: standard,
             response_type_id: 14,
             canonical_response_type_id: 13,
@@ -162,6 +212,7 @@ unit_tests:
           }
         - {
             assessment_id: 9001,
+            canonical_assessment_id: 9001,
             response_type: standard,
             response_type_id: 15,
             canonical_response_type_id: 15,
@@ -169,6 +220,7 @@ unit_tests:
           }
         - {
             assessment_id: 9001,
+            canonical_assessment_id: 9001,
             response_type: standard,
             response_type_id: 16,
             canonical_response_type_id: 15,
@@ -176,6 +228,7 @@ unit_tests:
           }
         - {
             assessment_id: 9100,
+            canonical_assessment_id: 9100,
             response_type: standard,
             response_type_id: 21,
             canonical_response_type_id: 21,
@@ -183,8 +236,17 @@ unit_tests:
           }
         - {
             assessment_id: 9101,
+            canonical_assessment_id: 9100,
             response_type: standard,
             response_type_id: 22,
             canonical_response_type_id: 21,
+            canonical_performance_band_set_id: 7,
+          }
+        - {
+            assessment_id: 9101,
+            canonical_assessment_id: 9101,
+            response_type: standard,
+            response_type_id: 22,
+            canonical_response_type_id: 22,
             canonical_performance_band_set_id: 7,
           }

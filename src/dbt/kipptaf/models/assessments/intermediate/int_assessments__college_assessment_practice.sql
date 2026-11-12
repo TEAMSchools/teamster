@@ -97,8 +97,12 @@ with
             ssk.aligned_scale_score,
         from {{ ref("int_assessments__response_rollup") }} as a
         inner join
-            -- the sheet must list each test under the group ID the roll-up
-            -- reports as `assessment_id`
+            -- `a.assessment_id` is `canonical_assessment_id`, because
+            -- `response_rollup` output is canonical-grain. The sheet's
+            -- `assessment_id` values align to canonical because Practice SAT/ACT are
+            -- not canonicalized into multi-member
+            -- groups. If multipart Practice administrations arrive later, the
+            -- sheet must reference the canonical (lowest) `assessment_id`.
             conversion as ssk
             on a.assessment_id = ssk.assessment_id
             and a.points between ssk.raw_score_low and ssk.raw_score_high
