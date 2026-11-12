@@ -44,9 +44,9 @@ for one region in `regions_assessed` form that region's group, named by its
 lowest `assessment_id`; that ID is `canonical_assessment_id`. A copy tagged for
 several regions sits in each region's group. Consequences:
 
-- Each region's scores carry the title, date, and report card and progress
-  report tags of its own first copy. A Camden copy created after Newark's keeps
-  Camden's own date. The band set is the one on the tag group's first copy.
+- Each region's scores carry the title, date, report card and progress report
+  tags, and band set of its own first copy. A Camden copy created after Newark's
+  keeps Camden's own date.
 - Two copies tagged for the same region combine: multi-part assessments and
   alternate versions become one result per student.
 - One mistagged copy (wrong module or grade) splits or merges a tag group, the
