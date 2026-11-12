@@ -34,7 +34,8 @@ models:
           # Covers int_people__staff_roster too, which reads the current rows of
           # this model. A new business unit passes the Tableau extract decodes
           # unchanged and reads as Region there: add it to those decodes and to
-          # this list.
+          # this list. rpt_tableau__pm_outlier_detection has no decode; add it
+          # to that model's accepted_values list instead, which fails at error.
           - accepted_values:
               arguments:
                 values:
