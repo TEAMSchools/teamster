@@ -12,6 +12,11 @@ models:
         contains_pii: true
     data_tests:
       - dbt_utils.unique_combination_of_columns:
+          description: >-
+            Amplify mCLASS filed more than one aimline row under one student ID
+            for the same probe, day and grade. The kipptaf aimline intermediate
+            ignores every colliding aimline row. Fix it in mCLASS by moving the
+            result to the right student.
           arguments:
             combination_of_columns:
               - student_primary_id
@@ -22,7 +27,7 @@ models:
               - device_date
               - assessment_grade
           config:
-            severity: error
+            severity: warn
     columns:
       - name: school_name
         data_type: string
