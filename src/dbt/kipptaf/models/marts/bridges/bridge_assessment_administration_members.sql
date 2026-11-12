@@ -21,7 +21,6 @@ with
             {{ ref("int_assessments__assessments_canonical") }} as c
             on rg.source = c.source
             and rg.canonical_assessment_id = c.canonical_assessment_id
-        where a.is_internal_assessment
     )
 
 select
