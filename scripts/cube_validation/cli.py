@@ -526,7 +526,7 @@ def _dispatch(args: argparse.Namespace) -> int:
     # prove
     if args.check:
         with tableau_session() as tbl:
-            pipeline.prove_check(cfg, tbl=tbl)
+            pipeline.prove_check(cfg, tbl=tbl, cube=_cube(args))
         return 0
     captures: dict = {}
     with tableau_session() as tbl:

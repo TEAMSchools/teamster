@@ -441,10 +441,19 @@ def wrap_cube(
 
 
 def _key(value: Any) -> str:
-    """Cell key text: dates by day, numbers by value, else the text."""
+    """Cell key text: dates by day, numbers by value, else the text.
+
+    Tableau's export writes a date as M/D/YYYY (the server's en-US format),
+    the probe and Cube as ISO, so both read as the same day.
+    """
     if isinstance(value, str) and re.match(r"\d{4}-\d{2}-\d{2}", value):
         try:
             value = datetime.fromisoformat(value)
+        except ValueError:
+            pass
+    elif isinstance(value, str) and re.fullmatch(r"\d{1,2}/\d{1,2}/\d{4}", value):
+        try:
+            value = datetime.strptime(value, "%m/%d/%Y")
         except ValueError:
             pass
     if isinstance(value, datetime):
@@ -1237,6 +1246,48 @@ def _gaps(comparisons: list[Comparison]) -> tuple[list[Gap], list[str]]:
     return gaps, unknown
 
 
+def _query_members(query: dict) -> Iterator[str]:
+    """Every member a Cube query names, nested `and`/`or` filters included."""
+    yield from query.get("measures", [])
+    yield from query.get("dimensions", [])
+    yield from (t["dimension"] for t in query.get("timeDimensions", []))
+    stack = list(query.get("filters", []))
+    while stack:
+        f = stack.pop()
+        if "member" in f:
+            yield f["member"]
+        stack += f.get("and", []) + f.get("or", [])
+
+
+def missing_members(
+    cfg: ViewConfig, comparisons: Iterable[Comparison], meta: dict
+) -> list[str]:
+    """The members `run` would query that Cube's `/meta` lacks, as `<id>: <member>`.
+
+    Read from the queries `run` sends, so a mapping to a member the model
+    dropped or renamed is caught before anything is priced. `/meta` lists what
+    this viewer may query: Cube refuses a load of any member it hides.
+    """
+    known = {
+        m["name"]
+        for cube in meta.get("cubes", [])
+        for kind in ("measures", "dimensions", "segments")
+        for m in cube.get(kind) or []
+    }
+    found: list[str] = []
+    for comparison in comparisons:
+        queries = [cell_query(cfg.view, comparison, cut) for cut in _cuts(comparison)]
+        if comparison.rows is not None:
+            queries.append(row_query(cfg.view, comparison))
+        names = _unique(m for q in queries for m in _query_members(q))
+        found += [f"{comparison.id}: {m}" for m in names if m not in known]
+    for anchor in cfg.anchors:
+        query = checks.anchor_query(anchor, cfg.view, cfg.time_dimension or "")
+        names = _unique(_query_members(query))
+        found += [f"anchor {anchor.measure}: {m}" for m in names if m not in known]
+    return found
+
+
 def run(
     cfg: ViewConfig,
     *,
@@ -1282,6 +1333,13 @@ def run(
         raise Refusal(
             f"comparison {', '.join(map(repr, changed_probes))}: the probe is not "
             "the one its proof covers; run `prove` again"
+        )
+    # A member the model dropped would refuse only after every query ran.
+    if missing := missing_members(cfg, comparisons, cube.meta()):
+        raise Refusal(
+            "Cube's model has no member for "
+            + "; ".join(missing)
+            + ". Fix each mapping, then `prove` that comparison again"
         )
     for comparison in comparisons:
         if comparison.proof:
@@ -2237,7 +2295,16 @@ def _export_cells(
     }
     cells: list[dict] = []
     totals = 0
+    # A dual axis exports one row per pane, identical in every column: count
+    # it once. A row that differs anywhere still reads as a repeat. Summed
+    # split rows keep every row, since 2 rows of a split field the export
+    # does not show can match in every column.
+    seen: set[tuple] = set()
     for r in rows:
+        whole = tuple(sorted((k, str(v)) for k, v in r.items()))
+        if whole in seen and comparison.split_rows != "sum":
+            continue
+        seen.add(whole)
         dims = {d: r[h] for h, d in mapping.items()}
         if any(v == TOTAL_LABEL and d not in real_all for d, v in dims.items()):
             totals += 1
@@ -2520,17 +2587,27 @@ def _print_failures(
         print(f"  Full list: {path}")
 
 
-def prove_check(cfg: ViewConfig, *, tbl: tableau.Tableau) -> list[str]:
-    """List comparisons whose sheet changed since their proof.
+def prove_check(
+    cfg: ViewConfig, *, tbl: tableau.Tableau, cube: Cube | None = None
+) -> list[str]:
+    """List comparisons whose sheet or Cube members changed since their proof.
 
     A workbook published after the proof is downloaded once and its sheet
     compared by what the proof covers: `fingerprint` (the sheet's formulas
     and filters) and `source_fingerprint` (its datasources' connection and
     filters). A republish that changed neither is reported and kept current.
     A proof without `source_fingerprint` cannot rule out a datasource change,
-    so it is stale after any republish.
+    so it is stale after any republish. With `cube`, a proven comparison that
+    maps a member Cube's `/meta` no longer lists is stale too.
     """
     stale = []
+    if cube is not None:
+        proven = [c for c in cfg.comparisons if c.proof is not None]
+        stale += [
+            f"{line}, which Cube's model no longer has; fix the mapping and re-prove"
+            for line in missing_members(cfg, proven, cube.meta())
+            if not line.startswith("anchor ")
+        ]
     twbs: dict[str, str] = {}
     for comparison in cfg.comparisons:
         if not comparison.workbook:
