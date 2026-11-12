@@ -11,6 +11,7 @@ select
     g.grade_band_goal,
     g.assessment_band_goal,
     g.region_grade_goal,
+    g.qa_goal,
 
     s.school_level,
 
