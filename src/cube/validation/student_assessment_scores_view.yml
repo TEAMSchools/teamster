@@ -269,6 +269,422 @@ comparisons:
         School Level: school_level
         is_low_25_fl: is_low_25_fl
         Week Start Monday: week_start_monday
+  # Goal distance, as the DDI Suite colors its cells: the highest
+  # differentiated goal in the cell minus the cell's mastery rate. The probes
+  # rebuild Grade/School/Region Goal (Differentiated) on the extract's columns,
+  # the K-2 QA goals hard-coded as the workbook has them today (Refs #6192).
+  - id: goal-distance-dki-school
+    <<: *school
+    measure: grade_goal_distance
+    sheet_field: Goal Distance - Grade/Subject
+    probe: >-
+      max(case when region in ('Camden', 'Newark', 'Paterson') and grade_level <
+      9 and subject_area in ('AP Language', 'English 100', 'English 200',
+      'English 300', 'English 400', 'Text Study') and module_type = 'ET' then
+      0.8 when region in ('Camden', 'Newark', 'Paterson') and grade_level > 9
+      and module_type = 'ET' then 0.8 when region in ('Camden', 'Newark',
+      'Paterson') and grade_level <= 2 and (subject_area in ('AP Language',
+      'English 100', 'English 200', 'English 300', 'English 400', 'Text Study')
+      or subject_area in ('Algebra I', 'Algebra I MS', 'Algebra II', 'AP Pre
+      Calculus', 'Geometry', 'Geometry Honors', 'Math 4', 'Mathematics')) and
+      module_type in ('QA', 'CRQ') then case concat(region, ' ',
+      cast(grade_level as string), ' ', case when subject_area in ('AP
+      Language', 'English 100', 'English 200', 'English 300', 'English 400',
+      'Text Study') then 'ELA' when subject_area in ('Algebra I', 'Algebra I
+      MS', 'Algebra II', 'AP Pre Calculus', 'Geometry', 'Geometry Honors', 'Math
+      4', 'Mathematics') then 'Math' end) when 'Newark 0 ELA' then 0.78 when
+      'Newark 1 ELA' then 0.63 when 'Newark 2 ELA' then 0.76 when 'Newark 0
+      Math' then 0.90 when 'Newark 1 Math' then 0.79 when 'Newark 2 Math' then
+      0.71 when 'Camden 0 ELA' then 0.61 when 'Camden 1 ELA' then 0.63 when
+      'Camden 2 ELA' then 0.76 when 'Camden 0 Math' then 0.83 when 'Camden 1
+      Math' then 0.77 when 'Camden 2 Math' then 0.53 when 'Paterson 0 ELA' then
+      0.78 when 'Paterson 1 ELA' then 0.50 when 'Paterson 2 ELA' then 0.64 when
+      'Paterson 0 Math' then 0.90 when 'Paterson 1 Math' then 0.78 when
+      'Paterson 2 Math' then 0.79 end when region in ('Camden', 'Newark',
+      'Paterson') and grade_level > 0 and grade_level < 9 and subject_area in
+      ('Algebra I', 'Algebra I MS', 'Algebra II', 'AP Pre Calculus', 'Geometry',
+      'Geometry Honors', 'Math 4', 'Mathematics') and module_type = 'CRQ' then
+      grade_goal + 0.1 when region in ('Camden', 'Newark', 'Paterson') and
+      grade_level > 2 and (subject_area in ('AP Language', 'English 100',
+      'English 200', 'English 300', 'English 400', 'Text Study') or subject_area
+      in ('Algebra I', 'Algebra I MS', 'Algebra II', 'AP Pre Calculus',
+      'Geometry', 'Geometry Honors', 'Math 4', 'Mathematics') or subject_area in
+      ('Biology', 'Chemistry', 'Human Anatomy and Physiology', 'Physics',
+      'Science')) and module_type = 'TP' then grade_goal + 0.1 else grade_goal
+      end) - avg(is_mastery_int)
+    proof:
+      fingerprint: 3c570b06fff00569956ab30062ec5971502aa895511df28e3e73d894b00496c6
+      cells: 2677
+      proven_at: "2026-11-11T17:22:03.590632+00:00"
+      workbook_updated_at: "2026-11-11T06:41:10+00:00"
+      probe_fingerprint: 322b3285fed80a647535c19890abea528e2c589f2330687cc6a466f1e7af0dd6
+      source_fingerprint: 0f04e5bc396bc10f77f44b8ef651a385c4eb60d3a8d925755e8ebbb36c7d3b6e
+      cuts:
+        - '{"Response Type": "overall"}'
+        - '{"Response Type": "standard"}'
+      totals_skipped: 370
+      shelves:
+        drop:
+          - Week Start Monday
+          - Grade/Subject
+          - Module Code
+          - School
+        clear_filters:
+          - Discipline
+        add:
+          rows:
+            - School
+            - Module Code
+            - Grade Level
+            - Subject Area
+      missing_cuts: []
+      missing_filters:
+        - Dibels Most Recent Composite
+        - Discipline
+        - Exclude Future Assessments
+        - Grade/Subject
+        - Head Of School
+        - IEP Status
+        - Ml Status
+        - School Level
+        - Term
+        - Week Start Monday
+        - gifted_and_talented
+        - is_low_25_fl
+        - is_sipps
+        - state_test_proficiency
+      restricting_filters:
+        - Exclude Future Assessments
+      filter_notes: {}
+      missing_columns:
+        Head Of School: head_of_school
+        Dibels Most Recent Composite: dibels_most_recent_composite
+        School Level: school_level
+        Ml Status: ml_status
+        Term: term
+        state_test_proficiency: state_test_proficiency
+        gifted_and_talented: gifted_and_talented
+        is_sipps: is_sipps
+        is_low_25_fl: is_low_25_fl
+        IEP Status: iep_status
+        Week Start Monday: week_start_monday
+  - id: school-goal-distance-lines-school
+    <<: *dki
+    sheet: School - Mastery Lines All
+    measure: school_goal_distance
+    sheet_field: Goal Distance - School
+    # The dashboard shows this sheet when Chart Type is Lines; it saves Table.
+    parameters: { Chart Type: Lines }
+    filters:
+      <<: *dki_filters
+      Student Tier: { dashboard: nj_student_tier, cube: bucket }
+    # The line is Is Mastery Int - Custom, which under Mastery Type Overall
+    # reads overall responses only, and its filter drops every row where it
+    # is blank: the sheet counts overall rows with a mastery value only, so
+    # both sides do.
+    scope:
+      - { cube: is_internal_assessment, values: [true] }
+      - { cube: response_type, values: [overall] }
+      - { cube: is_mastery, operator: set }
+    dashboard_filters:
+      - { dashboard: administered_at, operator: lte, days_from_week_end: 0 }
+      - { dashboard: response_type, values: [overall] }
+      - { dashboard: is_mastery_int, operator: set }
+    # The line sheets have no Response Type filter: every response type in the
+    # extract pools into each point.
+    cuts: []
+    dims:
+      - { dashboard: school, cube: abbreviation }
+      - { dashboard: grade_level, cube: grade_level }
+      - { dashboard: subject_area, cube: academic_subject }
+      - { dashboard: module_code, cube: module_code }
+    shelves:
+      drop: [Week Start Monday, School]
+      add: { rows: [School, Module Code, Grade Level, Subject Area] }
+      clear_filters: [Discipline, School]
+    probe: >-
+      max(case when region in ('Camden', 'Newark', 'Paterson') and grade_level <
+      9 and subject_area in ('AP Language', 'English 100', 'English 200',
+      'English 300', 'English 400', 'Text Study') and module_type = 'ET' then
+      0.8 when region in ('Camden', 'Newark', 'Paterson') and grade_level > 9
+      and module_type = 'ET' then 0.8 when region in ('Camden', 'Newark',
+      'Paterson') and grade_level <= 2 and (subject_area in ('AP Language',
+      'English 100', 'English 200', 'English 300', 'English 400', 'Text Study')
+      or subject_area in ('Algebra I', 'Algebra I MS', 'Algebra II', 'AP Pre
+      Calculus', 'Geometry', 'Geometry Honors', 'Math 4', 'Mathematics')) and
+      module_type in ('QA', 'CRQ') then case concat(region, ' ',
+      cast(grade_level as string), ' ', case when subject_area in ('AP
+      Language', 'English 100', 'English 200', 'English 300', 'English 400',
+      'Text Study') then 'ELA' when subject_area in ('Algebra I', 'Algebra I
+      MS', 'Algebra II', 'AP Pre Calculus', 'Geometry', 'Geometry Honors', 'Math
+      4', 'Mathematics') then 'Math' end) when 'Newark 0 ELA' then 0.78 when
+      'Newark 1 ELA' then 0.63 when 'Newark 2 ELA' then 0.76 when 'Newark 0
+      Math' then 0.90 when 'Newark 1 Math' then 0.79 when 'Newark 2 Math' then
+      0.71 when 'Camden 0 ELA' then 0.61 when 'Camden 1 ELA' then 0.63 when
+      'Camden 2 ELA' then 0.76 when 'Camden 0 Math' then 0.83 when 'Camden 1
+      Math' then 0.77 when 'Camden 2 Math' then 0.53 when 'Paterson 0 ELA' then
+      0.78 when 'Paterson 1 ELA' then 0.50 when 'Paterson 2 ELA' then 0.64 when
+      'Paterson 0 Math' then 0.90 when 'Paterson 1 Math' then 0.78 when
+      'Paterson 2 Math' then 0.79 end when region in ('Camden', 'Newark',
+      'Paterson') and grade_level > 0 and grade_level < 9 and subject_area in
+      ('Algebra I', 'Algebra I MS', 'Algebra II', 'AP Pre Calculus', 'Geometry',
+      'Geometry Honors', 'Math 4', 'Mathematics') and module_type = 'CRQ' then
+      school_goal + 0.1 when region in ('Camden', 'Newark', 'Paterson') and
+      grade_level > 2 and (subject_area in ('AP Language', 'English 100',
+      'English 200', 'English 300', 'English 400', 'Text Study') or subject_area
+      in ('Algebra I', 'Algebra I MS', 'Algebra II', 'AP Pre Calculus',
+      'Geometry', 'Geometry Honors', 'Math 4', 'Mathematics') or subject_area in
+      ('Biology', 'Chemistry', 'Human Anatomy and Physiology', 'Physics',
+      'Science')) and module_type = 'TP' then school_goal + 0.1 else school_goal
+      end) - avg(is_mastery_int)
+    proof:
+      fingerprint: 49bbceb9d81f6b5910909bf37a139844fad19d0b4e436beeae8e0fcede8725a7
+      cells: 1396
+      proven_at: "2026-11-11T21:26:44.332710+00:00"
+      workbook_updated_at: "2026-11-11T06:41:10+00:00"
+      probe_fingerprint: 85d80e8432c4e9639b4329552cc005938c8b3ec38c81db9133c11c487716eb63
+      source_fingerprint: 0f04e5bc396bc10f77f44b8ef651a385c4eb60d3a8d925755e8ebbb36c7d3b6e
+      cuts:
+        - "{}"
+      totals_skipped: 0
+      parameters:
+        Chart Type: Lines
+      shelves:
+        drop:
+          - Week Start Monday
+          - School
+        clear_filters:
+          - Discipline
+          - School
+        add:
+          rows:
+            - School
+            - Module Code
+            - Grade Level
+            - Subject Area
+      missing_cuts: []
+      missing_filters:
+        - Course Teacher Name
+        - Dibels Most Recent Composite
+        - Discipline
+        - Exclude Future Assessments
+        - IEP Status
+        - Is Mastery Int - Custom
+        - Ml Status
+        - Module Type
+        - Select Chart Type
+        - Standard
+        - Term
+        - Week of
+        - is_low_25_fl
+        - is_sipps
+        - state_test_proficiency
+      restricting_filters:
+        - Exclude Future Assessments
+        - Select Chart Type
+      filter_notes:
+        Select Chart Type: display switch on Chart Type
+      missing_columns:
+        IEP Status: iep_status
+        state_test_proficiency: state_test_proficiency
+        Course Teacher Name: course_teacher_name
+        Dibels Most Recent Composite: dibels_most_recent_composite
+        Module Type: module_type
+        Ml Status: ml_status
+        is_low_25_fl: is_low_25_fl
+        is_sipps: is_sipps
+        Term: term
+  - id: region-goal-distance-lines-region
+    <<: *dki
+    sheet: Region - Mastery Lines All
+    measure: region_goal_distance
+    sheet_field: Goal Distance - Region
+    filters:
+      <<: *dki_filters
+      Student Tier: { dashboard: nj_student_tier, cube: bucket }
+    # The line is Is Mastery Int - Custom, which under Mastery Type Overall
+    # reads overall responses only, and its filter drops every row where it
+    # is blank: the sheet counts overall rows with a mastery value only, so
+    # both sides do.
+    scope:
+      - { cube: is_internal_assessment, values: [true] }
+      - { cube: response_type, values: [overall] }
+      - { cube: is_mastery, operator: set }
+    dashboard_filters:
+      - { dashboard: administered_at, operator: lte, days_from_week_end: 0 }
+      - { dashboard: response_type, values: [overall] }
+      - { dashboard: is_mastery_int, operator: set }
+    # The line sheets have no Response Type filter: every response type in the
+    # extract pools into each point.
+    cuts: []
+    dims:
+      - { dashboard: region, cube: region_name }
+      - { dashboard: grade_level, cube: grade_level }
+      - { dashboard: subject_area, cube: academic_subject }
+    shelves:
+      drop: [Week Start Monday, Region]
+      add: { rows: [Region, Grade Level, Subject Area] }
+      clear_filters: [Discipline, Region]
+    probe: >-
+      max(case when region in ('Camden', 'Newark', 'Paterson') and grade_level <
+      9 and subject_area in ('AP Language', 'English 100', 'English 200',
+      'English 300', 'English 400', 'Text Study') and module_type = 'ET' then
+      0.8 when region in ('Camden', 'Newark', 'Paterson') and grade_level > 9
+      and module_type = 'ET' then 0.8 when region in ('Camden', 'Newark',
+      'Paterson') and grade_level <= 2 and (subject_area in ('AP Language',
+      'English 100', 'English 200', 'English 300', 'English 400', 'Text Study')
+      or subject_area in ('Algebra I', 'Algebra I MS', 'Algebra II', 'AP Pre
+      Calculus', 'Geometry', 'Geometry Honors', 'Math 4', 'Mathematics')) and
+      module_type in ('QA', 'CRQ') then case concat(region, ' ',
+      cast(grade_level as string), ' ', case when subject_area in ('AP
+      Language', 'English 100', 'English 200', 'English 300', 'English 400',
+      'Text Study') then 'ELA' when subject_area in ('Algebra I', 'Algebra I
+      MS', 'Algebra II', 'AP Pre Calculus', 'Geometry', 'Geometry Honors', 'Math
+      4', 'Mathematics') then 'Math' end) when 'Newark 0 ELA' then 0.78 when
+      'Newark 1 ELA' then 0.63 when 'Newark 2 ELA' then 0.76 when 'Newark 0
+      Math' then 0.90 when 'Newark 1 Math' then 0.79 when 'Newark 2 Math' then
+      0.71 when 'Camden 0 ELA' then 0.61 when 'Camden 1 ELA' then 0.63 when
+      'Camden 2 ELA' then 0.76 when 'Camden 0 Math' then 0.83 when 'Camden 1
+      Math' then 0.77 when 'Camden 2 Math' then 0.53 when 'Paterson 0 ELA' then
+      0.78 when 'Paterson 1 ELA' then 0.50 when 'Paterson 2 ELA' then 0.64 when
+      'Paterson 0 Math' then 0.90 when 'Paterson 1 Math' then 0.78 when
+      'Paterson 2 Math' then 0.79 end when region in ('Camden', 'Newark',
+      'Paterson') and grade_level > 0 and grade_level < 9 and subject_area in
+      ('Algebra I', 'Algebra I MS', 'Algebra II', 'AP Pre Calculus', 'Geometry',
+      'Geometry Honors', 'Math 4', 'Mathematics') and module_type = 'CRQ' then
+      region_goal + 0.1 when region in ('Camden', 'Newark', 'Paterson') and
+      grade_level > 2 and (subject_area in ('AP Language', 'English 100',
+      'English 200', 'English 300', 'English 400', 'Text Study') or subject_area
+      in ('Algebra I', 'Algebra I MS', 'Algebra II', 'AP Pre Calculus',
+      'Geometry', 'Geometry Honors', 'Math 4', 'Mathematics') or subject_area in
+      ('Biology', 'Chemistry', 'Human Anatomy and Physiology', 'Physics',
+      'Science')) and module_type = 'TP' then region_goal + 0.1 else region_goal
+      end) - avg(is_mastery_int)
+    proof:
+      fingerprint: b5b6b8f4fa9282b4fc8dc804f82f58b818e44bb943b18bc275309b0429037bcb
+      cells: 234
+      proven_at: "2026-11-11T21:28:41.054493+00:00"
+      workbook_updated_at: "2026-11-11T06:41:10+00:00"
+      probe_fingerprint: 14f6215245679a6d44a091c6d41874ed31e32cfaa89798652dbe35025eb9d197
+      source_fingerprint: 0f04e5bc396bc10f77f44b8ef651a385c4eb60d3a8d925755e8ebbb36c7d3b6e
+      cuts:
+        - "{}"
+      totals_skipped: 0
+      shelves:
+        drop:
+          - Week Start Monday
+          - Region
+        clear_filters:
+          - Discipline
+          - Region
+        add:
+          rows:
+            - Region
+            - Grade Level
+            - Subject Area
+      missing_cuts: []
+      missing_filters:
+        - Dibels Most Recent Composite
+        - Discipline
+        - Exclude Future Assessments
+        - Head Of School
+        - IEP Status
+        - Is Mastery Int - Custom
+        - Ml Status
+        - Module Type
+        - School Level
+        - Standard
+        - Week Start Monday
+        - is_low_25_fl
+        - is_sipps
+        - state_test_proficiency
+      restricting_filters:
+        - Exclude Future Assessments
+      filter_notes: {}
+      missing_columns:
+        Head Of School: head_of_school
+        School Level: school_level
+        state_test_proficiency: state_test_proficiency
+        Dibels Most Recent Composite: dibels_most_recent_composite
+        Module Type: module_type
+        Ml Status: ml_status
+        is_low_25_fl: is_low_25_fl
+        IEP Status: iep_status
+        is_sipps: is_sipps
+        Week Start Monday: week_start_monday
+  # The school week: mastery-dki-school with Week Start Monday kept as a row.
+  - id: mastery-dki-school-week
+    <<: *school
+    measure: pct_proficient
+    sheet_field: Avg. Is Mastery Int
+    probe: avg(is_mastery_int)
+    dims:
+      - { dashboard: school, cube: abbreviation }
+      - { dashboard: week_start_monday, cube: school_week_start_date }
+      - { dashboard: grade_level, cube: grade_level }
+      - { dashboard: subject_area, cube: academic_subject }
+      - { dashboard: module_code, cube: module_code }
+    shelves:
+      drop: [Week Start Monday, Grade/Subject, Module Code, School]
+      add:
+        rows:
+          [School, Week Start Monday, Module Code, Grade Level, Subject Area]
+      clear_filters: [Discipline]
+    proof:
+      fingerprint: 3c570b06fff00569956ab30062ec5971502aa895511df28e3e73d894b00496c6
+      cells: 2719
+      proven_at: "2026-11-11T20:47:23.349529+00:00"
+      workbook_updated_at: "2026-11-11T06:41:10+00:00"
+      probe_fingerprint: 1fc20c233825d658ea93376387aa45bd5f957d87b49196690e89f849f8e167de
+      source_fingerprint: 0f04e5bc396bc10f77f44b8ef651a385c4eb60d3a8d925755e8ebbb36c7d3b6e
+      cuts:
+        - '{"Response Type": "overall"}'
+        - '{"Response Type": "standard"}'
+      totals_skipped: 747
+      shelves:
+        drop:
+          - Week Start Monday
+          - Grade/Subject
+          - Module Code
+          - School
+        clear_filters:
+          - Discipline
+        add:
+          rows:
+            - School
+            - Week Start Monday
+            - Module Code
+            - Grade Level
+            - Subject Area
+      missing_cuts: []
+      missing_filters:
+        - Dibels Most Recent Composite
+        - Discipline
+        - Exclude Future Assessments
+        - Grade/Subject
+        - Head Of School
+        - IEP Status
+        - Ml Status
+        - School Level
+        - Term
+        - gifted_and_talented
+        - is_low_25_fl
+        - is_sipps
+        - state_test_proficiency
+      restricting_filters:
+        - Exclude Future Assessments
+      filter_notes: {}
+      missing_columns:
+        Term: term
+        School Level: school_level
+        IEP Status: iep_status
+        Dibels Most Recent Composite: dibels_most_recent_composite
+        Ml Status: ml_status
+        gifted_and_talented: gifted_and_talented
+        Head Of School: head_of_school
+        state_test_proficiency: state_test_proficiency
+        is_low_25_fl: is_low_25_fl
+        is_sipps: is_sipps
   # Gen Ed is iep_status other than Has IEP; a blank iep_status counts in
   # neither, as a null is_iep does in Cube.
   - id: mastery-gened-dki-school
