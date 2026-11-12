@@ -187,11 +187,11 @@ comparisons:
         }
     proof:
       fingerprint: 3c570b06fff00569956ab30062ec5971502aa895511df28e3e73d894b00496c6
-      cells: 3282
-      proven_at: "2026-11-12T02:07:25.912551+00:00"
-      workbook_updated_at: "2026-11-11T23:42:08+00:00"
+      cells: 3285
+      proven_at: "2026-11-12T13:03:25.299380+00:00"
+      workbook_updated_at: "2026-11-12T06:44:35+00:00"
       probe_fingerprint: 8cce34f2bea64e939a9602b9d87589092767700b09df9bfe33a340e2df35b104
-      source_fingerprint: 0f04e5bc396bc10f77f44b8ef651a385c4eb60d3a8d925755e8ebbb36c7d3b6e
+      source_fingerprint: d9ff221cb778a49a9bbdfcf16e8dbfe368b7b1640fb68fa44caad7c655e18817
       cuts:
         - '{"Response Type": "overall"}'
         - '{"Response Type": "standard"}'
@@ -199,7 +199,7 @@ comparisons:
           Below"}'
         - '{"Dibels Most Recent Composite": "Well Below Benchmark", "Response
           Type": "overall"}'
-      totals_skipped: 538
+      totals_skipped: 541
       shelves:
         drop:
           - Week Start Monday
@@ -230,11 +230,11 @@ comparisons:
         - Exclude Future Assessments
       filter_notes: {}
       missing_columns:
-        IEP Status: iep_status
         Week Start Monday: week_start_monday
+        IEP Status: iep_status
+        Term: term
         Head Of School: head_of_school
         Ml Status: ml_status
-        Term: term
         gifted_and_talented: gifted_and_talented
         School Level: school_level
   - id: mastery-dki-region
@@ -244,11 +244,11 @@ comparisons:
     probe: avg(is_mastery_int)
     proof:
       fingerprint: 3c570b06fff00569956ab30062ec5971502aa895511df28e3e73d894b00496c6
-      cells: 447
-      proven_at: "2026-11-08T21:42:40.788170+00:00"
-      workbook_updated_at: "2026-11-08T06:42:06+00:00"
+      cells: 451
+      proven_at: "2026-11-12T13:07:49.910042+00:00"
+      workbook_updated_at: "2026-11-12T06:44:35+00:00"
       probe_fingerprint: 169ffc2780ad5554bb33383ce97da9ce05e5b35e3a0cecd369af28f3e9e0ef8a
-      source_fingerprint: 0f04e5bc396bc10f77f44b8ef651a385c4eb60d3a8d925755e8ebbb36c7d3b6e
+      source_fingerprint: d9ff221cb778a49a9bbdfcf16e8dbfe368b7b1640fb68fa44caad7c655e18817
       cuts:
         - '{"Response Type": "overall"}'
         - '{"Response Type": "standard"}'
@@ -268,7 +268,6 @@ comparisons:
             - Subject Area
       missing_cuts: []
       missing_filters:
-        - Dibels Most Recent Composite
         - Discipline
         - Exclude Future Assessments
         - Grade/Subject
@@ -279,24 +278,17 @@ comparisons:
         - Term
         - Week Start Monday
         - gifted_and_talented
-        - is_low_25_fl
-        - is_sipps
-        - state_test_proficiency
       restricting_filters:
         - Exclude Future Assessments
       filter_notes: {}
       missing_columns:
-        Ml Status: ml_status
-        Head Of School: head_of_school
-        state_test_proficiency: state_test_proficiency
-        is_sipps: is_sipps
-        IEP Status: iep_status
-        gifted_and_talented: gifted_and_talented
-        Term: term
-        Dibels Most Recent Composite: dibels_most_recent_composite
-        School Level: school_level
-        is_low_25_fl: is_low_25_fl
         Week Start Monday: week_start_monday
+        IEP Status: iep_status
+        Term: term
+        Head Of School: head_of_school
+        Ml Status: ml_status
+        gifted_and_talented: gifted_and_talented
+        School Level: school_level
   # Goal distance, as the DDI Suite colors its cells: the highest
   # differentiated goal in the cell minus the cell's mastery rate. The probes
   # rebuild Grade/School/Region Goal (Differentiated) on the extract's columns,
@@ -342,15 +334,15 @@ comparisons:
       end) - avg(is_mastery_int)
     proof:
       fingerprint: 3c570b06fff00569956ab30062ec5971502aa895511df28e3e73d894b00496c6
-      cells: 2677
-      proven_at: "2026-11-11T17:22:03.590632+00:00"
-      workbook_updated_at: "2026-11-11T06:41:10+00:00"
+      cells: 2730
+      proven_at: "2026-11-12T13:10:15.557408+00:00"
+      workbook_updated_at: "2026-11-12T06:44:35+00:00"
       probe_fingerprint: 322b3285fed80a647535c19890abea528e2c589f2330687cc6a466f1e7af0dd6
-      source_fingerprint: 0f04e5bc396bc10f77f44b8ef651a385c4eb60d3a8d925755e8ebbb36c7d3b6e
+      source_fingerprint: d9ff221cb778a49a9bbdfcf16e8dbfe368b7b1640fb68fa44caad7c655e18817
       cuts:
         - '{"Response Type": "overall"}'
         - '{"Response Type": "standard"}'
-      totals_skipped: 370
+      totals_skipped: 376
       shelves:
         drop:
           - Week Start Monday
@@ -367,7 +359,6 @@ comparisons:
             - Subject Area
       missing_cuts: []
       missing_filters:
-        - Dibels Most Recent Composite
         - Discipline
         - Exclude Future Assessments
         - Grade/Subject
@@ -378,24 +369,17 @@ comparisons:
         - Term
         - Week Start Monday
         - gifted_and_talented
-        - is_low_25_fl
-        - is_sipps
-        - state_test_proficiency
       restricting_filters:
         - Exclude Future Assessments
       filter_notes: {}
       missing_columns:
-        Head Of School: head_of_school
-        Dibels Most Recent Composite: dibels_most_recent_composite
-        School Level: school_level
-        Ml Status: ml_status
-        Term: term
-        state_test_proficiency: state_test_proficiency
-        gifted_and_talented: gifted_and_talented
-        is_sipps: is_sipps
-        is_low_25_fl: is_low_25_fl
-        IEP Status: iep_status
         Week Start Monday: week_start_monday
+        IEP Status: iep_status
+        Term: term
+        Head Of School: head_of_school
+        Ml Status: ml_status
+        gifted_and_talented: gifted_and_talented
+        School Level: school_level
   - id: school-goal-distance-lines-school
     <<: *dki
     sheet: School - Mastery Lines All
@@ -467,11 +451,11 @@ comparisons:
       end) - avg(is_mastery_int)
     proof:
       fingerprint: 49bbceb9d81f6b5910909bf37a139844fad19d0b4e436beeae8e0fcede8725a7
-      cells: 1396
-      proven_at: "2026-11-11T21:26:44.332710+00:00"
-      workbook_updated_at: "2026-11-11T06:41:10+00:00"
+      cells: 1424
+      proven_at: "2026-11-12T13:12:49.228951+00:00"
+      workbook_updated_at: "2026-11-12T06:44:35+00:00"
       probe_fingerprint: 85d80e8432c4e9639b4329552cc005938c8b3ec38c81db9133c11c487716eb63
-      source_fingerprint: 0f04e5bc396bc10f77f44b8ef651a385c4eb60d3a8d925755e8ebbb36c7d3b6e
+      source_fingerprint: d9ff221cb778a49a9bbdfcf16e8dbfe368b7b1640fb68fa44caad7c655e18817
       cuts:
         - "{}"
       totals_skipped: 0
@@ -493,7 +477,6 @@ comparisons:
       missing_cuts: []
       missing_filters:
         - Course Teacher Name
-        - Dibels Most Recent Composite
         - Discipline
         - Exclude Future Assessments
         - IEP Status
@@ -504,9 +487,6 @@ comparisons:
         - Standard
         - Term
         - Week of
-        - is_low_25_fl
-        - is_sipps
-        - state_test_proficiency
       restricting_filters:
         - Exclude Future Assessments
         - Select Chart Type
@@ -514,14 +494,10 @@ comparisons:
         Select Chart Type: display switch on Chart Type
       missing_columns:
         IEP Status: iep_status
-        state_test_proficiency: state_test_proficiency
-        Course Teacher Name: course_teacher_name
-        Dibels Most Recent Composite: dibels_most_recent_composite
         Module Type: module_type
-        Ml Status: ml_status
-        is_low_25_fl: is_low_25_fl
-        is_sipps: is_sipps
         Term: term
+        Course Teacher Name: course_teacher_name
+        Ml Status: ml_status
   - id: region-goal-distance-lines-region
     <<: *dki
     sheet: Region - Mastery Lines All
@@ -591,10 +567,10 @@ comparisons:
     proof:
       fingerprint: b5b6b8f4fa9282b4fc8dc804f82f58b818e44bb943b18bc275309b0429037bcb
       cells: 234
-      proven_at: "2026-11-11T21:28:41.054493+00:00"
-      workbook_updated_at: "2026-11-11T06:41:10+00:00"
+      proven_at: "2026-11-12T13:14:30.823715+00:00"
+      workbook_updated_at: "2026-11-12T06:44:35+00:00"
       probe_fingerprint: 14f6215245679a6d44a091c6d41874ed31e32cfaa89798652dbe35025eb9d197
-      source_fingerprint: 0f04e5bc396bc10f77f44b8ef651a385c4eb60d3a8d925755e8ebbb36c7d3b6e
+      source_fingerprint: d9ff221cb778a49a9bbdfcf16e8dbfe368b7b1640fb68fa44caad7c655e18817
       cuts:
         - "{}"
       totals_skipped: 0
@@ -612,7 +588,6 @@ comparisons:
             - Subject Area
       missing_cuts: []
       missing_filters:
-        - Dibels Most Recent Composite
         - Discipline
         - Exclude Future Assessments
         - Head Of School
@@ -623,23 +598,16 @@ comparisons:
         - School Level
         - Standard
         - Week Start Monday
-        - is_low_25_fl
-        - is_sipps
-        - state_test_proficiency
       restricting_filters:
         - Exclude Future Assessments
       filter_notes: {}
       missing_columns:
-        Head Of School: head_of_school
-        School Level: school_level
-        state_test_proficiency: state_test_proficiency
-        Dibels Most Recent Composite: dibels_most_recent_composite
-        Module Type: module_type
-        Ml Status: ml_status
-        is_low_25_fl: is_low_25_fl
-        IEP Status: iep_status
-        is_sipps: is_sipps
         Week Start Monday: week_start_monday
+        IEP Status: iep_status
+        Module Type: module_type
+        Head Of School: head_of_school
+        Ml Status: ml_status
+        School Level: school_level
   # The school week: mastery-dki-school with Week Start Monday kept as a row.
   - id: mastery-dki-school-week
     <<: *school
@@ -660,15 +628,15 @@ comparisons:
       clear_filters: [Discipline]
     proof:
       fingerprint: 3c570b06fff00569956ab30062ec5971502aa895511df28e3e73d894b00496c6
-      cells: 2719
-      proven_at: "2026-11-11T20:47:23.349529+00:00"
-      workbook_updated_at: "2026-11-11T06:41:10+00:00"
+      cells: 2772
+      proven_at: "2026-11-12T13:16:08.066884+00:00"
+      workbook_updated_at: "2026-11-12T06:44:35+00:00"
       probe_fingerprint: 1fc20c233825d658ea93376387aa45bd5f957d87b49196690e89f849f8e167de
-      source_fingerprint: 0f04e5bc396bc10f77f44b8ef651a385c4eb60d3a8d925755e8ebbb36c7d3b6e
+      source_fingerprint: d9ff221cb778a49a9bbdfcf16e8dbfe368b7b1640fb68fa44caad7c655e18817
       cuts:
         - '{"Response Type": "overall"}'
         - '{"Response Type": "standard"}'
-      totals_skipped: 747
+      totals_skipped: 769
       shelves:
         drop:
           - Week Start Monday
@@ -686,7 +654,6 @@ comparisons:
             - Subject Area
       missing_cuts: []
       missing_filters:
-        - Dibels Most Recent Composite
         - Discipline
         - Exclude Future Assessments
         - Grade/Subject
@@ -696,23 +663,16 @@ comparisons:
         - School Level
         - Term
         - gifted_and_talented
-        - is_low_25_fl
-        - is_sipps
-        - state_test_proficiency
       restricting_filters:
         - Exclude Future Assessments
       filter_notes: {}
       missing_columns:
-        Term: term
-        School Level: school_level
         IEP Status: iep_status
-        Dibels Most Recent Composite: dibels_most_recent_composite
+        Term: term
+        Head Of School: head_of_school
         Ml Status: ml_status
         gifted_and_talented: gifted_and_talented
-        Head Of School: head_of_school
-        state_test_proficiency: state_test_proficiency
-        is_low_25_fl: is_low_25_fl
-        is_sipps: is_sipps
+        School Level: school_level
   # Gen Ed is iep_status other than Has IEP; a blank iep_status counts in
   # neither, as a null is_iep does in Cube.
   - id: mastery-gened-dki-school
@@ -729,15 +689,15 @@ comparisons:
       dashboard_scope: [{ dashboard: iep_status, values: [No IEP] }]
     proof:
       fingerprint: 3c570b06fff00569956ab30062ec5971502aa895511df28e3e73d894b00496c6
-      cells: 2585
-      proven_at: "2026-11-08T21:45:01.276707+00:00"
-      workbook_updated_at: "2026-11-08T06:42:06+00:00"
+      cells: 2730
+      proven_at: "2026-11-12T13:18:18.988782+00:00"
+      workbook_updated_at: "2026-11-12T06:44:35+00:00"
       probe_fingerprint: b73e3c91a61f6173c227c2a9dacdbc302d73de28b9cf92ae7a4ef86ef4d6aa37
-      source_fingerprint: 0f04e5bc396bc10f77f44b8ef651a385c4eb60d3a8d925755e8ebbb36c7d3b6e
+      source_fingerprint: d9ff221cb778a49a9bbdfcf16e8dbfe368b7b1640fb68fa44caad7c655e18817
       cuts:
         - '{"Response Type": "overall"}'
         - '{"Response Type": "standard"}'
-      totals_skipped: 360
+      totals_skipped: 376
       shelves:
         drop:
           - Week Start Monday
@@ -754,7 +714,6 @@ comparisons:
             - Subject Area
       missing_cuts: []
       missing_filters:
-        - Dibels Most Recent Composite
         - Discipline
         - Exclude Future Assessments
         - Grade/Subject
@@ -765,24 +724,17 @@ comparisons:
         - Term
         - Week Start Monday
         - gifted_and_talented
-        - is_low_25_fl
-        - is_sipps
-        - state_test_proficiency
       restricting_filters:
         - Exclude Future Assessments
       filter_notes: {}
       missing_columns:
-        Ml Status: ml_status
-        Head Of School: head_of_school
-        state_test_proficiency: state_test_proficiency
-        is_sipps: is_sipps
-        IEP Status: iep_status
-        gifted_and_talented: gifted_and_talented
-        Term: term
-        Dibels Most Recent Composite: dibels_most_recent_composite
-        School Level: school_level
-        is_low_25_fl: is_low_25_fl
         Week Start Monday: week_start_monday
+        IEP Status: iep_status
+        Term: term
+        Head Of School: head_of_school
+        Ml Status: ml_status
+        gifted_and_talented: gifted_and_talented
+        School Level: school_level
   - id: mastery-iep-dki-school
     <<: *school
     measure: pct_proficient
@@ -797,15 +749,15 @@ comparisons:
       dashboard_scope: [{ dashboard: iep_status, values: [Has IEP] }]
     proof:
       fingerprint: 3c570b06fff00569956ab30062ec5971502aa895511df28e3e73d894b00496c6
-      cells: 2585
-      proven_at: "2026-11-08T21:46:11.791303+00:00"
-      workbook_updated_at: "2026-11-08T06:42:06+00:00"
+      cells: 2730
+      proven_at: "2026-11-12T13:19:23.072011+00:00"
+      workbook_updated_at: "2026-11-12T06:44:35+00:00"
       probe_fingerprint: edbb20c9ef90ad5c6787b32e5c3fb88a47ca984fab3fd7e6f2d682e88584a9e7
-      source_fingerprint: 0f04e5bc396bc10f77f44b8ef651a385c4eb60d3a8d925755e8ebbb36c7d3b6e
+      source_fingerprint: d9ff221cb778a49a9bbdfcf16e8dbfe368b7b1640fb68fa44caad7c655e18817
       cuts:
         - '{"Response Type": "overall"}'
         - '{"Response Type": "standard"}'
-      totals_skipped: 360
+      totals_skipped: 376
       shelves:
         drop:
           - Week Start Monday
@@ -822,7 +774,6 @@ comparisons:
             - Subject Area
       missing_cuts: []
       missing_filters:
-        - Dibels Most Recent Composite
         - Discipline
         - Exclude Future Assessments
         - Grade/Subject
@@ -833,24 +784,17 @@ comparisons:
         - Term
         - Week Start Monday
         - gifted_and_talented
-        - is_low_25_fl
-        - is_sipps
-        - state_test_proficiency
       restricting_filters:
         - Exclude Future Assessments
       filter_notes: {}
       missing_columns:
-        Ml Status: ml_status
-        Head Of School: head_of_school
-        state_test_proficiency: state_test_proficiency
-        is_sipps: is_sipps
-        IEP Status: iep_status
-        gifted_and_talented: gifted_and_talented
-        Term: term
-        Dibels Most Recent Composite: dibels_most_recent_composite
-        School Level: school_level
-        is_low_25_fl: is_low_25_fl
         Week Start Monday: week_start_monday
+        IEP Status: iep_status
+        Term: term
+        Head Of School: head_of_school
+        Ml Status: ml_status
+        gifted_and_talented: gifted_and_talented
+        School Level: school_level
   - id: mastery-gened-dki-region
     <<: *region
     measure: pct_proficient
@@ -865,11 +809,11 @@ comparisons:
       dashboard_scope: [{ dashboard: iep_status, values: [No IEP] }]
     proof:
       fingerprint: 3c570b06fff00569956ab30062ec5971502aa895511df28e3e73d894b00496c6
-      cells: 447
-      proven_at: "2026-11-08T21:47:31.514520+00:00"
-      workbook_updated_at: "2026-11-08T06:42:06+00:00"
+      cells: 451
+      proven_at: "2026-11-12T13:20:24.314340+00:00"
+      workbook_updated_at: "2026-11-12T06:44:35+00:00"
       probe_fingerprint: faa7892153b24abec7a0ac6bbe5f969153dddeb4f930d9de57118d050c2a3f25
-      source_fingerprint: 0f04e5bc396bc10f77f44b8ef651a385c4eb60d3a8d925755e8ebbb36c7d3b6e
+      source_fingerprint: d9ff221cb778a49a9bbdfcf16e8dbfe368b7b1640fb68fa44caad7c655e18817
       cuts:
         - '{"Response Type": "overall"}'
         - '{"Response Type": "standard"}'
@@ -889,7 +833,6 @@ comparisons:
             - Subject Area
       missing_cuts: []
       missing_filters:
-        - Dibels Most Recent Composite
         - Discipline
         - Exclude Future Assessments
         - Grade/Subject
@@ -900,24 +843,17 @@ comparisons:
         - Term
         - Week Start Monday
         - gifted_and_talented
-        - is_low_25_fl
-        - is_sipps
-        - state_test_proficiency
       restricting_filters:
         - Exclude Future Assessments
       filter_notes: {}
       missing_columns:
-        Ml Status: ml_status
-        Head Of School: head_of_school
-        state_test_proficiency: state_test_proficiency
-        is_sipps: is_sipps
-        IEP Status: iep_status
-        gifted_and_talented: gifted_and_talented
-        Term: term
-        Dibels Most Recent Composite: dibels_most_recent_composite
-        School Level: school_level
-        is_low_25_fl: is_low_25_fl
         Week Start Monday: week_start_monday
+        IEP Status: iep_status
+        Term: term
+        Head Of School: head_of_school
+        Ml Status: ml_status
+        gifted_and_talented: gifted_and_talented
+        School Level: school_level
   - id: mastery-iep-dki-region
     <<: *region
     measure: pct_proficient
@@ -932,11 +868,11 @@ comparisons:
       dashboard_scope: [{ dashboard: iep_status, values: [Has IEP] }]
     proof:
       fingerprint: 3c570b06fff00569956ab30062ec5971502aa895511df28e3e73d894b00496c6
-      cells: 447
-      proven_at: "2026-11-08T21:48:41.915921+00:00"
-      workbook_updated_at: "2026-11-08T06:42:06+00:00"
+      cells: 451
+      proven_at: "2026-11-12T13:21:39.445553+00:00"
+      workbook_updated_at: "2026-11-12T06:44:35+00:00"
       probe_fingerprint: 1fda865df11b3a177d9d1c56514650b8c2cd479a56bdd3928cbbeb51b4a5b705
-      source_fingerprint: 0f04e5bc396bc10f77f44b8ef651a385c4eb60d3a8d925755e8ebbb36c7d3b6e
+      source_fingerprint: d9ff221cb778a49a9bbdfcf16e8dbfe368b7b1640fb68fa44caad7c655e18817
       cuts:
         - '{"Response Type": "overall"}'
         - '{"Response Type": "standard"}'
@@ -956,7 +892,6 @@ comparisons:
             - Subject Area
       missing_cuts: []
       missing_filters:
-        - Dibels Most Recent Composite
         - Discipline
         - Exclude Future Assessments
         - Grade/Subject
@@ -967,24 +902,17 @@ comparisons:
         - Term
         - Week Start Monday
         - gifted_and_talented
-        - is_low_25_fl
-        - is_sipps
-        - state_test_proficiency
       restricting_filters:
         - Exclude Future Assessments
       filter_notes: {}
       missing_columns:
-        Ml Status: ml_status
-        Head Of School: head_of_school
-        state_test_proficiency: state_test_proficiency
-        is_sipps: is_sipps
-        IEP Status: iep_status
-        gifted_and_talented: gifted_and_talented
-        Term: term
-        Dibels Most Recent Composite: dibels_most_recent_composite
-        School Level: school_level
-        is_low_25_fl: is_low_25_fl
         Week Start Monday: week_start_monday
+        IEP Status: iep_status
+        Term: term
+        Head Of School: head_of_school
+        Ml Status: ml_status
+        gifted_and_talented: gifted_and_talented
+        School Level: school_level
   # DKI - Assessment Mastery Bars colors each row by Performance Bands - 3
   # Level, a workbook calc that bins performance_band_label_number by school
   # level instead of reading the band set's mastery band. dashboard_columns
@@ -1056,11 +984,11 @@ comparisons:
           }
     proof:
       fingerprint: 8be8411cbf75a6f2141e46e61238e18c998d4fcd1f58de2bdefc33d3cc0d6be5
-      cells: 3678
-      proven_at: "2026-11-12T01:26:29.592041+00:00"
-      workbook_updated_at: "2026-11-11T23:42:08+00:00"
+      cells: 3682
+      proven_at: "2026-11-12T13:22:58.441491+00:00"
+      workbook_updated_at: "2026-11-12T06:44:35+00:00"
       probe_fingerprint: 6cb975f2ee4bfed6a84cb005bec5f07cf8ce032140d4133f9792be5321da7362
-      source_fingerprint: 0f04e5bc396bc10f77f44b8ef651a385c4eb60d3a8d925755e8ebbb36c7d3b6e
+      source_fingerprint: d9ff221cb778a49a9bbdfcf16e8dbfe368b7b1640fb68fa44caad7c655e18817
       cuts:
         - '{"Response Type": "overall"}'
       totals_skipped: 0
@@ -1078,7 +1006,6 @@ comparisons:
             - Subject Area
       missing_cuts: []
       missing_filters:
-        - Dibels Most Recent Composite
         - Discipline
         - Exclude Future Assessments
         - Head Of School
@@ -1089,25 +1016,18 @@ comparisons:
         - Term
         - Week Start Monday
         - gifted_and_talented
-        - is_low_25_fl
-        - is_sipps
-        - state_test_proficiency
       restricting_filters:
         - Exclude Future Assessments
       filter_notes: {}
       missing_columns:
-        gifted_and_talented: gifted_and_talented
-        IEP Status: iep_status
-        state_test_proficiency: state_test_proficiency
-        is_low_25_fl: is_low_25_fl
-        Dibels Most Recent Composite: dibels_most_recent_composite
-        Head Of School: head_of_school
-        is_sipps: is_sipps
         Week Start Monday: week_start_monday
         Student Tier: nj_student_tier
-        School Level: school_level
+        IEP Status: iep_status
         Term: term
+        Head Of School: head_of_school
         Ml Status: ml_status
+        gifted_and_talented: gifted_and_talented
+        School Level: school_level
   # DKI - Assessment Mastery Table shows AVG(Is Far Below) through Measure
   # Values: band 1 is 1, any higher band 0. Module Code joins the rows so each
   # cell holds 1 overall score per student, where an average of score rows and
@@ -1145,11 +1065,11 @@ comparisons:
           }
     proof:
       fingerprint: f7cc9a4cf8b0e25ef9bdd1b83c04756558f1039486d7d46734fbe3b6b8ce422d
-      cells: 1427
-      proven_at: "2026-11-12T01:28:16.841132+00:00"
-      workbook_updated_at: "2026-11-11T23:42:08+00:00"
+      cells: 1428
+      proven_at: "2026-11-12T13:24:55.228345+00:00"
+      workbook_updated_at: "2026-11-12T06:44:35+00:00"
       probe_fingerprint: dbe399bbffffb1f5edd68acf45cd392b3f41997cfa72370e110aee110754381c
-      source_fingerprint: 0f04e5bc396bc10f77f44b8ef651a385c4eb60d3a8d925755e8ebbb36c7d3b6e
+      source_fingerprint: d9ff221cb778a49a9bbdfcf16e8dbfe368b7b1640fb68fa44caad7c655e18817
       cuts:
         - '{"Response Type": "overall"}'
       totals_skipped: 1
@@ -1167,7 +1087,6 @@ comparisons:
             - Subject Area
       missing_cuts: []
       missing_filters:
-        - Dibels Most Recent Composite
         - Discipline
         - Exclude Future Assessments
         - Head Of School
@@ -1179,26 +1098,19 @@ comparisons:
         - Term
         - Week Start Monday
         - gifted_and_talented
-        - is_low_25_fl
-        - is_sipps
-        - state_test_proficiency
       restricting_filters:
         - Exclude Future Assessments
       filter_notes: {}
       missing_columns:
-        gifted_and_talented: gifted_and_talented
-        IEP Status: iep_status
-        state_test_proficiency: state_test_proficiency
-        is_low_25_fl: is_low_25_fl
-        Dibels Most Recent Composite: dibels_most_recent_composite
-        Head Of School: head_of_school
-        is_sipps: is_sipps
-        Student Tier: nj_student_tier
-        School Level: school_level
-        Week Start Monday: week_start_monday
-        Term: term
         Performance Band Label: performance_band_label
+        Student Tier: nj_student_tier
+        Week Start Monday: week_start_monday
+        IEP Status: iep_status
+        Term: term
+        Head Of School: head_of_school
         Ml Status: ml_status
+        gifted_and_talented: gifted_and_talented
+        School Level: school_level
   - id: students-bucket-1-module
     <<: *bucket_students
     sheet_field: Bucket 1 Students
