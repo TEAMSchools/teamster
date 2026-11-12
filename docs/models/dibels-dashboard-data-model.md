@@ -303,11 +303,12 @@ benchmark sittings for 1 ID on the same day. The mCLASS intermediates
 `int_amplify__mclass__pm_student_summary` and its `_aimline`) drop every row in
 such a collision, since neither row can be trusted. This is a data-team defense,
 awaiting T&L's confirmation. The student shows as Not Tested until Amplify or
-the school moves the result to the right student in mCLASS. The mCLASS staging
-warn tests list the collisions to fix. A row that arrives through both the
-network file and Paterson's archive file is not dropped. It fails the
-intermediates' uniqueness tests instead, because that double is ours to fix, not
-Amplify's.
+the school moves the result to the right student in mCLASS. When the collision
+is only in the aimline file, the probe stays, and its aimline status comes from
+the base PM file alone. The mCLASS staging warn tests list the collisions to
+fix. A row that arrives through both the network file and Paterson's archive
+file is not dropped. It fails the intermediates' uniqueness tests instead,
+because that double is ours to fix, not Amplify's.
 
 The aimline file is only unioned from the Newark account. The aimline model also
 reads `aimline_status` and `aimline_value_by_date` from the base PM file and
