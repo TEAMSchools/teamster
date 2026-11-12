@@ -1390,6 +1390,41 @@ sources:
             data_type: float64
           - name: QA_Goal
             data_type: float64
+      - name: src_google_sheets__assessments__module_goal_rules
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
+            sheet_range: src_assessments__module_goal_rules
+            skip_leading_rows: 1
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - assessments
+                - module_goal_rules
+        # Declared, not autodetected: discipline, goal and goal_offset are
+        # blank on some rows. Order must match sheet columns A:G; BigQuery maps
+        # declared columns by position, so the names need not match the headers.
+        columns:
+          - name: region
+            data_type: string
+          - name: module_type
+            data_type: string
+          - name: discipline
+            data_type: string
+          - name: grade_min
+            data_type: int64
+          - name: grade_max
+            data_type: int64
+          - name: goal
+            data_type: float64
+          - name: goal_offset
+            data_type: float64
       - name: src_google_sheets__assessments__qbls_power_standards
         external:
           options:

@@ -1,0 +1,72 @@
+models:
+  - name: stg_google_sheets__assessments__module_goal_rules
+    description: >-
+      DDI goal rules by assessment module type, from the Module Goal Rules tab
+      of the Assessments sheet. Each row either sets a fixed goal or adds an
+      offset to the academic goals lookup for one region, module type,
+      discipline and grade range. `rpt_tableau__ddi_dashboard` applies them in
+      its differentiated goal columns. One row per region, module type,
+      discipline and lowest grade; blank rows in the sheet grid are dropped.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - region
+              - module_type
+              - discipline
+              - grade_min
+          config:
+            severity: error
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: (goal is null) != (goal_offset is null)
+          config:
+            severity: error
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: grade_min <= grade_max
+          config:
+            severity: error
+    columns:
+      - name: module_type
+        data_type: string
+        description: >-
+          Assessment module type the rule applies to, matching `module_type` on
+          the DDI extract (for example ET, CRQ, TP).
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: grade_min
+        data_type: int64
+        description: Lowest grade level the rule applies to (0 is kindergarten).
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: grade_max
+        data_type: int64
+        description: Highest grade level the rule applies to, inclusive.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: region
+        data_type: string
+        description: >-
+          Region the rule applies to, matching `region` on the DDI extract.
+      - name: discipline
+        data_type: string
+        description: >-
+          Discipline the rule applies to, matching `Discipline` on the course
+          subject crosswalk. Blank means every subject.
+      - name: goal
+        data_type: float64
+        description: >-
+          Fixed goal that replaces the lookup goal at every level. Blank when
+          the rule is an offset.
+      - name: goal_offset
+        data_type: float64
+        description: >-
+          Amount added to the lookup goal at every level. Blank when the rule
+          sets a fixed goal.
