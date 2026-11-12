@@ -3,16 +3,17 @@ models:
     description: >-
       Per-student × per-canonical-assessment × per-response-type rollup of
       Illuminate response data. Starts from `int_assessments__scaffold` and LEFT
-      JOINs student responses, the canonical performance band set, and the
-      canonical assessment, so scaffold rows with no responses are kept with
-      null response columns. Responses that `int_assessments__performance_bands`
-      groups under one `canonical_response_type_id` (a standard Illuminate keeps
-      in several standards sets) are summed into one row per sitting.
-      `date_taken` is nulled when it falls more than 365 days from the canonical
-      administered date, or, when there is no administered date, outside
-      `academic_year` plus or minus one year. For internal assessments, the
-      copies in one regional group (the scaffold's `canonical_assessment_id` —
-      the copies of one tag group tagged for one region, per
+      JOINs student responses, the group's band set from
+      `int_assessments__group_performance_bands`, and the canonical assessment,
+      so scaffold rows with no responses are kept with null response columns.
+      Responses that `int_assessments__performance_bands` groups under one
+      `canonical_response_type_id` (a standard Illuminate keeps in several
+      standards sets) are summed into one row per sitting. `date_taken` is
+      nulled when it falls more than 365 days from the canonical administered
+      date, or, when there is no administered date, outside `academic_year` plus
+      or minus one year. For internal assessments, the copies in one regional
+      group (the scaffold's `canonical_assessment_id` — the copies of one tag
+      group tagged for one region, per
       `int_assessments__assessment_region_groups`) are aggregated to one row per
       student, `is_replacement`, and response with summed points, the earliest
       `date_taken`, and a deterministic single school/region selection. External
@@ -253,10 +254,15 @@ models:
       - name: performance_band_set_id
         data_type: int64
         description: >-
-          `canonical_performance_band_set_id` from
-          `int_assessments__performance_bands` for the row's response. Null when
-          the scaffold row has no responses. On Apex rows, the band set attached
-          to the Apex assessment; null when it has none.
+          `performance_band_set_id` from
+          `int_assessments__group_performance_bands` for the row's group
+          (`assessment_id`) and response, so an internal score is labeled from
+          the first copy in its own group that carries the response. Null when
+          the scaffold row has no responses, when that model gives the response
+          no band set, or when no copy in the group carries the response, as on
+          a replacement sitting scored on a standard its group's copies lack. On
+          Apex rows, the band set attached to the Apex assessment; null when it
+          has none.
       - name: performance_band_label
         data_type: string
         description: >-
@@ -419,8 +425,15 @@ unit_tests:
               9001 as assessment_id,
               'overall' as response_type,
               -1 as response_type_id,
-              -1 as canonical_response_type_id,
-              5 as canonical_performance_band_set_id
+              -1 as canonical_response_type_id
+      - input: ref('int_assessments__group_performance_bands')
+        format: sql
+        rows: |
+          select
+              9001 as canonical_assessment_id,
+              'overall' as response_type,
+              -1 as response_type_id,
+              5 as performance_band_set_id
       - input: ref('int_illuminate__performance_band_sets')
         rows:
           - {
@@ -482,7 +495,10 @@ unit_tests:
       under id 11. They merge into 1 row, 3 of 6 points (50), banded from the
       shared set. CODE.B has 1 record and keeps Illuminate's reported 77.8.
       CODE.C's 2 records sit on different band sets, so the merged row has no
-      band.
+      band. A replacement sitting on internal copy 9003 rolls up to group 9004
+      and scores CODE.D, which no copy in group 9004 carries; it keeps its row,
+      1 of 2 points (50), with no band. A band row keyed to copy 9003 itself
+      exists and must not label it, because the lookup keys on the group.
     model: int_assessments__response_rollup
     given:
       - input: ref('int_assessments__scaffold')
@@ -512,6 +528,31 @@ unit_tests:
               date('2026-10-01') as date_taken,
               cast(null as int64) as cc_dcid,
               cast(null as string) as section_match_method
+          union all
+          select
+              302,
+              302,
+              'illuminate',
+              9003,
+              'Unit Check Grade 6',
+              cast(null as string),
+              'Mathematics',
+              cast(null as string),
+              2026,
+              date('2026-09-28'),
+              cast(null as string),
+              cast(null as string),
+              'Camden',
+              'kippcamden',
+              179901,
+              7,
+              true,
+              true,
+              3,
+              9004,
+              date('2026-10-01'),
+              cast(null as int64),
+              cast(null as string)
       - input: ref('int_focus__apex_results')
         rows: []
       - input: ref('int_illuminate__agg_student_responses')
@@ -571,6 +612,17 @@ unit_tests:
               points: 1.0,
               percent_correct: 100.0,
             }
+          - {
+              student_assessment_id: 3,
+              assessment_id: 9003,
+              response_type: standard,
+              response_type_id: 16,
+              response_type_code: CODE.D,
+              response_type_description: Standard D,
+              points_possible: 2.0,
+              points: 1.0,
+              percent_correct: 50.0,
+            }
       - input: ref('int_assessments__performance_bands')
         format: sql
         rows: |
@@ -578,16 +630,31 @@ unit_tests:
               9002 as assessment_id,
               'standard' as response_type,
               11 as response_type_id,
-              11 as canonical_response_type_id,
-              5 as canonical_performance_band_set_id
+              11 as canonical_response_type_id
           union all
-          select 9002, 'standard', 12, 11, 5
+          select 9002, 'standard', 12, 11
           union all
-          select 9002, 'standard', 13, 13, 5
+          select 9002, 'standard', 13, 13
           union all
-          select 9002, 'standard', 14, 14, cast(null as int64)
+          select 9002, 'standard', 14, 14
           union all
-          select 9002, 'standard', 15, 14, cast(null as int64)
+          select 9002, 'standard', 15, 14
+          union all
+          select 9003, 'standard', 16, 16
+      - input: ref('int_assessments__group_performance_bands')
+        format: sql
+        rows: |
+          select
+              9002 as canonical_assessment_id,
+              'standard' as response_type,
+              11 as response_type_id,
+              5 as performance_band_set_id
+          union all
+          select 9002, 'standard', 13, 5
+          union all
+          select 9002, 'standard', 14, cast(null as int64)
+          union all
+          select 9003, 'standard', 16, 5
       - input: ref('int_illuminate__performance_band_sets')
         rows:
           - {
@@ -634,5 +701,13 @@ unit_tests:
             points: 2.0,
             points_possible: 2.0,
             percent_correct: 100.0,
+            performance_band_label: null,
+          }
+        - {
+            response_type_id: 16,
+            response_type_code: CODE.D,
+            points: 1.0,
+            points_possible: 2.0,
+            percent_correct: 50.0,
             performance_band_label: null,
           }

@@ -10,8 +10,6 @@ with
             asr.points,
             asr.percent_correct,
 
-            pb.canonical_performance_band_set_id,
-
             coalesce(
                 pb.canonical_response_type_id, asr.response_type_id
             ) as response_type_id,
@@ -32,7 +30,6 @@ with
             response_type_id,
             response_type_code,
             response_type_description,
-            canonical_performance_band_set_id,
 
             min(response_type_root_description) as response_type_root_description,
             sum(points_possible) as points_possible,
@@ -49,8 +46,7 @@ with
             response_type,
             response_type_id,
             response_type_code,
-            response_type_description,
-            canonical_performance_band_set_id
+            response_type_description
     ),
 
     scaffold_responses as (
@@ -84,7 +80,8 @@ with
             asr.response_type_root_description,
             asr.points_possible,
             asr.points,
-            asr.canonical_performance_band_set_id,
+
+            gpb.performance_band_set_id as canonical_performance_band_set_id,
 
             if(
                 asr.n_records = 1,
@@ -103,6 +100,11 @@ with
         left join
             responses_merged as asr
             on s.student_assessment_id = asr.student_assessment_id
+        left join
+            {{ ref("int_assessments__group_performance_bands") }} as gpb
+            on s.canonical_assessment_id = gpb.canonical_assessment_id
+            and asr.response_type = gpb.response_type
+            and asr.response_type_id = gpb.response_type_id
         left join
             {{ ref("int_assessments__assessments_canonical") }} as c
             on s.source = c.source

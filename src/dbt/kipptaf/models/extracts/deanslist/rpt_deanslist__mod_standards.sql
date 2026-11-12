@@ -8,7 +8,7 @@ with
             r.percent_correct,
 
             -- the assessment's set: Illuminate can tag a group with another
-            pb.canonical_performance_band_set_id as performance_band_set_id,
+            gpb.performance_band_set_id,
 
             if(
                 r.subject_area = 'Writing', 'Text Study', r.subject_area
@@ -16,9 +16,9 @@ with
             upper(left(r.response_type, 1)) as response_type,
         from {{ ref("int_assessments__response_rollup") }} as r
         inner join
-            {{ ref("int_assessments__performance_bands") }} as pb
-            on r.assessment_id = pb.assessment_id
-            and pb.response_type = 'overall'
+            {{ ref("int_assessments__group_performance_bands") }} as gpb
+            on r.assessment_id = gpb.canonical_assessment_id
+            and gpb.response_type = 'overall'
         where
             r.is_internal_assessment
             and r.response_type = 'group'
