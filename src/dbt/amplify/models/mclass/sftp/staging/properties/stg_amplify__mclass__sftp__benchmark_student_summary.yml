@@ -24,6 +24,22 @@ models:
               - assessment_grade
           config:
             severity: warn
+      - dbt_utils.unique_combination_of_columns:
+          description: >-
+            Amplify mCLASS filed 2 benchmark sittings under one student ID on
+            the same day, usually 2 children sharing an account, often at
+            different grades. The kipptaf mCLASS benchmark intermediate drops
+            both rows, so the student shows as Not Tested. Fix it in mCLASS by
+            moving the result to the right student.
+          arguments:
+            combination_of_columns:
+              - student_primary_id
+              - school_year
+              - benchmark_period
+              - device_date
+          config:
+            severity: warn
+            where: device_date is not null
     columns:
       - name: school_name
         data_type: string

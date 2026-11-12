@@ -205,9 +205,10 @@ Two failure shapes follow from it, and they look different:
 
 - **BM**: the Avro schema already carried both names, so the new column landed
   in the warehouse with values and the old one went null. Symptom: the staging
-  `unique_combination_of_columns` test fails with exactly one duplicate key per
-  grade (all-null id). Fix shipped 2026-09-22: the staging model coalesces the
-  two columns.
+  `unique_combination_of_columns` test warns with exactly one duplicate key per
+  grade (all-null id), and the benchmark intermediate drops those rows as
+  collisions, so the students read Not Tested rather than failing a build. Fix
+  shipped 2026-09-22: the staging model coalesces the two columns.
 - **PM**: the Avro schema (`PMStudentSummary` in
   `src/teamster/libraries/amplify/mclass/sftp/schema.py`) lacked the new names,
   so `fastavro` dropped the columns and SY2026-2027 PM rows had NO id column at
