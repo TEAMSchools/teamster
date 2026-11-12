@@ -60,6 +60,9 @@ and diagnostics are in the `cube-ops` skill.
   `sql:` (Cube custom-calendar recipe). `many_to_one` fan-trap protection trusts
   your declared `relationship` + `primary_key`, so any non-overlap invariant the
   join relies on must be test-enforced upstream in dbt.
+- **Join on keys and readable columns**, never a hard-coded hash literal. A role
+  cube over 1 slice of a fact joins on its key columns plus a readable literal
+  (`{CUBE}.discipline = 'ELA'`), not on a precomputed surrogate-key value.
 - **Avoid diamond paths.** Two join paths to the same dim → resolve to one
   canonical path. Reach deeper dims by traversing the FK chain (e.g.
   `student_attendance_enrollment_daily` reaches `locations` only via
