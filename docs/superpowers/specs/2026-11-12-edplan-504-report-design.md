@@ -110,3 +110,21 @@ Camden's file does not match Newark's, so 3 options were weighed:
 
 - Exact slugified column names (read the slugify function, do not guess).
 - Column descriptions.
+
+## Revision 2026-11-12: unpartitioned 504 asset
+
+PR review raised that the shared daily partitions definition gave the 504 asset
+partitions back to 2023-05-08, all empty. Each file already carries the full
+event history, so a daily partition adds nothing.
+
+- The 504 asset is unpartitioned. Each load replaces the last.
+  `njsmart_powerschool` keeps its own daily partitions.
+- `build_edplan_sftp_sensor` targets `asset_selection=assets` instead of a named
+  job. That runs on the implicit asset job, which accepts mixed partitions
+  definitions. The sensor keeps its name, so its cursor carries over. A run
+  request sets `partition_key` only for a partitioned asset.
+- The source drops `hive_partition_uri_prefix`. The staging model drops the
+  latest-file filter and `report_date`.
+- Cost: no daily copy of the point-in-time columns (`date_snapshot_*_y_n`,
+  `student_status`, `grade_abbrev`). The event history with its begin and end
+  dates stays in every file.

@@ -49,6 +49,10 @@ def test_both_files_request_one_run_per_asset():
     }
     assert len({r.run_key for r in run_requests}) == 2
 
+    by_key = {r.asset_selection[0]: r for r in run_requests if r.asset_selection}
+    assert by_key[NJSMART_KEY].partition_key is not None
+    assert by_key[SECTION_504_KEY].partition_key is None
+
 
 def test_paterson_export_requests_its_njsmart_asset():
     from teamster.code_locations.kipppaterson.edplan.sensors import (

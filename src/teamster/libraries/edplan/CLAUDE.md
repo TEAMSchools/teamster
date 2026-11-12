@@ -7,9 +7,11 @@ ingestion. The asset itself is built via `sftp.build_sftp_file_asset()`.
 
 **`sensors.py`** (`build_edplan_sftp_sensor()`): SFTP sensor that polls the
 EdPlan SFTP server for new files and emits a `RunRequest` when a file newer than
-the cursor is found. Takes a list of assets and builds one job per code location
-over all of them, so the assets must share one partitions definition; each run
-request selects only the asset whose file matched.
+the cursor is found. Takes a list of assets as its `asset_selection`, so it runs
+on the implicit asset job and the assets may have different partitions
+definitions (Newark's 504 report is unpartitioned). Each run request selects
+only the asset whose file matched, with a partition key only when that asset is
+partitioned.
 
 **`schema.py`**: Avro schemas for EdPlan SFTP file formats.
 

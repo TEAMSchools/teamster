@@ -3,8 +3,8 @@ models:
     description:
       EdPlan's 504 student report, one row per student per Section 504 event —
       eligibility determinations, non-eligibility determinations, and 504 plans,
-      current and previous. Each daily file is a full export carrying its own
-      event history, so only the latest file is kept.
+      current and previous. EdPlan sends a full export with its own event
+      history each day, and each load replaces the last.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -128,9 +128,6 @@ models:
         config:
           meta:
             contains_pii: true
-      - name: report_date
-        data_type: date
-        description: Date of the EdPlan export this row came from.
       - name: state_studentnumber
         data_type: int64
         description: NJ state student id (SID).

@@ -9,7 +9,6 @@ from dagster import (
     SensorEvaluationContext,
     SensorResult,
     SkipReason,
-    define_asset_job,
     sensor,
 )
 from dagster_shared import check
@@ -23,13 +22,11 @@ def build_edplan_sftp_sensor(
     execution_timezone: ZoneInfo,
     minimum_interval_seconds=None,
 ):
-    job = define_asset_job(
-        name=f"{code_location}_edplan_sftp_asset_job", selection=assets
-    )
-
+    # asset_selection runs on the implicit asset job, which accepts assets with
+    # different partitions definitions; the name keeps the existing cursor.
     @sensor(
-        name=f"{job.name}_sensor",
-        job=job,
+        name=f"{code_location}_edplan_sftp_asset_job_sensor",
+        asset_selection=assets,
         minimum_interval_seconds=minimum_interval_seconds,
     )
     def _sensor(context: SensorEvaluationContext, ssh_edplan: SSHResource):
@@ -78,7 +75,9 @@ def build_edplan_sftp_sensor(
                             run_key=(
                                 f"{asset_identifier}_{partition_key}_{now_timestamp}"
                             ),
-                            partition_key=partition_key,
+                            partition_key=(
+                                partition_key if asset.partitions_def else None
+                            ),
                             asset_selection=[asset.key],
                         )
                     )
