@@ -152,6 +152,7 @@ views:
         includes:
           - is_ell
           - is_iep
+          - is_504
           - iep_classification
           - special_education_code
           - special_education_name
@@ -253,6 +254,7 @@ views:
           members:
             - is_ell
             - is_iep
+            - is_504
             - iep_classification
             - special_education_code
             - special_education_name

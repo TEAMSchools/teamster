@@ -28,6 +28,17 @@ cubes:
         type: boolean
         public: true
 
+      - name: is_504
+        description: >-
+          TRUE if the student had a Section 504 plan during this enrollment
+          stint. FALSE otherwise, including when the source system leaves the
+          flag unset. This is the enrollment 504 status the assessment
+          dashboards show; state test files carry their own 504 flag, which can
+          differ.
+        sql: is_504
+        type: boolean
+        public: true
+
       - name: iep_classification
         description: >-
           IEP placement classification for this enrollment stint (latest span).

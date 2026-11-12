@@ -69,8 +69,7 @@ models:
         description: >-
           TRUE if the student had a Section 504 plan during this enrollment
           stint. FALSE otherwise, including when the source system leaves the
-          flag unset, as it does for most Miami students and every current-year
-          Paterson student. This is the enrollment 504 status the assessment
+          flag unset. This is the enrollment 504 status the assessment
           dashboards show; state test files carry their own 504 flag, which can
           differ.
         config:
