@@ -6,13 +6,43 @@ models:
       percentile and growth held in wide columns. Unions the SFTP and API
       benchmark student summaries, resolves school, region and Dagster code
       location through the location crosswalk on school_name, and puts Miami's
-      pre-Focus student ids onto the network student number.
+      pre-Focus student ids onto the network student number. Drops every row
+      that shares a student id, year and period with another row from the same
+      file, at the same grade or on the same day. These are Amplify filing
+      errors, usually 2 children on one account, and neither row can be trusted,
+      so the student shows as Not Tested until the result is moved in mCLASS.
+      The staging warn test lists them. A double across 2 files is not dropped
+      and fails the uniqueness tests here.
     config:
       # table, not view: as a view, the DIBELS dashboard's plan re-expands this
       # union and its crosswalk join and passes BigQuery's query-planning limit
       materialized: table
       meta:
         contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_primary_id
+              - school_year
+              - benchmark_period
+              - assessment_grade
+          config:
+            severity: error
+      - dbt_utils.unique_combination_of_columns:
+          description: >-
+            One benchmark sitting per student per day. Proves the same-day drop
+            held. A double that arrives through both the network file and the
+            kipppaterson archive file still fails here.
+          arguments:
+            combination_of_columns:
+              - student_primary_id
+              - school_year
+              - benchmark_period
+              - device_date
+          config:
+            severity: error
+            where: device_date is not null
     columns:
       - name: _dbt_source_relation
         data_type: string
