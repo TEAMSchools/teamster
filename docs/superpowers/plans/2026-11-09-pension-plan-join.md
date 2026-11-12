@@ -1,5 +1,12 @@
 # Pension Plan Join Fix Implementation Plan
 
+> **Superseded (2026-11-12).** Review on #6328 changed the design, so this plan
+> no longer describes the shipped change. The PR removes `rn_enrollment_recent`,
+> adds an `is_nj_pension` column and a `warn` uniqueness test in staging,
+> combines a position's active NJ pensions with `string_agg` in a `group by`
+> CTE, sets the roster history grain test to `error`, and adds a unit test. The
+> PR diff and review thread are the record.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use
 > superpowers:subagent-driven-development (recommended) or
 > superpowers:executing-plans to implement this plan task-by-task. Steps use
