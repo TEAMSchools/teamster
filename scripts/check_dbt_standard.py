@@ -224,7 +224,10 @@ def _extract_lineage(
         stack = _parents(manifest, node)
         while stack:
             parent = stack.pop()
-            if parent["resource_type"] != "model" or parent["unique_id"] in seen:
+            if (
+                parent["resource_type"] not in ("model", "snapshot")
+                or parent["unique_id"] in seen
+            ):
                 continue
             seen.add(parent["unique_id"])
             if parent["name"].startswith(_EXTRACT_PREFIX):

@@ -821,6 +821,13 @@ def test_a12_stops_at_another_mart() -> None:
     assert violations(EXT, dim, fct) == [("kipptaf.dim_y", "A12", EXT_KEY)]
 
 
+def test_mart_reaching_an_extract_through_a_snapshot_is_a12() -> None:
+    snap = snapshot("snapshot_extracts__y", "extracts")
+    snap["depends_on"]["nodes"] = [uid(EXT)]
+    fct = model("fct_y", "models/marts/facts/b.sql", [uid(snap)])
+    assert ("kipptaf.fct_y", "A12", EXT_KEY) in violations(EXT, snap, fct)
+
+
 def test_rpt_and_intermediates_may_read_extracts() -> None:
     mid = model("int_students__y", "models/students/b.sql", [uid(EXT)])
     rpt = model("rpt_tableau__y", "models/extracts/tableau/b.sql", [uid(EXT)])
