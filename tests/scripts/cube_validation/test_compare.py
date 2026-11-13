@@ -3,6 +3,7 @@ import re
 import pytest
 from cube_validation.compare import (
     Group,
+    _label,
     cell_verdict,
     clauses_for,
     groups_from,
@@ -89,7 +90,7 @@ def test_reconcile_sql_group_by_coalesces_cube_then_dashboard():
     sql = _sql()
 
     assert (
-        "COALESCE(CAST(c.grade_level_cube AS STRING), CAST(d.grade_level AS STRING)) "
+        f"COALESCE({_label('c.grade_level_cube')}, {_label('d.grade_level')}) "
         "AS grade_level_cube"
     ) in sql
 
@@ -619,6 +620,55 @@ def test_a_cube_time_member_at_midnight_is_the_dashboard_s_date(
 )
 def test_a_cube_time_member_on_another_day_or_hour_is_another_cell(duck, cube_week):
     assert _by_week(duck, "VARCHAR", cube_week, "DATE", "2026-09-21") == {"dims_differ"}
+
+
+def test_one_day_gets_one_group_label_whichever_side_holds_the_row(duck):
+    # A Cube-only row at midnight and a dashboard-only row on the same DATE:
+    # both group under the day, not under the TIMESTAMP text and the DATE text.
+    duck.table(
+        "cube_t",
+        "lea BIGINT, aid VARCHAR, week_c VARCHAR, ok_c BOOLEAN",
+        [(1, "a", "2026-09-21 00:00:00+00", True)],
+    )
+    duck.table(
+        "dash_t",
+        "student BIGINT, item VARCHAR, week_d DATE, ok_d BOOLEAN",
+        [(2, "b", "2026-09-21", True)],
+    )
+    rows = duck.rows(
+        reconcile_sql(
+            "SELECT * FROM `teamster-332318.m.cube_t`",
+            "SELECT * FROM `teamster-332318.d.dash_t`",
+            MOVED_ROWS,
+            WEEK_BY,
+        )
+    )
+    assert {(r["bucket"], r["week_c"]) for r in rows} == {
+        ("cube_only", "2026-09-21"),
+        ("dashboard_only", "2026-09-21"),
+    }
+
+
+def test_a_group_label_that_is_not_a_day_keeps_its_text(duck):
+    duck.table(
+        "cube_t",
+        "lea BIGINT, aid VARCHAR, week_c VARCHAR, ok_c BOOLEAN",
+        [(1, "a", "2026-09-21 13:00:00+00", True)],
+    )
+    duck.table(
+        "dash_t",
+        "student BIGINT, item VARCHAR, week_d VARCHAR, ok_d BOOLEAN",
+        [(2, "b", "Week 3", True)],
+    )
+    rows = duck.rows(
+        reconcile_sql(
+            "SELECT * FROM `teamster-332318.m.cube_t`",
+            "SELECT * FROM `teamster-332318.d.dash_t`",
+            MOVED_ROWS,
+            WEEK_BY,
+        )
+    )
+    assert {r["week_c"] for r in rows} == {"2026-09-21 13:00:00+00", "Week 3"}
 
 
 @pytest.mark.parametrize(

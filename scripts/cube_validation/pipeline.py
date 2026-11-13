@@ -1386,7 +1386,9 @@ def run(
         build = pick_moment(builds, now, requested, cfg.fact)
         _refuse_moved_facts(cfg, wh, build)
         schools = network_schools(wh)
-        sides = _Sides()
+        # The second facts held still, or the check above refused: no
+        # comparison or dims check scans them again.
+        sides = _Sides(moved={f: False for f in cfg.also_facts})
         for comparison in comparisons:
             _compare_one(
                 cfg,
@@ -1397,7 +1399,7 @@ def run(
                 schools=schools,
                 sides=sides,
             )
-        dims = sorted(sides.cube_tables - {cfg.fact})
+        dims = sorted(sides.cube_tables - {cfg.fact, *cfg.also_facts})
         changed = changed_between(wh, dims, build.start, build.end)
         findings, other = _anchors_and_identities(cfg, cube, wh, comparisons)
         cost = wh.spent

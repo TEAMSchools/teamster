@@ -115,6 +115,12 @@ def _day(col: str) -> str:
     )
 
 
+def _label(col: str) -> str:
+    """A group label: the day a date or a midnight timestamp names, else the
+    text. One day then groups once, whichever side holds the row."""
+    return f"COALESCE(CAST({_day(col)} AS STRING), CAST({col} AS STRING))"
+
+
 def _pair_matches(d: str, c: str) -> str:
     """Null-safe, type-tolerant equality of one dashboard/cube value pair.
 
@@ -298,8 +304,7 @@ def _joined(
     both = f"c.{_IN} IS NOT NULL AND d.{_IN} IS NOT NULL"
 
     group_cols = [
-        f"COALESCE(CAST(c.{p.cube} AS STRING), CAST(d.{p.dashboard} AS STRING)) "
-        f"AS {p.cube}"
+        f"COALESCE({_label(f'c.{p.cube}')}, {_label(f'd.{p.dashboard}')}) AS {p.cube}"
         for p in group_by
     ]
     group_names = [p.cube for p in group_by]

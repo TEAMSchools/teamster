@@ -914,10 +914,11 @@ def test_run_reads_a_listed_second_fact_that_held_during_the_build(fakes, tmp_pa
     assert cli.main(["run", str(_file(tmp_path, ALSO_FACTS_YML))]) == 0
 
     checks = [s for s in fakes.bq.ran if "farm_fingerprint" in s and "fct_g" in s]
-    assert {_first(r"TIMESTAMP '([^']+)'", s) for s in checks} == {
-        utc_literal(START),
-        utc_literal(END),
-    }
+    # Once at each end of the build: the dims check after the comparisons
+    # does not scan it again.
+    assert sorted(_first(r"TIMESTAMP '([^']+)'", s) for s in checks) == sorted(
+        [utc_literal(START), utc_literal(END)]
+    )
 
 
 def test_run_refuses_a_listed_second_fact_that_changed_during_the_build(
