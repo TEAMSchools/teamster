@@ -73,7 +73,7 @@ select
     null as smart_recruiter_id,
 
     coalesce(
-        cast(sr.primary_grade_level_taught as string), sr.home_department_name
+        cast(tgl.grade_level as string), sr.home_department_name
     ) as grade_department,
 
     coalesce(lc.location_region, sr.home_business_unit_name) as location_entity,
@@ -160,6 +160,12 @@ left join
     on sr.employee_number = pm.employee_number
     and pm.observation_type_abbreviation = 'PMS'
     and pm.rn_employee_type = 1
+left join
+    {{ ref("int_students__teacher_grade_levels") }} as tgl
+    on sr.powerschool_teacher_number = tgl.teachernumber
+    and sr.home_work_location_dagster_code_location = tgl._dbt_source_project
+    and tgl.academic_year = {{ var("current_academic_year") }}
+    and tgl.grade_level_rank = 1
 
 union all
 
