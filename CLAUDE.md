@@ -124,18 +124,19 @@ accept a subagent's self-report without the checks there.
 - Invoke `superpowers:receiving-code-review` before processing `claude-review`
   findings, and post a per-finding verdict as a PR comment. Everything else
   about review and CI: invoke `pr-ci-review`.
-- A finding you do not fix is declined (give the reason; nothing to record) or
-  deferred. For executing-plans "Deferred minors" and final-review findings, the
-  user picks, not you. Ask with `AskUserQuestion` (fix in this PR / defer to an
-  issue / decline) and wait. A reply that does not answer the question is not a
-  decision; ask again. Verify each finding against the code or data before you
-  ask, since a reviewer's minor can be wrong. A deferred finding links its
-  record when you report it: an open issue, a comment on one, a
-  `standard-baseline.tsv` row, or a `TODO(#N)`. If none covers it, file the
-  issue first. "Out of scope", "backlog", or "left to the author" with no link
-  drops the work, since the user reads the verdict as handled. This covers
-  `claude-review` verdicts and executing-plans "Deferred minors", whose ledger
-  is deleted at finish.
+- A finding you do not fix is declined or deferred. Decline on your own
+  judgment: give the reason; nothing to record. A deferral is the user's call.
+  Before you file, reuse, or link an issue for the work, ask with
+  `AskUserQuestion` (fix in this PR / defer to an issue / decline) and wait.
+  Filing an issue a rule requires (A2's mart-gap link) is a deferral too, never
+  a fix. A reply that does not answer the question is not a decision; ask again.
+  Verify each finding against the code or data before you ask, since a
+  reviewer's minor can be wrong. A deferred finding links its record when you
+  report it: an open issue, a comment on one, a `standard-baseline.tsv` row, or
+  a `TODO(#N)`. If none covers it, file the issue first. "Out of scope",
+  "backlog", or "left to the author" with no link drops the work, since the user
+  reads the verdict as handled. This covers `claude-review` verdicts and
+  executing-plans "Deferred minors", whose ledger is deleted at finish.
 
 ## Tooling
 
