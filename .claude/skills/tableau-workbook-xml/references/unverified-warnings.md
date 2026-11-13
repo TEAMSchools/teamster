@@ -7,15 +7,6 @@ every line as a hypothesis. Do not cite this file as evidence; run the probe.
 
 ## Publish and hand-over
 
-- **Putting embedded connection credentials back after a publish.** That a
-  publish drops them is now Verified (#5230; see
-  [build-workflow.md](build-workflow.md)). Which call restores them is not:
-  #5230 names `update_connection` with `oauth = True`, but the installed
-  library's `update_connection` request never emits `oauth`, and
-  `publish(connections=[...])` reported success on a live-connection workbook
-  while leaving `embed_password` false. Probe: on a scratch copy, try each call,
-  then read the connection back through the REST API and trigger a refresh.
-  Until then, say in the hand-over that credentials were not carried.
 - **`show_tabs=True` may change a user-visible setting.** Probe: read
   `wb.show_tabs` off the downloaded item and publish with the same value, then
   compare the two scratch copies.

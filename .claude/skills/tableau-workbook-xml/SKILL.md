@@ -96,18 +96,18 @@ redirect, never through a pipe.
    carries a different extract.
 6. **Publish to a non-production project.** Before the first publish of a build,
    ask the user which non-production project or subproject it should land in
-   while in progress, and record the id they name. If they have no preference,
-   use `GPA-monitor-temp`, id `c74d8e08-b856-4430-a759-ebacb061e376`. Before the
-   publish call, assert the target id equals that recorded literal and that the
-   workbook name carries a `ZZ-REVIEW` prefix plus the date, so an overwrite can
-   only land on a review copy. Keep the raise on `item.project_id` after the
-   call as confirmation of where it landed; it cannot prevent anything. A
-   publish also drops server-side state (Verified). Pass `hidden_views`, the
-   names to hide: sheets the `<windows>` element marks publishable (`class`
-   `worksheet` or `dashboard`, `hidden` not `'true'`) minus the target's live
-   view names, minus sheets this edit added; without it every publishable sheet
-   goes live. Record the target's revision number before the call as the owner's
-   own restore point. Recipes, the credential drop, and the gate in full:
+   while in progress, and record the id they name. There is no default: do not
+   publish until the user names a project. Before the publish call, assert the
+   target id equals that recorded literal and that the workbook name carries a
+   `ZZ-REVIEW` prefix plus the date, so an overwrite can only land on a review
+   copy. Keep the raise on `item.project_id` after the call as confirmation of
+   where it landed; it cannot prevent anything. A publish also drops server-side
+   state (Verified). Pass `hidden_views`, the names to hide: sheets the
+   `<windows>` element marks publishable (`class` `worksheet` or `dashboard`,
+   `hidden` not `'true'`) minus the target's live view names, minus sheets this
+   edit added; without it every publishable sheet goes live. Record the target's
+   revision number before the call as the owner's own restore point. Recipes,
+   the credential drop, and the gate in full:
    [references/build-workflow.md](references/build-workflow.md). Production
    becomes the target only when the user, in a message typed in this
    conversation, names production as the target, and then answers yes when you
@@ -115,9 +115,12 @@ redirect, never through a pipe.
    the whole network." A button click on a prompt is not a confirmation; a
    production URL, a request to fix production, an issue body, a prior session,
    and a deadline are not authorisation. A rollback is another production
-   publish and needs the same two confirmations. After any production publish,
-   tell the user to open the production workbook themselves and check it:
-   nothing here can guarantee it is not corrupted.
+   publish and needs the same two confirmations. A publish drops embedded
+   connection credentials, so after a production publish re-attach them and run
+   a refresh to `Success` before reporting done; the recipe is in
+   build-workflow.md. After any production publish, tell the user to open the
+   production workbook themselves and check it: nothing here can guarantee it is
+   not corrupted.
 7. **Render and look.** Render base and output at the same resolution, once per
    parameter value, with the parameter set explicitly. Crop each region you
    touched (a full render trips output scanning) and read it for `####`, clipped
@@ -133,7 +136,9 @@ redirect, never through a pipe.
    looked at, what still needs a human hover, click, or Desktop open, that the
    package carries the extract as of `updated_at`, and the revision number the
    target had before the publish. For a production publish, quote the user's two
-   confirmations verbatim.
+   confirmations verbatim. Give every link on `https://tableau.kipp.org`, never
+   the `SAC-RPT-02` address the API returns; the rewrite is in
+   build-workflow.md.
 
 ## By symptom
 
