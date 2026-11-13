@@ -8,6 +8,7 @@ from cube_validation.config import (
     ConfigError,
     load_view_config,
     mask_digits,
+    with_fact_dataset,
     write_decision,
     write_proof,
 )
@@ -346,6 +347,45 @@ def test_proof_without_cuts_reads_as_unknown(tmp_path):
 
     assert proof is not None and proof.cuts is None
     assert proof.totals_skipped is None
+
+
+def test_also_facts_load_as_listed(tmp_path):
+    text = EXAMPLE.replace(
+        "time_dimension: attendance_date\n",
+        "time_dimension: attendance_date\nalso_facts: [kipptaf_marts.fct_g]\n",
+    )
+
+    assert load_view_config(_write(tmp_path, text)).also_facts == [
+        "kipptaf_marts.fct_g"
+    ]
+    assert load_view_config(_write(tmp_path, EXAMPLE)).also_facts == []
+
+
+@pytest.mark.parametrize(
+    "value",
+    ["kipptaf_marts.fct_g", "[kipptaf_marts]", "[a.b.c]", "['a;b.c']", "[fct_g]"],
+)
+def test_also_facts_that_are_not_a_list_of_tables_are_refused(tmp_path, value):
+    text = EXAMPLE.replace(
+        "time_dimension: attendance_date\n",
+        f"time_dimension: attendance_date\nalso_facts: {value}\n",
+    )
+
+    with pytest.raises(ConfigError, match="also_facts"):
+        load_view_config(_write(tmp_path, text))
+
+
+def test_fact_dataset_moves_also_facts_with_the_fact(tmp_path):
+    text = EXAMPLE.replace(
+        "time_dimension: attendance_date\n",
+        "time_dimension: attendance_date\nalso_facts: [kipptaf_marts.fct_g]\n",
+    )
+
+    cfg = with_fact_dataset(
+        load_view_config(_write(tmp_path, text)), "zz_a_kipptaf_marts"
+    )
+
+    assert cfg.also_facts == ["zz_a_kipptaf_marts.fct_g"]
 
 
 @pytest.mark.parametrize(

@@ -252,6 +252,9 @@ class ViewConfig:
     identities: list[Identity] = field(default_factory=list)
     decisions: list[Decision] = field(default_factory=list)
     tasks: dict[str, str] = field(default_factory=dict)
+    # Facts other than `fact` that the view's members read. Cube reads them at
+    # the build end like `fact`; `run` refuses one that changed during the build.
+    also_facts: list[str] = field(default_factory=list)
 
 
 class _Reader:
@@ -300,7 +303,7 @@ def _identifier(reader: _Reader, key: str, *, required=False) -> str | None:
 
 
 def with_fact_dataset(cfg: ViewConfig, dataset: str) -> ViewConfig:
-    """Point `cfg.fact` at `dataset`, keeping its table.
+    """Point `cfg.fact` and each of `cfg.also_facts` at `dataset`, keeping its table.
 
     Raises:
         ConfigError: `dataset` is neither `kipptaf_marts` nor a dev build's
@@ -313,7 +316,11 @@ def with_fact_dataset(cfg: ViewConfig, dataset: str) -> ViewConfig:
             f"got {dataset!r}"
         )
 
-    return replace(cfg, fact=f"{dataset}.{cfg.fact.split('.', 1)[1]}")
+    return replace(
+        cfg,
+        fact=f"{dataset}.{cfg.fact.split('.', 1)[1]}",
+        also_facts=[f"{dataset}.{f.split('.', 1)[1]}" for f in cfg.also_facts],
+    )
 
 
 def _table_ref(reader: _Reader, key: str, *, required=False) -> str | None:
@@ -322,6 +329,18 @@ def _table_ref(reader: _Reader, key: str, *, required=False) -> str | None:
     if value is not None and not _TABLE_REF.fullmatch(value):
         reader.fail(key, f"must be dataset.table of plain identifiers; got {value!r}")
     return value
+
+
+def _table_refs(reader: _Reader, key: str) -> list[str]:
+    """A list of `dataset.table` strings, each safe to interpolate into SQL."""
+    values = reader.get(key, list, default=[])
+    for i, value in enumerate(values):
+        if not isinstance(value, str) or not _TABLE_REF.fullmatch(value):
+            reader.fail(
+                f"{key}[{i}]",
+                f"must be dataset.table of plain identifiers; got {value!r}",
+            )
+    return values
 
 
 def _list_of(reader: _Reader, key: str) -> list[_Reader]:
@@ -777,6 +796,7 @@ def load_view_config(path: Path) -> ViewConfig:
             for i, r in enumerate(_list_of(root, "decisions"))
         ],
         tasks=_tasks(root),
+        also_facts=_table_refs(root, "also_facts"),
     )
 
 

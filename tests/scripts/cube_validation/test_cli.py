@@ -185,6 +185,8 @@ class FakeCube:
         self.schools = ["A", "B"]
         self.dataset = "kipptaf_marts"
         self.dropped: set[str] = set()
+        # Extra JOIN lines, such as a second fact the view reads.
+        self.joins = ""
 
     def compiled(self, query):
         self.compiled_queries.append(query)
@@ -202,6 +204,7 @@ class FakeCube:
             f"FROM  {self.dataset}.fct_f  AS `t`\n"
             "LEFT JOIN  kipptaf_marts.dim_locations  AS `locations` "
             "ON `locations`.k = `t`.k\n"
+            f"{self.joins}"
             "WHERE (`locations`.abbreviation IN (?, ?))\n"
             "LIMIT 10000"
         )
@@ -896,6 +899,48 @@ def test_run_refuses_a_shared_table_that_changed_during_the_build(
     assert cli.main(["run", str(_file(tmp_path))]) == 1
     err = capsys.readouterr().err
     assert "kipptaf_marts.dim_locations" in err and "changed during the build" in err
+
+
+SECOND_FACT_JOIN = "LEFT JOIN  kipptaf_marts.fct_g  AS `g` ON `g`.k = `t`.k\n"
+ALSO_FACTS_YML = YML.replace(
+    "fact: kipptaf_marts.fct_f\n",
+    "fact: kipptaf_marts.fct_f\nalso_facts: [kipptaf_marts.fct_g]\n",
+)
+
+
+def test_run_reads_a_listed_second_fact_that_held_during_the_build(fakes, tmp_path):
+    fakes.cube.joins = SECOND_FACT_JOIN
+
+    assert cli.main(["run", str(_file(tmp_path, ALSO_FACTS_YML))]) == 0
+
+    checks = [s for s in fakes.bq.ran if "farm_fingerprint" in s and "fct_g" in s]
+    assert {_first(r"TIMESTAMP '([^']+)'", s) for s in checks} == {
+        utc_literal(START),
+        utc_literal(END),
+    }
+
+
+def test_run_refuses_a_listed_second_fact_that_changed_during_the_build(
+    fakes, tmp_path, capsys
+):
+    fakes.cube.joins = SECOND_FACT_JOIN
+    fakes.bq.changed = ("fct_g",)
+
+    assert cli.main(["run", str(_file(tmp_path, ALSO_FACTS_YML))]) == 1
+
+    err = capsys.readouterr().err
+    assert "kipptaf_marts.fct_g changed during the build of kipptaf_marts.fct_f" in err
+    # Refused before any comparison spent on a query.
+    assert not [s for s in fakes.bq.ran if "-- outer" in s or "AS value" in s]
+
+
+def test_run_refuses_a_second_fact_the_file_does_not_list(fakes, tmp_path, capsys):
+    fakes.cube.joins = SECOND_FACT_JOIN
+
+    assert cli.main(["run", str(_file(tmp_path))]) == 1
+
+    err = capsys.readouterr().err
+    assert "kipptaf_marts.fct_g" in err and "also_facts" in err
 
 
 def test_run_refuses_sql_it_cannot_time_travel(fakes, tmp_path, capsys):

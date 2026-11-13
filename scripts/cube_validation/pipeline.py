@@ -741,7 +741,12 @@ def _cube_sql(
     rows: bool = False,
 ) -> str:
     compiled = cube.compiled(query)
-    refuse_unless_safe(compiled, view_fact=cfg.fact, network_schools=schools)
+    refuse_unless_safe(
+        compiled,
+        view_fact=cfg.fact,
+        network_schools=schools,
+        also_facts=cfg.also_facts,
+    )
     bound = bind(compiled)
     return drop_limit(bound) if rows else bound
 
@@ -1288,6 +1293,26 @@ def missing_members(
     return found
 
 
+def _refuse_moved_facts(cfg: ViewConfig, wh: Warehouse, build: Build) -> None:
+    """Refuse when a fact in `cfg.also_facts` changed during the build.
+
+    The moment is a build of `cfg.fact`: the dashboard is read at its start and
+    Cube at its end, so a second fact must hold still in between, or Cube's
+    answer mixes 2 moments of it. A second fact has no build of its own to
+    pick, so only this check applies to it.
+
+    Raises:
+        Refusal: Such a fact changed between the build start and end.
+    """
+    if moved := changed_between(wh, cfg.also_facts, build.start, build.end):
+        raise Refusal(
+            f"{', '.join(moved)} changed during the build of {cfg.fact} "
+            f"({utc_literal(build.start)} to {utc_literal(build.end)}); Cube reads "
+            "it at the build end and the dashboard's inputs are read at the "
+            "start, so pick another build with `--moment`"
+        )
+
+
 def run(
     cfg: ViewConfig,
     *,
@@ -1306,7 +1331,8 @@ def run(
 
     Raises:
         Refusal: A confirmed comparison has no proof, its probe changed
-            since the proof, or it lacks a key it needs.
+            since the proof, or it lacks a key it needs; or a fact in
+            `also_facts` changed during the build.
         CostCapError: The priced queries passed `max_usd`.
         MomentError: No usable build in the 7-day window.
         CubeRefusal: Cube's SQL would not match a raw rebuild.
@@ -1358,6 +1384,7 @@ def run(
     with wh.budget(max_usd):
         builds = fact_builds(wh, cfg.fact, since=now - WINDOW)
         build = pick_moment(builds, now, requested, cfg.fact)
+        _refuse_moved_facts(cfg, wh, build)
         schools = network_schools(wh)
         sides = _Sides()
         for comparison in comparisons:
