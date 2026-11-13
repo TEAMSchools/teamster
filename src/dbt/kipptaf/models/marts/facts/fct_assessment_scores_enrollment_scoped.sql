@@ -33,6 +33,7 @@ with
 
             a.academic_year,
             a.module_code,
+            a.module_type,
 
             c.administered_date,
 
@@ -354,6 +355,24 @@ with
                 )
             }} as assessment_goal_key,
         from {{ ref("int_assessments__academic_goals") }}
+    ),
+
+    -- dim_assessment_module_goal_rules' rows, with its key rebuilt through the
+    -- same macro
+    module_goal_rules as (
+        select
+            region,
+            module_type,
+            illuminate_subject_area,
+            grade_min,
+            grade_max,
+
+            {{
+                assessment_module_goal_rule_key(
+                    "region", "module_type", "illuminate_subject_area", "grade_min"
+                )
+            }} as assessment_module_goal_rule_key,
+        from {{ ref("int_assessments__module_goal_rules") }}
     )
 
 /* internal assessments */
@@ -404,6 +423,9 @@ select
     ) as term_key,
 
     coalesce(gg.assessment_goal_key, gs.assessment_goal_key) as assessment_goal_key,
+    coalesce(
+        mgs.assessment_module_goal_rule_key, mga.assessment_module_goal_rule_key
+    ) as assessment_module_goal_rule_key,
 
     sr.student_section_enrollment_key,
 
@@ -458,6 +480,21 @@ left join
     and sr.enrollment_academic_year = gs.academic_year
     and sr.subject_area = gs.illuminate_subject_area
     and gs.grade_level is null
+-- the goal rule for the score's module type: the subject's own rule, or the
+-- rule for every subject. Overlapping rules are dropped upstream, so at most
+-- one of the two matches.
+left join
+    module_goal_rules as mgs
+    on sr.region = mgs.region
+    and ia.module_type = mgs.module_type
+    and sr.subject_area = mgs.illuminate_subject_area
+    and sr.grade_level between mgs.grade_min and mgs.grade_max
+left join
+    module_goal_rules as mga
+    on sr.region = mga.region
+    and ia.module_type = mga.module_type
+    and sr.grade_level between mga.grade_min and mga.grade_max
+    and mga.illuminate_subject_area is null
 
 union all
 
@@ -509,6 +546,8 @@ select
     ) as term_key,
 
     gc.assessment_goal_key,
+
+    cast(null as string) as assessment_module_goal_rule_key,
 
     sr.student_section_enrollment_key,
 
@@ -612,6 +651,7 @@ select
     ) as term_key,
 
     cast(null as string) as assessment_goal_key,
+    cast(null as string) as assessment_module_goal_rule_key,
 
     sr.student_section_enrollment_key,
 

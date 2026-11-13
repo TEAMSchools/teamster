@@ -155,6 +155,12 @@
     }}
 {% endmacro %}
 
+{% macro assessment_module_goal_rule_key(
+    region, module_type, subject_area, grade_min, nullable=false
+) %}
+    {{ return(_entity_key([region, module_type, subject_area, grade_min], nullable)) }}
+{% endmacro %}
+
 {% macro term_key(
     term_type,
     term_code,

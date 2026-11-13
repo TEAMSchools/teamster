@@ -28,9 +28,7 @@ exposure.tech_data_feeds	A8	kipptaf.stg_ldap__user_person	#5808
 kipptaf.base_powerschool__course_enrollments	A1	kipptaf.int_students__course_enrollments	#5807
 kipptaf.base_powerschool__sections	A1	kipptaf.int_students__course_sections	#5807
 kipptaf.base_powerschool__student_enrollments	A1	kipptaf.int_students__student_enrollments	#5807
-kipptaf.bridge_assessment_expectations_enrollment_scoped	A12	kipptaf.int_extracts__student_enrollments	#6398
 kipptaf.bridge_assessment_expectations_student_scoped	A1	kipptaf.stg_google_sheets__reporting__terms	#5806
-kipptaf.bridge_assessment_expectations_student_scoped	A12	kipptaf.int_extracts__student_enrollments	#6398
 kipptaf.bridge_course_section_teachers	A1	kipptaf.base_powerschool__sections	#5809
 kipptaf.bridge_course_section_teachers	A1	kipptaf.int_focus__schedule	#5809
 kipptaf.bridge_course_section_teachers	A1	kipptaf.int_powerschool__section_teachers	#5809
@@ -43,14 +41,11 @@ kipptaf.bridge_survey_questions	A1	source.alchemer.stg_alchemer__survey_question
 kipptaf.dim_assessment_administrations	A1	kipptaf.int_amplify__all_assessments	#5809
 kipptaf.dim_assessment_administrations	A1	kipptaf.int_fldoe__all_assessments	#5809
 kipptaf.dim_assessment_administrations	A1	kipptaf.stg_renlearn__star	#5809
-kipptaf.dim_assessment_administrations	A12	kipptaf.int_extracts__student_enrollments	#6398
 kipptaf.dim_assessment_comparisons	A1	kipptaf.stg_google_sheets__state_test_comparison	#5806
-kipptaf.dim_assessment_goals	A1	kipptaf.stg_google_sheets__assessments__academic_goals	#5806
 kipptaf.dim_assessments	A1	kipptaf.int_amplify__all_assessments	#5809
 kipptaf.dim_assessments	A1	kipptaf.int_fldoe__all_assessments	#5809
 kipptaf.dim_assessments	A1	kipptaf.int_iready__diagnostic_results	#5809
 kipptaf.dim_assessments	A1	kipptaf.stg_renlearn__star	#5809
-kipptaf.dim_assessments	A12	kipptaf.int_extracts__student_enrollments	#6398
 kipptaf.dim_college_enrollments	A1	kipptaf.int_kippadb__roster	#5809
 kipptaf.dim_college_enrollments	A1	kipptaf.stg_nsc__student_tracker	#5809
 kipptaf.dim_college_enrollments	A12	kipptaf.int_extracts__student_enrollments	#6398
@@ -109,8 +104,6 @@ kipptaf.dim_work_assignment_status	A1	kipptaf.int_adp_workforce_now__workers__wo
 kipptaf.dim_work_assignment_types	A1	kipptaf.int_adp_workforce_now__workers__work_assignments	#5809
 kipptaf.fct_assessment_scores_enrollment_scoped	A1	kipptaf.stg_google_sheets__assessments__vendor_subject_crosswalk	#5806
 kipptaf.fct_assessment_scores_enrollment_scoped	A1	kipptaf.stg_google_sheets__reporting__terms	#5806
-kipptaf.fct_assessment_scores_enrollment_scoped	A12	kipptaf.int_extracts__student_enrollments	#6398
-kipptaf.fct_assessment_scores_student_scoped	A12	kipptaf.int_extracts__student_enrollments	#6398
 kipptaf.fct_behavioral_consequences	A1	kipptaf.int_deanslist__incidents__penalties	#5809
 kipptaf.fct_behavioral_incidents	A1	kipptaf.stg_deanslist__users	#5809
 kipptaf.fct_family_communications	A1	kipptaf.int_deanslist__comm_log	#5809

@@ -385,7 +385,7 @@ unit_tests:
               cc_dateenrolled: 2026-09-01,
               cc_dateleft: 2027-06-03,
             }
-      - input: ref('int_extracts__student_enrollments')
+      - input: ref('int_students__student_enrollments')
         rows:
           - {
               student_number: 101,
@@ -596,7 +596,7 @@ unit_tests:
         rows: []
       - input: ref('int_assessments__course_enrollments')
         rows: []
-      - input: ref('int_extracts__student_enrollments')
+      - input: ref('int_students__student_enrollments')
         rows: []
       - input: ref('int_focus__apex_results')
         rows: []
