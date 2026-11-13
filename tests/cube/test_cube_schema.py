@@ -675,6 +675,13 @@ TWINS.update(
             ]
         },
         **{
+            ("student_assessment_module_goal_rules", c): (
+                "dim_assessment_module_goal_rules",
+                c,
+            )
+            for c in ["assessment_module_goal_rule_key", "goal", "goal_offset"]
+        },
+        **{
             ("student_enrollment_status", c): ("dim_student_enrollment_status", c)
             for c in [
                 "is_sipps",
