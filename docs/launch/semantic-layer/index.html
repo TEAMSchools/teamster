@@ -1266,6 +1266,14 @@
               .filter((k) => items.some((i) => i.status === k))
               .map((k) => {
                 const these = items.filter((i) => i.status === k);
+                // Dimensions read as a lookup list, so A–Z within each status
+                // group; metrics keep the order they have in Asana.
+                if (isDim)
+                  these.sort((a, b) =>
+                    a.name.localeCompare(b.name, undefined, {
+                      sensitivity: "base",
+                    }),
+                  );
                 const list = these
                   .map(
                     (i) =>
