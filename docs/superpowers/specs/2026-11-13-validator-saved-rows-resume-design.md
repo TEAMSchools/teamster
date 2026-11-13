@@ -44,12 +44,14 @@ stopped, and a triage fast enough to fit around a meeting.
    the proofs it finished.
 4. `triage` estimates the cost of every proof it will run before running any,
    and refuses up front if the total would pass the daily cap.
-5. `triage` runs proofs concurrently, 4 at a time.
+5. `run` compares 4 comparisons at a time, and `triage` runs 4 proofs at a time.
 6. `triage` takes `--comparison` (repeatable), like `prove`.
 
-Success: on the DDI view, a full triage of a saved run finishes in under 10
-minutes; a `run` or `triage` stopped partway and started again produces the same
-`run.json` / `triage.json` as an uninterrupted one.
+Success: on the DDI view, a full `run` finishes in under 30 minutes and a full
+triage of a saved run in under 10; a `run` or `triage` stopped partway and
+started again produces the same `run.json` / `triage.json` as an uninterrupted
+one. The 30-minute target is an estimate (BigQuery time dominating, slots to
+spare); the plan measures it.
 
 ## Non-goals
 
@@ -82,7 +84,8 @@ minutes; a `run` or `triage` stopped partway and started again produces the same
 - **Resume window is 7 days.** A resumed run reads the warehouse as of the
   original moment through time travel (`timetravel.as_of`), and BigQuery keeps 7
   days of history. Past that, `run` refuses to resume and says to start a new
-  run.
+  run. Inside it, only a run stopped in the last 24 hours resumes on its own;
+  see _`run`_.
 - **Unmatched rows are student-level PII** (they carry the comparison's grain,
   which includes `student_number`). They stay inside BigQuery: no local copy in
   the run cache beyond what `run` already writes.
@@ -125,29 +128,52 @@ fingerprint and makes that comparison's saved work stale.
 ### `run`
 
 - Before comparing, look for an unfinished run of the same view in the cache (a
-  run folder with checkpoints and no `run.json`). If one exists and is within
-  the 7-day window, resume it: reuse its moment instead of picking a new one,
-  and say so. `--moment` and a fresh start (`--restart`, new flag) override.
+  run folder with checkpoints and no `run.json`). By the age of its last
+  checkpoint:
+  - Under 24 hours: resume it, reusing its moment instead of picking a new one,
+    and print that it resumed and from when.
+  - 24 hours to 7 days: refuse, and say to pass `--resume` (continue at the old
+    moment) or `--restart` (start fresh). Either flag settles it.
+  - Over 7 days: refuse to resume; `--restart` starts fresh.
+
+  `--moment` overrides all three.
+
 - After each comparison, write a checkpoint to the run folder: that comparison's
   slice of `_Sides` (cells, groups, clauses, sql, fingerprints, moved, cell SQL
   and prices, cell rows, students). On resume, load the checkpoints whose
   fingerprint still matches and compare the rest. A comparison whose fingerprint
   changed is compared again and the change is printed.
-- Write each comparison's unmatched rows per bucket to the scratch dataset as
-  part of its reconcile, with labels carrying the view, run moment, comparison
-  id, bucket and fingerprint. The table name is derived from those (stable, so a
-  re-run replaces it).
-- Compare comparisons concurrently, 4 at a time, if the shared state (`_Sides`,
-  the `moved` cache, the budget) can be merged safely; otherwise keep `run`
-  serial and say so in the plan. Concurrency in `run` is a should, concurrency
-  in `triage` a must.
+- Save each comparison's unmatched rows to one table in the scratch dataset,
+  with a `bucket` column (`value_differs`, `dims_differ`, `dashboard_only`,
+  `cube_only`). The reconcile already sorts every row into its bucket in one
+  query, so it writes the unmatched rows once and the counts come from the same
+  statement; one table per bucket would rerun the reconcile per bucket. Labels
+  carry the view, run moment, comparison id and fingerprint. The table name is
+  derived from the view, moment and comparison (stable, so a re-run replaces
+  it).
+- Compare 4 comparisons at a time. Each worker builds its comparison's slice and
+  returns it; one thread merges slices into `_Sides` and writes the checkpoints,
+  so workers share no results. `Warehouse`'s spend counter and the daily ledger
+  take a lock, which `triage`'s workers need too.
+
+### Checkpoints: which record decides
+
+A comparison's "done" is recorded in two places, and they can disagree (a table
+expired or was dropped; a rebuilt codespace lost the run folder). Each has one
+job:
+
+- **The checkpoint file in the run folder decides what `run` skips.** No file
+  (or a stale fingerprint) means the comparison runs again and replaces its
+  table. An existing table never makes `run` skip a comparison.
+- **The table's labels only guard `triage`.** A table whose labels do not match
+  the run is refused, never read.
 
 ### `triage` and `triage confirm`
 
-- Proofs read the saved table for their comparison and bucket in place of
-  `{unmatched}`'s inline SQL. If the table is missing or its label fingerprint
-  does not match the run, refuse with "run `run` again for this comparison"
-  rather than recomputing inline.
+- Proofs read the saved table for their comparison, filtered to their bucket, in
+  place of `{unmatched}`'s inline SQL. If the table is missing or its label
+  fingerprint does not match the run, refuse with "run `run` again for this
+  comparison" rather than recomputing inline.
 - Before running any proof: list every (proof, comparison) pair to run, dry-run
   them (concurrently, as the trace's dry runs are today), sum the estimates and
   refuse if the total would pass either cap.
@@ -192,13 +218,19 @@ beside the new run.
 - Approach A, scratch dataset with auto-expiry.
 - Resume after a stop is the main requirement; speed comes second.
 
+- `run` compares 4 comparisons at a time, as `triage` runs 4 proofs: time is a
+  goal for both steps.
+- Resume on its own only within 24 hours of the last checkpoint; 24 hours to 7
+  days needs `--resume` or `--restart`.
+- One saved table per comparison, with a `bucket` column.
+- The run folder's checkpoint decides what `run` skips; table labels only guard
+  `triage`.
+
 ## Calls made in the design (owner to check)
 
 - Dataset name, 14-day expiry, Data Team-only access.
-- Checkpoint on both the local run folder and the BigQuery table labels.
 - 4 concurrent workers.
 - Refuse, rather than silently recompute, when a saved table is missing.
-- Resume is automatic when an unfinished run exists; `--restart` opts out.
 - Remove the session temp-table path once nothing reads it.
 - Triage keeps the compile-only Cube SQL check and refuses on a mismatch.
 - `--max-usd` stays per process; `run.json` reports total cost across processes.
@@ -236,10 +268,10 @@ commit, small ones first.
 ## Left to the builder
 
 - The exact checkpoint file format and table naming scheme.
-- How the reconcile SQL writes the unmatched rows (one `CREATE OR REPLACE TABLE`
-  per bucket, or one table per comparison with a bucket column).
-- Thread-safety of `Warehouse` (client, budget, ledger) under concurrent
-  workers.
+- How the reconcile statement writes the table and returns the counts (a
+  multi-statement script, or a write followed by a count over the table).
+- Thread-safety of the rest of `Warehouse` (client, dry-run cache) under
+  concurrent workers.
 - Whether the trace keeps any use for session temp tables.
 - Updating the `cube-validation` skill and any published docs that describe
   triage's cost or time.
