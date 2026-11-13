@@ -103,3 +103,21 @@ models:
         description: >-
           Special-education factor from the financial model. Optional sheet
           input.
+
+unit_tests:
+  - name: unit_finance_enrollment_targets_drops_unknown_school
+    description: >-
+      A sheet row whose schoolid matches no school is dropped; a matching row
+      keeps its district.
+    model: int_finance__enrollment_targets
+    given:
+      - input: ref('stg_google_sheets__finance__enrollment_targets')
+        rows:
+          - { Schoolid: 10, Grade_Level: 5, Target_Enrollment: 100 }
+          - { Schoolid: 99, Grade_Level: 5, Target_Enrollment: 50 }
+      - input: ref('int_students__schools')
+        rows:
+          - { school_number: 10, _dbt_source_project: kippnewark }
+    expect:
+      rows:
+        - { schoolid: 10, _dbt_source_project: kippnewark }

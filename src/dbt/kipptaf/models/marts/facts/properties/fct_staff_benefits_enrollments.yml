@@ -1,18 +1,19 @@
 models:
   - name: fct_staff_benefits_enrollments
     description: >-
-      Staff benefits enrollment fact table. One row per staff member x benefit
-      plan x enrollment period. Captures the plan type, plan name, and coverage
-      level each employee was enrolled in, with the start and end dates of that
-      enrollment period.
+      Staff benefits enrollment fact table. One row per staff member x position
+      x benefit plan x enrollment period. A staff member with more than one
+      position has a row per position. Captures the plan type, plan name, and
+      coverage level each employee was enrolled in, with the start and end dates
+      of that enrollment period.
     columns:
       - name: staff_benefits_enrollment_key
         data_type: string
         description: >-
-          Surrogate primary key derived from employee_number, plan_type,
-          plan_name, and enrollment_start_date. Generated with
-          generate_surrogate_key(["employee_number", "plan_type", "plan_name",
-          "enrollment_start_date"]).
+          Surrogate primary key derived from employee_number, position_id,
+          plan_type, plan_name, and enrollment_start_date. Generated with
+          generate_surrogate_key(["employee_number", "position_id", "plan_type",
+          "plan_name", "enrollment_start_date"]).
         constraints:
           - type: primary_key
             warn_unsupported: false

@@ -27,6 +27,7 @@ select
     end as grouped_status_timeframe,
 
 from {{ ref("int_tableau__fresh_enrollment_scaffold") }} as b
+-- drops goal rows with no spine row on purpose, mistyped regions included
 inner join
     {{ ref("stg_google_sheets__finalsite__goals") }} as g
     on b.enrollment_academic_year = g.enrollment_academic_year

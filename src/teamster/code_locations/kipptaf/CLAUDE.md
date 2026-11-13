@@ -100,11 +100,11 @@ GET (`/workers/{aoid}`), which returns the worker regardless — so a
 single-worker probe does NOT predict which partitions a bulk re-pull will place
 them in.
 
-A `workers_sync` `zero_api_errors` failure with `EMPLOYEE_NOT_FOUND` is usually
-one of these ghosts: the record was deleted in ADP after its partition left the
-window, staging keeps it open, and the roster sends the sync to the deleted OID.
-Check the `stg_adp_workforce_now__workers__ghost_open_records` asset check
-before you debug the sync itself. The fix is the re-pull above.
+`stg_adp_workforce_now__workers` drops ghosts, so they no longer reach the
+roster or `workers_sync`, unless more than 25 would drop at once; it then keeps
+everyone, treating the burst as a short pull. The
+`stg_adp_workforce_now__workers__ghost_open_records` asset check lists ghosts
+from the source either way. Clear them with the re-pull above.
 
 ## Illuminate DLT Schedule Split
 

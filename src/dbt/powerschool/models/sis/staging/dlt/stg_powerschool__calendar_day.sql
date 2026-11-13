@@ -28,7 +28,10 @@ with
     ),
 
     with_start as (
-        select *, date_trunc(date_value, week) as week_start_date, from staging
+        select *, date_trunc(date_value, week) as week_start_date,
+        from staging
+        -- phantom calendar rows (usually 1900-01-01); the source test lists them
+        where date_value >= '2000-01-01'
     )
 
 select *, date_add(week_start_date, interval 6 day) as week_end_date,

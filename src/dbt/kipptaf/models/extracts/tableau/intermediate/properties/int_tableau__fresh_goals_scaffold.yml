@@ -9,8 +9,9 @@ models:
       rpt_tableau__fresh_dashboard_aggregated. The inner join is on
       (enrollment_academic_year, region, schoolid, grade_level), so a
       goals-sheet row whose region, school or grade is not in the scaffold is
-      silently dropped (see
-      test_int_tableau__fresh_goals_scaffold_region_matches_scaffold).
+      dropped on purpose; it has no spine row to attach to.
+      test_int_tableau__fresh_goals_scaffold_region_matches_scaffold lists rows
+      dropped for a mistyped region.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -88,3 +89,40 @@ models:
           School, Accepted or Conversion (counted against every student who ever
           reached the stage); "Current" for every other goal_type (counted
           against students whose latest status is in the stage).
+
+unit_tests:
+  - name: unit_fresh_goals_scaffold_drops_goal_with_mistyped_region
+    description: >-
+      A goals-sheet row whose region does not match the scaffold's region for
+      the same school and grade is dropped; the matching row is kept.
+    model: int_tableau__fresh_goals_scaffold
+    given:
+      - input: ref('int_tableau__fresh_enrollment_scaffold')
+        rows:
+          - {
+              enrollment_academic_year: 2026,
+              region: Newark,
+              schoolid: 10,
+              grade_level: 5,
+            }
+      - input: ref('stg_google_sheets__finalsite__goals')
+        rows:
+          - {
+              enrollment_academic_year: 2026,
+              region: Newark,
+              schoolid: 10,
+              grade_level: 5,
+              goal_type: Applications,
+              goal_name: kept,
+            }
+          - {
+              enrollment_academic_year: 2026,
+              region: Camden,
+              schoolid: 10,
+              grade_level: 5,
+              goal_type: Applications,
+              goal_name: dropped,
+            }
+    expect:
+      rows:
+        - { region: Newark, schoolid: 10, grade_level: 5, goal_name: kept }

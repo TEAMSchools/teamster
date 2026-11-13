@@ -298,10 +298,11 @@ stays here is what to do and what not to do.
 - **`stg_renlearn__star`** — `int_renlearn__star_rollup` is disabled
   (`config: enabled: false`); leave it. Edit and consume STAR at
   `stg_renlearn__star`.
-- **`stg_adp_workforce_now__workers` ghosts** — fix by rematerializing the ADP
-  `workers` partitions spanning the record's active dates; the re-pull drops the
-  ghost and downstream tables rebuild via automation. The
-  `stg_adp_workforce_now__workers__ghost_open_records` asset check flags them.
+- **`stg_adp_workforce_now__workers` ghosts** — staging drops them (keeping
+  everyone when more than 25 would drop at once). Clear them at the source by
+  rematerializing the ADP `workers` partitions spanning the record's active
+  dates. The `stg_adp_workforce_now__workers__ghost_open_records` asset check
+  lists them from the source.
 - **`stg_people__employee_numbers` on a deleted and re-created hire** — the new
   worker_id gets a new employee number, and the old number stays active. IdAuto
   matches AD accounts on employee number, so have IT update the existing AD

@@ -4,6 +4,7 @@ models:
       This table maintains Student demographics and other School related
       information such as Lunch ID, Grade Level and scheduling data.
     data_tests:
+      # TODO(#5558): runbook
       - dbt_utils.expression_is_true:
           arguments:
             expression: entrydate <= exitdate

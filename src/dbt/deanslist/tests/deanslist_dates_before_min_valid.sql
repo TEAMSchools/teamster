@@ -1,14 +1,3 @@
-{{
-    config(
-        severity="warn",
-        meta={
-            "dagster": {
-                "ref": {"name": "stg_deanslist__incidents", "package": "deanslist"}
-            }
-        },
-    )
-}}
-
 -- depends_on: {{ ref("stg_deanslist__incidents") }}
 -- reads the raw source: the models null these dates, so a test on them never fails
 with

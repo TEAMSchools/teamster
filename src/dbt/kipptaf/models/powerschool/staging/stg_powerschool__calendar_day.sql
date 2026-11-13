@@ -13,11 +13,6 @@ with
         }}
     )
 
-select
-    ur.* except (date_value),
-
-    {{ extract_source_project("ur") }} as _dbt_source_project,
-
-    if(ur.date_value < date '2000-01-01', null, ur.date_value) as date_value,
-
-from union_relations as ur
+-- trunk-ignore(sqlfluff/AM04): union_relations resolves columns at run time
+select *, {{ extract_source_project() }} as _dbt_source_project,
+from union_relations

@@ -106,3 +106,88 @@ models:
         data_type: int64
       - name: track
         data_type: string
+unit_tests:
+  - name: unit_student_enrollment_union_drops_inverted_stints
+    description: >-
+      Proves the defense behind the entrydate <= exitdate warn tests on
+      stg_powerschool__students and stg_powerschool__reenrollments. Both
+      branches keep only stints whose exitdate is after entrydate, so a stint
+      PowerSchool dates backwards never reaches enrollment. Student 101 has a
+      valid current stint and a valid re-enrollment, which both survive, and an
+      inverted re-enrollment, which is dropped. Student 103's current stint is
+      inverted and is dropped. Every inverted stint starts inside a year term,
+      so only the date filter can remove it.
+    model: int_powerschool__student_enrollment_union
+    given:
+      - input: ref('stg_powerschool__students')
+        rows:
+          - {
+              id: 1,
+              dcid: 11,
+              student_number: 101,
+              schoolid: 10,
+              grade_level: 5,
+              enroll_status: 0,
+              entrydate: 2024-09-03,
+              exitdate: 2025-06-20,
+            }
+          - {
+              id: 3,
+              dcid: 13,
+              student_number: 103,
+              schoolid: 10,
+              grade_level: 5,
+              enroll_status: 0,
+              entrydate: 2024-10-01,
+              exitdate: 2024-09-15,
+            }
+      - input: ref('stg_powerschool__reenrollments')
+        rows:
+          - {
+              dcid: 501,
+              studentid: 1,
+              schoolid: 10,
+              grade_level: 4,
+              entrydate: 2023-09-05,
+              exitdate: 2024-06-20,
+            }
+          - {
+              dcid: 502,
+              studentid: 1,
+              schoolid: 10,
+              grade_level: 4,
+              entrydate: 2023-08-15,
+              exitdate: 2023-08-10,
+            }
+      - input: ref('stg_powerschool__terms')
+        rows:
+          - {
+              schoolid: 10,
+              yearid: 33,
+              academic_year: 2023,
+              isyearrec: 1,
+              firstday: 2023-08-01,
+              lastday: 2024-06-30,
+            }
+          - {
+              schoolid: 10,
+              yearid: 34,
+              academic_year: 2024,
+              isyearrec: 1,
+              firstday: 2024-08-01,
+              lastday: 2025-06-30,
+            }
+    expect:
+      rows:
+        - {
+            student_number: 101,
+            reenrollments_dcid: null,
+            entrydate: 2024-09-03,
+            exitdate: 2025-06-20,
+          }
+        - {
+            student_number: 101,
+            reenrollments_dcid: 501,
+            entrydate: 2023-09-05,
+            exitdate: 2024-06-20,
+          }
