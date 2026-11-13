@@ -30,7 +30,7 @@ import tableauserverclient as TSC
 
 from . import answers, checks, compare, decisions
 from . import discover as finder
-from . import report, tableau, triage
+from . import report, saved, tableau, triage
 from .bq import Warehouse
 from .checks import CheckResult, Finding
 from .compare import CellDiff, Gap, Group
@@ -723,13 +723,16 @@ def _masked(at: AsOf, ts: datetime) -> str:
 
 @dataclasses.dataclass
 class _Sides:
-    """What a run collects across comparisons."""
+    """What a run collects across comparisons, or one comparison's slice of it.
+
+    Each comparison returns its own slice (`_compare_one`); `run` merges them
+    in config order and keeps each as a checkpoint (`to_json`).
+    """
 
     cube_tables: set[str] = dataclasses.field(default_factory=set)
     live: set[str] = dataclasses.field(default_factory=set)
     cells: list[Cell] = dataclasses.field(default_factory=list)
     groups: list[Group] = dataclasses.field(default_factory=list)
-    clauses: dict[str, list[str]] = dataclasses.field(default_factory=dict)
     sql: dict[str, tuple[str, str]] = dataclasses.field(default_factory=dict)
     fingerprints: dict[str, dict[str, str]] = dataclasses.field(default_factory=dict)
     moved: dict[str, bool] = dataclasses.field(default_factory=dict)
@@ -746,6 +749,211 @@ class _Sides:
     students: dict[str, dict[tuple[str, tuple[str, ...]], int]] = dataclasses.field(
         default_factory=dict
     )
+
+    def merge(self, other: _Sides) -> None:
+        """Add another slice: its sets, cells, groups and every per-comparison
+        entry."""
+        self.cube_tables |= other.cube_tables
+        self.live |= other.live
+        self.moved |= other.moved
+        self.cells += other.cells
+        self.groups += other.groups
+        for name in (
+            "sql",
+            "fingerprints",
+            "cell_sql",
+            "cell_sql_usd",
+            "cell_rows",
+            "cell_students",
+            "students",
+        ):
+            getattr(self, name).update(getattr(other, name))
+
+    def to_json(self) -> dict:
+        """The slice as JSON data: counts, SQL and fingerprints, no student
+        row."""
+        return {
+            "cube_tables": sorted(self.cube_tables),
+            "live": sorted(self.live),
+            "cells": [dataclasses.asdict(c) for c in self.cells],
+            "groups": [dataclasses.asdict(g) for g in self.groups],
+            "sql": {k: list(v) for k, v in self.sql.items()},
+            "fingerprints": self.fingerprints,
+            "moved": self.moved,
+            "cell_sql": self.cell_sql,
+            "cell_sql_usd": self.cell_sql_usd,
+            "cell_rows": self.cell_rows,
+            "cell_students": self.cell_students,
+            "students": {
+                cid: [[cut, list(key), n] for (cut, key), n in by.items()]
+                for cid, by in self.students.items()
+            },
+        }
+
+    @classmethod
+    def from_json(cls, data: dict) -> _Sides:
+        """The slice `to_json` wrote, with its tuples restored."""
+
+        def pairs(dims) -> tuple:
+            return tuple(tuple(p) for p in dims)
+
+        return cls(
+            cube_tables=set(data["cube_tables"]),
+            live=set(data["live"]),
+            cells=[Cell(**{**c, "dims": pairs(c["dims"])}) for c in data["cells"]],
+            groups=[
+                Group(**{**g, "dims": pairs(g["dims"]), "nulls": tuple(g["nulls"])})
+                for g in data["groups"]
+            ],
+            sql={k: (v[0], v[1]) for k, v in data["sql"].items()},
+            fingerprints=data["fingerprints"],
+            moved=data["moved"],
+            cell_sql=data["cell_sql"],
+            cell_sql_usd=data["cell_sql_usd"],
+            cell_rows=data["cell_rows"],
+            cell_students=data["cell_students"],
+            students={
+                cid: {(cut, tuple(key)): n for cut, key, n in entries}
+                for cid, entries in data["students"].items()
+            },
+        )
+
+
+class _Expand:
+    """Compile Cube queries and expand SQL as of a moment, each once.
+
+    One per comparison: the cells, the rows and the fingerprints read the same
+    compiled and expanded SQL.
+    """
+
+    def __init__(
+        self, cfg: ViewConfig, cube: Cube, schools: set[str], wh: Warehouse
+    ) -> None:
+        self._cfg, self._cube, self._schools, self._wh = cfg, cube, schools, wh
+        self._compiled: dict[tuple[str, bool], str] = {}
+        self._expanded: dict[tuple[str, datetime], AsOf] = {}
+
+    def cube_sql(self, query: dict, rows: bool = False) -> str:
+        key = (json.dumps(query, sort_keys=True), rows)
+        if key not in self._compiled:
+            self._compiled[key] = _cube_sql(
+                self._cfg, self._cube, query, self._schools, rows=rows
+            )
+        return self._compiled[key]
+
+    def at(self, sql: str, ts: datetime) -> AsOf:
+        if (sql, ts) not in self._expanded:
+            self._expanded[(sql, ts)] = _as_of(sql, ts, self._wh)
+        return self._expanded[(sql, ts)]
+
+
+def _fingerprints(
+    cfg: ViewConfig, comparison: Comparison, ex: _Expand, build: Build
+) -> dict[str, str]:
+    """Both sides' SQL fingerprints: each side's cell and row SQL, expanded
+    through every view as of the moment and with the moment masked, so a view
+    or member edit changes them and a new moment does not."""
+    cube_parts = [
+        _masked(
+            ex.at(ex.cube_sql(cell_query(cfg.view, comparison, {})), build.end),
+            build.end,
+        )
+    ]
+    dash_parts = [
+        _masked(ex.at(probe_sql(cfg, comparison, {}), build.start), build.start)
+    ]
+    if comparison.rows is not None:
+        cube_parts.append(
+            _masked(
+                ex.at(
+                    ex.cube_sql(row_query(cfg.view, comparison), rows=True), build.end
+                ),
+                build.end,
+            )
+        )
+        dash_parts.append(
+            _masked(
+                ex.at(dashboard_rows_sql(cfg, comparison), build.start), build.start
+            )
+        )
+    return {
+        "cube": decisions.sql_fingerprint(sort_school_filters("\n".join(cube_parts))),
+        "dashboard": decisions.sql_fingerprint("\n".join(dash_parts)),
+    }
+
+
+def side_fingerprints(
+    cfg: ViewConfig,
+    comparison: Comparison,
+    *,
+    wh: Warehouse,
+    cube: Cube,
+    build: Build,
+    schools: set[str],
+) -> dict[str, str]:
+    """The `cube` and `dashboard` fingerprints `run` records for a comparison,
+    from compiled and expanded SQL only: no query runs."""
+    return _fingerprints(cfg, comparison, _Expand(cfg, cube, schools, wh), build)
+
+
+def checkpoint_fingerprint(comparison: Comparison, fingerprints: dict[str, str]) -> str:
+    """What a comparison's saved work holds for: its config entry and both
+    sides' SQL. Any edit to either makes the saved work stale."""
+    return hashlib.sha256(
+        json.dumps(
+            [dataclasses.asdict(comparison), fingerprints],
+            sort_keys=True,
+            default=str,
+        ).encode()
+    ).hexdigest()
+
+
+def _reconcile_args(
+    cfg: ViewConfig, comparison: Comparison, sides: RowSides
+) -> tuple[tuple, dict]:
+    """The positional and keyword arguments every row query of a comparison
+    takes (`compare.reconcile_script`, `unmatched_rows_sql`,
+    `cell_students_sql`)."""
+    flags = cut_flags(comparison) or []
+    args = (
+        wrap_cube(sides.cube_rows_sql, cfg.view, sides.columns, _date_cubes(cfg), None),
+        sides.dashboard.sql,
+        comparison.rows,
+        group_dims(comparison),
+    )
+    return args, {
+        "filters": _filter_flags(comparison),
+        "cuts": [(c, d) for _, c, d in flags],
+    }
+
+
+def save_script(
+    cfg: ViewConfig,
+    comparison: Comparison,
+    sides: RowSides,
+    table: str,
+    labels: dict[str, str] | None,
+) -> list[str]:
+    """The reconcile that also saves the comparison's unmatched rows to `table`.
+
+    With `labels`, the table carries them and expires after
+    `saved.SAVED_DAYS`; without (an offline test on DuckDB), it is a plain
+    table.
+    """
+    args, kwargs = _reconcile_args(cfg, comparison, sides)
+    return compare.reconcile_script(
+        *args,
+        **kwargs,
+        table=table,
+        labels=labels,
+        expire_days=saved.SAVED_DAYS if labels is not None else None,
+    )
+
+
+def inline_unmatched(cfg: ViewConfig, comparison: Comparison, sides: RowSides) -> str:
+    """The rows `save_script` saves, as one query with no table, for a dry run."""
+    args, kwargs = _reconcile_args(cfg, comparison, sides)
+    return compare.unmatched_rows_sql(*args, **kwargs)
 
 
 def _cube_sql(
@@ -775,29 +983,26 @@ def _compare_one(
     cube: Cube,
     build: Build,
     schools: set[str],
-    sides: _Sides,
-) -> None:
-    """Compare one comparison's cells and rows, and fingerprint both sides.
+    moved: dict[str, bool],
+) -> _Sides:
+    """Compare one comparison's cells and rows, fingerprint both sides, and
+    save its unmatched rows; return its slice of the run.
 
-    The fingerprints hash the SQL each side runs, expanded through every view
-    as of the moment and with the moment masked: a view or member edit asks
-    its decisions to be re-confirmed, a new moment does not.
+    The fingerprints come first (`_fingerprints`), since the saved table's
+    labels carry them. The rows are reconciled in one job that also saves the
+    unmatched ones to the scratch dataset (`save_script`), labelled with the
+    view, the moment, the comparison and its `checkpoint_fingerprint`.
+
+    Args:
+        moved: The tables already checked for a change during the build. The
+            slice's `moved` holds the answer for every table both sides read.
     """
+    sides = _Sides()
     dates = _date_cubes(cfg)
     dims = [d.cube for d in comparison.dims]
-    compiled: dict[tuple[str, bool], str] = {}
-    expanded: dict[tuple[str, datetime], AsOf] = {}
-
-    def cube_sql(query: dict, rows: bool = False) -> str:
-        key = (json.dumps(query, sort_keys=True), rows)
-        if key not in compiled:
-            compiled[key] = _cube_sql(cfg, cube, query, schools, rows=rows)
-        return compiled[key]
-
-    def at(sql: str, ts: datetime) -> AsOf:
-        if (sql, ts) not in expanded:
-            expanded[(sql, ts)] = _as_of(sql, ts, wh)
-        return expanded[(sql, ts)]
+    ex = _Expand(cfg, cube, schools, wh)
+    cube_sql, at = ex.cube_sql, ex.at
+    sides.fingerprints[comparison.id] = _fingerprints(cfg, comparison, ex, build)
 
     for cut in _cuts(comparison):
         cube_at = at(cube_sql(cell_query(cfg.view, comparison, cut)), build.end)
@@ -823,52 +1028,54 @@ def _compare_one(
             comparison, cut, dash_rows, cube_rows, comparison.decimals or 0, unfiltered
         )
 
-    cube_parts = [
-        _masked(
-            at(cube_sql(cell_query(cfg.view, comparison, {})), build.end), build.end
-        )
-    ]
-    dash_parts = [_masked(at(probe_sql(cfg, comparison, {}), build.start), build.start)]
-
     if comparison.rows is not None:
         cube_at = at(cube_sql(row_query(cfg.view, comparison), rows=True), build.end)
         dash_at = at(dashboard_rows_sql(cfg, comparison), build.start)
         sides.cube_tables |= cube_at.tables
         sides.live |= cube_at.live | dash_at.live
-        cube_parts.append(_masked(cube_at, build.end))
-        dash_parts.append(_masked(dash_at, build.start))
-        columns = _unique(p.cube for p in _row_pairs(comparison))
         shared = sorted(cube_at.tables & dash_at.tables)
-        unknown = [t for t in shared if t not in sides.moved]
+        unknown = [t for t in shared if t not in moved]
         changed = set(changed_between(wh, unknown, build.start, build.end))
-        sides.moved |= {t: t in changed for t in unknown}
-        if moved := [t for t in shared if sides.moved[t]]:
+        sides.moved = {t: moved.get(t, t in changed) for t in shared}
+        if both_moved := [t for t in shared if sides.moved[t]]:
             raise Refusal(
-                f"comparison {comparison.id!r}: both sides read {', '.join(moved)}, "
-                "which changed during the build; BigQuery reads a table at 1 "
-                "moment per query, so the rows cannot be reconciled at this build"
+                f"comparison {comparison.id!r}: both sides read "
+                f"{', '.join(both_moved)}, which changed during the build; BigQuery "
+                "reads a table at 1 moment per query, so the rows cannot be "
+                "reconciled at this build"
             )
         # Unchanged between start and end, so the Cube side reads its shared
         # tables at the start: BigQuery refuses 1 table at 2 moments.
-        cube_rows_sql = repin(cube_at.sql, shared, build.end, build.start)
-        flags = cut_flags(comparison) or []
-        reconcile_args = (
-            wrap_cube(cube_rows_sql, cfg.view, columns, dates, None),
-            dash_at.sql,
-            comparison.rows,
-            group_dims(comparison),
+        row_sql = RowSides(
+            cube=cube_at,
+            dashboard=dash_at,
+            cube_rows_sql=repin(cube_at.sql, shared, build.end, build.start),
+            columns=_unique(p.cube for p in _row_pairs(comparison)),
         )
-        reconcile_kwargs = {
-            "filters": _filter_flags(comparison),
-            "cuts": [(c, d) for _, c, d in flags],
-        }
-        result = wh.rows(compare.reconcile_sql(*reconcile_args, **reconcile_kwargs))
+        flags = cut_flags(comparison) or []
+        result = wh.script(
+            save_script(
+                cfg,
+                comparison,
+                row_sql,
+                saved.table_sql(saved.table_id(cfg.view, build, comparison.id)),
+                saved.labels(
+                    cfg.view,
+                    build,
+                    comparison.id,
+                    checkpoint_fingerprint(
+                        comparison, sides.fingerprints[comparison.id]
+                    ),
+                ),
+            )
+        )
         sides.groups += compare.groups_from(comparison.id, result)
         sides.cell_rows[comparison.id] = compare.cell_rows_from(
             result, [label for label, _, _ in flags]
         )
         if comparison.rows.cell == "count_students":
             labels = [label for label, _, _ in flags]
+            args, kwargs = _reconcile_args(cfg, comparison, row_sql)
             sides.cell_students[comparison.id] = [
                 {
                     "side": r["side"],
@@ -876,9 +1083,7 @@ def _compare_one(
                     "dims": [[p.cube, r[p.cube]] for p in group_dims(comparison)],
                     "n": r["n_students"],
                 }
-                for r in wh.rows(
-                    compare.cell_students_sql(*reconcile_args, **reconcile_kwargs)
-                )
+                for r in wh.rows(compare.cell_students_sql(*args, **kwargs))
             ]
         sides.sql[comparison.id] = (dash_at.sql, cube_at.sql)
         # Only a student column counts students; without one in the grain,
@@ -901,11 +1106,7 @@ def _compare_one(
                 ): r["n_students"]
                 for r in wh.rows(at(count_sql, build.start).sql)
             }
-
-    sides.fingerprints[comparison.id] = {
-        "cube": decisions.sql_fingerprint(sort_school_filters("\n".join(cube_parts))),
-        "dashboard": decisions.sql_fingerprint("\n".join(dash_parts)),
-    }
+    return sides
 
 
 @dataclasses.dataclass(frozen=True)
@@ -971,41 +1172,10 @@ def row_sides(
     if comparison.rows is None:
         raise Refusal(f"comparison {comparison.id!r} has no rows to trace")
 
-    def cube_sql(query: dict, rows: bool = False) -> str:
-        return _cube_sql(cfg, cube, query, schools, rows=rows)
-
-    cube_at = _as_of(cube_sql(row_query(cfg.view, comparison), True), build.end, wh)
-    dash_at = _as_of(dashboard_rows_sql(cfg, comparison), build.start, wh)
-    now = {
-        "cube": decisions.sql_fingerprint(
-            sort_school_filters(
-                "\n".join(
-                    [
-                        _masked(
-                            _as_of(
-                                cube_sql(cell_query(cfg.view, comparison, {})),
-                                build.end,
-                                wh,
-                            ),
-                            build.end,
-                        ),
-                        _masked(cube_at, build.end),
-                    ]
-                )
-            )
-        ),
-        "dashboard": decisions.sql_fingerprint(
-            "\n".join(
-                [
-                    _masked(
-                        _as_of(probe_sql(cfg, comparison, {}), build.start, wh),
-                        build.start,
-                    ),
-                    _masked(dash_at, build.start),
-                ]
-            )
-        ),
-    }
+    ex = _Expand(cfg, cube, schools, wh)
+    cube_at = ex.at(ex.cube_sql(row_query(cfg.view, comparison), rows=True), build.end)
+    dash_at = ex.at(dashboard_rows_sql(cfg, comparison), build.start)
+    now = _fingerprints(cfg, comparison, ex, build)
     changed = sorted(k for k in now if now[k] != fingerprints.get(k))
     if changed:
         raise Refusal(
@@ -1440,14 +1610,16 @@ def run(
         # comparison or dims check scans them again.
         sides = _Sides(moved={f: False for f in cfg.also_facts})
         for comparison in comparisons:
-            _compare_one(
-                cfg,
-                comparison,
-                wh=wh,
-                cube=cube,
-                build=build,
-                schools=schools,
-                sides=sides,
+            sides.merge(
+                _compare_one(
+                    cfg,
+                    comparison,
+                    wh=wh,
+                    cube=cube,
+                    build=build,
+                    schools=schools,
+                    moved=sides.moved,
+                )
             )
         dims = sorted(sides.cube_tables - {cfg.fact, *cfg.also_facts})
         changed = changed_between(wh, dims, build.start, build.end)

@@ -452,6 +452,24 @@ def test_run_counts_each_side_s_students_per_cell_for_a_student_count(fakes, tmp
     )
 
 
+def test_run_saves_each_comparison_s_unmatched_rows_to_a_labelled_table(
+    fakes, tmp_path
+):
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+
+    script = _reconcile(fakes.bq)
+    sha = hashlib.sha256(b"ada-region").hexdigest()[:8]
+    assert "CREATE TEMP TABLE __joined" in script
+    assert (
+        "CREATE OR REPLACE TABLE `teamster-332318`.`cube_validation_scratch`."
+        f"`v__2026_10_22t204400z__ada_region_{sha}`"
+    ) in script
+    assert "('comparison', 'ada-region')" in script
+    assert "INTERVAL 14 DAY" in script
+    # The rows stay in BigQuery: the job returns only the counts.
+    assert script.rstrip().split(";\n")[-1].startswith("-- outer")
+
+
 def test_run_cube_rows_are_ungrouped_and_unlimited(fakes, tmp_path):
     assert cli.main(["run", str(_file(tmp_path))]) == 0
 
