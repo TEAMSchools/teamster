@@ -1,5 +1,6 @@
 import contextlib
 import json
+from dataclasses import replace
 from datetime import datetime, timezone
 
 import pytest
@@ -1355,6 +1356,50 @@ def _rate_run(cube, dashboard, cell_rows=X_ROWS, groups=None):
     return replace(run, cell_rows={} if cell_rows is None else {"mastery": cell_rows})
 
 
+STUDENTS = replace(
+    RATE,
+    measure="count_students",
+    decimals=0,
+    rows=replace(RATE.rows, cell="count_students"),
+)
+STUDENTS_CFG = ViewConfig(view="v", fact="m.fct", comparisons=[STUDENTS])
+# Synthetic school X: 5 distinct students in Cube's cell, 3 in the dashboard's.
+CELL_X = [
+    {"side": "c", "cut": "{}", "dims": [["abbreviation", "X"]], "n": 5},
+    {"side": "d", "cut": "{}", "dims": [["abbreviation", "X"]], "n": 3},
+]
+
+
+def _students_run(cube, dashboard, students=CELL_X):
+    return replace(_rate_run(cube, dashboard), cell_students={"mastery": students})
+
+
+def test_a_student_count_cell_links_when_its_students_rebuild_both_sides(
+    tmp_path, monkeypatch
+):
+    cells = _cells(tmp_path, monkeypatch, run=_students_run(5.0, 3.0), cfg=STUDENTS_CFG)
+
+    assert cells["suggestion"] == "cause"
+
+
+def test_a_student_count_cell_its_students_do_not_rebuild_stays_open(
+    tmp_path, monkeypatch, capsys
+):
+    with pytest.raises(pipeline.Refusal, match="1 of 1 differing cells"):
+        _cells(tmp_path, monkeypatch, run=_students_run(6.0, 3.0), cfg=STUDENTS_CFG)
+
+    assert "rebuilt Cube 5, dashboard 3" in capsys.readouterr().out
+
+
+def test_a_student_count_cell_a_run_did_not_count_cannot_be_sized(
+    tmp_path, monkeypatch, capsys
+):
+    with pytest.raises(pipeline.Refusal, match="1 of 1 differing cells"):
+        _cells(tmp_path, monkeypatch, run=_students_run(5.0, 3.0, []), cfg=STUDENTS_CFG)
+
+    assert "cannot be sized" in capsys.readouterr().out
+
+
 def test_a_rate_cell_links_when_its_rows_rebuild_both_sides(tmp_path, monkeypatch):
     cells = _cells(tmp_path, monkeypatch, run=_rate_run(0.25, 1.0), cfg=RATE_CFG)
 
@@ -1543,7 +1588,7 @@ def test_cut_flags_skip_a_caption_every_cut_shares():
     assert "d.rtype" in dash
 
 
-def test_cut_flags_need_each_varying_caption_among_the_row_columns():
+def test_a_varying_cut_caption_becomes_a_row_column_on_both_sides():
     from dataclasses import replace
 
     by_region = replace(
@@ -1552,7 +1597,13 @@ def test_cut_flags_need_each_varying_caption_among_the_row_columns():
         filters={**BY_TYPE.filters, "Region": ColumnPair("region", "region")},
     )
 
-    assert pipeline.cut_flags(by_region) is None
+    flags = pipeline.cut_flags(by_region)
+
+    assert [label for label, _, _ in flags] == ['{"Region": "A"}', '{"Region": "B"}']
+    assert "c.region" in flags[1][1] and "d.region" in flags[1][2]
+    assert ColumnPair("region", "region") in pipeline._row_pairs(by_region)
+    # A caption every cut shares stays out of the rows.
+    assert ColumnPair("year", "year") not in pipeline._row_pairs(by_region)
 
 
 def test_a_rate_cell_under_a_cut_is_sized_by_that_cut_s_sums(tmp_path, monkeypatch):

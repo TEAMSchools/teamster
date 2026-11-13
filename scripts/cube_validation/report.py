@@ -115,6 +115,10 @@ class RunResult:
     # Per comparison with `rows`, each reconcile row's rows and value sums per
     # side (`compare.cell_rows_from`), to size a rate cell; counts only.
     cell_rows: dict[str, list[dict]] = field(default_factory=dict)
+    # Per comparison whose `rows.cell` is `count_students`, each side's
+    # distinct students per cell and cut (`compare.cell_students_sql`), to size
+    # a cell that counts students: `{"side", "cut", "dims", "n"}`; counts only.
+    cell_students: dict[str, list[dict]] = field(default_factory=dict)
 
 
 def mask(n: int) -> str:

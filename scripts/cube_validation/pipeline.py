@@ -201,31 +201,34 @@ def _any_cut_predicate(comparison: Comparison, with_filters: bool = True) -> str
     return preds[0] if len(preds) == 1 else " OR ".join(f"({p})" for p in preds)
 
 
-def cut_flags(comparison: Comparison) -> list[tuple[str, str, str]] | None:
-    """Per cut, its label and the predicates that keep its rows on each side
-    of the row reconcile (over `c.` and `d.` row columns), or None.
+def _varying_captions(comparison: Comparison) -> list[str]:
+    """The captions whose value differs across the comparison's cuts.
 
     A caption with one value in every cut (a default no cut changes) cannot
-    split the cells, so it is left out. None when another caption's column is
-    not a row column on both sides: the reconcile cannot tell its cuts apart.
+    split the cells.
+    """
+    chosen = [effective_filters(comparison, cut) for cut in _cuts(comparison)]
+    captions = dict.fromkeys(c for f in chosen for c in f)
+    return [
+        c
+        for c in captions
+        if len({json.dumps(f.get(c), sort_keys=True, default=str) for f in chosen}) > 1
+    ]
+
+
+def cut_flags(comparison: Comparison) -> list[tuple[str, str, str]] | None:
+    """Per cut, its label and the predicates that keep its rows on each side
+    of the row reconcile (over `c.` and `d.` row columns), or None without
+    `rows`.
+
+    Only the captions that vary across cuts (`_varying_captions`) split the
+    cells; `_row_pairs` makes each of them a row column on both sides.
     """
     cuts = _cuts(comparison)
     if comparison.rows is None:
         return None
     chosen = [effective_filters(comparison, cut) for cut in cuts]
-    captions = dict.fromkeys(c for f in chosen for c in f)
-    varying = [
-        c
-        for c in captions
-        if len({json.dumps(f.get(c), sort_keys=True, default=str) for f in chosen}) > 1
-    ]
-    pairs = _row_pairs(comparison)
-    cube_cols = {p.cube for p in pairs}
-    dash_cols = {p.dashboard for p in pairs}
-    for caption in varying:
-        pair = comparison.filters[caption]
-        if pair.cube not in cube_cols or pair.dashboard not in dash_cols:
-            return None
+    varying = _varying_captions(comparison)
     out = []
     for cut, f in zip(cuts, chosen, strict=True):
         sides = []
@@ -266,10 +269,20 @@ def cell_query(
 
 
 def _row_pairs(comparison: Comparison) -> list[ColumnPair]:
+    """The columns a comparison's row SQL selects on each side.
+
+    With `rows`: the grain, the values, the dims, and each caption that varies
+    across cuts, so the reconcile can tell the cuts' rows apart (`cut_flags`).
+    """
     rows = comparison.rows
     if rows is None:
         return list(comparison.dims)
-    return [*rows.grain, *rows.values, *comparison.dims]
+    pairs = [*rows.grain, *rows.values, *comparison.dims]
+    for caption in _varying_captions(comparison):
+        pair = comparison.filters[caption]
+        if pair not in pairs:
+            pairs.append(pair)
+    return pairs
 
 
 def _unique(names: Iterable[str]) -> list[str]:
@@ -726,6 +739,9 @@ class _Sides:
         default_factory=dict
     )
     cell_rows: dict[str, list[dict]] = dataclasses.field(default_factory=dict)
+    # Per comparison counting students, each side's distinct students per cell
+    # and cut (`RunResult.cell_students`).
+    cell_students: dict[str, list[dict]] = dataclasses.field(default_factory=dict)
     # Per comparison with `rows`, distinct students by (cut label, cell key).
     students: dict[str, dict[tuple[str, tuple[str, ...]], int]] = dataclasses.field(
         default_factory=dict
@@ -836,20 +852,34 @@ def _compare_one(
         # tables at the start: BigQuery refuses 1 table at 2 moments.
         cube_rows_sql = repin(cube_at.sql, shared, build.end, build.start)
         flags = cut_flags(comparison) or []
-        result = wh.rows(
-            compare.reconcile_sql(
-                wrap_cube(cube_rows_sql, cfg.view, columns, dates, None),
-                dash_at.sql,
-                comparison.rows,
-                group_dims(comparison),
-                filters=_filter_flags(comparison),
-                cuts=[(c, d) for _, c, d in flags],
-            )
+        reconcile_args = (
+            wrap_cube(cube_rows_sql, cfg.view, columns, dates, None),
+            dash_at.sql,
+            comparison.rows,
+            group_dims(comparison),
         )
+        reconcile_kwargs = {
+            "filters": _filter_flags(comparison),
+            "cuts": [(c, d) for _, c, d in flags],
+        }
+        result = wh.rows(compare.reconcile_sql(*reconcile_args, **reconcile_kwargs))
         sides.groups += compare.groups_from(comparison.id, result)
         sides.cell_rows[comparison.id] = compare.cell_rows_from(
             result, [label for label, _, _ in flags]
         )
+        if comparison.rows.cell == "count_students":
+            labels = [label for label, _, _ in flags]
+            sides.cell_students[comparison.id] = [
+                {
+                    "side": r["side"],
+                    "cut": labels[int(r["__cut"])],
+                    "dims": [[p.cube, r[p.cube]] for p in group_dims(comparison)],
+                    "n": r["n_students"],
+                }
+                for r in wh.rows(
+                    compare.cell_students_sql(*reconcile_args, **reconcile_kwargs)
+                )
+            ]
         sides.sql[comparison.id] = (dash_at.sql, cube_at.sql)
         # Only a student column counts students; without one in the grain,
         # every cell's `n_students` stays None, so none is an example cell.
@@ -1463,6 +1493,7 @@ def run(
         cell_sql=sides.cell_sql,
         cell_sql_usd=sides.cell_sql_usd,
         cell_rows=sides.cell_rows,
+        cell_students=sides.cell_students,
     )
     text = report.render_local(result) + "\n" + _extra_sections(sides.cells, findings)
     print(text)
@@ -1572,6 +1603,7 @@ def _run_from_json(data: dict) -> RunResult:
         cell_sql=data.get("cell_sql", {}),
         cell_sql_usd=data.get("cell_sql_usd", {}),
         cell_rows=data.get("cell_rows", {}),
+        cell_students=data.get("cell_students", {}),
         cube_host=data.get("cube_host", ""),
         fact=data.get("fact", ""),
     )

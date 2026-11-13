@@ -1351,6 +1351,32 @@ def _rebuilt(spec: Comparison, entries: list[dict], cell: dict) -> tuple:
     return tuple(out)
 
 
+def _students_rebuilt(
+    students: list[dict], cell: dict
+) -> tuple[float | None, float | None] | None:
+    """Each side's distinct students in the cell under its cut, or None when
+    the counts cannot size it (a cell dim the counts do not group by).
+
+    A side with no entry for the cell has no students there: its cell shows
+    nothing.
+    """
+    out = []
+    for side in ("c", "d"):
+        found = None
+        for e in students:
+            if e["side"] != side or e["cut"] != cell.get("cut", "{}"):
+                continue
+            columns = dict(e["dims"])
+            if any(col not in columns for col, _ in cell["dims"]):
+                return None
+            if _agrees(columns.get, cell["dims"]):
+                if found is not None:
+                    return None
+                found = float(e["n"])
+        out.append(found)
+    return out[0], out[1]
+
+
 def _reproduces(spec: Comparison, entries: list[dict], cell: dict) -> bool:
     """Whether both sides' cells, rebuilt from their rows, show the run's values."""
     cube, dashboard = _rebuilt(spec, entries, cell)
@@ -1379,6 +1405,10 @@ def link_cells(
       dashboard) must equal the linked groups' net rows (Cube-only and
       dashboard-filtered rows add, dashboard-only rows take away; a
       `dims_differ` group adds to Cube's cell and takes from the dashboard's).
+    - A comparison whose `rows.cell` is `count_students`: each side's cell,
+      rebuilt as its distinct students under the cell's cut
+      (`RunResult.cell_students`), must show the run's value. A cell the
+      counts do not cover is not linked.
     - Any other comparison with 1 value column: each side's cell, rebuilt as
       the mean of that column over the cell's rows from the run's per-cell
       sums (`RunResult.cell_rows`), must show the run's value. A cell the sums
@@ -1412,6 +1442,8 @@ def link_cells(
         ]
         cells = [c for c in run.diff_cells if c["comparison"] == item.comparison]
         sums = run.cell_rows.get(item.comparison)
+        students_kind = bool(spec and spec.rows and spec.rows.cell == "count_students")
+        students = run.cell_students.get(item.comparison)
         unlinked, used, gap, unsized, unbuilt = 0, {}, 0.0, 0, 0
         left: list[dict] = []
         for cell in cells:
@@ -1450,6 +1482,30 @@ def link_cells(
                     )
                     left.append({"cell": cell, "groups": said, "why": why})
                     continue
+            elif students_kind:
+                rebuilt = _students_rebuilt(students, cell) if students else None
+                if rebuilt is None:
+                    unlinked += 1
+                    unsized += 1
+                    why = (
+                        "cannot be sized: the run counted no students for it, or "
+                        "a dim the counts do not group by"
+                    )
+                    left.append({"cell": cell, "groups": said, "why": why})
+                    continue
+                cube, dash = rebuilt
+                if not (
+                    compare.cell_verdict(cell.get("cube"), cube, 0) == "pass"
+                    and compare.cell_verdict(cell.get("dashboard"), dash, 0) == "pass"
+                ):
+                    unlinked += 1
+                    unbuilt += 1
+                    why = (
+                        f"does not rebuild from its rows: rebuilt Cube {_shown(cube)}, "
+                        f"dashboard {_shown(dash)}"
+                    )
+                    left.append({"cell": cell, "groups": said, "why": why})
+                    continue
             elif sums is not None:
                 if not _sizable(spec, sums, cell):
                     unlinked += 1
@@ -1485,7 +1541,7 @@ def link_cells(
             line = (
                 f"every differing cell's rows lie in proven groups: {', '.join(used)}"
             )
-            if not counts and sums is None:
+            if not counts and not students_kind and sums is None:
                 line += "; cell sizes not checked: the run predates per-cell sums"
             target.update(
                 suggestion="cause",

@@ -458,6 +458,23 @@ def test_rows_dashboard_scope_defaults_to_none(tmp_path):
     assert rows.dashboard_scope == []
 
 
+def test_rows_cell_defaults_to_the_mean_and_takes_count_students(tmp_path):
+    assert (
+        load_view_config(_write(tmp_path, EXAMPLE)).comparisons[0].rows.cell == "mean"
+    )
+
+    text = EXAMPLE.replace(VALUES, VALUES + "      cell: count_students\n", 1)
+    rows = load_view_config(_write(tmp_path, text)).comparisons[0].rows
+
+    assert rows.cell == "count_students"
+
+
+def test_rows_cell_refuses_another_kind(tmp_path):
+    text = EXAMPLE.replace(VALUES, VALUES + "      cell: share\n", 1)
+    with pytest.raises(ConfigError, match=r"rows\.cell.*count_students"):
+        load_view_config(_write(tmp_path, text))
+
+
 def test_rows_dashboard_scope_takes_only_a_column_name(tmp_path):
     scope = '      dashboard_scope:\n        - { dashboard: "x; DROP", values: [1] }\n'
     text = EXAMPLE.replace(VALUES, VALUES + scope, 1)

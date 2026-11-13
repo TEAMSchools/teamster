@@ -417,6 +417,41 @@ def test_run_keeps_student_rows_in_bigquery(fakes, tmp_path, capsys):
     assert "student_number" not in out
 
 
+def test_run_counts_each_side_s_students_per_cell_for_a_student_count(fakes, tmp_path):
+    text = YML.replace(
+        "        - { dashboard: is_present, cube: attendance_value }\n",
+        "        - { dashboard: is_present, cube: attendance_value }\n"
+        "      cell: count_students\n",
+        1,
+    )
+    # One answer serves both student counts: the cell's (`side`, the Cube
+    # name) and the example cells' (the dashboard name).
+    fakes.bq.students = [
+        {"side": "c", "__cut": 1, "regions_region_name": "Miami",
+         "region": "Miami", "n_students": 3},
+        {"side": "d", "__cut": 1, "regions_region_name": "Miami",
+         "region": "Miami", "n_students": 2},
+    ]  # fmt: skip
+
+    assert cli.main(["run", str(_file(tmp_path, text))]) == 0
+
+    (saved,) = (tmp_path / "cache" / "v").glob("*/run.json")
+    miami = '{"Region": "Miami"}'
+    assert json.loads(saved.read_text())["cell_students"] == {
+        "ada-region": [
+            {"side": "c", "cut": miami,
+             "dims": [["regions_region_name", "Miami"]], "n": 3},
+            {"side": "d", "cut": miami,
+             "dims": [["regions_region_name", "Miami"]], "n": 2},
+        ]
+    }  # fmt: skip
+    (count,) = [s for s in fakes.bq.ran if "UNION ALL" in s and "'c' AS side" in s]
+    selects = re.findall(r"SELECT '(?:c|d)' AS side, (.*?) FROM joined", count)
+    assert selects and all(
+        s.endswith("COUNT(DISTINCT __student) AS n_students") for s in selects
+    )
+
+
 def test_run_cube_rows_are_ungrouped_and_unlimited(fakes, tmp_path):
     assert cli.main(["run", str(_file(tmp_path))]) == 0
 

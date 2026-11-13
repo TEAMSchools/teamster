@@ -221,17 +221,7 @@ def reconcile_sql(
         rows,
         group_by,
         filters,
-        extra=[
-            f"COALESCE({pred}, FALSE) AS __{side}k{j}"
-            for j, pair in enumerate(cuts)
-            for side, pred in zip(("c", "d"), pair, strict=True)
-        ]
-        # The dashboard shows only the rows its filters keep.
-        + (
-            [" AND ".join(f"d.{flag}" for flag, _ in filters) + " AS __dkeep"]
-            if filters
-            else []
-        ),  # fmt: skip
+        extra=_cut_extras(cuts, filters),
         moved=True,
     )
     stats = []
@@ -264,6 +254,78 @@ def reconcile_sql(
         + f"SELECT {outer_select}\nFROM joined\n"
         + f"GROUP BY {group_clause}\nORDER BY {group_clause}"
     )
+
+
+def _cut_extras(
+    cuts: Sequence[tuple[str, str]], filters: Sequence[tuple[str, str]]
+) -> list[str]:
+    """`joined`'s per-cut flags (`__ck<j>`, `__dk<j>`) and, with dashboard-only
+    filters, `__dkeep`: the rows the dashboard shows."""
+    return [
+        f"COALESCE({pred}, FALSE) AS __{side}k{j}"
+        for j, pair in enumerate(cuts)
+        for side, pred in zip(("c", "d"), pair, strict=True)
+    ] + (
+        [" AND ".join(f"d.{flag}" for flag, _ in filters) + " AS __dkeep"]
+        if filters
+        else []
+    )
+
+
+def cell_students_sql(
+    cube_rows_sql: str,
+    dashboard_rows_sql: str,
+    rows: RowSpec,
+    group_by: list[ColumnPair],
+    filters: Sequence[tuple[str, str]] = (),
+    cuts: Sequence[tuple[str, str]] = (),
+) -> str:
+    """Build the query that counts each side's distinct students per cell and cut.
+
+    Takes `reconcile_sql`'s arguments and joins the rows the same way. Each
+    side's rows count in that side's own cell (a `dims_differ` row in Cube's
+    cell on the Cube side, the dashboard's on the other), and the dashboard
+    counts only the rows its filters keep.
+
+    Returns:
+        One query returning `side` (`c` or `d`), `__cut` (the cut's index; 0
+        with no cuts), each group-by column by its `cube` name, and
+        `n_students` (distinct values of the first grain pair). No grain
+        column is returned.
+    """
+    ctes, _ = _joined(
+        cube_rows_sql,
+        dashboard_rows_sql,
+        rows,
+        group_by,
+        filters,
+        extra=_cut_extras(cuts, filters)
+        + [f"{_label(f'c.{p.cube}')} AS __cl_{p.cube}" for p in group_by]
+        + [f"{_label(f'd.{p.dashboard}')} AS __dl_{p.cube}" for p in group_by],
+    )
+    branches = []
+    for j in range(len(cuts) or 1):
+        for side in ("c", "d"):
+            keep = [f"__{side}in IS NOT NULL"]
+            if side == "d" and filters:
+                keep.append("__dkeep")
+            if cuts:
+                keep.append(f"__{side}k{j}")
+            columns = [f"__{side}l_{p.cube} AS {p.cube}" for p in group_by]
+            select = ", ".join(
+                [f"'{side}' AS side", f"{j} AS __cut", *columns]
+                + ["COUNT(DISTINCT __student) AS n_students"]
+            )
+            group = (
+                " GROUP BY " + ", ".join(f"__{side}l_{p.cube}" for p in group_by)
+                if group_by
+                else ""
+            )
+            branches.append(
+                # trunk-ignore(bandit/B608): identifiers are validated in config.py; row SQL comes from Cube's compiled query
+                f"SELECT {select} FROM joined WHERE {' AND '.join(keep)}{group}"
+            )
+    return ctes + "\n" + "\nUNION ALL\n".join(branches)
 
 
 def _joined(

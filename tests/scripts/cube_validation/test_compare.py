@@ -4,6 +4,7 @@ import pytest
 from cube_validation.compare import (
     Group,
     _label,
+    cell_students_sql,
     cell_verdict,
     clauses_for,
     groups_from,
@@ -320,6 +321,79 @@ FILTERED_ROWS = RowSpec(
     grain=[ColumnPair(dashboard="student_number", cube="lea_student_identifier")],
     values=[ColumnPair(dashboard="att_code", cube="attendance_code")],
 )
+
+
+def test_cell_students_count_each_student_once_per_side_and_cell(duck):
+    # Synthetic: student 1 holds 2 Cube rows in X; student 3 is the dashboard's
+    # alone, in Y.
+    duck.table(
+        "c_rows",
+        "lea BIGINT, aid VARCHAR, school VARCHAR",
+        [(1, "a", "X"), (1, "b", "X"), (2, "c", "X")],
+    )
+    duck.table(
+        "d_rows",
+        "student BIGINT, item VARCHAR, school VARCHAR",
+        [(1, "a", "X"), (3, "d", "Y")],
+    )
+    rows = RowSpec(
+        grain=[ColumnPair("student", "lea"), ColumnPair("item", "aid")], values=[]
+    )
+
+    got = duck.rows(
+        cell_students_sql(
+            "SELECT lea, aid, school FROM c_rows",
+            "SELECT student, item, school FROM d_rows",
+            rows,
+            [ColumnPair("school", "school")],
+        )
+    )
+
+    assert sorted(
+        (r["side"], r["__cut"], r["school"], r["n_students"]) for r in got
+    ) == [
+        ("c", 0, "X", 2),
+        ("d", 0, "X", 1),
+        ("d", 0, "Y", 1),
+    ]
+
+
+def test_cell_students_count_the_dashboard_s_cell_and_its_kept_rows_per_cut(duck):
+    # Synthetic: both sides hold student 1, Cube in X and the dashboard in Y
+    # (dims_differ); the dashboard's filter drops student 2, and cut 1 keeps
+    # only region B.
+    duck.table(
+        "c_rows",
+        "lea BIGINT, aid VARCHAR, school VARCHAR, region VARCHAR",
+        [(1, "a", "X", "A"), (2, "b", "X", "B")],
+    )
+    duck.table(
+        "d_rows",
+        "student BIGINT, item VARCHAR, school VARCHAR, region VARCHAR, f BOOLEAN",
+        [(1, "a", "Y", "A", True), (2, "b", "X", "B", False)],
+    )
+    rows = RowSpec(
+        grain=[ColumnPair("student", "lea"), ColumnPair("item", "aid")], values=[]
+    )
+
+    got = duck.rows(
+        cell_students_sql(
+            "SELECT lea, aid, school, region FROM c_rows",
+            "SELECT student, item, school, region, f AS __df0 FROM d_rows",
+            rows,
+            [ColumnPair("school", "school")],
+            filters=[("__df0", "f")],
+            cuts=[("TRUE", "TRUE"), ("c.region = 'B'", "d.region = 'B'")],
+        )
+    )
+
+    assert sorted(
+        (r["side"], r["__cut"], r["school"], r["n_students"]) for r in got
+    ) == [
+        ("c", 0, "X", 2),
+        ("c", 1, "X", 1),
+        ("d", 0, "Y", 1),
+    ]
 
 
 def test_reconcile_counts_rows_a_dashboard_only_filter_drops_apart():

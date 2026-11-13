@@ -96,6 +96,13 @@ class RowSpec:
     # probe and the cells keep every row, so a cell with no rows in scope
     # still shows (blank) on both.
     dashboard_scope: list[dict[str, Any]] = field(default_factory=list)
+    # How a cell is rebuilt from its rows to size it (`ROW_CELLS`): the mean of
+    # the value column, or the count of distinct students (the first grain
+    # column) for a measure that counts students.
+    cell: str = "mean"
+
+
+ROW_CELLS = ("mean", "count_students")
 
 
 @dataclass(frozen=True)
@@ -372,7 +379,11 @@ def _comparison(reader: _Reader) -> Comparison:
     rows = None
     if reader.data.get("rows") is not None:
         rows_reader = reader.child("rows", reader.data["rows"])
+        cell = rows_reader.get("cell", str, default="mean")
+        if cell not in ROW_CELLS:
+            rows_reader.fail("cell", f"must be one of {', '.join(ROW_CELLS)}")
         rows = RowSpec(
+            cell=cell,
             grain=_pairs(rows_reader, "grain"),
             values=_pairs(rows_reader, "values"),
             dashboard_scope=[
