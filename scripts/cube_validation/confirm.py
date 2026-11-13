@@ -292,18 +292,39 @@ def identifying(comparison: Comparison) -> set[str]:
     return {n.lower() for p in grain[:1] for n in (p.cube, p.dashboard)}
 
 
-def _identifies(column: str, student: set[str]) -> bool:
-    """A column whose value can name a student or staff member.
+# Numbers that name or reach a person (direct identifiers and contact details in
+# `.claude/rules/ferpa-pii.md`); any other `_number` column numbers a category,
+# such as a band or a module.
+_PERSON_NUMBERS = (
+    "student_number",
+    "studentnumber",
+    "employee_number",
+    "phone_number",
+    "state_id",
+    "local_id",
+    "school_specific_id",
+)
+_PEOPLE = ("student", "employee", "staff", "teacher")
 
-    The student grain column, a name, number or email column, or a student
-    id or key. Another id (`assessment_id`) names no one, so a proof may
-    compare it with a literal.
+
+def _identifies(column: str, student: set[str]) -> bool:
+    """A column whose value can name or reach a student or staff member.
+
+    The student grain column, a name or email column, a number that names or
+    reaches a person (`student_number`, `employee_number`, a phone number), or
+    an id, key, number or identifier of a student or staff member. A category
+    number (`module_number`, a band number) and another id (`assessment_id`)
+    name no one, so a proof may compare them with a literal.
     """
     name = column.lower()
     return (
         name in student
-        or name.endswith(("_number", "_name", "_email"))
-        or ("student" in name and name.endswith(("_id", "_key")))
+        or name.endswith(("_name", "_email"))
+        or name.endswith(_PERSON_NUMBERS)
+        or (
+            any(word in name for word in _PEOPLE)
+            and name.endswith(("_id", "_key", "_number", "_identifier"))
+        )
     )
 
 

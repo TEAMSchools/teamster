@@ -565,6 +565,13 @@ def test_check_sql_lets_a_literal_meet_an_id_that_names_no_one():
         "r.contact_email = 'C1'",
         "r.student_key = 7",
         "r.powerschool_student_id = 7",
+        "r.student_number = 7",
+        "r.employee_number = 7",
+        "r.state_studentnumber = 7",
+        "r.lea_student_identifier = 7",
+        "r.teacher_number = 7",
+        "r.home_phone_number = 7",
+        "r.guardian_phone_number = 7",
     ],
 )
 def test_check_sql_refuses_a_literal_on_a_column_that_names_a_person(where):
@@ -574,6 +581,24 @@ def test_check_sql_refuses_a_literal_on_a_column_that_names_a_person(where):
             GRAIN,
             STUDENT,
         )
+
+
+@pytest.mark.parametrize(
+    "where",
+    [
+        "r.performance_band_label_number = 3",
+        "r.module_number = 2",
+        "r.grade_level_number IN (5, 6)",
+    ],
+)
+def test_check_sql_lets_a_literal_meet_a_category_number(where):
+    assert confirm.check_sql(
+        f"SELECT u.__row, CASE WHEN {where} THEN 'C1' "
+        "ELSE 'UNEXPLAINED' END AS cause FROM {unmatched} AS u "
+        "LEFT JOIN `teamster-332318`.`ds`.`r` AS r ON r.student = u.lea",
+        GRAIN,
+        STUDENT,
+    ) == {"C1", "UNEXPLAINED"}
 
 
 @pytest.mark.parametrize(
