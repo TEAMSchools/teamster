@@ -295,6 +295,8 @@ comparisons:
   # the K-2 QA goals hard-coded as the workbook has them today (Refs #6192).
   - id: goal-distance-dki-school
     <<: *school
+    # Off until #6371 reads the goal rules (#6397) and the workbook change lands.
+    confirmed: false
     measure: grade_goal_distance
     sheet_field: Goal Distance - Grade/Subject
     probe: >-
@@ -382,6 +384,8 @@ comparisons:
         School Level: school_level
   - id: school-goal-distance-lines-school
     <<: *dki
+    # Off until #6371 reads the goal rules (#6397) and the workbook change lands.
+    confirmed: false
     sheet: School - Mastery Lines All
     measure: school_goal_distance
     sheet_field: Goal Distance - School
@@ -500,6 +504,8 @@ comparisons:
         Ml Status: ml_status
   - id: region-goal-distance-lines-region
     <<: *dki
+    # Off until #6371 reads the goal rules (#6397) and the workbook change lands.
+    confirmed: false
     sheet: Region - Mastery Lines All
     measure: region_goal_distance
     sheet_field: Goal Distance - Region
