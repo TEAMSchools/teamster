@@ -1,9 +1,9 @@
 # SAT and PSAT — crosswalk match
 
-SAT and PSAT share one crosswalk tab, `src_collegeboard__sat_id_crosswalk`, and
-both unpivots (`int_collegeboard__sat_unpivot`,
-`int_collegeboard__psat_unpivot`) resolve `cb_id` through it with a left join.
-AP IDs are a different ID space — see [SKILL.md](../SKILL.md).
+SAT and PSAT share one crosswalk tab, `CB SAT ID Crosswalk`, and both unpivots
+(`int_collegeboard__sat_unpivot`, `int_collegeboard__psat_unpivot`) resolve
+`cb_id` through it with a left join. AP IDs are a different ID space — see
+[SKILL.md](../SKILL.md).
 
 The two feed different places. PSAT flows into the CARAT dashboard. SAT feeds
 only the KIPP Forward SAT sheets (`rpt_gsheets__kippfwd_ogsat`, `_sfsat`, in the
@@ -73,12 +73,12 @@ tier.
 ## Step 4: Deliver, paste, reconcile
 
 Present counts per tier and bucket, then follow _Handing rows to the user_ in
-[SKILL.md](../SKILL.md) with destination tab
-`src_collegeboard__sat_id_crosswalk`. `flagged_for_review` rows go in chat as a
-table (CB name/DOB/gender against PS name/DOB/gender) for the user to decide
-individually. `ambiguous` rows (several candidates the first-name tiebreak
-couldn't narrow) go in chat the same way, with the candidates listed. For
-`no_match` rows, run _No-match root cause review_ in [ap.md](ap.md).
+[SKILL.md](../SKILL.md) with destination tab `CB SAT ID Crosswalk`.
+`flagged_for_review` rows go in chat as a table (CB name/DOB/gender against PS
+name/DOB/gender) for the user to decide individually. `ambiguous` rows (several
+candidates the first-name tiebreak couldn't narrow) go in chat the same way,
+with the candidates listed. For `no_match` rows, run _No-match root cause
+review_ in [ap.md](ap.md).
 
 ## Step 5: Pipeline QA
 
