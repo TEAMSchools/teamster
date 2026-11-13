@@ -55,6 +55,8 @@ Never bare `pytest` or `python`.
   aggregates `run.json` holds).
 - No worker pools or threads: `run` compares one comparison at a time and
   `triage` runs one proof at a time (spec, _Revision 2026-11-13_).
+- Correctness over speed: time is a benchmark only. Never cut or loosen a check,
+  guard or refusal to make something faster.
 - Resume on its own only when the last checkpoint is under 24 hours old; 24
   hours to 7 days needs `--resume` or `--restart`; over 7 days refuses to
   resume. `--moment` overrides all three.
@@ -1338,11 +1340,12 @@ each step in the runner with `time.monotonic()`.
       saved table with `get_table_info`: its 4 labels, its expiry, its `bucket`
       column.
 - [ ] **Step 4: Removed** (folded into Step 3).
-- [ ] **Step 5: Triage** — `triage --no-trace`. Target: under 10 minutes. Report
-      the trace's time separately (a non-goal of the spec). Then stop a second
-      `triage --no-trace` partway and run it again: the proofs it finished are
-      reused ("reused from triage-progress.json") and `triage.json`'s items
-      equal the first one's.
+- [ ] **Step 5: Triage** — `triage --no-trace`. Benchmark, not a pass/fail:
+      report its time against 10 minutes, and the trace's time separately. A
+      slower result is reported, never fixed by dropping a check. Then stop a
+      second `triage --no-trace` partway and run it again: the proofs it
+      finished are reused ("reused from triage-progress.json") and
+      `triage.json`'s items equal the first one's.
 - [ ] **Step 6: Caps** —
       `run --moment <M, Step 3's moment> --restart --max-usd 0.01` refuses
       before saving any table (check `maximum_bytes_billed` holds for a
@@ -1372,8 +1375,9 @@ each step in the runner with `time.monotonic()`.
 - `rows.cell` takes `count_students` only; the DDI comparisons are counts, so a
   share of distinct students waits for a view that has one. It costs `run` one
   more query per `count_students` comparison.
-- The 10-minute triage target is measured with `--no-trace`; the trace is a
-  non-goal of the spec.
+- Time is a benchmark, not a rule: a `--no-trace` triage is measured against 10
+  minutes, and no check, guard or refusal is cut or loosened to reach it (spec,
+  _Revision 2026-11-13_).
 - No parallel workers in `run` or `triage` (spec, _Revision 2026-11-13_): the
   owner validates one cube or measure at a time, and saved tables carry the
   triage speedup.

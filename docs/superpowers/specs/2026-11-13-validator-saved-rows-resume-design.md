@@ -289,9 +289,13 @@ or measure at a time, not a whole suite. This section overrides every mention of
   carried the main accuracy risks: slices merged out of order, lost updates to
   the spend counter, and a process passing `--max-usd` by queries in flight.
 - `Warehouse` needs no lock.
-- Success: a full triage of a saved DDI run with `--no-trace` finishes in under
-  10 minutes (the trace is a non-goal, timed and reported separately); `run` has
-  no time target; a stopped `run` or `triage` started again produces the same
-  `run.json` / `triage.json` as an uninterrupted one.
+- Success: a stopped `run` or `triage` started again produces the same
+  `run.json` / `triage.json` as an uninterrupted one, and proofs prove exactly
+  what they prove today, now on the run's own saved rows.
+- Time is a benchmark, not a success criterion. A `--no-trace` triage of a saved
+  DDI run is measured against 10 minutes, and `run` and the trace are timed and
+  reported, but nothing that keeps results right (a check, a guard, a refusal,
+  re-running a proof whose inputs changed) is cut or loosened to reach a time.
+  Correctness wins every trade.
 - Each comparison still returns its own slice of `_Sides`: the checkpoints need
   it.
