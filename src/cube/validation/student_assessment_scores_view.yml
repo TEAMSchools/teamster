@@ -298,8 +298,6 @@ comparisons:
   # the K-2 QA goals hard-coded as the workbook has them today (Refs #6192).
   - id: goal-distance-dki-school
     <<: *school
-    # Off until #6371 reads the goal rules (#6397) and the workbook change lands.
-    confirmed: false
     measure: grade_goal_distance
     sheet_field: Goal Distance - Grade/Subject
     probe: >-
@@ -339,15 +337,15 @@ comparisons:
       end) - avg(is_mastery_int)
     proof:
       fingerprint: 3c570b06fff00569956ab30062ec5971502aa895511df28e3e73d894b00496c6
-      cells: 2730
-      proven_at: "2026-11-12T13:10:15.557408+00:00"
-      workbook_updated_at: "2026-11-12T06:44:35+00:00"
+      cells: 2788
+      proven_at: "2026-11-13T18:38:15.780362+00:00"
+      workbook_updated_at: "2026-11-13T06:46:12+00:00"
       probe_fingerprint: 322b3285fed80a647535c19890abea528e2c589f2330687cc6a466f1e7af0dd6
       source_fingerprint: d9ff221cb778a49a9bbdfcf16e8dbfe368b7b1640fb68fa44caad7c655e18817
       cuts:
         - '{"Response Type": "overall"}'
         - '{"Response Type": "standard"}'
-      totals_skipped: 376
+      totals_skipped: 382
       shelves:
         drop:
           - Week Start Monday
@@ -379,16 +377,14 @@ comparisons:
       filter_notes: {}
       missing_columns:
         Week Start Monday: week_start_monday
+        Head Of School: head_of_school
         IEP Status: iep_status
         Term: term
-        Head Of School: head_of_school
         Ml Status: ml_status
         gifted_and_talented: gifted_and_talented
         School Level: school_level
   - id: school-goal-distance-lines-school
     <<: *dki
-    # Off until #6371 reads the goal rules (#6397) and the workbook change lands.
-    confirmed: false
     sheet: School - Mastery Lines All
     measure: school_goal_distance
     sheet_field: Goal Distance - School
@@ -458,9 +454,9 @@ comparisons:
       end) - avg(is_mastery_int)
     proof:
       fingerprint: 49bbceb9d81f6b5910909bf37a139844fad19d0b4e436beeae8e0fcede8725a7
-      cells: 1424
-      proven_at: "2026-11-12T13:12:49.228951+00:00"
-      workbook_updated_at: "2026-11-12T06:44:35+00:00"
+      cells: 1454
+      proven_at: "2026-11-13T18:41:03.742517+00:00"
+      workbook_updated_at: "2026-11-13T06:46:12+00:00"
       probe_fingerprint: 85d80e8432c4e9639b4329552cc005938c8b3ec38c81db9133c11c487716eb63
       source_fingerprint: d9ff221cb778a49a9bbdfcf16e8dbfe368b7b1640fb68fa44caad7c655e18817
       cuts:
@@ -500,15 +496,13 @@ comparisons:
       filter_notes:
         Select Chart Type: display switch on Chart Type
       missing_columns:
-        IEP Status: iep_status
-        Module Type: module_type
         Term: term
         Course Teacher Name: course_teacher_name
+        IEP Status: iep_status
+        Module Type: module_type
         Ml Status: ml_status
   - id: region-goal-distance-lines-region
     <<: *dki
-    # Off until #6371 reads the goal rules (#6397) and the workbook change lands.
-    confirmed: false
     sheet: Region - Mastery Lines All
     measure: region_goal_distance
     sheet_field: Goal Distance - Region
@@ -575,9 +569,9 @@ comparisons:
       end) - avg(is_mastery_int)
     proof:
       fingerprint: b5b6b8f4fa9282b4fc8dc804f82f58b818e44bb943b18bc275309b0429037bcb
-      cells: 234
-      proven_at: "2026-11-12T13:14:30.823715+00:00"
-      workbook_updated_at: "2026-11-12T06:44:35+00:00"
+      cells: 235
+      proven_at: "2026-11-13T18:42:50.875468+00:00"
+      workbook_updated_at: "2026-11-13T06:46:12+00:00"
       probe_fingerprint: 14f6215245679a6d44a091c6d41874ed31e32cfaa89798652dbe35025eb9d197
       source_fingerprint: d9ff221cb778a49a9bbdfcf16e8dbfe368b7b1640fb68fa44caad7c655e18817
       cuts:
@@ -612,9 +606,9 @@ comparisons:
       filter_notes: {}
       missing_columns:
         Week Start Monday: week_start_monday
+        Head Of School: head_of_school
         IEP Status: iep_status
         Module Type: module_type
-        Head Of School: head_of_school
         Ml Status: ml_status
         School Level: school_level
   # The school week: mastery-dki-school with Week Start Monday kept as a row.

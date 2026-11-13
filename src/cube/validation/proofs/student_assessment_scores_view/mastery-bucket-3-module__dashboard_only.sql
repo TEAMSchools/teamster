@@ -196,9 +196,12 @@ with
 
     -- the bucket subject each assessment reads (int_assessments__assessments_members)
     bucket_subjects as (
-        -- grain projection, not dup-masking: one subject per source and assessment
-        select distinct source, canonical_assessment_id, bucket_subject,
-        from `teamster-332318`.`kipptaf_assessments`.`int_assessments__assessments_members`
+        -- grain projection, not dup-masking: one subject per source, region and
+        -- canonical assessment (members groups canonical ids per region)
+        select distinct
+            m.source, g.region, g.canonical_assessment_id, m.bucket_subject,
+        from `teamster-332318`.`kipptaf_assessments`.`int_assessments__assessments_members` as m
+        cross join unnest(m.region_groups) as g
     ),
 
     -- Cube's 2026 rows per student and assessment, rebuilt from the resolver
@@ -233,6 +236,7 @@ with
         inner join
             bucket_subjects as m
             on r.source = m.source
+            and r.region = m.region
             and r.canonical_assessment_id = m.canonical_assessment_id
         left join
             `teamster-332318`.`kipptaf_marts`.`dim_student_enrollment_status` as es
