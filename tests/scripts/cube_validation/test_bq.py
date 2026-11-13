@@ -505,42 +505,6 @@ class SessionClient:
         return job
 
 
-def test_freeze_opens_one_session_and_only_its_readers_join_it():
-    client = SessionClient()
-    wh = Warehouse(client=client)
-
-    with wh.session():
-        first = wh.freeze("SELECT 1 AS x")
-        second = wh.freeze("SELECT 2 AS x")
-        wh.estimate(f"SELECT * FROM {first}")
-        wh.rows(f"SELECT * FROM {second}")
-        wh.rows("SELECT 3")
-
-    assert first != second and first.startswith("_SESSION.")
-    (f1, s1), (f2, s2), (dry, sd), (read, sr), (plain, sp), (end, se) = client.queries
-    assert f1.startswith(f"CREATE TEMP TABLE {first} AS")
-    assert s1["create"] and s1["session"] is None
-    assert not s2["create"] and s2["session"] == "s1"
-    assert sd == {"dry": True, "create": False, "session": "s1"}
-    assert sr["session"] == "s1"
-    # A query that reads no temp table runs outside the session, so it may
-    # run beside another.
-    assert plain == "SELECT 3" and sp["session"] is None
-    assert end == "CALL BQ.ABORT_SESSION()" and se["session"] == "s1"
-
-
-def test_freeze_refuses_outside_a_session():
-    with pytest.raises(RuntimeError, match="open session"):
-        Warehouse(client=SessionClient()).freeze("SELECT 1")
-
-
-def test_a_session_that_froze_nothing_ends_without_a_query():
-    client = SessionClient()
-    with Warehouse(client=client).session():
-        pass
-    assert client.queries == []
-
-
 def test_a_script_runs_as_one_job_and_returns_its_last_rows():
     client = FakeClient(rows=[{"n": 2}])
 

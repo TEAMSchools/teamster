@@ -1,12 +1,12 @@
 import contextlib
 import json
 from dataclasses import replace
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
 # trunk-ignore(pyright/reportAttributeAccessIssue): conftest.py registers cube_validation
-from cube_validation import confirm, pipeline, trace, triage
+from cube_validation import confirm, pipeline, saved, trace, triage
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.compare import CellDiff, Group
@@ -89,6 +89,8 @@ class Wh:
     def __init__(self, duck):
         self.duck = duck
         self.ran: list[tuple[str, float | None]] = []
+        # Each saved table's labels, by table id (`_save`).
+        self.labels: dict[str, dict] = {}
 
     def estimate(self, sql):
         return 0.01
@@ -107,16 +109,41 @@ class Wh:
     def budget(self, max_usd):
         yield
 
-    @contextlib.contextmanager
-    def session(self):
-        yield
+    def saved_labels(self, table_id):
+        return self.labels.get(table_id)
 
-    def freeze(self, sql, timeout_s=None):
-        """A temp table, as BigQuery's session keeps one."""
-        self.frozen = getattr(self, "frozen", []) + [sql]
-        name = f"frozen_{len(self.frozen)}"
-        self.rows(f"CREATE TEMP TABLE {name} AS {sql}", timeout_s)
-        return name
+
+def _saved_wh(duck, run, cfg=CFG):
+    """A warehouse whose scratch dataset holds the run's saved rows."""
+    wh = Wh(duck)
+    _save(duck, wh, run, cfg)
+    return wh
+
+
+def _save(duck, wh, run, cfg=CFG):
+    """What `run` leaves behind: each comparison's saved rows and labels."""
+    for c in cfg.comparisons:
+        if c.rows is None:
+            continue
+        table = saved.table_id(cfg.view, run.moment, c.id)
+        try:  # the rows the test's `row_sides` rebuilds, as `run` reconciled them
+            sides = pipeline.row_sides(
+                cfg, c, wh=wh, cube=None, build=run.moment, schools=set(),
+                fingerprints={},
+            )  # fmt: skip
+        except confirm.CubeError:  # a test whose rebuild fails: the default rows
+            sides = SIDES
+        duck.rows("DROP TABLE IF EXISTS __joined")
+        for statement in pipeline.save_script(
+            cfg, c, sides, saved.table_sql(table), None
+        ):
+            duck.rows(statement)
+        wh.labels[table] = saved.labels(
+            cfg.view,
+            run.moment,
+            c.id,
+            pipeline.checkpoint_fingerprint(c, run.fingerprints.get(c.id, {})),
+        )
 
 
 def _tables(duck, cube_rows=CUBE_ROWS, fact_rows=FACT_ROWS):
@@ -166,6 +193,7 @@ def _by_id(items):
 
 def _stored(run, items, directory, wh, cfg=CFG):
     """What every `triage` does: run the stored proofs, then sort by them."""
+    _save(wh.duck, wh, run, cfg)
     ran = confirm.run_stored(cfg, run, directory, wh=wh, cube=None)
     confirm.apply_runs(run, items, ran, cfg)
 
@@ -178,6 +206,66 @@ def _reprove(duck, tmp_path, run, body=PROOF, causes=None, wh=None):
 
 
 # --- a stored proof, re-run by every triage -----------------------------------------
+
+
+def test_a_proof_reads_the_saved_rows_not_both_sides(duck, tmp_path, offline):
+    _tables(duck)
+    wh = Wh(duck)
+
+    (item,) = _reprove(duck, tmp_path, _run([_group(3)]), wh=wh)
+
+    ((sql, _),) = wh.ran
+    assert item["suggestion"] == "cause"
+    assert "`cube_validation_scratch`" in sql and "cube_t" not in sql
+
+
+def test_a_proof_refuses_when_its_saved_rows_are_gone(duck, tmp_path, offline, capsys):
+    _tables(duck)
+    run, wh = _run([_group(3)]), Wh(duck)
+    items = _items(run)
+    directory, _ = _proof(tmp_path)
+
+    ran = confirm.run_stored(CFG, run, directory, wh=wh, cube=None)
+    confirm.apply_runs(run, items, ran, CFG)
+
+    assert items[0]["suggestion"] == "investigate" and wh.ran == []
+    assert "no saved rows for the run of" in capsys.readouterr().out
+
+
+def test_a_proof_refuses_saved_rows_labelled_for_another_run(
+    duck, tmp_path, offline, capsys
+):
+    _tables(duck)
+    run, wh = _run([_group(3)]), Wh(duck)
+    _save(duck, wh, run)
+    (table,) = wh.labels
+    wh.labels[table] = {**wh.labels[table], "fingerprint": "0" * 32}
+    items = _items(run)
+    directory, _ = _proof(tmp_path)
+
+    ran = confirm.run_stored(CFG, run, directory, wh=wh, cube=None)
+    confirm.apply_runs(run, items, ran, CFG)
+
+    assert wh.ran == []
+    assert "labelled for another run or SQL (fingerprint)" in capsys.readouterr().out
+
+
+def test_a_missing_table_past_time_travel_says_to_start_a_new_run(
+    duck, tmp_path, offline, monkeypatch
+):
+    monkeypatch.setattr(confirm, "_utcnow", lambda: BUILD.end + timedelta(days=9))
+
+    with pytest.raises(pipeline.Refusal, match="Start a new `run`"):
+        confirm.require_saved(Wh(duck), CFG, _run([_group(3)]), COMPARISON)
+
+
+def test_a_missing_table_within_time_travel_says_to_save_it_again(
+    duck, tmp_path, offline, monkeypatch
+):
+    monkeypatch.setattr(confirm, "_utcnow", lambda: BUILD.end + timedelta(hours=2))
+
+    with pytest.raises(pipeline.Refusal, match="--restart` to save them again"):
+        confirm.require_saved(Wh(duck), CFG, _run([_group(3)]), COMPARISON)
 
 
 def test_a_stored_proof_proves_every_row_of_an_item(duck, tmp_path, offline):
@@ -334,6 +422,7 @@ def test_a_cube_error_notes_the_items_and_a_comparison_is_rebuilt_once(
     duck, tmp_path, monkeypatch
 ):
     monkeypatch.setattr(confirm, "network_schools", lambda wh: set())
+    _tables(duck)
     calls = []
 
     def failing(*a, **k):
@@ -347,8 +436,13 @@ def test_a_cube_error_notes_the_items_and_a_comparison_is_rebuilt_once(
     (directory / "mastery__dashboard_only.sql").write_text(
         confirm.compose(CAUSES, PROOF)
     )
+    wh = Wh(duck)
+    _save(duck, wh, run)
+    calls.clear()
 
-    _stored(run, items, directory, Wh(duck))
+    confirm.apply_runs(
+        run, items, confirm.run_stored(CFG, run, directory, wh=wh, cube=None), CFG
+    )
 
     assert {i["suggestion"] for i in items} == {"investigate"}
     assert all("not run: Cube answered 502" in i["evidence"][0] for i in items)
@@ -367,7 +461,11 @@ def test_both_buckets_of_a_comparison_share_one_rebuild(duck, tmp_path, offline,
         confirm.compose(CAUSES, PROOF)
     )
 
-    _stored(run, _items(run), directory, Wh(duck))
+    wh = Wh(duck)
+    _save(duck, wh, run)
+    calls.clear()
+
+    confirm.run_stored(CFG, run, directory, wh=wh, cube=None)
 
     assert len(calls) == 1
 
@@ -392,7 +490,7 @@ def test_confirm_refreshes_the_decision_marks(duck, tmp_path, monkeypatch, offli
     confirm.run_confirm(
         cfg,
         tmp_path / "validation" / "v.yml",
-        wh=Wh(duck),
+        wh=_saved_wh(duck, run, cfg),
         cube=None,
         max_usd=1.0,
         cache_root=tmp_path,
@@ -684,10 +782,12 @@ def _saved(tmp_path, monkeypatch, run):
 def _confirm(duck, tmp_path, causes, **kw):
     draft = tmp_path / "draft.sql"
     draft.write_text(PROOF)
+    wh = Wh(duck)
+    _save(duck, wh, pipeline.latest_run(CFG, tmp_path)[0])
     confirm.run_confirm(
         CFG,
         tmp_path / "validation" / "v.yml",
-        wh=Wh(duck),
+        wh=wh,
         cube=None,
         max_usd=1.0,
         cache_root=tmp_path,
@@ -911,43 +1011,11 @@ def test_check_sql_warns_of_a_table_read_live(capsys):
     assert "fact" not in out and " w " not in out
 
 
-def test_a_frozen_bucket_proves_as_the_rebuilt_one_and_freezes_once(
-    duck, tmp_path, offline, monkeypatch
-):
+def test_a_proof_counts_each_cause_s_students_per_cell_and_cut(duck, tmp_path, offline):
     _tables(duck)
-    # Every proof query here is "too long", so the bucket freezes.
-    monkeypatch.setattr(trace, "MAX_QUERY_CHARS", 100)
-    proof = confirm.Proof(
-        tmp_path / "mastery__cube_only.sql", "mastery", "cube_only",
-        CAUSES, PROOF, {},
-    )  # fmt: skip
-    items = [("G1", _group(3))]
-
-    def prove(wh, frozen):
-        return confirm.run_proof(
-            wh, CFG, COMPARISON, SIDES, proof, items, BUILD, {}, frozen
-        )
-
-    rebuilt = prove(Wh(duck), None)
-    wh, frozen = Wh(duck), {}
-    first, again = prove(wh, frozen), prove(wh, frozen)
-
-    assert first == again == rebuilt
-    assert frozen == {("mastery", "cube_only"): "frozen_1"}
-    assert len(wh.frozen) == 1
-    (create, _), (read, _), (again_read, _) = wh.ran
-    assert create.startswith("CREATE TEMP TABLE frozen_1")
-    assert "FROM frozen_1" in read and "WITH c AS" not in read
-    assert "FROM frozen_1" in again_read
-
-
-@pytest.mark.parametrize("frozen", [None, {}])
-def test_a_proof_counts_each_cause_s_students_per_cell_and_cut(
-    duck, tmp_path, offline, monkeypatch, frozen
-):
-    _tables(duck)
-    if frozen is not None:
-        monkeypatch.setattr(trace, "MAX_QUERY_CHARS", 100)
+    wh = Wh(duck)
+    run = _run([_group(3)])
+    _save(duck, wh, run)
     proof = confirm.Proof(
         tmp_path / "mastery__cube_only.sql", "mastery", "cube_only",
         CAUSES, PROOF, {},
@@ -955,8 +1023,8 @@ def test_a_proof_counts_each_cause_s_students_per_cell_and_cut(
     students: list[dict] = []
 
     found = confirm.run_proof(
-        Wh(duck), CFG, COMPARISON, SIDES, proof, [("G1", _group(3))], BUILD, {},
-        frozen, students,
+        wh, CFG, COMPARISON, SIDES, proof, [("G1", _group(3))], BUILD, {},
+        students, table=confirm.require_saved(wh, CFG, run, COMPARISON),
     )  # fmt: skip
 
     assert found["G1"].counts == {"C1": 2, "C2": 1}
@@ -1004,23 +1072,6 @@ def test_a_re_run_proof_replaces_its_bucket_s_old_counts_even_when_smaller():
         loaded, "m", "cube_only", [{**entry, "n": 4, "bucket": "cube_only"}]
     )
     assert loaded["cause_students"]["m"] == [{**entry, "n": 4, "bucket": "cube_only"}]
-
-
-def test_a_proof_that_fits_runs_inline_without_freezing(duck, tmp_path, offline):
-    _tables(duck)
-    proof = confirm.Proof(
-        tmp_path / "mastery__cube_only.sql", "mastery", "cube_only",
-        CAUSES, PROOF, {},
-    )  # fmt: skip
-    wh, frozen = Wh(duck), {}
-
-    confirm.run_proof(
-        wh, CFG, COMPARISON, SIDES, proof, [("G1", _group(3))], BUILD, {}, frozen
-    )
-
-    assert frozen == {} and not getattr(wh, "frozen", [])
-    ((sql, _),) = wh.ran
-    assert "WITH c AS" in sql
 
 
 def test_a_proof_classifies_value_differing_rows(duck, tmp_path, offline, monkeypatch):
@@ -1145,7 +1196,7 @@ def test_confirm_also_proves_the_comparisons_with_the_same_rows(
     confirm.run_confirm(
         CFG2,
         tmp_path / "validation" / "v.yml",
-        wh=Wh(duck),
+        wh=_saved_wh(duck, run, CFG2),
         cube=None,
         max_usd=1.0,
         cache_root=tmp_path,
@@ -1242,10 +1293,12 @@ def _draft(tmp_path, text):
 
 
 def _confirm_text(duck, tmp_path, text, wh=None):
+    wh = wh or Wh(duck)
+    _save(duck, wh, pipeline.latest_run(CFG, tmp_path)[0])
     confirm.run_confirm(
         CFG,
         tmp_path / "validation" / "v.yml",
-        wh=wh or Wh(duck),
+        wh=wh,
         cube=None,
         max_usd=1.0,
         cache_root=tmp_path,

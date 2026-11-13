@@ -30,6 +30,7 @@ import re
 import time
 from collections import Counter
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from pathlib import Path
 
 import sqlglot
@@ -38,14 +39,14 @@ from sqlglot import exp
 from sqlglot.errors import SqlglotError
 from sqlglot.tokens import TokenType
 
-from . import compare, decisions, pipeline, trace, triage
+from . import compare, decisions, pipeline, saved, trace, triage
 from .bq import CostCapError, ViewHistoryError, Warehouse
 from .compare import Group
 from .config import Comparison, ViewConfig, id_like, mask_digits, row_population
 from .cube_client import Cube, CubeError, CubeRefusal, network_schools
-from .moment import Build
+from .moment import Build, MomentError, pick_moment
 from .report import RunResult, shown_counts
-from .timetravel import PROJECT
+from .timetravel import PROJECT, utc_literal
 from .trace import TIMEOUT_S, TRACED, _failure
 
 # The buckets a stored proof classifies: the one-sided rows the trace leads on,
@@ -641,27 +642,25 @@ def _unpinned(tree: exp.Expression) -> list[str]:
 
 
 def unmatched_sql(
-    cfg: ViewConfig,
     comparison: Comparison,
-    sides: pipeline.RowSides,
     bucket: str,
     items: list[tuple[str, Group]],
-    frozen: str | None = None,
+    source: str,
 ) -> tuple[str, str]:
-    """Every unmatched row of the bucket, as the run's reconcile finds them.
+    """Every unmatched row of the bucket, as the run's reconcile found them.
 
     Args:
-        frozen: A temp table holding `frozen_sql`'s rows of this comparison
-            and bucket, read in place of rebuilding both sides.
+        source: The comparison's saved rows (`require_saved`), or the same rows
+            inline as a parenthesized query (`pipeline.inline_unmatched`).
 
     Returns:
-        The reconcile's CTEs (none when `frozen`), and the SELECT that returns
-        `__row` (a row id from the grain keys and the duplicate number),
-        `item_key` (the triage item id of the row's group, NULL for a row no
-        open group holds), `side` (the side holding the row), the group-by
-        columns as text, the grain under its Cube names (as the side holding
-        the row types it), and `__rn`. A `value_differs` row's side reads
-        `both`.
+        A `WITH` holding the bucket's rows as `__f` (`bucket_rows_sql`), and the
+        SELECT that returns `__row` (a row id from the grain keys and the
+        duplicate number), `item_key` (the triage item id of the row's group,
+        NULL for a row no open group holds), `side` (the side holding the row),
+        the group-by columns as text, the grain under its Cube names (as the
+        side holding the row types it), and `__rn`. A `value_differs` row's
+        side reads `both`.
     """
     if comparison.rows is None:
         raise pipeline.Refusal(f"comparison {comparison.id!r} has no rows to prove")
@@ -678,10 +677,7 @@ def unmatched_sql(
         )
         whens.append(f"WHEN {test or 'TRUE'} THEN {pipeline._lit(item_id)}")
     key = f"CASE {' '.join(whens)} END" if whens else "CAST(NULL AS STRING)"
-    ctes = ""
-    if frozen is None:
-        ctes, rows = frozen_sql(cfg, comparison, sides, bucket)
-        ctes, frozen = f"{ctes},\n__f AS (\n{rows}\n)", "__f"
+    ctes = f"WITH __f AS (\n{bucket_rows_sql(comparison, bucket, source)}\n)"
     columns = [
         "__row",
         f"{key} AS item_key",
@@ -690,73 +686,39 @@ def unmatched_sql(
         *(p.cube for p in grain),
         "__rn",
     ]
-    # trunk-ignore(bandit/B608): the table is the reconcile's or the session's; values are bound literals
-    return ctes, f"SELECT {', '.join(columns)}\nFROM {frozen}"
+    # trunk-ignore(bandit/B608): identifiers are validated in config.py; values are bound literals
+    return ctes, f"SELECT {', '.join(columns)}\nFROM __f"
 
 
-def frozen_sql(
-    cfg: ViewConfig,
-    comparison: Comparison,
-    sides: pipeline.RowSides,
-    bucket: str,
-) -> tuple[str, str]:
-    """The bucket's unmatched rows with every column a proof or item reads.
+def bucket_rows_sql(comparison: Comparison, bucket: str, source: str) -> str:
+    """The bucket's saved rows with every column a proof or item reads.
 
-    Returns:
-        The reconcile's CTEs, and the SELECT over them that returns
-        `unmatched_sql`'s columns but `item_key`, plus `__d_<column>` per
-        group-by column (the dashboard's cell, which a `dims_differ` group
-        names). Frozen once per session (`Warehouse.freeze`), it serves every
-        proof of the comparison and bucket with the items it holds.
+    `source` holds `compare.reconcile_script`'s saved rows. Returns
+    `unmatched_sql`'s columns but `item_key`, plus `__d_<column>` per group-by
+    column (the dashboard's cell, which a `dims_differ` group names) and each
+    cut's flag (`__cut<j>`). The grain and the cut flags are read on the side
+    holding the row: the dashboard's for a `dashboard_only` row, else Cube's (a
+    value-differing row is on both sides; Cube types its grain).
     """
     if comparison.rows is None:
         raise pipeline.Refusal(f"comparison {comparison.id!r} has no rows to prove")
-    # A value-differing row is on both sides; its grain is read as Cube types it.
+    if bucket not in compare.UNMATCHED:
+        raise pipeline.Refusal(f"{bucket!r} is no bucket a run saves")
     side = "d" if bucket == "dashboard_only" else "c"
     held = {"cube_only": "cube", "dashboard_only": "dashboard"}.get(bucket, "both")
-    grain = comparison.rows.grain
-    extra = [
-        f"{side}.{p.cube if side == 'c' else p.dashboard} AS __g{i}"
-        for i, p in enumerate(grain)
-    ]
     dims = pipeline.group_dims(comparison)
-    # A `dims_differ` group also names the dashboard's cell, as `d:<column>`.
-    extra += [f"CAST(d.{p.dashboard} AS STRING) AS __d_{p.cube}" for p in dims]
-    # Whether the row is in each cut, read on the side holding it, so the
-    # proof can count a cause's students per cell and cut.
     flags = pipeline.cut_flags(comparison) or []
-    extra += [
-        f"COALESCE({pair[0] if side == 'c' else pair[1]}, FALSE) AS __cut{j}"
-        for j, (_, *pair) in enumerate(flags)
-    ]
-    ctes, _ = compare._joined(
-        pipeline.wrap_cube(
-            sides.cube_rows_sql,
-            cfg.view,
-            sides.columns,
-            pipeline._date_cubes(cfg),
-            None,
-        ),
-        sides.dashboard.sql,
-        comparison.rows,
-        dims,
-        pipeline._filter_flags(comparison),
-        keys=True,
-        extra=extra,
-    )
-    keys = ", ".join(f"__k{i}" for i in range(len(grain)))
     columns = [
-        f"FARM_FINGERPRINT(TO_JSON_STRING(STRUCT({keys}, __rn))) AS __row",
+        "__row",
         f"'{held}' AS side",
         *(p.cube for p in dims),
         *(f"__d_{p.cube}" for p in dims),
-        *(f"__g{i} AS {p.cube}" for i, p in enumerate(grain)),
+        *(f"__g{side}{i} AS {p.cube}" for i, p in enumerate(comparison.rows.grain)),
         "__rn",
-        *(f"__cut{j}" for j in range(len(flags))),
+        *(f"__{side}k{j} AS __cut{j}" for j in range(len(flags))),
     ]
-    # trunk-ignore(bandit/B608): identifiers are validated in config.py; values are bound literals
-    select = f"SELECT {', '.join(columns)}\nFROM joined WHERE bucket = '{bucket}'"
-    return ctes, select
+    # trunk-ignore(bandit/B608): identifiers are validated in config.py; the bucket is checked above
+    return f"SELECT {', '.join(columns)}\nFROM {source}\nWHERE bucket = '{bucket}'"
 
 
 def _joined_column(dim: str) -> str:
@@ -770,13 +732,12 @@ def _joined_column(dim: str) -> str:
 class StudentCount:
     """What `proof_query` needs to count a cause's students per cell and cut.
 
-    `source` holds `frozen_sql`'s rows (the session's table, or `__f`);
-    `student` is the first grain column; `dims` the cell's columns;
-    `moved` adds each `dims_differ` row to the dashboard's cell too; `cuts`
-    is how many `__cut<j>` flags the rows carry.
+    The rows are `unmatched_sql`'s `__f` (`bucket_rows_sql`); `student` is the
+    first grain column; `dims` the cell's columns; `moved` adds each
+    `dims_differ` row to the dashboard's cell too; `cuts` is how many
+    `__cut<j>` flags the rows carry.
     """
 
-    source: str
     student: str
     dims: tuple[str, ...]
     moved: bool
@@ -837,7 +798,7 @@ def _with_students(
         return (
             # trunk-ignore(bandit/B608): identifiers are validated in config.py; cause literals are quoted by pipeline._lit
             f"SELECT per.cause, {cols + ', ' if cols else ''}f.{s.student} AS __st"
-            f"{flags} FROM __per AS per JOIN {s.source} AS f ON f.__row = per.__row "
+            f"{flags} FROM __per AS per JOIN __f AS f ON f.__row = per.__row "
             f"WHERE per.cause IN ({allowed}) AND per.__times = 1"
         )
 
@@ -1037,7 +998,58 @@ def bigquery_said(exc: GoogleAPIError) -> str:
     return f"{_failure(exc)}: {masked}"
 
 
-def run_proof(
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def require_saved(
+    wh: Warehouse, cfg: ViewConfig, run: RunResult, comparison: Comparison
+) -> str:
+    """The comparison's saved rows for this run, as SQL names the table.
+
+    The table must exist and carry the labels this run and its SQL give it
+    (`saved.labels`): a table of another run, or of SQL that changed since, is
+    never read.
+
+    Raises:
+        pipeline.Refusal: The table is gone, or its labels differ; the message
+            says what to run, by whether the run's moment is still within time
+            travel.
+    """
+    table = saved.table_id(cfg.view, run.moment, comparison.id)
+    want = saved.labels(
+        cfg.view,
+        run.moment,
+        comparison.id,
+        pipeline.checkpoint_fingerprint(
+            comparison, run.fingerprints.get(comparison.id, {})
+        ),
+    )
+    have = wh.saved_labels(table)
+    if have is None:
+        why = (
+            f"comparison {comparison.id!r}: no saved rows for the run of "
+            f"{utc_literal(run.moment.end)}; they expired or were never saved."
+        )
+    elif differ := sorted(k for k in want if have.get(k) != want[k]):
+        why = (
+            f"comparison {comparison.id!r}: the saved rows are labelled for another "
+            f"run or SQL ({', '.join(differ)})."
+        )
+    else:
+        return saved.table_sql(table)
+    try:
+        pick_moment([run.moment], _utcnow(), None)
+        step = (
+            f"Run `run --moment '{run.moment.end.isoformat()}' --restart` to save "
+            "them again"
+        )
+    except MomentError:
+        step = "Start a new `run`: this moment is past BigQuery's 7 days of time travel"
+    raise pipeline.Refusal(f"{why} {step}")
+
+
+def proof_sql(
     wh: Warehouse,
     cfg: ViewConfig,
     comparison: Comparison,
@@ -1045,36 +1057,32 @@ def run_proof(
     proof: Proof,
     items: list[tuple[str, Group]],
     build: Build,
+    *,
+    table: str,
     moved: dict[str, bool] | None = None,
-    frozen: dict[tuple[str, str], str] | None = None,
-    students: list[dict] | None = None,
-) -> dict[str, Outcome]:
-    """Check, pin, price and run a proof on the run's rows. Call inside `wh.budget`.
+    students: bool = False,
+) -> tuple[str, set[str]]:
+    """Check and pin a proof, and build its counting query over the saved rows.
 
     The proof's own tables are read as of the build start, as the dashboard
-    side is (`timetravel.as_of`); a table `{unmatched}` reads at the build end
-    (one only the Cube side reads) is read there too, as the trace does,
-    since BigQuery reads a table at 1 moment per query.
+    side is (`timetravel.as_of`); a table only the Cube side reads is read at
+    the build end, as the trace does, since BigQuery reads a table at 1 moment
+    per query. The saved rows are read as they are: they were written after
+    the moment. Runs no priced query.
 
     Args:
+        table: The comparison's saved rows (`require_saved`).
         moved: The tables already checked for a change during the build, and
             whether they changed; shared across the proofs of one triage.
-        frozen: The session's temp table of each comparison bucket's unmatched
-            rows, shared across the proofs of one process (inside
-            `wh.session`). Given, a proof whose query would pass
-            `trace.MAX_QUERY_CHARS` with both sides inline freezes its bucket
-            first and reads the rows there; a shorter one runs inline, which
-            is faster when 1 proof reads the bucket. A bucket already frozen
-            is always read from its table.
-        students: Given, receives the proof's cause-student counts per cell
-            and cut (`cause_students`), for `triage.json`.
+        students: Also count each cause's students per cell and cut.
+
+    Returns:
+        The query and the proof's string literals.
 
     Raises:
-        pipeline.Refusal: The proof fails a check (see `check_sql` and
-            `outcomes`), cannot be read as of the moment, reads a table that
-            changed during the build at the build end, or BigQuery refuses it
-            (its message is kept for the terminal).
-        CostCapError: It would pass the run's or the day's cap.
+        pipeline.Refusal: The proof fails a check (`check_sql`), cannot be read
+            as of the moment, or reads a table that changed during the build at
+            the build end.
     """
     literals = check_sql(proof.body, grain_names(comparison), identifying(comparison))
     at = pipeline._as_of(proof.body, build.start, wh)
@@ -1086,22 +1094,51 @@ def run_proof(
         wh,
         doing=f"read in {proof.path.name}",
     )
-    key = (comparison.id, proof.bucket)
+    ctes, select = unmatched_sql(comparison, proof.bucket, items, table)
+    count = _student_count(comparison, proof.bucket) if students else None
+    return proof_query(ctes, select, body, literals, count), literals
+
+
+def run_proof(
+    wh: Warehouse,
+    cfg: ViewConfig,
+    comparison: Comparison,
+    sides: pipeline.RowSides,
+    proof: Proof,
+    items: list[tuple[str, Group]],
+    build: Build,
+    moved: dict[str, bool] | None = None,
+    students: list[dict] | None = None,
+    *,
+    table: str,
+) -> dict[str, Outcome]:
+    """Check, pin, price and run a proof on the run's saved rows. Call inside
+    `wh.budget`.
+
+    Args:
+        moved: As `proof_sql` takes it.
+        students: Given, receives the proof's cause-student counts per cell
+            and cut (`cause_students`), for `triage.json`.
+        table: The comparison's saved rows (`require_saved`).
+
+    Raises:
+        pipeline.Refusal: As `proof_sql`, a failed outcome check (`outcomes`),
+            or BigQuery refuses it (its message is kept for the terminal).
+        CostCapError: It would pass the run's or the day's cap.
+    """
+    sql, literals = proof_sql(
+        wh,
+        cfg,
+        comparison,
+        sides,
+        proof,
+        items,
+        build,
+        table=table,
+        moved=moved,
+        students=students is not None,
+    )
     try:
-        table = (frozen or {}).get(key)
-        count = _student_count(comparison, proof.bucket, students)
-        ctes, select = unmatched_sql(cfg, comparison, sides, proof.bucket, items, table)
-        sql = proof_query(ctes, select, body, literals, count(table))
-        if frozen is not None and table is None and len(sql) > trace.MAX_QUERY_CHARS:
-            print(
-                f"Proof {proof.path.name}: {len(sql):,} characters with both sides "
-                "inline; freezing its rows first."
-            )
-            frozen[key] = _freeze(wh, cfg, comparison, sides, proof.bucket)
-            ctes, select = unmatched_sql(
-                cfg, comparison, sides, proof.bucket, items, frozen[key]
-            )
-            sql = proof_query(ctes, select, body, literals, count(frozen[key]))
         usd = wh.estimate(sql)
         wh.refuse_past_caps(usd)
         print(f"Proof {proof.path.name}: ${usd:.2f} (dry run).")
@@ -1116,48 +1153,18 @@ def run_proof(
     return found
 
 
-def _student_count(comparison: Comparison, bucket: str, wanted):
-    """For `run_proof`: the `StudentCount` for rows read from a table (None
-    for the reconcile's own `__f`), or None per table when not `wanted` or
-    the comparison's cuts cannot be told apart (`pipeline.cut_flags`)."""
+def _student_count(comparison: Comparison, bucket: str) -> StudentCount | None:
+    """The `StudentCount` for a proof's rows, or None when the comparison's
+    cuts cannot be told apart (`pipeline.cut_flags`)."""
     flags = pipeline.cut_flags(comparison)
-    if wanted is None or not flags or comparison.rows is None:
-        return lambda table: None
-    return lambda table: StudentCount(
-        source=table or "__f",
+    if not flags or comparison.rows is None:
+        return None
+    return StudentCount(
         student=comparison.rows.grain[0].cube,
         dims=tuple(p.cube for p in pipeline.group_dims(comparison)),
         moved=bucket == "dims_differ",
         cuts=len(flags),
     )
-
-
-def _freeze(
-    wh: Warehouse,
-    cfg: ViewConfig,
-    comparison: Comparison,
-    sides: pipeline.RowSides,
-    bucket: str,
-) -> str:
-    """Price and freeze a comparison bucket's unmatched rows; return the table.
-
-    The rows never leave BigQuery: the session's temp table holds them.
-    """
-    ctes, select = frozen_sql(cfg, comparison, sides, bucket)
-    sql = f"{ctes}\n{select}"
-    usd = wh.estimate(sql)
-    wh.refuse_past_caps(usd)
-    start = time.monotonic()
-    table = wh.freeze(sql, timeout_s=TIMEOUT_S)
-    took = time.monotonic() - start
-    print(
-        f"Froze {comparison.id} {bucket} unmatched rows: ${usd:.2f} (dry run), "
-        f"{took:.0f} s."
-    )
-    return table
-
-
-# --- re-sorting triage items -------------------------------------------------------
 
 
 def _proof_lines(proof: Proof, outcome: Outcome, posted: bool) -> list[str]:
@@ -1674,20 +1681,17 @@ def run_stored(
     by_id = {c.id: c for c in cfg.comparisons}
     prepared = prepared or trace.Prepared()
     out = []
-    with wh.session():
-        for path in sorted(directory.glob("*__*.sql")) if directory.is_dir() else []:
-            try:
-                proof = read_proof(path)
-            except (OSError, pipeline.Refusal) as exc:
-                print(f"Proof {path.name} skipped: {exc}")
-                continue
-            if (own := by_id.get(proof.comparison)) is None:
-                continue
-            for comparison in [own, *_shared(cfg, directory, proof, own)]:
-                if ran := _run_one(cfg, run, comparison, proof, wh, cube, prepared):
-                    out.append(ran)
-        # The session's temp tables end with it.
-        prepared.frozen.clear()
+    for path in sorted(directory.glob("*__*.sql")) if directory.is_dir() else []:
+        try:
+            proof = read_proof(path)
+        except (OSError, pipeline.Refusal) as exc:
+            print(f"Proof {path.name} skipped: {exc}")
+            continue
+        if (own := by_id.get(proof.comparison)) is None:
+            continue
+        for comparison in [own, *_shared(cfg, directory, proof, own)]:
+            if ran := _run_one(cfg, run, comparison, proof, wh, cube, prepared):
+                out.append(ran)
     return out
 
 
@@ -1724,7 +1728,12 @@ def check_proofs(
             sides = pipeline.current_row_sides(
                 cfg, comparison, cube=cube, schools=schools
             )
-            ctes, select = unmatched_sql(cfg, comparison, sides, proof.bucket, [], None)
+            ctes, select = unmatched_sql(
+                comparison,
+                proof.bucket,
+                [],
+                f"({pipeline.inline_unmatched(cfg, comparison, sides)})",
+            )
             wh.estimate(proof_query(ctes, select, proof.body, literals))
         except GoogleAPIError as exc:
             out.append(f"{path.name}: BigQuery rejects it ({bigquery_said(exc)})")
@@ -1751,6 +1760,7 @@ def _run_one(
     try:
         if prepared.schools is None:
             prepared.schools = network_schools(wh)
+        table = require_saved(wh, cfg, run, comparison)
         ran.found = run_proof(
             wh,
             cfg,
@@ -1760,8 +1770,8 @@ def _run_one(
             bucket_items,
             run.moment,
             prepared.moved,
-            prepared.frozen,
             ran.students,
+            table=table,
         )
     except (
         pipeline.Refusal,
@@ -1977,27 +1987,25 @@ def run_confirm(
             print(f"Reproduce {b}: dry run OK, ${usd:.2f} on today's tables.")
         prepared = trace.Prepared(schools=network_schools(wh))
         students: list[dict] = []
-        with wh.session():
-            found = run_proof(
-                wh,
-                cfg,
-                target,
-                prepared.row_sides(cfg, target, run, wh, cube),
-                proof,
-                bucket_items,
-                run.moment,
-                prepared.moved,
-                prepared.frozen,
-                students,
-            )
-            # The comparisons holding the same rows: the proof classifies
-            # theirs too, unless one has its own. A refusal there keeps this
-            # proof.
-            shared = [
-                r
-                for c in _shared(cfg, stored.parent, proof, target)
-                if (r := _run_one(cfg, run, c, proof, wh, cube, prepared))
-            ]
+        found = run_proof(
+            wh,
+            cfg,
+            target,
+            prepared.row_sides(cfg, target, run, wh, cube),
+            proof,
+            bucket_items,
+            run.moment,
+            prepared.moved,
+            students,
+            table=require_saved(wh, cfg, run, target),
+        )
+        # The comparisons holding the same rows: the proof classifies theirs
+        # too, unless one has its own. A refusal there keeps this proof.
+        shared = [
+            r
+            for c in _shared(cfg, stored.parent, proof, target)
+            if (r := _run_one(cfg, run, c, proof, wh, cube, prepared))
+        ]
 
     stored.parent.mkdir(parents=True, exist_ok=True)
     stored.write_text(proof.text)
