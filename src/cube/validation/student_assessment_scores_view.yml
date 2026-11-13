@@ -2,6 +2,9 @@
 # email: pass --email or set CUBE_VALIDATION_EMAIL; never write it here.
 view: student_assessment_scores_view
 fact: kipptaf_marts.fct_assessment_scores_enrollment_scoped
+# The per-subject members (state test proficiency, DIBELS composite, Low 25)
+# read this fact through the student_subjects_annual role cubes.
+also_facts: [kipptaf_marts.fct_student_subjects_annual]
 time_dimension: assessment_date
 tasks:
   cube_fix: https://github.com/TEAMSchools/teamster/issues/5668
