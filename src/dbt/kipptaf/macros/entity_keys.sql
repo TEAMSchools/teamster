@@ -161,38 +161,6 @@
     {{ return(_entity_key([region, module_type, subject_area, grade_min], nullable)) }}
 {% endmacro %}
 
-{#- The internal-assessment branch of fct_assessment_scores_enrollment_scoped's
-    assessment_score_key; the state and vendor branches hash other columns.
-    Takes response_rollup's raw columns and derives the 2 computed inputs
-    here, so every caller hashes them the same way. -#}
-{% macro internal_assessment_score_key(
-    student_number,
-    source,
-    assessment_id,
-    assessment_ids,
-    response_type,
-    response_type_id,
-    response_type_code,
-    nullable=false
-) %}
-    {{
-        return(
-            _entity_key(
-                [
-                    student_number,
-                    source,
-                    assessment_id,
-                    "to_json_string(" ~ assessment_ids ~ ")",
-                    "coalesce(" ~ response_type ~ ", 'not_taken')",
-                    response_type_id,
-                    response_type_code,
-                ],
-                nullable,
-            )
-        )
-    }}
-{% endmacro %}
-
 {% macro term_key(
     term_type,
     term_code,
