@@ -593,6 +593,15 @@ select
         ar.region = 'Miami', ar.is_504, coalesce(njr.pid_504_tf, njs.is_504, false)
     ) as is_504,
 
+    if(
+        current_date('{{ var("local_timezone") }}')
+        between tut.enter_date and tut.exit_date,
+        true,
+        false
+    ) as is_tutoring,
+
+    if(sip.students_student_number is not null, true, false) as is_sipps,
+
     coalesce(adb.kipp_hs_class, ar.cohort) as ktc_cohort,
 
     sl.google_email as student_email_google,
@@ -774,3 +783,19 @@ left join {{ ref("stg_kippadb__user") }} as adbu on adb.owner_id = adbu.id
 left join
     {{ ref("stg_illuminate__public__students") }} as ill
     on ar.student_number = ill.local_student_id
+left join
+    {{ ref("int_powerschool__spenrollments") }} as tut
+    on ar.studentid = tut.studentid
+    and ar.academic_year = tut.academic_year
+    and ar._dbt_source_project = tut._dbt_source_project
+    and tut.specprog_name = 'Tutoring'
+    and tut.rn_student_program_year_desc = 1
+left join
+    {{ ref("base_powerschool__course_enrollments") }} as sip
+    on ar.student_number = sip.students_student_number
+    and ar.academic_year = sip.cc_academic_year
+    and ar._dbt_source_project = sip._dbt_source_project
+    -- the SIPPS foundational reading intervention course
+    and sip.courses_course_number = 'SEM01099G1'
+    and sip.rn_course_number_year = 1
+    and not sip.is_dropped_section

@@ -794,3 +794,41 @@ def test_snapshot_folder_follows_the_model_it_snapshots() -> None:
         "int_seat_tracker__snapshot", "models/google/appsheet/b.sql", [uid(snap)]
     )
     assert violations(stg, snap, child) == []
+
+
+EXT = model(
+    "int_extracts__student_enrollments",
+    "models/extracts/intermediate/a.sql",
+    [uid(INT_STU)],
+)
+EXT_KEY = "kipptaf.int_extracts__student_enrollments"
+
+
+def test_mart_reading_an_extract_directly_is_a12() -> None:
+    fct = model("fct_y", "models/marts/facts/b.sql", [uid(EXT)])
+    assert violations(EXT, fct) == [("kipptaf.fct_y", "A12", EXT_KEY)]
+
+
+def test_mart_reaching_an_extract_through_an_intermediate_is_a12() -> None:
+    mid = model("int_students__y", "models/students/b.sql", [uid(EXT)])
+    fct = model("fct_y", "models/marts/facts/b.sql", [uid(mid)])
+    assert violations(EXT, mid, fct) == [("kipptaf.fct_y", "A12", EXT_KEY)]
+
+
+def test_a12_stops_at_another_mart() -> None:
+    dim = model("dim_y", "models/marts/dimensions/b.sql", [uid(EXT)])
+    fct = model("fct_y", "models/marts/facts/b.sql", [uid(dim)])
+    assert violations(EXT, dim, fct) == [("kipptaf.dim_y", "A12", EXT_KEY)]
+
+
+def test_mart_reaching_an_extract_through_a_snapshot_is_a12() -> None:
+    snap = snapshot("snapshot_extracts__y", "extracts")
+    snap["depends_on"]["nodes"] = [uid(EXT)]
+    fct = model("fct_y", "models/marts/facts/b.sql", [uid(snap)])
+    assert ("kipptaf.fct_y", "A12", EXT_KEY) in violations(EXT, snap, fct)
+
+
+def test_rpt_and_intermediates_may_read_extracts() -> None:
+    mid = model("int_students__y", "models/students/b.sql", [uid(EXT)])
+    rpt = model("rpt_tableau__y", "models/extracts/tableau/b.sql", [uid(EXT)])
+    assert violations(EXT, mid, rpt) == []

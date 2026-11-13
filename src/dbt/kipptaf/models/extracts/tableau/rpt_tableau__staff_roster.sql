@@ -52,7 +52,8 @@ select
     b.memberships,
     b.is_leader_development_program,
     b.is_teacher_development_program,
-    b.primary_grade_level_taught,
+
+    tgl.grade_level as primary_grade_level_taught,
 
     ye.years_at_kipp_total,
     ye.years_teaching_total,
@@ -76,6 +77,12 @@ select
     null as gender,
     null as grades_taught_custom,
 from {{ ref("int_people__staff_roster") }} as b
+left join
+    {{ ref("int_students__teacher_grade_levels") }} as tgl
+    on b.powerschool_teacher_number = tgl.teachernumber
+    and b.home_work_location_dagster_code_location = tgl._dbt_source_project
+    and tgl.academic_year = {{ var("current_academic_year") }}
+    and tgl.grade_level_rank = 1
 left join
     {{ ref("int_people__years_experience") }} as ye
     on b.employee_number = ye.employee_number

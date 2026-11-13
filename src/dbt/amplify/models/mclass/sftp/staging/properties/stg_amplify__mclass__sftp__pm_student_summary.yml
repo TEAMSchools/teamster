@@ -2,14 +2,21 @@ models:
   - name: stg_amplify__mclass__sftp__pm_student_summary
     description: >-
       Amplify mCLASS DIBELS progress monitoring scores from the PM SFTP file.
-      One row per student, school year, PM period, measure, probe, device date
-      and assessment grade. The file is a network-wide export of the Amplify
+      Meant to hold one row per student, school year, PM period, measure, probe,
+      device date and assessment grade; Amplify filing errors can break that,
+      and the test below warns. The file is a network-wide export of the Amplify
       account, so a district's copy can carry other regions' schools.
     config:
       meta:
         contains_pii: true
     data_tests:
       - dbt_utils.unique_combination_of_columns:
+          description: >-
+            Amplify mCLASS filed more than one progress monitoring result under
+            one student ID for the same probe, day and grade, usually 2 children
+            sharing an account. The kipptaf mCLASS PM intermediates drop every
+            colliding row, so the probe shows as not taken. Fix it in mCLASS by
+            moving the result to the right student.
           arguments:
             combination_of_columns:
               - student_primary_id_studentnumber
@@ -20,8 +27,20 @@ models:
               - device_date
               - assessment_grade
           config:
-            severity: error
+            severity: warn
     columns:
+      - name: student_primary_id_studentnumber
+        data_type: int64
+        description: >-
+          Student number, the student's primary id in Amplify. Coalesced from
+          the suffixed column and the unsuffixed student_primary_id, because
+          Amplify dropped the suffix from this header in later files.
+        data_tests:
+          # gate: the kipptaf intermediates drop colliding rows, which would
+          # hide a whole file of null ids
+          - not_null:
+              config:
+                severity: error
       - name: measure
         data_type: string
         description:
@@ -178,12 +197,6 @@ models:
           Student state id. Coalesced from the suffixed column and the
           unsuffixed secondary_student_id, because Amplify dropped the suffix
           from this header in later files.
-      - name: student_primary_id_studentnumber
-        data_type: int64
-        description: >-
-          Student number, the student's primary id in Amplify. Coalesced from
-          the suffixed column and the unsuffixed student_primary_id, because
-          Amplify dropped the suffix from this header in later files.
       - name: measure_name
         data_type: string
       - name: academic_year

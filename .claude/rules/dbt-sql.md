@@ -348,6 +348,14 @@ validation/profiling goes through BigQuery MCP, not `dbt show`.
   select only key columns. Once a non-key column is added, a `distinct` returns
   one row per stint again, and a later dedup on the old key then picks among
   them unpredictably.
+- S12: the annotation is a claim to verify before you write it, not a label.
+  Query the CTE's input and show that rows repeat on the named key and that
+  every projected column is constant within it. Nothing repeats: the `distinct`
+  is dead code; delete it and let the grain uniqueness test guard the key.
+  Repeats come from a join or `unnest` in this model: that is masking; carry the
+  fanned-out column (region, section) into the grain and key the downstream
+  joins on it. Repeats come from a source defect: dedup in `stg_` (A5) with its
+  warn test. Never justify a `distinct` with a case not seen in the data.
 - S10: expressions that inherently combine columns from both join sides
   (`st_distance(a.geo, b.geo)`, `st_dwithin(...)`) cannot be hoisted and are
   allowed. Column-to-column inequality comparisons (half-open date-range joins)

@@ -59,14 +59,12 @@ models:
               to_columns: [assessment_administration_key]
 
 unit_tests:
-  - name: test_bridge_assessment_expectations_student_scoped_drops_untagged_replacement
+  - name: test_bridge_assessment_expectations_student_scoped_scope
     description:
-      A replacement row whose region is not tagged on the assessment has no
-      administration in dim_assessment_administrations, so the bridge leaves it
-      out. Feeds a tagged replacement row, an untagged replacement row, and a
-      non-replacement row, whose is_region_tagged is null; asserts the untagged
-      replacement row is dropped and the other two are kept. The scaffold's own
-      unit test covers how is_region_tagged is computed.
+      The bridge keeps replacement rows and rows with no section, and leaves out
+      rows that have a section, which the enrollment-scoped bridge holds. Feeds
+      a replacement row, a non-replacement row with no section, and a
+      non-replacement row with a section; asserts the first 2 are kept.
     model: bridge_assessment_expectations_student_scoped
     given:
       - input: ref('int_assessments__scaffold')
@@ -74,32 +72,32 @@ unit_tests:
           - student_number: 1001
             source: illuminate
             assessment_id: 1
+            canonical_assessment_id: 1
             administered_at: 2025-10-08
             region: Newark
             _dbt_source_project: kippnewark
             is_internal_assessment: true
             is_replacement: true
-            is_region_tagged: true
             cc_dcid: null
           - student_number: 1002
             source: illuminate
             assessment_id: 1
-            administered_at: 2025-10-08
-            region: Paterson
-            _dbt_source_project: kipppaterson
-            is_internal_assessment: true
-            is_replacement: true
-            is_region_tagged: false
-            cc_dcid: null
-          - student_number: 1003
-            source: illuminate
-            assessment_id: 1
+            canonical_assessment_id: 1
             administered_at: 2025-10-08
             region: Paterson
             _dbt_source_project: kipppaterson
             is_internal_assessment: true
             is_replacement: false
-            is_region_tagged: null
+            cc_dcid: 5001
+          - student_number: 1003
+            source: illuminate
+            assessment_id: 1
+            canonical_assessment_id: 1
+            administered_at: 2025-10-08
+            region: Paterson
+            _dbt_source_project: kipppaterson
+            is_internal_assessment: true
+            is_replacement: false
             cc_dcid: null
       - input: ref('int_assessments__assessments_members')
         rows:
@@ -107,7 +105,6 @@ unit_tests:
             assessment_id: 1
             module_code: QA1
             academic_year: 2026
-            canonical_assessment_id: 1
       - input: ref('int_assessments__assessments_canonical')
         format: sql
         rows: |

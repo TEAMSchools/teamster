@@ -28,6 +28,7 @@ with
             rn_subj_day,
             rn_subj_round,
 
+            cast(null as bool) as is_latest_in_year,
             cast(null as string) as assessment_id,
 
             'iready' as score_source,
@@ -63,6 +64,7 @@ with
             cast(null as string) as response_type_description,
             cast(null as int64) as rn_subj_day,
             cast(null as int64) as rn_subj_round,
+            cast(null as bool) as is_latest_in_year,
 
             assessment_id,
 
@@ -105,6 +107,9 @@ with
 
             cast(null as int64) as rn_subj_day,
             cast(null as int64) as rn_subj_round,
+
+            is_latest_in_year,
+
             cast(null as string) as assessment_id,
 
             'dibels' as score_source,
@@ -135,6 +140,7 @@ select
     u.response_type_description,
     u.rn_subj_day,
     u.rn_subj_round,
+    u.is_latest_in_year,
     u.assessment_id,
 
     coalesce(x.illuminate_subject_area, u.raw_subject) as illuminate_subject_area,

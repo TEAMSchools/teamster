@@ -174,7 +174,9 @@ with
             and not co.is_out_of_district
             and co.academic_year >= {{ var("current_academic_year") - 1 }}
             {# TODO: Remove SY26 #}
-            /* Manual filter to avoid dashboard roll-up */
+            /* Manual filter to avoid dashboard roll-up. It also drops unmatched
+               weeks, which keeps week_start_monday non-null; removing it needs
+               the week_start_monday not_null test back. */
             and r.module_type != 'WPP'
     ),
 

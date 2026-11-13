@@ -63,6 +63,9 @@ views:
           - response_type_root_description
           - is_replacement
           - bucket
+          - is_low_25
+          - state_test_proficiency
+          - dibels_most_recent_composite
 
       - join_path: student_assessment_scores.student_assessment_administrations.student_assessments
         includes:
@@ -92,6 +95,7 @@ views:
           - month_number
           - month_name
           - school_week_start_date
+          - school_week_end_date
 
       - join_path: student_assessment_scores.student_assessment_goals
         includes:
@@ -162,6 +166,11 @@ views:
           - special_education_placement
           - is_meal_eligible
           - meal_eligibility
+          - is_sipps
+          - is_tutoring
+          - is_self_contained
+          - homeroom_name
+          - homeroom_section_number
 
       - join_path: >-
           student_assessment_scores.student_section_enrollments.student_school_enrollments.students
@@ -296,6 +305,7 @@ views:
             - month_number
             - month_name
             - school_week_start_date
+            - school_week_end_date
         - name: Course
           members:
             - discipline
@@ -352,6 +362,14 @@ views:
             - is_meal_eligible
             - meal_eligibility
             - bucket
+            - is_sipps
+            - is_tutoring
+            - is_self_contained
+            - homeroom_name
+            - homeroom_section_number
+            - is_low_25
+            - state_test_proficiency
+            - dibels_most_recent_composite
         - name: Enrollment
           members:
             - student_section_enrollment_key

@@ -9,7 +9,6 @@ from dagster import (
     SensorEvaluationContext,
     SensorResult,
     SkipReason,
-    define_asset_job,
     sensor,
 )
 from dagster_shared import check
@@ -18,18 +17,16 @@ from teamster.libraries.ssh.resources import SSHResource
 
 
 def build_edplan_sftp_sensor(
-    asset: AssetsDefinition,
+    assets: list[AssetsDefinition],
     code_location: str,
     execution_timezone: ZoneInfo,
     minimum_interval_seconds=None,
 ):
-    job = define_asset_job(
-        name=f"{code_location}_edplan_sftp_asset_job", selection=[asset]
-    )
-
+    # asset_selection runs on the implicit asset job, which accepts assets with
+    # different partitions definitions; the name keeps the existing cursor.
     @sensor(
-        name=f"{job.name}_sensor",
-        job=job,
+        name=f"{code_location}_edplan_sftp_asset_job_sensor",
+        asset_selection=assets,
         minimum_interval_seconds=minimum_interval_seconds,
     )
     def _sensor(context: SensorEvaluationContext, ssh_edplan: SSHResource):
@@ -43,40 +40,47 @@ def build_edplan_sftp_sensor(
         if isinstance(files, SkipReason):
             return files
 
-        asset_identifier = asset.key.to_python_identifier()
-        context.log.info(asset_identifier)
+        for asset in assets:
+            asset_identifier = asset.key.to_python_identifier()
+            context.log.info(asset_identifier)
 
-        last_run = cursor.get(asset_identifier, 0)
+            last_run = cursor.get(asset_identifier, 0)
 
-        for f, _ in files:
-            match = re.match(
-                pattern=asset.metadata_by_key[asset.key]["remote_file_regex"],
-                string=f.filename,
-            )
-
-            if (
-                match is not None
-                and f.st_mtime > last_run
-                and check.not_none(value=f.st_size) > 0
-            ):
-                context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
-                # Daily partitions are in execution_timezone; a UTC date runs a
-                # day ahead in the evening and names a partition not yet created.
-                partition_key = (
-                    datetime.fromtimestamp(
-                        timestamp=check.not_none(value=f.st_mtime),
-                        tz=execution_timezone,
-                    )
-                    .date()
-                    .isoformat()
+            for f, _ in files:
+                match = re.match(
+                    pattern=asset.metadata_by_key[asset.key]["remote_file_regex"],
+                    string=f.filename,
                 )
 
-                run_requests.append(
-                    RunRequest(
-                        run_key=f"{asset_identifier}_{partition_key}_{now_timestamp}",
-                        partition_key=partition_key,
+                if (
+                    match is not None
+                    and f.st_mtime > last_run
+                    and check.not_none(value=f.st_size) > 0
+                ):
+                    context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
+                    # Daily partitions are in execution_timezone; a UTC date runs a
+                    # day ahead in the evening and names a partition not yet
+                    # created.
+                    partition_key = (
+                        datetime.fromtimestamp(
+                            timestamp=check.not_none(value=f.st_mtime),
+                            tz=execution_timezone,
+                        )
+                        .date()
+                        .isoformat()
                     )
-                )
+
+                    run_requests.append(
+                        RunRequest(
+                            run_key=(
+                                f"{asset_identifier}_{partition_key}_{now_timestamp}"
+                            ),
+                            partition_key=(
+                                partition_key if asset.partitions_def else None
+                            ),
+                            asset_selection=[asset.key],
+                        )
+                    )
 
             cursor[asset_identifier] = now_timestamp
 

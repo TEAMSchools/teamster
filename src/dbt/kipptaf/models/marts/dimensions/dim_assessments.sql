@@ -15,8 +15,6 @@ with
             m.bucket_subject,
             m.source as assessment_type,
 
-            c.grade_level,
-
             'enrollment' as assessment_scope,
             'internal' as assessment_family,
 
@@ -24,11 +22,9 @@ with
             cast(null as string) as aligned_academic_subject,
             cast(null as string) as credit_category,
             cast(null as string) as test_type,
+
+            m.grade_level_id - 1 as grade_level,
         from {{ ref("int_assessments__assessments_members") }} as m
-        inner join
-            {{ ref("int_assessments__assessments_canonical") }} as c
-            on m.source = c.source
-            and m.canonical_assessment_id = c.canonical_assessment_id
         where m.is_internal_assessment
     ),
 

@@ -123,6 +123,18 @@ select
     srh.job_title as observer_job_title,
     srh.home_work_location_name as observer_location,
     srh.reports_to_formatted_name as observer_manager,
+    srh.home_business_unit_name,
+    srh.home_department_name,
+    srh.job_function,
+    srh.job_title,
+    srh.mail,
+    srh.user_principal_name,
+    srh.sam_account_name,
+    srh.reports_to_mail,
+    srh.reports_to_sam_account_name,
+
+    lc.location_clean_name,
+    lc.campus_name,
 
     sa.employee_number as teacher_employee_number,
     sa.overall_score as teacher_overall_score,
@@ -178,6 +190,9 @@ inner join
     and sd.end_date_timestamp
     between srh.effective_date_start_timestamp and srh.effective_date_end_timestamp
     and srh.primary_indicator
+left join
+    {{ ref("int_people__location_crosswalk") }} as lc
+    on srh.home_work_location_name = lc.location_name
 inner join
     score_aggs as sa
     on sd.observer_employee_number = sa.observer_employee_number
