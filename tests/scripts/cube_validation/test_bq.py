@@ -1,10 +1,11 @@
 from datetime import datetime, timedelta, timezone
+from types import SimpleNamespace
 
 import pytest
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.bq import JOB_ID, CostCapError, ViewHistoryError, Warehouse
-from google.api_core.exceptions import BadRequest
+from google.api_core.exceptions import BadRequest, NotFound
 
 TS = datetime(2026, 10, 22, 19, 0, 0, tzinfo=timezone.utc)
 TIB = 2**40
@@ -538,3 +539,27 @@ def test_a_session_that_froze_nothing_ends_without_a_query():
     with Warehouse(client=client).session():
         pass
     assert client.queries == []
+
+
+def test_a_script_runs_as_one_job_and_returns_its_last_rows():
+    client = FakeClient(rows=[{"n": 2}])
+
+    got = Warehouse(client=client).script(
+        ["CREATE TEMP TABLE a AS SELECT 1", "SELECT 2 AS n"]
+    )
+
+    assert got == [{"n": 2}]
+    assert client.queries == [
+        ("CREATE TEMP TABLE a AS SELECT 1;\nSELECT 2 AS n", False)
+    ]
+
+
+def test_saved_labels_read_a_table_and_none_for_a_missing_one():
+    table = SimpleNamespace(labels={"view": "v"})
+    assert Warehouse(client=FakeClient(table)).saved_labels("p.d.t") == {"view": "v"}
+
+    class Gone(FakeClient):
+        def get_table(self, ref):
+            raise NotFound(ref)
+
+    assert Warehouse(client=Gone()).saved_labels("p.d.t") is None

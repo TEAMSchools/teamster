@@ -1,6 +1,7 @@
 """Read-only BigQuery access: table kinds, view history, dry-run pricing.
 
-Only SELECTs, dry runs and session temp tables (`Warehouse.freeze`) are
+Only SELECTs, dry runs, session temp tables (`Warehouse.freeze`) and the
+validator's saved tables in `saved.SCRATCH_DATASET` (`Warehouse.script`) are
 issued. `Warehouse` is the catalog `as_of` needs.
 """
 
@@ -15,7 +16,7 @@ from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from google.api_core.exceptions import GoogleAPIError
+from google.api_core.exceptions import GoogleAPIError, NotFound
 from google.cloud import bigquery
 
 from .timetravel import PROJECT, TableInfo, closing_paren, utc_literal
@@ -337,6 +338,27 @@ class Warehouse:
     def spent(self) -> float:
         """USD priced or billed since the latest `budget` opened."""
         return self._spent
+
+    def script(
+        self, statements: list[str], timeout_s: float | None = None
+    ) -> list[dict]:
+        """Run `statements` as one multi-statement job and return the last one's
+        rows.
+
+        The job is capped and billed as a whole, as `rows` caps and bills one
+        query. Used to save a comparison's unmatched rows and count them in the
+        same job (`compare.reconcile_script`).
+        """
+        return self.rows(";\n".join(statements), timeout_s)
+
+    def saved_labels(self, table_id: str) -> dict[str, str] | None:
+        """A saved table's labels, or None when the table is gone (expired or
+        dropped)."""
+        try:
+            table = self._client.get_table(table_id)
+        except NotFound:
+            return None
+        return dict(table.labels or {})
 
     def rows(self, sql: str, timeout_s: float | None = None) -> list[dict]:
         """Run `sql` and return its rows.
