@@ -101,8 +101,27 @@ def _bool_text(col: str) -> str:
     )
 
 
+# A DATE's text, or a midnight DATETIME's or UTC TIMESTAMP's: the texts BigQuery
+# casts them to. Anything else, a time past midnight included, is not a day.
+_DAY = "^[0-9]{4}-[0-9]{2}-[0-9]{2}([ T]00:00:00([.]0+)?([+]00(:?00)?|Z)?)?$"
+
+
+def _day(col: str) -> str:
+    """The DATE a date or a midnight timestamp names; NULL for anything else."""
+    text = f"CAST({col} AS STRING)"
+    return (
+        f"IF(REGEXP_CONTAINS({text}, '{_DAY}'), "
+        f"SAFE_CAST(SUBSTR({text}, 1, 10) AS DATE), NULL)"
+    )
+
+
 def _pair_matches(d: str, c: str) -> str:
-    """Null-safe, type-tolerant equality of one dashboard/cube value pair."""
+    """Null-safe, type-tolerant equality of one dashboard/cube value pair.
+
+    A date and a midnight timestamp of the same day match: Cube returns a
+    `type: time` member as a TIMESTAMP where the dashboard may hold a DATE, as
+    the cell keys already read them (`pipeline._key`).
+    """
     # Cast through STRING: SAFE_CAST(BOOL AS FLOAT64) fails at compile time.
     # TRUE and FALSE read as 1 and 0 so a BOOL matches a 0/1 column.
     number_d = f"SAFE_CAST({_bool_text(d)} AS FLOAT64)"
@@ -111,7 +130,8 @@ def _pair_matches(d: str, c: str) -> str:
         f"COALESCE(({d} IS NULL AND {c} IS NULL) "
         f"OR {number_d} = {number_c} "
         f"OR (({number_d} IS NULL OR {number_c} IS NULL) "
-        f"AND LOWER(CAST({d} AS STRING)) = LOWER(CAST({c} AS STRING))), FALSE)"
+        f"AND LOWER(CAST({d} AS STRING)) = LOWER(CAST({c} AS STRING))) "
+        f"OR {_day(d)} = {_day(c)}, FALSE)"
     )
 
 
@@ -158,7 +178,8 @@ def reconcile_sql(
     matches a NULL on the other side and nothing else, the empty string
     included.
     Temporal grains are not normalized: callers must emit date grains as DATE
-    on both sides.
+    on both sides. Value and group-by pairs read a date and a midnight
+    timestamp of the same day as equal.
 
     Args:
         cube_rows_sql: SELECT returning the grain, value and group-by columns

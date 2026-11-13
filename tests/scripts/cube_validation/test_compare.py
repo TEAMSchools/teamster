@@ -1,5 +1,6 @@
 import re
 
+import pytest
 from cube_validation.compare import (
     Group,
     cell_verdict,
@@ -569,6 +570,63 @@ def test_the_reconcile_keeps_each_side_s_rows_and_sums_per_cell(duck):
     assert moved["dash_dims"] == [["grade_c", "2"]]
     assert moved["c"] == moved["d"] == {"rows": 1, "n": [1], "sum": [0.0]}
     assert rows[("cube_only", (("grade_c", "2"),))]["d"]["rows"] == 0
+
+
+# --- a Cube time member beside a dashboard date ---------------------------------
+
+WEEK_BY = [ColumnPair("week_d", "week_c")]
+
+
+def _by_week(duck, cube_type, cube_week, dash_type, dash_week):
+    """One row both sides hold with the same value, filed by each side's week."""
+    duck.table(
+        "cube_t",
+        f"lea BIGINT, aid VARCHAR, week_c {cube_type}, ok_c BOOLEAN",
+        [(1, "a", cube_week, True)],
+    )
+    duck.table(
+        "dash_t",
+        f"student BIGINT, item VARCHAR, week_d {dash_type}, ok_d BOOLEAN",
+        [(1, "a", dash_week, True)],
+    )
+    rows = duck.rows(
+        reconcile_sql(
+            "SELECT * FROM `teamster-332318.m.cube_t`",
+            "SELECT * FROM `teamster-332318.d.dash_t`",
+            MOVED_ROWS,
+            WEEK_BY,
+        )
+    )
+    return {r["bucket"] for r in rows}
+
+
+@pytest.mark.parametrize(
+    ("cube_type", "cube_week"),
+    [
+        ("TIMESTAMP", "2026-09-21 00:00:00"),
+        # The text BigQuery casts a UTC TIMESTAMP to.
+        ("VARCHAR", "2026-09-21 00:00:00+00"),
+    ],
+)
+def test_a_cube_time_member_at_midnight_is_the_dashboard_s_date(
+    duck, cube_type, cube_week
+):
+    assert _by_week(duck, cube_type, cube_week, "DATE", "2026-09-21") == {"match"}
+
+
+@pytest.mark.parametrize(
+    "cube_week", ["2026-09-22 00:00:00+00", "2026-09-21 13:00:00+00"]
+)
+def test_a_cube_time_member_on_another_day_or_hour_is_another_cell(duck, cube_week):
+    assert _by_week(duck, "VARCHAR", cube_week, "DATE", "2026-09-21") == {"dims_differ"}
+
+
+@pytest.mark.parametrize(
+    ("cube_week", "dash_week", "bucket"),
+    [("Week A", "week a", "match"), ("Week A", "Week B", "dims_differ")],
+)
+def test_text_that_is_not_a_date_compares_as_before(duck, cube_week, dash_week, bucket):
+    assert _by_week(duck, "VARCHAR", cube_week, "VARCHAR", dash_week) == {bucket}
 
 
 def test_rows_the_dashboard_filters_out_count_on_cube_s_side_only(duck):
