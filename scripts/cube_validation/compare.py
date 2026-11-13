@@ -16,6 +16,8 @@ from typing import Any, Literal
 from .config import ColumnPair, Comparison, RowSpec
 
 BUCKETS = ("match", "value_differs", "dims_differ", "dashboard_only", "cube_only")
+# The buckets of rows the 2 sides do not agree on: what a run saves for proofs.
+UNMATCHED = BUCKETS[1:]
 _RN = "__rn"
 _IN = "__in"
 # A `dims_differ` row's group-by values on the dashboard side, as `d:<column>`
@@ -224,6 +226,18 @@ def reconcile_sql(
         extra=_cut_extras(cuts, filters),
         moved=True,
     )
+    return ctes + "\n" + _outer_sql(rows, group_names, filters, cuts, "joined")
+
+
+def _outer_sql(
+    rows: RowSpec,
+    group_names: list[str],
+    filters: Sequence[tuple[str, str]],
+    cuts: Sequence[tuple[str, str]],
+    source: str,
+) -> str:
+    """The reconcile's counting SELECT over `source` (`joined`'s columns),
+    after its `-- outer` marker."""
     stats = []
     for prefix, flag in [("", None), *((f"k{j}_", j) for j in range(len(cuts)))]:
         for side in ("c", "d"):
@@ -248,12 +262,141 @@ def reconcile_sql(
     )
     group_clause = ", ".join(["bucket", *group_names])
     return (
-        ctes
-        + "\n-- outer\n"
-        # trunk-ignore(bandit/B608): identifiers are validated in config.py; row SQL comes from Cube's compiled query
-        + f"SELECT {outer_select}\nFROM joined\n"
+        "-- outer\n"
+        # trunk-ignore(bandit/B608): identifiers are validated in config.py; the source is joined or the script's temp table
+        + f"SELECT {outer_select}\nFROM {source}\n"
         + f"GROUP BY {group_clause}\nORDER BY {group_clause}"
     )
+
+
+# A label value as BigQuery takes it (`saved.labels` writes them so).
+_LABEL_VALUE = re.compile(r"[a-z0-9_-]{0,63}")
+
+
+def _saved_joined(
+    cube_rows_sql: str,
+    dashboard_rows_sql: str,
+    rows: RowSpec,
+    group_by: list[ColumnPair],
+    filters: Sequence[tuple[str, str]],
+    cuts: Sequence[tuple[str, str]],
+) -> tuple[str, list[str]]:
+    """`joined` as the reconcile builds it, plus what a saved row needs: the
+    grain keys (`__k<i>`, `__rn`) and each side's own grain (`__gc<i>`,
+    `__gd<i>`, typed as that side types it)."""
+    return _joined(
+        cube_rows_sql,
+        dashboard_rows_sql,
+        rows,
+        group_by,
+        filters,
+        keys=True,
+        extra=_cut_extras(cuts, filters)
+        + [f"c.{p.cube} AS __gc{i}" for i, p in enumerate(rows.grain)]
+        + [f"d.{p.dashboard} AS __gd{i}" for i, p in enumerate(rows.grain)],
+        moved=True,
+    )
+
+
+def _saved_select(
+    rows: RowSpec,
+    group_by: list[ColumnPair],
+    cuts: Sequence[tuple[str, str]],
+    source: str,
+) -> str:
+    """The unmatched rows a run saves, over `source` (`joined`'s columns).
+
+    Per row: `bucket`, `__row` (an id from the grain keys and the duplicate
+    number), each group-by column by its `cube` name and `__d_<column>` (the
+    dashboard's cell of a `dims_differ` row), both sides' grain, `__rn`, and
+    each cut's flag on each side (`__ck<j>`, `__dk<j>`).
+    """
+    keys = ", ".join([*(f"__k{i}" for i in range(len(rows.grain))), _RN])
+    columns = [
+        "bucket",
+        f"FARM_FINGERPRINT(TO_JSON_STRING(STRUCT({keys}))) AS __row",
+        *(p.cube for p in group_by),
+        *(f"__d_{p.cube}" for p in group_by),
+        *(f"__gc{i}" for i in range(len(rows.grain))),
+        *(f"__gd{i}" for i in range(len(rows.grain))),
+        _RN,
+        *(f"__{side}k{j}" for j in range(len(cuts)) for side in ("c", "d")),
+    ]
+    buckets = ", ".join(f"'{b}'" for b in UNMATCHED)
+    # trunk-ignore(bandit/B608): identifiers are validated in config.py; buckets are constants
+    return f"SELECT {', '.join(columns)}\nFROM {source}\nWHERE bucket IN ({buckets})"
+
+
+def reconcile_script(
+    cube_rows_sql: str,
+    dashboard_rows_sql: str,
+    rows: RowSpec,
+    group_by: list[ColumnPair],
+    filters: Sequence[tuple[str, str]] = (),
+    cuts: Sequence[tuple[str, str]] = (),
+    *,
+    table: str,
+    labels: dict[str, str] | None = None,
+    expire_days: int | None = None,
+) -> list[str]:
+    """The reconcile as 3 statements of one job: it saves the unmatched rows to
+    `table` and returns `reconcile_sql`'s counts.
+
+    The rows are joined once, into a temp table both later statements read, so
+    saving them costs no second scan of either side.
+
+    Args:
+        table: The saved table, as SQL names it; replaced if it exists.
+        labels: The table's labels; each value must be one BigQuery takes.
+        expire_days: Days until the table expires on its own.
+
+    Returns:
+        The statements: the join into `__joined`, the saved table
+        (`_saved_select`'s rows), and the counts, with `reconcile_sql`'s
+        columns and its `-- outer` marker.
+
+    Raises:
+        ValueError: A label value BigQuery would not take.
+    """
+    ctes, group_names = _saved_joined(
+        cube_rows_sql, dashboard_rows_sql, rows, group_by, filters, cuts
+    )
+    options = []
+    if expire_days is not None:
+        options.append(
+            "expiration_timestamp = TIMESTAMP_ADD(CURRENT_TIMESTAMP(), "
+            f"INTERVAL {int(expire_days)} DAY)"
+        )
+    if labels:
+        for key, value in labels.items():
+            if not (_LABEL_VALUE.fullmatch(key) and _LABEL_VALUE.fullmatch(value)):
+                raise ValueError(f"not a BigQuery label: {key}={value!r}")
+        pairs = ", ".join(f"('{k}', '{v}')" for k, v in sorted(labels.items()))
+        options.append(f"labels = [{pairs}]")
+    head = f"CREATE OR REPLACE TABLE {table}"
+    if options:
+        head += "\nOPTIONS(" + ", ".join(options) + ")"
+    return [
+        f"CREATE TEMP TABLE __joined AS\n{ctes}\nSELECT * FROM joined",
+        f"{head}\nAS {_saved_select(rows, group_by, cuts, '__joined')}",
+        _outer_sql(rows, group_names, filters, cuts, "__joined"),
+    ]
+
+
+def unmatched_rows_sql(
+    cube_rows_sql: str,
+    dashboard_rows_sql: str,
+    rows: RowSpec,
+    group_by: list[ColumnPair],
+    filters: Sequence[tuple[str, str]] = (),
+    cuts: Sequence[tuple[str, str]] = (),
+) -> str:
+    """The rows `reconcile_script` saves, as one query with no table: for a
+    dry run that needs no saved table (`prove --check`)."""
+    ctes, _ = _saved_joined(
+        cube_rows_sql, dashboard_rows_sql, rows, group_by, filters, cuts
+    )
+    return f"{ctes}\n{_saved_select(rows, group_by, cuts, 'joined')}"
 
 
 def _cut_extras(

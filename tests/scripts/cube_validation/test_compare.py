@@ -8,9 +8,11 @@ from cube_validation.compare import (
     cell_verdict,
     clauses_for,
     groups_from,
+    reconcile_script,
     reconcile_sql,
     scope_filters,
     trace_sql,
+    unmatched_rows_sql,
 )
 from cube_validation.config import ColumnPair, Comparison, RowSpec
 
@@ -321,6 +323,93 @@ FILTERED_ROWS = RowSpec(
     grain=[ColumnPair(dashboard="student_number", cube="lea_student_identifier")],
     values=[ColumnPair(dashboard="att_code", cube="attendance_code")],
 )
+
+
+ROWS_V = RowSpec(
+    grain=[ColumnPair("student", "lea"), ColumnPair("item", "aid")],
+    values=[ColumnPair("v", "v")],
+)
+SAVE_ARGS = (
+    "SELECT lea, aid, school, v FROM c_rows",
+    "SELECT student, item, school, v FROM d_rows",
+    ROWS_V,
+    [ColumnPair("school", "school")],
+)
+
+
+def _save_tables(duck):
+    # Synthetic. The 2 sides type the student differently, as BigQuery may:
+    # each side's own grain is kept. Student 1 matches, 2's value differs, 3 is
+    # Cube's alone and 4 the dashboard's.
+    duck.table(
+        "c_rows",
+        "lea BIGINT, aid VARCHAR, school VARCHAR, v DOUBLE",
+        [(1, "a", "X", 1.0), (2, "b", "X", 0.0), (3, "c", "Y", 1.0)],
+    )
+    duck.table(
+        "d_rows",
+        "student VARCHAR, item VARCHAR, school VARCHAR, v DOUBLE",
+        [("1", "a", "X", 1.0), ("2", "b", "X", 1.0), ("4", "d", "Y", 0.0)],
+    )
+
+
+def test_the_save_script_counts_exactly_as_the_reconcile(duck):
+    _save_tables(duck)
+    *setup, counts = reconcile_script(
+        *SAVE_ARGS, table="`teamster-332318`.`cube_validation_scratch`.`saved_t`"
+    )
+    for statement in setup:
+        duck.rows(statement)
+
+    assert "-- outer" in counts
+    assert duck.rows(counts) == duck.rows(reconcile_sql(*SAVE_ARGS))
+
+
+def test_the_save_script_keeps_only_unmatched_rows_with_each_side_s_grain(duck):
+    _save_tables(duck)
+    for statement in reconcile_script(*SAVE_ARGS, table="saved_t")[:2]:
+        duck.rows(statement)
+
+    assert duck.rows(
+        "SELECT bucket, school, __gc0, __gd0 FROM saved_t ORDER BY bucket"
+    ) == [
+        {"bucket": "cube_only", "school": "Y", "__gc0": 3, "__gd0": None},
+        {"bucket": "dashboard_only", "school": "Y", "__gc0": None, "__gd0": "4"},
+        {"bucket": "value_differs", "school": "X", "__gc0": 2, "__gd0": "2"},
+    ]
+
+
+def test_the_saved_table_carries_its_labels_and_expiry():
+    create = reconcile_script(
+        *SAVE_ARGS,
+        table="`p`.`d`.`t`",
+        labels={"view": "v", "fingerprint": "ab"},
+        expire_days=14,
+    )[1]
+
+    assert create.startswith("CREATE OR REPLACE TABLE `p`.`d`.`t`\nOPTIONS(")
+    assert "labels = [('fingerprint', 'ab'), ('view', 'v')]" in create
+    assert (
+        "expiration_timestamp = TIMESTAMP_ADD(CURRENT_TIMESTAMP(), INTERVAL 14 DAY)"
+        in create
+    )
+
+
+def test_a_label_value_outside_bigquery_s_characters_is_refused():
+    with pytest.raises(ValueError, match="label"):
+        reconcile_script(*SAVE_ARGS, table="t", labels={"view": "v'); DROP"})
+
+
+def test_unmatched_rows_inline_are_the_saved_rows(duck):
+    _save_tables(duck)
+    for statement in reconcile_script(*SAVE_ARGS, table="saved_t")[:2]:
+        duck.rows(statement)
+
+    inline = duck.rows(
+        f"SELECT * FROM ({unmatched_rows_sql(*SAVE_ARGS)}) ORDER BY __row"
+    )
+
+    assert inline == duck.rows("SELECT * FROM saved_t ORDER BY __row")
 
 
 def test_cell_students_count_each_student_once_per_side_and_cell(duck):
