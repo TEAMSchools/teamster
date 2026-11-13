@@ -115,8 +115,8 @@ with
                     "r.student_number",
                     "r.source",
                     "r.assessment_id",
-                    "to_json_string(r.assessment_ids)",
-                    "coalesce(r.response_type, 'not_taken')",
+                    "r.assessment_ids",
+                    "r.response_type",
                     "r.response_type_id",
                     "r.response_type_code",
                 )

@@ -19,6 +19,7 @@ with
             rr.n_assessments,
             rr.percent_correct,
             rr._dbt_source_project,
+            rr.assessment_ids,
 
             rr.date_taken as test_date,
 
@@ -26,8 +27,6 @@ with
             -- defect: response_rollup LEFT JOINs responses onto the scaffold's
             -- "expected to take" grain.
             coalesce(rr.response_type, 'not_taken') as response_type,
-
-            to_json_string(rr.assessment_ids) as assessment_ids_json,
 
             rr.assessment_id as source_assessment_id,
 
@@ -382,7 +381,7 @@ select
             "ia.student_number",
             "ia.source",
             "ia.assessment_id",
-            "ia.assessment_ids_json",
+            "ia.assessment_ids",
             "ia.response_type",
             "ia.response_type_id",
             "ia.response_type_code",

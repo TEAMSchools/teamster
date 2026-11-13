@@ -5,13 +5,15 @@ models:
       area and grade range, holding either a fixed goal that replaces an
       assessment's lookup goal or an offset added to it. A rule that is
       malformed or overlaps another rule is left out, so the scores it would
-      match keep their lookup goal.
+      match keep their lookup goal. Region is part of the key but not a column;
+      a rule's region is reached through the score that points at it.
     config:
       materialized: table
       meta:
         dagster:
-          # Shares the scores fact's tick, so a sheet edit never leaves the
-          # fact holding a rule key this dim no longer has. Rationale in
+          # Shares the scores fact's tick, so the fact and this dim pick up a
+          # sheet edit together; they disagree only if the sheet's staging
+          # table rebuilds mid-tick. Rationale in
           # fct_assessment_scores_enrollment_scoped.
           automation_condition:
             cron_schedule: 30 0,10,13,15,17 * * *

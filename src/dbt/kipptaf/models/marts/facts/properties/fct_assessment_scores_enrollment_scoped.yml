@@ -552,6 +552,8 @@ unit_tests:
         rows: []
     expect:
       rows:
+        # fa44baa2...: Newark ET Mathematics 3-5
+        # c27ae70b...: Newark ET any subject 6-8
         - {
             percent_correct: 0.1,
             assessment_module_goal_rule_key: fa44baa2dae4c56b9b0a5369e09a9d3b,
