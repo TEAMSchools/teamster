@@ -1,8 +1,9 @@
 sources:
   - name: kippmiami_focus
     schema:
-      "{%- if target.name == 'dev' -%}zz_{{ env_var('GITHUB_USER', 'dev') }}_{%-
-      elif target.name == 'staging' -%}zz_stg_{%- endif -%}kippmiami_focus"
+      "{%- if target.name == 'dev' -%}zz_{{ env_var('GITHUB_USER', 'dev') |
+      replace('-', '_') }}_{%- elif target.name == 'staging' -%}zz_stg_{%- endif
+      -%}kippmiami_focus"
     tables:
       - name: stg_focus__schools
         config:
