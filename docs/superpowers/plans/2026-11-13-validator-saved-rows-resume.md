@@ -10,18 +10,18 @@ triage reads each comparison's unmatched rows from a saved BigQuery table
 instead of rebuilding both sides per proof; plus the #6412 guard, the #6411 cell
 confirm, and a proof dry run in `prove --check`.
 
-**Architecture:** `run` compares 4 comparisons at a time. Each worker returns
-its comparison's slice of `_Sides` and saves the comparison's unmatched rows to
-one labelled table in `teamster-332318.cube_validation_scratch` with the same
-multi-statement query that returns the reconcile counts. The main thread merges
-slices in config order and writes a checkpoint per comparison into the run
-folder, which decides what a resumed `run` skips. `triage` checks each table's
-labels, prices every proof up front, runs 4 proofs at a time against the saved
-tables, and records each finished outcome in `triage-progress.json`. The session
-temp-table path is deleted.
+**Architecture:** `run` compares one comparison at a time, as today. Each
+comparison returns its own slice of `_Sides` and saves its unmatched rows to one
+labelled table in `teamster-332318.cube_validation_scratch` with the same
+multi-statement query that returns the reconcile counts. `run` merges each slice
+and writes a checkpoint per comparison into the run folder, which decides what a
+resumed `run` skips. `triage` checks each table's labels, prices every proof up
+front, runs the proofs one at a time against the saved tables, and records each
+finished outcome in `triage-progress.json`. The session temp-table path is
+deleted. No threads: see the spec's _Revision 2026-11-13_.
 
-**Tech Stack:** Python 3.13 via `uv run`, `google-cloud-bigquery`,
-`concurrent.futures`, `threading`, pytest with DuckDB (`--with duckdb`).
+**Tech Stack:** Python 3.13 via `uv run`, `google-cloud-bigquery`, pytest with
+DuckDB (`--with duckdb`).
 
 **Spec:**
 `docs/superpowers/specs/2026-11-13-validator-saved-rows-resume-design.md`.
@@ -53,15 +53,16 @@ Never bare `pytest` or `python`.
 - Unmatched rows are student-level PII: they stay in BigQuery. Nothing new is
   written locally beyond what `run` writes today (checkpoints hold the same
   aggregates `run.json` holds).
-- `run` compares 4 comparisons at a time; `triage` runs 4 proofs at a time.
+- No worker pools or threads: `run` compares one comparison at a time and
+  `triage` runs one proof at a time (spec, _Revision 2026-11-13_).
 - Resume on its own only when the last checkpoint is under 24 hours old; 24
   hours to 7 days needs `--resume` or `--restart`; over 7 days refuses to
   resume. `--moment` overrides all three.
 - The run folder's checkpoint decides what `run` skips; table labels only guard
   `triage` (a mismatch refuses, never reads).
 - Every query counts against `--max-usd` and `--max-usd-per-day` through
-  `Warehouse`, from concurrent workers too. `--max-usd` caps each process;
-  `run.json`'s `cost_usd` is the total across processes.
+  `Warehouse`. `--max-usd` caps each process; `run.json`'s `cost_usd` is the
+  total across processes.
 - Docstrings follow `W/src/teamster/CLAUDE.md`; comments follow
   `.claude/rules/comments.md` (no measurements, no history).
 - Commits: conventional commits, files staged by name, message ending with
@@ -70,20 +71,21 @@ Never bare `pytest` or `python`.
 
 ## Review Focus
 
-1. A resumed run merges slices in a different order from an uninterrupted one:
-   `cells` and `groups` reorder and `run.json` differs. Expected: merged in
-   config order, identical `run.json` but `cost_usd`. Pinned in Task 9
-   (`test_a_stopped_run_resumes_to_the_same_result`).
+1. A resumed run merges saved slices and fresh ones in a different order from an
+   uninterrupted one: `cells` and `groups` reorder and `run.json` differs.
+   Expected: merged in config order, identical `run.json` but `cost_usd`. Pinned
+   in Task 9 (`test_a_stopped_run_resumes_to_the_same_result`).
 2. A checkpoint under 24 hours old whose build has aged past time travel (the
    build start older than 7 days less the 1-hour margin). Expected: a refusal
    naming `--restart`, not a BigQuery error mid-run. Pinned in Task 9
    (`test_a_resume_past_time_travel_refuses_before_any_query`).
-3. One worker fails (a cap, a refusal) while others run. Expected: every
-   comparison that finished is checkpointed before the error surfaces. Pinned in
-   Task 9 (`test_a_stopped_run_resumes_to_the_same_result`, first half).
-4. Concurrent workers updating the spend counter and the daily ledger lose
-   updates. Expected: exact totals. Pinned in Task 5
-   (`test_concurrent_queries_count_every_dollar_once`).
+3. A comparison fails partway (a cap, a refusal). Expected: every comparison
+   before it is checkpointed, the failed one is not, and its table (if the
+   script got that far) is replaced on resume. Pinned in Task 9
+   (`test_a_stopped_run_resumes_to_the_same_result`, first half).
+4. A stopped run's spend is lost from `run.json`. Expected: `cost_usd` adds
+   every process's spend from `run-state.json`. Pinned in Task 9 (the
+   `total_spend` assertion) and Task 8 (`test_spend_adds_up_across_processes`).
 5. A table with the right name holding another run's rows (same view, moment and
    comparison, but a `--fact-dataset` dev run or an edited comparison).
    Expected: triage refuses that comparison's proofs. Pinned in Task 10
@@ -132,9 +134,9 @@ Never bare `pytest` or `python`.
 P/saved.py         new: scratch dataset constant, table id, labels
 P/checkpoints.py   new: run folder state and per-comparison checkpoints
 P/progress.py      new: triage-progress.json
-P/bq.py            lock, script, saved_labels; session path removed
+P/bq.py            script, saved_labels; session path removed
 P/compare.py       reconcile_script, unmatched_rows_sql, cell_students_sql
-P/pipeline.py      slices, side_fingerprints, workers, resume
+P/pipeline.py      slices, side_fingerprints, resume
 P/confirm.py       identifier guard, cell kinds, saved-table proofs, check_proofs
 P/trace.py         Prepared.frozen removed
 P/triage.py        --comparison, progress
@@ -542,13 +544,11 @@ def test_labels_are_what_bigquery_takes():
 
 ---
 
-### Task 5: `Warehouse` is safe for concurrent workers
+### Task 5: `Warehouse` runs a script and reads a saved table's labels
 
 **Files:**
 
-- Modify: `P/bq.py:47-64` (lock), `270-334` (`price`, `refuse_past_caps`,
-  `_record`), `392-406` (`_count_billed`), `88-155` (`_tables`, `_views`,
-  `_save_views`), new methods
+- Modify: `P/bq.py` (new methods, module docstring)
 - Test: `T/test_bq.py`
 
 **Interfaces:**
@@ -559,30 +559,10 @@ def test_labels_are_what_bigquery_takes():
     `rows`, returning the last statement's rows and billing the whole job.
   - `Warehouse.saved_labels(table_id: str) -> dict[str, str] | None`: the
     table's labels, or None when `get_table` raises `NotFound`.
-  - Every read-modify-write of `_spent`, the ledger file, `_tables` and `_views`
-    holds `self._lock` (`threading.RLock`). `rows` and `estimate` run their
-    BigQuery job outside the lock.
 
 - [ ] **Step 1: Write the failing tests**
 
 ```python
-def test_concurrent_queries_count_every_dollar_once(tmp_path):
-    class Billing(FakeClient):
-        def query(self, sql, job_config=None):
-            job = super().query(sql, job_config)
-            job.total_bytes_billed = TIB // 625  # $0.01
-            return job
-
-    wh = Warehouse(client=Billing())
-    wh.configure_local(tmp_path, daily_cap=None)
-    with ThreadPoolExecutor(8) as pool:
-        list(pool.map(lambda _: wh.rows("SELECT 1"), range(400)))
-
-    assert wh.spent == pytest.approx(4.0)
-    ledger = json.loads((tmp_path / "spend.json").read_text())
-    assert sum(ledger.values()) == pytest.approx(4.0)
-
-
 def test_a_script_runs_as_one_job_and_returns_its_last_rows():
     client = FakeClient(rows=[{"n": 2}])
     assert Warehouse(client=client).script(["CREATE TEMP TABLE a AS SELECT 1", "SELECT 2 AS n"]) == [{"n": 2}]
@@ -599,18 +579,14 @@ def test_saved_labels_read_a_table_and_none_for_a_missing_one():
     assert Warehouse(client=Gone()).saved_labels("p.d.t") is None
 ```
 
-- [ ] **Step 2: Run to fail** — the concurrency test fails on the ledger total
-      (lost updates) or intermittently on `_spent`; the 2 others on missing
-      methods.
+- [ ] **Step 2: Run to fail** — both fail on missing methods.
 
 - [ ] **Step 3: Implement** as the Interfaces say. Update the module docstring
       ("Only SELECTs, dry runs and the validator's saved tables in
-      `saved.SCRATCH_DATASET` are issued"). Note in `rows`' docstring that
-      concurrent queries in one process can each be allowed what is left under a
-      cap, as 2 processes can today.
+      `saved.SCRATCH_DATASET` are issued").
 
 - [ ] **Step 4: Run to pass; commit** —
-      `feat(cube): let concurrent validator queries share one warehouse`,
+      `feat(cube): run a multi-statement script and read a saved table's labels`,
       `Refs #6410`.
 
 ---
@@ -798,9 +774,9 @@ def test_run_saves_each_comparison_s_unmatched_rows_to_a_labelled_table(fakes, t
       in the script).
 
 - [ ] **Step 3: Implement** as the Interfaces say. `run` keeps a single
-      sequential loop for now, merging each returned slice into its `_Sides`
-      (Task 9 adds workers). `row_sides` compares `side_fingerprints(...)` with
-      the run's and keeps its refusal text.
+      sequential loop, merging each returned slice into its `_Sides` (Task 9
+      adds checkpoints and resume). `row_sides` compares
+      `side_fingerprints(...)` with the run's and keeps its refusal text.
 
 - [ ] **Step 4: Run to pass** — `... pytest T/ -q` (every existing `run`,
       `triage` and trace test must pass). `test_cli.py`'s `_reconcile(bq)` now
@@ -872,7 +848,7 @@ def test_run_saves_each_comparison_s_unmatched_rows_to_a_labelled_table(fakes, t
 
 ---
 
-### Task 9: `run` compares 4 at a time and resumes after a stop
+### Task 9: `run` checkpoints each comparison and resumes after a stop
 
 **Files:**
 
@@ -885,9 +861,9 @@ def test_run_saves_each_comparison_s_unmatched_rows_to_a_labelled_table(fakes, t
 - Consumes: Task 7's `_compare_one`, `_Sides.merge/to_json/from_json`,
   `side_fingerprints`, `checkpoint_fingerprint`; Task 8's `checkpoints`.
 - Produces:
-  - `RUN_WORKERS = 4`, `AUTO_RESUME = timedelta(hours=24)`,
-    `RESUME_LIMIT = timedelta(days=7)` in `pipeline.py`.
-  - `run(cfg, *, wh, cube, now, requested, max_usd, cache_root, cube_host="", resume: bool = False, restart: bool = False, clock: Callable[[], datetime] = <UTC now>, workers: int = RUN_WORKERS) -> RunResult`.
+  - `AUTO_RESUME = timedelta(hours=24)`, `RESUME_LIMIT = timedelta(days=7)` in
+    `pipeline.py`.
+  - `run(cfg, *, wh, cube, now, requested, max_usd, cache_root, cube_host="", resume: bool = False, restart: bool = False, clock: Callable[[], datetime] = <UTC now>) -> RunResult`.
   - CLI: `run --resume` and `run --restart`, mutually exclusive; `--resume` with
     `--moment` refuses ("`--moment` picks the moment itself; drop `--resume`").
     `cli` passes `clock=utcnow`.
@@ -902,13 +878,6 @@ gets a job whose `result()` raises
 `rows` turns into `CostCapError`; then `fail_once` resets to None.
 
 ```python
-def test_four_comparisons_compare_at_once(fakes, tmp_path):
-    gate = threading.Barrier(4, timeout=10)
-    real = fakes.bq.answer
-    fakes.bq.answer = lambda sql: (gate.wait(), real(sql))[1] if "-- outer" in sql else real(sql)
-    assert cli.main(["run", str(_four(tmp_path))]) == 0
-
-
 def test_a_stopped_run_resumes_to_the_same_result(fakes, tmp_path, monkeypatch):
     path = _four(tmp_path)
     # Baseline: an uninterrupted run in its own cache.
@@ -920,12 +889,14 @@ def test_a_stopped_run_resumes_to_the_same_result(fakes, tmp_path, monkeypatch):
     fakes.bq.fail_once = "ada_region_3"
     assert cli.main(["run", str(path)]) == 1
     folder = next((tmp_path / "cache" / "v").iterdir())
-    assert sorted(checkpoints.read_all(folder)) == ["ada-region-1", "ada-region-2", "ada-region-4"]
+    # Comparisons run in config order: 1 and 2 finished, 3 failed, 4 never began.
+    assert sorted(checkpoints.read_all(folder)) == ["ada-region-1", "ada-region-2"]
 
     fakes.bq.ran.clear()
     assert cli.main(["run", str(path)]) == 0
     scripts = [s for s in fakes.bq.ran if "-- outer" in s]
-    assert len(scripts) == 1 and "ada_region_3" in scripts[0]
+    assert len(scripts) == 2
+    assert "ada_region_3" in scripts[0] and "ada_region_4" in scripts[1]
     resumed = json.loads((folder / "run.json").read_text())
     assert {**resumed, "cost_usd": 0} == {**whole, "cost_usd": 0}
 
@@ -974,7 +945,8 @@ def test_a_comparison_edited_since_its_checkpoint_is_compared_again(fakes, tmp_p
     fakes.bq.ran.clear()
     assert cli.main(["run", str(path)]) == 0
     assert "Comparison ada-region-1: its config or SQL changed since its saved result" in capsys.readouterr().out
-    assert len([s for s in fakes.bq.ran if "-- outer" in s]) == 2
+    # ada-region-1 again (edited), then 3 and 4 (never finished); 2 is kept.
+    assert len([s for s in fakes.bq.ran if "-- outer" in s]) == 3
 ```
 
 Also: `run.json`'s `cost_usd` after a resume equals `checkpoints.total_spend` of
@@ -1009,12 +981,11 @@ the folder (both processes), and `--resume` with nothing unfinished refuses with
    checkpoint_fingerprint(c, side_fingerprints(...)) with the saved one; equal
    -> keep the slice; else print "Comparison <id>: its config or SQL changed
    since its saved result; comparing it again."
-4. The rest go to a ThreadPoolExecutor(workers); each gets a copy of the merged
-   `moved`. As each future completes, the main thread writes its checkpoint
-   (at=clock()) and record_spend(folder, process, wh.spent). On the first
-   exception: cancel futures not started, wait for running ones, checkpoint each
-   that succeeded, record spend, then re-raise.
-5. Merge every slice into one _Sides in config order (never completion order).
+4. The rest, one at a time in config order, each given the merged `moved` so
+   far. After each: write its checkpoint (at=clock()) and
+   record_spend(folder, process, wh.spent). On an exception: record spend, then
+   re-raise; the comparisons before it are already checkpointed.
+5. Merge every slice into one _Sides in config order, saved and fresh alike.
 6. The rest of run as today; cost_usd = total_spend after a last record_spend.
    After run.json is written: checkpoints.finish(folder).
 ```
@@ -1022,7 +993,7 @@ the folder (both processes), and `--resume` with nothing unfinished refuses with
 - [ ] **Step 4: Run to pass** — `... pytest T/ -q`.
 
 - [ ] **Step 5: Commit** —
-      `feat(cube): run compares 4 comparisons at a time and resumes after a stop`,
+      `feat(cube): run checkpoints each comparison and resumes after a stop`,
       `Refs #6410`.
 
 ---
@@ -1141,7 +1112,7 @@ Run: `... pytest T/ -q` — PASS.
 
 ---
 
-### Task 11: Triage prices up front, runs 4 proofs at a time, keeps its progress
+### Task 11: Triage prices up front and keeps its progress
 
 **Files:**
 
@@ -1160,12 +1131,12 @@ Run: `... pytest T/ -q` — PASS.
     (sha256 of the JSON of the 5, `open_keys` sorted);
     `progress.load(folder: Path) -> dict[str, dict]`;
     `progress.save(folder: Path, key: str, outcome: dict) -> None` (whole-file
-    replace, main thread only).
+    replace through a temp file and `os.replace`, so a stop mid-write keeps the
+    last whole file).
   - An outcome is
     `{"found": {open_key: {"n_rows", "counts": {cause: n}, "unexplained"}}, "students": [...]}`;
     only a proof that ran to an outcome is saved.
-  - `confirm.PROOF_WORKERS = 4`.
-  - `run_stored(cfg, run, directory, *, wh, cube, prepared=None, progress_dir: Path | None = None, comparisons: set[str] | None = None, workers: int = PROOF_WORKERS) -> list[Ran]`.
+  - `run_stored(cfg, run, directory, *, wh, cube, prepared=None, progress_dir: Path | None = None, comparisons: set[str] | None = None) -> list[Ran]`.
   - `run_triage(..., comparisons: list[str] | None = None)`; CLI
     `triage --comparison <id>` (repeatable, `action="append"`).
 
@@ -1216,27 +1187,25 @@ def test_proofs_refuse_before_any_runs_when_their_estimate_passes_a_cap(duck, tm
     assert wh.ran == []
 
 
-CFG4 = ViewConfig(view="v", fact="m.fct", comparisons=[
-    COMPARISON, *(replace(SIBLING, id=f"mastery-{k}") for k in "bcd")])  # fmt: skip
-
-
-def test_four_proofs_run_at_once(duck, tmp_path, offline):
-    gate, lock = threading.Barrier(4, timeout=10), threading.Lock()
-
-    class Gated(Wh):
+def test_a_triage_stopped_partway_keeps_the_proofs_it_finished(duck, tmp_path, offline):
+    class StopsOnSecond(Wh):
         def rows(self, sql, timeout_s=None):
-            gate.wait()
-            with lock:  # one DuckDB connection serves one call at a time
-                return super().rows(sql, timeout_s)
+            if len(self.ran) == 1:
+                raise CostCapError("nothing is left under --max-usd")
+            return super().rows(sql, timeout_s)
 
     _tables(duck)
-    run = _run([_group(3), *(Group(f"mastery-{k}", (("abbreviation", "X"),), "cube_only", 3, 3)
-                             for k in "bcd")])  # fmt: skip
-    wh = Gated(duck)
-    _save(duck, wh, run, cfg=CFG4)
+    run, wh = _sibling_run(), StopsOnSecond(duck)
+    _save(duck, wh, run, cfg=CFG2)
     directory, _ = _proof(tmp_path)
-    ran = confirm.run_stored(CFG4, run, directory, wh=wh, cube=None)
-    assert len(ran) == 4 and all(r.found is not None for r in ran)
+    first = confirm.run_stored(CFG2, run, directory, wh=wh, cube=None, progress_dir=tmp_path)
+    assert [r.found is not None for r in first] == [True, False]
+    assert len(progress.load(tmp_path)) == 1
+
+    wh = Wh(duck)
+    _save(duck, wh, run, cfg=CFG2)
+    confirm.run_stored(CFG2, run, directory, wh=wh, cube=None, progress_dir=tmp_path)
+    assert len(wh.ran) == 1  # only the proof the first triage did not finish
 
 
 def test_triage_of_one_comparison_reuses_the_others_and_runs_only_its_own(duck, tmp_path, offline):
@@ -1260,8 +1229,8 @@ def test_triage_of_one_comparison_reuses_the_others_and_runs_only_its_own(duck, 
     assert by["mastery-b"].found is not None
 ```
 
-(`replace` is `dataclasses.replace`; `threading` and `CostCapError` are new
-imports; `_sibling_run`, `SIBLING` and `CFG2` are at lines 1045-1073.)
+(`CostCapError` and `progress` are new imports; `_sibling_run`, `SIBLING` and
+`CFG2` are at lines 1045-1073.)
 
 `T/test_cli.py`: `triage <file> --comparison ada-region --no-trace` runs, writes
 `triage.json` with every open item, and prints only `ada-region` items.
@@ -1283,9 +1252,9 @@ imports; `_sibling_run`, `SIBLING` and `CFG2` are at lines 1045-1073.)
    Ran.why (bigquery_said). Print "Proofs: <n> to run, $<sum> (dry run);
    <k> reused from triage-progress.json." Then wh.refuse_past_caps(sum),
    whose CostCapError ends the triage before any proof runs.
-6. ThreadPoolExecutor(workers) runs wh.rows(sql, timeout_s=TIMEOUT_S) per
-   pair; as each completes, the main thread reads outcomes (its Refusal or a
-   CostCapError into Ran.why) and progress.save()s a successful one.
+6. One at a time, in pair order: wh.rows(sql, timeout_s=TIMEOUT_S), then
+   outcomes (its Refusal or a CostCapError into Ran.why, as today), and
+   progress.save() for a successful one before the next proof starts.
 7. Return the Rans in pair order.
 ```
 
@@ -1296,7 +1265,7 @@ imports; `_sibling_run`, `SIBLING` and `CFG2` are at lines 1045-1073.)
 - [ ] **Step 4: Run to pass** — `... pytest T/ -q`.
 
 - [ ] **Step 5: Commit** —
-      `feat(cube): triage prices its proofs first, runs 4 at a time and keeps finished ones`,
+      `feat(cube): triage prices its proofs first and keeps finished ones`,
       `Refs #6410`.
 
 ---
@@ -1310,17 +1279,18 @@ imports; `_sibling_run`, `SIBLING` and `CFG2` are at lines 1045-1073.)
 
 - [ ] **Step 1: Edit the skill.** Read `.claude/rules/claude-md-editing.md` (it
       loads on the Read). Changes:
-  - Step 7 (`run`): 4 comparisons at a time; a stopped `run` resumes on its own
-    within 24 hours of its last checkpoint, needs `--resume` or `--restart` from
-    24 hours to 7 days, and cannot resume past 7 days; `--moment` picks the
-    moment itself; `cost_usd` adds every process's spend; unmatched rows go to
+  - Step 7 (`run`): a stopped `run` resumes on its own within 24 hours of its
+    last checkpoint, needs `--resume` or `--restart` from 24 hours to 7 days,
+    and cannot resume past 7 days; `--moment` picks the moment itself;
+    `cost_usd` adds every process's spend; unmatched rows go to
     `cube_validation_scratch` tables (14-day expiry, Data Team only) and never
     to the cache.
   - Step 8 (`triage`): proofs read those tables; a missing or mislabelled one
-    refuses with the `run --moment ... --restart` command; every proof is priced
-    before any runs and a total over a cap refuses up front; 4 at a time;
-    finished outcomes kept in `triage-progress.json`, so a stopped triage skips
-    them; `--comparison` (repeatable).
+    refuses and names the next step (`run --moment ... --restart` within time
+    travel, a new `run` past it); every proof is priced before any runs and a
+    total over a cap refuses up front; finished outcomes kept in
+    `triage-progress.json`, so a stopped triage skips them; `--comparison`
+    (repeatable).
   - Step 7.7 (`triage confirm`): replace the 900K freeze paragraph (lines
     352-357) with "a proof reads its comparison's saved rows"; the guard list
     (line 343) says `student_number`, `employee_number` and other numbers that
@@ -1358,21 +1328,23 @@ each step in the runner with `time.monotonic()`.
       access list the owner set.
 - [ ] **Step 2: `prove --check`** — every stored DDI proof dry-runs; list the
       rejected ones.
-- [ ] **Step 3: Full `run`** at a moment M. Target: under 30 minutes. Copy M's
-      `run.json` aside (`<scratchpad>/run-whole.json`). Spot-check one saved
-      table with `get_table_info`: its 4 labels, its expiry, its `bucket`
-      column.
-- [ ] **Step 4: Stop and resume** — `run --moment M --restart` in the background
+- [ ] **Step 3: One `run`, stopped and resumed** — `run` in the background
       runner; stop it after about 10 minutes (stop the pytest process by its
-      PID, not `pgrep -f` on a string in your own command); then
-      `run --moment M`. Expected: "Resuming ..." and only the unfinished
-      comparisons compared; `run.json` equals `run-whole.json` but `cost_usd`.
+      PID, not `pgrep -f` on a string in your own command); then `run` again.
+      Expected: "Resuming ..." and only the unfinished comparisons compared;
+      `cost_usd` adds both processes. Report the total time; `run` has no time
+      target. One run, not a baseline plus a resumed one: Task 9's offline test
+      pins that a resumed `run.json` equals an uninterrupted one. Spot-check one
+      saved table with `get_table_info`: its 4 labels, its expiry, its `bucket`
+      column.
+- [ ] **Step 4: Removed** (folded into Step 3).
 - [ ] **Step 5: Triage** — `triage --no-trace`. Target: under 10 minutes. Report
       the trace's time separately (a non-goal of the spec). Then stop a second
       `triage --no-trace` partway and run it again: the proofs it finished are
       reused ("reused from triage-progress.json") and `triage.json`'s items
       equal the first one's.
-- [ ] **Step 6: Caps** — `run --moment M --restart --max-usd 0.01` refuses
+- [ ] **Step 6: Caps** —
+      `run --moment <M, Step 3's moment> --restart --max-usd 0.01` refuses
       before saving any table (check `maximum_bytes_billed` holds for a
       multi-statement job); `triage --max-usd 0.01` refuses up front naming the
       proofs' total.
@@ -1402,8 +1374,8 @@ each step in the runner with `time.monotonic()`.
   more query per `count_students` comparison.
 - The 10-minute triage target is measured with `--no-trace`; the trace is a
   non-goal of the spec.
-- Concurrent workers may each be allowed what is left under `--max-usd`, so a
-  process can overshoot its cap by up to 3 queries in flight; the up-front
-  triage estimate and BigQuery's per-query `maximum_bytes_billed` still bound
-  each query. Whether `maximum_bytes_billed` bounds a multi-statement job as a
-  whole or per statement is unverified; Task 13 Step 6 checks it.
+- No parallel workers in `run` or `triage` (spec, _Revision 2026-11-13_): the
+  owner validates one cube or measure at a time, and saved tables carry the
+  triage speedup.
+- Whether `maximum_bytes_billed` bounds a multi-statement job as a whole or per
+  statement is unverified; Task 13 Step 6 checks it.

@@ -275,3 +275,23 @@ commit, small ones first.
 - Whether the trace keeps any use for session temp tables.
 - Updating the `cube-validation` skill and any published docs that describe
   triage's cost or time.
+
+## Revision 2026-11-13: no parallel workers
+
+Decided at plan review, after the owner said future validations cover one cube
+or measure at a time, not a whole suite. This section overrides every mention of
+"4 at a time", workers, locks and the 30-minute `run` target above.
+
+- `run` compares one comparison at a time, and `triage` runs one proof at a
+  time, as today. Goal 5 is dropped.
+- Why: saved tables are where triage's time goes (each proof stops rebuilding
+  both sides), and a run of a few comparisons gains little from workers. Workers
+  carried the main accuracy risks: slices merged out of order, lost updates to
+  the spend counter, and a process passing `--max-usd` by queries in flight.
+- `Warehouse` needs no lock.
+- Success: a full triage of a saved DDI run with `--no-trace` finishes in under
+  10 minutes (the trace is a non-goal, timed and reported separately); `run` has
+  no time target; a stopped `run` or `triage` started again produces the same
+  `run.json` / `triage.json` as an uninterrupted one.
+- Each comparison still returns its own slice of `_Sides`: the checkpoints need
+  it.
