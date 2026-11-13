@@ -410,6 +410,12 @@ def run_stamp(moment: Build) -> str:
     return end.strftime("%Y-%m-%dT%H%M%SZ")
 
 
+def run_dir(root: Path, view: str, moment: Build) -> Path:
+    """The folder a run of `view` at `moment` keeps its results and
+    checkpoints in."""
+    return root / view / run_stamp(moment)
+
+
 def save_local(run: RunResult, text: str, root: Path | None = None) -> Path:
     """Write the local result under the view and moment.
 
@@ -421,7 +427,7 @@ def save_local(run: RunResult, text: str, root: Path | None = None) -> Path:
     Returns:
         The path of `result.md`.
     """
-    path = (root or CACHE_ROOT) / run.view / run_stamp(run.moment) / "result.md"
+    path = run_dir(root or CACHE_ROOT, run.view, run.moment) / "result.md"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text)
     return path
