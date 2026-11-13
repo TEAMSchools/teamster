@@ -116,11 +116,20 @@ cubes:
         public: true
 
       - name: school_week_start_date
+        description: >-
+          Start of the Monday-based week containing this date.
         sql: CAST(school_week_start_date AS TIMESTAMP)
         type: time
         public: true
+        meta:
+          ai_context: >-
+            For a week-by-week breakdown, group by this member. Do not apply a
+            week granularity to a date member instead: that buckets by ISO week,
+            a different calendar.
 
       - name: school_week_end_date
+        description: >-
+          End of the Monday-based week (Sunday) containing this date.
         sql: CAST(school_week_end_date AS TIMESTAMP)
         type: time
         public: true

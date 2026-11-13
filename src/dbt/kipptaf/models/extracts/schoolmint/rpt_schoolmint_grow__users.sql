@@ -35,8 +35,9 @@ with
             sr.given_name,
             sr.family_name_1,
             sr.assignment_status,
-            sr.primary_grade_level_taught,
             sr.user_principal_name,
+
+            tgl.grade_level as primary_grade_level_taught,
 
             coalesce(
                 sr.worker_termination_date, current_date('{{ var("local_timezone") }}')
@@ -83,6 +84,12 @@ with
         from {{ ref("int_people__staff_roster") }} as sr
         left join
             new_teacher_network_coordinators as ntnc on sr.worker_id = ntnc.associate_id
+        left join
+            {{ ref("int_students__teacher_grade_levels") }} as tgl
+            on sr.powerschool_teacher_number = tgl.teachernumber
+            and sr.home_work_location_dagster_code_location = tgl._dbt_source_project
+            and tgl.academic_year = {{ var("current_academic_year") }}
+            and tgl.grade_level_rank = 1
         where sr.home_work_location_dagster_code_location != 'kipppaterson'
     ),
 

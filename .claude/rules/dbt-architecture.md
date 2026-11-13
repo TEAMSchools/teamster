@@ -208,6 +208,10 @@ an extract holds, move that logic into the domain `int_` both read.
   sweep of untouched models. An existing A1, A2, A8, or A12 edge is not a
   finding. A1, A8, and A12 edges are tracked in `standard-baseline.tsv`; nothing
   records A2 edges, so never call one tracked.
+- A refactor that moves an existing domain `int_` read from one model to
+  another, adding no new consumer of that data, is not a new A2 edge and needs
+  no mart-gap issue. A new A2 edge's issue is a deferral: ask the user before
+  filing it (root CLAUDE.md, _Pull requests and CI_).
 - Key macros live in `src/dbt/kipptaf/macros/`; an entity with none yet uses
   `generate_surrogate_key`.
 - Mart column naming, strict-chain traversal, and PK/FK shapes:

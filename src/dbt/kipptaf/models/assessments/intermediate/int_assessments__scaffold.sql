@@ -268,7 +268,7 @@ with
             se.grade_level + 1 as grade_level_id,
         from apex_tested as t
         inner join
-            {{ ref("int_extracts__student_enrollments") }} as se
+            {{ ref("int_students__student_enrollments") }} as se
             on t.student_number = se.student_number
             and t._dbt_source_project = se._dbt_source_project
             and t.date_taken >= se.entrydate

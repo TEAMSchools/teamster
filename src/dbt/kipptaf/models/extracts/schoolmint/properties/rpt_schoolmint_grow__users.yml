@@ -139,9 +139,9 @@ models:
       - name: grade_id
         data_type: string
         description: >
-          Grow grade tag `_id` matched from ADP `primary_grade_level_taught`
-          (K-coded for 0) via `stg_schoolmint_grow__generic_tags` (tag_type =
-          'grades').
+          Grow grade tag `_id` matched from the teacher's current-year primary
+          grade level in `int_students__teacher_grade_levels` (K-coded for 0)
+          via `stg_schoolmint_grow__generic_tags` (tag_type = 'grades').
       - name: role_ids_ws
         data_type: array<string>
         description: >
@@ -204,10 +204,12 @@ unit_tests:
               'Active' as assignment_status,
               'KTAF or Regional Director' as job_function,
               'Director' as job_title,
-              cast(null as int64) as primary_grade_level_taught,
+              cast(null as string) as powerschool_teacher_number,
               'norole@apps.teamschools.org' as user_principal_name,
               cast(null as date) as worker_termination_date,
               cast(null as string) as worker_id
+      - input: ref('int_students__teacher_grade_levels')
+        rows: []
       - input: ref('stg_adp_workforce_now__employee_memberships')
         format: sql
         rows: |
@@ -307,7 +309,7 @@ unit_tests:
               'Active' as assignment_status,
               'KTAF or Regional Director' as job_function,
               'Director' as job_title,
-              cast(null as int64) as primary_grade_level_taught,
+              cast(null as string) as powerschool_teacher_number,
               'noaccount@apps.teamschools.org' as user_principal_name,
               cast(null as date) as worker_termination_date,
               cast(null as string) as worker_id
@@ -316,8 +318,10 @@ unit_tests:
               601, 'hasaccount@apps.teamschools.org', cast(null as int64),
               'KIPP TEAM Academy', 'KIPP TEAM Academy', 'Finance',
               'kippnewark', 'Has', 'Account', 'Active',
-              'KTAF or Regional Director', 'Director', cast(null as int64),
+              'KTAF or Regional Director', 'Director', cast(null as string),
               'hasaccount@apps.teamschools.org', cast(null as date), cast(null as string)
+      - input: ref('int_students__teacher_grade_levels')
+        rows: []
       - input: ref('stg_adp_workforce_now__employee_memberships')
         format: sql
         rows: |
@@ -403,6 +407,9 @@ unit_tests:
       (no role) is mocked with an existing Grow account, since a no-role user
       with no account is no longer emitted.
     model: rpt_schoolmint_grow__users
+    overrides:
+      vars:
+        current_academic_year: 2026
     given:
       - input: ref('int_people__staff_roster')
         format: sql
@@ -420,7 +427,7 @@ unit_tests:
               'Active' as assignment_status,
               'Teacher' as job_function,
               'Teacher' as job_title,
-              5 as primary_grade_level_taught,
+              'T1' as powerschool_teacher_number,
               'areal@apps.teamschools.org' as user_principal_name,
               cast(null as date) as worker_termination_date,
               cast(null as string) as worker_id
@@ -428,35 +435,43 @@ unit_tests:
           select
               2, 'teach2@apps.teamschools.org', 11, 'KIPP TEAM Academy', 'KIPP TEAM Academy',
               'Elementary', 'kippnewark', 'Nul', 'Function', 'Active',
-              cast(null as string), 'Teacher', 5,
+              cast(null as string), 'Teacher', 'T2',
               'nfunction@apps.teamschools.org', cast(null as date), cast(null as string)
           union all
           select
               3, 'term@apps.teamschools.org', 12, 'KIPP TEAM Academy', 'KIPP TEAM Academy',
               'Student Support', 'kippnewark', 'Gone', 'Already', 'Terminated',
-              'Teacher', 'Teacher', 5, 'galready@apps.teamschools.org',
+              'Teacher', 'Teacher', 'T3', 'galready@apps.teamschools.org',
               date '2024-06-30', cast(null as string)
           union all
           select
               10, 'mgr1@apps.teamschools.org', cast(null as int64),
               'KIPP TEAM Academy', 'KIPP TEAM Academy', 'School Leadership', 'kippnewark',
               'Real', 'Manager', 'Active', 'Assistant School Leaders',
-              'Assistant School Leader', cast(null as int64),
+              'Assistant School Leader', cast(null as string),
               'rmanager@apps.teamschools.org', cast(null as date), cast(null as string)
           union all
           select
               11, 'mgr2@apps.teamschools.org', cast(null as int64),
               'KIPP TEAM Academy', 'KIPP TEAM Academy', 'School Leadership', 'kippnewark',
               'Nulls', 'Only', 'Active', 'Assistant School Leaders',
-              'Assistant School Leader', cast(null as int64),
+              'Assistant School Leader', cast(null as string),
               'nonly@apps.teamschools.org', cast(null as date), cast(null as string)
           union all
           select
               12, 'mgr3@apps.teamschools.org', cast(null as int64),
               'KIPP TEAM Academy', 'KIPP TEAM Academy', 'Student Support', 'kippnewark',
               'Term', 'Reports', 'Active', 'Deans', 'Dean',
-              cast(null as int64), 'treports@apps.teamschools.org',
+              cast(null as string), 'treports@apps.teamschools.org',
               cast(null as date), cast(null as string)
+      - input: ref('int_students__teacher_grade_levels')
+        format: sql
+        rows: |
+          select 'T1' as teachernumber, 'kippnewark' as _dbt_source_project, 2026 as academic_year, 5 as grade_level, 1 as grade_level_rank
+          union all
+          select 'T2' as teachernumber, 'kippnewark' as _dbt_source_project, 2026 as academic_year, 5 as grade_level, 1 as grade_level_rank
+          union all
+          select 'T3' as teachernumber, 'kippnewark' as _dbt_source_project, 2026 as academic_year, 5 as grade_level, 1 as grade_level_rank
       - input: ref('stg_adp_workforce_now__employee_memberships')
         format: sql
         rows: |
@@ -538,6 +553,9 @@ unit_tests:
       are mocked with existing Grow accounts, since a no-role user with no
       account is no longer emitted.
     model: rpt_schoolmint_grow__users
+    overrides:
+      vars:
+        current_academic_year: 2026
     given:
       - input: ref('int_people__staff_roster')
         format: sql
@@ -555,7 +573,7 @@ unit_tests:
               'Active' as assignment_status,
               'Chief Level' as job_function,
               'Chief Academic Officer' as job_title,
-              cast(null as int64) as primary_grade_level_taught,
+              cast(null as string) as powerschool_teacher_number,
               'chief@apps.teamschools.org' as user_principal_name,
               cast(null as date) as worker_termination_date,
               cast(null as string) as worker_id
@@ -564,7 +582,7 @@ unit_tests:
               101, 'hos@apps.teamschools.org', cast(null as int64),
               'KIPP TEAM Academy', 'KIPP TEAM Academy', 'School Support', 'kippnewark',
               'Head', 'Schools', 'Active', 'EDs, HOSs, MDOs',
-              'Head of Schools', cast(null as int64),
+              'Head of Schools', cast(null as string),
               'hos@apps.teamschools.org', cast(null as date), cast(null as string)
           union all
           select
@@ -572,54 +590,58 @@ unit_tests:
               'KIPP TEAM Academy', 'KIPP TEAM Academy', 'Special Education', 'kippnewark',
               'Managing', 'Director', 'Active',
               'KTAF or Regional Managing Director', 'Managing Director',
-              cast(null as int64), 'md@apps.teamschools.org', cast(null as date), cast(null as string)
+              cast(null as string), 'md@apps.teamschools.org', cast(null as date), cast(null as string)
           union all
           select
               103, 'blocked@apps.teamschools.org', cast(null as int64),
               'KIPP TEAM Academy', 'KIPP TEAM Academy', 'Finance', 'kippnewark',
               'Gated', 'Out', 'Active', 'KTAF or Regional Director',
-              'Director', cast(null as int64),
+              'Director', cast(null as string),
               'blocked@apps.teamschools.org', cast(null as date), cast(null as string)
           union all
           select
               104, 'assoc@apps.teamschools.org', cast(null as int64),
               'KIPP TEAM Academy', 'KIPP TEAM Academy', 'Special Education', 'kippnewark',
               'Assoc', 'Promoted', 'Active', 'KTAF or Regional Staff',
-              'Associate Director', cast(null as int64),
+              'Associate Director', cast(null as string),
               'assoc@apps.teamschools.org', cast(null as date), cast(null as string)
           union all
           select
               105, 'sl@apps.teamschools.org', cast(null as int64),
               'KIPP TEAM Academy', 'KIPP TEAM Academy', 'School Leadership', 'kippnewark',
               'School', 'Leader', 'Active', 'School Leader', 'School Leader',
-              cast(null as int64), 'sl@apps.teamschools.org', cast(null as date), cast(null as string)
+              cast(null as string), 'sl@apps.teamschools.org', cast(null as date), cast(null as string)
           union all
           select
               106, 'dean@apps.teamschools.org', cast(null as int64),
               'KIPP TEAM Academy', 'KIPP TEAM Academy', 'Student Support', 'kippnewark',
               'Assistant', 'Dean', 'Active', 'Deans', 'Assistant Dean',
-              cast(null as int64), 'dean@apps.teamschools.org',
+              cast(null as string), 'dean@apps.teamschools.org',
               cast(null as date), cast(null as string)
           union all
           select
               107, 'nulljf@apps.teamschools.org', cast(null as int64),
               'KIPP TEAM Academy', 'KIPP TEAM Academy', 'Teaching and Learning', 'kippnewark',
               'Null', 'Tier', 'Active', cast(null as string),
-              'Achievement Director', cast(null as int64),
+              'Achievement Director', cast(null as string),
               'nulljf@apps.teamschools.org', cast(null as date), cast(null as string)
           union all
           select
               108, 'coachadmin@apps.teamschools.org', cast(null as int64),
               'KIPP TEAM Academy', 'KIPP TEAM Academy', 'School Leadership', 'kippnewark',
               'Coaching', 'Admin', 'Active', 'Assistant School Leaders',
-              'Assistant School Leader', cast(null as int64),
+              'Assistant School Leader', cast(null as string),
               'coachadmin@apps.teamschools.org', cast(null as date), cast(null as string)
           union all
           select
               109, 'report@apps.teamschools.org', 108,
               'KIPP TEAM Academy', 'KIPP TEAM Academy', 'Elementary', 'kippnewark',
-              'Real', 'Teacher', 'Active', 'Teacher', 'Teacher', 5,
+              'Real', 'Teacher', 'Active', 'Teacher', 'Teacher', 'T109',
               'report@apps.teamschools.org', cast(null as date), cast(null as string)
+      - input: ref('int_students__teacher_grade_levels')
+        format: sql
+        rows: |
+          select 'T109' as teachernumber, 'kippnewark' as _dbt_source_project, 2026 as academic_year, 5 as grade_level, 1 as grade_level_rank
       - input: ref('stg_adp_workforce_now__employee_memberships')
         format: sql
         rows: |
@@ -710,6 +732,9 @@ unit_tests:
       a teacher is an observee -- a School Assistant Admin who coaches observes
       and is never observed, and neither is a Regional Admin.
     model: rpt_schoolmint_grow__users
+    overrides:
+      vars:
+        current_academic_year: 2026
     given:
       - input: ref('int_people__staff_roster')
         format: sql
@@ -727,7 +752,7 @@ unit_tests:
               'Active' as assignment_status,
               'EDs, HOSs, MDOs' as job_function,
               'Head of Schools' as job_title,
-              cast(null as int64) as primary_grade_level_taught,
+              cast(null as string) as powerschool_teacher_number,
               'ra@apps.teamschools.org' as user_principal_name,
               cast(null as date) as worker_termination_date,
               cast(null as string) as worker_id
@@ -736,14 +761,18 @@ unit_tests:
               201, 'saa@apps.teamschools.org', cast(null as int64),
               'KIPP TEAM Academy', 'KIPP TEAM Academy', 'School Leadership', 'kippnewark',
               'Assistant', 'Leader', 'Active', 'Assistant School Leaders',
-              'Assistant School Leader', cast(null as int64),
+              'Assistant School Leader', cast(null as string),
               'saa@apps.teamschools.org', cast(null as date), cast(null as string)
           union all
           select
               202, 'teach@apps.teamschools.org', 201,
               'KIPP TEAM Academy', 'KIPP TEAM Academy', 'Elementary', 'kippnewark',
-              'Plain', 'Teacher', 'Active', 'Teacher', 'Teacher', 5,
+              'Plain', 'Teacher', 'Active', 'Teacher', 'Teacher', 'T202',
               'teach@apps.teamschools.org', cast(null as date), cast(null as string)
+      - input: ref('int_students__teacher_grade_levels')
+        format: sql
+        rows: |
+          select 'T202' as teachernumber, 'kippnewark' as _dbt_source_project, 2026 as academic_year, 5 as grade_level, 1 as grade_level_rank
       - input: ref('stg_adp_workforce_now__employee_memberships')
         format: sql
         rows: |
@@ -822,6 +851,9 @@ unit_tests:
       region matches their own. A teacher gets an empty list. readonly is 1 for
       Regional Admin holders and 0 for everyone else.
     model: rpt_schoolmint_grow__users
+    overrides:
+      vars:
+        current_academic_year: 2026
     given:
       - input: ref('int_people__staff_roster')
         format: sql
@@ -839,7 +871,7 @@ unit_tests:
               'Active' as assignment_status,
               'Chief Level' as job_function,
               'Chief Academic Officer' as job_title,
-              cast(null as int64) as primary_grade_level_taught,
+              cast(null as string) as powerschool_teacher_number,
               'chief@apps.teamschools.org' as user_principal_name,
               cast(null as date) as worker_termination_date,
               cast(null as string) as worker_id
@@ -848,14 +880,18 @@ unit_tests:
               301, 'md@apps.teamschools.org', cast(null as int64),
               'KIPP TEAM Academy', 'KIPP TEAM Academy', 'School Support',
               'kippnewark', 'Regional', 'Leader', 'Active',
-              'EDs, HOSs, MDOs', 'Head of Schools', cast(null as int64),
+              'EDs, HOSs, MDOs', 'Head of Schools', cast(null as string),
               'md@apps.teamschools.org', cast(null as date), cast(null as string)
           union all
           select
               302, 'teach@apps.teamschools.org', 301,
               'KIPP TEAM Academy', 'KIPP TEAM Academy', 'Elementary',
               'kippnewark', 'Plain', 'Teacher', 'Active', 'Teacher',
-              'Teacher', 5, 'teach@apps.teamschools.org', cast(null as date), cast(null as string)
+              'Teacher', 'T302', 'teach@apps.teamschools.org', cast(null as date), cast(null as string)
+      - input: ref('int_students__teacher_grade_levels')
+        format: sql
+        rows: |
+          select 'T302' as teachernumber, 'kippnewark' as _dbt_source_project, 2026 as academic_year, 5 as grade_level, 1 as grade_level_rank
       - input: ref('stg_adp_workforce_now__employee_memberships')
         format: sql
         rows: |
@@ -963,7 +999,7 @@ unit_tests:
               'Active' as assignment_status,
               'Teacher' as job_function,
               'Teacher' as job_title,
-              cast(null as int64) as primary_grade_level_taught,
+              cast(null as string) as powerschool_teacher_number,
               'ntnc@apps.teamschools.org' as user_principal_name,
               cast(null as date) as worker_termination_date,
               'w-400' as worker_id
@@ -973,22 +1009,24 @@ unit_tests:
               'KIPP Courage Academy', 'KIPP Courage Academy',
               'School Leadership', 'kippmiami', 'Coordinating', 'Leader',
               'Active', 'Assistant School Leaders', 'Assistant School Leader',
-              cast(null as int64), 'ntncasl@apps.teamschools.org',
+              cast(null as string), 'ntncasl@apps.teamschools.org',
               cast(null as date), 'w-401'
           union all
           select
               402, 'other@apps.teamschools.org', cast(null as int64),
               'KIPP TEAM Academy', 'KIPP TEAM Academy', 'Elementary',
               'kippnewark', 'Other', 'Membership', 'Active', 'Teacher',
-              'Teacher', cast(null as int64),
+              'Teacher', cast(null as string),
               'other@apps.teamschools.org', cast(null as date), 'w-402'
           union all
           select
               403, 'expired@apps.teamschools.org', cast(null as int64),
               'KIPP TEAM Academy', 'KIPP TEAM Academy', 'Elementary',
               'kippnewark', 'Expired', 'Coordinator', 'Active', 'Teacher',
-              'Teacher', cast(null as int64),
+              'Teacher', cast(null as string),
               'expired@apps.teamschools.org', cast(null as date), 'w-403'
+      - input: ref('int_students__teacher_grade_levels')
+        rows: []
       - input: ref('stg_adp_workforce_now__employee_memberships')
         format: sql
         rows: |
@@ -1121,7 +1159,7 @@ unit_tests:
               'Active' as assignment_status,
               'School Leader' as job_function,
               'School Leader in Residence' as job_title,
-              cast(null as int64) as primary_grade_level_taught,
+              cast(null as string) as powerschool_teacher_number,
               'slrmia@apps.teamschools.org' as user_principal_name,
               cast(null as date) as worker_termination_date,
               'w-500' as worker_id
@@ -1130,15 +1168,17 @@ unit_tests:
               501, 'slrnwk@apps.teamschools.org', cast(null as int64),
               'Room 9', 'Room 9', 'School Leadership', 'kippnewark',
               'Newark', 'Resident', 'Active', 'School Leader',
-              'School Leader in Residence', cast(null as int64),
+              'School Leader in Residence', cast(null as string),
               'slrnwk@apps.teamschools.org', cast(null as date), 'w-501'
           union all
           select
               502, 'slmia@apps.teamschools.org', cast(null as int64),
               'KIPP Courage Academy', 'KIPP Courage Academy',
               'School Leadership', 'kippmiami', 'Campus', 'Leader',
-              'Active', 'School Leader', 'School Leader', cast(null as int64),
+              'Active', 'School Leader', 'School Leader', cast(null as string),
               'slmia@apps.teamschools.org', cast(null as date), 'w-502'
+      - input: ref('int_students__teacher_grade_levels')
+        rows: []
       - input: ref('stg_adp_workforce_now__employee_memberships')
         format: sql
         rows: |

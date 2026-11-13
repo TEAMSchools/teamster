@@ -36,6 +36,20 @@ cubes:
         sql: "{terms.term_key} = {CUBE}.term_key"
         relationship: many_to_one
 
+      # The goal row matched in dbt (school, year, grade and subject for
+      # internal assessments; school, year and state test code for state tests).
+      - name: student_assessment_goals
+        sql: >
+          {student_assessment_goals.assessment_goal_key} =
+          {CUBE}.assessment_goal_key
+        relationship: many_to_one
+
+      - name: student_assessment_module_goal_rules
+        sql: >
+          {student_assessment_module_goal_rules.assessment_module_goal_rule_key}
+          = {CUBE}.assessment_module_goal_rule_key
+        relationship: many_to_one
+
     dimensions:
       - name: assessment_score_key
         description: Surrogate key. Primary key for this fact.
@@ -329,6 +343,80 @@ cubes:
             bucket and read pct_proficient. To leave out scores with no bucket,
             filter bucket set. Every score before 2025-26 reads null, because
             the bucket model starts that year.
+      # The DDI Suite's differentiated goals, computed as rpt_tableau__ddi_dashboard
+      # does from the Module Goal Rules sheet (student_assessment_module_goal_rules,
+      # matched to each score in dbt). The 3 members differ only in the base
+      # goal column.
+      - name: grade_goal_differentiated
+        description: >-
+          Grade-level goal adjusted by the DDI goal rule for the score's module
+          type: the rule's fixed goal; otherwise, on QA and CRQ modules, the
+          quarterly assessment goal; otherwise the grade goal plus the rule's
+          offset. A score no rule covers uses the grade goal.
+        sql: >
+          COALESCE(
+            {student_assessment_module_goal_rules.goal},
+            IF({student_assessments.module_type} IN ('QA', 'CRQ'),
+              {student_assessment_goals.quarterly_assessment_goal}, NULL),
+            {student_assessment_goals.grade_goal}
+              + COALESCE({student_assessment_module_goal_rules.goal_offset}, 0)
+          )
+        type: number
+        format: percent
+        public: true
+        meta:
+          ai_context: >-
+            The goal the DDI Suite compares internal assessment mastery against.
+            Compare it with pct_proficient at one grade, subject and module, or
+            use grade_goal_distance and grade_goal_status, which do that
+            comparison. For state test goals use grade_goal, school_goal,
+            region_goal or assessment_band_goal instead.
+
+      - name: school_goal_differentiated
+        description: >-
+          School-level goal adjusted by the DDI goal rule for the score's module
+          type: the rule's fixed goal; otherwise, on QA and CRQ modules, the
+          quarterly assessment goal; otherwise the school goal plus the rule's
+          offset. A score no rule covers uses the school goal.
+        sql: >
+          COALESCE(
+            {student_assessment_module_goal_rules.goal},
+            IF({student_assessments.module_type} IN ('QA', 'CRQ'),
+              {student_assessment_goals.quarterly_assessment_goal}, NULL),
+            {student_assessment_goals.school_goal}
+              + COALESCE({student_assessment_module_goal_rules.goal_offset}, 0)
+          )
+        type: number
+        format: percent
+        public: true
+        meta:
+          ai_context: >-
+            The school goal the DDI Suite compares internal assessment mastery
+            against. Compare it with pct_proficient for one school, subject and
+            module, or use school_goal_distance.
+
+      - name: region_goal_differentiated
+        description: >-
+          Region-level goal adjusted by the DDI goal rule for the score's module
+          type: the rule's fixed goal; otherwise, on QA and CRQ modules, the
+          quarterly assessment goal; otherwise the region goal plus the rule's
+          offset. A score no rule covers uses the region goal.
+        sql: >
+          COALESCE(
+            {student_assessment_module_goal_rules.goal},
+            IF({student_assessments.module_type} IN ('QA', 'CRQ'),
+              {student_assessment_goals.quarterly_assessment_goal}, NULL),
+            {student_assessment_goals.region_goal}
+              + COALESCE({student_assessment_module_goal_rules.goal_offset}, 0)
+          )
+        type: number
+        format: percent
+        public: true
+        meta:
+          ai_context: >-
+            The region goal the DDI Suite compares internal assessment mastery
+            against. Compare it with pct_proficient for one region, subject and
+            module, or use region_goal_distance.
 
       # The 3 DDI Suite subject flags pick the student's ELA or math value the
       # same way bucket does, so a flag and bucket always agree on subject.
@@ -814,6 +902,90 @@ cubes:
         sql: "1.0 * {_sum_proficient_crq} / NULLIF({_count_scored_crq}, 0)"
         type: number
         format: percent
+        public: true
+
+      # Goal measures follow the DDI Suite workbook: the highest goal in the
+      # slice against the slice's proficiency rate. None of them is in
+      # proficiency_rollup, so a query using them reads the fact.
+      - name: _max_grade_goal_differentiated
+        description: >-
+          Highest grade_goal_differentiated in the slice. Building block for
+          grade_goal_distance and grade_goal_status.
+        sql: "{grade_goal_differentiated}"
+        type: max
+        public: false
+
+      - name: _max_school_goal_differentiated
+        description: >-
+          Highest school_goal_differentiated in the slice. Building block for
+          school_goal_distance.
+        sql: "{school_goal_differentiated}"
+        type: max
+        public: false
+
+      - name: _max_region_goal_differentiated
+        description: >-
+          Highest region_goal_differentiated in the slice. Building block for
+          region_goal_distance.
+        sql: "{region_goal_differentiated}"
+        type: max
+        public: false
+
+      - name: grade_goal_distance
+        description: >-
+          Grain: meaningful only within one grade, subject and module, where the
+          goal is a single value; across grades it compares the highest goal in
+          the slice with a pooled rate, a silent-failure trap. How far the
+          proficiency rate falls short of the differentiated grade goal: the
+          goal minus pct_proficient. Positive means below goal; negative means
+          above it.
+        sql: "{_max_grade_goal_differentiated} - {pct_proficient}"
+        type: number
+        format: percent
+        public: true
+
+      - name: school_goal_distance
+        description: >-
+          Grain: meaningful only within one school, subject and module, where
+          the goal is a single value; across schools or grades it compares the
+          highest goal in the slice with a pooled rate, a silent-failure trap.
+          How far the proficiency rate falls short of the differentiated school
+          goal: the goal minus pct_proficient. Positive means below goal;
+          negative means above it.
+        sql: "{_max_school_goal_differentiated} - {pct_proficient}"
+        type: number
+        format: percent
+        public: true
+
+      - name: region_goal_distance
+        description: >-
+          Grain: meaningful only within one region, subject and module, where
+          the goal is a single value; across regions it compares the highest
+          goal in the slice with a pooled rate, a silent-failure trap. How far
+          the proficiency rate falls short of the differentiated region goal:
+          the goal minus pct_proficient. Positive means below goal; negative
+          means above it.
+        sql: "{_max_region_goal_differentiated} - {pct_proficient}"
+        type: number
+        format: percent
+        public: true
+
+      - name: grade_goal_status
+        description: >-
+          Grain: meaningful only within one grade, subject and module, like
+          grade_goal_distance. Whether pct_proficient beat the differentiated
+          grade goal: exceeded (above the goal), met (equal to it) or not met
+          (below it). Null where the slice has no goal or no proficiency rate.
+        sql: >
+          CASE
+            WHEN {_max_grade_goal_differentiated} < {pct_proficient}
+            THEN 'exceeded'
+            WHEN {_max_grade_goal_differentiated} = {pct_proficient}
+            THEN 'met'
+            WHEN {_max_grade_goal_differentiated} > {pct_proficient}
+            THEN 'not met'
+          END
+        type: string
         public: true
 
     pre_aggregations:
