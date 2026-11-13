@@ -662,6 +662,26 @@ TWINS.update(
             "is_504",
         ),
         **{
+            ("student_assessment_goals", c): ("dim_assessment_goals", c)
+            for c in [
+                "assessment_goal_key",
+                "grade_goal",
+                "school_goal",
+                "region_goal",
+                "organization_goal",
+                "grade_band_goal",
+                "assessment_band_goal",
+                "quarterly_assessment_goal",
+            ]
+        },
+        **{
+            ("student_assessment_module_goal_rules", c): (
+                "dim_assessment_module_goal_rules",
+                c,
+            )
+            for c in ["assessment_module_goal_rule_key", "goal", "goal_offset"]
+        },
+        **{
             ("student_enrollment_status", c): ("dim_student_enrollment_status", c)
             for c in [
                 "is_sipps",

@@ -39,6 +39,13 @@ views:
           - pct_students_far_below
           - avg_percent_correct
           - avg_scale_score
+          - grade_goal_distance
+          - school_goal_distance
+          - region_goal_distance
+          - grade_goal_status
+          - grade_goal_differentiated
+          - school_goal_differentiated
+          - region_goal_differentiated
           - assessment_score_key
           - assessment_date
           - date_taken
@@ -89,6 +96,16 @@ views:
           - month_name
           - school_week_start_date
           - school_week_end_date
+
+      - join_path: student_assessment_scores.student_assessment_goals
+        includes:
+          - grade_goal
+          - school_goal
+          - region_goal
+          - organization_goal
+          - grade_band_goal
+          - assessment_band_goal
+          - quarterly_assessment_goal
 
       - join_path: student_assessment_scores.student_section_enrollments.course_sections.courses
         includes:
@@ -267,6 +284,18 @@ views:
             - response_type_description
             - response_type_root_description
             - is_replacement
+        - name: Goal
+          members:
+            - grade_goal
+            - school_goal
+            - region_goal
+            - organization_goal
+            - grade_band_goal
+            - assessment_band_goal
+            - quarterly_assessment_goal
+            - grade_goal_differentiated
+            - school_goal_differentiated
+            - region_goal_differentiated
         - name: Date
           members:
             - assessment_date
