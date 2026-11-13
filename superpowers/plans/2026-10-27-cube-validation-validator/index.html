@@ -1,0 +1,2619 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>Cube Validation: Validator Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.57a0d79d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#cube-validation-validator-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Cube Validation: Validator Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/launch-page-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Launch Page
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube-access-individual-exceptions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube Access - Individual Exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/tableau-permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tableau Permissions (People Data)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/csgf-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSGF Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/crdc-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CRDC Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ddi-stack-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDI Stack Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/hs-early-warning-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HS Early Warning Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/dibels-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIBELS Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/stat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/njdoe-universal-screener-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NJDOE Universal Screener Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/athletic-eligibility-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Athletic Eligibility Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/academic-health-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic Health Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/grad-plan-tracking-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Grad Plan Tracking Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ignite-r2i-extract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IGNITE R2I Extract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-10-27-cube-validation-validator.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="cube-validation-validator-implementation-plan">Cube Validation: Validator Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> A command-line validator that compares each Cube measure with its
+dashboard, a source anchor, or its sibling measures, at 1 shared moment rebuilt
+from BigQuery, and hands the analyst a triage list.</p>
+<p><strong>Architecture:</strong> A Python package <code>scripts/cube_validation/</code> builds BigQuery
+SQL for both sides "as of" a Cube fact build (time travel, views expanded to
+base tables, clock functions pinned) and runs every comparison inside BigQuery,
+so student-level rows never leave the warehouse. Per-view configuration and the
+analyst's recorded decisions live in <code>src/cube/validation/&lt;view&gt;.yml</code>. Tableau
+is touched only to prove a workbook formula once, through a copy in <code>TEMP-CB</code>.</p>
+<p><strong>Tech Stack:</strong> Python 3.13 (<code>uv run</code>), <code>google-cloud-bigquery</code> (ADC),
+<code>tableauserverclient</code>, <code>pyyaml</code>, stdlib <code>hmac</code>/<code>urllib</code> for Cube REST, pytest.</p>
+<p><strong>Spec:</strong>
+<code>docs/superpowers/specs/2026-10-26-cube-validation-and-build-skill-design.md</code>
+(Part 1 only). Carried-over rules:
+<code>docs/superpowers/specs/2026-10-26-cube-validation-approved-rules.md</code>. Issue</p>
+<h1 id="6150">6150.</h1>
+<p>Worktree:
+<code>/workspaces/teamster/.claude/worktrees/cristinabaldor/feat/claude-cube-validation-and-build-skill</code>
+(<code>W</code> below). Run every command with <code>cd W &amp;&amp;</code> first, and <code>git -C W</code> for git. IDE
+Pyright errors on worktree files are false positives; trust <code>uv run</code>.</p>
+<h2 id="global-constraints">Global Constraints</h2>
+<ul>
+<li>No production change: no extract refresh, no schedule change, no Tableau
+  content written outside the <code>TEMP-CB</code> project.</li>
+<li>The tool never posts to Slack. Anything posted to GitHub shows counts under 10
+  as <code>&lt;10</code>. Row-level output never leaves local files or BigQuery; nothing
+  committed names a person.</li>
+<li>Every comparison runs inside the 7-day time-travel window of its moment.</li>
+<li>The compiled SQL is the raw query, not Cube's 1 pre-aggregation.</li>
+<li>The Cube token's email must have the <code>network</code> grant; refuse if the compiled
+  school filter lists fewer schools than the network scope.</li>
+<li>Each Cube view in scope reads 1 fact; a measure that reads 2 facts is refused.</li>
+<li>Decisions live in <code>src/cube/validation/&lt;view&gt;.yml</code>, never under
+  <code>src/cube/model/</code>.</li>
+<li>Build fresh: do not port code from the deleted first tool (closed PR #5961).</li>
+<li>Each run prices its queries with BigQuery dry runs first and states the cost;
+  <code>--max-usd</code> defaults to 5.</li>
+<li>Commands that need the Tableau PAT or <code>CUBE_API_SECRET</code> run under the pytest
+  secrets fixture through a throwaway <code>tests/test_zz_cube_validation.py</code>, with
+  <code>--tb=short</code>. BigQuery uses ADC and needs no fixture.</li>
+<li>No new <code>pyproject.toml</code> dependencies. Cube's JWT is signed with stdlib <code>hmac</code>;
+  HTTP uses <code>urllib.request</code>.</li>
+<li>Never bare <code>uv run pytest</code>: run <code>uv run pytest tests/scripts/cube_validation</code>
+  only (<code>tests/</code> holds live integration tests).</li>
+</ul>
+<h2 id="review-focus">Review Focus</h2>
+<ol>
+<li>A view in the dashboard's lineage changed its SQL after the moment: the
+   rebuild must use the view's SQL as it stood then (from <code>CREATE VIEW</code> jobs),
+   not today's. Test in Task 3.</li>
+<li>No fact build inside the time-travel window, or <code>--moment</code> older than 7 days:
+   a plain refusal naming the window, not a BigQuery error. Test in Task 3.</li>
+<li>Compiled SQL that reads the pre-aggregation, reads 2 facts, or carries a
+   short school list: refused with the reason. Test in Task 4.</li>
+<li>A Google Sheets external table in the lineage: read live and named in the
+   result, never silent. Test in Task 2.</li>
+<li>A decision whose SQL changed only in whitespace or comments stays quiet; a
+   logic change asks for re-confirmation. Test in Task 6.</li>
+</ol>
+<hr />
+<h2 id="file-structure">File Structure</h2>
+<div class="highlight"><pre><span></span><code>scripts/cube_validation/
+  __init__.py
+  __main__.py        # python -m scripts.cube_validation &lt;command&gt;
+  config.py          # load and validate src/cube/validation/&lt;view&gt;.yml
+  timetravel.py      # as-of SQL rewriting: refs, views, clock pinning
+  bq.py              # BigQuery client, catalog, JOBS queries, cost guard
+  moment.py          # fact builds, moment choice, table fingerprints
+  cube_client.py     # Cube token, compiled SQL, parameter binding, refusals
+  compare.py         # row reconcile, scope, cells, groups, clauses
+  decisions.py       # fingerprints and applying recorded decisions
+  checks.py          # anchors, identities, strongest check per measure
+  tableau.py         # workbook copy, number formats, exports, proof
+  discover.py        # candidate comparisons from exposures and calcs
+  report.py          # local result, GitHub masking, review-issue body
+  cli.py             # commands: discover, prove, check-api, run, review
+src/cube/validation/
+  student_attendance_enrollment_daily_view.yml   # first real file (Task 13)
+tests/scripts/cube_validation/
+  test_&lt;module&gt;.py   # 1 per module, offline, fakes only
+  fixtures/          # SQL and .twb snippets, no student data
+.claude/skills/cube-validation/SKILL.md          # analyst runbook (Task 13)
+</code></pre></div>
+<h2 id="the-validation-file-shared-by-tasks-1-and-5-to-12">The validation file (shared by Tasks 1 and 5 to 12)</h2>
+<div class="highlight"><pre><span></span><code><span class="nt">view</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">student_attendance_enrollment_daily_view</span>
+<span class="nt">fact</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">kipptaf_marts.fct_student_attendance_enrollment_daily</span>
+<span class="nt">email</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">someone@apps.teamschools.org</span><span class="w"> </span><span class="c1"># network grant; overridable by --email</span>
+<span class="nt">comparisons</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ada-y1-region</span>
+<span class="w">    </span><span class="nt">measure</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">avg_daily_attendance</span>
+<span class="w">    </span><span class="nt">confirmed</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="nt">workbook</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">87c13e78-a912-40a4-95dd-33248fc1cbd3</span>
+<span class="w">    </span><span class="nt">sheet</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Y1 ADA - Region</span>
+<span class="w">    </span><span class="nt">dashboard_view</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">kipptaf_tableau.rpt_tableau__attendance_dashboard</span>
+<span class="w">    </span><span class="nt">probe</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">avg(is_present)</span><span class="w"> </span><span class="c1"># aggregate over dashboard rows; or probe_sql</span>
+<span class="w">    </span><span class="nt">decimals</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3</span><span class="w"> </span><span class="c1"># digits of the compared value: p0.0% is a fraction to 3; Task 8 fills it</span>
+<span class="w">    </span><span class="nt">dims</span><span class="p">:</span><span class="w"> </span><span class="c1"># sheet dims, dashboard column -&gt; Cube member</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> dashboard</span><span class="p">:</span><span class="w"> </span><span class="nv">region</span><span class="p p-Indicator">,</span><span class="nt"> cube</span><span class="p">:</span><span class="w"> </span><span class="nv">regions_region_name</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="w">    </span><span class="nt">filters</span><span class="p">:</span><span class="w"> </span><span class="c1"># filter card caption -&gt; both sides</span>
+<span class="w">      </span><span class="nt">Academic Year</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> dashboard</span><span class="p">:</span><span class="w"> </span><span class="nv">academic_year</span><span class="p p-Indicator">,</span><span class="nt"> cube</span><span class="p">:</span><span class="w"> </span><span class="nv">dates_academic_year</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="w">      </span><span class="nt">Region</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> dashboard</span><span class="p">:</span><span class="w"> </span><span class="nv">region</span><span class="p p-Indicator">,</span><span class="nt"> cube</span><span class="p">:</span><span class="w"> </span><span class="nv">regions_region_name</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="w">    </span><span class="nt">defaults</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> Academic Year</span><span class="p">:</span><span class="w"> </span><span class="s">"2026"</span><span class="p p-Indicator">,</span><span class="nt"> Region</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">Camden</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">Newark</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">Paterson</span><span class="p p-Indicator">]</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="w">    </span><span class="nt">cuts</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[{},</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> Region</span><span class="p">:</span><span class="w"> </span><span class="nv">Miami</span><span class="w"> </span><span class="p p-Indicator">}]</span>
+<span class="w">    </span><span class="nt">scope</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span><span class="w"> </span><span class="c1"># e.g. { cube: grade_level, values: [...] }</span>
+<span class="w">    </span><span class="nt">rows</span><span class="p">:</span><span class="w"> </span><span class="c1"># row-level reconcile; grain first</span>
+<span class="w">      </span><span class="nt">grain</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> dashboard</span><span class="p">:</span><span class="w"> </span><span class="nv">student_number</span><span class="p p-Indicator">,</span><span class="nt"> cube</span><span class="p">:</span><span class="w"> </span><span class="nv">lea_student_identifier</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> dashboard</span><span class="p">:</span><span class="w"> </span><span class="nv">calendardate</span><span class="p p-Indicator">,</span><span class="nt"> cube</span><span class="p">:</span><span class="w"> </span><span class="nv">attendance_date</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="w">      </span><span class="nt">values</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> dashboard</span><span class="p">:</span><span class="w"> </span><span class="nv">is_present</span><span class="p p-Indicator">,</span><span class="nt"> cube</span><span class="p">:</span><span class="w"> </span><span class="nv">attendance_value</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="w">    </span><span class="nt">proof</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w"> </span><span class="c1"># written by `prove`: fingerprint, cells, proven_at</span>
+<span class="nt">anchors</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">measure</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">avg_daily_attendance</span>
+<span class="w">    </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.912</span>
+<span class="w">    </span><span class="nt">source</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PowerSchool ADA report</span>
+<span class="w">    </span><span class="nt">as_of</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2026-10-15</span>
+<span class="w">    </span><span class="nt">date_range</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">2026-08-12</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2026-10-15</span><span class="p p-Indicator">]</span>
+<span class="w">    </span><span class="nt">filters</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> regions_region_name</span><span class="p">:</span><span class="w"> </span><span class="nv">Newark</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="nt">identities</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ada-is-attendance-over-membership</span>
+<span class="w">    </span><span class="nt">left</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">avg_daily_attendance</span>
+<span class="w">    </span><span class="nt">right</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sum_attendance_value / sum_membership_value</span>
+<span class="nt">decisions</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">example</span>
+<span class="w">    </span><span class="nt">comparison</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ada-y1-region</span>
+<span class="w">    </span><span class="nt">group</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> column</span><span class="p">:</span><span class="w"> </span><span class="nv">grade_level</span><span class="p p-Indicator">,</span><span class="nt"> values</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">"9"</span><span class="p p-Indicator">]</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="w">    </span><span class="nt">call</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">deliberate</span><span class="w"> </span><span class="c1"># deliberate | fix_dashboard | fix_cube | domain_owner</span>
+<span class="w">    </span><span class="nt">reason</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">...</span>
+<span class="w">    </span><span class="nt">task</span><span class="p">:</span><span class="w"> </span><span class="s">""</span><span class="w"> </span><span class="c1"># Asana or GitHub link for fix_* and domain_owner</span>
+<span class="w">    </span><span class="nt">fingerprints</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> cube</span><span class="p">:</span><span class="w"> </span><span class="nv">&lt;sha256&gt;</span><span class="p p-Indicator">,</span><span class="nt"> dashboard</span><span class="p">:</span><span class="w"> </span><span class="nv">&lt;sha256&gt;</span><span class="w"> </span><span class="p p-Indicator">}</span>
+</code></pre></div>
+<p><code>probe_sql</code> (alternative to <code>probe</code>) is a full query template with <code>{rows}</code>,
+<code>{where}</code> and <code>{dims}</code> placeholders, for detail-level calculations.</p>
+<hr />
+<h3 id="task-1-package-skeleton-and-the-validation-file">Task 1: Package skeleton and the validation file</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>scripts/cube_validation/__init__.py</code>, <code>__main__.py</code>, <code>config.py</code></li>
+<li>Test: <code>tests/scripts/cube_validation/test_config.py</code>,
+  <code>tests/scripts/cube_validation/__init__.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>
+<p>Produces: <code>load_view_config(path: Path) -&gt; ViewConfig</code>; frozen dataclasses
+  <code>ViewConfig</code>, <code>Comparison</code>,
+  <code>RowSpec(grain: list[ColumnPair], values: list[ColumnPair])</code>, <code>Proof</code> fields
+  as plain values, <code>Anchor</code>, <code>Identity</code>, <code>Decision</code>,
+  <code>ColumnPair(dashboard: str, cube: str)</code>;
+  <code>write_proof(path, comparison_id, proof_dict) -&gt; None</code> (rewrites only that
+  comparison's <code>proof:</code> key); <code>ConfigError(Exception)</code> whose message names the
+  file and the key path.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Confirm Cube ignores <code>src/cube/validation/</code>.</strong> Query context7
+      (<code>mcp__context7__query-docs</code>, library Cube) for the default <code>schemaPath</code>
+      and confirm <code>src/cube/cube.js</code> sets none (it sets <code>driverFactory</code>,
+      <code>checkAuth</code> and group hooks only). Expected: default <code>model</code>. If Cube
+      Cloud loads anything outside <code>model/</code>, stop and report.</p>
+</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Write failing tests.</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_loads_example</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">):</span> <span class="o">...</span>  <span class="c1"># the YAML above round-trips; comparisons[0].dims[0].cube == "regions_region_name"</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_unknown_call_is_refused</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">):</span>  <span class="c1"># call: maybe</span>
+    <span class="k">with</span> <span class="n">pytest</span><span class="o">.</span><span class="n">raises</span><span class="p">(</span><span class="n">ConfigError</span><span class="p">,</span> <span class="n">match</span><span class="o">=</span><span class="sa">r</span><span class="s2">"decisions\[0\]\.call"</span><span class="p">):</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_probe_and_probe_sql_are_exclusive</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">):</span> <span class="o">...</span>  <span class="c1"># ConfigError names comparisons[0]</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_file_under_model_is_refused</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">):</span>  <span class="c1"># path .../src/cube/model/x.yml</span>
+    <span class="k">with</span> <span class="n">pytest</span><span class="o">.</span><span class="n">raises</span><span class="p">(</span><span class="n">ConfigError</span><span class="p">,</span> <span class="n">match</span><span class="o">=</span><span class="s2">"src/cube/model"</span><span class="p">):</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_fix_calls_need_a_task</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">):</span> <span class="o">...</span>  <span class="c1"># call fix_cube with task "" -&gt; ConfigError</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Run:</strong>
+      <code>cd W &amp;&amp; uv run pytest tests/scripts/cube_validation/test_config.py -q</code>
+      Expected: FAIL, module not found.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Implement <code>config.py</code></strong> with <code>yaml.safe_load</code> and explicit
+      validation (no schema library). <code>__main__.py</code> calls
+      <code>cli.main(sys.argv[1:])</code> and exits with its return code (<code>cli.py</code> arrives
+      in Task 12; stub <code>main</code> returning 2 until then).</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Run tests.</strong> Expected: PASS.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Commit</strong> <code>feat(cube): validation file loader</code> with <code>Refs #6150</code>.</li>
+</ul>
+<h3 id="task-2-as-of-sql-rewriting">Task 2: As-of SQL rewriting</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>scripts/cube_validation/timetravel.py</code></li>
+<li>Test: <code>tests/scripts/cube_validation/test_timetravel.py</code>, fixtures
+  <code>fixtures/cube_compiled.sql</code>, <code>fixtures/view_union.sql</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul>
+<li>Consumes: a catalog object with <code>table(dataset: str, name: str) -&gt; TableInfo</code>
+  and <code>view_sql_as_of(dataset, name, ts) -&gt; str</code> (Task 3 implements it; tests
+  use a fake).</li>
+<li>Produces:
+  <code>TableInfo(kind: Literal["TABLE","VIEW","EXTERNAL"], view_sql: str | None)</code>;
+  <code>as_of(sql: str, ts: datetime, catalog) -&gt; AsOf</code> where
+  <code>AsOf(sql: str, tables: frozenset[str], live: frozenset[str])</code>;
+  <code>pin_clock(sql: str, ts: datetime) -&gt; str</code>.</li>
+</ul>
+<p>Rules, each proven on 2026-10-26:</p>
+<ul class="task-list">
+<li>dbt view refs: <code>`teamster-332318`.`ds`.`t`</code> with optional <code>as alias</code>. Skip
+  a ref inside a string literal (dbt <code>union_relations</code> writes
+  <code>'''</code>teamster-332318.ds.t<code>'''</code>): regex
+  <code>(?&lt;!')`teamster-332318`\.`(\w+)`\.`(\w+)`(\s+as\s+`?(\w+)`?)?</code>.</li>
+<li>Cube refs: <code>(FROM|JOIN)\s+(\w+)\.(\w+)\s+AS\s+</code>(\w+)<code>(Cube writes</code> FROM
+  kipptaf_marts.fct_x AS <code>alias</code> ``).</li>
+<li>A TABLE becomes
+  <code>`teamster-332318.ds.t` AS alias FOR SYSTEM_TIME AS OF TIMESTAMP '&lt;utc&gt;'</code>:
+  the alias comes before <code>FOR SYSTEM_TIME</code>.</li>
+<li>A VIEW becomes <code>(&lt;its SQL as of ts, rewritten recursively&gt;) AS alias</code>; depth
+  over 12 raises <code>ValueError</code>.</li>
+<li>An EXTERNAL table is left as is and added to <code>live</code>.</li>
+<li>
+<p><code>pin_clock</code> replaces <code>current_date(&lt;tz&gt;)</code>, <code>current_datetime(&lt;tz&gt;)</code> and
+  <code>current_timestamp()</code> (any case, any whitespace) with
+  <code>date(timestamp '&lt;utc&gt;', &lt;tz&gt;)</code>, <code>datetime(timestamp '&lt;utc&gt;', &lt;tz&gt;)</code> and
+  <code>timestamp '&lt;utc&gt;'</code>; no-argument forms keep no zone argument.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write failing tests.</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_cube_table_gets_alias_before_clause</span><span class="p">():</span> <span class="o">...</span>  <span class="c1"># fixture cube_compiled.sql; output contains "AS `locations` FOR SYSTEM_TIME AS OF TIMESTAMP '2026-10-22 20:44:04+00:00'"</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_view_is_inlined_recursively</span><span class="p">():</span> <span class="o">...</span>          <span class="c1"># fake: dim_locations VIEW -&gt; stg TABLE; result.tables == {"kipptaf_google_sheets.stg_x"}</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_quoted_ref_is_left_alone</span><span class="p">():</span> <span class="o">...</span>             <span class="c1"># fixture view_union.sql: the '''...''' literal is unchanged</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_external_table_is_read_live</span><span class="p">():</span> <span class="o">...</span>          <span class="c1"># result.live == {"ds.sheet"}, no FOR SYSTEM_TIME on it</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_pin_clock_variants</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="n">pin_clock</span><span class="p">(</span><span class="s2">"current_date('America/New_York')"</span><span class="p">,</span> <span class="n">TS</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"date(timestamp '2026-10-22 19:00:00+00:00', 'America/New_York')"</span>
+    <span class="k">assert</span> <span class="n">pin_clock</span><span class="p">(</span><span class="s2">"CURRENT_TIMESTAMP()"</span><span class="p">,</span> <span class="n">TS</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"timestamp '2026-10-22 19:00:00+00:00'"</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_view_depth_limit</span><span class="p">():</span> <span class="o">...</span>                     <span class="c1"># self-referencing fake view -&gt; ValueError</span>
+</code></pre></div>
+<p><code>fixtures/cube_compiled.sql</code> is Cube's compiled SQL for <code>avg_daily_attendance</code>
+by <code>grade_level</code> and <code>locations_abbreviation</code> with a Region filter (5 joins:
+<code>fct_student_attendance_enrollment_daily</code>, <code>dim_student_enrollments</code>,
+<code>dim_locations</code>, <code>dim_dates</code>, <code>dim_regions</code>; <code>?</code> parameters). Get it once with
+<code>mcp__claude_ai_Cube__sql</code>. <code>fixtures/view_union.sql</code> is a hand-written view
+body with 1 backticked table ref, 1 <code>union_relations</code>-style quoted ref, and 1
+<code>current_date('America/New_York')</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run</strong>
+      <code>uv run pytest tests/scripts/cube_validation/test_timetravel.py -q</code>.
+      Expected: FAIL.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Implement <code>as_of</code> and <code>pin_clock</code>.</strong> <code>as_of</code> applies <code>pin_clock</code>
+      to the outer SQL and every inlined view body.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run tests.</strong> Expected: PASS.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong> <code>feat(cube): rewrite SQL as of a moment</code>.</li>
+</ul>
+<h3 id="task-3-bigquery-access-view-history-and-moments">Task 3: BigQuery access, view history and moments</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>scripts/cube_validation/bq.py</code>, <code>scripts/cube_validation/moment.py</code></li>
+<li>Test: <code>tests/scripts/cube_validation/test_bq.py</code>, <code>test_moment.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul>
+<li>Consumes: <code>TableInfo</code> (Task 2).</li>
+<li>Produces:</li>
+<li><code>class Warehouse</code> (wraps <code>bigquery.Client(project="teamster-332318")</code>):
+    <code>table(ds, name) -&gt; TableInfo</code>, <code>view_sql_as_of(ds, name, ts) -&gt; str</code>,
+    <code>price(sql: str) -&gt; float</code> (USD at $6.25 per TiB from a dry run),
+    <code>rows(sql: str) -&gt; list[dict]</code>, and a <code>budget(max_usd: float)</code> context
+    manager that raises <code>CostCapError</code> once summed prices pass the cap.</li>
+<li><code>Build(start: datetime, end: datetime, job_id: str)</code>;
+    <code>fact_builds(wh, fact: str, since: datetime) -&gt; list[Build]</code> from
+    <code>`teamster-332318`.`region-us`.INFORMATION_SCHEMA.JOBS_BY_PROJECT</code>
+    (successful jobs whose <code>destination_table</code> is the fact, any statement type);</li>
+<li><code>pick_moment(builds, now, requested: datetime | None) -&gt; Build</code> raising
+    <code>MomentError</code>;</li>
+<li><code>fingerprint(wh, table: str, ts: datetime) -&gt; int</code> using
+    <code>bit_xor(farm_fingerprint(to_json_string(t)))</code>;
+    <code>changed_between(wh, tables, t1, t2) -&gt; list[str]</code>.</li>
+</ul>
+<p>Behavior:</p>
+<ul class="task-list">
+<li><code>view_sql_as_of</code> returns today's <code>view_query</code> when the view's <code>modified</code> is at
+  or before <code>ts</code>; otherwise the body of the latest successful <code>CREATE_VIEW</code> job
+  for that view that started before <code>ts</code> (text after the first <code>as</code> that follows
+  <code>OPTIONS(...)</code> or the view name). No such job: raise <code>ViewHistoryError</code> naming
+  the view.</li>
+<li>
+<p><code>pick_moment</code>: with <code>requested</code>, the build whose <code>end</code> equals it or the latest
+  build ending at or before it; refuse when that build's <code>start</code> is older than
+  <code>now - 7 days + 1 hour</code>. Without <code>requested</code>, the latest build. No build:
+  <code>MomentError("no successful build of &lt;fact&gt; in the last 7 days")</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write failing tests</strong> with a fake BigQuery client returning
+      canned rows (no network).</p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_view_sql_uses_current_when_unchanged</span><span class="p">():</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_view_sql_uses_create_view_job_when_changed_after</span><span class="p">():</span> <span class="o">...</span>   <span class="c1"># Review Focus 1</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_view_history_missing_is_refused</span><span class="p">():</span> <span class="o">...</span>                    <span class="c1"># ViewHistoryError names the view</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_pick_latest_build</span><span class="p">():</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_requested_moment_outside_window_is_refused</span><span class="p">():</span>             <span class="c1"># Review Focus 2</span>
+    <span class="k">with</span> <span class="n">pytest</span><span class="o">.</span><span class="n">raises</span><span class="p">(</span><span class="n">MomentError</span><span class="p">,</span> <span class="n">match</span><span class="o">=</span><span class="s2">"7 days"</span><span class="p">):</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_budget_stops_past_cap</span><span class="p">():</span> <span class="o">...</span>                              <span class="c1"># price 3 + 3 with cap 5 -&gt; CostCapError</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run</strong>
+      <code>uv run pytest tests/scripts/cube_validation/test_bq.py tests/scripts/cube_validation/test_moment.py -q</code>.
+      Expected: FAIL.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Implement <code>bq.py</code> and <code>moment.py</code>.</strong></li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run tests.</strong> Expected: PASS.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Live check (ADC, no fixture):</strong>
+      <code>cd W &amp;&amp; uv run python -c "from scripts.cube_validation import bq, moment; ..."</code>
+      listing builds of <code>kipptaf_marts.fct_student_attendance_enrollment_daily</code>
+      since 2026-10-22. Expected: includes a build starting 2026-10-22 16:44 ET.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Commit</strong> <code>feat(cube): fact builds, view history and cost guard</code>.</li>
+</ul>
+<h3 id="task-4-cube-compiled-sql">Task 4: Cube compiled SQL</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>scripts/cube_validation/cube_client.py</code></li>
+<li>Test: <code>tests/scripts/cube_validation/test_cube_client.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Produces:</li>
+<li><code>mint_token(secret: str, email: str, now: int, ttl: int = 300) -&gt; str</code>:
+    HS256 JWT, payload exactly <code>{"email", "iat", "exp"}</code>, base64url without
+    padding.</li>
+<li><code>class Cube(base_url: str, secret: str, email: str, fetch=urlopen_json)</code>:
+    <code>compiled(query: dict) -&gt; Compiled</code> (GET <code>/sql?query=&lt;json&gt;</code>),
+    <code>load(query: dict) -&gt; list[dict]</code> (POST <code>/load</code>). Header
+    <code>Authorization: &lt;token&gt;</code> with no <code>Bearer</code>. Base URL from <code>CUBE_REST_URL</code>
+    (same variable <code>src/cube/mcp/server.py</code> reads; it includes
+    <code>/cubejs-api/v1</code>).</li>
+<li><code>Compiled(sql: str, params: list, pre_aggregations: list)</code>;
+    <code>bind(compiled) -&gt; str</code> inlines <code>?</code> parameters as BigQuery literals (strings
+    single-quoted with <code>\</code> and <code>'</code> escaped; numbers bare);
+    <code>drop_limit(sql) -&gt; str</code> removes a trailing <code>LIMIT &lt;n&gt;</code>.</li>
+<li><code>refuse_unless_safe(compiled, *, view_fact: str, network_schools: set[str]) -&gt; None</code>
+    raising <code>CubeRefusal</code> when <code>pre_aggregations</code> is non-empty, when the SQL
+    reads a <code>kipptaf_marts.fct_*</code> other than <code>view_fact</code>, or when the bound
+    school list (the <code>abbreviation IN (...)</code> parameters) is a strict subset of
+    <code>network_schools</code>.</li>
+<li>
+<p><code>network_schools(wh) -&gt; set[str]</code>: the abbreviation set the <code>network</code> scope
+    enumerates (read <code>src/cube/access.js</code> lines 151 to 161 for its source table
+    and mirror that query).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write failing tests</strong> (fake <code>fetch</code>).</p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_token_payload_and_signature</span><span class="p">():</span> <span class="o">...</span>       <span class="c1"># recompute hmac over header.payload; payload keys == {"email","iat","exp"}</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_header_has_no_bearer</span><span class="p">():</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_bind_escapes_quotes</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="n">bind</span><span class="p">(</span><span class="n">Compiled</span><span class="p">(</span><span class="s2">"x = ?"</span><span class="p">,</span> <span class="p">[</span><span class="s2">"O'Neil"</span><span class="p">],</span> <span class="p">[]))</span> <span class="o">==</span> <span class="s2">"x = 'O</span><span class="se">\\</span><span class="s2">'Neil'"</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_preaggregation_is_refused</span><span class="p">():</span> <span class="o">...</span>          <span class="c1"># Review Focus 3</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_second_fact_is_refused</span><span class="p">():</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_short_school_list_is_refused</span><span class="p">():</span> <span class="o">...</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run</strong>
+      <code>uv run pytest tests/scripts/cube_validation/test_cube_client.py -q</code>.
+      Expected: FAIL.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Implement.</strong> Read the <code>/sql</code> response shape from Cube's docs
+      (context7) and map <code>sql.sql</code> to <code>(sql, params)</code> and <code>sql.preAggregations</code>
+      to <code>pre_aggregations</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run tests.</strong> Expected: PASS.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Live smoke</strong> through a throwaway
+      <code>tests/test_zz_cube_validation.py</code> that calls <code>Cube(...).compiled(...)</code>
+      for <code>avg_daily_attendance</code> by <code>grade_level</code>:
+      <code>uv run pytest tests/test_zz_cube_validation.py -s --tb=short</code>. Expected:
+      SQL mentions <code>fct_student_attendance_enrollment_daily</code>, params include the
+      school list. Delete the file after.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Commit</strong> <code>feat(cube): compiled SQL with safety refusals</code>.</li>
+</ul>
+<h3 id="task-5-comparing-rows-and-cells">Task 5: Comparing rows and cells</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>scripts/cube_validation/compare.py</code></li>
+<li>Test: <code>tests/scripts/cube_validation/test_compare.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>Comparison</code>, <code>ColumnPair</code> (Task 1).</li>
+<li>Produces:</li>
+<li><code>reconcile_sql(cube_rows_sql: str, dashboard_rows_sql: str, rows: RowSpec, group_by: list[str]) -&gt; str</code>:
+    1 BigQuery query that full-outer-joins both sides on the grain and returns
+    only aggregates: per bucket (<code>match</code>, <code>value_differs</code>, <code>dashboard_only</code>,
+    <code>cube_only</code>) and per <code>group_by</code> value, <code>n_rows</code> and <code>n_students</code>.</li>
+<li><code>Group(comparison_id: str, column: str, value: str, bucket: str, n_rows: int, n_students: int)</code>
+    and
+    <code>groups_from(comparison_id: str, result_rows: list[dict]) -&gt; list[Group]</code>
+    (buckets other than <code>match</code>).</li>
+<li><code>scope_filters(comparison) -&gt; list[dict]</code>: Cube filters for each <code>scope</code>
+    entry, listed in the result.</li>
+<li><code>cell_verdict(dashboard: float | None, cube: float | None, decimals: int) -&gt; Literal["pass","differs","dashboard_only","cube_only"]</code>:
+    compares after <code>round(x, decimals)</code>; <code>decimals</code> already counts a percent's
+    fraction digits (Task 8).</li>
+<li>
+<p><code>clauses_for(columns: list[str], sql: str) -&gt; list[str]</code>: each <code>WHERE</code>,
+    <code>QUALIFY</code>, <code>HAVING</code> or <code>JOIN ... ON</code> predicate in <code>sql</code> that names one of
+    <code>columns</code>, trimmed to 1 line.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write failing tests.</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_reconcile_sql_returns_aggregates_only</span><span class="p">():</span> <span class="o">...</span>   <span class="c1"># no grain column in the outer SELECT</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_cell_verdict_at_displayed_decimals</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="n">cell_verdict</span><span class="p">(</span><span class="mf">0.9321</span><span class="p">,</span> <span class="mf">0.9324</span><span class="p">,</span> <span class="n">decimals</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"pass"</span>      <span class="c1"># both show 93.2%</span>
+    <span class="k">assert</span> <span class="n">cell_verdict</span><span class="p">(</span><span class="mf">0.9321</span><span class="p">,</span> <span class="mf">0.9372</span><span class="p">,</span> <span class="n">decimals</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"differs"</span>   <span class="c1"># 93.2% vs 93.7%</span>
+    <span class="k">assert</span> <span class="n">cell_verdict</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="mf">0.93</span><span class="p">,</span> <span class="n">decimals</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"cube_only"</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_clauses_for_finds_the_filter</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="n">clauses_for</span><span class="p">([</span><span class="s2">"assessment_type"</span><span class="p">],</span> <span class="s2">"select * from t where assessment_type != 'x' and y = 1"</span><span class="p">)</span> <span class="o">==</span> <span class="p">[</span><span class="s2">"assessment_type != 'x'"</span><span class="p">]</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_scope_filter_from_comparison</span><span class="p">():</span> <span class="o">...</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run</strong>
+      <code>uv run pytest tests/scripts/cube_validation/test_compare.py -q</code>.
+      Expected: FAIL.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Implement.</strong> Split predicates on top-level <code>AND</code> only.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run tests.</strong> Expected: PASS.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong> <code>feat(cube): row and cell comparison</code>.</li>
+</ul>
+<h3 id="task-6-recorded-decisions">Task 6: Recorded decisions</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>scripts/cube_validation/decisions.py</code></li>
+<li>Test: <code>tests/scripts/cube_validation/test_decisions.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>Decision</code> (Task 1); <code>Group</code> (Task 5).</li>
+<li>
+<p>Produces: <code>sql_fingerprint(sql: str) -&gt; str</code> (sha256 of SQL with comments
+  removed, whitespace collapsed, lower-cased outside string literals);
+  <code>apply(decisions, groups, fingerprints: dict[str, str]) -&gt; Applied</code> with
+  <code>Applied(open: list[Group], quiet: list[tuple[Decision, Group]], reconfirm: list[Decision], no_longer_needed: list[Decision])</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write failing tests.</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_whitespace_and_comment_changes_keep_fingerprint</span><span class="p">():</span> <span class="o">...</span>   <span class="c1"># Review Focus 5</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_logic_change_changes_fingerprint</span><span class="p">():</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_matching_decision_quiets_group</span><span class="p">():</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_changed_sql_asks_to_reconfirm</span><span class="p">():</span> <span class="o">...</span>    <span class="c1"># decision moves to reconfirm; its group stays open</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_missing_group_marks_no_longer_needed</span><span class="p">():</span> <span class="o">...</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2 to 4:</strong> run (FAIL), implement, run (PASS).</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong> <code>feat(cube): apply recorded decisions</code>.</li>
+</ul>
+<h3 id="task-7-anchors-identities-and-the-strongest-check">Task 7: Anchors, identities and the strongest check</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>scripts/cube_validation/checks.py</code></li>
+<li>Test: <code>tests/scripts/cube_validation/test_checks.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>Anchor</code>, <code>Identity</code> (Task 1); <code>Cube</code>, <code>bind</code> (Task 4).</li>
+<li>Produces:</li>
+<li><code>Finding(kind: Literal["anchor","identity"], measure: str, detail: str, left: float, right: float, passed: bool)</code>.</li>
+<li><code>anchor_query(anchor, view: str) -&gt; dict</code>: a Cube query for the anchor's
+    measure, <code>date_range</code> and <code>filters</code>. Anchors run on current data (the figure
+    is frozen at its date; no time travel).</li>
+<li><code>anchor_finding(anchor, cube_value: float) -&gt; Finding</code>: always a triage item
+    showing both values and the difference; no threshold.</li>
+<li><code>identity_queries(identity, cut: dict) -&gt; tuple[dict, dict]</code> and
+    <code>identity_finding(identity, left: float, right: float) -&gt; Finding</code> (equal at
+    9 decimals passes).</li>
+<li>
+<p><code>strongest_check(measure: str, results) -&gt; Literal["matches a dashboard","anchored to a source","consistent only","none"]</code>.
+    "consistent only" and "none" are never reported as validated.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write failing tests.</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_anchor_difference_is_always_triaged</span><span class="p">():</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_identity_passes_at_9_decimals</span><span class="p">():</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_strongest_check_order</span><span class="p">():</span> <span class="o">...</span>   <span class="c1"># dashboard pass beats anchor; anchor beats identity</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_consistent_only_is_not_validated</span><span class="p">():</span> <span class="o">...</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2 to 4:</strong> run (FAIL), implement, run (PASS).</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong> <code>feat(cube): anchors and consistency checks</code>.</li>
+</ul>
+<h3 id="task-8-proving-a-workbook-formula">Task 8: Proving a workbook formula</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>scripts/cube_validation/tableau.py</code></li>
+<li>Test: <code>tests/scripts/cube_validation/test_tableau.py</code>, fixture
+  <code>fixtures/sheet_formats.twb</code> (a trimmed <code>.twb</code> with 1 worksheet and 2
+  measures, no data)</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul>
+<li>Produces:</li>
+<li><code>drop_number_formats(twb_xml: str, measures: list[str]) -&gt; str</code>: removes
+    <code>default-format</code> on those measures' <code>column</code> elements and their
+    <code>text-format</code> rules in worksheet <code>style</code>.</li>
+<li><code>displayed_decimals(format_string: str) -&gt; int</code>: digits of the compared
+    value, so a percent counts its fraction: <code>"p0.0%"</code> → 3, <code>"p0%"</code> → 2,
+    <code>"n#,##0"</code> → 0, <code>"0.00"</code> → 2.</li>
+<li><code>class Tableau(server)</code>: <code>download_twb(luid) -&gt; str</code> (no extract),
+    <code>workbook_updated(luid) -&gt; datetime</code>,
+    <code>refresh_started(workbook_luid) -&gt; datetime</code> (latest completed
+    extract-refresh job's start, workbook or its published datasource),
+    <code>publish_copy(workbook_luid, xml_edit) -&gt; str</code> (copy luid in <code>TEMP-CB</code>,
+    named <code>ZZ-VALIDATE &lt;workbook name&gt;</code>),
+    <code>export(copy_luid, sheet, filters: dict) -&gt; list[dict]</code> (REST CSV with <code>vf</code>
+    filters).</li>
+<li><code>prove(comparison, exports, probe_values) -&gt; Proof</code> where
+    <code>Proof(fingerprint: str, cells: int, failures: list[str], proven_at: datetime)</code>;
+    proven only when every exported value equals the probe at the displayed
+    decimals.</li>
+</ul>
+<p>Before editing any XML, invoke the <code>tableau-workbook-xml</code> skill. The probe runs
+over the dashboard view rebuilt as of <code>refresh_started</code> (Task 2 and 3), so 1 SQL
+dialect serves both the proof and later comparisons. Read the refresh start
+before and after the exports; if it moved, discard the exports and retry once.
+Parameter cuts are out of scope for automated proof (the Tableau MCP returns 400
+on parameters here); the result lists them as "prove in the browser".</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write failing tests</strong> (offline; fake server object).</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_drop_number_formats_removes_only_named_measures</span><span class="p">():</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_displayed_decimals_cases</span><span class="p">():</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_prove_fails_on_one_mismatch</span><span class="p">():</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_refresh_moved_triggers_retry</span><span class="p">():</span> <span class="o">...</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2 to 4:</strong> run (FAIL), implement with <code>tableauserverclient</code>
+      (<code>TableauServerResource</code> in <code>src/teamster/libraries/tableau/resources.py</code>
+      shows sign-in; env vars <code>TABLEAU_SERVER_ADDRESS</code>, <code>TABLEAU_SITE_ID</code>,
+      <code>TABLEAU_TOKEN_NAME</code>, <code>TABLEAU_PERSONAL_ACCESS_TOKEN</code>), run (PASS).</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong> <code>feat(cube): prove a workbook formula once</code>.</li>
+</ul>
+<h3 id="task-9-finding-comparisons">Task 9: Finding comparisons</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>scripts/cube_validation/discover.py</code></li>
+<li>Test: <code>tests/scripts/cube_validation/test_discover.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Produces:</li>
+<li><code>tableau_exposures(path: Path) -&gt; list[Exposure]</code> reading
+    <code>src/dbt/kipptaf/models/exposures/tableau.yml</code>;
+    <code>Exposure(name, label, luid, models: list[str])</code> with the luid at
+    <code>config.meta.dagster.asset.metadata.id</code>.</li>
+<li><code>calculated_fields(twb_xml: str) -&gt; list[Calc(caption, formula, worksheets)]</code>.</li>
+<li><code>rank(measure: str, member_sql: str, calcs) -&gt; list[Candidate]</code>: score by
+    shared tokens between the measure name, the columns in its SQL, and each
+    calc's caption and formula; top 5 per workbook, score over 0.</li>
+<li>
+<p>Writes nothing: <code>discover</code> prints candidates; the analyst confirms and the
+  skill writes <code>comparisons:</code> entries with <code>confirmed: true</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write failing tests.</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_exposure_luid_path</span><span class="p">():</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_calculated_fields_from_twb</span><span class="p">():</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_rank_prefers_formula_on_shared_columns</span><span class="p">():</span> <span class="o">...</span>   <span class="c1"># "is_present" calc outranks "Attendance Pts"</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2 to 4:</strong> run (FAIL), implement, run (PASS).</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong> <code>feat(cube): find candidate comparisons</code>.</li>
+</ul>
+<h3 id="task-10-result-and-review-issue">Task 10: Result and review issue</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>scripts/cube_validation/report.py</code></li>
+<li>Test: <code>tests/scripts/cube_validation/test_report.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>Applied</code> (Task 6), findings (Task 7), cell and bucket results (Task
+  5), <code>AsOf.live</code> (Task 2), changed dimensions (Task 3).</li>
+<li>
+<p>Produces: <code>render_local(run) -&gt; str</code> (Markdown to the terminal and
+  <code>~/.cache/cube-validation/&lt;view&gt;/&lt;moment&gt;/result.md</code>), sections in the spec's
+  order: each measure with strongest check and verdict; triage list; decisions
+  applied, to re-confirm, no longer needed; sources read live; dimensions that
+  changed between the moment's start and end; scopes applied; cost.
+  <code>render_review_issue(domain: str, runs) -&gt; str</code>: body in the
+  <code>.github/ISSUE_TEMPLATE/feature_request.md</code> structure, domain-owner groups
+  only, every count through <code>mask(n) -&gt; str</code> (<code>"&lt;10"</code> under 10).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write failing tests.</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_mask_small_counts</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="n">mask</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"&lt;10"</span> <span class="ow">and</span> <span class="n">mask</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"10"</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_review_issue_has_no_raw_small_counts</span><span class="p">():</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_local_result_lists_live_sources_and_changed_dims</span><span class="p">():</span> <span class="o">...</span>   <span class="c1"># Review Focus 4</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_consistent_only_measure_reads_not_validated</span><span class="p">():</span> <span class="o">...</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2 to 4:</strong> run (FAIL), implement, run (PASS).</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong> <code>feat(cube): validation result and review issue</code>.</li>
+</ul>
+<h3 id="task-11-command-line">Task 11: Command line</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>scripts/cube_validation/cli.py</code> (replace the Task 1 stub)</li>
+<li>Test: <code>tests/scripts/cube_validation/test_cli.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: every module above.</li>
+<li>Produces <code>main(argv: list[str]) -&gt; int</code> with commands:</li>
+<li><code>discover &lt;view.yml&gt; --measure &lt;m&gt;</code>: Task 9 candidates.</li>
+<li><code>prove &lt;view.yml&gt; --comparison &lt;id&gt;</code>: Task 8; writes <code>proof:</code> (fingerprint,
+    cells, <code>proven_at</code>, the workbook's <code>updated_at</code>) into the file with
+    <code>write_proof</code>.</li>
+<li><code>prove &lt;view.yml&gt; --check</code>: read-only sign-in; lists comparisons whose
+    workbook <code>updated_at</code> is later than their proof's. <code>run</code> never signs in to
+    Tableau; it prints each proof's date.</li>
+<li><code>check-api &lt;view.yml&gt;</code>: for the default cut and 2 more, <code>Cube.load</code> and the
+    bound compiled SQL run now must agree at 9 decimals; refuse if the fact or a
+    dimension rebuilt in between (<code>changed_between</code>).</li>
+<li><code>run &lt;view.yml&gt; [--moment &lt;iso&gt;] [--email &lt;e&gt;] [--max-usd 5]</code>: pick the
+    moment; for each comparison and cut, dashboard rows as of <code>build.start</code>,
+    Cube as of <code>build.end</code>; name the dimension tables in Cube's SQL that
+    <code>changed_between</code> start and end; reconcile, cells, decisions, anchors,
+    identities; render.</li>
+<li><code>review &lt;view.yml&gt;... --domain &lt;name&gt;</code>: prints the review-issue body. Never
+    posts.</li>
+<li>
+<p>Return codes: 0 done, 1 refused (message says why), 2 usage error.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write failing tests</strong> with fakes for <code>Warehouse</code>, <code>Cube</code>,
+      <code>Tableau</code>.</p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_run_uses_start_for_dashboard_and_end_for_cube</span><span class="p">():</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_run_refuses_comparison_without_proof</span><span class="p">():</span> <span class="o">...</span>    <span class="c1"># exit 1, message names the comparison</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_run_prices_before_running</span><span class="p">():</span> <span class="o">...</span>               <span class="c1"># CostCapError -&gt; exit 1 with dollars</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_review_never_posts</span><span class="p">():</span> <span class="o">...</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2 to 4:</strong> run (FAIL), implement, run (PASS).</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Run the whole package's tests:</strong>
+      <code>uv run pytest tests/scripts/cube_validation -q</code>. Expected: all pass.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Commit</strong> <code>feat(cube): validation command line</code>.</li>
+</ul>
+<h3 id="task-12-skill-and-the-first-validation-file">Task 12: Skill and the first validation file</h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Create: <code>.claude/skills/cube-validation/SKILL.md</code>,
+  <code>src/cube/validation/student_attendance_enrollment_daily_view.yml</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Invoke <code>superpowers:writing-skills</code></strong>, then write the skill: a
+      runbook for the analyst flow (list measures → <code>discover</code> → confirm →
+      <code>prove</code> → <code>check-api</code> once per view → <code>run</code> → triage into the 4 calls →
+      record decisions → <code>review</code> on the analyst's OK, posted by Claude with
+      <code>mcp__github__issue_write</code>). Include the throwaway secrets runner from
+      Global Constraints, the 7-day window, the 4 calls and where each goes, and
+      the rule that the tool never posts to Slack. Description triggers:
+      "validate Cube", "does Cube match the dashboard", <code>src/cube/validation/</code>.</p>
+</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Write the attendance file</strong> with 1 comparison (<code>ada-y1-region</code>
+      as in the example above, <code>confirmed: true</code>, <code>proof: null</code>), 1 identity
+      (<code>avg_daily_attendance</code> = <code>sum_attendance_value / sum_membership_value</code>),
+      no anchors and no decisions yet. The analyst supplies the network-grant
+      email; ask before committing it, since the file is committed.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Load it:</strong>
+      <code>uv run python -c "from pathlib import Path; from scripts.cube_validation.config import load_view_config as l; print(l(Path('src/cube/validation/student_attendance_enrollment_daily_view.yml')).view)"</code>.
+      Expected: <code>student_attendance_enrollment_daily_view</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Lint</strong>
+      <code>cd W &amp;&amp; /workspaces/teamster/.trunk/tools/trunk check --force --no-fix .claude/skills/cube-validation/SKILL.md src/cube/validation/student_attendance_enrollment_daily_view.yml &lt;/dev/null</code>.
+      Expected: no lint findings (formatting is the hook's).</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong> <code>feat(cube): validation skill and attendance file</code>.</li>
+</ul>
+<h3 id="task-13-live-acceptance-on-the-2026-10-22-proof">Task 13: Live acceptance on the 2026-10-22 proof</h3>
+<p>Run before 2026-10-29 16:44 ET, when the 2026-10-22 16:44 build leaves the
+time-travel window. After that, use the latest build and compare against a fresh
+<code>prove</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: <code>prove</code></strong> the <code>ada-y1-region</code> comparison through the throwaway
+      runner. Expected: proof written, 0 failures, at least 1 cell per cut.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: <code>check-api</code>.</strong> Expected: agree on all 3 cuts.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: <code>run --moment 2026-10-22T20:44:16Z</code></strong> (end of the 16:44 ET
+      build; confirm the exact end from <code>fact_builds</code>). Expected: for Miami,
+      Royalty grade 2 reads 0.932810551 on both sides and Courage grade 7 reads
+      0.956382220 on both sides (Cube as of the build's end, dashboard rows as
+      of its start), the same values the 2026-10-26 proof found.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: <code>run</code></strong> with the latest build. Expected: a result with strongest
+      checks, a triage list, cost under $5, and no student-level row in the
+      output.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Delete</strong> <code>tests/test_zz_cube_validation.py</code>; confirm
+      <code>git -C W status --short</code> shows no throwaway file.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: File the builder and CI parts as their own issues</strong>, linked from
+      #6150, so they outlive this PR. Then push and open the PR from
+      <code>.github/pull_request_template.md</code> with <code>Refs #6150</code>.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+    
+  </body>
+</html>

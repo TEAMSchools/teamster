@@ -1,0 +1,2331 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>DDI Suite student dimensions in Cube: implementation plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.57a0d79d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#ddi-suite-student-dimensions-in-cube-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              DDI Suite student dimensions in Cube: implementation plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/launch-page-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Launch Page
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube-access-individual-exceptions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube Access - Individual Exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/tableau-permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tableau Permissions (People Data)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/csgf-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSGF Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/crdc-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CRDC Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ddi-stack-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDI Stack Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/hs-early-warning-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HS Early Warning Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/dibels-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIBELS Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/stat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/njdoe-universal-screener-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NJDOE Universal Screener Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/athletic-eligibility-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Athletic Eligibility Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/academic-health-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic Health Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/grad-plan-tracking-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Grad Plan Tracking Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ignite-r2i-extract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IGNITE R2I Extract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#global-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global Constraints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#review-focus" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Review Focus
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Review Focus">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-1-school-week-on-the-assessment-view" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: School week on the assessment view
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-2-per-student-flags-and-homeroom-on-dim_student_enrollment_status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: Per-student flags and homeroom on dim_student_enrollment_status
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-3-per-student-flags-and-homeroom-in-cube" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: Per-student flags and homeroom in Cube
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-4-per-subject-flags-on-dim_student_enrollment_status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: Per-subject flags on dim_student_enrollment_status
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-5-subject-picked-flags-in-cube-after-6305" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 5: Subject-picked flags in Cube (after #6305)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-6-verify-the-branch-and-open-the-pr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 6: Verify the branch and open the PR
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-11-12-ddi-suite-student-dimensions.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="ddi-suite-student-dimensions-in-cube-implementation-plan">DDI Suite student dimensions in Cube: implementation plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Put every DDI Suite student dimension still missing from
+<code>student_assessment_scores_view</code> into the marts and Cube: the school week, 3
+per-student flags, the homeroom name and section number, and 3 subject-picked
+flags.</p>
+<p><strong>Architecture:</strong> All new dbt columns land on <code>dim_student_enrollment_status</code> (1
+row per enrollment stint), copied from the extract models the DDI Suite reads
+today, joined on <code>student_enrollment_key</code>. Cube exposes them through the
+existing <code>student_enrollment_status</code> cube; the 3 per-subject members live on the
+<code>student_assessment_scores</code> cube next to #6305's <code>bucket</code> and pick the ELA or
+math column by <code>bucket_subject</code>.</p>
+<p><strong>Tech Stack:</strong> dbt (kipptaf, BigQuery), dbt unit tests, Cube YAML,
+<code>tests/cube/test_cube_schema.py</code> (pytest + Cube compile), BigQuery MCP for
+acceptance queries.</p>
+<p><strong>Spec:</strong>
+<code>docs/superpowers/specs/2026-11-11-ddi-suite-student-dimensions-design.md</code></p>
+<h2 id="global-constraints">Global Constraints</h2>
+<ul>
+<li>Worktree <code>&lt;wt&gt;</code> =
+  <code>/workspaces/teamster/.claude/worktrees/cristinabaldor/feat/claude-ddi-student-flags</code>.
+  Use <code>git -C &lt;wt&gt;</code> and absolute <code>&lt;wt&gt;/...</code> paths; run dbt and pytest through
+  <code>uv run</code>. Invoke the <code>dbt-local-dev</code> skill before the first dbt build.</li>
+<li>Copy the dashboard: every value equals what the extract model holds for that
+  stint today. No "as of assessment date" logic, no coalescing beyond what the
+  extract already does.</li>
+<li>New dbt columns are column-level <code>config.meta.contains_pii: true</code>, with a
+  <code>description:</code> and <code>data_type</code>. The model is contract-enforced.</li>
+<li>dbt column names (final): <code>is_sipps</code>, <code>is_tutoring</code>, <code>is_self_contained</code>,
+  <code>homeroom_name</code>, <code>homeroom_section_number</code>, <code>is_ela_low_25</code>, <code>is_math_low_25</code>,
+  <code>ela_state_test_proficiency</code>, <code>math_state_test_proficiency</code>,
+  <code>dibels_most_recent_composite</code>.</li>
+<li>View member names (final): the 5 per-student names above, plus <code>is_low_25</code>,
+  <code>state_test_proficiency</code>, <code>dibels_most_recent_composite</code>,
+  <code>school_week_start_date</code>, <code>school_week_end_date</code>.</li>
+<li>The ELA/math pair members on the <code>student_enrollment_status</code> cube are
+  <code>public: false</code>. No member goes on any view other than
+  <code>student_assessment_scores_view</code>. No member joins the <code>proficiency_rollup</code>
+  pre-aggregation.</li>
+<li>One-column Cube members get a description identical to their dbt column and a
+  <code>TWINS</code> entry in <code>tests/cube/test_cube_schema.py</code>.</li>
+<li>No student value (name, number, id, row) in a commit message, PR body or issue
+  comment.</li>
+</ul>
+<p>Commands, referred to below by name:</p>
+<ul>
+<li><strong>DEV BUILD <code>&lt;selection&gt;</code></strong>:
+  <code>uv run dbt build --project-dir &lt;wt&gt;/src/dbt/kipptaf --target dev --defer --favor-state --state /workspaces/teamster/src/dbt/kipptaf/target/prod --select &lt;selection&gt; 2&gt;&amp;1 | tail -n 30</code></li>
+<li><strong>UNIT <code>&lt;model&gt;</code></strong>: the same flags with <code>dbt test</code> and
+  <code>--select "test_type:unit,&lt;model&gt;"</code>.</li>
+<li><strong>CUBE TESTS</strong>: <code>cd &lt;wt&gt; &amp;&amp; uv run pytest tests/cube/ -q 2&gt;&amp;1 | tail -n 20</code>.
+  Run <code>npm ci</code> in <code>&lt;wt&gt;/src/cube</code> once first; check the summary shows no skipped
+  compile test.</li>
+<li><strong>LINT <code>&lt;files&gt;</code></strong>: from <code>&lt;wt&gt;</code>,
+  <code>/workspaces/teamster/.trunk/tools/trunk check --force --no-fix &lt;files&gt; &lt;/dev/null</code>.</li>
+</ul>
+<h2 id="review-focus">Review Focus</h2>
+<ol>
+<li>A <code>student_number</code> that repeats in 2 regions must take only its own region's
+   flags. The key includes <code>_dbt_source_project</code>; Task 2's unit test pins it
+   with a same-number row in another region.</li>
+<li>A student with 2 stints in 1 year gets each stint's own extract values and no
+   extra rows. Task 2's unit test pins it; the dim's <code>unique</code> PK test backs it.</li>
+<li>Miami <code>is_self_contained</code> stays null (the extract's value), not false. Task
+   2's unit test pins it.</li>
+<li>A Math assessment shows <code>No Composite Score Available</code> for DIBELS, and a
+   science assessment shows null for all 3 subject members. Task 5 pins both
+   with a compiled-SQL check.</li>
+<li>A stint with no extract row (for example a grade 99 placeholder) gets null
+   flags, not a dropped dim row. Task 2's and Task 4's unit tests pin it.</li>
+</ol>
+<hr />
+<h3 id="task-1-school-week-on-the-assessment-view">Task 1: School week on the assessment view</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify:
+  <code>src/cube/model/views/student_assessments/student_assessment_scores_view.yml</code>
+  (the <code>student_assessment_scores.dates</code> include and the <code>Date</code> folder)</li>
+<li>Test: <code>tests/cube/test_cube_schema.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>
+<p>Produces: <code>DDI_SUITE_VIEW_MEMBERS</code>, a module-level list in
+  <code>tests/cube/test_cube_schema.py</code>, and
+  <code>test_assessment_view_exposes_ddi_suite_members()</code>. Later tasks append to the
+  list.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing test.</strong> Add to
+      <code>tests/cube/test_cube_schema.py</code> a list
+      <code>DDI_SUITE_VIEW_MEMBERS = ["school_week_start_date", "school_week_end_date"]</code>
+      (bare names: the view's <code>dates</code> include has no <code>prefix</code>) and a test that
+      compiles the model the way <code>test_model_compiles_with_cube</code> does and
+      asserts every name is a dimension of <code>student_assessment_scores_view</code>.</p>
+</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run it to see it fail.</strong> CUBE TESTS. Expected: the new test
+      FAILs naming both members.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Add both members</strong> to the <code>dates</code> include and the <code>Date</code> folder.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run it to see it pass.</strong> CUBE TESTS. Expected: all PASS.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Lint and commit.</strong> LINT the 2 files, then commit them by name:
+      <code>feat(cube): add the school week to the assessment-scores view</code>.</li>
+</ul>
+<h3 id="task-2-per-student-flags-and-homeroom-on-dim_student_enrollment_status">Task 2: Per-student flags and homeroom on <code>dim_student_enrollment_status</code></h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/marts/dimensions/dim_student_enrollment_status.sql</code></li>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/marts/dimensions/properties/dim_student_enrollment_status.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>int_extracts__student_enrollments</code> columns <code>student_number</code>,
+  <code>_dbt_source_project</code>, <code>academic_year</code>, <code>entrydate</code>, <code>is_sipps</code>,
+  <code>is_tutoring</code>, <code>is_self_contained</code>, <code>advisory_name</code>, <code>team</code> (which is
+  <code>advisory_section_number</code>).</li>
+<li>
+<p>Produces: dim columns <code>is_sipps</code> (bool), <code>is_tutoring</code> (bool),
+  <code>is_self_contained</code> (bool), <code>homeroom_name</code> (string),
+  <code>homeroom_section_number</code> (string).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing unit test</strong>
+      <code>unit_dim_student_enrollment_status_student_flags</code> in the properties yml.
+      Give <code>dim_student_enrollments</code> as <code>format: sql</code> rows whose keys are the
+      surrogate hash, built in the fixture as
+      <code>to_hex(md5(concat(&lt;student_number&gt;, '-', &lt;project&gt;, '-', &lt;year&gt;, '-', &lt;entrydate&gt;)))</code>
+      (the <code>student_enrollment_key</code> macro is <code>generate_surrogate_key</code> over those
+      4, cast to string). Rows:</p>
+</li>
+<li>NJ stint A (<code>kippnewark</code>, student 1001, 2026, entry 2026-09-02): extract row
+    <code>is_sipps</code> true, <code>is_tutoring</code> true, <code>is_self_contained</code> true,
+    <code>advisory_name</code> <code>Harvard</code>, <code>team</code> <code>5HAR</code>.</li>
+<li>Same student 1001 in <code>kippmiami</code>, 2026: extract row with all 3 flags false,
+    <code>is_self_contained</code> null, <code>advisory_name</code> <code>Rm 12</code>, <code>team</code> <code>HR12</code>.</li>
+<li>NJ student 1002 with 2 stints in 2026 (entry 2026-09-02 and 2027-01-10),
+    each with its own extract row, differing <code>team</code>.</li>
+<li>NJ stint with no extract row. Give every other input <code>rows: []</code>. Expect each
+    stint's own values, and nulls on the no-extract stint. Add
+    <code>int_extracts__student_enrollments</code> (and, so Task 4 doesn't break it,
+    <code>int_extracts__student_enrollments_subjects</code>) with <code>rows: []</code> to the
+    existing <code>unit_dim_student_enrollment_status_buckets</code> test.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run it to see it fail.</strong> UNIT <code>dim_student_enrollment_status</code>.
+      Expected: FAIL; the new columns do not exist.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Implement.</strong> Add a CTE over <code>int_extracts__student_enrollments</code>
+      that builds <code>student_enrollment_key</code> with the macro (same call shape as
+      <code>section_504</code>) and selects the 5 source columns; left join it on
+      <code>student_enrollment_key</code>; select the 5 columns renamed as in Interfaces.
+      Add the 5 contract columns to the yml, each with <code>data_type</code>,
+      <code>description:</code> (what the DDI Suite shows, from the spec's workstream 3
+      table) and <code>config.meta.contains_pii: true</code>. Update the model
+      <code>description:</code> to name the new columns' source.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run it to see it pass.</strong> UNIT <code>dim_student_enrollment_status</code>.
+      Expected: both unit tests PASS.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Build.</strong> DEV BUILD <code>dim_student_enrollment_status</code>. Expected:
+      PASS, including the <code>unique</code> PK test.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Acceptance query.</strong> On the dev build, count 2026 stints where
+      each of the 5 columns differs from <code>int_extracts__student_enrollments</code>
+      (joined by the reproduced key). Expected: 0 for every column.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Lint and commit.</strong> LINT the 2 files; commit by name:
+      <code>feat(dbt): add DDI Suite student flags and homeroom to the enrollment status dim</code>.</li>
+</ul>
+<h3 id="task-3-per-student-flags-and-homeroom-in-cube">Task 3: Per-student flags and homeroom in Cube</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/cube/model/cubes/students/student_enrollment_status.yml</code></li>
+<li>Modify:
+  <code>src/cube/model/views/student_assessments/student_assessment_scores_view.yml</code>
+  (the <code>student_enrollment_status</code> include and the <code>Status</code> folder)</li>
+<li>Modify: <code>tests/cube/test_cube_schema.py</code> (<code>TWINS</code>, <code>DDI_SUITE_VIEW_MEMBERS</code>)</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: Task 2's 5 dim columns; Task 1's <code>DDI_SUITE_VIEW_MEMBERS</code>.</li>
+<li>
+<p>Produces: public members <code>student_enrollment_status.is_sipps</code>, <code>is_tutoring</code>,
+  <code>is_self_contained</code>, <code>homeroom_name</code>, <code>homeroom_section_number</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing tests.</strong> Append the 5 names to
+      <code>DDI_SUITE_VIEW_MEMBERS</code>; add 5 <code>TWINS</code> entries
+      <code>("student_enrollment_status", &lt;col&gt;): ("dim_student_enrollment_status", &lt;col&gt;)</code>.</p>
+</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run them to see them fail.</strong> CUBE TESTS. Expected: the view test
+      and the twin test FAIL on the 5 names.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Add the 5 members</strong> to the cube (<code>public: true</code>, description
+      copied verbatim from the dbt yml), then to the view include and the
+      <code>Status</code> folder. Add <code>ai_context</code> to <code>is_tutoring</code> saying it reads today's
+      date, so past years read false.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run them to see them pass.</strong> CUBE TESTS. Expected: all PASS.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Lint and commit.</strong> LINT the 3 files; commit by name:
+      <code>feat(cube): add DDI Suite student flags and homeroom to the assessment-scores view</code>.</li>
+</ul>
+<h3 id="task-4-per-subject-flags-on-dim_student_enrollment_status">Task 4: Per-subject flags on <code>dim_student_enrollment_status</code></h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/marts/dimensions/dim_student_enrollment_status.sql</code></li>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/marts/dimensions/properties/dim_student_enrollment_status.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>int_extracts__student_enrollments_subjects</code> columns
+  <code>student_number</code>, <code>_dbt_source_project</code>, <code>academic_year</code>, <code>entrydate</code>,
+  <code>discipline</code> (<code>ELA</code> or <code>Math</code>), <code>is_low_25_fl</code>, <code>state_test_proficiency</code>,
+  <code>dibels_most_recent_composite</code>.</li>
+<li>
+<p>Produces: <code>is_ela_low_25</code> (bool), <code>is_math_low_25</code> (bool),
+  <code>ela_state_test_proficiency</code> (string), <code>math_state_test_proficiency</code> (string),
+  <code>dibels_most_recent_composite</code> (string, from the <code>ELA</code> row).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing unit test</strong>
+      <code>unit_dim_student_enrollment_status_subject_flags</code>, same key-fixture
+      approach as Task 2. Rows: 1 NJ stint with an <code>ELA</code> row (<code>is_low_25_fl</code>
+      false, <code>state_test_proficiency</code> <code>Met Expectations</code>,
+      <code>dibels_most_recent_composite</code> <code>At Benchmark</code>) and a <code>Math</code> row
+      (<code>is_low_25_fl</code> false, <code>Partially Met</code>, <code>No Composite Score Available</code>); 1
+      Miami stint with <code>ELA</code> <code>is_low_25_fl</code> true and <code>Math</code> false; 1 stint with
+      no subject rows. Expect the pairs per stint, DIBELS from the <code>ELA</code> row,
+      nulls on the no-row stint. Add
+      <code>int_extracts__student_enrollments_subjects</code> with <code>rows: []</code> to Task 2's
+      unit test if not already there.</p>
+</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run it to see it fail.</strong> UNIT <code>dim_student_enrollment_status</code>.
+      Expected: FAIL.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Implement.</strong> 1 CTE over the subjects model building the key,
+      pivoting by <code>discipline</code> into the 5 columns (conditional aggregation
+      grouped by key, or 2 filtered left joins; the model's grain test,
+      <code>student_number</code> x <code>academic_year</code> x <code>entrydate</code> x <code>iready_subject</code>, makes
+      either 1 row per key and subject). Left join on the key. Add the 5
+      contract columns to the yml as in Task 2.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run it to see it pass.</strong> UNIT <code>dim_student_enrollment_status</code>.
+      Expected: all 3 unit tests PASS.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Build.</strong> DEV BUILD <code>dim_student_enrollment_status</code>. Expected:
+      PASS.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Acceptance query.</strong> On the dev build, count 2026 stints where
+      each pair column differs from the subjects model's matching <code>discipline</code>
+      row. Expected: 0 for every column.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Lint and commit.</strong> LINT the 2 files; commit by name:
+      <code>feat(dbt): add DDI Suite subject flags to the enrollment status dim</code>.</li>
+</ul>
+<h3 id="task-5-subject-picked-flags-in-cube-after-6305">Task 5: Subject-picked flags in Cube (after #6305)</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/cube/model/cubes/students/student_enrollment_status.yml</code></li>
+<li>Modify:
+  <code>src/cube/model/cubes/student_assessments/student_assessment_scores.yml</code></li>
+<li>Modify:
+  <code>src/cube/model/views/student_assessments/student_assessment_scores_view.yml</code></li>
+<li>Modify: <code>tests/cube/test_cube_schema.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: Task 4's 5 dim columns; #6305's <code>student_assessments.bucket_subject</code>
+  (<code>Reading</code>, <code>Math</code>, or null) and the <code>bucket</code> member's pattern on
+  <code>student_assessment_scores</code>.</li>
+<li>
+<p>Produces: public members <code>student_assessment_scores.is_low_25</code>,
+  <code>state_test_proficiency</code>, <code>dibels_most_recent_composite</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Bring in #6305.</strong> If #6305 is not on <code>origin/main</code>, stop and ask
+      the user before going on. Otherwise invoke <code>resuming-a-branch</code>, then merge
+      <code>origin/main</code> into the branch.</p>
+</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Write the failing tests.</strong> Append <code>is_low_25</code>,
+      <code>state_test_proficiency</code>, <code>dibels_most_recent_composite</code> to
+      <code>DDI_SUITE_VIEW_MEMBERS</code>; add 5 <code>TWINS</code> entries for the private pair
+      members. Add a test that compiles the model and asserts the compiled SQL
+      of <code>student_assessment_scores.dibels_most_recent_composite</code> contains the
+      literal <code>'No Composite Score Available'</code> under the <code>'Math'</code> branch and has
+      no <code>ELSE</code> branch (so other subjects return null).</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Run them to see them fail.</strong> CUBE TESTS. Expected: FAIL.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Implement.</strong> Add the 5 pair members to
+      <code>student_enrollment_status</code> as <code>public: false</code>. Add the 3 members to
+      <code>student_assessment_scores</code> next to <code>bucket</code>, each
+      <code>CASE {student_assessments.bucket_subject} WHEN 'Reading' THEN ... WHEN 'Math' THEN ... END</code>
+      (DIBELS's Math branch is the literal). Descriptions say what the member
+      means for an assessment row; <code>ai_context</code> says the subject comes from
+      <code>bucket_subject</code> and that Low 25 is Miami only. Add the 3 to the view's
+      top-cube include and the <code>Status</code> folder.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Run them to see them pass.</strong> CUBE TESTS. Expected: all PASS.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Lint and commit.</strong> LINT the 4 files; commit by name:
+      <code>feat(cube): add DDI Suite subject flags to the assessment-scores view</code>.</li>
+</ul>
+<h3 id="task-6-verify-the-branch-and-open-the-pr">Task 6: Verify the branch and open the PR</h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify: the DDI Suite validation spec on the #5668 validation branch (via the
+  <code>cube-validation</code> skill), only if that branch is reachable; otherwise record
+  the comparisons to add in the PR body.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Full checks.</strong> DEV BUILD <code>dim_student_enrollment_status</code>, UNIT
+      <code>dim_student_enrollment_status</code>, CUBE TESTS. Expected: all PASS.</p>
+</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Lint everything changed.</strong> LINT every file in
+      <code>git -C &lt;wt&gt; diff --name-only origin/main...HEAD</code>. Expected: no findings.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Validation comparisons.</strong> Invoke <code>cube-validation</code>. Add
+      comparisons for sheets filtered or split by each new member, each with a
+      <code>rows:</code> block, and record the reuse mappings (<code>module_number</code> -&gt;
+      <code>module_code</code>, <code>is_normed_scope</code> -&gt; <code>is_internal_assessment</code>). Expected
+      differences are only those in the spec's <em>Differences to accept</em>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Open the PR.</strong> Push, open the PR from
+      <code>.github/pull_request_template.md</code> with <code>Closes #6372</code> and <code>Refs #6192</code>,
+      and note in Reviewer Notes that the school week moved out of PR D. Comment
+      on #6192 that PR D no longer carries <code>dates.school_week_start_date</code>. Then
+      offer CI watch and <code>claude-review</code> follow-up per root CLAUDE.md.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,2423 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>Performance Bands Dimension Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.57a0d79d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#performance-bands-dimension-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Performance Bands Dimension Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/launch-page-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Launch Page
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube-access-individual-exceptions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube Access - Individual Exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/tableau-permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tableau Permissions (People Data)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/csgf-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSGF Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/crdc-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CRDC Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ddi-stack-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDI Stack Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/hs-early-warning-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HS Early Warning Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/dibels-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIBELS Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/stat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/njdoe-universal-screener-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NJDOE Universal Screener Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/athletic-eligibility-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Athletic Eligibility Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/academic-health-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic Health Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/grad-plan-tracking-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Grad Plan Tracking Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ignite-r2i-extract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IGNITE R2I Extract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#global-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global Constraints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#review-focus" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Review Focus
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Review Focus">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-1-focus-package-band-levels-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: Focus package band levels model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-2-expose-focus-band-levels-to-kipptaf" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: Expose Focus band levels to kipptaf
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-3-band-union-with-the-level-rule" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: Band union with the level rule
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-4-dimension-and-fact-key" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: Dimension and fact key
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-5-cube-members-measures-and-text" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 5: Cube members, measures and text
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-6-pull-request" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 6: Pull request
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-7-validate-against-the-dki-view" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 7: Validate against the DKI View
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-8-after-merge" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 8: After merge
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-11-05-performance-bands-dimension.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="performance-bands-dimension-implementation-plan">Performance Bands Dimension Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Give every Illuminate and Focus Assessments score in Cube its band
+set, cut points and a mastery-relative level (At/Above, Approaching, Below, Far
+Below), and prove the level against the DDI Suite DKI View.</p>
+<p><strong>Architecture:</strong> The Focus package's band numbering moves into its own model. A
+kipptaf domain intermediate unions Illuminate and Focus bands at band grain and
+derives the level; <code>dim_performance_bands</code> reads it, the scores fact gains
+<code>performance_band_key</code>, and a new Cube cube joins in. The validator compares the
+level against 2 DKI sheets.</p>
+<p><strong>Tech Stack:</strong> dbt (BigQuery) in <code>src/dbt/focus</code> and <code>src/dbt/kipptaf</code>; Cube
+YAML in <code>src/cube/model</code>; <code>scripts/cube_validation</code>.</p>
+<p><strong>Spec:</strong>
+<code>docs/superpowers/specs/2026-11-05-performance-bands-dimension-design.md</code></p>
+<p><strong>Worktree:</strong>
+<code>/workspaces/teamster/.claude/worktrees/cristinabaldor/feat/claude-band-set-dimension</code>
+(branch <code>cristinabaldor/feat/claude-band-set-dimension</code>). Every git call uses
+<code>git -C &lt;worktree&gt;</code>; every dbt, Python and pytest call uses <code>uv run</code> from the
+worktree, except the validator runner (Task 7).</p>
+<h2 id="global-constraints">Global Constraints</h2>
+<ul>
+<li>Source literals: <code>illuminate</code> and <code>apex</code>, exactly as
+  <code>int_assessments__response_rollup.source</code> spells them.</li>
+<li><code>performance_band_key</code> =
+  <code>generate_surrogate_key([source, performance_band_set_id, band_number])</code> on
+  both the dim and the fact. The fact wraps it in
+  <code>if(&lt;band number&gt; is not null, ..., cast(null as string))</code>.</li>
+<li><code>mastery_level</code> values, exactly: <code>At/Above</code>, <code>Approaching</code>, <code>Below</code>.</li>
+<li>Level rule: At/Above = <code>band_number &gt;= mastery_band_number</code>; Approaching =
+  <code>band_number = mastery_band_number - 1</code>; Below = lower. <code>is_far_below</code> =
+  <code>band_number = 1 and not is_mastery</code>.</li>
+<li>A set that breaks a level assumption (mastery not contiguous to the top band,
+  <code>band_number</code> out of <code>minimum_score</code> order, or mastery starting below band 3)
+  gets null <code>mastery_level</code> and null <code>is_far_below</code> on every band. Its guard
+  test runs at <code>warn</code> (spec revision 2026-11-05).</li>
+<li>Focus mastery: <code>Level 3</code> and above on every Focus set.</li>
+<li>Only band sets used by internal scores (<code>int_assessments__response_rollup</code>,
+  <code>is_internal_assessment</code>) are in the union and the dim.</li>
+<li>Below and Far Below shares are percents of distinct students
+  (<code>student_enrollment_key</code>), over students with a banded score.</li>
+<li>Cut values are percent correct, 0 to 100.</li>
+<li>Every new or changed dbt column and Cube member has a <code>description:</code>; a
+  one-column Cube member's description equals its dbt column's, registered in
+  <code>TWINS</code>.</li>
+<li>No movement column and no Cube text about movement beyond <code>mastery_level</code>'s
+  <code>ai_context</code> (spec, Cube section).</li>
+</ul>
+<h2 id="review-focus">Review Focus</h2>
+<ol>
+<li>A score with a band number but no band set (merged split standards) gets a
+   null key, never a placeholder hash. Test: Task 4 FK-population query.</li>
+<li>A standard on a different band set from its assessment keys to its own set.
+   Test: Task 4 query comparing the fact key's set to the rollup row's set.</li>
+<li>Focus set 4 spells 2 bands "Low Level 1". Band identity is the band number,
+   never the label. Test: Task 3 unit test row with a duplicate label.</li>
+<li>The fact's band number is <code>numeric</code> and the Focus band number is <code>int64</code>;
+   both must hash to the same string. Test: Task 4 FK-population query returns 0
+   orphans.</li>
+<li>A new Illuminate set breaks a level assumption (mastery at band 2, a gap).
+   Its bands get a null level instead of a wrong one, and nothing stops
+   refreshing. Test: Task 3 unit-test set E.</li>
+</ol>
+<hr />
+<h3 id="task-1-focus-package-band-levels-model">Task 1: Focus package band levels model</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>src/dbt/focus/models/intermediate/int_focus__apex_band_levels.sql</code></li>
+<li>Create:
+  <code>src/dbt/focus/models/intermediate/properties/int_focus__apex_band_levels.yml</code></li>
+<li>Modify:
+  <code>src/dbt/focus/models/intermediate/int_focus__apex_results.sql:141-190</code> (drop
+  the <code>band_levels</code> CTE; join the new model)</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>
+<p>Produces <code>int_focus__apex_band_levels</code>, 1 row per band: <code>band_set_id int64</code>,
+  <code>band_set_name string</code> (from <code>stg_focus__apex_band_sets.name</code>),
+  <code>label string</code>, <code>label_number int64</code>, <code>min_score</code> (as staged), <code>upper_bound</code>
+  (next band's <code>min_score</code>, top band 1000000), <code>is_mastery bool</code>
+  (<code>min_score &gt;=</code> the set's <code>Level 3</code> <code>min_score</code>; null when the set has no
+  <code>Level 3</code>).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Snapshot today's output.</strong> Record <code>count(*)</code> and
+      <code>count(distinct format('%T', t))</code> of
+      <code>kippmiami_focus.int_focus__apex_results</code> (BigQuery MCP).</p>
+</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Write the model and properties.</strong> Move the CTE's logic as is,
+      add the <code>band_sets</code> join and <code>is_mastery</code>. Properties: every column with
+      <code>data_type</code> and description; <code>dbt_utils.unique_combination_of_columns</code> on
+      <code>[band_set_id, label_number]</code> at <code>severity: error</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Repoint <code>int_focus__apex_results</code></strong> to join
+      <code>ref("int_focus__apex_band_levels")</code> on the same predicates, reading
+      <code>is_mastery</code> from it. Output columns unchanged.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Build in dev.</strong> Invoke <code>dbt-local-dev</code> first. Run
+      <code>uv run dbt build --select int_focus__apex_band_levels int_focus__apex_results --project-dir src/dbt/kippmiami</code>.
+      Expected: both build, tests pass.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Prove no change.</strong> On the dev relation vs prod:
+      <code>select * from &lt;prod&gt; except distinct select * from &lt;dev&gt;</code> and the reverse
+      both return 0 rows; counts match Step 1.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Commit.</strong> <code>git add</code> the 3 files by name;
+      <code>refactor(dbt): move Focus Assessments band numbering into its own model</code>.</li>
+</ul>
+<h3 id="task-2-expose-focus-band-levels-to-kipptaf">Task 2: Expose Focus band levels to kipptaf</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/dbt/kipptaf/models/focus/sources-kippmiami.yml</code> (add
+  <code>int_focus__apex_band_levels</code> after <code>int_focus__apex_results</code>, same
+  <code>config.meta.dagster</code> shape, asset key
+  <code>[kippmiami, focus, int_focus__apex_band_levels]</code>)</li>
+<li>Create:
+  <code>src/dbt/kipptaf/models/focus/intermediate/int_focus__apex_band_levels.sql</code>
+  (the same <code>union_relations</code> passthrough as <code>int_focus__apex_results.sql</code> in
+  that folder)</li>
+<li>Create or modify: that folder's properties file for the wrapper (description
+  only, no uniqueness test, per the union-view exception)</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: Task 1's model.</li>
+<li>
+<p>Produces: kipptaf <code>int_focus__apex_band_levels</code> with Task 1's columns plus
+  <code>_dbt_source_relation</code>, <code>_dbt_source_project</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Add the source entry and wrapper.</strong></p>
+</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Compile against staging.</strong>
+      <code>uv run dbt compile --select int_focus__apex_band_levels --project-dir src/dbt/kipptaf --target staging</code>
+      fails until Step 3 (no <code>zz_stg</code> relation); that confirms the gap.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Seed the staging copy (shared write, user's OK required in the
+      turn before).</strong> In its own Bash call:
+      <code>uv run dbt build --select int_focus__apex_band_levels --project-dir src/dbt/kippmiami --target staging</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Compile again.</strong> Same command as Step 2. Expected: the compiled
+      SQL lists every Task 1 column.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit.</strong>
+      <code>feat(dbt): expose Focus Assessments band levels to kipptaf</code>.</li>
+</ul>
+<h3 id="task-3-band-union-with-the-level-rule">Task 3: Band union with the level rule</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create:
+  <code>src/dbt/kipptaf/models/assessments/intermediate/int_assessments__performance_band_union.sql</code></li>
+<li>Create:
+  <code>src/dbt/kipptaf/models/assessments/intermediate/properties/int_assessments__performance_band_union.yml</code></li>
+<li>Test: unit test and the guard test, both in the properties file</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>int_illuminate__performance_band_sets</code> (<code>performance_band_set_id</code>,
+  <code>description</code>, <code>label</code>, <code>label_number</code>, <code>minimum_value</code>, <code>is_mastery</code>); Task
+  2's wrapper; <code>int_assessments__response_rollup</code> (<code>source</code>,
+  <code>performance_band_set_id</code>, <code>is_internal_assessment</code>).</li>
+<li>
+<p>Produces <code>int_assessments__performance_band_union</code>, 1 row per band of a used
+  set: <code>performance_band_key string</code>, <code>source string</code>,
+  <code>performance_band_set_id int64</code>, <code>performance_band_set string</code>,
+  <code>band_label string</code>, <code>band_number int64</code>, <code>band_count int64</code>,
+  <code>minimum_score numeric</code>, <code>maximum_score numeric</code> (next band's minimum, null
+  for the top band), <code>is_mastery bool</code>, <code>mastery_band_number int64</code>,
+  <code>mastery_minimum_score numeric</code>, <code>mastery_level string</code>, <code>is_far_below bool</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the unit test</strong> <code>test_performance_band_union_levels</code>
+      (<code>format: sql</code> inputs). Fixtures and expected rows:</p>
+</li>
+<li>Illuminate set A, 5 bands, mastery from band 4: bands 1-5 →
+    <code>Below, Below, Approaching, At/Above, At/Above</code>; <code>is_far_below</code> true only on
+    band 1; <code>mastery_band_number</code> 4; <code>band_count</code> 5.</li>
+<li>Illuminate set B, 5 bands, mastery from band 3: →
+    <code>Below, Approaching, At/Above, At/Above, At/Above</code>; far below on band 1.</li>
+<li>Focus set C, 8 bands, <code>Level 3</code> at band 6, bands 1 and 4 both labeled
+    <code>Low Level 1</code>: → bands 1-4 <code>Below</code>, 5 <code>Approaching</code>, 6-8 <code>At/Above</code>; 8
+    distinct keys.</li>
+<li>An unused set D in the Illuminate input: absent from the output.</li>
+<li>Illuminate set E, 5 bands, mastery from band 2: every band's <code>mastery_level</code>
+    and <code>is_far_below</code> null; <code>is_level_rule_valid</code> false.</li>
+<li><code>maximum_score</code> of each top band is null; of every other band, the next
+    band's <code>minimum_score</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run it to see it fail.</strong>
+      <code>uv run dbt test --select test_type:unit,int_assessments__performance_band_union --project-dir src/dbt/kipptaf</code>.
+      Expected: fails (model missing).</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Write the model.</strong> Union Illuminate and Focus at band grain with
+      the source literal, keep sets in the rollup's used set, then derive
+      set-level columns with windows. Add a set-level <code>is_level_rule_valid bool</code>
+      (true when all 3 assumptions in Global Constraints hold for the set;
+      intermediate only, not in the dim), and the level with this rule:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">case</span>
+<span class="w">    </span><span class="k">when</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="n">is_level_rule_valid</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="k">when</span><span class="w"> </span><span class="n">band_number</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="n">mastery_band_number</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="s1">'At/Above'</span>
+<span class="w">    </span><span class="k">when</span><span class="w"> </span><span class="n">band_number</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mastery_band_number</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="s1">'Approaching'</span>
+<span class="w">    </span><span class="k">else</span><span class="w"> </span><span class="s1">'Below'</span>
+<span class="k">end</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">mastery_level</span><span class="p">,</span>
+</code></pre></div>
+<p><code>is_far_below</code> is null when <code>not is_level_rule_valid</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Write the properties.</strong> <code>materialized: table</code> with the
+      assessment star's cron tick (copy <code>dim_assessments</code>'
+      <code>automation_condition</code>). <code>unique</code> on <code>performance_band_key</code> at
+      <code>severity: error</code>. Every column described.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Write the guard test</strong> as a column test on
+      <code>is_level_rule_valid</code>: <code>accepted_values: [true]</code> at <code>severity: warn</code> (it
+      passes nulls, so pair it with <code>not_null</code> at <code>warn</code>). Its description names
+      the source (Illuminate or Focus band-set setup), the 3 assumptions, and
+      that a failing set's scores load with no level until the set is fixed or
+      the rule is decided. No singular test file.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Build and test.</strong>
+      <code>uv run dbt build --select int_assessments__performance_band_union --project-dir src/dbt/kipptaf</code>
+      (with the <code>dbt-local-dev</code> defer flags). Expected: unit test, <code>unique</code> and
+      the guard test pass (no warning today); 94 sets
+      (<code>count(distinct format('%T|%T', source, performance_band_set_id))</code>).</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Commit.</strong>
+      <code>feat(dbt): union Illuminate and Focus band sets with a mastery level</code>.</li>
+</ul>
+<h3 id="task-4-dimension-and-fact-key">Task 4: Dimension and fact key</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>src/dbt/kipptaf/models/marts/dimensions/dim_performance_bands.sql</code></li>
+<li>Create:
+  <code>src/dbt/kipptaf/models/marts/dimensions/properties/dim_performance_bands.yml</code></li>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/marts/facts/fct_assessment_scores_enrollment_scoped.sql</code>
+  (internal CTE selects <code>rr.performance_band_set_id</code>; the internal branch adds
+  the key; the state and vendor branches add
+  <code>cast(null as string) as performance_band_key</code>)</li>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/marts/facts/properties/fct_assessment_scores_enrollment_scoped.yml</code>
+  (new column, <code>config.meta.foreign_key</code> to <code>dim_performance_bands</code>)</li>
+<li>Modify: <code>src/dbt/kipptaf/models/exposures/cube.yml</code> (add
+  <code>ref("dim_performance_bands")</code>)</li>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/marts/dimensions/properties/dim_assessments.yml</code>
+  (<code>title</code> description adds: for state tests, the test name, such as NJSLA,
+  NJGPA, FAST or EOC)</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: Task 3's columns.</li>
+<li>
+<p>Produces: <code>kipptaf_marts.dim_performance_bands</code> with every Task 3 column
+  except <code>source</code> and <code>performance_band_set_id</code> (plumbing, R8); fact column
+  <code>performance_band_key string</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the dim</strong> selecting Task 3's columns; properties copy
+      <code>dim_assessments</code>' table config and PK constraint shape; descriptions
+      match the spec's column table.</p>
+</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Add the fact key</strong> per Global Constraints.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Build.</strong>
+      <code>uv run dbt build --select dim_performance_bands fct_assessment_scores_enrollment_scoped dim_assessments --project-dir src/dbt/kipptaf</code>.
+      Expected: all pass; fact row count equals prod's.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Check the key (Review Focus 1, 2, 4).</strong> On the dev fact:
+      <code>countif(performance_band_key is null and performance_band_label_number is not null)</code>
+      = 0,
+      <code>countif(performance_band_key is not null and performance_band_label_number is null)</code>
+      = 0, and a left join to the dev dim leaves 0 unmatched non-null keys. Then
+      for 2026-27 standard rows, the dim set behind each key equals the rollup
+      row's <code>performance_band_set_id</code> on a 1,000-row sample.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Check the cut values.</strong> For 10 Illuminate and all 4 Focus sets,
+      <code>mastery_minimum_score</code> equals the source's lowest mastery band minimum.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Regenerate the marts reference.</strong>
+      <code>uv run scripts/generate_marts_reference.py</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Commit.</strong>
+      <code>feat(dbt): add dim_performance_bands and the scores fact's band key</code>.</li>
+</ul>
+<h3 id="task-5-cube-members-measures-and-text">Task 5: Cube members, measures and text</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create:
+  <code>src/cube/model/cubes/student_assessments/student_performance_bands.yml</code>
+  (<code>sql_table: kipptaf_marts.dim_performance_bands</code>; the domain-prefix rule
+  names it <code>student_performance_bands</code>, after <code>student_assessments</code>)</li>
+<li>Modify:
+  <code>src/cube/model/cubes/student_assessments/student_assessment_scores.yml</code> (join
+  <code>student_performance_bands</code> many-to-one on <code>performance_band_key</code>; measures
+  below; text on <code>performance_band_label_number</code> and <code>is_mastery</code> names the new
+  members)</li>
+<li>Modify:
+  <code>src/cube/model/views/student_assessments/student_assessment_scores_view.yml</code>
+  (new <code>join_path</code> block, every dim member except the key and <code>is_mastery</code>,
+  which the fact already exposes; a <code>Performance band</code> folder; the 2 public
+  measures)</li>
+<li>Modify: <code>src/cube/model/cubes/student_assessments/student_assessments.yml</code>
+  (<code>title</code> description, twin of Task 4's)</li>
+<li>Modify: <code>src/cube/mcp/project_knowledge/assessment-cube-reference.md</code> (delete
+  both interim band-set tables and text routing to them)</li>
+<li>Modify: <code>tests/cube/test_cube_schema.py</code> (<code>TWINS</code> for every one-column member
+  of the new cube and <code>title</code>; <code>PHRASES</code> for the new <code>ai_context</code>)</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: Task 4's dim and fact column.</li>
+<li>
+<p>Produces view members: <code>performance_band_set</code>, <code>band_label</code>, <code>band_number</code>,
+  <code>band_count</code>, <code>minimum_score</code>, <code>maximum_score</code>, <code>mastery_band_number</code>,
+  <code>mastery_minimum_score</code>, <code>mastery_level</code>, <code>is_far_below</code>; measures
+  <code>pct_students_below</code> and <code>pct_students_far_below</code> (hidden helpers
+  <code>_count_students_banded</code>, <code>_count_students_below</code>,
+  <code>_count_students_far_below</code>: <code>count_distinct</code> of
+  <code>{student_section_enrollments.student_enrollment_key}</code> with filters on
+  <code>{CUBE}.performance_band_key IS NOT NULL</code>,
+  <code>{student_performance_bands.mastery_level} = 'Below'</code>,
+  <code>{student_performance_bands.is_far_below}</code>).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the cube, join, measures, view block and folder.</strong>
+      <code>mastery_level</code>'s <code>ai_context</code>: compares across assessments, band numbers
+      do not; to see whether a student moved between bands on 2 assessments,
+      compare <code>mastery_level</code> and name both assessments. Leave the new members
+      and measures out of the <code>proficiency_rollup</code> pre-aggregation.</p>
+</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Update the text and twins; delete the reference tables.</strong></li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Run the schema tests.</strong> <code>npm ci</code> in <code>src/cube</code> once, then
+      <code>uv run pytest tests/cube/ 2&gt;&amp;1 | tail -n 15</code>. Expected: all pass, 0
+      skipped.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Smoke-test on a local Cube</strong> (<code>cube-ops</code> skill; a model copy
+      under the session scratchpad with the 2 <code>sql_table</code>s pointed at the dev
+      dataset, a relative <code>CUBEJS_SCHEMA_PATH</code>, <code>CUBEJS_REFRESH_WORKER=false</code>).
+      Query <code>pct_students_below</code> and <code>pct_students_far_below</code> by <code>mastery_level</code>
+      for 1 2026-27 module. Expected: both return; the <code>Below</code> row's share
+      matches a hand count on the dev fact.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit.</strong>
+      <code>feat(cube): add performance band members and below/far-below shares</code>.</li>
+</ul>
+<h3 id="task-6-pull-request">Task 6: Pull request</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Lint</strong> the touched SQL, YAML and markdown with
+      <code>/workspaces/teamster/.trunk/tools/trunk check --force --no-fix &lt;files&gt; &lt;/dev/null</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Push and open the PR</strong> from <code>.github/pull_request_template.md</code>,
+      <code>Closes #5573</code>, <code>Refs #6192</code>. Note in Reviewer Notes the shared
+      <code>zz_stg_kippmiami_focus</code> seed and that the kippmiami model must build in
+      prod before kipptaf's wrapper reads it.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Offer CI watch and <code>claude-review</code> handling</strong> (root CLAUDE.md).</li>
+</ul>
+<h3 id="task-7-validate-against-the-dki-view">Task 7: Validate against the DKI View</h3>
+<p>Runbook: the <code>cube-validation</code> skill. Validation files go on
+<code>cristinabaldor/test/claude-ddi-cube-validation</code>, in its own worktree, never in
+the builder PR.</p>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>Modify (validation branch):
+  <code>src/cube/validation/student_assessment_scores_view.yml</code> (2 comparisons)</li>
+<li>
+<p>Create (validation branch): the proof file <code>triage confirm</code> writes</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Worktree and merge.</strong> Invoke <code>resuming-a-branch</code>; add a worktree
+      for the validation branch and merge <code>origin/main</code>.</p>
+</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Add comparison <code>levels-dki-mastery-bars</code></strong> on "DKI - Assessment
+      Mastery Bars": <code>dims</code> map Performance Bands - 3 Level to <code>mastery_level</code>;
+      the measure is the share of students per level; <code>rows:</code> block at student x
+      assessment grain; filters and cuts copied from the existing
+      <code>mastery-dki-school</code> comparison's shared block.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Add comparison <code>far-below-dki-mastery-table</code></strong> on "DKI -
+      Assessment Mastery Table", <code>sheet_field: AVG(Is Far Below)</code>, measure
+      <code>pct_students_far_below</code>, same <code>rows:</code> grain.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Preflight.</strong> <code>preflight &lt;file&gt; --twb &lt;ddi_suite.twb&gt;</code>; settle
+      the "Before prove" list with Cristina.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Prove, check, run</strong> through the runner with
+      <code>--fact-dataset zz_&lt;user&gt;_kipptaf_marts</code> and a local Cube over Task 5's
+      model: <code>prove --comparison</code> for both, <code>check-api</code>, <code>prove --check</code>, <code>run</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Triage.</strong> Every open item should land on an existing cause or
+      the new one. Write the new proof: cells where the workbook's school-level
+      guess (<code>HS</code>: band &gt;= 3, else band &gt;= 4) disagrees with the band set's
+      <code>mastery_level</code>. <code>triage confirm</code> it; 0 <code>UNEXPLAINED</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Commit the validation files</strong> on the validation branch, each
+      staged by name, and report the result to Cristina.</li>
+</ul>
+<h3 id="task-8-after-merge">Task 8: After merge</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1:</strong> Confirm prod built
+      <code>kippmiami_focus.int_focus__apex_band_levels</code> before kipptaf's next
+      assessment tick; launch it in Dagster if not.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2:</strong> Re-run Task 7 Step 5 without <code>--fact-dataset</code> against Cube
+      Cloud and update the PR description.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3:</strong> Close the Asana subtasks on <code>dim_assessments</code>: State test code
+      / name (pointer to <code>module_code</code> and <code>title</code>) and QBL (retired
+      2026-09-30).</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+    
+  </body>
+</html>

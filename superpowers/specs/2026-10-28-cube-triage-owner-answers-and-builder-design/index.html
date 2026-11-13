@@ -1,0 +1,2541 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>Cube triage, owner answers in chat, and the builder: design - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.57a0d79d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#cube-triage-owner-answers-in-chat-and-the-builder-design" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Cube triage, owner answers in chat, and the builder: design
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/launch-page-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Launch Page
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube-access-individual-exceptions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube Access - Individual Exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/tableau-permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tableau Permissions (People Data)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/csgf-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSGF Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/crdc-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CRDC Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ddi-stack-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDI Stack Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/hs-early-warning-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HS Early Warning Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/dibels-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIBELS Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/stat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/njdoe-universal-screener-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NJDOE Universal Screener Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/athletic-eligibility-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Athletic Eligibility Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/academic-health-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic Health Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/grad-plan-tracking-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Grad Plan Tracking Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ignite-r2i-extract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IGNITE R2I Extract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#intent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Intent
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#non-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Non-goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#anti-goals-failure-even-if-it-technically-works" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Anti-goals (failure even if it technically works)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#people" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        People
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-the-work-is-organized" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How the work is organized
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-a-context-checked-triage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part A: context-checked triage
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-b-owner-answers-in-chat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part B: owner answers in chat
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-c-the-builder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part C: the builder
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part C: the builder">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-inventory-from-3-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Inventory, from 3 sources
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-the-tiered-plan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. The tiered plan
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-building-in-3-pr-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Building, in 3 PR types
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-what-ships-in-6160-and-the-first-real-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. What ships in #6160, and the first real test
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#changes-to-the-validator-these-need" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changes to the validator these need
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Constraints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decided-by-the-analyst" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decided by the analyst
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#left-to-the-builder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Left to the builder
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#calls-i-made-not-discussed-with-the-analyst" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Calls I made (not discussed with the analyst)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/specs/2026-10-28-cube-triage-owner-answers-and-builder-design.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="cube-triage-owner-answers-in-chat-and-the-builder-design">Cube triage, owner answers in chat, and the builder: design</h1>
+<p>Issues: #6150 (scope comment of 2026-10-28) and #6157. Ships in PR #6160 with
+the validator. Builds on
+<a href="../2026-10-26-cube-validation-and-build-skill-design/">2026-10-26-cube-validation-and-build-skill-design.md</a>;
+this document replaces that design's "Part 2: the builder" and adds 2 pieces
+before it.</p>
+<h2 id="intent">Intent</h2>
+<p>The validator works: the attendance run proved 13 comparisons and produced 26
+owner questions. 2 steps after it still ran by hand, and a third was never
+built:</p>
+<ol>
+<li><strong>Triage before the owner.</strong> The analyst, with Claude, read Cube's member
+   descriptions and <code>ai_context</code> and closed 9 of the 26 questions without the
+   owner, and an open issue (#4927) settled parts of 5 more. Most "owner
+   questions" were answered by evidence the tool could have gathered.</li>
+<li><strong>The owner's answers.</strong> The owner is the analyst's boss: he knows the
+   policy, is not a coder, and should answer in VS Code chat, not by writing
+   GitHub comments.</li>
+<li><strong>The builder.</strong> Adding a dashboard's missing measures to Cube is still a
+   manual reconstruction of formulas, filters and lineage.</li>
+</ol>
+<h2 id="goals">Goals</h2>
+<ol>
+<li>Close everything the evidence answers before a question reaches the owner,
+   with the analyst approving in one batch.</li>
+<li>Let the owner answer each remaining question in chat, with the information to
+   judge it and checks he can run himself.</li>
+<li>Record the owner's answers as decisions the analyst picks up like a code
+   review.</li>
+<li>Given a dashboard, inventory what Cube has and lacks, plan the missing pieces
+   in tiers, then build them as reviewable pull requests, each proven against
+   the dashboard before it merges.</li>
+</ol>
+<h2 id="non-goals">Non-goals</h2>
+<ul>
+<li>Data quality at the source. A "the source data is wrong" answer opens an issue
+  for that data's owner; the validator does not monitor data.</li>
+<li>CI (#6158), still later.</li>
+<li>Changing any production dashboard or schedule.</li>
+</ul>
+<h2 id="anti-goals-failure-even-if-it-technically-works">Anti-goals (failure even if it technically works)</h2>
+<ul>
+<li><strong>Timing reported as a difference.</strong> Every comparison, before or after a
+  merge, is pinned to 1 fact build; anything the tool cannot pin, it refuses.</li>
+<li><strong>A duplicate measure.</strong> The builder never adds a member Cube already has
+  under another name or with the same SQL.</li>
+<li><strong>An owner question the evidence already answers</strong>, or one the owner cannot
+  understand without asking the analyst.</li>
+<li><strong>Student-level detail, or anything identifying a staff member, on GitHub.</strong>
+  Counts and codes only, under the small-cell rule. Never on GitHub, in git, or
+  in a decision: a student's name, number or row; a staff member's name, email
+  or row (a teacher or homeroom cut is a staff row). These stay in local chat.</li>
+</ul>
+<h2 id="people">People</h2>
+<ul>
+<li><strong>The analyst</strong> builds Cube, runs the validator, triages, and drives the
+  builder.</li>
+<li><strong>The owner</strong> (today the analyst's boss) answers policy questions in VS Code
+  chat. He has a checkout of this repo with Claude Code, a GitHub account, and
+  BigQuery console access to the base tables, but he never edits validation
+  files or runs the validator.</li>
+<li><strong>A data's domain owner</strong> (for example, Miami's attendance data) gets an issue
+  when the owner finds a source-data problem.</li>
+<li><strong>Reviewers</strong>: analytics engineers review Cube changes; data engineers review
+  dbt mart changes.</li>
+</ul>
+<h2 id="how-the-work-is-organized">How the work is organized</h2>
+<p><strong>One GitHub issue per piece of work, as its hub.</strong></p>
+<ul>
+<li>A <strong>validation issue</strong> ("Validate the Attendance Dashboard in Cube") holds the
+  owner's questions and his answers. Each validation round also has a small data
+  PR for its validation file (proofs and decisions), even when every answer is
+  "intended"; that file is what CI will read.</li>
+<li>A <strong>build issue</strong> ("Build DDI Suite in Cube") holds the builder's inventory
+  and tiered plan. The builds become PRs linked to it.</li>
+</ul>
+<p><strong>The attendance run moves out of #6160 once this design is written.</strong> A new
+validation issue; a new branch, in its own worktree, based on the validator
+branch, keeping every attendance data commit; and 1 commit on #6160 that removes
+the 2 attendance validation files (history kept, nothing rewritten). The
+attendance session moves to that worktree. After #6160 merges, the attendance PR
+is retargeted to <code>main</code>. The end-to-end test with the owner happens on that
+branch once Parts A and B are built.</p>
+<h2 id="part-a-context-checked-triage">Part A: context-checked triage</h2>
+<p>After <code>run</code>, before <code>review</code>, the tool gathers evidence for every open item (row
+groups, cell differences, missing cuts and filters) and suggests a call. It
+never applies a call and never touches GitHub.</p>
+<p><strong>Evidence the tool gathers</strong> (deterministic, offline-testable):</p>
+<ol>
+<li><strong>Member docs beside each item.</strong> The <code>description</code> and <code>ai_context</code> of the
+   comparison's measure and of every member the item involves.</li>
+<li><strong>A Cube member for a dashboard field</strong> with no paired member: candidates by
+   name, caption and description, then a value check. Reference columns compare
+   exact values ("same values: map it under <code>filters:</code>"); a description match
+   with different values reads "same field, different coding" (Ethnicity letters
+   against <code>race</code> labels); otherwise "no candidate". Values are never compared
+   or printed for an identifier column.</li>
+<li><strong>Filters that filter nothing.</strong> From the workbook XML: a filter that keeps
+   every member, or whose field is a plain copy of a mapped field, or a
+   parameter-driven display switch.</li>
+<li><strong>A suggested call per item, with its evidence</strong>, in the run result and in a
+   machine-readable file beside <code>run.json</code>.</li>
+</ol>
+<p><strong>What Claude adds in the skill:</strong> a search of open GitHub issues for known gaps
+(#4927 explained the Miami nulls), contradictions between a description and the
+result (<code>pct_ontime</code> says Miami present days count as on time; Cube returns
+blank), and a drafted reason for every suggested close, so the analyst edits
+rather than writes.</p>
+<p><strong>The analyst approves in a batch,</strong> grouped by suggestion, the owner pile last:</p>
+<ul>
+<li>Close as deliberate (the docs answer it), with the quoted evidence</li>
+<li>Map under <code>filters:</code> (Cube has the field)</li>
+<li>Filters nothing</li>
+<li>Known issue</li>
+<li>Send to the owner (no evidence answers it)</li>
+</ul>
+<p>The analyst replies "approve all" or "approve all but 2 and 6". Approved items
+become decisions; only the owner pile reaches <code>review</code>.</p>
+<h2 id="part-b-owner-answers-in-chat">Part B: owner answers in chat</h2>
+<p><strong><code>review</code></strong> posts the remaining questions to the validation issue as today, and
+also writes them as JSON: question id, reason, the decision ids it covers across
+files, both definitions, the evidence, the counts, the hand checks and the run's
+moment. The JSON goes into the validation issue too, as a fenced block, so the
+owner's session reads it from GitHub; it holds the same counts and codes as the
+markdown, under the same small-cell rule, and nothing row-level. Claude reads
+the JSON, never the markdown.</p>
+<p><strong>The owner's skill</strong> is a repo skill (he has a checkout) with a plain-language
+trigger ("answer the attendance review", "walk me through issue #N"), so he
+never needs the validator's name. Claude opens the validation issue, says how
+many questions there are, then asks one at a time. When he asks for example
+students, his session queries them with his own access, and they stay in his
+chat.</p>
+<p><strong>Each question shows everything up front,</strong> in this order:</p>
+<ol>
+<li>The question in policy words ("Which attendance codes should count as
+   tardy?"), with no column names.</li>
+<li>The 2 definitions side by side: the Tableau formula with code groups spelled
+   out, and Cube's definition.</li>
+<li>Who differs: the filters on each side, and the rows and students only one
+   side counts, by school or grade (counts only; small cells masked).</li>
+<li>What triage found, and why it is his call.</li>
+<li><strong>Checks he runs himself</strong>, independent of Claude:</li>
+<li>the dashboard: which sheet, which filters to set, which cell to read, and
+     the number to expect (the example cell with the biggest difference). The
+     example cell is always a group: built only from reviewed columns (region,
+     school, grade and the like), with 10 or more students. Never one student's
+     row, and never a row for a teacher or other staff member. If no such cell
+     differs, the issue says so, and his session finds an example under his own
+     access, in his chat;</li>
+<li>BigQuery SQL for each side, to paste into the console under his own access,
+     <strong>pinned to the run's moment</strong> with time travel, so his numbers reproduce
+     the tool's. Each returns only the example cell's number; the SQL sits in a
+     collapsed block in the issue because the expanded view can be long. Tableau
+     shows its last refresh, so a small difference may not match there.</li>
+<li>The answer, as choices with what happens next, plus free text:</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Choice</th>
+<th>Call</th>
+<th>What happens</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The dashboard is right</td>
+<td><code>fix_cube</code></td>
+<td>the domain's Cube-fix issue</td>
+</tr>
+<tr>
+<td>Cube is right</td>
+<td><code>fix_dashboard</code></td>
+<td>the domain's Asana dashboard-fix task</td>
+</tr>
+<tr>
+<td>Both fine, intended</td>
+<td><code>deliberate</code></td>
+<td>recorded; stays quiet on later runs</td>
+</tr>
+<tr>
+<td>The source data is wrong</td>
+<td><code>fix_source</code></td>
+<td>a new GitHub issue for that data's owner</td>
+</tr>
+<tr>
+<td>Free text ("need to talk")</td>
+<td><code>domain_owner</code></td>
+<td>stays open, with his note in the reason</td>
+</tr>
+</tbody>
+</table>
+<p>He can ask follow-up questions before answering; Claude answers from the same
+evidence and asks the question again.</p>
+<p><strong><code>fix_source</code> is a new call.</strong> It covers "this is weird, investigate" and
+"found it: Miami entered tardies wrong". Claude drafts a GitHub issue with the
+question, both definitions, the counts, his note and what his session found; he
+picks the domain owner to assign and confirms the text. That issue is the
+decision's <code>task</code>. It never carries a student's name, number or row, or a staff
+member's name, email or row; the domain owner is named only as the GitHub
+assignee.</p>
+<p><strong>The pinned checks need the run to be fresh.</strong> Time travel reaches 7 days, so
+the Q&amp;A warns when the moment is near that limit; past it, the analyst re-runs
+<code>run</code> and the questions refresh.</p>
+<p><strong>At the end,</strong> Claude shows a summary of his answers; he confirms it, and
+Claude posts 1 comment on the validation issue: a readable summary plus a fenced
+machine-readable block. His free-text notes become decision reasons in git, so
+before posting, Claude checks them for a student's or staff member's name,
+number or email (likely after he looked at example students) and asks him to
+reword; <code>record-answers</code> repeats the check before writing.</p>
+<p><strong>Where each fix call's <code>task</code> comes from.</strong> Each validation file gets a
+<code>tasks:</code> block naming its domain's Cube-fix GitHub issue and Asana dashboard-fix
+task. An owner's <code>fix_cube</code> or <code>fix_dashboard</code> answer takes its <code>task</code> from
+there; <code>fix_source</code> takes the issue his session opened. Like the other fix
+calls, <code>fix_source</code> keeps its items quiet while that issue is open, and the
+measure still does not read "validated".</p>
+<p><strong>The analyst picks it up like a code review:</strong> "pick up the answers on #N". A
+new command, <code>record-answers</code>, reads only the comment the analyst points it at;
+it shows that comment's author, and the analyst confirms before anything is
+written. It writes the decisions: the call, a reason that keeps the owner's
+words, and <code>task</code>. It refuses an answer whose decision ids no longer match. Then
+<code>run</code> again (the decisions fingerprint covers <code>reason</code>, a safeguard the analyst
+kept). The validation issue closes when every question has a decision and every
+fix has its issue, PR or Asana task.</p>
+<h2 id="part-c-the-builder">Part C: the builder</h2>
+<p>The analyst says "build DDI Suite in Cube".</p>
+<h3 id="1-inventory-from-3-sources">1. Inventory, from 3 sources</h3>
+<ul>
+<li><strong>The gap catalog</strong>
+  (<a href="../../plans/2026-10-02-cube-gap-catalog/"><code>docs/superpowers/plans/2026-10-02-cube-gap-catalog.md</code></a>
+  and its domain files): every measure and dimension on the dashboard,
+  classified <code>cube-covered</code>, <code>mart-ready</code>, <code>mart-missing</code> or <code>workbook-only</code> as
+  of 2026-10-02. The builder re-checks each row against today's Cube.</li>
+<li><strong>An independent review</strong>: a fresh reviewer re-inventories the workbook from
+  its XML (sheets, calculations with code groups expanded, cuts and filters)
+  without seeing the catalog, so it is not anchored on it.</li>
+<li><strong>The dashboard's Asana task</strong> in "Data Marts + Semantic Layer": its
+  blocked-by builds, their open field subtasks, and its deferred and retired
+  notes. A retired item (QBL) drops out; a deferred one is listed, not planned.</li>
+</ul>
+<p>The result is one row per measure and dimension: in Cube (naming the member) or
+missing. Where the 3 sources disagree, the row says so, and the analyst decides.</p>
+<p><strong>No duplicates.</strong> Before calling anything missing, the builder searches every
+cube, not only the dashboard's view, for a member that already means it: by
+name, by description, and by compiled SQL. A member whose compiled SQL equals
+another's is refused.</p>
+<p>A same-named member on another cube is a candidate, not a match. Cube has 4
+<code>count_students</code> today, and each counts a different population: students with a
+score, enrolled in a period, with a section enrollment, enrolled on a day. Their
+compiled SQL differs, so the SQL check alone misses them, and the name check
+alone would wrongly call them one measure. For each candidate the builder shows
+the analyst what it counts (the key it counts, its table's grain, its filters)
+beside what the dashboard counts, and one of 3 verdicts:</p>
+<ol>
+<li><strong>Same population, already in the dashboard's view:</strong> reuse it; nothing is
+   built.</li>
+<li><strong>Same population, on a cube the view does not include:</strong> add that cube to
+   the view (a tier 2 change), not a copy of the measure.</li>
+<li><strong>Different population:</strong> a new measure is allowed. Its name says which
+   students it counts (<code>count_students_with_attendance</code>, not <code>count_students</code>),
+   and its description says how it differs from the others. <code>count_students</code>
+   means the enrollment headcount and nothing else, on every view.</li>
+</ol>
+<p>The analyst confirms each verdict before the plan is written.</p>
+<p>Dimensions follow the same path. The DDI Suite workbook showed 4 kinds of field:
+already in Cube under another name (map it under <code>filters:</code>), plain <code>rpt</code>
+columns Cube lacks, workbook calculations with business logic, and
+presentation-only fields (parameters, URLs, permission fields), which are
+ignored.</p>
+<h3 id="2-the-tiered-plan">2. The tiered plan</h3>
+<p>Each missing piece sits in the shallowest tier that builds it:</p>
+<ol>
+<li>Every member exists: only a comparison and a proof.</li>
+<li>New Cube members over columns a mart already has.</li>
+<li>New columns on an existing fact or dimension table, then their members.</li>
+<li>A whole new cube over an existing mart.</li>
+<li>A new fact table: a new dbt mart, then everything above.</li>
+</ol>
+<p><strong>Where it lands:</strong> the build issue holds the inventory, the source
+disagreements and the plan. Asana changes only where something was missed (a
+measure no field subtask names, a dependency the blocked-by list lacks), shown
+in the build issue first and made after the analyst approves.</p>
+<h3 id="3-building-in-3-pr-types">3. Building, in 3 PR types</h3>
+<p>After the analyst approves the plan, the builder builds, shallowest tier first:</p>
+<ol>
+<li><strong>YAML only</strong>: new measures over members already present, and their
+   validation comparisons. A simple review.</li>
+<li><strong>Cube adds or changes</strong>: new dimensions, joins, a new cube. Analytics
+   engineer review.</li>
+<li><strong>Fact adds or changes</strong>: new columns or a new mart in dbt. Data engineer
+   review. A type 3 PR merges before the type 2 that reads its column.</li>
+</ol>
+<p><strong>Every PR is proven before it merges.</strong></p>
+<ul>
+<li><strong>Types 1 and 2</strong> run the validator against a <strong>local Cube server</strong> over the
+  branch's model (the <code>CUBEJS_SCHEMA_PATH</code> copy in
+  <code>.claude/rules/cube-authoring.md</code>). A flag points it at a Cube Cloud Dev Mode
+  deployment instead.</li>
+<li><strong>Type 3</strong>: the local Cube copy reads the analyst's dbt dev build of the mart,
+  and the validator reads the dev table. The moment is that dev build, found in
+  BigQuery's job history like a production build, so the dashboard side still
+  rebuilds at the matching moment.</li>
+<li>Each PR's description says what was proven, at which moment, against which
+  branch.</li>
+</ul>
+<p>When every tier is done, a validation issue runs the whole dashboard end to end
+(Parts A and B), and the dashboard's Asana stage subtasks move from "Built in
+Cube" toward "Matches within tolerance".</p>
+<h3 id="4-what-ships-in-6160-and-the-first-real-test">4. What ships in #6160, and the first real test</h3>
+<p>The builder ships in #6160 as the commands it needs and its skill runbook,
+proven by offline tests. The steps that need judgment (reading the 3 sources,
+the independent review, sorting a field into its group, choosing a tier) are
+skill steps; the deterministic parts are commands: walking Cube's members with
+their compiled SQL for the duplicate check, the workbook re-inventory, and the
+comparison of the 3 sources into the inventory.</p>
+<p>The first real test is DDI Suite, outside #6160: its own build issue and PRs,
+based on #6160's branch until it merges, the same way the attendance run moves
+out.</p>
+<h2 id="changes-to-the-validator-these-need">Changes to the validator these need</h2>
+<ul>
+<li>Evidence gathering, suggested calls and their machine-readable file (Part A).</li>
+<li><code>review</code> also writes its questions as JSON, with hand checks (Part B).</li>
+<li>A <code>record-answers</code> command (Part B).</li>
+<li>A <code>fix_source</code> call, with <code>task</code> required like the other fix calls.</li>
+<li><code>record-answers</code> refuses a reason that contains a student's or staff member's
+  name, number or email.</li>
+<li>The review's footnote reads "identifiers of students and staff are hidden"
+  (today: "student identifiers").</li>
+<li>The Cube client accepts plain <code>http</code> for <code>localhost</code> only; every other URL
+  stays https-only, as the security scan required.</li>
+<li>A moment can come from a dev build of a fact, not only production.</li>
+</ul>
+<h2 id="constraints">Constraints</h2>
+<ul>
+<li>The tool posts nothing. Claude posts only what the analyst or the owner
+  approved: triage closes, the owner's comment, a <code>fix_source</code> issue, Asana
+  edits, pull requests.</li>
+<li>No PII in decisions, reasons, issues, comments or PRs
+  (<code>.claude/rules/ferpa-pii.md</code>), and nothing that identifies a staff member.
+  The value check skips identifier columns. The review already shows values only
+  for its reviewed columns and redacts every other one, so a teacher or homeroom
+  column fails closed; the new JSON, hand checks and <code>fix_source</code> issue use the
+  same list. Example students in the owner's chat stay local.</li>
+<li>Time travel's 7-day window bounds every pinned check.</li>
+<li>BigQuery spend (Charlie's review on #6160). Every query the new commands run
+  goes through the validator's warehouse: triage's value checks, the builder's
+  dev-build moment lookup, and every proof. Each query is priced before it runs,
+  counts against the run's cap and the daily cap shared by every run on the
+  machine (<code>--max-usd-per-day</code>), and reuses view versions from the disk cache.
+  The owner's pinned SQL runs under his own access, outside those caps, so each
+  check shows its dry-run price and filters to the example cell's school and
+  grade to scan as little as the table allows.</li>
+<li>Data commits (validation files) stay separate from tool commits. Another
+  session works the same worktree, so files are staged by name.</li>
+</ul>
+<h2 id="decided-by-the-analyst">Decided by the analyst</h2>
+<ul>
+<li>Triage before the owner; batch approval, grouped by suggestion, owner pile
+  last.</li>
+<li>The owner answers in VS Code chat, one question at a time, with choices plus
+  free text, everything shown up front.</li>
+<li>The owner's checks are his to run (dashboard steps and SQL), not Claude's, and
+  the SQL is pinned to the run's moment.</li>
+<li>A 5th outcome, the source data is wrong, opens a new issue assigned to a
+  domain owner.</li>
+<li>One issue per validation and per build, as the hub; the analyst picks up the
+  owner's answers like a code review.</li>
+<li>The attendance run moves to its own issue and branch after this design is
+  written.</li>
+<li>The builder's inventory comes from the gap catalog, an independent review and
+  the Asana dashboard task; its plan tiers the missing pieces; it lands in a
+  build issue, with Asana edits only for misses.</li>
+<li>The builder builds, in 3 PR types by reviewer, each proven before merge,
+  against a local Cube server by default.</li>
+<li>Everything ships in #6160, but the builder's first real test (DDI Suite)
+  happens outside it, in its own issue and PRs.</li>
+<li>The owner has a repo checkout with Claude Code, GitHub, and BigQuery console
+  access to the base tables.</li>
+<li>Staff names and anything else identifying a staff member stay off GitHub, the
+  same as student-level detail.</li>
+<li><code>count_students</code> means the enrollment headcount only. Any other set of
+  students gets a name that says which. The rule goes into
+  <code>.claude/rules/cube-authoring.md</code>, and the existing measures that break it are
+  renamed, in their own PR (#6176), before the DDI Suite build.</li>
+</ul>
+<h2 id="left-to-the-builder">Left to the builder</h2>
+<ul>
+<li>Command names, file formats, and the owner skill's name.</li>
+<li>How candidates are scored for field matching, within the value rule above.</li>
+<li>How the independent review is run.</li>
+<li>Which example cell the hand checks use when several differ by the same amount.</li>
+</ul>
+<h2 id="calls-i-made-not-discussed-with-the-analyst">Calls I made (not discussed with the analyst)</h2>
+<ul>
+<li>Claude drafts the reason for each suggested close.</li>
+<li>The owner's Q&amp;A is a separate skill, not a mode of <code>cube-validation</code>.</li>
+<li><code>fix_source</code> is the new call's name.</li>
+<li>A member whose compiled SQL equals another's is refused outright.</li>
+<li>The duplicate search covers every cube. A same-named member elsewhere gets one
+  of 3 verdicts (reuse, add its cube to the view, or a new measure for a
+  different population) for the analyst to confirm.</li>
+<li>Retired Asana items drop out of the inventory; deferred ones are listed but
+  not planned.</li>
+<li>The builder proves on a local Cube server for all 3 PR types; the Cube Cloud
+  Dev Mode flag is opt-in.</li>
+<li>A <code>tasks:</code> block per validation file supplies the Cube-fix issue and Asana
+  dashboard-fix task; <code>fix_source</code> keeps its items quiet while its issue is
+  open.</li>
+<li>The owner's questions reach his session as a fenced JSON block in the
+  validation issue, counts and codes only.</li>
+<li>The pinned SQL returns only the example cell, in a collapsed block.</li>
+<li>The owner's pinned SQL shows its dry-run price, since it runs outside the
+  validator's caps.</li>
+<li><code>record-answers</code> reads only the comment the analyst names, and shows its
+  author for confirmation first.</li>
+<li>Judgment steps of the builder are skill steps; the duplicate check, workbook
+  re-inventory and 3-source comparison are commands.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+    
+  </body>
+</html>

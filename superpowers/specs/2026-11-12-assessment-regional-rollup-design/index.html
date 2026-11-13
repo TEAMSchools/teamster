@@ -1,0 +1,2576 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>Region-aware roll-up for internal assessments - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.57a0d79d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#region-aware-roll-up-for-internal-assessments" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Region-aware roll-up for internal assessments
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/launch-page-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Launch Page
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube-access-individual-exceptions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube Access - Individual Exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/tableau-permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tableau Permissions (People Data)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/csgf-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSGF Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/crdc-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CRDC Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ddi-stack-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDI Stack Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/hs-early-warning-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HS Early Warning Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/dibels-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIBELS Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/stat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/njdoe-universal-screener-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NJDOE Universal Screener Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/athletic-eligibility-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Athletic Eligibility Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/academic-health-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic Health Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/grad-plan-tracking-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Grad Plan Tracking Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ignite-r2i-extract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IGNITE R2I Extract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#intent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Intent
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decisions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#non-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Non-goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#anti-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Anti-goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Constraints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#approaches" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Approaches
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#design" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Design
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Design">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#terms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Terms
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#1-int_assessments__assessments_members" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. int_assessments__assessments_members
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-new-int_assessments__assessment_region_groups" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. New int_assessments__assessment_region_groups
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-int_assessments__assessments_canonical" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. int_assessments__assessments_canonical
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-int_assessments__scaffold" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. int_assessments__scaffold
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-int_assessments__performance_bands-and-the-roll-ups-band-lookup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. int_assessments__performance_bands and the roll-up's band lookup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-marts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Marts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-one-reader-outside-the-assessment-star" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. One reader outside the assessment star
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-after-merge" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. After merge
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#9-tests-docs-and-skill" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Tests, docs and skill
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#size-of-the-change-in-data-prod-2026-11-12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Size of the change in data (prod, 2026-11-12)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#verification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Verification
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#left-to-the-builder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Left to the builder
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#open-items" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open items
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#approval-2026-11-12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Approval, 2026-11-12
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#revision-2026-11-12-built-inside-existing-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Revision, 2026-11-12: built inside existing models
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/specs/2026-11-12-assessment-regional-rollup-design.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="region-aware-roll-up-for-internal-assessments">Region-aware roll-up for internal assessments</h1>
+<p>Closes #6308.</p>
+<h2 id="intent">Intent</h2>
+<p>Internal Illuminate assessments that carry the same tags (school year, scope,
+subject, module code, grade) roll up into one group. That is by design: it is
+how the parts of a multi-part assessment, and alternate versions, become one
+result per student.</p>
+<p>The region tag (<code>regions_assessed</code>) was added after the roll-up was built, and
+the roll-up never took it into account. When Camden and Newark each have their
+own copy of a module, both copies land in one group, and the copy with the
+lowest <code>assessment_id</code> supplies the group's title, date, band set and report
+card tags for every region. The region whose copy was not created first then
+shows:</p>
+<ul>
+<li>another region's title and date, so its scores sit in the wrong week on the
+  DDI weekly views and the wrong quarter under the Term filter;</li>
+<li>a section lookup on a date the student did not sit the test, which drops a
+  small number of scores from the scores fact;</li>
+<li>another region's report card and progress report tags, which today leaves
+  Camden's grade 1 and 2 literacy assessments off Camden's feeds;</li>
+<li>another region's performance band set (see <em>Open items</em>).</li>
+</ul>
+<p>The Data Team decided that the whole roll-up becomes region-aware, not only the
+date: two copies combine for a region only when both are tagged for that region.</p>
+<h2 id="decisions">Decisions</h2>
+<table>
+<thead>
+<tr>
+<th>Decision</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The roll-up is regional. A region's group is every identically tagged copy whose <code>regions_assessed</code> lists that region. A copy tagged for several regions sits in each of those regions' groups.</td>
+<td>Decided 2026-11-12</td>
+</tr>
+<tr>
+<td>A regional group's ID is the lowest <code>assessment_id</code> among the copies tagged for that region.</td>
+<td>Decided 2026-11-12</td>
+</tr>
+<tr>
+<td>Rejected: grouping copies only when their region lists match exactly. It splits one combined score in two for about 2,500 student-assessments in SY25-26 and 1,400 in SY26-27.</td>
+<td>Decided 2026-11-12</td>
+</tr>
+<tr>
+<td>The Assessment Dashboard shows one row per regional assessment. No workbook change ships with this.</td>
+<td>Decided 2026-11-12</td>
+</tr>
+<tr>
+<td>Scores whose section cannot be resolved are the resolver working as designed. No resolver fallback, no "first copy with sittings" rule, no clean-up of old-year dates, and no anchor-count acceptance check.</td>
+<td>Decided 2026-11-12</td>
+</tr>
+<tr>
+<td>Replacement scores missing from the scores fact get their own issue.</td>
+<td>Issue #6308</td>
+</tr>
+</tbody>
+</table>
+<h2 id="goals">Goals</h2>
+<ul>
+<li>Two copies combine for a region only when both are tagged for that region.</li>
+<li>Each region's scores carry the title, date, and report card and progress
+  report tags of that region's own first copy.</li>
+<li>No student's combined score changes: the set of copies rolled into each
+  student's result, and its percent correct, are the same before and after.</li>
+<li>Every key derived from the group ID is hashed from the same ID and date by its
+  producer and all of its consumers.</li>
+</ul>
+<h2 id="non-goals">Non-goals</h2>
+<ul>
+<li>Correcting tag errors, such as a WPP2 copy tagged WPP 1. Those are on the
+  tagging work list and are fixed in the tagging app.</li>
+<li>Changing the section resolver or the scaffold's course enrollment join
+  (<code>between</code>), including making it half-open.</li>
+<li>The replacement-score gap.</li>
+<li>Removing <code>is_florida_assessment</code> from the tag grouping. Miami-only copies
+  already group apart, and their group IDs do not change under this design.</li>
+<li>Tableau workbook changes.</li>
+<li>An override for Camden's Literacy G1 UA2, which moves to Camden's Q2 because
+  Camden gave it on November 9, 2026.</li>
+</ul>
+<h2 id="anti-goals">Anti-goals</h2>
+<ul>
+<li>A student's combined score splitting into two results.</li>
+<li>One column name, <code>canonical_assessment_id</code>, carrying two meanings (the tag
+  group on one model, the regional group on another).</li>
+<li>A producer and a consumer hashing different group IDs or dates. No mart test
+  catches an orphaned key.</li>
+</ul>
+<h2 id="constraints">Constraints</h2>
+<ul>
+<li>A5: <code>int_assessments__score_anchors</code> holds an existing <code>row_number() = 1</code>
+  pick. Do not edit inside it. It needs no edit, because its date comes from the
+  canonical model by group ID.</li>
+<li>Hash-change discipline (<code>src/dbt/kipptaf/models/marts/CLAUDE.md</code>): the group
+  ID and date are hash inputs to <code>assessment_administration_key</code> and to the
+  score key. Producer and every consumer change in one commit.</li>
+<li>Key churn is unavoidable for the regions that get a new group ID. Issue #6308
+  asked to keep <code>c.administered_date</code> as the hash input to avoid churn; that
+  held for a date-only fix and does not hold here.</li>
+<li>The assessment intermediates and marts are tables on one cron tick. Cube's
+  <code>proficiency_rollup</code> pre-aggregation follows the scores fact's rebuild only
+  for partitions from July 1 of the previous school year onward. Older
+  partitions, which hold SY24-25's 12 split groups, rebuild only by hand in Cube
+  Cloud.</li>
+<li>Never bare <code>dbt</code>; always <code>uv run</code>.</li>
+</ul>
+<h2 id="approaches">Approaches</h2>
+<ol>
+<li><strong>A per-region date only.</strong> Keep one group per tag set and give each region
+   its own date. Smallest change and no key churn beyond the date. It leaves the
+   title, band set and report card tags coming from another region's copy.
+   Superseded by the decision above.</li>
+<li><strong>A regional group ID from a copy-by-region crosswalk (chosen).</strong> Keep the
+   members model at one row per copy. Add one model at one row per copy and
+   region that carries the regional group ID. Every consumer that needs a group
+   reads it there or from the scaffold, which already works at that grain.</li>
+<li><strong>Change the members model's grain to copy by region.</strong> One model instead of
+   two, but every copy-grain consumer (<code>rpt_appsheet__assessments</code>, the two tag
+   audits, <code>dim_assessments</code>, the band model) would have to collapse it again.</li>
+</ol>
+<h2 id="design">Design</h2>
+<h3 id="terms">Terms</h3>
+<ul>
+<li><strong>Tag group</strong>: copies sharing source, internal flag, Florida flag, school
+  year, scope, subject, module code and grade. This is today's grouping,
+  unchanged. Its ID is the lowest <code>assessment_id</code> in it.</li>
+<li><strong>Regional group</strong>: within a tag group, the copies tagged for one region. Its
+  ID is the lowest <code>assessment_id</code> among them.</li>
+</ul>
+<p>When a tag group's first copy is tagged for a region, that region's regional
+group ID equals the tag group ID, so nothing changes for it.</p>
+<h3 id="1-int_assessments__assessments_members">1. <code>int_assessments__assessments_members</code></h3>
+<p>Grain unchanged: one row per source and <code>assessment_id</code>.</p>
+<p>Rename <code>canonical_assessment_id</code> to <code>tag_group_assessment_id</code>. The values do not
+change. The rename makes every reader of the old column fail to compile until it
+is pointed at the right group, which is the point: a reader left on the tag
+group silently keeps the cross-region roll-up.</p>
+<h3 id="2-new-int_assessments__assessment_region_groups">2. New <code>int_assessments__assessment_region_groups</code></h3>
+<p>A build model (a crosswalk) at one row per source, <code>assessment_id</code> and region,
+for internal assessments. It is the one place the regional rule lives.</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="n">m</span><span class="p">.</span><span class="k">source</span><span class="p">,</span>
+<span class="w">    </span><span class="n">m</span><span class="p">.</span><span class="n">assessment_id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">m</span><span class="p">.</span><span class="n">tag_group_assessment_id</span><span class="p">,</span>
+
+<span class="w">    </span><span class="n">region</span><span class="p">,</span>
+
+<span class="w">    </span><span class="k">min</span><span class="p">(</span><span class="n">m</span><span class="p">.</span><span class="n">assessment_id</span><span class="p">)</span><span class="w"> </span><span class="n">over</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="n">partition</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">m</span><span class="p">.</span><span class="k">source</span><span class="p">,</span><span class="w"> </span><span class="n">m</span><span class="p">.</span><span class="n">tag_group_assessment_id</span><span class="p">,</span><span class="w"> </span><span class="n">region</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">canonical_assessment_id</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"int_assessments__assessments_members"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">m</span>
+<span class="k">cross</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="k">unnest</span><span class="p">(</span><span class="n">m</span><span class="p">.</span><span class="n">regions_assessed_array</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">region</span>
+<span class="k">where</span><span class="w"> </span><span class="n">m</span><span class="p">.</span><span class="n">is_internal_assessment</span>
+</code></pre></div>
+<p>Apex rows pass through unchanged: each is its own tag group with region Miami.
+Uniqueness test on source, <code>assessment_id</code> and region.</p>
+<h3 id="3-int_assessments__assessments_canonical">3. <code>int_assessments__assessments_canonical</code></h3>
+<p>Grain unchanged: one row per source and <code>canonical_assessment_id</code>. The set of
+IDs becomes every regional group ID from the crosswalk plus every tag group ID.
+A tag group ID that is no region's group (its first copy has no region tagged)
+keeps its row with an empty <code>regions_array</code>, so the replacement fallback below
+still finds a title and date.</p>
+<ul>
+<li>Attributes (title, date, subject, scope, module code, year, grade) come from
+  the copy whose <code>assessment_id</code> is the group ID. The row is determined, so the
+  <code>dbt_utils.deduplicate</code> pick is no longer needed.</li>
+<li><code>regions_array</code> becomes the regions whose regional group this ID is. Today it
+  is every region tagged anywhere in the tag group.</li>
+<li>Add <code>tag_group_assessment_id</code>.</li>
+</ul>
+<p><code>dim_assessment_administrations</code> reads this model fanned by <code>regions_array</code>. Its
+SQL does not change, and it now yields one administration per regional group and
+region, dated by that region's first copy.</p>
+<h3 id="4-int_assessments__scaffold">4. <code>int_assessments__scaffold</code></h3>
+<ul>
+<li><code>assessment_region_scaffold</code>: join the crosswalk in place of the <code>unnest</code>, and
+  take <code>canonical_assessment_id</code> from it. Students are already rostered only to
+  copies tagged for their region, so rows and rostering do not change.</li>
+<li>Replacement branch: the student's region comes from their school. Look up the
+  regional group for the copy's tag group and that region in the canonical
+  model. When one exists, use its ID and set <code>is_region_tagged</code> true. When none
+  exists, fall back to <code>tag_group_assessment_id</code> and set it false, which matches
+  today's value.</li>
+<li>Non-internal and Apex branches: <code>canonical_assessment_id</code> is the copy's own
+  <code>tag_group_assessment_id</code>. Values do not change.</li>
+</ul>
+<p>The score anchors, section resolver and scores fact read the group ID from the
+scaffold and the date from the canonical model, so they follow without logic
+changes, apart from the joins named below. The response roll-up follows for the
+group ID, title and date; its band lookup changes as described next.</p>
+<h3 id="5-int_assessments__performance_bands-and-the-roll-ups-band-lookup">5. <code>int_assessments__performance_bands</code> and the roll-up's band lookup</h3>
+<p>Depends on open item 1. As recommended there, only the band set becomes
+regional:</p>
+<ul>
+<li><strong>Rule.</strong> A score is labeled from the band set on its regional group's first
+  copy. For a standard or reporting group, that is the first copy in the group
+  that carries it. A replacement row uses the group the scaffold assigned it.</li>
+<li><strong>The standard merge stays on the tag group.</strong> <code>canonical_response_type_id</code>
+  keeps its window over the tag group. It is only a representative ID for the
+  same standard across copies. Making it regional could change
+  <code>response_type_id</code>, and with it the score key, for regions whose group ID does
+  not change.</li>
+<li><strong>The roll-up's join moves.</strong> <code>int_assessments__response_rollup</code> joins the
+  band model in <code>responses_keyed</code>, on single sittings that carry no group yet,
+  and aggregates on the band set before the scaffold join. The band set lookup
+  has to happen once the group is known. <code>rpt_deanslist__mod_standards</code> reads
+  the band set through the roll-up's group ID and follows the same rule.</li>
+</ul>
+<p>If the decision goes the other way, the band model only swaps
+<code>canonical_assessment_id</code> for <code>tag_group_assessment_id</code> and nothing else moves.</p>
+<h3 id="6-marts">6. Marts</h3>
+<ul>
+<li><code>fct_assessment_scores_enrollment_scoped</code>: the roll-up's <code>assessment_id</code> is
+  the group ID. Join the canonical model on it directly instead of through the
+  member's own group column. Raw <code>academic_year</code> and <code>module_code</code> still come
+  from the member row for that ID.</li>
+<li><code>bridge_assessment_administration_members</code> is disabled, so it does not compile
+  and the rename will not flag it. Update its SQL to read copy, region and group
+  ID from the crosswalk anyway, so it is right if it is re-enabled. It stays
+  disabled and is not part of verification.</li>
+<li><code>bridge_assessment_expectations_student_scoped</code> and
+  <code>bridge_assessment_expectations_enrollment_scoped</code>: take the group ID from the
+  scaffold row, not from the member's own group column.</li>
+<li><code>dim_assessments</code>: member grain, and its key does not hash the group ID, so no
+  key changes. It joins the canonical model only for the grade, which is the
+  same for every copy in a tag group.</li>
+</ul>
+<p>Key effects: <code>assessment_administration_key</code> and the score key change for rows
+whose regional group ID differs from today's group ID. <code>assessment_key</code> on the
+fact moves to the regional first copy's existing <code>dim_assessments</code> row. No
+column is added to or removed from a mart, so the Cube model files need no edit.</p>
+<h3 id="7-one-reader-outside-the-assessment-star">7. One reader outside the assessment star</h3>
+<p><code>int_assessments__college_assessment_practice</code> (CARAT practice SAT and ACT
+scores) joins the roll-up's group ID to a hand-kept conversion sheet. A practice
+test in a group that splits would need its new ID on the sheet. None of the 11
+practice IDs sits in a split group today (checked 2026-11-12). No change is
+needed; verification re-checks it.</p>
+<h3 id="8-after-merge">8. After merge</h3>
+<ul>
+<li>All changed tables rebuild in one pass so keys agree.</li>
+<li>The Data Team rebuilds the <code>proficiency_rollup</code> partitions before July 1, 2025
+  by hand in Cube Cloud, so SY24-25 picks up its new keys and dates.</li>
+</ul>
+<h3 id="9-tests-docs-and-skill">9. Tests, docs and skill</h3>
+<ul>
+<li>Update <code>int_assessments__assessments_members__no_cross_source_canonical</code>,
+  <code>int_assessments__scaffold__replacement_region_untagged</code> and the properties
+  files that name the renamed column.</li>
+<li><code>docs/models/ddi-stack-data-model.md</code>: replace the decision "Canonical
+  grouping by attributes, not region" and the terms that describe the group.</li>
+<li><code>.claude/skills/ddi-stack/references/tagging.md</code>: rewrite "Canonical
+  grouping", including the Florida note. <code>report-cards.md</code>: the gate now reads
+  the tags on the region's own first copy.</li>
+</ul>
+<h2 id="size-of-the-change-in-data-prod-2026-11-12">Size of the change in data (prod, 2026-11-12)</h2>
+<table>
+<thead>
+<tr>
+<th>Year</th>
+<th>Tag groups that split by region</th>
+<th>Student-assessments that get a new group ID</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SY24-25</td>
+<td>12</td>
+<td>1,177</td>
+</tr>
+<tr>
+<td>SY25-26</td>
+<td>37</td>
+<td>13,735 of 404,150</td>
+</tr>
+<tr>
+<td>SY26-27</td>
+<td>15</td>
+<td>2,708 of 219,723</td>
+</tr>
+<tr>
+<td>Earlier</td>
+<td>0</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+<p>All but one of the 52 groups in the last two years are Camden's own copy against
+Newark's, or Newark and Paterson's. The 12 in SY24-25 are Camden high school
+copies. The full list is on the Regional dates tab of the tagging work list
+(Google Sheet "DDI assessment tagging fixes (SY25-26 and SY26-27)").</p>
+<h2 id="verification">Verification</h2>
+<ol>
+<li><strong>Combined scores do not change.</strong> For internal, non-replacement rows of the
+   response roll-up, compare the branch build to prod on student, the sorted
+   list of member copies (<code>assessment_ids</code>) and response type. Row counts and
+   percent correct match exactly.</li>
+<li><strong>Only the expected rows get a new group ID.</strong> Rows whose group ID differs
+   from prod fall only in the tag groups listed above, and each row's region is
+   tagged on its new first copy.</li>
+<li><strong>Keys resolve.</strong> Every internal <code>assessment_administration_key</code> on the
+   scores fact and on the two expectation bridges exists in
+   <code>dim_assessment_administrations</code>. Check counts, not compilation. For rows
+   whose group ID does not change, the score key matches prod.</li>
+<li><strong>Report cards.</strong> Camden's grade 2 literacy domain rows appear for the
+   students who lack them today (172 on 2026-11-12), and grade 1 and 2 literacy
+   progress report rows appear (141 and 173). A replay of the feed logic matched
+   the published feed exactly, so the same replay against the branch build is
+   the check.</li>
+<li><strong>Dates.</strong> Literacy G3 ET3 (SY25-26): Newark and Paterson scores carry
+   January 28, 2026, and Camden's carry September 22, 2025.</li>
+<li><strong>Uniqueness tests</strong> pass on the crosswalk and on every model whose grain is
+   named above.</li>
+<li><strong>CARAT.</strong> No practice SAT or ACT ID on the conversion sheet sits in a group
+   that splits.</li>
+<li><strong>Bands, if open item 1 is yes.</strong> Mastery changes only in the modules listed
+   there, and replacement rows keep a band set.</li>
+</ol>
+<h2 id="left-to-the-builder">Left to the builder</h2>
+<ul>
+<li>The final name of <code>tag_group_assessment_id</code> and of the crosswalk model.</li>
+<li>Whether the crosswalk needs a grain-projection <code>distinct</code> for a region typed
+  twice in one tag, and how the empty-string region that a trailing comma
+  produces is carried. Keep today's behavior for both.</li>
+<li>The exact join shape for the replacement branch's regional lookup.</li>
+<li>Whether <code>dim_assessments</code> keeps its canonical join or reads the grade from the
+  member row.</li>
+<li>The rebuild after merge: all changed tables must rebuild in one pass so keys
+  agree. Confirm how the deploy triggers that, per
+  <code>src/dbt/kipptaf/models/marts/CLAUDE.md</code>.</li>
+<li>Follow-up issue for the replacement-score gap.</li>
+</ul>
+<h2 id="open-items">Open items</h2>
+<ol>
+<li><strong>Should performance bands follow the regional group?</strong> Today the tag group's
+   first copy supplies the band set for everyone. In 11 of the 52 split groups
+   the regional copies carry different band sets, and in 9 of those the cut
+   points differ. If bands become regional, 130 overall results change mastery:
+   67 in SY26-27 (Newark Chemistry ET 1, which today is judged by a Camden-only
+   copy nobody sat) and 63 in SY25-26 across four literacy modules.
+   Standard-level results were not measured. Recommended: yes, because the
+   decision was that the whole roll-up is regional, and a region should be
+   judged by the cut points on the test it sat. Two copies carry Illuminate's
+   default band set (Camden's Literacy G4 ET1 and Newark's Literacy G7 ET1, both
+   SY25-26), which looks like a setup miss; under this option those regions
+   would be judged by the default set until the copy is corrected. This
+   contradicts the stakeholder doc's line that no mastery result changes, so the
+   doc changes with the answer.</li>
+<li><strong>Camden Literacy G1 UA2 lands in Q2.</strong> No override is planned. Teaching &amp;
+   Learning has not yet confirmed the quarter.</li>
+</ol>
+<h2 id="approval-2026-11-12">Approval, 2026-11-12</h2>
+<p>Approved by the Data Team on 2026-11-12, with open item 1 decided:</p>
+<ul>
+<li><strong>Performance bands follow the regional group.</strong> Section 5 is built as
+  written: the band set becomes regional and the standard merge stays on the tag
+  group.</li>
+<li><strong>It may be rolled back.</strong> The decision is flagged to stakeholders as a
+  question in the stakeholder doc. Build the band change as its own commit,
+  after the group change, so it can be reverted without touching the regional
+  grouping. Reverted, the band model reads <code>tag_group_assessment_id</code> and labels
+  do not change from today.</li>
+</ul>
+<p>Open item 2 stays open and does not block the build.</p>
+<h2 id="revision-2026-11-12-built-inside-existing-models">Revision, 2026-11-12: built inside existing models</h2>
+<p>The PR's new owner changed the design before build. Where this section and the
+sections above disagree, this section wins.</p>
+<ul>
+<li><strong>Region is part of the canonical definition.</strong> <code>canonical_assessment_id</code>
+  keeps its name and now groups per region. No <code>tag_group_assessment_id</code>.
+  Grouping exists only to merge the parts of a multi-part assessment; regional
+  variants are distinct assessments and never merge across regions.</li>
+<li><strong>No new model.</strong> <code>int_assessments__assessments_members</code> carries
+  <code>region_groups</code>, an array of <code>(region, canonical_assessment_id)</code> per copy.
+  Consumers unnest it. Section 2's <code>int_assessments__assessment_region_groups</code>
+  is not built.</li>
+<li><strong>No fallback for untagged regions.</strong> A replacement score from a region the
+  copy is not tagged for drops in the scaffold. The
+  <code>replacement_region_untagged</code> warn test and <code>is_region_tagged</code> are not built.</li>
+<li><strong>Bands and standards both follow the regional group.</strong>
+  <code>int_assessments__performance_bands</code> adds <code>canonical_assessment_id</code> to its
+  grain and merges per group, so each region keeps its own band set. The band
+  change ships in the same PR, not as a separate revertible commit.</li>
+<li><strong><code>dim_assessments</code> grade</strong> comes from each copy's own <code>grade_level_id</code>, not
+  from the canonical row.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+    
+  </body>
+</html>
