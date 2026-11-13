@@ -44,6 +44,16 @@ with
             and question_shortname = 'itr_plans'
             and academic_year = {{ var("current_academic_year") }}
         group by respondent_employee_number, answer, academic_year
+    ),
+
+    teacher_grade_levels as (
+        select
+            teachernumber,
+            _dbt_source_project,
+            cast(grade_level as string) as grade_level,
+        from {{ ref("int_students__teacher_grade_levels") }}
+        where
+            academic_year = {{ var("current_academic_year") }} and grade_level_rank = 1
     )
 
 select
@@ -72,9 +82,7 @@ select
 
     null as smart_recruiter_id,
 
-    coalesce(
-        cast(tgl.grade_level as string), sr.home_department_name
-    ) as grade_department,
+    coalesce(tgl.grade_level, sr.home_department_name) as grade_department,
 
     coalesce(lc.location_region, sr.home_business_unit_name) as location_entity,
 
@@ -161,11 +169,9 @@ left join
     and pm.observation_type_abbreviation = 'PMS'
     and pm.rn_employee_type = 1
 left join
-    {{ ref("int_students__teacher_grade_levels") }} as tgl
+    teacher_grade_levels as tgl
     on sr.powerschool_teacher_number = tgl.teachernumber
     and sr.home_work_location_dagster_code_location = tgl._dbt_source_project
-    and tgl.academic_year = {{ var("current_academic_year") }}
-    and tgl.grade_level_rank = 1
 
 union all
 
