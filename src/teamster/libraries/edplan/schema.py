@@ -42,3 +42,31 @@ class NJSmartPowerschool(BaseModel):
     ti_serv_physical: str | None = None
     ti_serv_speech: str | None = None
     source_file_name: str | None = None
+
+
+class Section504StudentReport(BaseModel):
+    internal_student_id: str | None = None
+    school: str | None = None
+    last_name: str | None = None
+    first_name: str | None = None
+    state_id: str | None = None
+    student_id: str | None = None
+    date_of_birth: str | None = None
+    gender: str | None = None
+    ethnicity: str | None = None
+    race_abbrev_csv_list: str | None = None
+    grade_abbrev: str | None = None
+    student_status: str | None = None
+    date_snapshot_section_504_eligibility_y_n: str | None = None
+    date_snapshot_historical_section_504_eligibility_y_n: str | None = None
+    section_504_case_manager: str | None = None
+    event_selector: str | None = None
+    event_type: str | None = None
+    document_id: str | None = None
+    event_date: str | None = None
+    primary_disability: str | None = None
+    secondary_disability: str | None = None
+    third_disability: str | None = None
+    begin_date: str | None = None
+    end_date: str | None = None
+    source_file_name: str | None = None

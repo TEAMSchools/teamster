@@ -120,7 +120,7 @@ Network-wide code location covering CMO-level integrations.
 | `kippnewark__amplify__mclass__sftp_asset_job_sensor` | 5 min        | `benchmark_student_summary`, `pm_student_summary`, `pm_student_summary_aimline`                                         |
 | `kippnewark__couchdrop__sftp_asset_job_sensor`       | 10 min       | `cambium/njgpa`, `cambium/njsla`, `finalsite/status_report`                                                             |
 | `kippnewark__titan__sftp_asset_sensor`               | 10 min       | `person_data`                                                                                                           |
-| `kippnewark_edplan_sftp_asset_job_sensor`            | 10 min       | `njsmart_powerschool`                                                                                                   |
+| `kippnewark_edplan_sftp_asset_job_sensor`            | 10 min       | `njsmart_powerschool`, `section_504_student_report`                                                                     |
 | `kippnewark_iready_sftp_asset_job_sensor`            | 10 min       | `diagnostic_results`, `instruction_by_lesson`, `personalized_instruction_by_lesson`, `personalized_instruction_summary` |
 
 ### Extracts

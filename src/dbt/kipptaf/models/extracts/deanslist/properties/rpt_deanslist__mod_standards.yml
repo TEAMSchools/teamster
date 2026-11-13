@@ -26,6 +26,14 @@ models:
               - subject_area
               - term
               - standard_description
+      # grain columns this model's own SQL does not keep non-null; a null
+      # grain value leaves the row without its key
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: |-
+              student_number is not null
+              and term is not null
+              and standard_description is not null
     columns:
       - name: student_number
         data_type: int64
@@ -82,6 +90,7 @@ unit_tests:
               2026 as academic_year,
               'Q1' as term_administered,
               9001 as assessment_id,
+              'Newark' as region,
               true as is_internal_assessment,
               'group' as response_type,
               'MC' as response_type_description,
@@ -90,17 +99,19 @@ unit_tests:
               'Text Study' as subject_area
           union all
           select
-              101, 2026, 'Q1', 9002, true, 'group', 'MC', 1,
+              101, 2026, 'Q1', 9002, 'Newark', true, 'group', 'MC', 1,
               cast(80 as numeric), 'Text Study'
       - input: ref('int_assessments__performance_bands')
         format: sql
         rows: |
           select
               9001 as assessment_id,
+              'Newark' as region,
+              9001 as canonical_assessment_id,
               'overall' as response_type,
               500 as canonical_performance_band_set_id
           union all
-          select 9002, 'overall', 500
+          select 9002, 'Newark', 9002, 'overall', 500
       - input: ref('int_illuminate__performance_band_sets')
         format: sql
         rows: |

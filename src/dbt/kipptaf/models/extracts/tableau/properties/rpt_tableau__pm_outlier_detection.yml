@@ -7,7 +7,12 @@ models:
       PMS from 2024). Observer attributes come from their primary roster row on
       the round's last end date across regions; teacher attributes come from
       their primary roster row at their last scored form in the round, and are
-      null when no primary row covers that time.
+      null when no primary row covers that time. The 11 Tableau row-level
+      security columns (location_clean_name, campus_name,
+      home_business_unit_name, home_department_name, job_function, job_title,
+      mail, user_principal_name, sam_account_name, reports_to_mail,
+      reports_to_sam_account_name) describe the observer, because the outlier
+      results judge the observer's scoring.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -17,6 +22,29 @@ models:
               - reporting_term
               - teacher_employee_number
     columns:
+      - name: location_clean_name
+        data_type: string
+        description: >-
+          Canonical name of the observer's home work location, from the location
+          crosswalk. Drives the Tableau location gate.
+        data_tests:
+          - not_null
+      - name: home_business_unit_name
+        data_type: string
+        description: >-
+          Observer's legal entity. Drives the Tableau entity gate. Never
+          location_region, which is a property of the location rather than the
+          person.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - TEAM Academy Charter School
+                  - KIPP Cooper Norcross Academy
+                  - KIPP Miami
+                  - KIPP Paterson
+                  - KIPP TEAM and Family Schools Inc.
       - name: teacher_employee_number
         data_type: int64
         description: Employee number of the teacher the observer scored.
@@ -176,6 +204,60 @@ models:
         config:
           meta:
             contains_pii: true
+      - name: campus_name
+        data_type: string
+        description: >-
+          Campus of the observer's home work location, from the location
+          crosswalk. An available axis in Tableau, not gated.
+      - name: home_department_name
+        data_type: string
+        description: Observer's home department. The Tableau department axis.
+      - name: job_function
+        data_type: string
+        description: >-
+          Observer's ADP job function. Drives the Tableau AP role predicate.
+      - name: job_title
+        data_type: string
+        description: >-
+          Observer's job title. The Tableau role fallback when job_function is
+          null.
+      - name: mail
+        data_type: string
+        description: Observer's email address. Tableau identity match.
+        config:
+          meta:
+            contains_pii: true
+      - name: user_principal_name
+        data_type: string
+        description: >-
+          Observer's Entra user principal name. Tableau identity match where it
+          differs from mail.
+        config:
+          meta:
+            contains_pii: true
+      - name: sam_account_name
+        data_type: string
+        description: >-
+          Observer's Active Directory account name. Tableau identity match on
+          the Active Directory login.
+        config:
+          meta:
+            contains_pii: true
+      - name: reports_to_mail
+        data_type: string
+        description: >-
+          Email address of the observer's manager. Tableau manager match.
+        config:
+          meta:
+            contains_pii: true
+      - name: reports_to_sam_account_name
+        data_type: string
+        description: >-
+          Active Directory account name of the observer's manager. Tableau
+          manager match on the Active Directory login.
+        config:
+          meta:
+            contains_pii: true
       - name: teacher_name
         data_type: string
         description: Teacher's formatted name.
@@ -294,6 +376,8 @@ unit_tests:
             primary_indicator: true
             effective_date_start_timestamp: 2026-07-01 00:00:00
             effective_date_end_timestamp: 9999-12-31 00:00:00
+      - input: ref("int_people__location_crosswalk")
+        rows: []
     expect:
       rows:
         - observer_employee_number: 1

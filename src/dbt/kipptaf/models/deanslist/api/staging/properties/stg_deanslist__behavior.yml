@@ -6,6 +6,15 @@ models:
       # missing from the crosswalk sheet on every build. No package can hold it,
       # because the crosswalk is a kipptaf model.
       materialized: table
+      # Consumers and their tests filter on behavior_date or academic_year with
+      # a literal; partitioning and clustering prune what they scan.
+      partition_by:
+        field: behavior_date
+        data_type: date
+        granularity: month
+      cluster_by:
+        - academic_year
+        - behavior
     columns:
       - name: school_name
         data_type: string

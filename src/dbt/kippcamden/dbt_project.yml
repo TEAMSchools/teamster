@@ -66,6 +66,9 @@ models:
     staging:
       stg_edplan__njsmart_powerschool_archive:
         +enabled: false
+      # Newark-only until this region's 504 report matches Newark's layout
+      stg_edplan__section_504_student_report:
+        +enabled: false
   overgrad:
     +materialized: table
     staging:
@@ -103,6 +106,10 @@ models:
         +enabled: false
 
 sources:
+  edplan:
+    edplan:
+      src_edplan__section_504_student_report:
+        +enabled: false
   finalsite:
     finalsite:
       contacts:
