@@ -219,7 +219,11 @@ cause, do not retry around it.
    the datasource check is listed once ("re-prove once"). It also lists each
    proven comparison that maps a member Cube's `/meta` lacks, and `run` refuses
    on one before it spends: fix the mapping, or wait for the PR that adds the
-   member to deploy. `run` warns when a proof is more than 7 days old.
+   member to deploy. `run` warns when a proof is more than 7 days old. It also
+   dry-runs every stored proof (below) on today's tables, free, and lists under
+   "Proofs BigQuery rejects:" each one a model's changed columns broke, one that
+   fails its own checks, or one that names no comparison of the view: fix it
+   before `triage` runs it.
 7. `run <file>` (add `--moment <ISO time>` for a build within the last 7 days).
    It prices queries first and stops over `--max-usd`. Every run on this machine
    also shares a daily cap, `--max-usd-per-day` (UTC day), and view versions
@@ -234,6 +238,20 @@ cause, do not retry around it.
    `triage`) reads the fact from a dbt dev build instead of the file's `fact:`,
    to prove a mart change before it merges; give `triage` the same dataset as
    the `run` it reads.
+
+   `run` saves each comparison's unmatched rows to a table in
+   `teamster-332318.cube_validation_scratch` (Data Team only; each table expires
+   after 14 days) for `triage` to prove on; the rows never reach the cache. It
+   checkpoints each comparison in the run folder as it finishes, so a stopped
+   `run` loses at most the comparison in progress. Started again with the same
+   command, it resumes on its own when the last checkpoint is under 24 hours old
+   ("Resuming the unfinished run of ..."); from 24 hours to 7 days it refuses
+   until you pass `--resume` (finish at the old moment) or `--restart` (start
+   fresh); past 7 days only `--restart` works. `--moment` resumes that moment's
+   unfinished run whatever its age. A comparison whose entry or SQL changed
+   since its checkpoint is compared again. `cost_usd` adds every process's
+   spend.
+
 8. `triage <file>` reads the latest run and writes `triage.json` beside its
    `run.json`. It sorts every open item (row groups, cell differences, missing
    cuts and filters) into one pile: `map_filters`, `filters_nothing`, `cause`,
@@ -256,14 +274,16 @@ cause, do not retry around it.
    needs `rows` on its comparison to be provable: add `rows` before `run`. For a
    count, the cell's difference must equal the groups' net rows. For a rate with
    1 value column, each side's cell rebuilt from its rows (the mean of the value
-   column) must show the run's value. The run keeps the sums per cut when every
-   caption the cuts set differently (a default all cuts share is skipped) is a
-   `rows` column on both sides; otherwise a cell under a cut whose column the
-   rows are not grouped by cannot be sized and stays open. A run saved before
-   per-cell sums links without the rate check and says so: `run` again to check
-   sizes. A member description, a cell pattern or a trace count is a lead, never
-   a cause. A run saved before groups recorded their NULLs is refused ("this run
-   predates NULL-aware groups"): `run --moment <its moment>` again.
+   column) must show the run's value. For a count of distinct students
+   (`count_students`), set `rows: {..., cell: count_students}` before `run`:
+   each side's cell is rebuilt as its distinct students under the cut, and a run
+   that did not count them leaves the cell open ("cannot be sized"). The run
+   keeps the sums per cut: every caption the cuts set differently is a row
+   column on both sides. A run saved before per-cell sums links without the rate
+   check and says so: `run` again to check sizes. A member description, a cell
+   pattern or a trace count is a lead, never a cause. A run saved before groups
+   recorded their NULLs is refused ("this run predates NULL-aware groups"):
+   `run --moment <its moment>` again.
 
    The trace leads. `triage` relaxes each step of the other side's SQL (WHERE
    and HAVING conjuncts, INNER JOINs, required LEFT JOINs, down 3 dbt models)
@@ -339,22 +359,24 @@ cause, do not retry around it.
       `{unmatched}`, and refuses a row the proof drops or repeats, a cause that
       is not that one `CASE` of quoted names ending in `ELSE 'UNEXPLAINED'`, any
       column but `__row` and `cause`, a grain or ID column as the cause, a
-      literal compared with a column that names a person (the student column, a
-      `_number`, `_name` or `_email`, a student id or key;
-      `assessment_id = 189131` is fine), and an ID-like number or email in a
-      comment or string. These checks catch the common mistakes, not every one:
-      read the proof yourself. It is priced and capped like any query. It saves
-      the proof to
+      literal compared with a column that names or reaches a person (the student
+      column, a `_name` or `_email`, `student_number`, `employee_number`, a
+      phone number, or a student's or staff member's id, key, number or
+      identifier; `assessment_id = 189131` and a band or module number are
+      fine), and an ID-like number or email in a comment or string. These checks
+      catch the common mistakes, not every one: read the proof yourself. It is
+      priced and capped like any query. It saves the proof to
       `src/cube/validation/proofs/<view>/<comparison>__<bucket>.sql`, under lint
       opt-outs and its `-- cause <bucket> = <side>: <words>` block, and moves
       each item it fully explains (no `UNEXPLAINED`) to `cause`. The rest stay,
       with "proof <file> leaves N rows unexplained". `--items <ids>` narrows the
-      printout only. After an edit, run it again without `--sql`. A proof whose
-      query would pass 900K characters with both sides inline (BigQuery refuses
-      past 1,024K) first freezes its bucket's unmatched rows in a BigQuery
-      session temp table ("Froze ... unmatched rows"), which halves the query;
-      the rows never leave BigQuery. A shorter proof runs inline, which is
-      faster.
+      printout only. After an edit, run it again without `--sql`. A proof reads
+      its comparison's unmatched rows from the table `run` saved, so it never
+      rebuilds both sides. A missing table, or one whose labels name another run
+      or SQL, refuses and names the next step: `run --moment <m> --restart`
+      while the moment is within time travel, a new `run` past it. Editing a
+      comparison's entry after `run` (even `rows.cell`) does the same: `run`
+      again, and only that comparison is compared again.
 
       Give each owner cause a count query the owner can run after time travel
       ends: a `-- reproduce <bucket>:` block in the proof's header, the query as
@@ -401,14 +423,20 @@ cause, do not retry around it.
    that comparison's own rows, so a dim whose join drops or repeats rows shows
    as a refusal there. Delete a duplicate file to share.
 
-   Every `triage` re-runs every stored proof on the new run's rows first, priced
-   and capped (`--no-proofs` skips them), then traces only what no proof
-   explains; an item with rows a proof no longer explains returns to
-   `investigate`. Re-triage a run whose leads are in hand with `--no-trace`;
-   trace again only when new items appeared. The proof files are the durable
-   record: commit them with the decisions, in the validation-file commit. They
-   hold SQL only: no values, no names. A formatting-only edit to one re-opens
-   nothing.
+   Every `triage` re-runs every stored proof on the new run's rows first
+   (`--no-proofs` skips them), then traces only what no proof explains; an item
+   with rows a proof no longer explains returns to `investigate`. It dry-runs
+   every proof it will run and prints the total ("Proofs: N to run, $X"); a
+   total over `--max-usd` or the daily cap refuses before any runs. Each
+   finished proof's outcome is kept in `triage-progress.json` beside `run.json`,
+   so a stopped `triage` started again reuses them ("reused from
+   triage-progress.json"); an edited proof, changed SQL or a changed set of open
+   items runs it again. `--comparison <id>` (repeatable) runs, traces and prints
+   only those comparisons; `triage.json` still holds every item. Re-triage a run
+   whose leads are in hand with `--no-trace`; trace again only when new items
+   appeared. The proof files are the durable record: commit them with the
+   decisions, in the validation-file commit. They hold SQL only: no values, no
+   names. A formatting-only edit to one re-opens nothing.
 
    Worked example (DDI). Cube-only rows were classified through the dashboard's
    `responses` CTE, dashboard-only rows through Cube's fact:
