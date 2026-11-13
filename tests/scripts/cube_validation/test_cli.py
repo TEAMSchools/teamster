@@ -2877,6 +2877,41 @@ def test_triage_re_runs_the_stored_proofs_unless_told_not_to(
     assert seen == [path.parent / "proofs" / "v"]
 
 
+def test_triage_of_one_comparison_prints_its_items_and_keeps_every_item(
+    fakes, tmp_path, monkeypatch, capsys
+):
+    path = _four(tmp_path)
+    assert cli.main(["run", str(path)]) == 0
+    seen = []
+    monkeypatch.setattr(
+        confirm, "run_stored", lambda cfg, run, d, **k: seen.append(k) or []
+    )
+    capsys.readouterr()
+
+    assert (
+        cli.main(["triage", str(path), "--no-trace", "--comparison", "ada-region-2"])
+        == 0
+    )
+
+    out = capsys.readouterr().out
+    assert "ada-region-2:" in out and "ada-region-1:" not in out
+    (saved,) = (tmp_path / "cache" / "v").glob("*/triage.json")
+    kept = {i["comparison"] for i in json.loads(saved.read_text())["items"]}
+    assert {"ada-region-1", "ada-region-2"} <= kept
+    (kwargs,) = seen
+    assert kwargs["comparisons"] == {"ada-region-2"}
+    assert kwargs["progress_dir"] == saved.parent
+
+
+def test_triage_refuses_a_comparison_the_view_lacks(fakes, tmp_path, capsys):
+    path = _four(tmp_path)
+    assert cli.main(["run", str(path)]) == 0
+
+    assert cli.main(["triage", str(path), "--no-trace", "--comparison", "nope"]) == 1
+
+    assert "nope" in capsys.readouterr().err
+
+
 def test_triage_proves_first_and_traces_only_what_no_proof_explains(
     fakes, tmp_path, monkeypatch, capsys
 ):

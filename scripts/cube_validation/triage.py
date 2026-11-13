@@ -1160,6 +1160,7 @@ def run_triage(
     manifest: Path | None = None,
     trace_max_minutes: float | None = None,
     proofs: Path | None = None,
+    comparisons: list[str] | None = None,
 ) -> list[Suggestion]:
     """Sort each open item of the view's latest run into a pile and print them.
 
@@ -1176,12 +1177,25 @@ def run_triage(
     marked by the cause decisions that decide it (`mark_decided`): it stays in the local
     cache, and its stubs and causes carry real values and exact counts.
 
+    Each proof's outcome is kept beside `run.json` as it finishes
+    (`progress`), so a stopped triage skips the proofs it finished. With
+    `comparisons`, only their proofs run and only their row groups are traced
+    or printed; `triage.json` still holds every item, the others' from their
+    kept proof outcomes.
+
     Raises:
         pipeline.Refusal: The view has no usable saved run (see
-            `pipeline.latest_run`), its SQL changed since the run, or the
-            manifest lacks compiled SQL the trace needs.
-        CostCapError: The value checks or the trace would pass a cap.
+            `pipeline.latest_run`), its SQL changed since the run, the
+            manifest lacks compiled SQL the trace needs, or a comparison asked
+            for is not in the view.
+        CostCapError: The value checks, the proofs together, or the trace
+            would pass a cap.
     """
+    wanted = set(comparisons) if comparisons else None
+    if wanted and (unknown := wanted - {c.id for c in cfg.comparisons}):
+        raise pipeline.Refusal(
+            f"--comparison: {', '.join(sorted(unknown))} is no comparison of {cfg.view}"
+        )
     run, run_json = pipeline.latest_run(cfg, cache_root)
     meta = cube.meta()
     docs = member_docs(meta, cfg.view)
@@ -1220,7 +1234,14 @@ def run_triage(
         ran, closed = closed_groups(
             run,
             confirm.run_stored(
-                cfg, with_closed(run), proofs, wh=wh, cube=cube, prepared=prepared
+                cfg,
+                with_closed(run),
+                proofs,
+                wh=wh,
+                cube=cube,
+                prepared=prepared,
+                progress_dir=run_json.parent,
+                comparisons=wanted,
             )
             if proofs is not None
             else [],
@@ -1234,7 +1255,7 @@ def run_triage(
                 cube=cube,
                 manifest_path=manifest or trace.MANIFEST,
                 max_minutes=trace_max_minutes or trace.TRACE_MAX_MINUTES,
-                skip=confirm.explained(ran),
+                skip=confirm.explained(ran) | _outside(run, wanted),
                 prepared=prepared,
             )
             if trace_rows
@@ -1271,6 +1292,24 @@ def run_triage(
         )
     )
 
-    print("\n".join(batch_lines(run, found)))
+    shown = found
+    if wanted:
+        shown = [s for s in found if s.item.comparison in wanted]
+        print(
+            f"Showing {', '.join(sorted(wanted))} (--comparison); "
+            f"{len(found) - len(shown):,} other items are in {out.name}."
+        )
+    print("\n".join(batch_lines(run, shown)))
     print(f"Saved {out}")
     return found
+
+
+def _outside(run: RunResult, wanted: set[str] | None) -> set[tuple]:
+    """The `trace.item_key` of every row group outside `wanted`: not traced."""
+    if not wanted:
+        return set()
+    return {
+        trace.item_key(g)
+        for _, g in _entries(run)
+        if isinstance(g, Group) and g.comparison_id not in wanted
+    }

@@ -39,7 +39,7 @@ from sqlglot import exp
 from sqlglot.errors import SqlglotError
 from sqlglot.tokens import TokenType
 
-from . import compare, decisions, pipeline, saved, trace, triage
+from . import compare, decisions, pipeline, progress, saved, trace, triage
 from .bq import CostCapError, ViewHistoryError, Warehouse
 from .compare import Group
 from .config import Comparison, ViewConfig, id_like, mask_digits, row_population
@@ -1669,18 +1669,36 @@ def run_stored(
     wh: Warehouse,
     cube: Cube,
     prepared: trace.Prepared | None = None,
+    progress_dir: Path | None = None,
+    comparisons: set[str] | None = None,
 ) -> list[Ran]:
-    """Run every stored proof of the view on the run's rows. Call inside `wh.budget`.
+    """Run every stored proof of the view on the run's saved rows. Call inside
+    `wh.budget`.
 
-    A proof that cannot run (a failed check, a cap, a BigQuery or Cube error,
-    its SQL no longer the run's) keeps why and moves nothing; the rest still
-    run. A proof also runs on each comparison that reconciles the same rows
-    and has no proof of its own for the bucket (`siblings`). Each
-    comparison's row SQL is rebuilt once, or taken from `prepared`.
+    A proof also runs on each comparison that reconciles the same rows and
+    has no proof of its own for the bucket (`siblings`). Each pair's outcome
+    is kept in `progress_dir` (`progress`) as it finishes, and a later triage
+    reuses one whose proof, SQL and open items still match, running nothing.
+    The rest are priced together first, and a total over a cap refuses
+    before any runs; then they run one at a time. A proof that cannot run (a
+    failed check, its saved rows gone, a BigQuery or Cube error, its SQL no
+    longer the run's) keeps why and moves nothing; the rest still run.
+
+    Args:
+        progress_dir: Where finished outcomes are kept; None keeps none.
+        comparisons: Run only these comparisons' proofs; another's outcome is
+            reused when kept, else it reads "not run: outside --comparison".
+
+    Raises:
+        CostCapError: The proofs to run, together, would pass the run's or the
+            day's cap.
     """
     by_id = {c.id: c for c in cfg.comparisons}
     prepared = prepared or trace.Prepared()
-    out = []
+    kept = progress.load(progress_dir) if progress_dir is not None else {}
+    out: list[Ran] = []
+    todo: list[tuple[Ran, Comparison, str, set[str], str]] = []
+    reused = 0
     for path in sorted(directory.glob("*__*.sql")) if directory.is_dir() else []:
         try:
             proof = read_proof(path)
@@ -1690,9 +1708,122 @@ def run_stored(
         if (own := by_id.get(proof.comparison)) is None:
             continue
         for comparison in [own, *_shared(cfg, directory, proof, own)]:
-            if ran := _run_one(cfg, run, comparison, proof, wh, cube, prepared):
-                out.append(ran)
+            items = _bucket_items(run, comparison.id, proof.bucket)
+            if not items:
+                continue
+            ran = Ran(proof, items)
+            out.append(ran)
+            done = progress.key(
+                proof.fingerprint,
+                comparison.id,
+                proof.bucket,
+                run.fingerprints.get(comparison.id, {}),
+                [triage._open_key(g) for _, g in items],
+            )
+            if done in kept:
+                _from_progress(ran, kept[done])
+                reused += 1
+                continue
+            if comparisons is not None and comparison.id not in comparisons:
+                ran.why = f"proof {path.name} not run: outside --comparison"
+                continue
+            try:
+                if prepared.schools is None:
+                    prepared.schools = network_schools(wh)
+                sql, literals = proof_sql(
+                    wh,
+                    cfg,
+                    comparison,
+                    prepared.row_sides(cfg, comparison, run, wh, cube),
+                    proof,
+                    items,
+                    run.moment,
+                    table=require_saved(wh, cfg, run, comparison),
+                    moved=prepared.moved,
+                    students=True,
+                )
+            except _CANNOT_RUN as exc:
+                ran.why = f"proof {path.name} not run: {exc}"
+                continue
+            except GoogleAPIError as exc:
+                ran.why = f"proof {path.name} not run ({bigquery_said(exc)})"
+                continue
+            todo.append((ran, comparison, sql, literals, done))
+
+    ready = []
+    total = 0.0
+    for job, price in zip(todo, trace._dry_runs(wh, [t[2] for t in todo]), strict=True):
+        if isinstance(price, GoogleAPIError):
+            job[
+                0
+            ].why = f"proof {job[0].proof.path.name} not run ({bigquery_said(price)})"
+        else:
+            total += price
+            ready.append(job)
+    if ready or reused:
+        print(
+            f"Proofs: {len(ready)} to run, ${total:.2f} (dry run); {reused} reused "
+            f"from {progress.FILE}."
+        )
+    wh.refuse_past_caps(total)
+    for ran, comparison, sql, literals, done in ready:
+        name = ran.proof.path.name
+        try:
+            rows = wh.rows(sql, timeout_s=TIMEOUT_S)
+            ran.found = outcomes(rows, ran.proof, ran.items, literals)
+            ran.students = cause_students(rows, ran.proof, comparison)
+        except (pipeline.Refusal, CostCapError) as exc:
+            ran.why = f"proof {name} not run: {exc}"
+        except GoogleAPIError as exc:
+            # As `run_proof` words it, so the evidence reads the same.
+            ran.why = (
+                f"proof {name} not run: {name}: BigQuery refused it "
+                f"({bigquery_said(exc)})"
+            )
+        else:
+            if progress_dir is not None:
+                progress.save(progress_dir, done, _to_progress(ran))
+    for ran in out:
+        if ran.why:
+            print(ran.why)
     return out
+
+
+# What keeps one proof from running, besides a BigQuery error.
+_CANNOT_RUN = (pipeline.Refusal, CostCapError, ViewHistoryError, CubeError, CubeRefusal)
+
+
+def _to_progress(ran: Ran) -> dict:
+    """A finished proof's outcome as `progress` keeps it: by open key, counts
+    only."""
+    found = ran.found or {}
+    return {
+        "found": {
+            triage._open_key(g): {
+                "n_rows": found[item_id].n_rows,
+                "counts": dict(found[item_id].counts),
+                "unexplained": found[item_id].unexplained,
+            }
+            for item_id, g in ran.items
+            if item_id in found
+        },
+        "students": ran.students,
+    }
+
+
+def _from_progress(ran: Ran, kept: dict) -> None:
+    """Fill `ran` from a kept outcome (`_to_progress`)."""
+    by_key = kept["found"]
+    ran.found = {
+        item_id: Outcome(
+            n_rows=o["n_rows"],
+            counts=Counter(o["counts"]),
+            unexplained=o["unexplained"],
+        )
+        for item_id, g in ran.items
+        if (o := by_key.get(triage._open_key(g))) is not None
+    }
+    ran.students = kept["students"]
 
 
 def check_proofs(
@@ -1773,13 +1904,7 @@ def _run_one(
             ran.students,
             table=table,
         )
-    except (
-        pipeline.Refusal,
-        CostCapError,
-        ViewHistoryError,
-        CubeError,
-        CubeRefusal,
-    ) as exc:
+    except _CANNOT_RUN as exc:
         ran.why = f"proof {path.name} not run: {exc}"
     except GoogleAPIError as exc:
         ran.why = f"proof {path.name} not run ({bigquery_said(exc)})"

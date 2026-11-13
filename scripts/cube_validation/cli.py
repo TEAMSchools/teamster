@@ -296,6 +296,11 @@ def _parser() -> argparse.ArgumentParser:
         action="store_true",
         help="skip re-running the view's stored proofs (`triage confirm`)",
     )
+    p.add_argument(
+        "--comparison",
+        action="append",
+        help="run and print only this comparison's proofs and items (repeatable)",
+    )
 
     # `triage confirm ...` on the command line; see `main`.
     p = sub.add_parser(
@@ -473,6 +478,7 @@ def _dispatch(args: argparse.Namespace) -> int:
             manifest=args.manifest,
             trace_max_minutes=args.trace_max_minutes,
             proofs=None if args.no_proofs else confirm.proofs_dir(args.view, cfg.view),
+            comparisons=args.comparison,
         )
         return 0
 

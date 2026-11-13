@@ -6,7 +6,8 @@ from datetime import datetime, timedelta, timezone
 import pytest
 
 # trunk-ignore(pyright/reportAttributeAccessIssue): conftest.py registers cube_validation
-from cube_validation import confirm, pipeline, saved, trace, triage
+from cube_validation import confirm, pipeline, progress, saved, trace, triage
+from cube_validation.bq import CostCapError
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.compare import CellDiff, Group
@@ -1746,3 +1747,117 @@ def test_check_reproduce_tests_each_comparison_inside_exists_on_its_own():
             EXISTS_REPRODUCE.replace("= r.student_number", "= 123").format(year="2026"),
             {"student"},
         )
+
+
+# --- a triage keeps its finished proofs and prices them first -----------------------
+
+
+def test_a_second_triage_reuses_a_finished_proof_and_runs_no_query(
+    duck, tmp_path, offline
+):
+    _tables(duck)
+    run, wh = _run([_group(3)]), Wh(duck)
+    _save(duck, wh, run)
+    directory, _ = _proof(tmp_path)
+
+    first = confirm.run_stored(
+        CFG, run, directory, wh=wh, cube=None, progress_dir=tmp_path
+    )
+    again = confirm.run_stored(
+        CFG, run, directory, wh=wh, cube=None, progress_dir=tmp_path
+    )
+
+    assert len(wh.ran) == 1
+    assert again[0].found == first[0].found
+    assert again[0].students == first[0].students
+
+
+def test_an_edited_proof_or_a_new_group_runs_again(duck, tmp_path, offline):
+    _tables(duck)
+    run, wh = _run([_group(3)]), Wh(duck)
+    _save(duck, wh, run)
+    directory, _ = _proof(tmp_path)
+    confirm.run_stored(CFG, run, directory, wh=wh, cube=None, progress_dir=tmp_path)
+
+    _proof(tmp_path, causes={"C1": CAUSES["C2"], "C2": CAUSES["C1"]})
+    confirm.run_stored(CFG, run, directory, wh=wh, cube=None, progress_dir=tmp_path)
+    bigger = _run([_group(4)])
+    confirm.run_stored(CFG, bigger, directory, wh=wh, cube=None, progress_dir=tmp_path)
+
+    assert len(wh.ran) == 3
+
+
+def test_proofs_refuse_before_any_runs_when_their_estimate_passes_a_cap(
+    duck, tmp_path, offline
+):
+    class Capped(Wh):
+        def refuse_past_caps(self, usd):
+            if usd > 0.015:
+                raise CostCapError(f"these queries (${usd:.2f}) would pass the cap")
+
+    _tables(duck)
+    run, wh = _sibling_run(), Capped(duck)
+    _save(duck, wh, run, cfg=CFG2)
+    directory, _ = _proof(tmp_path)
+
+    with pytest.raises(CostCapError, match=r"\(\$0\.02\)"):
+        confirm.run_stored(CFG2, run, directory, wh=wh, cube=None)
+
+    assert wh.ran == []
+
+
+def test_a_triage_stopped_partway_keeps_the_proofs_it_finished(duck, tmp_path, offline):
+    class StopsOnSecond(Wh):
+        def rows(self, sql, timeout_s=None):
+            if len(self.ran) == 1:
+                raise CostCapError("nothing is left under --max-usd")
+            return super().rows(sql, timeout_s)
+
+    _tables(duck)
+    run, wh = _sibling_run(), StopsOnSecond(duck)
+    _save(duck, wh, run, cfg=CFG2)
+    directory, _ = _proof(tmp_path)
+
+    first = confirm.run_stored(
+        CFG2, run, directory, wh=wh, cube=None, progress_dir=tmp_path
+    )
+
+    assert [r.found is not None for r in first] == [True, False]
+    assert len(progress.load(tmp_path)) == 1
+
+    wh = Wh(duck)
+    _save(duck, wh, run, cfg=CFG2)
+    confirm.run_stored(CFG2, run, directory, wh=wh, cube=None, progress_dir=tmp_path)
+
+    assert len(wh.ran) == 1  # only the proof the first triage did not finish
+
+
+def test_triage_of_one_comparison_reuses_the_others_and_runs_only_its_own(
+    duck, tmp_path, offline
+):
+    _tables(duck)
+    run, wh = _sibling_run(), Wh(duck)
+    _save(duck, wh, run, cfg=CFG2)
+    directory, _ = _proof(tmp_path)
+    kept, empty = tmp_path / "kept", tmp_path / "empty"
+    confirm.run_stored(CFG2, run, directory, wh=wh, cube=None, progress_dir=kept)
+    wh.ran.clear()
+
+    reused = confirm.run_stored(
+        CFG2, run, directory, wh=wh, cube=None, progress_dir=kept,
+        comparisons={"mastery-b"},
+    )  # fmt: skip
+
+    assert wh.ran == [] and all(r.found is not None for r in reused)
+
+    alone = confirm.run_stored(
+        CFG2, run, directory, wh=wh, cube=None, progress_dir=empty,
+        comparisons={"mastery-b"},
+    )  # fmt: skip
+
+    assert len(wh.ran) == 1
+    by = {confirm._comparison_of(r): r for r in alone}
+    assert by["mastery"].why == (
+        "proof mastery__cube_only.sql not run: outside --comparison"
+    )
+    assert by["mastery-b"].found is not None
