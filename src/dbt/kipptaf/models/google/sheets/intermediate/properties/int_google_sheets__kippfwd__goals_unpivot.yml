@@ -14,10 +14,11 @@ models:
 
       Both branches are driven from the scaffold, so both carry every threshold
       it states rather than only those a goal was written for, and both apply
-      the same two exclusions. They differ only in how a goal's grade is
-      treated. The scaffold is unpivoted with UNPIVOT, which drops null
-      thresholds, so a metric the scaffold leaves blank for a score type has no
-      row here.
+      the same two exclusions. A goal with no scaffold row for its academic
+      year, test type, and score type has no threshold, so it is left out on
+      purpose. They differ only in how a goal's grade is treated. The scaffold
+      is unpivoted with UNPIVOT, which drops null thresholds, so a metric the
+      scaffold leaves blank for a score type has no row here.
 
 
       By Grade attaches grade_level and cohort from the goals sheet, so a score
@@ -211,3 +212,59 @@ models:
           goal subtype alone — HS Grad-Ready, College-Ready — and Attempts rows
           carry the scope too, ACT 1 Attempt or SAT 2+ Attempts, because an
           attempt count is only meaningful against a named test.
+
+unit_tests:
+  - name: unit_int_google_sheets__kippfwd__goals_unpivot_drops_unmatched_goal
+    description: >-
+      The scaffold has a row for sat_total, and the goals sheet has goals for
+      sat_total and for sat_totl, a misspelled score type. Only the sat_total
+      goal comes through, once per branch. The sat_totl goal has no threshold to
+      report against, so it is left out.
+    model: int_google_sheets__kippfwd__goals_unpivot
+    given:
+      - input: ref("stg_google_sheets__kippfwd__scaffold")
+        rows:
+          - academic_year: 2026
+            expected_test_type: Official
+            expected_scope: SAT
+            expected_aligned_scope: ACT/SAT
+            expected_subject_area: Combined
+            expected_aligned_subject_area: Total
+            expected_score_category: Scale Score
+            expected_score_type: sat_total
+            college_ready_min_score: 1010
+      # sql format: the deferred relation can lag this model's column list
+      - input: ref("stg_google_sheets__kippfwd__goals")
+        format: sql
+        rows: |
+          select
+              2026 as academic_year,
+              'Official' as test_type,
+              '11' as grade_level,
+              cast(null as string) as cohort,
+              'sat_total' as score_type,
+              'pct_college_ready' as expected_metric_type,
+              0.4 as expected_metric_goal,
+              false as is_over_time_goal,
+              'Benchmark' as expected_goal_type,
+              'College-Ready' as expected_goal_subtype
+          union all
+          select
+              2026,
+              'Official',
+              '11',
+              null,
+              'sat_totl',
+              'pct_college_ready',
+              0.5,
+              false,
+              'Benchmark',
+              'College-Ready'
+    expect:
+      rows:
+        - score_type: sat_total
+          goal_branch: By Grade
+          expected_metric_goal: 0.4
+        - score_type: sat_total
+          goal_branch: All Grades
+          expected_metric_goal: 0.4

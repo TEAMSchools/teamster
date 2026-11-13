@@ -1,50 +1,50 @@
+-- depends_on: {{ ref("stg_kippadb__contact_note") }}
 with
     salesforce_notes as (
         select
-            n.id,
-            n.name,
-            n.contact,
-            n.subject,
-            n.date,
-            n.status,
-            n.type,
-            n.academic_year,
+            id,
+            `name`,
+            contact__c,
+            subject__c,
+            date__c,
+            status__c,
+            type__c,
 
-            trim(
-                regexp_replace(regexp_replace(n.comments, r'\r|\n', ' '), r'\s+', ' ')
-            ) as comments,
-
-            trim(
-                regexp_replace(regexp_replace(n.next_steps, r'\r|\n', ' '), r'\s+', ' ')
-            ) as next_steps,
-
-        from {{ ref("stg_kippadb__contact_note") }} as n
-        left join {{ ref("stg_kippadb__contact") }} as ktc on n.contact = ktc.id
-        where n.academic_year >= 2025 and ktc.advising_provider is null
+            regexp_replace(trim(comments__c), r'\s+', ' ') as comments__c,
+            regexp_replace(trim(next_steps__c), r'\s+', ' ') as next_steps__c,
+        from {{ source("kippadb", "contact_note") }}
+        -- record not accessible to fix on SF
+        where not isdeleted and id != 'a0LQg00000SOadzMAD'
     ),
 
     row_counting as (
         select
             *,
 
+            -- blank comments partition by id, matching stg_kippadb__contact_note
             row_number() over (
                 partition by
-                    contact, `subject`, comments, next_steps, `date`, `status`, `type`
+                    contact__c,
+                    subject__c,
+                    if(comments__c != '', comments__c, id),
+                    next_steps__c,
+                    date__c,
+                    status__c,
+                    type__c
                 order by `name`
             ) as order_rows,
-
         from salesforce_notes
     )
 
 select
     id,
     `name`,
-    contact as contact__c,
-    `subject` as subject__c,
-    comments as comments__c,
-    next_steps as next_steps__c,
-    `date` as date__c,
-    `status` as status__c,
-    `type` as type__c,
+    contact__c,
+    subject__c,
+    comments__c,
+    next_steps__c,
+    date__c,
+    status__c,
+    type__c,
 from row_counting
-where order_rows > 1 and comments != ''
+where order_rows > 1

@@ -16,10 +16,10 @@ models:
         data_type: int64
       - name: powerschool_student_number
         data_type: int64
-        data_tests:
-          - not_null:
-              config:
-                severity: warn
+        description: >-
+          Student number from the College Board ID crosswalk. Scores whose
+          College Board ID has no crosswalk row with a student number are left
+          out.
       - name: academic_year
         data_type: int64
       - name: administration_round
@@ -44,3 +44,34 @@ models:
         description:
           ROWNUMBER of value partitioned by powerschool_student_number,
           test_type, score_type ordered by score.
+
+unit_tests:
+  - name: unit_int_collegeboard__psat_unpivot_drops_unmatched
+    description: >-
+      College Board ID 1 matches a crosswalk row with a student number and is
+      kept. ID 2 matches a crosswalk row with no student number, and ID 3 has no
+      crosswalk row; both are left out instead of piling up under a blank
+      student number.
+    model: int_collegeboard__psat_unpivot
+    given:
+      - input: ref("stg_collegeboard__psat")
+        rows:
+          - cb_id: 1
+            latest_psat_total: 1000
+            latest_psat_date: 2025-10-15
+          - cb_id: 2
+            latest_psat_total: 900
+            latest_psat_date: 2025-10-15
+          - cb_id: 3
+            latest_psat_total: 800
+            latest_psat_date: 2025-10-15
+      - input: ref("stg_google_sheets__collegeboard__sat_id_crosswalk")
+        rows:
+          - college_board_id: 1
+            powerschool_student_number: 101
+          - college_board_id: 2
+            powerschool_student_number: null
+    expect:
+      rows:
+        - cb_id: 1
+          powerschool_student_number: 101

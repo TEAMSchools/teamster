@@ -124,6 +124,9 @@ with
 
             regexp_replace(s.expected_metric_type, r'^pct_', '') as metric_stem,
 
+        /* driven from the scaffold on purpose: a goal with no scaffold row has no
+           threshold to report against, so it is dropped, and
+           test_kippfwd_goals_resolve_to_scaffold lists it for the sheet owner */
         /* grade_level comes from the goal, not the scaffold, so a threshold with
            no goal stated for it reads null — matching how the retired sheet
            carried section thresholds at no grade. A score type with goals at two

@@ -18,7 +18,7 @@ models:
               - ap_course_name
               - date
           config:
-            severity: warn
+            severity: error
     columns:
       - name: id
         data_type: string
@@ -58,3 +58,40 @@ models:
         data_type: int64
       - name: average_rows
         data_type: float64
+
+unit_tests:
+  - name: unit_int_kippadb__standardized_test_unpivot_ap_entered_twice
+    description: >-
+      Records a1 and a2 are the same AP exam for the same student on the same
+      date, entered under 2 subject spellings that the crosswalk maps to 1
+      course. Only a2, the more recently edited record, is kept. Record a3 is a
+      different exam and is kept.
+    model: int_kippadb__standardized_test_unpivot
+    given:
+      - input: ref("int_kippadb__standardized_test")
+        format: sql
+        rows: |
+          select 'a1' as id, 'a1' as name, 'c1' as contact, date '2025-05-10' as date, 'Advanced Placement' as test_type, 'Calculus AB' as subject, timestamp '2025-07-01 00:00:00' as last_modified_date, false as scoring_irregularity, cast(null as string) as administration_round, cast(null as numeric) as act_composite, cast(null as numeric) as act_ela, cast(null as numeric) as act_english, cast(null as numeric) as act_math, cast(null as numeric) as act_reading, cast(null as numeric) as act_science, cast(null as numeric) as act_stem, cast(null as numeric) as act_writing, cast(null as numeric) as sat_total_score, cast(null as numeric) as sat_ebrw, cast(null as numeric) as sat_essay_analysis, cast(null as numeric) as sat_essay_reading, cast(null as numeric) as sat_essay_writing, cast(null as numeric) as sat_math, cast(null as numeric) as sat_math_test_score, cast(null as numeric) as sat_reading_test_score, cast(null as numeric) as sat_verbal, cast(null as numeric) as sat_writing, cast(null as numeric) as sat_critical_reading_pre_2016, cast(null as numeric) as sat_math_pre_2016, cast(null as numeric) as sat_writing_and_language_test_score, cast(null as numeric) as sat_writing_pre_2016, cast(4 as numeric) as ap, cast(null as numeric) as psat_total_score, cast(null as numeric) as psat_ebrw, cast(null as numeric) as psat_math, cast(null as numeric) as psat_math_test_score, cast(null as numeric) as psat_reading_test_score, cast(null as numeric) as psat_verbal, cast(null as numeric) as psat_writing, cast(null as numeric) as psat_writing_and_language_test_score, cast(null as numeric) as psat_critical_reading_pre_2016, cast(null as numeric) as psat_math_pre_2016, cast(null as numeric) as psat_writing_pre_2016, 2024 as academic_year, cast(null as numeric) as afqt_score, cast(null as string) as physical_training_requirement_passed, cast(null as boolean) as qualified_air_force, cast(null as boolean) as qualified_army, cast(null as boolean) as qualified_coast_guard, cast(null as boolean) as qualified_marine_corps, cast(null as boolean) as qualified_navy, cast(null as numeric) as total_qualified_military_branches, 1 as school_specific_id
+          union all
+          select 'a2' as id, 'a2' as name, 'c1' as contact, date '2025-05-10' as date, 'Advanced Placement' as test_type, 'AP Calculus AB' as subject, timestamp '2025-08-01 00:00:00' as last_modified_date, false as scoring_irregularity, cast(null as string) as administration_round, cast(null as numeric) as act_composite, cast(null as numeric) as act_ela, cast(null as numeric) as act_english, cast(null as numeric) as act_math, cast(null as numeric) as act_reading, cast(null as numeric) as act_science, cast(null as numeric) as act_stem, cast(null as numeric) as act_writing, cast(null as numeric) as sat_total_score, cast(null as numeric) as sat_ebrw, cast(null as numeric) as sat_essay_analysis, cast(null as numeric) as sat_essay_reading, cast(null as numeric) as sat_essay_writing, cast(null as numeric) as sat_math, cast(null as numeric) as sat_math_test_score, cast(null as numeric) as sat_reading_test_score, cast(null as numeric) as sat_verbal, cast(null as numeric) as sat_writing, cast(null as numeric) as sat_critical_reading_pre_2016, cast(null as numeric) as sat_math_pre_2016, cast(null as numeric) as sat_writing_and_language_test_score, cast(null as numeric) as sat_writing_pre_2016, cast(5 as numeric) as ap, cast(null as numeric) as psat_total_score, cast(null as numeric) as psat_ebrw, cast(null as numeric) as psat_math, cast(null as numeric) as psat_math_test_score, cast(null as numeric) as psat_reading_test_score, cast(null as numeric) as psat_verbal, cast(null as numeric) as psat_writing, cast(null as numeric) as psat_writing_and_language_test_score, cast(null as numeric) as psat_critical_reading_pre_2016, cast(null as numeric) as psat_math_pre_2016, cast(null as numeric) as psat_writing_pre_2016, 2024 as academic_year, cast(null as numeric) as afqt_score, cast(null as string) as physical_training_requirement_passed, cast(null as boolean) as qualified_air_force, cast(null as boolean) as qualified_army, cast(null as boolean) as qualified_coast_guard, cast(null as boolean) as qualified_marine_corps, cast(null as boolean) as qualified_navy, cast(null as numeric) as total_qualified_military_branches, 1 as school_specific_id
+          union all
+          select 'a3' as id, 'a3' as name, 'c1' as contact, date '2025-05-12' as date, 'Advanced Placement' as test_type, 'Biology' as subject, timestamp '2025-07-01 00:00:00' as last_modified_date, false as scoring_irregularity, cast(null as string) as administration_round, cast(null as numeric) as act_composite, cast(null as numeric) as act_ela, cast(null as numeric) as act_english, cast(null as numeric) as act_math, cast(null as numeric) as act_reading, cast(null as numeric) as act_science, cast(null as numeric) as act_stem, cast(null as numeric) as act_writing, cast(null as numeric) as sat_total_score, cast(null as numeric) as sat_ebrw, cast(null as numeric) as sat_essay_analysis, cast(null as numeric) as sat_essay_reading, cast(null as numeric) as sat_essay_writing, cast(null as numeric) as sat_math, cast(null as numeric) as sat_math_test_score, cast(null as numeric) as sat_reading_test_score, cast(null as numeric) as sat_verbal, cast(null as numeric) as sat_writing, cast(null as numeric) as sat_critical_reading_pre_2016, cast(null as numeric) as sat_math_pre_2016, cast(null as numeric) as sat_writing_and_language_test_score, cast(null as numeric) as sat_writing_pre_2016, cast(3 as numeric) as ap, cast(null as numeric) as psat_total_score, cast(null as numeric) as psat_ebrw, cast(null as numeric) as psat_math, cast(null as numeric) as psat_math_test_score, cast(null as numeric) as psat_reading_test_score, cast(null as numeric) as psat_verbal, cast(null as numeric) as psat_writing, cast(null as numeric) as psat_writing_and_language_test_score, cast(null as numeric) as psat_critical_reading_pre_2016, cast(null as numeric) as psat_math_pre_2016, cast(null as numeric) as psat_writing_pre_2016, 2024 as academic_year, cast(null as numeric) as afqt_score, cast(null as string) as physical_training_requirement_passed, cast(null as boolean) as qualified_air_force, cast(null as boolean) as qualified_army, cast(null as boolean) as qualified_coast_guard, cast(null as boolean) as qualified_marine_corps, cast(null as boolean) as qualified_navy, cast(null as numeric) as total_qualified_military_branches, 1 as school_specific_id
+      - input: ref("stg_google_sheets__collegeboard__ap_course_crosswalk")
+        rows:
+          - Data_Source: ADB
+            Test_Name: Calculus AB
+            AP_Course_Name: AP Calculus AB
+          - Data_Source: ADB
+            Test_Name: AP Calculus AB
+            AP_Course_Name: AP Calculus AB
+          - Data_Source: ADB
+            Test_Name: Biology
+            AP_Course_Name: AP Biology
+    expect:
+      rows:
+        - id: a2
+          ap_course_name: AP Calculus AB
+          score: 5
+        - id: a3
+          ap_course_name: AP Biology
+          score: 3

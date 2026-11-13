@@ -48,3 +48,57 @@
     and {{ grant_date_column }} <= current_date('{{ var("local_timezone") }}')
     and {{ expiry_date_column }} >= current_date('{{ var("local_timezone") }}')
 {% endmacro %}
+
+{# Why a KIPP Forward scaffold sheet row cannot be used, or null when it can.
+   stg_google_sheets__kippfwd__scaffold drops the rows this flags, and
+   test_kippfwd_scaffold_sheet_rows lists them for the sheet owner, so both read
+   the one list of accepted values here. #}
+{% macro kippfwd_scaffold_problem() %}
+    {%- set required = [
+        "academic_year",
+        "expected_subject_area",
+        "expected_score_type",
+    ] -%}
+    {%- set accepted = {
+        "expected_test_type": ["Official", "Practice"],
+        "expected_scope": [
+            "SAT",
+            "ACT",
+            "PSAT 8/9",
+            "PSAT10",
+            "PSAT NMSQT",
+        ],
+        "expected_aligned_scope": ["ACT/SAT", "PSAT10/NMSQT", "PSAT 8/9"],
+        "expected_aligned_subject_area": [
+            "Total",
+            "Math",
+            "EBRW/Reading",
+            "Reading",
+            "Writing",
+            "English",
+            "Science",
+        ],
+        "expected_grouping": [
+            "Total",
+            "Math",
+            "EBRW",
+            "Reading",
+            "Writing",
+            "English",
+            "Science",
+            "Growth",
+        ],
+        "expected_score_category": ["Scale Score", "Score Change"],
+    } -%}
+    case
+        {% for col in required -%}
+            when {{ col }} is null then '{{ col }} is blank'
+        {% endfor -%}
+        {% for col, values in accepted.items() -%}
+            when {{ col }} is null
+            then '{{ col }} is blank'
+            when {{ col }} not in ('{{ values | join("', '") }}')
+            then '{{ col }} is not an accepted value'
+        {% endfor -%}
+    end
+{% endmacro %}
