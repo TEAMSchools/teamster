@@ -15,6 +15,7 @@ import json
 import re
 import subprocess
 import sys
+import uuid
 
 # trunk-ignore(bandit/B405): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
 import xml.etree.ElementTree as ET
@@ -28,7 +29,7 @@ from typing import Any
 
 import tableauserverclient as TSC
 
-from . import answers, checks, compare, decisions
+from . import answers, checkpoints, checks, compare, decisions
 from . import discover as finder
 from . import report, saved, tableau, triage
 from .bq import Warehouse
@@ -52,7 +53,14 @@ from .cube_client import (
     sort_school_filters,
 )
 from .decisions import Applied
-from .moment import WINDOW, Build, changed_between, fact_builds, pick_moment
+from .moment import (
+    WINDOW,
+    Build,
+    MomentError,
+    changed_between,
+    fact_builds,
+    pick_moment,
+)
 from .report import MeasureResult, RunResult
 from .timetravel import PROJECT, AsOf, as_of, repin, utc_literal
 
@@ -1533,6 +1541,99 @@ def _refuse_moved_facts(cfg: ViewConfig, wh: Warehouse, build: Build) -> None:
         )
 
 
+# A stopped run resumes on its own within this long of its last checkpoint;
+# after it, only with `--resume`, up to time travel's reach.
+AUTO_RESUME = timedelta(hours=24)
+RESUME_LIMIT = timedelta(days=7)
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _run_folder(
+    cfg: ViewConfig,
+    wh: Warehouse,
+    *,
+    now: datetime,
+    requested: datetime | None,
+    resume: bool,
+    restart: bool,
+    cache_root: Path,
+    clock: Callable[[], datetime],
+) -> tuple[Path, Build]:
+    """The run folder and moment for this `run`: an unfinished run's, or new.
+
+    With `requested`, the moment is the build it names; its folder's
+    checkpoints are reused only when that run is unfinished. Otherwise an
+    unfinished run of the view resumes on its own when its last checkpoint is
+    under `AUTO_RESUME` old, with `resume` up to `RESUME_LIMIT`, and never past
+    it. `restart` clears an unfinished run and starts a new one. A folder a new
+    run lands in starts with no checkpoints.
+
+    Raises:
+        Refusal: `resume` with nothing to resume, an unfinished run that needs
+            `--resume` or `--restart`, or one too old to resume.
+    """
+
+    def resuming(u: checkpoints.Unfinished, build: Build) -> None:
+        print(
+            f"Resuming the unfinished run of {utc_literal(build.start)} to "
+            f"{utc_literal(build.end)}: {u.done} of "
+            f"{len([c for c in cfg.comparisons if c.confirmed])} comparisons saved, "
+            f"the last at {utc_literal(u.last_at)}."
+        )
+
+    if requested is not None:
+        build = pick_moment(
+            fact_builds(wh, cfg.fact, since=now - WINDOW), now, requested, cfg.fact
+        )
+        folder = report.run_dir(cache_root, cfg.view, build)
+        there = checkpoints.unfinished(folder)
+        if restart or there is None:
+            checkpoints.clear(folder)
+        else:
+            resuming(there, build)
+        return folder, build
+
+    unfinished = checkpoints.find_unfinished(cache_root, cfg.view)
+    if unfinished is not None and restart:
+        checkpoints.clear(unfinished.folder)
+        unfinished = None
+    if unfinished is None and resume:
+        raise Refusal(f"no unfinished run of {cfg.view} to resume")
+    if unfinished is not None:
+        age = clock() - unfinished.last_at
+        stamp = report.run_stamp(unfinished.moment)
+        if age > RESUME_LIMIT:
+            raise Refusal(
+                f"{cfg.view}: an unfinished run of {stamp} stopped more than 7 days "
+                "ago, past time travel; pass --restart to start a new run"
+            )
+        if age >= AUTO_RESUME and not resume:
+            raise Refusal(
+                f"{cfg.view}: an unfinished run of {stamp} stopped "
+                f"{age.total_seconds() / 3600:.0f} hours ago; pass --resume to "
+                "finish it at that moment, or --restart to start a new run"
+            )
+        try:
+            build = pick_moment([unfinished.moment], now, None, cfg.fact)
+        except MomentError as exc:
+            raise Refusal(
+                f"{cfg.view}: the unfinished run of {stamp} cannot resume: {exc}; "
+                "pass --restart to start a new run"
+            ) from exc
+        resuming(unfinished, build)
+        return unfinished.folder, build
+
+    build = pick_moment(
+        fact_builds(wh, cfg.fact, since=now - WINDOW), now, None, cfg.fact
+    )
+    folder = report.run_dir(cache_root, cfg.view, build)
+    checkpoints.clear(folder)
+    return folder, build
+
+
 def run(
     cfg: ViewConfig,
     *,
@@ -1543,20 +1644,29 @@ def run(
     max_usd: float,
     cache_root: Path,
     cube_host: str = "",
+    resume: bool = False,
+    restart: bool = False,
+    clock: Callable[[], datetime] = _utcnow,
 ) -> RunResult:
     """Validate one view at one fact build and print the result.
 
     `cube_host` is printed with `cfg.fact` so the result says what it was
-    proven against.
+    proven against. Each comparison it finishes is checkpointed in the run
+    folder; a stopped run started again skips them (`_run_folder` says when
+    it resumes). A checkpoint whose comparison entry or SQL changed is
+    compared again. `cost_usd` adds what every process spent on the run.
 
     Raises:
         Refusal: A confirmed comparison has no proof, its probe changed
-            since the proof, or it lacks a key it needs; or a fact in
-            `also_facts` changed during the build.
+            since the proof, or it lacks a key it needs; a fact in
+            `also_facts` changed during the build; or an unfinished run needs
+            `--resume` or `--restart` (`_run_folder`).
         CostCapError: The priced queries passed `max_usd`.
         MomentError: No usable build in the 7-day window.
         CubeRefusal: Cube's SQL would not match a raw rebuild.
     """
+    if resume and requested is not None:
+        raise Refusal("`--moment` picks the moment itself; drop `--resume`")
     comparisons = [c for c in cfg.comparisons if c.confirmed]
     for skipped in (c for c in cfg.comparisons if not c.confirmed):
         print(f"Skipping comparison {skipped.id!r}: not confirmed.")
@@ -1602,29 +1712,35 @@ def run(
         print(f"{line}.")
 
     with wh.budget(max_usd):
-        builds = fact_builds(wh, cfg.fact, since=now - WINDOW)
-        build = pick_moment(builds, now, requested, cfg.fact)
-        _refuse_moved_facts(cfg, wh, build)
-        schools = network_schools(wh)
-        # The second facts held still, or the check above refused: no
-        # comparison or dims check scans them again.
-        sides = _Sides(moved={f: False for f in cfg.also_facts})
-        for comparison in comparisons:
-            sides.merge(
-                _compare_one(
-                    cfg,
-                    comparison,
-                    wh=wh,
-                    cube=cube,
-                    build=build,
-                    schools=schools,
-                    moved=sides.moved,
-                )
+        folder, build = _run_folder(
+            cfg,
+            wh,
+            now=now,
+            requested=requested,
+            resume=resume,
+            restart=restart,
+            cache_root=cache_root,
+            clock=clock,
+        )
+        process = f"{clock().isoformat()}-{uuid.uuid4().hex[:8]}"
+        checkpoints.start(folder, build, process)
+        try:
+            sides = _compare_all(
+                cfg,
+                comparisons,
+                wh=wh,
+                cube=cube,
+                build=build,
+                folder=folder,
+                process=process,
+                clock=clock,
             )
-        dims = sorted(sides.cube_tables - {cfg.fact, *cfg.also_facts})
-        changed = changed_between(wh, dims, build.start, build.end)
-        findings, other = _anchors_and_identities(cfg, cube, wh, comparisons)
-        cost = wh.spent
+            dims = sorted(sides.cube_tables - {cfg.fact, *cfg.also_facts})
+            changed = changed_between(wh, dims, build.start, build.end)
+            findings, other = _anchors_and_identities(cfg, cube, wh, comparisons)
+        finally:
+            checkpoints.record_spend(folder, process, wh.spent)
+        cost = checkpoints.total_spend(folder)
 
     gaps, gaps_unknown = _gaps(comparisons)
     cell_diffs = _cell_diffs(cfg, comparisons, sides, cube)
@@ -1693,8 +1809,76 @@ def run(
     saved.with_name("run.json").write_text(
         json.dumps(dataclasses.asdict(result), default=_json_default, indent=1)
     )
+    checkpoints.finish(folder)
     print(f"Saved {saved}")
     return result
+
+
+def _compare_all(
+    cfg: ViewConfig,
+    comparisons: list[Comparison],
+    *,
+    wh: Warehouse,
+    cube: Cube,
+    build: Build,
+    folder: Path,
+    process: str,
+    clock: Callable[[], datetime],
+) -> _Sides:
+    """Every comparison's slice, merged in config order. Call inside
+    `wh.budget`.
+
+    A comparison with a checkpoint whose fingerprint still holds is taken from
+    it; the rest are compared one at a time, each checkpointed (with the spend
+    so far) as it finishes, so a stop loses at most the one in progress.
+    """
+    _refuse_moved_facts(cfg, wh, build)
+    schools = network_schools(wh)
+    kept = checkpoints.read_all(folder)
+    # The second facts held still, or the check above refused: no comparison
+    # or dims check scans them again.
+    moved = {f: False for f in cfg.also_facts}
+    slices: dict[str, _Sides] = {}
+    for comparison in comparisons:
+        if comparison.id in kept:
+            fingerprint, data = kept[comparison.id]
+            now = checkpoint_fingerprint(
+                comparison,
+                side_fingerprints(
+                    cfg, comparison, wh=wh, cube=cube, build=build, schools=schools
+                ),
+            )
+            if now == fingerprint:
+                slices[comparison.id] = _Sides.from_json(data)
+                moved |= slices[comparison.id].moved
+                continue
+            print(
+                f"Comparison {comparison.id}: its config or SQL changed since its "
+                "saved result; comparing it again."
+            )
+        one = _compare_one(
+            cfg,
+            comparison,
+            wh=wh,
+            cube=cube,
+            build=build,
+            schools=schools,
+            moved=moved,
+        )
+        moved |= one.moved
+        slices[comparison.id] = one
+        checkpoints.write(
+            folder,
+            comparison.id,
+            checkpoint_fingerprint(comparison, one.fingerprints[comparison.id]),
+            one.to_json(),
+            clock(),
+        )
+        checkpoints.record_spend(folder, process, wh.spent)
+    sides = _Sides(moved={f: False for f in cfg.also_facts})
+    for comparison in comparisons:
+        sides.merge(slices[comparison.id])
+    return sides
 
 
 def _diff_cells(sides: _Sides) -> list[dict]:

@@ -129,29 +129,34 @@ def read_all(folder: Path) -> dict[str, tuple[str, dict]]:
     return {e["comparison"]: (e["fingerprint"], e["slice"]) for e in _entries(folder)}
 
 
+def unfinished(folder: Path) -> Unfinished | None:
+    """The folder's run, when it is unfinished and holds a checkpoint."""
+    state = _read_state(folder)
+    if not state or state.get("finished"):
+        return None
+    entries = _entries(folder)
+    if not entries:
+        return None
+    m = state["moment"]
+    return Unfinished(
+        folder=folder,
+        moment=Build(
+            datetime.fromisoformat(m["start"]),
+            datetime.fromisoformat(m["end"]),
+            m["job_id"],
+        ),
+        last_at=max(datetime.fromisoformat(e["at"]) for e in entries),
+        done=len(entries),
+    )
+
+
 def find_unfinished(root: Path, view: str) -> Unfinished | None:
     """The view's unfinished run with the latest checkpoint, or None."""
-    found = []
-    for folder in (root / view).iterdir() if (root / view).is_dir() else []:
-        state = _read_state(folder)
-        if not state or state.get("finished"):
-            continue
-        entries = _entries(folder)
-        if not entries:
-            continue
-        m = state["moment"]
-        found.append(
-            Unfinished(
-                folder=folder,
-                moment=Build(
-                    datetime.fromisoformat(m["start"]),
-                    datetime.fromisoformat(m["end"]),
-                    m["job_id"],
-                ),
-                last_at=max(datetime.fromisoformat(e["at"]) for e in entries),
-                done=len(entries),
-            )
-        )
+    found = [
+        u
+        for folder in ((root / view).iterdir() if (root / view).is_dir() else [])
+        if (u := unfinished(folder)) is not None
+    ]
     return max(found, key=lambda u: u.last_at, default=None)
 
 

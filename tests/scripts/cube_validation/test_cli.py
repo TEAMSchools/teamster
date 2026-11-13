@@ -14,7 +14,16 @@ import pytest
 import tableauserverclient as TSC
 
 # trunk-ignore(pyright/reportAttributeAccessIssue): conftest.py registers cube_validation
-from cube_validation import cli, confirm, pipeline, report, tableau, trace, triage
+from cube_validation import (
+    checkpoints,
+    cli,
+    confirm,
+    pipeline,
+    report,
+    tableau,
+    trace,
+    triage,
+)
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.bq import CostCapError, Warehouse
@@ -109,6 +118,8 @@ class FakeBigQuery:
         self.cost = cost
         self.changed = changed
         self.ran: list[str] = []
+        # The next query holding this text is refused as over its cap, once.
+        self.fail_once: str | None = None
         self.probe = probe or [{"region": "Newark", "value": 0.9123}]
         self.cells = cells
         # Per cut index: cut 0 is `{}`, cut 1 is `{Region: Miami}`.
@@ -136,7 +147,10 @@ class FakeBigQuery:
         if job_config is not None and job_config.dry_run:
             return SimpleNamespace(total_bytes_processed=nbytes, result=lambda: [])
         limit = job_config.maximum_bytes_billed if job_config is not None else None
-        if limit is not None and nbytes > int(limit):
+        failing = self.fail_once is not None and self.fail_once in sql
+        if failing:
+            self.fail_once = None
+        if failing or (limit is not None and nbytes > int(limit)):
             # BigQuery refuses an over-limit query before it runs, unbilled.
             def refuse():
                 raise BadRequest(
@@ -468,6 +482,181 @@ def test_run_saves_each_comparison_s_unmatched_rows_to_a_labelled_table(
     assert "INTERVAL 14 DAY" in script
     # The rows stay in BigQuery: the job returns only the counts.
     assert script.rstrip().split(";\n")[-1].startswith("-- outer")
+
+
+def _four(tmp_path):
+    """The view file with its comparison repeated as `ada-region-1` to `-4`."""
+    head, rest = YML.split("  - id: ada-region\n", 1)
+    block, tail = rest.split("identities:", 1)
+    blocks = "".join(f"  - id: ada-region-{i}\n" + block for i in range(1, 5))
+    return _file(tmp_path, head + blocks + "identities:" + tail)
+
+
+def _outer(bq):
+    return [s for s in bq.ran if "-- outer" in s]
+
+
+def test_a_stopped_run_resumes_to_the_same_result(fakes, tmp_path, monkeypatch):
+    path = _four(tmp_path)
+    # Baseline: an uninterrupted run in its own cache.
+    monkeypatch.setattr(cli, "cache_root", lambda: tmp_path / "whole")
+    assert cli.main(["run", str(path)]) == 0
+    whole = json.loads(next((tmp_path / "whole").glob("v/*/run.json")).read_text())
+
+    monkeypatch.setattr(cli, "cache_root", lambda: tmp_path / "cache")
+    fakes.bq.fail_once = "ada_region_3"
+    assert cli.main(["run", str(path)]) == 1
+    folder = next((tmp_path / "cache" / "v").iterdir())
+    # Comparisons run in config order: 1 and 2 finished, 3 failed, 4 never began.
+    assert sorted(checkpoints.read_all(folder)) == ["ada-region-1", "ada-region-2"]
+    assert not (folder / "run.json").exists()
+
+    fakes.bq.ran.clear()
+    assert cli.main(["run", str(path)]) == 0
+
+    scripts = _outer(fakes.bq)
+    assert len(scripts) == 2
+    assert "ada_region_3" in scripts[0] and "ada_region_4" in scripts[1]
+    resumed = json.loads((folder / "run.json").read_text())
+    assert {**resumed, "cost_usd": 0} == {**whole, "cost_usd": 0}
+    assert resumed["cost_usd"] == pytest.approx(checkpoints.total_spend(folder))
+    assert checkpoints.find_unfinished(tmp_path / "cache", "v") is None
+
+
+def test_a_resumed_run_says_so(fakes, tmp_path, capsys):
+    path = _four(tmp_path)
+    fakes.bq.fail_once = "ada_region_3"
+    assert cli.main(["run", str(path)]) == 1
+    capsys.readouterr()
+
+    assert cli.main(["run", str(path)]) == 0
+
+    out = capsys.readouterr().out
+    assert "Resuming the unfinished run of" in out
+    assert "2 of 4 comparisons saved" in out
+
+
+def test_a_run_stopped_a_day_ago_waits_for_resume_or_restart(
+    fakes, tmp_path, monkeypatch, capsys
+):
+    path = _four(tmp_path)
+    fakes.bq.fail_once = "ada_region_3"
+    assert cli.main(["run", str(path)]) == 1
+    monkeypatch.setattr(cli, "utcnow", Clock(NOW + timedelta(hours=30)))
+    capsys.readouterr()
+
+    assert cli.main(["run", str(path)]) == 1
+    assert "pass --resume to finish it at that moment, or --restart" in (
+        capsys.readouterr().err
+    )
+    assert cli.main(["run", str(path), "--resume"]) == 0
+
+
+def test_a_resume_past_time_travel_refuses_before_any_query(
+    fakes, tmp_path, monkeypatch, capsys
+):
+    path = _four(tmp_path)
+    fakes.bq.fail_once = "ada_region_3"
+    assert cli.main(["run", str(path)]) == 1
+    # The checkpoints are an hour old, but the build began 7 days ago, past
+    # time travel less its margin.
+    monkeypatch.setattr(cli, "utcnow", Clock(START + timedelta(days=7)))
+    folder = next((tmp_path / "cache" / "v").iterdir())
+    for f in (folder / checkpoints.DIR).glob("*.json"):
+        data = json.loads(f.read_text())
+        data["at"] = (START + timedelta(days=7, hours=-1)).isoformat()
+        f.write_text(json.dumps(data))
+    fakes.bq.ran.clear()
+    capsys.readouterr()
+
+    assert cli.main(["run", str(path)]) == 1
+
+    assert "pass --restart" in capsys.readouterr().err
+    assert not _outer(fakes.bq)
+
+
+def test_a_run_stopped_over_7_days_ago_cannot_resume(
+    fakes, tmp_path, monkeypatch, capsys
+):
+    path = _four(tmp_path)
+    fakes.bq.fail_once = "ada_region_3"
+    assert cli.main(["run", str(path)]) == 1
+    monkeypatch.setattr(cli, "utcnow", Clock(NOW + timedelta(days=8)))
+    capsys.readouterr()
+
+    assert cli.main(["run", str(path), "--resume"]) == 1
+
+    assert "more than 7 days ago" in capsys.readouterr().err
+
+
+def test_a_moment_with_an_unfinished_run_resumes_it_whatever_its_age(
+    fakes, tmp_path, monkeypatch, capsys
+):
+    path = _four(tmp_path)
+    fakes.bq.fail_once = "ada_region_3"
+    assert cli.main(["run", str(path)]) == 1
+    folder = next((tmp_path / "cache" / "v").iterdir())
+    # A newer unfinished run of another moment holds the latest checkpoint.
+    other = tmp_path / "cache" / "v" / "2026-10-21T000000Z"
+    other_build = report.Build(START - timedelta(days=1), START, "j0")
+    checkpoints.start(other, other_build, "p0")
+    checkpoints.write(other, "x", "f", {}, NOW + timedelta(hours=2))
+    monkeypatch.setattr(cli, "utcnow", Clock(NOW + timedelta(hours=30)))
+    fakes.bq.ran.clear()
+    capsys.readouterr()
+
+    assert cli.main(["run", str(path), "--moment", END.isoformat()]) == 0
+
+    assert "Resuming the unfinished run of" in capsys.readouterr().out
+    assert len(_outer(fakes.bq)) == 2
+    assert (folder / "run.json").exists()
+
+
+def test_restart_clears_the_unfinished_run(fakes, tmp_path):
+    path = _four(tmp_path)
+    fakes.bq.fail_once = "ada_region_3"
+    assert cli.main(["run", str(path)]) == 1
+    fakes.bq.ran.clear()
+
+    assert cli.main(["run", str(path), "--restart"]) == 0
+
+    assert len(_outer(fakes.bq)) == 4
+
+
+def test_resume_with_nothing_unfinished_refuses(fakes, tmp_path, capsys):
+    assert cli.main(["run", str(_four(tmp_path)), "--resume"]) == 1
+
+    assert "no unfinished run of v to resume" in capsys.readouterr().err
+
+
+def test_resume_and_moment_together_refuse(fakes, tmp_path, capsys):
+    assert (
+        cli.main(["run", str(_four(tmp_path)), "--resume", "--moment", END.isoformat()])
+        == 1
+    )
+
+    assert "drop `--resume`" in capsys.readouterr().err
+
+
+def test_a_comparison_edited_since_its_checkpoint_is_compared_again(
+    fakes, tmp_path, capsys
+):
+    path = _four(tmp_path)
+    fakes.bq.fail_once = "ada_region_3"
+    assert cli.main(["run", str(path)]) == 1
+    # `workbook` is outside the probe's fingerprint, so `run` does not refuse it.
+    path.write_text(path.read_text().replace("workbook: wb-1", "workbook: wb-9", 1))
+    fakes.bq.ran.clear()
+    capsys.readouterr()
+
+    assert cli.main(["run", str(path)]) == 0
+
+    assert (
+        "Comparison ada-region-1: its config or SQL changed since its saved result"
+        in capsys.readouterr().out
+    )
+    # ada-region-1 again (edited), then 3 and 4 (never finished); 2 is kept.
+    assert len(_outer(fakes.bq)) == 3
 
 
 def test_run_cube_rows_are_ungrouped_and_unlimited(fakes, tmp_path):

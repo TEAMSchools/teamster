@@ -255,6 +255,17 @@ def _parser() -> argparse.ArgumentParser:
     view_file(p)
     fact_dataset(p)
     p.add_argument("--moment", type=_moment, help="ISO time; the build ending by it")
+    again = p.add_mutually_exclusive_group()
+    again.add_argument(
+        "--resume",
+        action="store_true",
+        help="finish an unfinished run stopped 24 hours to 7 days ago, at its moment",
+    )
+    again.add_argument(
+        "--restart",
+        action="store_true",
+        help="drop an unfinished run's saved comparisons and start a new run",
+    )
     email(p)
     max_usd(p)
 
@@ -445,6 +456,9 @@ def _dispatch(args: argparse.Namespace) -> int:
             max_usd=args.max_usd,
             cache_root=cache_root(),
             cube_host=_cube_host(),
+            resume=args.resume,
+            restart=args.restart,
+            clock=utcnow,
         )
         return 0
 
