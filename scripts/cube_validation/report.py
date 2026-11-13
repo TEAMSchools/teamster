@@ -402,6 +402,14 @@ def render_local(run: RunResult) -> str:
     return "\n".join(out)
 
 
+def run_stamp(moment: Build) -> str:
+    """A run's moment as its folder and saved tables name it: the build end, UTC."""
+    end = moment.end
+    if end.tzinfo is not None:
+        end = end.astimezone(timezone.utc)
+    return end.strftime("%Y-%m-%dT%H%M%SZ")
+
+
 def save_local(run: RunResult, text: str, root: Path | None = None) -> Path:
     """Write the local result under the view and moment.
 
@@ -413,11 +421,7 @@ def save_local(run: RunResult, text: str, root: Path | None = None) -> Path:
     Returns:
         The path of `result.md`.
     """
-    end = run.moment.end
-    if end.tzinfo is not None:
-        end = end.astimezone(timezone.utc)
-    stamp = end.strftime("%Y-%m-%dT%H%M%SZ")
-    path = (root or CACHE_ROOT) / run.view / stamp / "result.md"
+    path = (root or CACHE_ROOT) / run.view / run_stamp(run.moment) / "result.md"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text)
     return path
