@@ -8,7 +8,9 @@ models:
       — Composite plus subtests). Each row is linked to an assessment
       administration (via assessment_administration_key) and to the student's
       resolved section enrollment (via student_section_enrollment_key and
-      enrollment_resolution).
+      enrollment_resolution). A score that resolves to no section enrollment is
+      not in this table, most often a new student tested before their class
+      schedule starts.
 
       Vendor breakdown rows sit alongside the summary row, not in place of it.
       DIBELS contributes one row per subtest next to the Composite. i-Ready
@@ -153,6 +155,20 @@ models:
             foreign_key:
               to: ref('dim_assessment_goals')
               to_columns: [assessment_goal_key]
+
+      - name: assessment_module_goal_rule_key
+        data_type: string
+        description: >-
+          FK to dim_assessment_module_goal_rules. The DDI goal rule for the
+          score's module type, matched on the student's region and enrolled
+          grade and the assessment's subject; a rule with no subject covers
+          every subject. Internal assessments only; null for state and vendor
+          assessments, and wherever no rule applies.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_assessment_module_goal_rules')
+              to_columns: [assessment_module_goal_rule_key]
 
       - name: test_date_key
         data_type: date
@@ -314,3 +330,247 @@ models:
           Illuminate and Focus Assessments only; null for every other source,
           for not-taken rows, and when the band set's setup breaks the level
           rule's assumptions.
+
+unit_tests:
+  - name: test_fct_assessment_scores_enrollment_scoped_module_goal_rule
+    description: >-
+      Matches each internal score to the goal rule for its region, module type,
+      subject and enrolled grade. A subject's own rule matches at both ends of
+      its grade range, and the rule with no subject covers every subject in its
+      range. A score in another region, module type, subject or grade gets no
+      rule. percent_correct identifies each score.
+    model: fct_assessment_scores_enrollment_scoped
+    given:
+      - input: ref("int_assessments__response_rollup")
+        format: sql
+        rows: |
+          select
+              s.student_number,
+              'illuminate' as source,
+              s.assessment_id,
+              cast(null as int64) as response_type_id,
+              cast(null as string) as response_type_code,
+              cast(null as string) as response_type_description,
+              cast(null as string) as response_type_root_description,
+              false as is_replacement,
+              cast(null as string) as performance_band_label,
+              cast(null as numeric) as performance_band_label_number,
+              true as is_mastery,
+              1 as n_assessments,
+              s.percent_correct,
+              s.source_project as _dbt_source_project,
+              cast('2026-10-01' as date) as date_taken,
+              'overall' as response_type,
+              [s.assessment_id] as assessment_ids,
+              cast(null as int64) as performance_band_set_id,
+              true as is_internal_assessment,
+          from
+              unnest(
+                  [
+                      struct(
+                          1 as student_number,
+                          1 as assessment_id,
+                          cast(0.1 as numeric) as percent_correct,
+                          'kippnewark' as source_project
+                      ),
+                      struct(2, 1, cast(0.2 as numeric), 'kippnewark'),
+                      struct(3, 1, cast(0.3 as numeric), 'kippnewark'),
+                      struct(4, 1, cast(0.4 as numeric), 'kippnewark'),
+                      struct(5, 1, cast(0.5 as numeric), 'kippnewark'),
+                      struct(6, 1, cast(0.6 as numeric), 'kippnewark'),
+                      struct(7, 1, cast(0.7 as numeric), 'kippcamden'),
+                      struct(8, 2, cast(0.8 as numeric), 'kippnewark')
+                  ]
+              ) as s
+      - input: ref("int_assessments__assessments_members")
+        rows:
+          - {
+              source: illuminate,
+              assessment_id: 1,
+              academic_year: 2026,
+              module_code: M1,
+              module_type: ET,
+            }
+          - {
+              source: illuminate,
+              assessment_id: 2,
+              academic_year: 2026,
+              module_code: M2,
+              module_type: QA,
+            }
+      - input: ref("int_assessments__assessments_canonical")
+        rows:
+          - {
+              source: illuminate,
+              canonical_assessment_id: 1,
+              administered_date: 2026-10-01,
+            }
+          - {
+              source: illuminate,
+              canonical_assessment_id: 2,
+              administered_date: 2026-10-01,
+            }
+      - input: ref("int_assessments__resolved_section_enrollments")
+        rows:
+          # subject rule, lowest grade
+          - {
+              student_number: 1,
+              source: illuminate,
+              canonical_assessment_id: 1,
+              _dbt_source_project: kippnewark,
+              source_type: internal,
+              region: Newark,
+              grade_level: 3,
+              subject_area: Mathematics,
+              enrollment_academic_year: 2026,
+              powerschool_school_id: 1,
+            }
+          # subject rule, highest grade
+          - {
+              student_number: 2,
+              source: illuminate,
+              canonical_assessment_id: 1,
+              _dbt_source_project: kippnewark,
+              source_type: internal,
+              region: Newark,
+              grade_level: 5,
+              subject_area: Mathematics,
+              enrollment_academic_year: 2026,
+              powerschool_school_id: 1,
+            }
+          # any-subject rule, a subject with no rule of its own
+          - {
+              student_number: 3,
+              source: illuminate,
+              canonical_assessment_id: 1,
+              _dbt_source_project: kippnewark,
+              source_type: internal,
+              region: Newark,
+              grade_level: 6,
+              subject_area: English Language Arts,
+              enrollment_academic_year: 2026,
+              powerschool_school_id: 1,
+            }
+          # any-subject rule, past the subject rule's range
+          - {
+              student_number: 4,
+              source: illuminate,
+              canonical_assessment_id: 1,
+              _dbt_source_project: kippnewark,
+              source_type: internal,
+              region: Newark,
+              grade_level: 6,
+              subject_area: Mathematics,
+              enrollment_academic_year: 2026,
+              powerschool_school_id: 1,
+            }
+          # no rule: subject rule is for another subject
+          - {
+              student_number: 5,
+              source: illuminate,
+              canonical_assessment_id: 1,
+              _dbt_source_project: kippnewark,
+              source_type: internal,
+              region: Newark,
+              grade_level: 4,
+              subject_area: English Language Arts,
+              enrollment_academic_year: 2026,
+              powerschool_school_id: 1,
+            }
+          # no rule: grade above every range
+          - {
+              student_number: 6,
+              source: illuminate,
+              canonical_assessment_id: 1,
+              _dbt_source_project: kippnewark,
+              source_type: internal,
+              region: Newark,
+              grade_level: 9,
+              subject_area: Mathematics,
+              enrollment_academic_year: 2026,
+              powerschool_school_id: 1,
+            }
+          # no rule: another region
+          - {
+              student_number: 7,
+              source: illuminate,
+              canonical_assessment_id: 1,
+              _dbt_source_project: kippcamden,
+              source_type: internal,
+              region: Camden,
+              grade_level: 4,
+              subject_area: Mathematics,
+              enrollment_academic_year: 2026,
+              powerschool_school_id: 1,
+            }
+          # no rule: another module type
+          - {
+              student_number: 8,
+              source: illuminate,
+              canonical_assessment_id: 2,
+              _dbt_source_project: kippnewark,
+              source_type: internal,
+              region: Newark,
+              grade_level: 4,
+              subject_area: Mathematics,
+              enrollment_academic_year: 2026,
+              powerschool_school_id: 1,
+            }
+      - input: ref("int_assessments__module_goal_rules")
+        rows:
+          - {
+              region: Newark,
+              module_type: ET,
+              illuminate_subject_area: Mathematics,
+              grade_min: 3,
+              grade_max: 5,
+              goal: 0.8,
+              goal_offset: null,
+            }
+          - {
+              region: Newark,
+              module_type: ET,
+              illuminate_subject_area: null,
+              grade_min: 6,
+              grade_max: 8,
+              goal: 0.8,
+              goal_offset: null,
+            }
+      - input: ref("int_assessments__performance_band_union")
+        rows: []
+      - input: ref("int_assessments__state_scores")
+        rows: []
+      - input: ref("int_assessments__benchmark_scores")
+        rows: []
+      - input: ref("int_assessments__iready_domain_unpivot")
+        rows: []
+      - input: ref("stg_google_sheets__assessments__vendor_subject_crosswalk")
+        rows: []
+      - input: ref("stg_google_sheets__reporting__terms")
+        rows: []
+      - input: ref("int_assessments__academic_goals")
+        rows: []
+    expect:
+      rows:
+        # fa44baa2...: Newark ET Mathematics 3-5
+        # c27ae70b...: Newark ET any subject 6-8
+        - {
+            percent_correct: 0.1,
+            assessment_module_goal_rule_key: fa44baa2dae4c56b9b0a5369e09a9d3b,
+          }
+        - {
+            percent_correct: 0.2,
+            assessment_module_goal_rule_key: fa44baa2dae4c56b9b0a5369e09a9d3b,
+          }
+        - {
+            percent_correct: 0.3,
+            assessment_module_goal_rule_key: c27ae70bff7d3f0d0e524eaa5cea6183,
+          }
+        - {
+            percent_correct: 0.4,
+            assessment_module_goal_rule_key: c27ae70bff7d3f0d0e524eaa5cea6183,
+          }
+        - { percent_correct: 0.5, assessment_module_goal_rule_key: null }
+        - { percent_correct: 0.6, assessment_module_goal_rule_key: null }
+        - { percent_correct: 0.7, assessment_module_goal_rule_key: null }
+        - { percent_correct: 0.8, assessment_module_goal_rule_key: null }
