@@ -6,23 +6,29 @@ models:
       assessment's lookup goal or an offset added to it. A rule that is
       malformed or overlaps another rule is left out, so the scores it would
       match keep their lookup goal.
+    config:
+      materialized: table
+      meta:
+        dagster:
+          # Shares the scores fact's tick, so a sheet edit never leaves the
+          # fact holding a rule key this dim no longer has. Rationale in
+          # fct_assessment_scores_enrollment_scoped.
+          automation_condition:
+            cron_schedule: 30 0,10,13,15,17 * * *
     columns:
       - name: assessment_module_goal_rule_key
         data_type: string
         description: >-
-          Surrogate key derived from region, module_type,
-          illuminate_subject_area, and grade_min. Primary key.
+          Surrogate key derived from the rule's region, module type, subject
+          area, and lowest grade. Primary key.
         constraints:
           - type: primary_key
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - unique:
               config:
                 severity: error
-
-      - name: region
-        data_type: string
-        description: Region the rule applies to.
 
       - name: module_type
         data_type: string

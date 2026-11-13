@@ -154,8 +154,9 @@ A fact driven from primary stints (`rn_year = 1`) filters out
 
 Marts default to `materialized: view`. Exception: `dim_assessments`,
 `dim_courses`, `dim_dates`, `dim_regions`, `dim_staff`, `dim_students`, the six
-assessment-star marts, and the four assessment intermediates are
-`materialized: table`. All seven assessment marts share
+assessment-star marts, `dim_assessment_goals`,
+`dim_assessment_module_goal_rules`, and the four assessment intermediates are
+`materialized: table`. All nine assessment marts share
 `int_assessments__response_rollup`'s cron tick — Cube is their only consumer,
 and its `proficiency_rollup` pre-aggregation follows the scores fact's rebuilds,
 so an eager view would buy no freshness

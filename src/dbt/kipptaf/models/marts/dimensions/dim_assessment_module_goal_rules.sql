@@ -5,7 +5,6 @@ select
         )
     }} as assessment_module_goal_rule_key,
 
-    region,
     module_type,
     grade_min,
     grade_max,

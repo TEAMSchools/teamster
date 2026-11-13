@@ -378,16 +378,14 @@ with
 /* internal assessments */
 select
     {{
-        dbt_utils.generate_surrogate_key(
-            [
-                "ia.student_number",
-                "ia.source",
-                "ia.assessment_id",
-                "ia.assessment_ids_json",
-                "ia.response_type",
-                "ia.response_type_id",
-                "ia.response_type_code",
-            ]
+        internal_assessment_score_key(
+            "ia.student_number",
+            "ia.source",
+            "ia.assessment_id",
+            "ia.assessment_ids_json",
+            "ia.response_type",
+            "ia.response_type_id",
+            "ia.response_type_code",
         )
     }} as assessment_score_key,
 

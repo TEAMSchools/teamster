@@ -385,6 +385,19 @@ erDiagram
 | `streak_start_date_key`  | `dim_dates`               |
 | `student_enrollment_key` | `dim_student_enrollments` |
 
+## fct_student_subjects_annual
+
+```mermaid
+erDiagram
+  fct_student_subjects_annual }o--|| dim_students : "student_key"
+```
+
+### Foreign keys
+
+| FK column     | References     |
+| ------------- | -------------- |
+| `student_key` | `dim_students` |
+
 ## fct_support_tickets
 
 ```mermaid

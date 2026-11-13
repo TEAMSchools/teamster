@@ -109,6 +109,19 @@ with
 
             cast(r.assessment_id as string) as assessment_id,
 
+            -- the scores fact's key, to read the goal rule it matched
+            {{
+                internal_assessment_score_key(
+                    "r.student_number",
+                    "r.source",
+                    "r.assessment_id",
+                    "to_json_string(r.assessment_ids)",
+                    "coalesce(r.response_type, 'not_taken')",
+                    "r.response_type_id",
+                    "r.response_type_code",
+                )
+            }} as assessment_score_key,
+
             -- Apex rows take the section the scaffold matched, Illuminate rows
             -- the student's latest section in the subject
             -- Focus rows null sections_section_number; cc_section_number is
@@ -190,9 +203,10 @@ with
             sf.nj_student_tier,
             sf.is_low_25_fl,
 
-            coalesce(mgs.goal, mga.goal) as module_goal,
+            mg.goal as module_goal,
+
             -- 0 when no rule adds an offset, so goal + offset is the raw goal
-            coalesce(mgs.goal_offset, mga.goal_offset, 0) as module_goal_offset,
+            coalesce(mg.goal_offset, 0) as module_goal_offset,
 
             -- T&L's QA goals apply to QA modules and to CRQ modules
             r.module_type in ('QA', 'CRQ') as is_qa_goal_module,
@@ -204,17 +218,12 @@ with
             and r.course_credittype = sf.powerschool_credittype
             and sf.rn_year = 1
         left join
-            {{ ref("int_assessments__module_goal_rules") }} as mgs
-            on r.region = mgs.region
-            and r.module_type = mgs.module_type
-            and r.subject_area = mgs.illuminate_subject_area
-            and r.grade_level between mgs.grade_min and mgs.grade_max
+            {{ ref("fct_assessment_scores_enrollment_scoped") }} as f
+            on r.assessment_score_key = f.assessment_score_key
+            and f.assessment_module_goal_rule_key is not null
         left join
-            {{ ref("int_assessments__module_goal_rules") }} as mga
-            on r.region = mga.region
-            and r.module_type = mga.module_type
-            and r.grade_level between mga.grade_min and mga.grade_max
-            and mga.illuminate_subject_area is null
+            {{ ref("dim_assessment_module_goal_rules") }} as mg
+            on f.assessment_module_goal_rule_key = mg.assessment_module_goal_rule_key
     ),
 
     microgoals_long as (
