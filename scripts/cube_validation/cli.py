@@ -525,8 +525,19 @@ def _dispatch(args: argparse.Namespace) -> int:
 
     # prove
     if args.check:
+        cube = _cube(args)
         with tableau_session() as tbl:
-            pipeline.prove_check(cfg, tbl=tbl, cube=_cube(args))
+            pipeline.prove_check(cfg, tbl=tbl, cube=cube)
+        rejected = confirm.check_proofs(
+            cfg,
+            confirm.proofs_dir(args.view, cfg.view),
+            wh=_warehouse(args),
+            cube=cube,
+        )
+        if rejected:
+            print("Proofs BigQuery rejects:")
+            for line in rejected:
+                print(f"- {line}")
         return 0
     captures: dict = {}
     with tableau_session() as tbl:

@@ -923,6 +923,26 @@ class RowSides:
     columns: list[str]
 
 
+def current_row_sides(
+    cfg: ViewConfig, comparison: Comparison, *, cube: Cube, schools: set[str]
+) -> RowSides:
+    """The comparison's row SQL on today's tables, with no time travel.
+
+    For a dry run that checks a proof still compiles against the tables as they
+    are now; never for counting rows, which `row_sides` reads at the run's
+    moment.
+    """
+    if comparison.rows is None:
+        raise Refusal(f"comparison {comparison.id!r} has no rows")
+    cube_sql = _cube_sql(cfg, cube, row_query(cfg.view, comparison), schools, rows=True)
+    return RowSides(
+        cube=AsOf(cube_sql, frozenset(), frozenset()),
+        dashboard=AsOf(dashboard_rows_sql(cfg, comparison), frozenset(), frozenset()),
+        cube_rows_sql=cube_sql,
+        columns=_unique(p.cube for p in _row_pairs(comparison)),
+    )
+
+
 def row_sides(
     cfg: ViewConfig,
     comparison: Comparison,

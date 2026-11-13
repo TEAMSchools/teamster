@@ -1669,6 +1669,29 @@ def test_prove_does_not_write_a_failed_proof(fakes, tmp_path, capsys):
     assert "probe" in capsys.readouterr().out
 
 
+def test_prove_check_lists_stored_proofs_bigquery_rejects(
+    fakes, tmp_path, capsys, monkeypatch
+):
+    path = _file(tmp_path)
+    directory = tmp_path / "proofs" / "v"
+    directory.mkdir(parents=True)
+    (directory / "ada-region__cube_only.sql").write_text("SELECT 1")
+    seen = []
+
+    def check(cfg, where, *, wh, cube):
+        seen.append(where)
+        return ["ada-region__cube_only.sql: BigQuery rejects it (x)"]
+
+    monkeypatch.setattr(confirm, "check_proofs", check)
+
+    assert cli.main(["prove", str(path), "--check"]) == 0
+
+    assert seen == [directory]
+    out = capsys.readouterr().out
+    assert "Proofs BigQuery rejects:" in out
+    assert "ada-region__cube_only.sql: BigQuery rejects it (x)" in out
+
+
 def test_prove_check_lists_stale_proofs(fakes, tmp_path, capsys):
     fakes.tbl.updated = datetime(2026, 10, 25, tzinfo=timezone.utc)
 

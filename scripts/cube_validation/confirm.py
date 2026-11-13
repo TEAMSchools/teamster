@@ -1691,6 +1691,48 @@ def run_stored(
     return out
 
 
+def check_proofs(
+    cfg: ViewConfig, directory: Path, *, wh: Warehouse, cube: Cube
+) -> list[str]:
+    """Dry-run every stored proof of the view and list each one that fails.
+
+    A proof fails when it cannot be read, names no comparison of the view,
+    fails `check_sql`, cannot be built (a Cube or row SQL refusal), or BigQuery
+    rejects it on a dry run: a column or table it reads has changed. Each
+    proof runs against its own comparison's rows on today's tables, so the
+    dry run needs no time travel. Dry runs are free and count toward no cap.
+
+    Returns:
+        One line per failing proof, `<file>: <why>`, in file order.
+    """
+    by_id = {c.id: c for c in cfg.comparisons}
+    schools: set[str] | None = None
+    out = []
+    for path in sorted(directory.glob("*__*.sql")) if directory.is_dir() else []:
+        try:
+            proof = read_proof(path)
+            comparison = by_id.get(proof.comparison)
+            if comparison is None:
+                raise pipeline.Refusal(
+                    f"names no comparison of {cfg.view} ({proof.comparison!r})"
+                )
+            literals = check_sql(
+                proof.body, grain_names(comparison), identifying(comparison)
+            )
+            if schools is None:
+                schools = network_schools(wh)
+            sides = pipeline.current_row_sides(
+                cfg, comparison, cube=cube, schools=schools
+            )
+            ctes, select = unmatched_sql(cfg, comparison, sides, proof.bucket, [], None)
+            wh.estimate(proof_query(ctes, select, proof.body, literals))
+        except GoogleAPIError as exc:
+            out.append(f"{path.name}: BigQuery rejects it ({bigquery_said(exc)})")
+        except (OSError, pipeline.Refusal, CubeError) as exc:
+            out.append(f"{path.name}: {exc}")
+    return out
+
+
 def _run_one(
     cfg: ViewConfig,
     run: RunResult,
