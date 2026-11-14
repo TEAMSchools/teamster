@@ -1577,11 +1577,12 @@ def _run_folder(
     """
 
     def resuming(u: checkpoints.Unfinished, build: Build) -> None:
+        confirmed = {c.id for c in cfg.comparisons if c.confirmed}
+        saved_ids = set(checkpoints.read_all(u.folder)) & confirmed
         print(
             f"Resuming the unfinished run of {utc_literal(build.start)} to "
-            f"{utc_literal(build.end)}: {u.done} of "
-            f"{len([c for c in cfg.comparisons if c.confirmed])} comparisons saved, "
-            f"the last at {utc_literal(u.last_at)}."
+            f"{utc_literal(build.end)}: {len(saved_ids)} of {len(confirmed)} "
+            f"comparisons saved, the last at {utc_literal(u.last_at)}."
         )
 
     if requested is not None:

@@ -536,6 +536,22 @@ def test_a_resumed_run_says_so(fakes, tmp_path, capsys):
     assert "2 of 4 comparisons saved" in out
 
 
+def test_the_resume_count_names_only_checkpoints_of_confirmed_comparisons(
+    fakes, tmp_path, capsys
+):
+    path = _four(tmp_path)
+    fakes.bq.fail_once = "ada_region_3"
+    assert cli.main(["run", str(path)]) == 1
+    folder = next((tmp_path / "cache" / "v").iterdir())
+    # A comparison since removed from the file left its checkpoint behind.
+    checkpoints.write(folder, "gone", "f", {}, NOW)
+    capsys.readouterr()
+
+    assert cli.main(["run", str(path)]) == 0
+
+    assert "2 of 4 comparisons saved" in capsys.readouterr().out
+
+
 def test_a_run_stopped_a_day_ago_waits_for_resume_or_restart(
     fakes, tmp_path, monkeypatch, capsys
 ):
