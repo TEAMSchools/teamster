@@ -387,7 +387,7 @@ def unmatched_rows_sql(
     cuts: Sequence[tuple[str, str]] = (),
 ) -> str:
     """The rows `reconcile_script` saves, as one query with no table: for a
-    dry run that needs no saved table (`prove --check`)."""
+    dry run that needs no saved table."""
     ctes, _ = _saved_joined(
         cube_rows_sql, dashboard_rows_sql, rows, group_by, filters, cuts
     )

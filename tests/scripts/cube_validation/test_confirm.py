@@ -1364,55 +1364,6 @@ def test_confirm_refuses_a_reproduce_query_bigquery_refuses(
 # --- cells left open; rows that sit in another cell ---------------------------------
 
 
-def test_check_proofs_lists_a_proof_bigquery_rejects(tmp_path, offline, monkeypatch):
-    monkeypatch.setattr(pipeline, "current_row_sides", lambda *a, **k: SIDES)
-    directory, path = _proof(tmp_path)
-
-    class Rejecting(Wh):
-        def estimate(self, sql):
-            raise BadRequest(
-                "Unrecognized name: missing_col", errors=[{"reason": "invalidQuery"}]
-            )
-
-    assert confirm.check_proofs(CFG, directory, wh=Rejecting(None), cube=None) == [
-        f"{path.name}: BigQuery rejects it (job ?, invalidQuery: Unrecognized name: "
-        "missing_col)"
-    ]
-
-
-def test_check_proofs_dry_runs_the_proof_on_today_s_tables(
-    tmp_path, offline, monkeypatch
-):
-    monkeypatch.setattr(pipeline, "current_row_sides", lambda *a, **k: SIDES)
-    directory, _ = _proof(tmp_path)
-    seen = []
-
-    class Recording(Wh):
-        def estimate(self, sql):
-            seen.append(sql)
-            return 0.0
-
-    assert confirm.check_proofs(CFG, directory, wh=Recording(None), cube=None) == []
-    (sql,) = seen
-    assert "{unmatched}" not in sql and "FOR SYSTEM_TIME" not in sql
-
-
-def test_check_proofs_lists_a_proof_its_own_checks_refuse(
-    tmp_path, offline, monkeypatch
-):
-    monkeypatch.setattr(pipeline, "current_row_sides", lambda *a, **k: SIDES)
-    directory, path = _proof(
-        tmp_path, body=PROOF.replace("u.__row,", "u.lea, u.__row,")
-    )
-    (directory / "nobody__cube_only.sql").write_text(confirm.compose(CAUSES, PROOF))
-
-    lines = confirm.check_proofs(CFG, directory, wh=Wh(None), cube=None)
-
-    assert len(lines) == 2
-    assert lines[0].startswith(f"{path.name}: the proof returns")
-    assert lines[1].startswith("nobody__cube_only.sql: names no comparison of v")
-
-
 def test_a_cells_refusal_names_each_open_cell_and_why(tmp_path, monkeypatch, capsys):
     # Cell Y holds no open group; cell X's proven group links.
     cell = CELLS_RUN["diff_cells"][0]

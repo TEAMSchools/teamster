@@ -1099,26 +1099,6 @@ class RowSides:
     columns: list[str]
 
 
-def current_row_sides(
-    cfg: ViewConfig, comparison: Comparison, *, cube: Cube, schools: set[str]
-) -> RowSides:
-    """The comparison's row SQL on today's tables, with no time travel.
-
-    For a dry run that checks a proof still compiles against the tables as they
-    are now; never for counting rows, which `row_sides` reads at the run's
-    moment.
-    """
-    if comparison.rows is None:
-        raise Refusal(f"comparison {comparison.id!r} has no rows")
-    cube_sql = _cube_sql(cfg, cube, row_query(cfg.view, comparison), schools, rows=True)
-    return RowSides(
-        cube=AsOf(cube_sql, frozenset(), frozenset()),
-        dashboard=AsOf(dashboard_rows_sql(cfg, comparison), frozenset(), frozenset()),
-        cube_rows_sql=cube_sql,
-        columns=_unique(p.cube for p in _row_pairs(comparison)),
-    )
-
-
 def row_sides(
     cfg: ViewConfig,
     comparison: Comparison,
@@ -1609,8 +1589,8 @@ def run(
             if _proof_is_old(comparison.proof.proven_at, now):
                 print(
                     f"Warning: the proof for {comparison.id} is more than 7 days "
-                    "old. `run` never reads the workbook, so run `prove --check` "
-                    "to catch an edit since."
+                    "old. `run` never reads the workbook, so re-prove to catch an "
+                    "edit since."
                 )
 
     totals = _unproven_totals(comparisons)
@@ -2781,7 +2761,7 @@ def prove(
                 comparison.workbook or ""
             ).isoformat(),
             "probe_fingerprint": probe_fingerprint(cfg, comparison),
-            # `prove --check` reads a republish that changed neither this nor
+            # `workbook_check` reads a republish that changed neither this nor
             # `fingerprint` as no change to the sheet.
             "source_fingerprint": tableau.source_fingerprint(
                 twb, comparison.sheet or ""
@@ -2842,28 +2822,39 @@ def _print_failures(
         print(f"  Full list: {path}")
 
 
-def prove_check(
-    cfg: ViewConfig, *, tbl: tableau.Tableau, cube: Cube | None = None
+def workbook_check(
+    cfg: ViewConfig,
+    comparisons: list[Comparison],
+    *,
+    tbl: tableau.Tableau,
+    cube: Cube,
 ) -> list[str]:
-    """List comparisons whose sheet or Cube members changed since their proof.
+    """List the comparisons whose sheet or Cube members changed since their proof.
 
     A workbook published after the proof is downloaded once and its sheet
     compared by what the proof covers: `fingerprint` (the sheet's formulas
     and filters) and `source_fingerprint` (its datasources' connection and
-    filters). A republish that changed neither is reported and kept current.
-    A proof without `source_fingerprint` cannot rule out a datasource change,
-    so it is stale after any republish. With `cube`, a proven comparison that
-    maps a member Cube's `/meta` no longer lists is stale too.
+    filters). A republish that changed neither is printed as such and not
+    listed. A proof without `source_fingerprint` cannot rule out a datasource
+    change, so it is stale after any republish. A proven comparison that maps a
+    member Cube's `/meta` no longer lists is stale too.
+
+    Args:
+        cfg: The view's config.
+        comparisons: The comparisons to check.
+        tbl: Tableau, for each workbook's publish time and file.
+        cube: Cube, for its `/meta` members.
+
+    Returns:
+        One line per stale comparison, each ending in what to do.
     """
-    stale = []
-    if cube is not None:
-        proven = [c for c in cfg.comparisons if c.proof is not None]
-        stale += [
-            f"{line}, which Cube's model no longer has; fix the mapping and re-prove"
-            for line in missing_members(cfg, proven, cube.meta())
-        ]
+    proven = [c for c in comparisons if c.proof is not None]
+    stale = [
+        f"{line}, which Cube's model no longer has; fix the mapping and re-prove"
+        for line in missing_members(cfg, proven, cube.meta())
+    ]
     twbs: dict[str, str] = {}
-    for comparison in cfg.comparisons:
+    for comparison in comparisons:
         if not comparison.workbook:
             continue
         proof = comparison.proof
@@ -2908,10 +2899,6 @@ def prove_check(
             print(
                 f"{comparison.id}: republished {updated.isoformat()}, sheet unchanged"
             )
-    for line in stale:
-        print(line)
-    if not stale:
-        print("Every proof is current.")
     return stale
 
 

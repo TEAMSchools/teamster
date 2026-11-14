@@ -229,14 +229,11 @@ def _parser() -> argparse.ArgumentParser:
     p = sub.add_parser("prove", help="prove a probe against its sheet once")
     view_file(p)
     fact_dataset(p)
-    which = p.add_mutually_exclusive_group(required=True)
-    which.add_argument(
+    p.add_argument(
         "--comparison",
         action="append",
+        required=True,
         help="comparison id to prove; repeat it to prove several from one export",
-    )
-    which.add_argument(
-        "--check", action="store_true", help="list proofs older than their workbook"
     )
     p.add_argument(
         "--headers",
@@ -531,21 +528,6 @@ def _dispatch(args: argparse.Namespace) -> int:
         return 0
 
     # prove
-    if args.check:
-        cube = _cube(args)
-        with tableau_session() as tbl:
-            pipeline.prove_check(cfg, tbl=tbl, cube=cube)
-        rejected = confirm.check_proofs(
-            cfg,
-            confirm.proofs_dir(args.view, cfg.view),
-            wh=_warehouse(args),
-            cube=cube,
-        )
-        if rejected:
-            print("Proofs BigQuery rejects:")
-            for line in rejected:
-                print(f"- {line}")
-        return 0
     captures: dict = {}
     with tableau_session() as tbl:
         if args.headers:

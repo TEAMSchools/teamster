@@ -916,7 +916,7 @@ def test_run_warns_on_a_proof_older_than_7_days(fakes, tmp_path, capsys):
 
     out = capsys.readouterr().out
     assert "Warning: the proof for ada-region is more than 7 days old" in out
-    assert "prove --check" in out
+    assert "re-prove" in out
 
 
 def test_run_does_not_warn_on_a_recent_proof(fakes, tmp_path, capsys):
@@ -1782,52 +1782,50 @@ def test_prove_does_not_write_a_failed_proof(fakes, tmp_path, capsys):
     assert "probe" in capsys.readouterr().out
 
 
-def test_prove_check_lists_stored_proofs_bigquery_rejects(
-    fakes, tmp_path, capsys, monkeypatch
-):
-    path = _file(tmp_path)
-    directory = tmp_path / "proofs" / "v"
-    directory.mkdir(parents=True)
-    (directory / "ada-region__cube_only.sql").write_text("SELECT 1")
-    seen = []
-
-    def check(cfg, where, *, wh, cube):
-        seen.append(where)
-        return ["ada-region__cube_only.sql: BigQuery rejects it (x)"]
-
-    monkeypatch.setattr(confirm, "check_proofs", check)
-
-    assert cli.main(["prove", str(path), "--check"]) == 0
-
-    assert seen == [directory]
-    out = capsys.readouterr().out
-    assert "Proofs BigQuery rejects:" in out
-    assert "ada-region__cube_only.sql: BigQuery rejects it (x)" in out
+def _workbook_check(fakes, path, ids=None):
+    cfg = load_view_config(path)
+    chosen = [c for c in cfg.comparisons if ids is None or c.id in ids]
+    return pipeline.workbook_check(cfg, chosen, tbl=fakes.tbl, cube=fakes.cube)
 
 
-def test_prove_check_lists_stale_proofs(fakes, tmp_path, capsys):
+def test_prove_takes_no_check_flag(fakes, tmp_path, capsys):
+    assert cli.main(["prove", str(_file(tmp_path)), "--check"]) == 2
+
+
+def test_prove_requires_a_comparison(fakes, tmp_path, capsys):
+    assert cli.main(["prove", str(_file(tmp_path))]) == 2
+
+
+def test_workbook_check_lists_stale_proofs(fakes, tmp_path):
     fakes.tbl.updated = datetime(2026, 10, 25, tzinfo=timezone.utc)
 
-    assert cli.main(["prove", str(_file(tmp_path)), "--check"]) == 0
+    (line,) = _workbook_check(fakes, _file(tmp_path))
 
-    out = capsys.readouterr().out
-    assert "ada-region" in out and "re-prove" in out
-    assert fakes.signed_in == 1
+    assert line.startswith("ada-region") and "re-prove" in line
 
 
-def test_prove_check_quiet_when_current(fakes, tmp_path, capsys):
-    assert cli.main(["prove", str(_file(tmp_path)), "--check"]) == 0
-    assert "current" in capsys.readouterr().out
+def test_workbook_check_is_empty_when_current(fakes, tmp_path, capsys):
+    assert _workbook_check(fakes, _file(tmp_path)) == []
+    assert capsys.readouterr().out == ""
 
 
-def test_prove_check_lists_a_member_cube_dropped(fakes, tmp_path, capsys):
+def test_workbook_check_lists_a_member_cube_dropped(fakes, tmp_path):
     fakes.cube.dropped = {"v.regions_region_name"}
 
-    assert cli.main(["prove", str(_file(tmp_path)), "--check"]) == 0
+    (line,) = _workbook_check(fakes, _file(tmp_path))
 
-    out = capsys.readouterr().out
-    assert "ada-region" in out and "v.regions_region_name" in out
-    assert "re-prove" in out and "Every proof is current" not in out
+    assert "ada-region" in line and "v.regions_region_name" in line
+    assert "re-prove" in line
+
+
+def test_workbook_check_lists_only_the_comparisons_asked(fakes, tmp_path):
+    head, rest = YML.split("  - id: ada-region\n", 1)
+    path = _file(tmp_path, head + "  - id: first\n" + rest + "  - id: second\n" + rest)
+    fakes.tbl.updated = datetime(2026, 10, 25, tzinfo=timezone.utc)
+
+    lines = _workbook_check(fakes, path, {"first"})
+
+    assert len(lines) == 1 and lines[0].startswith("first:")
 
 
 DS_END = "        <calculation class='tableau' formula='COUNTD([row_key])' />\n      </column>\n    </datasource>"
@@ -1853,50 +1851,45 @@ def _republished(fakes, tmp_path, source=True):
     return _file(tmp_path, YML.replace(PROOF, proof))
 
 
-def test_prove_check_keeps_a_proof_when_a_republish_left_the_sheet_alone(
+def test_workbook_check_keeps_a_proof_when_a_republish_left_the_sheet_alone(
     fakes, tmp_path, capsys
 ):
     path = _republished(fakes, tmp_path)
 
-    assert cli.main(["prove", str(path), "--check"]) == 0
+    assert _workbook_check(fakes, path) == []
 
     out = capsys.readouterr().out
     assert "ada-region: republished 2026-10-25T00:00:00+00:00, sheet unchanged" in out
-    assert "Every proof is current." in out
 
 
-def test_prove_check_stales_a_proof_whose_datasource_filters_changed(
+def test_workbook_check_stales_a_proof_whose_datasource_filters_changed(
     fakes, tmp_path, capsys
 ):
     path = _republished(fakes, tmp_path)
     assert DS_END in fakes.tbl.twb
     fakes.tbl.twb = fakes.tbl.twb.replace(DS_END, DS_FILTER)
 
-    assert cli.main(["prove", str(path), "--check"]) == 0
+    (line,) = _workbook_check(fakes, path)
 
-    assert "a datasource's connection or filters changed; re-prove" in (
-        capsys.readouterr().out
-    )
+    assert "a datasource's connection or filters changed; re-prove" in line
 
 
-def test_prove_check_stales_a_proof_that_predates_the_datasource_check(
+def test_workbook_check_stales_a_proof_that_predates_the_datasource_check(
     fakes, tmp_path, capsys
 ):
     path = _republished(fakes, tmp_path, source=False)
 
-    assert cli.main(["prove", str(path), "--check"]) == 0
+    (line,) = _workbook_check(fakes, path)
 
-    assert "predates the datasource check; re-prove once" in capsys.readouterr().out
+    assert "predates the datasource check; re-prove once" in line
 
 
-def test_prove_check_stales_a_proof_whose_formulas_changed(fakes, tmp_path, capsys):
+def test_workbook_check_stales_a_proof_whose_formulas_changed(fakes, tmp_path, capsys):
     fakes.tbl.updated = datetime(2026, 10, 25, tzinfo=timezone.utc)
 
-    assert cli.main(["prove", str(_file(tmp_path)), "--check"]) == 0
+    (line,) = _workbook_check(fakes, _file(tmp_path))
 
-    assert "the sheet's formulas or filters changed; re-prove" in (
-        capsys.readouterr().out
-    )
+    assert "the sheet's formulas or filters changed; re-prove" in line
 
 
 # --- discover and usage ------------------------------------------------------
