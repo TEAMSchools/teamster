@@ -1696,7 +1696,9 @@ def run_stored(
     A proof also runs on each comparison that reconciles the same rows and
     has no proof of its own for the bucket (`siblings`). Each pair's outcome
     is kept in `progress_dir` (`progress`) as it finishes, and a later triage
-    reuses one whose proof, SQL and open items still match, running nothing.
+    reuses one whose proof and open items still match, once the comparison's
+    SQL still matches the run (`pipeline.row_sides`, compile only) and its
+    saved rows still carry the run's labels (`require_saved`).
     The rest are priced together first, and a total over a cap refuses
     before any runs; then they run one at a time. A proof that cannot run (a
     failed check, its saved rows gone, a BigQuery or Cube error, its SQL no
@@ -1738,6 +1740,19 @@ def run_stored(
                 run.fingerprints.get(comparison.id, {}),
                 [triage._open_key(g) for _, g in items],
             )
+            # A kept outcome holds only while the run's SQL and saved rows do:
+            # check both, compile only, before reusing or running anything.
+            try:
+                if prepared.schools is None:
+                    prepared.schools = network_schools(wh)
+                sides = prepared.row_sides(cfg, comparison, run, wh, cube)
+                table = require_saved(wh, cfg, run, comparison)
+            except _CANNOT_RUN as exc:
+                ran.why = f"proof {path.name} not run: {exc}"
+                continue
+            except GoogleAPIError as exc:
+                ran.why = f"proof {path.name} not run ({bigquery_said(exc)})"
+                continue
             if done in kept:
                 _from_progress(ran, kept[done])
                 reused += 1
@@ -1746,17 +1761,15 @@ def run_stored(
                 ran.why = f"proof {path.name} not run: outside --comparison"
                 continue
             try:
-                if prepared.schools is None:
-                    prepared.schools = network_schools(wh)
                 sql, literals = proof_sql(
                     wh,
                     cfg,
                     comparison,
-                    prepared.row_sides(cfg, comparison, run, wh, cube),
+                    sides,
                     proof,
                     items,
                     run.moment,
-                    table=require_saved(wh, cfg, run, comparison),
+                    table=table,
                     moved=prepared.moved,
                     students=True,
                 )

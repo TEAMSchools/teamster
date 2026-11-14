@@ -430,13 +430,14 @@ cause, do not retry around it.
    total over `--max-usd` or the daily cap refuses before any runs. Each
    finished proof's outcome is kept in `triage-progress.json` beside `run.json`,
    so a stopped `triage` started again reuses them ("reused from
-   triage-progress.json"); an edited proof, changed SQL or a changed set of open
-   items runs it again. `--comparison <id>` (repeatable) runs, traces and prints
-   only those comparisons; `triage.json` still holds every item. Re-triage a run
-   whose leads are in hand with `--no-trace`; trace again only when new items
-   appeared. The proof files are the durable record: commit them with the
-   decisions, in the validation-file commit. They hold SQL only: no values, no
-   names. A formatting-only edit to one re-opens nothing.
+   triage-progress.json"); an edited proof or a changed set of open items runs
+   it again, and SQL that no longer matches the run refuses it, as an
+   uninterrupted `triage` does. `--comparison <id>` (repeatable) runs, traces
+   and prints only those comparisons; `triage.json` still holds every item.
+   Re-triage a run whose leads are in hand with `--no-trace`; trace again only
+   when new items appeared. The proof files are the durable record: commit them
+   with the decisions, in the validation-file commit. They hold SQL only: no
+   values, no names. A formatting-only edit to one re-opens nothing.
 
    Worked example (DDI). Cube-only rows were classified through the dashboard's
    `responses` CTE, dashboard-only rows through Cube's fact:

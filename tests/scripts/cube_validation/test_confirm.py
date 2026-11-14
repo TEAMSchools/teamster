@@ -1866,3 +1866,41 @@ def test_triage_of_one_comparison_reuses_the_others_and_runs_only_its_own(
         "proof mastery__cube_only.sql not run: outside --comparison"
     )
     assert by["mastery-b"].found is not None
+
+
+def test_a_kept_outcome_is_not_reused_when_the_sql_no_longer_matches_the_run(
+    duck, tmp_path, offline, monkeypatch
+):
+    _tables(duck)
+    run, wh = _run([_group(3)]), Wh(duck)
+    _save(duck, wh, run)
+    directory, _ = _proof(tmp_path)
+    confirm.run_stored(CFG, run, directory, wh=wh, cube=None, progress_dir=tmp_path)
+
+    def changed(*a, **k):
+        raise pipeline.Refusal("the cube SQL is not the SQL the run reconciled")
+
+    monkeypatch.setattr(pipeline, "row_sides", changed)
+    (again,) = confirm.run_stored(
+        CFG, run, directory, wh=wh, cube=None, progress_dir=tmp_path
+    )
+
+    assert again.found is None
+    assert "not the SQL the run reconciled" in again.why
+
+
+def test_a_kept_outcome_is_not_reused_when_its_saved_rows_are_gone(
+    duck, tmp_path, offline
+):
+    _tables(duck)
+    run, wh = _run([_group(3)]), Wh(duck)
+    _save(duck, wh, run)
+    directory, _ = _proof(tmp_path)
+    confirm.run_stored(CFG, run, directory, wh=wh, cube=None, progress_dir=tmp_path)
+    wh.labels.clear()
+
+    (again,) = confirm.run_stored(
+        CFG, run, directory, wh=wh, cube=None, progress_dir=tmp_path
+    )
+
+    assert again.found is None and "no saved rows" in again.why
