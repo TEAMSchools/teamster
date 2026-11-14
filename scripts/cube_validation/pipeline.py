@@ -763,7 +763,7 @@ def _masked(at: AsOf, ts: datetime) -> str:
 class _Sides:
     """What a run collects across comparisons, or one comparison's slice of it.
 
-    Each comparison returns its own slice (`_compare_one`); `run` merges them
+    Each comparison returns its own slice (`_execute`); `run` merges them
     in config order and keeps each as a checkpoint (`to_json`).
     """
 
@@ -999,7 +999,59 @@ def _cube_sql(
     return drop_limit(bound) if rows else bound
 
 
-def _compare_one(
+@dataclasses.dataclass(frozen=True)
+class _CutPlan:
+    """One cut's cell queries: the dashboard's, Cube's wrapped one, and the
+    dashboard's again without its `dashboard_filters` when it has any."""
+
+    label: str
+    dash_sql: str
+    cube_sql: str
+    unfiltered_sql: str | None
+
+
+@dataclasses.dataclass
+class _Plan:
+    """Everything comparing one comparison will run, built before any of it
+    bills (`_plan_one`), so `run` can price the whole run first.
+
+    `moved` holds the answer for every table both sides' rows read, and
+    `shared` lists those tables.
+    """
+
+    cfg: ViewConfig
+    comparison: Comparison
+    fingerprints: dict[str, str]
+    cuts: list[_CutPlan]
+    rows: RowSides | None
+    moved: dict[str, bool]
+    shared: list[str]
+    students_sql: str | None
+    cube_tables: set[str]
+    live: set[str]
+
+    def queries(self) -> list[str]:
+        """Every query that bills, in the order `_execute` reads their prices:
+        each cut's dashboard, Cube and unfiltered queries, the unmatched rows,
+        the student count.
+
+        The save script's temp table cannot be dry-run before it exists, so
+        its join (`inline_unmatched`) stands in for it; the script's reads of
+        that table still run under `Warehouse.rows`' billing cap.
+        """
+        out: list[str] = []
+        for cut in self.cuts:
+            out += [cut.dash_sql, cut.cube_sql]
+            if cut.unfiltered_sql is not None:
+                out.append(cut.unfiltered_sql)
+        if self.rows is not None:
+            out.append(inline_unmatched(self.cfg, self.comparison, self.rows))
+        if self.students_sql is not None:
+            out.append(self.students_sql)
+        return out
+
+
+def _plan_one(
     cfg: ViewConfig,
     comparison: Comparison,
     *,
@@ -1008,60 +1060,61 @@ def _compare_one(
     build: Build,
     schools: set[str],
     moved: dict[str, bool],
-) -> _Sides:
-    """Compare one comparison's cells and rows, fingerprint both sides, and
-    save its unmatched rows; return its slice of the run.
+) -> _Plan:
+    """Compile, expand and fingerprint one comparison's queries; run none that
+    bills.
 
-    The fingerprints come first (`_fingerprints`), since the saved table's
-    labels carry them. The rows are reconciled in one job that also saves the
-    unmatched ones to the scratch dataset (`save_script`), labelled with the
-    view, the moment, the comparison and its `checkpoint_fingerprint`.
+    View history and `changed_between` run here, since they decide which
+    queries exist.
 
     Args:
         moved: The tables already checked for a change during the build. The
-            slice's `moved` holds the answer for every table both sides read.
+            plan's `moved` holds the answer for every table both sides read.
+
+    Raises:
+        Refusal: Both sides' rows read a table that changed during the build.
     """
-    sides = _Sides()
     dates = _date_cubes(cfg)
     dims = [d.cube for d in comparison.dims]
     ex = _Expand(cfg, cube, schools, wh)
     cube_sql, at = ex.cube_sql, ex.at
-    sides.fingerprints[comparison.id] = _fingerprints(cfg, comparison, ex, build)
-
+    fingerprints = _fingerprints(cfg, comparison, ex, build)
+    cube_tables: set[str] = set()
+    live: set[str] = set()
+    cuts: list[_CutPlan] = []
     for cut in _cuts(comparison):
         cube_at = at(cube_sql(cell_query(cfg.view, comparison, cut)), build.end)
         dash_at = at(probe_sql(cfg, comparison, cut), build.start)
-        sides.cube_tables |= cube_at.tables
-        sides.live |= cube_at.live | dash_at.live
-        wrapped = wrap_cube(cube_at.sql, cfg.view, dims, dates, comparison.measure)
-        label = cut_label(cut)
-        sides.cell_sql.setdefault(comparison.id, {})[label] = [dash_at.sql, wrapped]
-        sides.cell_sql_usd.setdefault(comparison.id, {})[label] = [
-            wh.estimate(dash_at.sql),
-            wh.estimate(wrapped),
-        ]
-        cube_rows = wh.rows(wrapped)
-        dash_rows = wh.rows(dash_at.sql)
+        cube_tables |= cube_at.tables
+        live |= cube_at.live | dash_at.live
         unfiltered = None
         if comparison.dashboard_filters:
             # The probe again without them, to name the cells they drop.
-            unfiltered = wh.rows(
-                at(probe_sql(cfg, comparison, cut, with_filters=False), build.start).sql
+            unfiltered = at(
+                probe_sql(cfg, comparison, cut, with_filters=False), build.start
+            ).sql
+        cuts.append(
+            _CutPlan(
+                cut_label(cut),
+                dash_at.sql,
+                wrap_cube(cube_at.sql, cfg.view, dims, dates, comparison.measure),
+                unfiltered,
             )
-        sides.cells += _cells(
-            comparison, cut, dash_rows, cube_rows, comparison.decimals or 0, unfiltered
         )
 
+    rows, students_sql = None, None
+    shared: list[str] = []
+    slice_moved: dict[str, bool] = {}
     if comparison.rows is not None:
         cube_at = at(cube_sql(row_query(cfg.view, comparison), rows=True), build.end)
         dash_at = at(dashboard_rows_sql(cfg, comparison), build.start)
-        sides.cube_tables |= cube_at.tables
-        sides.live |= cube_at.live | dash_at.live
+        cube_tables |= cube_at.tables
+        live |= cube_at.live | dash_at.live
         shared = sorted(cube_at.tables & dash_at.tables)
         unknown = [t for t in shared if t not in moved]
         changed = set(changed_between(wh, unknown, build.start, build.end))
-        sides.moved = {t: moved.get(t, t in changed) for t in shared}
-        if both_moved := [t for t in shared if sides.moved[t]]:
+        slice_moved = {t: moved.get(t, t in changed) for t in shared}
+        if both_moved := [t for t in shared if slice_moved[t]]:
             raise Refusal(
                 f"comparison {comparison.id!r}: both sides read "
                 f"{', '.join(both_moved)}, which changed during the build; BigQuery "
@@ -1070,33 +1123,12 @@ def _compare_one(
             )
         # Unchanged between start and end, so the Cube side reads its shared
         # tables at the start: BigQuery refuses 1 table at 2 moments.
-        row_sql = RowSides(
+        rows = RowSides(
             cube=cube_at,
             dashboard=dash_at,
             cube_rows_sql=repin(cube_at.sql, shared, build.end, build.start),
             columns=_unique(p.cube for p in _row_pairs(comparison)),
         )
-        flags = cut_flags(comparison) or []
-        result = wh.script(
-            save_script(
-                cfg,
-                comparison,
-                row_sql,
-                saved.table_sql(saved.table_id(cfg.view, build, comparison.id)),
-                saved.labels(
-                    cfg.view,
-                    build,
-                    comparison.id,
-                    checkpoint_fingerprint(
-                        comparison, sides.fingerprints[comparison.id]
-                    ),
-                ),
-            )
-        )
-        sides.groups += compare.groups_from(
-            comparison.id, result, [label for label, _, _ in flags]
-        )
-        sides.sql[comparison.id] = (dash_at.sql, cube_at.sql)
         # Only a student column counts students; without one in the grain,
         # every cell's `n_students` stays None, so none is an example cell.
         student = next(
@@ -1108,15 +1140,93 @@ def _compare_one(
             None,
         )
         if student:
-            cuts = _cuts(comparison)
-            count_sql = _students_sql(cfg, comparison, student)
-            sides.students[comparison.id] = {
-                (
-                    cut_label(cuts[int(r["__cut"])]),
-                    tuple(_key(r[d.dashboard]) for d in comparison.dims),
-                ): r["n_students"]
-                for r in wh.rows(at(count_sql, build.start).sql)
-            }
+            students_sql = at(_students_sql(cfg, comparison, student), build.start).sql
+    return _Plan(
+        cfg=cfg,
+        comparison=comparison,
+        fingerprints=fingerprints,
+        cuts=cuts,
+        rows=rows,
+        moved=slice_moved,
+        shared=shared,
+        students_sql=students_sql,
+        cube_tables=cube_tables,
+        live=live,
+    )
+
+
+def _execute(
+    cfg: ViewConfig,
+    plan: _Plan,
+    *,
+    wh: Warehouse,
+    build: Build,
+    prices: list[float],
+) -> _Sides:
+    """Run a plan's queries; return its comparison's slice of the run.
+
+    The rows are reconciled in one job that also saves the unmatched ones to
+    the scratch dataset (`save_script`), labelled with the view, the moment,
+    the comparison and its `checkpoint_fingerprint`.
+
+    Args:
+        prices: Each of `plan.queries()`'s dry-run prices, in its order; a
+            cut's 2 cell prices are kept as its `cell_sql_usd`.
+    """
+    comparison = plan.comparison
+    sides = _Sides(
+        cube_tables=set(plan.cube_tables), live=set(plan.live), moved=dict(plan.moved)
+    )
+    sides.fingerprints[comparison.id] = plan.fingerprints
+    price = iter(prices)
+    for cut, step in zip(_cuts(comparison), plan.cuts, strict=True):
+        sides.cell_sql.setdefault(comparison.id, {})[step.label] = [
+            step.dash_sql,
+            step.cube_sql,
+        ]
+        sides.cell_sql_usd.setdefault(comparison.id, {})[step.label] = [
+            next(price),
+            next(price),
+        ]
+        cube_rows = wh.rows(step.cube_sql)
+        dash_rows = wh.rows(step.dash_sql)
+        unfiltered = None
+        if step.unfiltered_sql is not None:
+            next(price)
+            unfiltered = wh.rows(step.unfiltered_sql)
+        sides.cells += _cells(
+            comparison, cut, dash_rows, cube_rows, comparison.decimals or 0, unfiltered
+        )
+
+    if plan.rows is not None:
+        flags = cut_flags(comparison) or []
+        result = wh.script(
+            save_script(
+                cfg,
+                comparison,
+                plan.rows,
+                saved.table_sql(saved.table_id(cfg.view, build, comparison.id)),
+                saved.labels(
+                    cfg.view,
+                    build,
+                    comparison.id,
+                    checkpoint_fingerprint(comparison, plan.fingerprints),
+                ),
+            )
+        )
+        sides.groups += compare.groups_from(
+            comparison.id, result, [label for label, _, _ in flags]
+        )
+        sides.sql[comparison.id] = (plan.rows.dashboard.sql, plan.rows.cube.sql)
+    if plan.students_sql is not None:
+        cuts = _cuts(comparison)
+        sides.students[comparison.id] = {
+            (
+                cut_label(cuts[int(r["__cut"])]),
+                tuple(_key(r[d.dashboard]) for d in comparison.dims),
+            ): r["n_students"]
+            for r in wh.rows(plan.students_sql)
+        }
     return sides
 
 
@@ -1290,17 +1400,6 @@ def _extra_sections(cells: list[Cell]) -> str:
         for c in cells
     ] or ["None."]
     return "\n".join(out) + "\n"
-
-
-def _proof_is_old(proven_at: str, now: datetime) -> bool:
-    """True when a proof is more than 7 days old, or its time is unreadable."""
-    try:
-        proven = datetime.fromisoformat(proven_at)
-    except ValueError:
-        return True
-    if proven.tzinfo is None:
-        proven = proven.replace(tzinfo=timezone.utc)
-    return now - proven > WINDOW
 
 
 def _browser_cuts(comparisons: list[Comparison]) -> list[str]:
@@ -1565,25 +1664,33 @@ def run(
     requested: datetime | None,
     max_usd: float,
     cache_root: Path,
+    tbl: tableau.Tableau,
     cube_host: str = "",
     resume: bool = False,
     restart: bool = False,
     clock: Callable[[], datetime] = _utcnow,
+    ticker: report.Ticker | None = None,
 ) -> RunResult:
     """Validate one view at one fact build and print the result.
 
     `cube_host` is printed with `cfg.fact` so the result says what it was
-    proven against. Each comparison it finishes is checkpointed in the run
-    folder; a stopped run started again skips them (`_run_folder` says when
-    it resumes). A checkpoint whose comparison entry or SQL changed is
-    compared again. `cost_usd` adds what every process spent on the run.
+    proven against. Before any query, each confirmed comparison's workbook is
+    checked against its proof (`workbook_check`). Every query a comparison
+    bills is priced before the first one runs (`_compare_all`), and `ticker`
+    prints a line as each comparison finishes. Each comparison it finishes is
+    checkpointed in the run folder; a stopped run started again skips them
+    (`_run_folder` says when it resumes). A checkpoint whose comparison entry
+    or SQL changed is compared again. `cost_usd` adds what every process spent
+    on the run.
 
     Raises:
         Refusal: A confirmed comparison has no proof, its probe changed
-            since the proof, or it lacks a key it needs; a fact in
-            `also_facts` changed during the build; or an unfinished run needs
-            `--resume` or `--restart` (`_run_folder`).
-        CostCapError: The priced queries passed `max_usd`.
+            since the proof, its workbook changed since the proof, or it lacks
+            a key it needs; a fact in `also_facts` changed during the build;
+            both sides' rows read a table that changed during the build; or an
+            unfinished run needs `--resume` or `--restart` (`_run_folder`).
+        CostCapError: The priced queries would pass `max_usd` or the day's
+            cap.
         MomentError: No usable build in the 7-day window.
         CubeRefusal: Cube's SQL would not match a raw rebuild.
     """
@@ -1619,15 +1726,18 @@ def run(
             + "; ".join(missing)
             + ". Fix each mapping, then `prove` that comparison again"
         )
+    # Every confirmed comparison, before the run folder or any query.
+    if stale := workbook_check(cfg, comparisons, tbl=tbl, cube=cube):
+        ids = [
+            c.id for c in comparisons if any(s.startswith(f"{c.id}: ") for s in stale)
+        ]
+        raise Refusal(
+            f"workbook changed since its proof: {'; '.join(stale)}; "
+            f"`prove` {', '.join(ids)} again"
+        )
     for comparison in comparisons:
         if comparison.proof:
             print(f"Proof for {comparison.id}: proven {comparison.proof.proven_at}.")
-            if _proof_is_old(comparison.proof.proven_at, now):
-                print(
-                    f"Warning: the proof for {comparison.id} is more than 7 days "
-                    "old. `run` never reads the workbook, so re-prove to catch an "
-                    "edit since."
-                )
 
     totals = _unproven_totals(comparisons)
     for line in totals:
@@ -1662,6 +1772,7 @@ def run(
                 folder=folder,
                 process=process,
                 clock=clock,
+                ticker=ticker,
             )
             dims = sorted(sides.cube_tables - {cfg.fact, *cfg.also_facts})
             changed = changed_between(wh, dims, build.start, build.end)
@@ -1747,13 +1858,20 @@ def _compare_all(
     folder: Path,
     process: str,
     clock: Callable[[], datetime],
+    ticker: report.Ticker | None = None,
 ) -> _Sides:
     """Every comparison's slice, merged in config order. Call inside
     `wh.budget`.
 
     A comparison with a checkpoint whose fingerprint still holds is taken from
-    it; the rest are compared one at a time, each checkpointed (with the spend
-    so far) as it finishes, so a stop loses at most the one in progress.
+    it. The rest are planned (`_plan_one`), every query they would bill is
+    dry-run one at a time, and the total is refused when it would pass a cap,
+    before the first billed query. They are then compared one at a time, each
+    checkpointed (with the spend so far) as it finishes, so a stop loses at
+    most the one in progress.
+
+    Raises:
+        CostCapError: The priced total would pass the run's or the day's cap.
     """
     _refuse_moved_facts(cfg, wh, build)
     schools = network_schools(wh)
@@ -1762,6 +1880,7 @@ def _compare_all(
     # or dims check scans them again.
     moved = {f: False for f in cfg.also_facts}
     slices: dict[str, _Sides] = {}
+    plans: list[_Plan] = []
     for comparison in comparisons:
         if comparison.id in kept:
             fingerprint, data = kept[comparison.id]
@@ -1779,7 +1898,7 @@ def _compare_all(
                 f"Comparison {comparison.id}: its config or SQL changed since its "
                 "saved result; comparing it again."
             )
-        one = _compare_one(
+        plan = _plan_one(
             cfg,
             comparison,
             wh=wh,
@@ -1788,16 +1907,28 @@ def _compare_all(
             schools=schools,
             moved=moved,
         )
-        moved |= one.moved
+        moved |= plan.moved
+        plans.append(plan)
+
+    prices = [[wh.estimate(sql) for sql in plan.queries()] for plan in plans]
+    total = sum(map(sum, prices))
+    print(f"Compare: {sum(map(len, prices))} queries, ${total:.2f} (dry run)")
+    wh.refuse_past_caps(total)
+
+    for plan, priced in zip(plans, prices, strict=True):
+        comparison = plan.comparison
+        one = _execute(cfg, plan, wh=wh, build=build, prices=priced)
         slices[comparison.id] = one
         checkpoints.write(
             folder,
             comparison.id,
-            checkpoint_fingerprint(comparison, one.fingerprints[comparison.id]),
+            checkpoint_fingerprint(comparison, plan.fingerprints),
             one.to_json(),
             clock(),
         )
         checkpoints.record_spend(folder, process, wh.spent)
+        if ticker is not None:
+            ticker.say("compare", comparison.id, wh.spent)
     sides = _Sides(moved={f: False for f in cfg.also_facts})
     for comparison in comparisons:
         sides.merge(slices[comparison.id])
@@ -2896,7 +3027,8 @@ def workbook_check(
         cube: Cube, for its `/meta` members.
 
     Returns:
-        One line per stale comparison, each ending in what to do.
+        One line per problem, each starting with its comparison's id and
+        ending in what to do.
     """
     proven = [c for c in comparisons if c.proof is not None]
     stale = [

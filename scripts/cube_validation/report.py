@@ -13,8 +13,9 @@ from __future__ import annotations
 
 import json
 import re
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import timezone
+from datetime import datetime, timezone
 from pathlib import Path
 
 from .compare import Gap, Group
@@ -392,6 +393,43 @@ def run_dir(root: Path, view: str, moment: Build) -> Path:
     """The folder a run of `view` at `moment` keeps its results and
     checkpoints in."""
     return root / view / run_stamp(moment)
+
+
+class Ticker:
+    """Progress lines for a long command: the clock, the time since it began,
+    the step, the comparison and the spend so far.
+
+    A line names only a step and a comparison id, never a row value, so it is
+    safe wherever the command's output goes.
+    """
+
+    def __init__(self, clock: Callable[[], datetime], started: datetime) -> None:
+        self._clock, self._started = clock, started
+
+    def say(self, step: str, comparison: str, spent: float) -> str:
+        """Print and return one progress line, flushed so a watcher sees it now.
+
+        Args:
+            step: What just finished, such as `compare`.
+            comparison: The comparison's id.
+            spent: USD spent so far.
+
+        Returns:
+            `[HH:MM:SS UTC +<elapsed>] <step> <comparison>: $<spent> spent`,
+            the elapsed time as `7m07s`, or `2h02m05s` from 1 hour.
+        """
+        now = self._clock().astimezone(timezone.utc)
+        seconds = max(0, int((now - self._started).total_seconds()))
+        hours, rest = divmod(seconds, 3600)
+        minutes, secs = divmod(rest, 60)
+        elapsed = (
+            f"{hours}h{minutes:02d}m{secs:02d}s" if hours else f"{minutes}m{secs:02d}s"
+        )
+        line = (
+            f"[{now:%H:%M:%S} UTC +{elapsed}] {step} {comparison}: ${spent:.2f} spent"
+        )
+        print(line, flush=True)
+        return line
 
 
 def save_local(run: RunResult, text: str, root: Path | None = None) -> Path:

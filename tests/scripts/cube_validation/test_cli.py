@@ -117,6 +117,8 @@ class FakeBigQuery:
         self.cost = cost
         self.changed = changed
         self.ran: list[str] = []
+        # Every dry run and run in order, as ("dry" | "run", sql).
+        self.log: list[tuple[str, str]] = []
         # The next query holding this text is refused as over its cap, once.
         self.fail_once: str | None = None
         self.probe = probe or [{"region": "Newark", "value": 0.9123}]
@@ -146,6 +148,7 @@ class FakeBigQuery:
     def query(self, sql, job_config=None):
         nbytes = int(self.cost(sql) / 6.25 * TIB)
         if job_config is not None and job_config.dry_run:
+            self.log.append(("dry", sql))
             return SimpleNamespace(total_bytes_processed=nbytes, result=lambda: [])
         limit = job_config.maximum_bytes_billed if job_config is not None else None
         failing = self.fail_once is not None and self.fail_once in sql
@@ -160,6 +163,7 @@ class FakeBigQuery:
 
             return SimpleNamespace(total_bytes_processed=0, result=refuse)
         self.ran.append(sql)
+        self.log.append(("run", sql))
         rows = self.answer(sql)
         return SimpleNamespace(
             total_bytes_processed=nbytes, total_bytes_billed=nbytes, result=lambda: rows
@@ -794,6 +798,93 @@ def test_run_max_usd_sets_the_cap(fakes, tmp_path):
     )
 
 
+def _compared(bq):
+    """The queries a comparison bills: its cells, unmatched rows and counts."""
+    return [
+        q for q in bq.ran if "AS value" in q or "-- outer" in q or "AS n_students" in q
+    ]
+
+
+def test_run_refuses_a_changed_workbook_before_any_query(fakes, tmp_path, capsys):
+    path = _republished(fakes, tmp_path)
+    fakes.tbl.updated = datetime(2026, 10, 30, tzinfo=timezone.utc)  # after the proof
+    fakes.tbl.twb = fakes.tbl.twb.replace(
+        "SUM([is_present]) / SUM([is_enrolled])", "SUM([is_present])"
+    )
+
+    assert cli.main(["run", str(path)]) == 1
+
+    err = capsys.readouterr().err
+    assert "workbook changed since its proof: ada-region: workbook published" in err
+    assert "the sheet's formulas or filters changed" in err
+    assert err.rstrip().endswith("`prove` ada-region again")
+    assert fakes.bq.ran == [] and fakes.cube.compiled_queries == []
+
+
+def test_run_prices_every_query_first_and_refuses_over_the_cap(fakes, tmp_path, capsys):
+    fakes.bq.cost = lambda sql: 2.0 if "rpt_d" in sql else 0.0
+
+    args = ["run", str(_file(tmp_path)), "--max-usd", "1", "--max-usd-per-day", "100"]
+    assert cli.main(args) == 1
+
+    assert "would pass the $1.00 cap" in capsys.readouterr().err
+    assert not _compared(fakes.bq)
+
+
+def test_run_dry_runs_every_billed_query_before_the_first_runs(fakes, tmp_path):
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+
+    kinds = [kind for kind, _ in fakes.bq.log]
+    first_billed = next(
+        i
+        for i, (kind, sql) in enumerate(fakes.bq.log)
+        if kind == "run" and sql in _compared(fakes.bq)
+    )
+    assert "dry" not in kinds[first_billed:]
+    dry = [sql for kind, sql in fakes.bq.log if kind == "dry"]
+    # 2 cuts of 2 sides, the unmatched rows and the student count.
+    assert len(dry) == 6
+    for sql in _compared(fakes.bq):
+        # The save script is priced by its join alone: its table is not made yet.
+        assert sql in dry or "CREATE TEMP TABLE" in sql
+
+
+def test_run_prints_the_priced_total_then_a_progress_line_per_comparison(
+    fakes, tmp_path, capsys
+):
+    fakes.bq.cost = lambda sql: 0.25 if "FOR SYSTEM_TIME" in sql else 0.0
+
+    args = ["run", str(_four(tmp_path)), "--max-usd", "50", "--max-usd-per-day", "50"]
+    assert cli.main(args) == 0
+
+    out = capsys.readouterr().out
+    assert "Compare: 24 queries, $6.00 (dry run)" in out
+    lines = re.findall(
+        r"\[\d\d:\d\d:\d\d UTC \+\d+m\d\ds\] compare (ada-region-\d): "
+        r"\$\d+\.\d\d spent",
+        out,
+    )
+    assert lines == [f"ada-region-{i}" for i in range(1, 5)]
+    assert out.index("(dry run)") < out.index("] compare ada-region-1:")
+    saved = json.loads(next((tmp_path / "cache").glob("v/*/run.json")).read_text())
+    ran = [s for s in fakes.bq.ran if "FOR SYSTEM_TIME" in s]
+    assert saved["cost_usd"] == pytest.approx(0.25 * len(ran), abs=0.01)
+
+
+def test_a_resumed_run_prices_only_the_comparisons_left(fakes, tmp_path, capsys):
+    path = _four(tmp_path)
+    fakes.bq.fail_once = "ada_region_3"
+    assert cli.main(["run", str(path)]) == 1
+    capsys.readouterr()
+
+    assert cli.main(["run", str(path)]) == 0
+
+    out = capsys.readouterr().out
+    assert "Compare: 12 queries" in out
+    assert "] compare ada-region-1:" not in out
+    assert "] compare ada-region-3:" in out and "] compare ada-region-4:" in out
+
+
 def test_run_names_dimensions_that_changed(fakes, tmp_path, capsys):
     fakes.bq.changed = ("dim_locations",)
 
@@ -830,9 +921,9 @@ def test_run_sends_and_names_set_scopes(fakes, tmp_path, capsys):
     assert "ada-region: v.attendance_value is set" in section
 
 
-def test_run_never_signs_in_to_tableau(fakes, tmp_path):
+def test_run_signs_in_to_tableau_once_for_its_workbook_check(fakes, tmp_path):
     assert cli.main(["run", str(_file(tmp_path))]) == 0
-    assert fakes.signed_in == 0
+    assert fakes.signed_in == 1
 
 
 def test_run_reports_cells_and_proofs(fakes, tmp_path, capsys):
@@ -927,21 +1018,6 @@ def test_run_reads_a_proof_without_a_totals_count_as_unknown(fakes, tmp_path, ca
     section = _totals_section(capsys.readouterr().out)
     assert "ada-region: totals not proven: unknown" in section
     assert "re-prove" in section
-
-
-def test_run_warns_on_a_proof_older_than_7_days(fakes, tmp_path, capsys):
-    old = PROOF.replace("2026-10-26T12:00:00+00:00", "2026-10-10T12:00:00+00:00")
-
-    assert cli.main(["run", str(_file(tmp_path, YML.replace(PROOF, old)))]) == 0
-
-    out = capsys.readouterr().out
-    assert "Warning: the proof for ada-region is more than 7 days old" in out
-    assert "re-prove" in out
-
-
-def test_run_does_not_warn_on_a_recent_proof(fakes, tmp_path, capsys):
-    assert cli.main(["run", str(_file(tmp_path))]) == 0
-    assert "Warning: the proof" not in capsys.readouterr().out
 
 
 def test_run_cells_that_differ_fail_the_dashboard_check(fakes, tmp_path, capsys):
@@ -1883,7 +1959,7 @@ def test_workbook_check_keeps_a_proof_when_a_republish_left_the_sheet_alone(
 
 
 def test_workbook_check_stales_a_proof_whose_datasource_filters_changed(
-    fakes, tmp_path, capsys
+    fakes, tmp_path
 ):
     path = _republished(fakes, tmp_path)
     assert DS_END in fakes.tbl.twb
@@ -1895,7 +1971,7 @@ def test_workbook_check_stales_a_proof_whose_datasource_filters_changed(
 
 
 def test_workbook_check_stales_a_proof_that_predates_the_datasource_check(
-    fakes, tmp_path, capsys
+    fakes, tmp_path
 ):
     path = _republished(fakes, tmp_path, source=False)
 
@@ -1904,7 +1980,7 @@ def test_workbook_check_stales_a_proof_that_predates_the_datasource_check(
     assert "predates the datasource check; re-prove once" in line
 
 
-def test_workbook_check_stales_a_proof_whose_formulas_changed(fakes, tmp_path, capsys):
+def test_workbook_check_stales_a_proof_whose_formulas_changed(fakes, tmp_path):
     fakes.tbl.updated = datetime(2026, 10, 25, tzinfo=timezone.utc)
 
     (line,) = _workbook_check(fakes, _file(tmp_path))

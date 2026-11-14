@@ -911,3 +911,26 @@ def test_a_measure_with_an_open_item_reads_differs():
         pipeline.verdict({"pass": 2, "dashboard_filtered": 1}, 0, 0, 0) == "validated"
     )
     assert pipeline.verdict({"pass": 2, "differs": 1}, 0, 0, 0) == "differs"
+
+
+def test_a_ticker_line_shows_clock_elapsed_step_and_spend(capsys):
+    t = report.Ticker(
+        lambda: datetime(2026, 11, 14, 15, 4, 5, tzinfo=timezone.utc),
+        datetime(2026, 11, 14, 13, 2, 0, tzinfo=timezone.utc),
+    )
+
+    line = t.say("sort", "c1", 0.5)
+
+    assert line == "[15:04:05 UTC +2h02m05s] sort c1: $0.50 spent"
+    assert capsys.readouterr().out == line + "\n"
+
+
+def test_a_ticker_under_an_hour_shows_minutes_and_seconds():
+    t = report.Ticker(
+        lambda: datetime(2026, 11, 14, 13, 9, 7, tzinfo=timezone.utc),
+        datetime(2026, 11, 14, 13, 2, 0, tzinfo=timezone.utc),
+    )
+
+    assert t.say("compare", "c1", 12.345) == (
+        "[13:09:07 UTC +7m07s] compare c1: $12.35 spent"
+    )

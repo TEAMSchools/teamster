@@ -441,19 +441,23 @@ def _dispatch(args: argparse.Namespace) -> int:
 
     if args.command == "run":
         cube = _cube(args)
-        pipeline.run(
-            cfg,
-            wh=_warehouse(args),
-            cube=cube,
-            now=utcnow(),
-            requested=args.moment,
-            max_usd=args.max_usd,
-            cache_root=cache_root(),
-            cube_host=_cube_host(),
-            resume=args.resume,
-            restart=args.restart,
-            clock=utcnow,
-        )
+        # Tableau, for the workbook check before any query.
+        with tableau_session() as tbl:
+            pipeline.run(
+                cfg,
+                wh=_warehouse(args),
+                cube=cube,
+                now=utcnow(),
+                requested=args.moment,
+                max_usd=args.max_usd,
+                cache_root=cache_root(),
+                tbl=tbl,
+                cube_host=_cube_host(),
+                resume=args.resume,
+                restart=args.restart,
+                clock=utcnow,
+                ticker=report.Ticker(utcnow, utcnow()),
+            )
         return 0
 
     if args.command == "triage":
