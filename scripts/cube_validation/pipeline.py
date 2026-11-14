@@ -946,7 +946,8 @@ def save_script(
 
     With `labels`, the table carries them and expires after
     `saved.SAVED_DAYS`; without (an offline test on DuckDB), it is a plain
-    table.
+    table. A comparison counting students (`rows.cell`) also gets each side's
+    distinct students per cell and cut from the same job.
     """
     args, kwargs = _reconcile_args(cfg, comparison, sides)
     return compare.reconcile_script(
@@ -955,6 +956,8 @@ def save_script(
         table=table,
         labels=labels,
         expire_days=saved.SAVED_DAYS if labels is not None else None,
+        students=comparison.rows is not None
+        and comparison.rows.cell == "count_students",
     )
 
 
@@ -1077,13 +1080,18 @@ def _compare_one(
                 ),
             )
         )
+        counted = [r for r in result if r.get("__kind", "counts") == "students"]
+        result = [
+            {k: v for k, v in r.items() if k not in ("__kind", "side", "__cut")}
+            for r in result
+            if r.get("__kind", "counts") == "counts"
+        ]
         sides.groups += compare.groups_from(comparison.id, result)
         sides.cell_rows[comparison.id] = compare.cell_rows_from(
             result, [label for label, _, _ in flags]
         )
         if comparison.rows.cell == "count_students":
             labels = [label for label, _, _ in flags]
-            args, kwargs = _reconcile_args(cfg, comparison, row_sql)
             sides.cell_students[comparison.id] = [
                 {
                     "side": r["side"],
@@ -1091,7 +1099,7 @@ def _compare_one(
                     "dims": [[p.cube, r[p.cube]] for p in group_dims(comparison)],
                     "n": r["n_students"],
                 }
-                for r in wh.rows(compare.cell_students_sql(*args, **kwargs))
+                for r in counted
             ]
         sides.sql[comparison.id] = (dash_at.sql, cube_at.sql)
         # Only a student column counts students; without one in the grain,

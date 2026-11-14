@@ -438,20 +438,31 @@ def test_run_counts_each_side_s_students_per_cell_for_a_student_count(fakes, tmp
         "      cell: count_students\n",
         1,
     )
-    # One answer serves both student counts: the cell's (`side`, the Cube
-    # name) and the example cells' (the dashboard name).
-    fakes.bq.students = [
-        {"side": "c", "__cut": 1, "regions_region_name": "Miami",
-         "region": "Miami", "n_students": 3},
-        {"side": "d", "__cut": 1, "regions_region_name": "Miami",
-         "region": "Miami", "n_students": 2},
+    students = [
+        {"__kind": "students", "side": "c", "__cut": 1,
+         "regions_region_name": "Miami", "n_students": 3},
+        {"__kind": "students", "side": "d", "__cut": 1,
+         "regions_region_name": "Miami", "n_students": 2},
     ]  # fmt: skip
+    real = fakes.bq.answer
+
+    def answer(sql):
+        if "-- outer" in sql and "'students'" in sql:
+            counts = [
+                {**r, "__kind": "counts", "side": None, "__cut": None}
+                for r in RECONCILE_ROWS
+            ]
+            return counts + students
+        return real(sql)
+
+    fakes.bq.answer = answer
 
     assert cli.main(["run", str(_file(tmp_path, text))]) == 0
 
     (saved,) = (tmp_path / "cache" / "v").glob("*/run.json")
+    data = json.loads(saved.read_text())
     miami = '{"Region": "Miami"}'
-    assert json.loads(saved.read_text())["cell_students"] == {
+    assert data["cell_students"] == {
         "ada-region": [
             {"side": "c", "cut": miami,
              "dims": [["regions_region_name", "Miami"]], "n": 3},
@@ -459,11 +470,12 @@ def test_run_counts_each_side_s_students_per_cell_for_a_student_count(fakes, tmp
              "dims": [["regions_region_name", "Miami"]], "n": 2},
         ]
     }  # fmt: skip
-    (count,) = [s for s in fakes.bq.ran if "UNION ALL" in s and "'c' AS side" in s]
-    selects = re.findall(r"SELECT '(?:c|d)' AS side, (.*?) FROM joined", count)
-    assert selects and all(
-        s.endswith("COUNT(DISTINCT __student) AS n_students") for s in selects
-    )
+    # The counts come from the reconcile's own job: no second scan of both sides.
+    (script,) = _outer(fakes.bq)
+    assert "COUNT(DISTINCT __student)" in script and "'students'" in script
+    assert not [s for s in fakes.bq.ran if "FROM joined WHERE __cin" in s]
+    # The students rows never reach the groups.
+    assert {g["comparison_id"] for g in data["applied"]["open"]} <= {"ada-region"}
 
 
 def test_run_saves_each_comparison_s_unmatched_rows_to_a_labelled_table(

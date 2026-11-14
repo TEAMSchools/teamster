@@ -292,6 +292,7 @@ def _saved_joined(
         filters,
         keys=True,
         extra=_cut_extras(cuts, filters)
+        + _cell_labels(group_by)
         + [f"c.{p.cube} AS __gc{i}" for i, p in enumerate(rows.grain)]
         + [f"d.{p.dashboard} AS __gd{i}" for i, p in enumerate(rows.grain)],
         moved=True,
@@ -338,6 +339,7 @@ def reconcile_script(
     table: str,
     labels: dict[str, str] | None = None,
     expire_days: int | None = None,
+    students: bool = False,
 ) -> list[str]:
     """The reconcile as 3 statements of one job: it saves the unmatched rows to
     `table` and returns `reconcile_sql`'s counts.
@@ -349,6 +351,10 @@ def reconcile_script(
         table: The saved table, as SQL names it; replaced if it exists.
         labels: The table's labels; each value must be one BigQuery takes.
         expire_days: Days until the table expires on its own.
+        students: Also return `cell_students_sql`'s counts from the same join:
+            every row then carries `__kind` (`counts` or `students`), with
+            `side` and `__cut` set on the `students` rows and the counts'
+            columns NULL there.
 
     Returns:
         The statements: the join into `__joined`, the saved table
@@ -376,11 +382,60 @@ def reconcile_script(
     head = f"CREATE OR REPLACE TABLE {table}"
     if options:
         head += "\nOPTIONS(" + ", ".join(options) + ")"
+    counts = _outer_sql(rows, group_names, filters, cuts, "__joined")
+    if students:
+        counts = _with_students(counts, rows, group_by, group_names, filters, cuts)
     return [
         f"CREATE TEMP TABLE __joined AS\n{ctes}\nSELECT * FROM joined",
         f"{head}\nAS {_saved_select(rows, group_by, cuts, '__joined')}",
-        _outer_sql(rows, group_names, filters, cuts, "__joined"),
+        counts,
     ]
+
+
+def _with_students(
+    counts: str,
+    rows: RowSpec,
+    group_by: list[ColumnPair],
+    group_names: list[str],
+    filters: Sequence[tuple[str, str]],
+    cuts: Sequence[tuple[str, str]],
+) -> str:
+    """The counts (`_outer_sql`) and each side's distinct students per cell and
+    cut over `__joined`, as one result told apart by `__kind`."""
+    stats = _stat_names(rows, cuts)
+    branches = [
+        # trunk-ignore(bandit/B608): identifiers are validated in config.py; no values are interpolated
+        f"SELECT 'counts' AS __kind, o.*, CAST(NULL AS STRING) AS side, "
+        f"CAST(NULL AS INT64) AS __cut FROM (\n{counts}\n) AS o"
+    ]
+    for side, j, where, labels, group in _student_branches(group_by, filters, cuts):
+        cell = dict(labels)
+        columns = (
+            ["'students'", "NULL"]
+            + [cell.get(name, "NULL") for name in group_names]
+            + ["NULL", "COUNT(DISTINCT __student)"]
+            + ["NULL"] * len(stats)
+            + [f"'{side}'", str(j)]
+        )
+        branches.append(
+            # trunk-ignore(bandit/B608): identifiers are validated in config.py; no values are interpolated
+            f"SELECT {', '.join(columns)} FROM __joined WHERE {where}{group}"
+        )
+    return "\nUNION ALL\n".join(branches)
+
+
+def _stat_names(rows: RowSpec, cuts: Sequence[tuple[str, str]]) -> list[str]:
+    """The per-side stat columns `_outer_sql` returns, in its order."""
+    names = []
+    for prefix in ["", *(f"k{j}_" for j in range(len(cuts)))]:
+        for side in ("c", "d"):
+            names.append(f"{_STATS}{prefix}{side}_rows")
+            for i in range(len(rows.values)):
+                names += [
+                    f"{_STATS}{prefix}{side}_n{i}",
+                    f"{_STATS}{prefix}{side}_sum{i}",
+                ]
+    return names
 
 
 def unmatched_rows_sql(
@@ -442,11 +497,38 @@ def cell_students_sql(
         rows,
         group_by,
         filters,
-        extra=_cut_extras(cuts, filters)
-        + [f"{_label(f'c.{p.cube}')} AS __cl_{p.cube}" for p in group_by]
-        + [f"{_label(f'd.{p.dashboard}')} AS __dl_{p.cube}" for p in group_by],
+        extra=_cut_extras(cuts, filters) + _cell_labels(group_by),
     )
     branches = []
+    for side, j, where, labels, group in _student_branches(group_by, filters, cuts):
+        columns = [f"'{side}' AS side", f"{j} AS __cut"]
+        columns += [f"{label} AS {cube}" for cube, label in labels]
+        columns.append("COUNT(DISTINCT __student) AS n_students")
+        branches.append(
+            # trunk-ignore(bandit/B608): identifiers are validated in config.py; row SQL comes from Cube's compiled query
+            f"SELECT {', '.join(columns)} FROM joined WHERE {where}{group}"
+        )
+    return ctes + "\n" + "\nUNION ALL\n".join(branches)
+
+
+def _cell_labels(group_by: list[ColumnPair]) -> list[str]:
+    """`joined`'s per-side cell labels: each group-by column as Cube labels it
+    (`__cl_<column>`) and as the dashboard does (`__dl_<column>`)."""
+    return [f"{_label(f'c.{p.cube}')} AS __cl_{p.cube}" for p in group_by] + [
+        f"{_label(f'd.{p.dashboard}')} AS __dl_{p.cube}" for p in group_by
+    ]
+
+
+def _student_branches(
+    group_by: list[ColumnPair],
+    filters: Sequence[tuple[str, str]],
+    cuts: Sequence[tuple[str, str]],
+) -> list[tuple[str, int, str, list[tuple[str, str]], str]]:
+    """Per side and cut: the side, the cut index, the rows it keeps (a WHERE
+    over `joined`'s columns), its cell columns (`cube` name, label column) and
+    its GROUP BY. Each side's rows count in that side's own cell, and the
+    dashboard counts only the rows its filters keep."""
+    out = []
     for j in range(len(cuts) or 1):
         for side in ("c", "d"):
             keep = [f"__{side}in IS NOT NULL"]
@@ -454,21 +536,10 @@ def cell_students_sql(
                 keep.append("__dkeep")
             if cuts:
                 keep.append(f"__{side}k{j}")
-            columns = [f"__{side}l_{p.cube} AS {p.cube}" for p in group_by]
-            select = ", ".join(
-                [f"'{side}' AS side", f"{j} AS __cut", *columns]
-                + ["COUNT(DISTINCT __student) AS n_students"]
-            )
-            group = (
-                " GROUP BY " + ", ".join(f"__{side}l_{p.cube}" for p in group_by)
-                if group_by
-                else ""
-            )
-            branches.append(
-                # trunk-ignore(bandit/B608): identifiers are validated in config.py; row SQL comes from Cube's compiled query
-                f"SELECT {select} FROM joined WHERE {' AND '.join(keep)}{group}"
-            )
-    return ctes + "\n" + "\nUNION ALL\n".join(branches)
+            labels = [(p.cube, f"__{side}l_{p.cube}") for p in group_by]
+            group = " GROUP BY " + ", ".join(e for _, e in labels) if group_by else ""
+            out.append((side, j, " AND ".join(keep), labels, group))
+    return out
 
 
 def _joined(

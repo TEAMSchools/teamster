@@ -412,6 +412,31 @@ def test_unmatched_rows_inline_are_the_saved_rows(duck):
     assert inline == duck.rows("SELECT * FROM saved_t ORDER BY __row")
 
 
+def test_the_save_script_also_counts_students_per_cell_in_the_same_job(duck):
+    _save_tables(duck)
+    *setup, last = reconcile_script(*SAVE_ARGS, table="saved_t", students=True)
+    for statement in setup:
+        duck.rows(statement)
+
+    got = duck.rows(last)
+
+    counts = [
+        {k: v for k, v in r.items() if k not in ("__kind", "side", "__cut")}
+        for r in got
+        if r["__kind"] == "counts"
+    ]
+    students = [
+        (r["side"], r["__cut"], r["school"], r["n_students"])
+        for r in got
+        if r["__kind"] == "students"
+    ]
+    assert counts == duck.rows(reconcile_sql(*SAVE_ARGS))
+    assert sorted(students) == sorted(
+        (r["side"], r["__cut"], r["school"], r["n_students"])
+        for r in duck.rows(cell_students_sql(*SAVE_ARGS))
+    )
+
+
 def test_cell_students_count_each_student_once_per_side_and_cell(duck):
     # Synthetic: student 1 holds 2 Cube rows in X; student 3 is the dashboard's
     # alone, in Y.
