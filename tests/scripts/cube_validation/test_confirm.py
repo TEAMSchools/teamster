@@ -1137,38 +1137,70 @@ BY_GRADE = replace(
 )
 
 
-def test_a_row_each_side_files_under_another_cut_counts_in_each_side_s_cell(duck):
-    # Saved rows: Cube files student 1 under Grade 5, the dashboard under 6.
+def _prove_saved(duck, bucket, rows, items):
+    """Run a proof that gives every row C1 over hand-made saved rows of
+    BY_GRADE: (row, student, Cube's school, the dashboard's or None, moved,
+    Cube's and the dashboard's flags for Grade 5 and Grade 6)."""
     duck.table(
         "saved_t",
-        "bucket VARCHAR, __row BIGINT, abbreviation VARCHAR, "
+        "bucket VARCHAR, __row BIGINT, abbreviation VARCHAR, __moved BOOLEAN, "
         "__d_abbreviation VARCHAR, __gc0 BIGINT, __gc1 VARCHAR, __gd0 BIGINT, "
         "__gd1 VARCHAR, __rn BIGINT, __ck0 BOOLEAN, __dk0 BOOLEAN, "
         "__ck1 BOOLEAN, __dk1 BOOLEAN",
-        [("dims_differ", 7, "X", "X", 1, "a", 1, "a", 1, True, False, False,
-          True)],
+        [(bucket, row, school, moved, dash, student, "a", student, "a", 1, *flags)
+         for row, student, school, dash, moved, flags in rows],
     )  # fmt: skip
-    group = Group("mastery", (("abbreviation", "X"), ("d:abbreviation", "X")),
-                  "dims_differ", 1, 1)  # fmt: skip
     proof = confirm.Proof(
-        Path("p.sql"), "mastery", "dims_differ",
-        {"C1": ("dashboard", "the dashboard files it under another grade")},
+        Path("p.sql"), "mastery", bucket,
+        {"C1": ("dashboard", "the dashboard files it elsewhere")},
         "SELECT u.__row, 'C1' AS cause FROM {unmatched} AS u", {},
     )  # fmt: skip
-    ctes, select = confirm.unmatched_sql(
-        BY_GRADE, "dims_differ", [("G1", group)], "saved_t"
-    )
-
+    ctes, select = confirm.unmatched_sql(BY_GRADE, bucket, items, "saved_t")
     rows = duck.rows(
         confirm.proof_query(
             ctes, select, proof.body, {"C1"},
-            confirm._student_count(BY_GRADE, "dims_differ"),
+            confirm._student_count(BY_GRADE, bucket),
         )
+    )  # fmt: skip
+    counts = {r["item_key"]: r["n"] for r in rows if r["__kind"] == "count"}
+    return counts, confirm.cause_students(rows, proof, BY_GRADE)
+
+
+def test_a_row_each_side_files_under_another_cut_counts_in_each_side_s_cell(duck):
+    # Cube files student 1 under Grade 5, the dashboard under 6.
+    group = Group("mastery", (("abbreviation", "X"), ("d:abbreviation", "X")),
+                  "dims_differ", 1, 1)  # fmt: skip
+
+    _, found = _prove_saved(
+        duck, "dims_differ", [(7, 1, "X", "X", True, (True, False, False, True))],
+        [("G1", group)],
     )  # fmt: skip
 
     grade_5, grade_6 = [label for label, _, _ in pipeline.cut_flags(BY_GRADE)]
-    found = confirm.cause_students(rows, proof, BY_GRADE)
     assert sorted((e["cut"], e["n"]) for e in found) == [(grade_5, 1), (grade_6, 1)]
+
+
+def test_a_value_differing_row_in_another_cell_is_its_own_group_and_counts_twice(
+    duck,
+):
+    # Student 1's value differs and the dashboard files it under school Y;
+    # student 2's value differs in the same cell on both sides.
+    same = Group("mastery", (("abbreviation", "X"),), "value_differs", 1, 1)
+    moved = Group("mastery", (("abbreviation", "X"), ("d:abbreviation", "Y")),
+                  "value_differs", 1, 1)  # fmt: skip
+    in_5 = (True, True, False, False)
+
+    counts, found = _prove_saved(
+        duck, "value_differs",
+        [(7, 1, "X", "Y", True, in_5), (8, 2, "X", None, None, in_5)],
+        # The group of the same cell first: a moved row must not land in it.
+        [("SAME", same), ("MOVED", moved)],
+    )  # fmt: skip
+
+    assert counts == {"SAME": 1, "MOVED": 1}
+    grade_5, _ = [label for label, _, _ in pipeline.cut_flags(BY_GRADE)]
+    assert sorted((e["dims"][0][1], e["n"]) for e in found) == [("X", 2), ("Y", 1)]
+    assert {e["cut"] for e in found} == {grade_5}
 
 
 def test_kept_counts_take_the_larger_of_2_buckets_proofs_on_one_cell():

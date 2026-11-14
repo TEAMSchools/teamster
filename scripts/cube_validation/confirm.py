@@ -53,6 +53,8 @@ from .trace import TIMEOUT_S, TRACED, _failure
 # The buckets a stored proof classifies: the one-sided rows the trace leads on,
 # and rows both sides hold whose values differ.
 PROVABLE = (*TRACED, "value_differs", "dims_differ")
+# The buckets of rows both sides hold, which each side may file in its own cell.
+MOVABLE = ("value_differs", "dims_differ")
 
 PLACEHOLDER = "{unmatched}"
 # Enough of a BigQuery message to name the table and the reason.
@@ -688,12 +690,18 @@ def unmatched_sql(
     whens = []
     for item_id, g in items:
         nulls = set(g.nulls)
-        test = " AND ".join(
+        tests = [
             f"{_joined_column(column)} IS NULL"
             if column in nulls
             else f"{_joined_column(column)} = {pipeline._lit(value)}"
             for column, value in g.dims
-        )
+        ]
+        if dims:
+            # A row each side files in another cell belongs only to a group
+            # with the dashboard's cell (`d:` dims), whatever its own dims.
+            moved = any(c.startswith(compare.DASH_PREFIX) for c, _ in g.dims)
+            tests.append(f"COALESCE({compare._MOVED}, FALSE) = {str(moved).upper()}")
+        test = " AND ".join(tests)
         whens.append(f"WHEN {test or 'TRUE'} THEN {pipeline._lit(item_id)}")
     key = f"CASE {' '.join(whens)} END" if whens else "CAST(NULL AS STRING)"
     ctes = f"WITH __f AS (\n{bucket_rows_sql(comparison, bucket, source)}\n)"
@@ -713,13 +721,14 @@ def bucket_rows_sql(comparison: Comparison, bucket: str, source: str) -> str:
     """The bucket's saved rows with every column a proof or item reads.
 
     `source` holds `compare.reconcile_script`'s saved rows. Returns
-    `unmatched_sql`'s columns but `item_key`, plus `__d_<column>` per group-by
-    column (the dashboard's cell, which a `dims_differ` group names) and each
-    cut's flag (`__cut<j>`). The grain and the cut flags are read on the side
-    holding the row: the dashboard's for a `dashboard_only` row, else Cube's (a
-    value-differing row is on both sides; Cube types its grain). A
-    `dims_differ` row adds the dashboard's cut flags (`__dcut<j>`): each side
-    may file it under another cut.
+    `unmatched_sql`'s columns but `item_key`, plus, with group-by columns,
+    `__moved` and `__d_<column>` per column (the dashboard's cell of a row
+    each side files in another cell, which its group names as `d:` dims), and
+    each cut's flag (`__cut<j>`). The grain and the cut flags are read on the
+    side holding the row: the dashboard's for a `dashboard_only` row, else
+    Cube's (a value-differing row is on both sides; Cube types its grain). A
+    row both sides hold adds the dashboard's cut flags (`__dcut<j>`): each
+    side may file it under another cut.
     """
     if comparison.rows is None:
         raise pipeline.Refusal(f"comparison {comparison.id!r} has no rows to prove")
@@ -733,13 +742,14 @@ def bucket_rows_sql(comparison: Comparison, bucket: str, source: str) -> str:
         "__row",
         f"'{held}' AS side",
         *(p.cube for p in dims),
+        *([compare._MOVED] if dims else []),
         *(f"__d_{p.cube}" for p in dims),
         *(f"__g{side}{i} AS {p.cube}" for i, p in enumerate(comparison.rows.grain)),
         "__rn",
         *(f"__{side}k{j} AS __cut{j}" for j in range(len(flags))),
         *(
             f"__dk{j} AS __dcut{j}"
-            for j in range(len(flags) if bucket == "dims_differ" else 0)
+            for j in range(len(flags) if bucket in MOVABLE else 0)
         ),
     ]
     # trunk-ignore(bandit/B608): identifiers are validated in config.py; the bucket is checked above
@@ -758,9 +768,10 @@ class StudentCount:
     """What `proof_query` needs to count a cause's students per cell and cut.
 
     The rows are `unmatched_sql`'s `__f` (`bucket_rows_sql`); `student` is the
-    first grain column; `dims` the cell's columns; `moved` adds each
-    `dims_differ` row to the dashboard's cell too, under the dashboard's cut
-    flags (`__dcut<j>`); `cuts` is how many `__cut<j>` flags the rows carry.
+    first grain column; `dims` the cell's columns; `moved` adds each row both
+    sides hold to the dashboard's cell too, under the dashboard's cut flags
+    (`__dcut<j>`): with dims, only a row each side files in another cell
+    (`__moved`); `cuts` is how many `__cut<j>` flags the rows carry.
     """
 
     student: str
@@ -817,19 +828,21 @@ def _with_students(
 ) -> str:
     """`proof_query` with the cause-student counts after the item counts."""
 
-    def placed(dim, flag: str = "__cut") -> str:
+    def placed(dim, flag: str = "__cut", where: str = "") -> str:
         cols = ", ".join(f"CAST(f.{dim(d)} AS STRING) AS {d}" for d in s.dims)
         flags = "".join(f", f.{flag}{j} AS __cut{j}" for j in range(s.cuts))
         return (
             # trunk-ignore(bandit/B608): identifiers are validated in config.py; cause literals are quoted by pipeline._lit
             f"SELECT per.cause, {cols + ', ' if cols else ''}f.{s.student} AS __st"
             f"{flags} FROM __per AS per JOIN __f AS f ON f.__row = per.__row "
-            f"WHERE per.cause IN ({allowed}) AND per.__times = 1"
+            f"WHERE per.cause IN ({allowed}) AND per.__times = 1{where}"
         )
 
     places = [placed(lambda d: d)]
     if s.moved:
-        places.append(placed(lambda d: f"__d_{d}", "__dcut"))
+        # A row in the same cell on both sides has no dashboard cell of its own.
+        moved = f" AND f.{compare._MOVED}" if s.dims else ""
+        places.append(placed(lambda d: f"__d_{d}", "__dcut", moved))
     cell = "TO_JSON_STRING(STRUCT(" + ", ".join(s.dims) + "))" if s.dims else "'{}'"
     nulls = "CAST(NULL AS STRING) AS item_key, cause, " + ", ".join(
         f"CAST(NULL AS INT64) AS {c}"
@@ -1187,7 +1200,7 @@ def _student_count(comparison: Comparison, bucket: str) -> StudentCount | None:
     return StudentCount(
         student=comparison.rows.grain[0].cube,
         dims=tuple(p.cube for p in pipeline.group_dims(comparison)),
-        moved=bucket == "dims_differ",
+        moved=bucket in MOVABLE,
         cuts=len(flags),
     )
 

@@ -36,9 +36,10 @@ def unplaceable(comparison: Comparison) -> str | None:
 
 
 def _dash(g: Group, column: str) -> str | None:
-    """The column's value on the dashboard side: a `dims_differ` group's `d:`
-    column, else its own."""
-    if g.bucket == "dims_differ":
+    """The column's value on the dashboard side: its `d:` column when the
+    group has them (the 2 sides file its rows in different cells), else its
+    own."""
+    if any(c.startswith(compare.DASH_PREFIX) for c, _ in g.dims):
         return g.value_of(f"{compare.DASH_PREFIX}{column}")
     return g.value_of(column)
 
@@ -63,7 +64,8 @@ def has_rows_in(g: Group, cell: dict) -> bool:
 
     Under the cell's cut, its Cube-side rows are more than 0 and its own
     columns agree with every cell dim, or its dashboard-side rows are more
-    than 0 and the dashboard's columns (`d:` for `dims_differ`) agree. Values
+    than 0 and the dashboard's columns (its `d:` ones when it has them)
+    agree. Values
     compare by `pipeline._key`. A group with no `cut_rows` entry for the
     cell's cut has no row there.
     """

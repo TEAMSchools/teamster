@@ -213,3 +213,61 @@ def test_a_row_under_another_cut_is_a_group_with_no_group_by(duck):
     assert g.cut_rows == ((GRADE_5, 1, 0), (GRADE_6, 0, 1))
     spec = dataclasses.replace(SPEC, dims=[])
     assert coverage.placed({"cut": GRADE_6, "dims": []}, [g], spec) == [g]
+
+
+def test_a_row_with_another_value_in_another_cell_sits_in_both_cells(duck):
+    # Student 2's value differs too, and Cube files it under Miami, the
+    # dashboard under Newark.
+    duck.table(
+        "cube_t",
+        "student_number BIGINT, grade VARCHAR, region VARCHAR, ok BOOLEAN",
+        [(2, "5", "Miami", True)],
+    )
+    duck.table(
+        "dash_t",
+        "student BIGINT, grade_d VARCHAR, region_d VARCHAR, ok_d BOOLEAN",
+        [(2, "5", "Newark", False)],
+    )
+    result = duck.rows(
+        reconcile_sql(
+            "SELECT * FROM `teamster-332318.m.cube_t`",
+            "SELECT * FROM `teamster-332318.d.dash_t`",
+            SPEC.rows,
+            SPEC.dims,
+            cuts=[
+                ("c.grade = '5'", "d.grade_d = '5'"),
+                ("c.grade = '6'", "d.grade_d = '6'"),
+            ],
+        )
+    )
+
+    (g,) = groups_from("c1", result, [GRADE_5, GRADE_6])
+    assert g.bucket == "value_differs"
+    assert g.dims == (("region", "Miami"), ("d:region", "Newark"))
+    assert coverage.placed(_cell(GRADE_5, "Miami"), [g], SPEC) == [g]
+    assert coverage.placed(_cell(GRADE_5, "Newark"), [g], SPEC) == [g]
+
+
+def test_a_row_with_another_value_in_the_same_cell_keeps_its_dims(duck):
+    duck.table(
+        "cube_t",
+        "student_number BIGINT, grade VARCHAR, region VARCHAR, ok BOOLEAN",
+        [(2, "5", "Miami", True)],
+    )
+    duck.table(
+        "dash_t",
+        "student BIGINT, grade_d VARCHAR, region_d VARCHAR, ok_d BOOLEAN",
+        [(2, "5", "Miami", False)],
+    )
+    result = duck.rows(
+        reconcile_sql(
+            "SELECT * FROM `teamster-332318.m.cube_t`",
+            "SELECT * FROM `teamster-332318.d.dash_t`",
+            SPEC.rows,
+            SPEC.dims,
+            cuts=[("c.grade = '5'", "d.grade_d = '5'")],
+        )
+    )
+
+    (g,) = groups_from("c1", result, [GRADE_5])
+    assert g.bucket == "value_differs" and g.dims == (("region", "Miami"),)
