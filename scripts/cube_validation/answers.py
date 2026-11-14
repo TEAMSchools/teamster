@@ -214,6 +214,7 @@ def example_cell(
     comparison: str,
     cause: str | None = None,
     cells: list | None = None,
+    kind: str | None = None,
 ) -> dict | None:
     """Pick the differing cell an owner can check without seeing a person.
 
@@ -225,6 +226,9 @@ def example_cell(
             question's words cannot single one out; the most wins.
         cells: `cell_causes` for the comparison; without it, `cause` is
             not used.
+        kind: Only cells of this `kind` (`formula` or `cells`, as `run` saved
+            it; a cell saved without one is `cells`), so a formula question's
+            example is a cell where every row matched.
 
     Returns:
         The cell with the largest absolute difference whose dims are all
@@ -238,6 +242,7 @@ def example_cell(
         c
         for c in run.diff_cells
         if c["comparison"] == comparison
+        and kind in (None, c.get("kind", "cells"))
         and not any(_is_identifier(column) for column, _ in c["dims"])
         and c["n_students"] is not None
         and c["n_students"] >= MASK_BELOW
@@ -309,6 +314,7 @@ def hand_check(
     now: datetime,
     cause: str | None = None,
     cells: list | None = None,
+    kind: str | None = None,
 ) -> HandCheck | None:
     """Wrap each side's saved as-of SQL to return just the example cell.
 
@@ -322,12 +328,13 @@ def hand_check(
         now: The current time, to decide whether the as-of SQL still runs.
         cause: For a cause question, its cause; see `example_cell`.
         cells: `cell_causes` for the comparison, with `cause`.
+        kind: The cell kind the example must have; see `example_cell`.
 
     Returns:
         None when there is no example cell, no saved SQL or `cell_sql_usd`
         entry for its cut, or a dim the comparison does not map.
     """
-    cell = example_cell(run, comparison, cause, cells)
+    cell = example_cell(run, comparison, cause, cells, kind)
     cmp = next((c for c in cfg.comparisons if c.id == comparison), None)
     sql = run.cell_sql.get(comparison, {}).get(cell["cut"]) if cell else None
     usd = run.cell_sql_usd.get(comparison, {}).get(cell["cut"]) if cell else None
@@ -714,7 +721,7 @@ def questions_json(
             for view, ask in q.get("asks", [])
         }
         found, none = [], {}
-        for view, cid, _ in q["comparisons"]:
+        for view, cid, kind in q["comparisons"]:
             cfg = by_cfg.get(view)
             cause = asked.get((view, cid))
             check = (
@@ -725,6 +732,8 @@ def questions_json(
                     now,
                     cause,
                     cells_of(view, cid) if cause else None,
+                    # A formula question's example is a formula cell.
+                    "formula" if kind == "formula" else None,
                 )
                 if cfg
                 else None

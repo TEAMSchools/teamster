@@ -652,15 +652,20 @@ def row_group_cause(n_groups: int) -> str:
 
 def _cell_diffs(
     cfg: ViewConfig, comparisons: list[Comparison], sides: "_Sides", cube: Cube
-) -> list[CellDiff]:
+) -> tuple[list[CellDiff], set[Cell]]:
     """Each comparison's differing cells, with candidate causes.
 
     A cell `coverage.placed` finds no group in is a formula difference: every
     row in it matched on both sides. Those cells make the comparison's
     `formula` diff; the rest, holding groups or unplaceable, its `cells` diff.
     A cell that cannot be placed is never a formula difference.
+
+    Returns:
+        The diffs, and the formula cells, which `_diff_cells` marks so later
+        steps read this split instead of placing the cells again.
     """
     out = []
+    formula_cells: set[Cell] = set()
     for comparison in comparisons:
         differing = [
             c for c in sides.cells
@@ -677,6 +682,7 @@ def _cell_diffs(
         for c in differing:
             inside = coverage.placed(_coverage_cell(c), sides.groups, comparison)
             (formula if inside == [] else cells).append(c)
+        formula_cells.update(formula)
         if cells:
             causes = candidate_causes(comparison, cells, comparison.decimals or 0, expr)
             if comparison.rows is not None:
@@ -702,7 +708,7 @@ def _cell_diffs(
                     kind="formula",
                 )
             )
-    return out
+    return out, formula_cells
 
 
 def _coverage_cell(c: Cell) -> dict:
@@ -1664,7 +1670,7 @@ def run(
         cost = checkpoints.total_spend(folder)
 
     gaps, gaps_unknown = _gaps(comparisons)
-    cell_diffs = _cell_diffs(cfg, comparisons, sides, cube)
+    cell_diffs, formula_cells = _cell_diffs(cfg, comparisons, sides, cube)
     try:
         applied = decisions.apply(
             cfg.decisions,
@@ -1716,7 +1722,7 @@ def run(
         fingerprints=sides.fingerprints,
         decisions_fingerprint=decisions.decisions_fingerprint(cfg.decisions),
         gaps_unknown=gaps_unknown,
-        diff_cells=_diff_cells(sides),
+        diff_cells=_diff_cells(sides, formula_cells),
         cell_sql=sides.cell_sql,
         cell_sql_usd=sides.cell_sql_usd,
     )
@@ -1798,8 +1804,12 @@ def _compare_all(
     return sides
 
 
-def _diff_cells(sides: _Sides) -> list[dict]:
-    """Every cell that neither passes nor is dashboard-filtered, for run.json."""
+def _diff_cells(sides: _Sides, formula: set[Cell]) -> list[dict]:
+    """Every cell that neither passes nor is dashboard-filtered, for run.json.
+
+    `kind` names the item holding it: `formula` for a cell in `formula`
+    (`_cell_diffs`), else `cells`. A run saved before it reads as `cells`.
+    """
     return [
         {
             "comparison": c.comparison,
@@ -1811,6 +1821,7 @@ def _diff_cells(sides: _Sides) -> list[dict]:
             "n_students": sides.students.get(c.comparison, {}).get(
                 (c.cut, tuple(v for _, v in c.dims))
             ),
+            "kind": "formula" if c in formula else "cells",
         }
         for c in sides.cells
         if c.verdict not in ("pass", "dashboard_filtered")

@@ -301,6 +301,20 @@ def test_two_formula_decisions_on_one_comparison_refuse():
         )  # fmt: skip
 
 
+def test_two_formula_decisions_refuse_even_with_no_formula_cells():
+    with pytest.raises(ValueError, match="both claim the formula difference"):
+        apply(
+            [_formula("f1"), _formula("f2")], [], {"enrollment": FP},
+            cell_diffs=[DIFF],
+        )  # fmt: skip
+    stale = {**FP, "cube": "old"}
+    with pytest.raises(ValueError, match="both claim the formula difference"):
+        apply(
+            [_formula("f1", stale), _formula("f2", stale)], [], {"enrollment": FP},
+            cell_diffs=[FORMULA],
+        )  # fmt: skip
+
+
 def test_no_group_decision_quiets_a_comparison_s_cell_differences():
     d = Decision("d", "enrollment", "deliberate", "r",
                  {"column": "x", "values": ["1"]}, fingerprints=dict(FP))  # fmt: skip

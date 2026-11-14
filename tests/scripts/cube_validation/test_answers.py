@@ -94,6 +94,26 @@ def test_example_cell_is_biggest_difference_with_reviewed_dims_only():
     assert example_cell(run, "enrollment")["key"] == "b"
 
 
+def test_a_formula_question_s_hand_check_names_a_formula_cell():
+    # A wide cell holding unmatched rows and a narrow one where every row
+    # matched: the formula question's example is the narrow one.
+    wide = {**_cell("wide", 10, 90), "kind": "cells"}
+    narrow = {**_cell("narrow", 10, 25), "kind": "formula"}
+    run = _owner_run([wide, narrow])
+    run.applied.quiet = []
+
+    (q,) = _questions(run)
+
+    (check,) = q["hand_checks"]
+    assert (check["dashboard"], check["cube"]) == ("10", "25")
+    assert example_cell(run, "enrollment")["key"] == "wide"
+    assert example_cell(run, "enrollment", kind="formula")["key"] == "narrow"
+    # A run saved before cells carried a kind holds no formula cell.
+    old = _run([_cell("old", 10, 12)])
+    assert example_cell(old, "enrollment", kind="formula") is None
+    assert example_cell(old, "enrollment", kind="cells")["key"] == "old"
+
+
 def test_example_cell_ties_go_to_the_lowest_key():
     run = _run([_cell("b", 10, 20), _cell("a", 10, 20)])
 

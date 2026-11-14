@@ -224,6 +224,16 @@ def apply(
             gap_claims[named] = decision
             applied.quiet_gaps.append((decision, gap))
             continue
+        if decision.formula:
+            # Refused whatever this run holds (stale SQL, no formula cells),
+            # so a file never keeps 2 claims a later run would refuse.
+            if decision.comparison in formula_claims:
+                raise ValueError(
+                    f"decisions {formula_claims[decision.comparison].id!r} and "
+                    f"{decision.id!r} both claim the formula difference of "
+                    f"{decision.comparison!r}"
+                )
+            formula_claims[decision.comparison] = decision
         current = fingerprints.get(decision.comparison) or {}
         if any(
             not decision.fingerprints.get(side)
@@ -246,13 +256,6 @@ def apply(
             if diff is None:
                 applied.no_longer_needed.append(decision)
                 continue
-            if decision.comparison in formula_claims:
-                raise ValueError(
-                    f"decisions {formula_claims[decision.comparison].id!r} and "
-                    f"{decision.id!r} both claim the formula difference of "
-                    f"{decision.comparison!r}"
-                )
-            formula_claims[decision.comparison] = decision
             applied.quiet_cells.append((decision, diff))
             continue
 

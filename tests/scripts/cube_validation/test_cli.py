@@ -2479,6 +2479,8 @@ def test_a_cell_whose_rows_all_match_is_a_formula_difference(fakes, tmp_path):
     saved = json.loads(_latest_run(tmp_path).read_text())
     (formula,) = saved["applied"]["open_cells"]
     assert (formula["kind"], formula["counts"]) == ("formula", {"differs": 2})
+    # Each saved cell says which item holds it, for link_cells and hand checks.
+    assert {c["kind"] for c in saved["diff_cells"]} == {"formula"}
     assert formula["causes"][0] == "2 differing cells hold no unmatched row"
     assert formula["causes"][-1] == (
         "Recorded definitions: dashboard present days over days; Cube sum over count"
@@ -2517,9 +2519,17 @@ def test_a_cell_that_gains_a_row_leaves_the_formula_claim(fakes, tmp_path, capsy
     ]  # fmt: skip
     assert cli.main(["run", str(path)]) == 0
 
-    applied = json.loads(_latest_run(tmp_path).read_text())["applied"]
+    saved = json.loads(_latest_run(tmp_path).read_text())
+    applied = saved["applied"]
     (cells,) = applied["open_cells"]
     assert (cells["kind"], cells["counts"]) == ("cells", {"differs": 1})
+    kinds = {(c["cut"], c["key"]): c["kind"] for c in saved["diff_cells"]}
+    assert kinds == {
+        ("{}", "regions_region_name=Camden"): "formula",
+        ("{}", "regions_region_name=Newark"): "cells",
+        ('{"Region": "Miami"}', "regions_region_name=Camden"): "formula",
+        ('{"Region": "Miami"}', "regions_region_name=Newark"): "formula",
+    }
     ((d, quiet),) = applied["quiet_cells"]
     assert d["id"] == "which-rate"
     # Camden under both cuts, Newark under the Miami cut, where it has no row.
@@ -2527,6 +2537,28 @@ def test_a_cell_that_gains_a_row_leaves_the_formula_claim(fakes, tmp_path, capsy
     items = _triage_items(path, tmp_path)
     assert items["ada-region:cells"]["suggestion"] == "investigate"
     assert "ada-region:formula" not in items
+
+
+def test_a_run_saved_before_formula_differences_reads_its_cells_as_cell_sets(
+    fakes, tmp_path
+):
+    fakes.bq.cells = [{"regions_region_name": "Newark", "value": 0.95}]
+    path = _file(tmp_path, DEFINED)
+    assert cli.main(["run", str(path)]) == 0
+    saved = json.loads(_latest_run(tmp_path).read_text())
+    (formula,) = saved["applied"]["open_cells"]
+    decision = {"id": "f", "comparison": "ada-region", "call": "deliberate",
+                "reason": "r"}  # fmt: skip
+    saved["applied"]["quiet_cells"] = [[decision, dict(formula)]]
+    for diff in (formula, saved["applied"]["quiet_cells"][0][1]):
+        del diff["kind"]
+    for cell in saved["diff_cells"]:
+        del cell["kind"]
+
+    run = pipeline._run_from_json(saved)
+
+    assert [d.kind for d in run.applied.open_cells] == ["cells"]
+    assert [d.kind for _, d in run.applied.quiet_cells] == ["cells"]
 
 
 def test_an_unplaceable_cell_is_never_a_formula_difference(fakes, tmp_path):
@@ -2559,6 +2591,8 @@ def test_run_saves_differing_cells_and_their_pinned_sql(fakes, tmp_path):
         "dashboard": None,
         "cube": 0.95,
         "n_students": 12,
+        # The Miami group's dashboard-side rows lie in it.
+        "kind": "cells",
     }
     # Each cell carries its own cut's count, not one shared across cuts.
     assert [(c["cut"], c["key"], c["n_students"]) for c in saved["diff_cells"]] == [

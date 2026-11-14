@@ -924,8 +924,9 @@ def test_cells_link_only_to_groups_under_their_cut():
 def test_a_cell_the_formula_item_holds_leaves_the_cell_set():
     # Cell X lies in a proven group. Cell Y holds no unmatched row, so the
     # run filed it in the comparison's formula item, not in the cell set.
-    cell = CELLS_RUN["diff_cells"][0]
-    y = {**cell, "key": "abbreviation=Y", "dims": [["abbreviation", "Y"]]}
+    cell = {**CELLS_RUN["diff_cells"][0], "kind": "cells"}
+    y = {**cell, "key": "abbreviation=Y", "dims": [["abbreviation", "Y"]],
+         "kind": "formula"}  # fmt: skip
     formula = CellDiff("mastery", {"differs": 1}, kind="formula")
     run = _run([_placed(3)], cells=[*CELLS_RUN["cells"], formula], diff_cells=[cell, y])
     left: dict = {}
@@ -937,12 +938,15 @@ def test_a_cell_the_formula_item_holds_leaves_the_cell_set():
 
 
 def test_a_cell_with_no_row_stays_open_when_no_formula_item_holds_it():
-    # A run saved before formula differences split from the cell set.
+    # A run saved before cells carried a kind: each reads as the cell set's,
+    # even with a formula difference beside it.
     cell = CELLS_RUN["diff_cells"][0]
     y = {**cell, "key": "abbreviation=Y", "dims": [["abbreviation", "Y"]]}
+    formula = CellDiff("mastery", {"differs": 1}, kind="formula")
+    run = _run([_placed(3)], [*CELLS_RUN["cells"], formula], [cell, y])
     left: dict = {}
 
-    cells = _cells(run=_run([_placed(3)], CELLS_RUN["cells"], [cell, y]), left=left)
+    cells = _cells(run=run, left=left)
 
     assert cells["suggestion"] == "investigate"
     ((only,),) = left.values()
