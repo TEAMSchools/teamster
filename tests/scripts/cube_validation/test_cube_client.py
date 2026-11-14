@@ -161,6 +161,31 @@ def test_second_fact_is_refused():
         )
 
 
+def test_a_listed_second_fact_passes():
+    sql = _sql() + " JOIN kipptaf_marts.fct_other o ON 1=1"
+
+    refuse_unless_safe(
+        Compiled(sql, ["A", "B", "C"], []),
+        view_fact=f"kipptaf_marts.{FACT}",
+        network_schools=ALL,
+        also_facts=["kipptaf_marts.fct_other"],
+    )
+
+
+def test_a_fact_outside_the_listed_ones_is_still_refused():
+    sql = _sql() + " JOIN kipptaf_marts.fct_other o ON 1=1 JOIN kipptaf_marts.fct_x"
+
+    with pytest.raises(CubeRefusal, match="fct_x") as info:
+        refuse_unless_safe(
+            Compiled(sql, ["A", "B", "C"], []),
+            view_fact=f"kipptaf_marts.{FACT}",
+            network_schools=ALL,
+            also_facts=["kipptaf_marts.fct_other"],
+        )
+
+    assert "fct_other'" not in str(info.value)
+
+
 def test_short_school_list_is_refused():
     with pytest.raises(CubeRefusal, match="2 of 3"):
         refuse_unless_safe(

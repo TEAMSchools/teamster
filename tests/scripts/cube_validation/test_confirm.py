@@ -1,11 +1,13 @@
 import contextlib
 import json
-from datetime import datetime, timezone
+from dataclasses import replace
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
 # trunk-ignore(pyright/reportAttributeAccessIssue): conftest.py registers cube_validation
-from cube_validation import confirm, pipeline, trace, triage
+from cube_validation import confirm, pipeline, progress, saved, trace, triage
+from cube_validation.bq import CostCapError
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.compare import CellDiff, Group
@@ -88,6 +90,8 @@ class Wh:
     def __init__(self, duck):
         self.duck = duck
         self.ran: list[tuple[str, float | None]] = []
+        # Each saved table's labels, by table id (`_save`).
+        self.labels: dict[str, dict] = {}
 
     def estimate(self, sql):
         return 0.01
@@ -106,16 +110,41 @@ class Wh:
     def budget(self, max_usd):
         yield
 
-    @contextlib.contextmanager
-    def session(self):
-        yield
+    def saved_labels(self, table_id):
+        return self.labels.get(table_id)
 
-    def freeze(self, sql, timeout_s=None):
-        """A temp table, as BigQuery's session keeps one."""
-        self.frozen = getattr(self, "frozen", []) + [sql]
-        name = f"frozen_{len(self.frozen)}"
-        self.rows(f"CREATE TEMP TABLE {name} AS {sql}", timeout_s)
-        return name
+
+def _saved_wh(duck, run, cfg=CFG):
+    """A warehouse whose scratch dataset holds the run's saved rows."""
+    wh = Wh(duck)
+    _save(duck, wh, run, cfg)
+    return wh
+
+
+def _save(duck, wh, run, cfg=CFG):
+    """What `run` leaves behind: each comparison's saved rows and labels."""
+    for c in cfg.comparisons:
+        if c.rows is None:
+            continue
+        table = saved.table_id(cfg.view, run.moment, c.id)
+        try:  # the rows the test's `row_sides` rebuilds, as `run` reconciled them
+            sides = pipeline.row_sides(
+                cfg, c, wh=wh, cube=None, build=run.moment, schools=set(),
+                fingerprints={},
+            )  # fmt: skip
+        except confirm.CubeError:  # a test whose rebuild fails: the default rows
+            sides = SIDES
+        duck.rows("DROP TABLE IF EXISTS __joined")
+        for statement in pipeline.save_script(
+            cfg, c, sides, saved.table_sql(table), None
+        ):
+            duck.rows(statement)
+        wh.labels[table] = saved.labels(
+            cfg.view,
+            run.moment,
+            c.id,
+            pipeline.checkpoint_fingerprint(c, run.fingerprints.get(c.id, {})),
+        )
 
 
 def _tables(duck, cube_rows=CUBE_ROWS, fact_rows=FACT_ROWS):
@@ -165,6 +194,7 @@ def _by_id(items):
 
 def _stored(run, items, directory, wh, cfg=CFG):
     """What every `triage` does: run the stored proofs, then sort by them."""
+    _save(wh.duck, wh, run, cfg)
     ran = confirm.run_stored(cfg, run, directory, wh=wh, cube=None)
     confirm.apply_runs(run, items, ran, cfg)
 
@@ -177,6 +207,66 @@ def _reprove(duck, tmp_path, run, body=PROOF, causes=None, wh=None):
 
 
 # --- a stored proof, re-run by every triage -----------------------------------------
+
+
+def test_a_proof_reads_the_saved_rows_not_both_sides(duck, tmp_path, offline):
+    _tables(duck)
+    wh = Wh(duck)
+
+    (item,) = _reprove(duck, tmp_path, _run([_group(3)]), wh=wh)
+
+    ((sql, _),) = wh.ran
+    assert item["suggestion"] == "cause"
+    assert "`cube_validation_scratch`" in sql and "cube_t" not in sql
+
+
+def test_a_proof_refuses_when_its_saved_rows_are_gone(duck, tmp_path, offline, capsys):
+    _tables(duck)
+    run, wh = _run([_group(3)]), Wh(duck)
+    items = _items(run)
+    directory, _ = _proof(tmp_path)
+
+    ran = confirm.run_stored(CFG, run, directory, wh=wh, cube=None)
+    confirm.apply_runs(run, items, ran, CFG)
+
+    assert items[0]["suggestion"] == "investigate" and wh.ran == []
+    assert "no saved rows for the run of" in capsys.readouterr().out
+
+
+def test_a_proof_refuses_saved_rows_labelled_for_another_run(
+    duck, tmp_path, offline, capsys
+):
+    _tables(duck)
+    run, wh = _run([_group(3)]), Wh(duck)
+    _save(duck, wh, run)
+    (table,) = wh.labels
+    wh.labels[table] = {**wh.labels[table], "fingerprint": "0" * 32}
+    items = _items(run)
+    directory, _ = _proof(tmp_path)
+
+    ran = confirm.run_stored(CFG, run, directory, wh=wh, cube=None)
+    confirm.apply_runs(run, items, ran, CFG)
+
+    assert wh.ran == []
+    assert "labelled for another run or SQL (fingerprint)" in capsys.readouterr().out
+
+
+def test_a_missing_table_past_time_travel_says_to_start_a_new_run(
+    duck, tmp_path, offline, monkeypatch
+):
+    monkeypatch.setattr(confirm, "_utcnow", lambda: BUILD.end + timedelta(days=9))
+
+    with pytest.raises(pipeline.Refusal, match="Start a new `run`"):
+        confirm.require_saved(Wh(duck), CFG, _run([_group(3)]), COMPARISON)
+
+
+def test_a_missing_table_within_time_travel_says_to_save_it_again(
+    duck, tmp_path, offline, monkeypatch
+):
+    monkeypatch.setattr(confirm, "_utcnow", lambda: BUILD.end + timedelta(hours=2))
+
+    with pytest.raises(pipeline.Refusal, match="--restart` to save them again"):
+        confirm.require_saved(Wh(duck), CFG, _run([_group(3)]), COMPARISON)
 
 
 def test_a_stored_proof_proves_every_row_of_an_item(duck, tmp_path, offline):
@@ -333,6 +423,7 @@ def test_a_cube_error_notes_the_items_and_a_comparison_is_rebuilt_once(
     duck, tmp_path, monkeypatch
 ):
     monkeypatch.setattr(confirm, "network_schools", lambda wh: set())
+    _tables(duck)
     calls = []
 
     def failing(*a, **k):
@@ -346,8 +437,13 @@ def test_a_cube_error_notes_the_items_and_a_comparison_is_rebuilt_once(
     (directory / "mastery__dashboard_only.sql").write_text(
         confirm.compose(CAUSES, PROOF)
     )
+    wh = Wh(duck)
+    _save(duck, wh, run)
+    calls.clear()
 
-    _stored(run, items, directory, Wh(duck))
+    confirm.apply_runs(
+        run, items, confirm.run_stored(CFG, run, directory, wh=wh, cube=None), CFG
+    )
 
     assert {i["suggestion"] for i in items} == {"investigate"}
     assert all("not run: Cube answered 502" in i["evidence"][0] for i in items)
@@ -366,7 +462,11 @@ def test_both_buckets_of_a_comparison_share_one_rebuild(duck, tmp_path, offline,
         confirm.compose(CAUSES, PROOF)
     )
 
-    _stored(run, _items(run), directory, Wh(duck))
+    wh = Wh(duck)
+    _save(duck, wh, run)
+    calls.clear()
+
+    confirm.run_stored(CFG, run, directory, wh=wh, cube=None)
 
     assert len(calls) == 1
 
@@ -391,7 +491,7 @@ def test_confirm_refreshes_the_decision_marks(duck, tmp_path, monkeypatch, offli
     confirm.run_confirm(
         cfg,
         tmp_path / "validation" / "v.yml",
-        wh=Wh(duck),
+        wh=_saved_wh(duck, run, cfg),
         cube=None,
         max_usd=1.0,
         cache_root=tmp_path,
@@ -565,6 +665,16 @@ def test_check_sql_lets_a_literal_meet_an_id_that_names_no_one():
         "r.contact_email = 'C1'",
         "r.student_key = 7",
         "r.powerschool_student_id = 7",
+        "r.student_number = 7",
+        "r.employee_number = 7",
+        "r.state_studentnumber = 7",
+        "r.lea_student_identifier = 7",
+        "r.teacher_number = 7",
+        "r.home_phone_number = 7",
+        "r.guardian_phone_number = 7",
+        "r.payroll_file_number = 7",
+        "r.worker_number = 7",
+        "r.badge_number = 7",
     ],
 )
 def test_check_sql_refuses_a_literal_on_a_column_that_names_a_person(where):
@@ -574,6 +684,26 @@ def test_check_sql_refuses_a_literal_on_a_column_that_names_a_person(where):
             GRAIN,
             STUDENT,
         )
+
+
+@pytest.mark.parametrize(
+    "where",
+    [
+        "r.performance_band_label_number = 3",
+        "r.module_number = 2",
+        "r.grade_level_number IN (5, 6)",
+        "r.section_number = 4",
+        "r.week_number = 12",
+    ],
+)
+def test_check_sql_lets_a_literal_meet_a_category_number(where):
+    assert confirm.check_sql(
+        f"SELECT u.__row, CASE WHEN {where} THEN 'C1' "
+        "ELSE 'UNEXPLAINED' END AS cause FROM {unmatched} AS u "
+        "LEFT JOIN `teamster-332318`.`ds`.`r` AS r ON r.student = u.lea",
+        GRAIN,
+        STUDENT,
+    ) == {"C1", "UNEXPLAINED"}
 
 
 @pytest.mark.parametrize(
@@ -658,10 +788,12 @@ def _saved(tmp_path, monkeypatch, run):
 def _confirm(duck, tmp_path, causes, **kw):
     draft = tmp_path / "draft.sql"
     draft.write_text(PROOF)
+    wh = Wh(duck)
+    _save(duck, wh, pipeline.latest_run(CFG, tmp_path)[0])
     confirm.run_confirm(
         CFG,
         tmp_path / "validation" / "v.yml",
-        wh=Wh(duck),
+        wh=wh,
         cube=None,
         max_usd=1.0,
         cache_root=tmp_path,
@@ -885,43 +1017,11 @@ def test_check_sql_warns_of_a_table_read_live(capsys):
     assert "fact" not in out and " w " not in out
 
 
-def test_a_frozen_bucket_proves_as_the_rebuilt_one_and_freezes_once(
-    duck, tmp_path, offline, monkeypatch
-):
+def test_a_proof_counts_each_cause_s_students_per_cell_and_cut(duck, tmp_path, offline):
     _tables(duck)
-    # Every proof query here is "too long", so the bucket freezes.
-    monkeypatch.setattr(trace, "MAX_QUERY_CHARS", 100)
-    proof = confirm.Proof(
-        tmp_path / "mastery__cube_only.sql", "mastery", "cube_only",
-        CAUSES, PROOF, {},
-    )  # fmt: skip
-    items = [("G1", _group(3))]
-
-    def prove(wh, frozen):
-        return confirm.run_proof(
-            wh, CFG, COMPARISON, SIDES, proof, items, BUILD, {}, frozen
-        )
-
-    rebuilt = prove(Wh(duck), None)
-    wh, frozen = Wh(duck), {}
-    first, again = prove(wh, frozen), prove(wh, frozen)
-
-    assert first == again == rebuilt
-    assert frozen == {("mastery", "cube_only"): "frozen_1"}
-    assert len(wh.frozen) == 1
-    (create, _), (read, _), (again_read, _) = wh.ran
-    assert create.startswith("CREATE TEMP TABLE frozen_1")
-    assert "FROM frozen_1" in read and "WITH c AS" not in read
-    assert "FROM frozen_1" in again_read
-
-
-@pytest.mark.parametrize("frozen", [None, {}])
-def test_a_proof_counts_each_cause_s_students_per_cell_and_cut(
-    duck, tmp_path, offline, monkeypatch, frozen
-):
-    _tables(duck)
-    if frozen is not None:
-        monkeypatch.setattr(trace, "MAX_QUERY_CHARS", 100)
+    wh = Wh(duck)
+    run = _run([_group(3)])
+    _save(duck, wh, run)
     proof = confirm.Proof(
         tmp_path / "mastery__cube_only.sql", "mastery", "cube_only",
         CAUSES, PROOF, {},
@@ -929,8 +1029,8 @@ def test_a_proof_counts_each_cause_s_students_per_cell_and_cut(
     students: list[dict] = []
 
     found = confirm.run_proof(
-        Wh(duck), CFG, COMPARISON, SIDES, proof, [("G1", _group(3))], BUILD, {},
-        frozen, students,
+        wh, CFG, COMPARISON, SIDES, proof, [("G1", _group(3))], BUILD, {},
+        students, table=confirm.require_saved(wh, CFG, run, COMPARISON),
     )  # fmt: skip
 
     assert found["G1"].counts == {"C1": 2, "C2": 1}
@@ -978,23 +1078,6 @@ def test_a_re_run_proof_replaces_its_bucket_s_old_counts_even_when_smaller():
         loaded, "m", "cube_only", [{**entry, "n": 4, "bucket": "cube_only"}]
     )
     assert loaded["cause_students"]["m"] == [{**entry, "n": 4, "bucket": "cube_only"}]
-
-
-def test_a_proof_that_fits_runs_inline_without_freezing(duck, tmp_path, offline):
-    _tables(duck)
-    proof = confirm.Proof(
-        tmp_path / "mastery__cube_only.sql", "mastery", "cube_only",
-        CAUSES, PROOF, {},
-    )  # fmt: skip
-    wh, frozen = Wh(duck), {}
-
-    confirm.run_proof(
-        wh, CFG, COMPARISON, SIDES, proof, [("G1", _group(3))], BUILD, {}, frozen
-    )
-
-    assert frozen == {} and not getattr(wh, "frozen", [])
-    ((sql, _),) = wh.ran
-    assert "WITH c AS" in sql
 
 
 def test_a_proof_classifies_value_differing_rows(duck, tmp_path, offline, monkeypatch):
@@ -1119,7 +1202,7 @@ def test_confirm_also_proves_the_comparisons_with_the_same_rows(
     confirm.run_confirm(
         CFG2,
         tmp_path / "validation" / "v.yml",
-        wh=Wh(duck),
+        wh=_saved_wh(duck, run, CFG2),
         cube=None,
         max_usd=1.0,
         cache_root=tmp_path,
@@ -1216,10 +1299,12 @@ def _draft(tmp_path, text):
 
 
 def _confirm_text(duck, tmp_path, text, wh=None):
+    wh = wh or Wh(duck)
+    _save(duck, wh, pipeline.latest_run(CFG, tmp_path)[0])
     confirm.run_confirm(
         CFG,
         tmp_path / "validation" / "v.yml",
-        wh=wh or Wh(duck),
+        wh=wh,
         cube=None,
         max_usd=1.0,
         cache_root=tmp_path,
@@ -1328,6 +1413,99 @@ def _rate_run(cube, dashboard, cell_rows=X_ROWS, groups=None):
                      "dashboard": dashboard}],
     )  # fmt: skip
     return replace(run, cell_rows={} if cell_rows is None else {"mastery": cell_rows})
+
+
+STUDENTS = replace(
+    RATE,
+    measure="count_students",
+    decimals=0,
+    rows=replace(RATE.rows, cell="count_students"),
+)
+STUDENTS_CFG = ViewConfig(view="v", fact="m.fct", comparisons=[STUDENTS])
+# Synthetic school X: 5 distinct students in Cube's cell, 3 in the dashboard's.
+CELL_X = [
+    {"side": "c", "cut": "{}", "dims": [["abbreviation", "X"]], "n": 5},
+    {"side": "d", "cut": "{}", "dims": [["abbreviation", "X"]], "n": 3},
+]
+
+
+def _students_run(cube, dashboard, students=CELL_X):
+    return replace(_rate_run(cube, dashboard), cell_students={"mastery": students})
+
+
+def test_a_student_count_cell_links_when_its_students_rebuild_both_sides(
+    tmp_path, monkeypatch
+):
+    cells = _cells(tmp_path, monkeypatch, run=_students_run(5.0, 3.0), cfg=STUDENTS_CFG)
+
+    assert cells["suggestion"] == "cause"
+
+
+def test_a_student_count_cell_its_students_do_not_rebuild_stays_open(
+    tmp_path, monkeypatch, capsys
+):
+    with pytest.raises(pipeline.Refusal, match="1 of 1 differing cells"):
+        _cells(tmp_path, monkeypatch, run=_students_run(6.0, 3.0), cfg=STUDENTS_CFG)
+
+    assert "rebuilt Cube 5, dashboard 3" in capsys.readouterr().out
+
+
+def test_a_student_count_cell_a_run_did_not_count_cannot_be_sized(
+    tmp_path, monkeypatch, capsys
+):
+    with pytest.raises(pipeline.Refusal, match="1 of 1 differing cells"):
+        _cells(tmp_path, monkeypatch, run=_students_run(5.0, 3.0, []), cfg=STUDENTS_CFG)
+
+    assert "cannot be sized" in capsys.readouterr().out
+
+
+def test_check_proofs_lists_a_proof_bigquery_rejects(tmp_path, offline, monkeypatch):
+    monkeypatch.setattr(pipeline, "current_row_sides", lambda *a, **k: SIDES)
+    directory, path = _proof(tmp_path)
+
+    class Rejecting(Wh):
+        def estimate(self, sql):
+            raise BadRequest(
+                "Unrecognized name: missing_col", errors=[{"reason": "invalidQuery"}]
+            )
+
+    assert confirm.check_proofs(CFG, directory, wh=Rejecting(None), cube=None) == [
+        f"{path.name}: BigQuery rejects it (job ?, invalidQuery: Unrecognized name: "
+        "missing_col)"
+    ]
+
+
+def test_check_proofs_dry_runs_the_proof_on_today_s_tables(
+    tmp_path, offline, monkeypatch
+):
+    monkeypatch.setattr(pipeline, "current_row_sides", lambda *a, **k: SIDES)
+    directory, _ = _proof(tmp_path)
+    seen = []
+
+    class Recording(Wh):
+        def estimate(self, sql):
+            seen.append(sql)
+            return 0.0
+
+    assert confirm.check_proofs(CFG, directory, wh=Recording(None), cube=None) == []
+    (sql,) = seen
+    assert "{unmatched}" not in sql and "FOR SYSTEM_TIME" not in sql
+
+
+def test_check_proofs_lists_a_proof_its_own_checks_refuse(
+    tmp_path, offline, monkeypatch
+):
+    monkeypatch.setattr(pipeline, "current_row_sides", lambda *a, **k: SIDES)
+    directory, path = _proof(
+        tmp_path, body=PROOF.replace("u.__row,", "u.lea, u.__row,")
+    )
+    (directory / "nobody__cube_only.sql").write_text(confirm.compose(CAUSES, PROOF))
+
+    lines = confirm.check_proofs(CFG, directory, wh=Wh(None), cube=None)
+
+    assert len(lines) == 2
+    assert lines[0].startswith(f"{path.name}: the proof returns")
+    assert lines[1].startswith("nobody__cube_only.sql: names no comparison of v")
 
 
 def test_a_rate_cell_links_when_its_rows_rebuild_both_sides(tmp_path, monkeypatch):
@@ -1518,7 +1696,7 @@ def test_cut_flags_skip_a_caption_every_cut_shares():
     assert "d.rtype" in dash
 
 
-def test_cut_flags_need_each_varying_caption_among_the_row_columns():
+def test_a_varying_cut_caption_becomes_a_row_column_on_both_sides():
     from dataclasses import replace
 
     by_region = replace(
@@ -1527,7 +1705,13 @@ def test_cut_flags_need_each_varying_caption_among_the_row_columns():
         filters={**BY_TYPE.filters, "Region": ColumnPair("region", "region")},
     )
 
-    assert pipeline.cut_flags(by_region) is None
+    flags = pipeline.cut_flags(by_region)
+
+    assert [label for label, _, _ in flags] == ['{"Region": "A"}', '{"Region": "B"}']
+    assert "c.region" in flags[1][1] and "d.region" in flags[1][2]
+    assert ColumnPair("region", "region") in pipeline._row_pairs(by_region)
+    # A caption every cut shares stays out of the rows.
+    assert ColumnPair("year", "year") not in pipeline._row_pairs(by_region)
 
 
 def test_a_rate_cell_under_a_cut_is_sized_by_that_cut_s_sums(tmp_path, monkeypatch):
@@ -1568,3 +1752,173 @@ def test_check_reproduce_tests_each_comparison_inside_exists_on_its_own():
             EXISTS_REPRODUCE.replace("= r.student_number", "= 123").format(year="2026"),
             {"student"},
         )
+
+
+# --- a triage keeps its finished proofs and prices them first -----------------------
+
+
+def test_a_second_triage_reuses_a_finished_proof_and_runs_no_query(
+    duck, tmp_path, offline
+):
+    _tables(duck)
+    run, wh = _run([_group(3)]), Wh(duck)
+    _save(duck, wh, run)
+    directory, _ = _proof(tmp_path)
+
+    first = confirm.run_stored(
+        CFG, run, directory, wh=wh, cube=None, progress_dir=tmp_path
+    )
+    again = confirm.run_stored(
+        CFG, run, directory, wh=wh, cube=None, progress_dir=tmp_path
+    )
+
+    assert len(wh.ran) == 1
+    assert again[0].found == first[0].found
+    assert again[0].students == first[0].students
+
+
+def test_an_edited_proof_or_a_new_group_runs_again(duck, tmp_path, offline):
+    _tables(duck)
+    run, wh = _run([_group(3)]), Wh(duck)
+    _save(duck, wh, run)
+    directory, _ = _proof(tmp_path)
+    confirm.run_stored(CFG, run, directory, wh=wh, cube=None, progress_dir=tmp_path)
+
+    _proof(tmp_path, causes={"C1": CAUSES["C2"], "C2": CAUSES["C1"]})
+    confirm.run_stored(CFG, run, directory, wh=wh, cube=None, progress_dir=tmp_path)
+    bigger = _run([_group(4)])
+    confirm.run_stored(CFG, bigger, directory, wh=wh, cube=None, progress_dir=tmp_path)
+
+    assert len(wh.ran) == 3
+
+
+def test_proofs_refuse_before_any_runs_when_their_estimate_passes_a_cap(
+    duck, tmp_path, offline
+):
+    class Capped(Wh):
+        def refuse_past_caps(self, usd):
+            if usd > 0.015:
+                raise CostCapError(f"these queries (${usd:.2f}) would pass the cap")
+
+    _tables(duck)
+    run, wh = _sibling_run(), Capped(duck)
+    _save(duck, wh, run, cfg=CFG2)
+    directory, _ = _proof(tmp_path)
+
+    with pytest.raises(CostCapError, match=r"\(\$0\.02\)"):
+        confirm.run_stored(CFG2, run, directory, wh=wh, cube=None)
+
+    assert wh.ran == []
+
+
+def test_a_triage_stopped_partway_keeps_the_proofs_it_finished(duck, tmp_path, offline):
+    class StopsOnSecond(Wh):
+        def rows(self, sql, timeout_s=None):
+            if len(self.ran) == 1:
+                raise CostCapError("nothing is left under --max-usd")
+            return super().rows(sql, timeout_s)
+
+    _tables(duck)
+    run, wh = _sibling_run(), StopsOnSecond(duck)
+    _save(duck, wh, run, cfg=CFG2)
+    directory, _ = _proof(tmp_path)
+
+    first = confirm.run_stored(
+        CFG2, run, directory, wh=wh, cube=None, progress_dir=tmp_path
+    )
+
+    assert [r.found is not None for r in first] == [True, False]
+    assert len(progress.load(tmp_path)) == 1
+
+    wh = Wh(duck)
+    _save(duck, wh, run, cfg=CFG2)
+    confirm.run_stored(CFG2, run, directory, wh=wh, cube=None, progress_dir=tmp_path)
+
+    assert len(wh.ran) == 1  # only the proof the first triage did not finish
+
+
+def test_triage_of_one_comparison_reuses_the_others_and_runs_only_its_own(
+    duck, tmp_path, offline
+):
+    _tables(duck)
+    run, wh = _sibling_run(), Wh(duck)
+    _save(duck, wh, run, cfg=CFG2)
+    directory, _ = _proof(tmp_path)
+    kept, empty = tmp_path / "kept", tmp_path / "empty"
+    confirm.run_stored(CFG2, run, directory, wh=wh, cube=None, progress_dir=kept)
+    wh.ran.clear()
+
+    reused = confirm.run_stored(
+        CFG2, run, directory, wh=wh, cube=None, progress_dir=kept,
+        comparisons={"mastery-b"},
+    )  # fmt: skip
+
+    assert wh.ran == [] and all(r.found is not None for r in reused)
+
+    alone = confirm.run_stored(
+        CFG2, run, directory, wh=wh, cube=None, progress_dir=empty,
+        comparisons={"mastery-b"},
+    )  # fmt: skip
+
+    assert len(wh.ran) == 1
+    by = {confirm._comparison_of(r): r for r in alone}
+    assert by["mastery"].why == (
+        "proof mastery__cube_only.sql not run: outside --comparison"
+    )
+    assert by["mastery-b"].found is not None
+
+
+def test_a_kept_outcome_is_not_reused_when_the_sql_no_longer_matches_the_run(
+    duck, tmp_path, offline, monkeypatch
+):
+    _tables(duck)
+    run, wh = _run([_group(3)]), Wh(duck)
+    _save(duck, wh, run)
+    directory, _ = _proof(tmp_path)
+    confirm.run_stored(CFG, run, directory, wh=wh, cube=None, progress_dir=tmp_path)
+
+    def changed(*a, **k):
+        raise pipeline.Refusal("the cube SQL is not the SQL the run reconciled")
+
+    monkeypatch.setattr(pipeline, "row_sides", changed)
+    (again,) = confirm.run_stored(
+        CFG, run, directory, wh=wh, cube=None, progress_dir=tmp_path
+    )
+
+    assert again.found is None
+    assert "not the SQL the run reconciled" in again.why
+
+
+def test_a_kept_outcome_is_not_reused_when_its_saved_rows_are_gone(
+    duck, tmp_path, offline
+):
+    _tables(duck)
+    run, wh = _run([_group(3)]), Wh(duck)
+    _save(duck, wh, run)
+    directory, _ = _proof(tmp_path)
+    confirm.run_stored(CFG, run, directory, wh=wh, cube=None, progress_dir=tmp_path)
+    wh.labels.clear()
+
+    (again,) = confirm.run_stored(
+        CFG, run, directory, wh=wh, cube=None, progress_dir=tmp_path
+    )
+
+    assert again.found is None and "no saved rows" in again.why
+
+
+def test_proofs_outside_the_comparisons_are_counted_in_one_line(
+    duck, tmp_path, offline, capsys
+):
+    _tables(duck)
+    run, wh = _sibling_run(), Wh(duck)
+    _save(duck, wh, run, cfg=CFG2)
+    directory, _ = _proof(tmp_path)
+
+    confirm.run_stored(
+        CFG2, run, directory, wh=wh, cube=None, progress_dir=tmp_path,
+        comparisons={"mastery-b"},
+    )  # fmt: skip
+
+    out = capsys.readouterr().out
+    assert "not run: outside --comparison" not in out
+    assert "1 proof outside --comparison not run (no kept outcome)." in out

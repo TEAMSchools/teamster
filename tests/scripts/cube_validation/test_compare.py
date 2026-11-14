@@ -1,13 +1,18 @@
 import re
 
+import pytest
 from cube_validation.compare import (
     Group,
+    _label,
+    cell_students_sql,
     cell_verdict,
     clauses_for,
     groups_from,
+    reconcile_script,
     reconcile_sql,
     scope_filters,
     trace_sql,
+    unmatched_rows_sql,
 )
 from cube_validation.config import ColumnPair, Comparison, RowSpec
 
@@ -88,7 +93,7 @@ def test_reconcile_sql_group_by_coalesces_cube_then_dashboard():
     sql = _sql()
 
     assert (
-        "COALESCE(CAST(c.grade_level_cube AS STRING), CAST(d.grade_level AS STRING)) "
+        f"COALESCE({_label('c.grade_level_cube')}, {_label('d.grade_level')}) "
         "AS grade_level_cube"
     ) in sql
 
@@ -318,6 +323,191 @@ FILTERED_ROWS = RowSpec(
     grain=[ColumnPair(dashboard="student_number", cube="lea_student_identifier")],
     values=[ColumnPair(dashboard="att_code", cube="attendance_code")],
 )
+
+
+ROWS_V = RowSpec(
+    grain=[ColumnPair("student", "lea"), ColumnPair("item", "aid")],
+    values=[ColumnPair("v", "v")],
+)
+SAVE_ARGS = (
+    "SELECT lea, aid, school, v FROM c_rows",
+    "SELECT student, item, school, v FROM d_rows",
+    ROWS_V,
+    [ColumnPair("school", "school")],
+)
+
+
+def _save_tables(duck):
+    # Synthetic. The 2 sides type the student differently, as BigQuery may:
+    # each side's own grain is kept. Student 1 matches, 2's value differs, 3 is
+    # Cube's alone and 4 the dashboard's.
+    duck.table(
+        "c_rows",
+        "lea BIGINT, aid VARCHAR, school VARCHAR, v DOUBLE",
+        [(1, "a", "X", 1.0), (2, "b", "X", 0.0), (3, "c", "Y", 1.0)],
+    )
+    duck.table(
+        "d_rows",
+        "student VARCHAR, item VARCHAR, school VARCHAR, v DOUBLE",
+        [("1", "a", "X", 1.0), ("2", "b", "X", 1.0), ("4", "d", "Y", 0.0)],
+    )
+
+
+def test_the_save_script_counts_exactly_as_the_reconcile(duck):
+    _save_tables(duck)
+    *setup, counts = reconcile_script(
+        *SAVE_ARGS, table="`teamster-332318`.`cube_validation_scratch`.`saved_t`"
+    )
+    for statement in setup:
+        duck.rows(statement)
+
+    assert "-- outer" in counts
+    assert duck.rows(counts) == duck.rows(reconcile_sql(*SAVE_ARGS))
+
+
+def test_the_save_script_keeps_only_unmatched_rows_with_each_side_s_grain(duck):
+    _save_tables(duck)
+    for statement in reconcile_script(*SAVE_ARGS, table="saved_t")[:2]:
+        duck.rows(statement)
+
+    assert duck.rows(
+        "SELECT bucket, school, __gc0, __gd0 FROM saved_t ORDER BY bucket"
+    ) == [
+        {"bucket": "cube_only", "school": "Y", "__gc0": 3, "__gd0": None},
+        {"bucket": "dashboard_only", "school": "Y", "__gc0": None, "__gd0": "4"},
+        {"bucket": "value_differs", "school": "X", "__gc0": 2, "__gd0": "2"},
+    ]
+
+
+def test_the_saved_table_carries_its_labels_and_expiry():
+    create = reconcile_script(
+        *SAVE_ARGS,
+        table="`p`.`d`.`t`",
+        labels={"view": "v", "fingerprint": "ab"},
+        expire_days=14,
+    )[1]
+
+    assert create.startswith("CREATE OR REPLACE TABLE `p`.`d`.`t`\nOPTIONS(")
+    assert "labels = [('fingerprint', 'ab'), ('view', 'v')]" in create
+    assert (
+        "expiration_timestamp = TIMESTAMP_ADD(CURRENT_TIMESTAMP(), INTERVAL 14 DAY)"
+        in create
+    )
+
+
+def test_a_label_value_outside_bigquery_s_characters_is_refused():
+    with pytest.raises(ValueError, match="label"):
+        reconcile_script(*SAVE_ARGS, table="t", labels={"view": "v'); DROP"})
+
+
+def test_unmatched_rows_inline_are_the_saved_rows(duck):
+    _save_tables(duck)
+    for statement in reconcile_script(*SAVE_ARGS, table="saved_t")[:2]:
+        duck.rows(statement)
+
+    inline = duck.rows(
+        f"SELECT * FROM ({unmatched_rows_sql(*SAVE_ARGS)}) ORDER BY __row"
+    )
+
+    assert inline == duck.rows("SELECT * FROM saved_t ORDER BY __row")
+
+
+def test_the_save_script_also_counts_students_per_cell_in_the_same_job(duck):
+    _save_tables(duck)
+    *setup, last = reconcile_script(*SAVE_ARGS, table="saved_t", students=True)
+    for statement in setup:
+        duck.rows(statement)
+
+    got = duck.rows(last)
+
+    counts = [
+        {k: v for k, v in r.items() if k not in ("__kind", "side", "__cut")}
+        for r in got
+        if r["__kind"] == "counts"
+    ]
+    students = [
+        (r["side"], r["__cut"], r["school"], r["n_students"])
+        for r in got
+        if r["__kind"] == "students"
+    ]
+    assert counts == duck.rows(reconcile_sql(*SAVE_ARGS))
+    assert sorted(students) == sorted(
+        (r["side"], r["__cut"], r["school"], r["n_students"])
+        for r in duck.rows(cell_students_sql(*SAVE_ARGS))
+    )
+
+
+def test_cell_students_count_each_student_once_per_side_and_cell(duck):
+    # Synthetic: student 1 holds 2 Cube rows in X; student 3 is the dashboard's
+    # alone, in Y.
+    duck.table(
+        "c_rows",
+        "lea BIGINT, aid VARCHAR, school VARCHAR",
+        [(1, "a", "X"), (1, "b", "X"), (2, "c", "X")],
+    )
+    duck.table(
+        "d_rows",
+        "student BIGINT, item VARCHAR, school VARCHAR",
+        [(1, "a", "X"), (3, "d", "Y")],
+    )
+    rows = RowSpec(
+        grain=[ColumnPair("student", "lea"), ColumnPair("item", "aid")], values=[]
+    )
+
+    got = duck.rows(
+        cell_students_sql(
+            "SELECT lea, aid, school FROM c_rows",
+            "SELECT student, item, school FROM d_rows",
+            rows,
+            [ColumnPair("school", "school")],
+        )
+    )
+
+    assert sorted(
+        (r["side"], r["__cut"], r["school"], r["n_students"]) for r in got
+    ) == [
+        ("c", 0, "X", 2),
+        ("d", 0, "X", 1),
+        ("d", 0, "Y", 1),
+    ]
+
+
+def test_cell_students_count_the_dashboard_s_cell_and_its_kept_rows_per_cut(duck):
+    # Synthetic: both sides hold student 1, Cube in X and the dashboard in Y
+    # (dims_differ); the dashboard's filter drops student 2, and cut 1 keeps
+    # only region B.
+    duck.table(
+        "c_rows",
+        "lea BIGINT, aid VARCHAR, school VARCHAR, region VARCHAR",
+        [(1, "a", "X", "A"), (2, "b", "X", "B")],
+    )
+    duck.table(
+        "d_rows",
+        "student BIGINT, item VARCHAR, school VARCHAR, region VARCHAR, f BOOLEAN",
+        [(1, "a", "Y", "A", True), (2, "b", "X", "B", False)],
+    )
+    rows = RowSpec(
+        grain=[ColumnPair("student", "lea"), ColumnPair("item", "aid")], values=[]
+    )
+
+    got = duck.rows(
+        cell_students_sql(
+            "SELECT lea, aid, school, region FROM c_rows",
+            "SELECT student, item, school, region, f AS __df0 FROM d_rows",
+            rows,
+            [ColumnPair("school", "school")],
+            filters=[("__df0", "f")],
+            cuts=[("TRUE", "TRUE"), ("c.region = 'B'", "d.region = 'B'")],
+        )
+    )
+
+    assert sorted(
+        (r["side"], r["__cut"], r["school"], r["n_students"]) for r in got
+    ) == [
+        ("c", 0, "X", 2),
+        ("c", 1, "X", 1),
+        ("d", 0, "Y", 1),
+    ]
 
 
 def test_reconcile_counts_rows_a_dashboard_only_filter_drops_apart():
@@ -569,6 +759,112 @@ def test_the_reconcile_keeps_each_side_s_rows_and_sums_per_cell(duck):
     assert moved["dash_dims"] == [["grade_c", "2"]]
     assert moved["c"] == moved["d"] == {"rows": 1, "n": [1], "sum": [0.0]}
     assert rows[("cube_only", (("grade_c", "2"),))]["d"]["rows"] == 0
+
+
+# --- a Cube time member beside a dashboard date ---------------------------------
+
+WEEK_BY = [ColumnPair("week_d", "week_c")]
+
+
+def _by_week(duck, cube_type, cube_week, dash_type, dash_week):
+    """One row both sides hold with the same value, filed by each side's week."""
+    duck.table(
+        "cube_t",
+        f"lea BIGINT, aid VARCHAR, week_c {cube_type}, ok_c BOOLEAN",
+        [(1, "a", cube_week, True)],
+    )
+    duck.table(
+        "dash_t",
+        f"student BIGINT, item VARCHAR, week_d {dash_type}, ok_d BOOLEAN",
+        [(1, "a", dash_week, True)],
+    )
+    rows = duck.rows(
+        reconcile_sql(
+            "SELECT * FROM `teamster-332318.m.cube_t`",
+            "SELECT * FROM `teamster-332318.d.dash_t`",
+            MOVED_ROWS,
+            WEEK_BY,
+        )
+    )
+    return {r["bucket"] for r in rows}
+
+
+@pytest.mark.parametrize(
+    ("cube_type", "cube_week"),
+    [
+        ("TIMESTAMP", "2026-09-21 00:00:00"),
+        # The text BigQuery casts a UTC TIMESTAMP to.
+        ("VARCHAR", "2026-09-21 00:00:00+00"),
+    ],
+)
+def test_a_cube_time_member_at_midnight_is_the_dashboard_s_date(
+    duck, cube_type, cube_week
+):
+    assert _by_week(duck, cube_type, cube_week, "DATE", "2026-09-21") == {"match"}
+
+
+@pytest.mark.parametrize(
+    "cube_week", ["2026-09-22 00:00:00+00", "2026-09-21 13:00:00+00"]
+)
+def test_a_cube_time_member_on_another_day_or_hour_is_another_cell(duck, cube_week):
+    assert _by_week(duck, "VARCHAR", cube_week, "DATE", "2026-09-21") == {"dims_differ"}
+
+
+def test_one_day_gets_one_group_label_whichever_side_holds_the_row(duck):
+    # A Cube-only row at midnight and a dashboard-only row on the same DATE:
+    # both group under the day, not under the TIMESTAMP text and the DATE text.
+    duck.table(
+        "cube_t",
+        "lea BIGINT, aid VARCHAR, week_c VARCHAR, ok_c BOOLEAN",
+        [(1, "a", "2026-09-21 00:00:00+00", True)],
+    )
+    duck.table(
+        "dash_t",
+        "student BIGINT, item VARCHAR, week_d DATE, ok_d BOOLEAN",
+        [(2, "b", "2026-09-21", True)],
+    )
+    rows = duck.rows(
+        reconcile_sql(
+            "SELECT * FROM `teamster-332318.m.cube_t`",
+            "SELECT * FROM `teamster-332318.d.dash_t`",
+            MOVED_ROWS,
+            WEEK_BY,
+        )
+    )
+    assert {(r["bucket"], r["week_c"]) for r in rows} == {
+        ("cube_only", "2026-09-21"),
+        ("dashboard_only", "2026-09-21"),
+    }
+
+
+def test_a_group_label_that_is_not_a_day_keeps_its_text(duck):
+    duck.table(
+        "cube_t",
+        "lea BIGINT, aid VARCHAR, week_c VARCHAR, ok_c BOOLEAN",
+        [(1, "a", "2026-09-21 13:00:00+00", True)],
+    )
+    duck.table(
+        "dash_t",
+        "student BIGINT, item VARCHAR, week_d VARCHAR, ok_d BOOLEAN",
+        [(2, "b", "Week 3", True)],
+    )
+    rows = duck.rows(
+        reconcile_sql(
+            "SELECT * FROM `teamster-332318.m.cube_t`",
+            "SELECT * FROM `teamster-332318.d.dash_t`",
+            MOVED_ROWS,
+            WEEK_BY,
+        )
+    )
+    assert {r["week_c"] for r in rows} == {"2026-09-21 13:00:00+00", "Week 3"}
+
+
+@pytest.mark.parametrize(
+    ("cube_week", "dash_week", "bucket"),
+    [("Week A", "week a", "match"), ("Week A", "Week B", "dims_differ")],
+)
+def test_text_that_is_not_a_date_compares_as_before(duck, cube_week, dash_week, bucket):
+    assert _by_week(duck, "VARCHAR", cube_week, "VARCHAR", dash_week) == {bucket}
 
 
 def test_rows_the_dashboard_filters_out_count_on_cube_s_side_only(duck):

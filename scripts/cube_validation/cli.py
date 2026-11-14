@@ -255,6 +255,17 @@ def _parser() -> argparse.ArgumentParser:
     view_file(p)
     fact_dataset(p)
     p.add_argument("--moment", type=_moment, help="ISO time; the build ending by it")
+    again = p.add_mutually_exclusive_group()
+    again.add_argument(
+        "--resume",
+        action="store_true",
+        help="finish an unfinished run stopped 24 hours to 7 days ago, at its moment",
+    )
+    again.add_argument(
+        "--restart",
+        action="store_true",
+        help="drop an unfinished run's saved comparisons and start a new run",
+    )
     email(p)
     max_usd(p)
 
@@ -284,6 +295,11 @@ def _parser() -> argparse.ArgumentParser:
         "--no-proofs",
         action="store_true",
         help="skip re-running the view's stored proofs (`triage confirm`)",
+    )
+    p.add_argument(
+        "--comparison",
+        action="append",
+        help="run and print only this comparison's proofs and items (repeatable)",
     )
 
     # `triage confirm ...` on the command line; see `main`.
@@ -445,6 +461,9 @@ def _dispatch(args: argparse.Namespace) -> int:
             max_usd=args.max_usd,
             cache_root=cache_root(),
             cube_host=_cube_host(),
+            resume=args.resume,
+            restart=args.restart,
+            clock=utcnow,
         )
         return 0
 
@@ -459,6 +478,7 @@ def _dispatch(args: argparse.Namespace) -> int:
             manifest=args.manifest,
             trace_max_minutes=args.trace_max_minutes,
             proofs=None if args.no_proofs else confirm.proofs_dir(args.view, cfg.view),
+            comparisons=args.comparison,
         )
         return 0
 
@@ -525,8 +545,19 @@ def _dispatch(args: argparse.Namespace) -> int:
 
     # prove
     if args.check:
+        cube = _cube(args)
         with tableau_session() as tbl:
-            pipeline.prove_check(cfg, tbl=tbl, cube=_cube(args))
+            pipeline.prove_check(cfg, tbl=tbl, cube=cube)
+        rejected = confirm.check_proofs(
+            cfg,
+            confirm.proofs_dir(args.view, cfg.view),
+            wh=_warehouse(args),
+            cube=cube,
+        )
+        if rejected:
+            print("Proofs BigQuery rejects:")
+            for line in rejected:
+                print(f"- {line}")
         return 0
     captures: dict = {}
     with tableau_session() as tbl:

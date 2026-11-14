@@ -13,7 +13,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from typing import Any, Protocol
 
@@ -350,13 +350,24 @@ def sort_school_filters(sql: str) -> str:
 
 
 def refuse_unless_safe(
-    compiled: Compiled, *, view_fact: str, network_schools: set[str]
+    compiled: Compiled,
+    *,
+    view_fact: str,
+    network_schools: set[str],
+    also_facts: Iterable[str] = (),
 ) -> None:
     """Refuse a compiled query that would not match a raw rebuild.
 
+    Args:
+        compiled: Cube's compiled query.
+        view_fact: The fact the run's moment is a build of.
+        network_schools: Every school abbreviation the network scope covers.
+        also_facts: Other facts the view reads, listed in its validation file;
+            `run` checks each did not change during the build.
+
     Raises:
         CubeRefusal: a pre-aggregation answered it, it reads a fact other than
-            `view_fact`, or its school filter is missing, a
+            `view_fact` and `also_facts`, or its school filter is missing, a
             default-deny, or not exactly `network_schools`.
     """
     if compiled.pre_aggregations:
@@ -366,10 +377,14 @@ def refuse_unless_safe(
         )
 
     facts = {f"{ds}.{name}".lower() for ds, name in _FACT_REF.findall(compiled.sql)}
-    others = facts - {view_fact.lower()}
+    allowed = [view_fact, *also_facts]
+    others = facts - {f.lower() for f in allowed}
 
     if others:
-        raise CubeRefusal(f"SQL reads facts other than {view_fact}: {sorted(others)}")
+        raise CubeRefusal(
+            f"SQL reads facts other than {', '.join(allowed)}: {sorted(others)}. "
+            "List a fact the view reads under `also_facts:` in its validation file."
+        )
 
     bound = bind(compiled)
     code = "".join(t for lit, t in _split(bound) if not lit)

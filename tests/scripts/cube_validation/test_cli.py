@@ -14,7 +14,16 @@ import pytest
 import tableauserverclient as TSC
 
 # trunk-ignore(pyright/reportAttributeAccessIssue): conftest.py registers cube_validation
-from cube_validation import cli, confirm, pipeline, report, tableau, trace, triage
+from cube_validation import (
+    checkpoints,
+    cli,
+    confirm,
+    pipeline,
+    report,
+    tableau,
+    trace,
+    triage,
+)
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.bq import CostCapError, Warehouse
@@ -109,6 +118,8 @@ class FakeBigQuery:
         self.cost = cost
         self.changed = changed
         self.ran: list[str] = []
+        # The next query holding this text is refused as over its cap, once.
+        self.fail_once: str | None = None
         self.probe = probe or [{"region": "Newark", "value": 0.9123}]
         self.cells = cells
         # Per cut index: cut 0 is `{}`, cut 1 is `{Region: Miami}`.
@@ -136,7 +147,10 @@ class FakeBigQuery:
         if job_config is not None and job_config.dry_run:
             return SimpleNamespace(total_bytes_processed=nbytes, result=lambda: [])
         limit = job_config.maximum_bytes_billed if job_config is not None else None
-        if limit is not None and nbytes > int(limit):
+        failing = self.fail_once is not None and self.fail_once in sql
+        if failing:
+            self.fail_once = None
+        if failing or (limit is not None and nbytes > int(limit)):
             # BigQuery refuses an over-limit query before it runs, unbilled.
             def refuse():
                 raise BadRequest(
@@ -185,6 +199,8 @@ class FakeCube:
         self.schools = ["A", "B"]
         self.dataset = "kipptaf_marts"
         self.dropped: set[str] = set()
+        # Extra JOIN lines, such as a second fact the view reads.
+        self.joins = ""
 
     def compiled(self, query):
         self.compiled_queries.append(query)
@@ -202,6 +218,7 @@ class FakeCube:
             f"FROM  {self.dataset}.fct_f  AS `t`\n"
             "LEFT JOIN  kipptaf_marts.dim_locations  AS `locations` "
             "ON `locations`.k = `t`.k\n"
+            f"{self.joins}"
             "WHERE (`locations`.abbreviation IN (?, ?))\n"
             "LIMIT 10000"
         )
@@ -412,6 +429,296 @@ def test_run_keeps_student_rows_in_bigquery(fakes, tmp_path, capsys):
                 ), branch
     out = capsys.readouterr().out
     assert "student_number" not in out
+
+
+def test_run_counts_each_side_s_students_per_cell_for_a_student_count(fakes, tmp_path):
+    text = YML.replace(
+        "        - { dashboard: is_present, cube: attendance_value }\n",
+        "        - { dashboard: is_present, cube: attendance_value }\n"
+        "      cell: count_students\n",
+        1,
+    )
+    students = [
+        {"__kind": "students", "side": "c", "__cut": 1,
+         "regions_region_name": "Miami", "n_students": 3},
+        {"__kind": "students", "side": "d", "__cut": 1,
+         "regions_region_name": "Miami", "n_students": 2},
+    ]  # fmt: skip
+    real = fakes.bq.answer
+
+    def answer(sql):
+        if "-- outer" in sql and "'students'" in sql:
+            counts = [
+                {**r, "__kind": "counts", "side": None, "__cut": None}
+                for r in RECONCILE_ROWS
+            ]
+            return counts + students
+        return real(sql)
+
+    fakes.bq.answer = answer
+
+    assert cli.main(["run", str(_file(tmp_path, text))]) == 0
+
+    (saved,) = (tmp_path / "cache" / "v").glob("*/run.json")
+    data = json.loads(saved.read_text())
+    miami = '{"Region": "Miami"}'
+    assert data["cell_students"] == {
+        "ada-region": [
+            {"side": "c", "cut": miami,
+             "dims": [["regions_region_name", "Miami"]], "n": 3},
+            {"side": "d", "cut": miami,
+             "dims": [["regions_region_name", "Miami"]], "n": 2},
+        ]
+    }  # fmt: skip
+    # The counts come from the reconcile's own job: no second scan of both sides.
+    (script,) = _outer(fakes.bq)
+    assert "COUNT(DISTINCT __student)" in script and "'students'" in script
+    assert not [s for s in fakes.bq.ran if "FROM joined WHERE __cin" in s]
+    # The students rows never reach the groups.
+    assert {g["comparison_id"] for g in data["applied"]["open"]} <= {"ada-region"}
+
+
+def test_run_saves_each_comparison_s_unmatched_rows_to_a_labelled_table(
+    fakes, tmp_path
+):
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+
+    script = _reconcile(fakes.bq)
+    sha = hashlib.sha256(b"ada-region").hexdigest()[:8]
+    assert "CREATE TEMP TABLE __joined" in script
+    assert (
+        "CREATE OR REPLACE TABLE `teamster-332318`.`cube_validation_scratch`."
+        f"`v__2026_10_22t204400z__ada_region_{sha}`"
+    ) in script
+    assert "('comparison', 'ada-region')" in script
+    assert "INTERVAL 14 DAY" in script
+    # The rows stay in BigQuery: the job returns only the counts.
+    assert script.rstrip().split(";\n")[-1].startswith("-- outer")
+
+
+def _four(tmp_path):
+    """The view file with its comparison repeated as `ada-region-1` to `-4`."""
+    head, rest = YML.split("  - id: ada-region\n", 1)
+    block, tail = rest.split("identities:", 1)
+    blocks = "".join(f"  - id: ada-region-{i}\n" + block for i in range(1, 5))
+    return _file(tmp_path, head + blocks + "identities:" + tail)
+
+
+def _outer(bq):
+    return [s for s in bq.ran if "-- outer" in s]
+
+
+def test_a_stopped_run_resumes_to_the_same_result(fakes, tmp_path, monkeypatch):
+    path = _four(tmp_path)
+    # Baseline: an uninterrupted run in its own cache.
+    monkeypatch.setattr(cli, "cache_root", lambda: tmp_path / "whole")
+    assert cli.main(["run", str(path)]) == 0
+    whole = json.loads(next((tmp_path / "whole").glob("v/*/run.json")).read_text())
+
+    monkeypatch.setattr(cli, "cache_root", lambda: tmp_path / "cache")
+    fakes.bq.fail_once = "ada_region_3"
+    assert cli.main(["run", str(path)]) == 1
+    folder = next((tmp_path / "cache" / "v").iterdir())
+    # Comparisons run in config order: 1 and 2 finished, 3 failed, 4 never began.
+    assert sorted(checkpoints.read_all(folder)) == ["ada-region-1", "ada-region-2"]
+    assert not (folder / "run.json").exists()
+
+    fakes.bq.ran.clear()
+    assert cli.main(["run", str(path)]) == 0
+
+    scripts = _outer(fakes.bq)
+    assert len(scripts) == 2
+    assert "ada_region_3" in scripts[0] and "ada_region_4" in scripts[1]
+    resumed = json.loads((folder / "run.json").read_text())
+    assert {**resumed, "cost_usd": 0} == {**whole, "cost_usd": 0}
+    assert resumed["cost_usd"] == pytest.approx(checkpoints.total_spend(folder))
+    assert checkpoints.find_unfinished(tmp_path / "cache", "v") is None
+
+
+def test_a_resumed_run_says_so(fakes, tmp_path, capsys):
+    path = _four(tmp_path)
+    fakes.bq.fail_once = "ada_region_3"
+    assert cli.main(["run", str(path)]) == 1
+    capsys.readouterr()
+
+    assert cli.main(["run", str(path)]) == 0
+
+    out = capsys.readouterr().out
+    assert "Resuming the unfinished run of" in out
+    assert "2 of 4 comparisons saved" in out
+
+
+def test_the_resume_count_names_only_checkpoints_of_confirmed_comparisons(
+    fakes, tmp_path, capsys
+):
+    path = _four(tmp_path)
+    fakes.bq.fail_once = "ada_region_3"
+    assert cli.main(["run", str(path)]) == 1
+    folder = next((tmp_path / "cache" / "v").iterdir())
+    # A comparison since removed from the file left its checkpoint behind.
+    checkpoints.write(folder, "gone", "f", {}, NOW)
+    capsys.readouterr()
+
+    assert cli.main(["run", str(path)]) == 0
+
+    assert "2 of 4 comparisons saved" in capsys.readouterr().out
+
+
+def test_a_run_stopped_a_day_ago_waits_for_resume_or_restart(
+    fakes, tmp_path, monkeypatch, capsys
+):
+    path = _four(tmp_path)
+    fakes.bq.fail_once = "ada_region_3"
+    assert cli.main(["run", str(path)]) == 1
+    monkeypatch.setattr(cli, "utcnow", Clock(NOW + timedelta(hours=30)))
+    capsys.readouterr()
+
+    assert cli.main(["run", str(path)]) == 1
+    assert "pass --resume to finish it at that moment, or --restart" in (
+        capsys.readouterr().err
+    )
+    assert cli.main(["run", str(path), "--resume"]) == 0
+
+
+def test_a_resume_past_time_travel_refuses_before_any_query(
+    fakes, tmp_path, monkeypatch, capsys
+):
+    path = _four(tmp_path)
+    fakes.bq.fail_once = "ada_region_3"
+    assert cli.main(["run", str(path)]) == 1
+    # The checkpoints are an hour old, but the build began 7 days ago, past
+    # time travel less its margin.
+    monkeypatch.setattr(cli, "utcnow", Clock(START + timedelta(days=7)))
+    folder = next((tmp_path / "cache" / "v").iterdir())
+    for f in (folder / checkpoints.DIR).glob("*.json"):
+        data = json.loads(f.read_text())
+        data["at"] = (START + timedelta(days=7, hours=-1)).isoformat()
+        f.write_text(json.dumps(data))
+    fakes.bq.ran.clear()
+    capsys.readouterr()
+
+    assert cli.main(["run", str(path)]) == 1
+
+    assert "pass --restart" in capsys.readouterr().err
+    assert not _outer(fakes.bq)
+
+
+def test_a_run_stopped_over_7_days_ago_cannot_resume(
+    fakes, tmp_path, monkeypatch, capsys
+):
+    path = _four(tmp_path)
+    fakes.bq.fail_once = "ada_region_3"
+    assert cli.main(["run", str(path)]) == 1
+    monkeypatch.setattr(cli, "utcnow", Clock(NOW + timedelta(days=8)))
+    capsys.readouterr()
+
+    assert cli.main(["run", str(path), "--resume"]) == 1
+
+    assert "more than 7 days ago" in capsys.readouterr().err
+
+
+def test_a_moment_with_an_unfinished_run_resumes_it_whatever_its_age(
+    fakes, tmp_path, monkeypatch, capsys
+):
+    path = _four(tmp_path)
+    fakes.bq.fail_once = "ada_region_3"
+    assert cli.main(["run", str(path)]) == 1
+    folder = next((tmp_path / "cache" / "v").iterdir())
+    # A newer unfinished run of another moment holds the latest checkpoint.
+    other = tmp_path / "cache" / "v" / "2026-10-21T000000Z"
+    other_build = report.Build(START - timedelta(days=1), START, "j0")
+    checkpoints.start(other, other_build, "p0")
+    checkpoints.write(other, "x", "f", {}, NOW + timedelta(hours=2))
+    monkeypatch.setattr(cli, "utcnow", Clock(NOW + timedelta(hours=30)))
+    fakes.bq.ran.clear()
+    capsys.readouterr()
+
+    assert cli.main(["run", str(path), "--moment", END.isoformat()]) == 0
+
+    assert "Resuming the unfinished run of" in capsys.readouterr().out
+    assert len(_outer(fakes.bq)) == 2
+    assert (folder / "run.json").exists()
+
+
+def test_a_run_stopped_before_its_first_checkpoint_keeps_its_spend(fakes, tmp_path):
+    path = _four(tmp_path)
+    fakes.bq.cost = lambda sql: 0.01
+    fakes.bq.fail_once = "ada_region_1"
+    assert cli.main(["run", str(path)]) == 1
+    folder = next((tmp_path / "cache" / "v").iterdir())
+    first = checkpoints.total_spend(folder)
+    assert first > 0
+
+    assert cli.main(["run", str(path)]) == 0
+
+    state = json.loads((folder / checkpoints.STATE).read_text())
+    assert len(state["spent"]) == 2
+    run_json = json.loads((folder / "run.json").read_text())
+    assert run_json["cost_usd"] == pytest.approx(sum(state["spent"].values()))
+    assert run_json["cost_usd"] > first
+
+
+def test_a_stopped_run_of_another_fact_is_not_resumed(fakes, tmp_path, capsys):
+    path = _four(tmp_path)
+    fakes.bq.fail_once = "ada_region_3"
+    assert cli.main(["run", str(path)]) == 1
+    fakes.cube.dataset = "zz_cbaldor_kipptaf_marts"
+    fakes.bq.ran.clear()
+    capsys.readouterr()
+
+    assert (
+        cli.main(["run", str(path), "--fact-dataset", "zz_cbaldor_kipptaf_marts"]) == 0
+    )
+
+    assert "Resuming" not in capsys.readouterr().out
+    assert len(_outer(fakes.bq)) == 4
+
+
+def test_restart_clears_the_unfinished_run(fakes, tmp_path):
+    path = _four(tmp_path)
+    fakes.bq.fail_once = "ada_region_3"
+    assert cli.main(["run", str(path)]) == 1
+    fakes.bq.ran.clear()
+
+    assert cli.main(["run", str(path), "--restart"]) == 0
+
+    assert len(_outer(fakes.bq)) == 4
+
+
+def test_resume_with_nothing_unfinished_refuses(fakes, tmp_path, capsys):
+    assert cli.main(["run", str(_four(tmp_path)), "--resume"]) == 1
+
+    assert "no unfinished run of v to resume" in capsys.readouterr().err
+
+
+def test_resume_and_moment_together_refuse(fakes, tmp_path, capsys):
+    assert (
+        cli.main(["run", str(_four(tmp_path)), "--resume", "--moment", END.isoformat()])
+        == 1
+    )
+
+    assert "drop `--resume`" in capsys.readouterr().err
+
+
+def test_a_comparison_edited_since_its_checkpoint_is_compared_again(
+    fakes, tmp_path, capsys
+):
+    path = _four(tmp_path)
+    fakes.bq.fail_once = "ada_region_3"
+    assert cli.main(["run", str(path)]) == 1
+    # `workbook` is outside the probe's fingerprint, so `run` does not refuse it.
+    path.write_text(path.read_text().replace("workbook: wb-1", "workbook: wb-9", 1))
+    fakes.bq.ran.clear()
+    capsys.readouterr()
+
+    assert cli.main(["run", str(path)]) == 0
+
+    assert (
+        "Comparison ada-region-1: its config or SQL changed since its saved result"
+        in capsys.readouterr().out
+    )
+    # ada-region-1 again (edited), then 3 and 4 (never finished); 2 is kept.
+    assert len(_outer(fakes.bq)) == 3
 
 
 def test_run_cube_rows_are_ungrouped_and_unlimited(fakes, tmp_path):
@@ -896,6 +1203,49 @@ def test_run_refuses_a_shared_table_that_changed_during_the_build(
     assert cli.main(["run", str(_file(tmp_path))]) == 1
     err = capsys.readouterr().err
     assert "kipptaf_marts.dim_locations" in err and "changed during the build" in err
+
+
+SECOND_FACT_JOIN = "LEFT JOIN  kipptaf_marts.fct_g  AS `g` ON `g`.k = `t`.k\n"
+ALSO_FACTS_YML = YML.replace(
+    "fact: kipptaf_marts.fct_f\n",
+    "fact: kipptaf_marts.fct_f\nalso_facts: [kipptaf_marts.fct_g]\n",
+)
+
+
+def test_run_reads_a_listed_second_fact_that_held_during_the_build(fakes, tmp_path):
+    fakes.cube.joins = SECOND_FACT_JOIN
+
+    assert cli.main(["run", str(_file(tmp_path, ALSO_FACTS_YML))]) == 0
+
+    checks = [s for s in fakes.bq.ran if "farm_fingerprint" in s and "fct_g" in s]
+    # Once at each end of the build: the dims check after the comparisons
+    # does not scan it again.
+    assert sorted(_first(r"TIMESTAMP '([^']+)'", s) for s in checks) == sorted(
+        [utc_literal(START), utc_literal(END)]
+    )
+
+
+def test_run_refuses_a_listed_second_fact_that_changed_during_the_build(
+    fakes, tmp_path, capsys
+):
+    fakes.cube.joins = SECOND_FACT_JOIN
+    fakes.bq.changed = ("fct_g",)
+
+    assert cli.main(["run", str(_file(tmp_path, ALSO_FACTS_YML))]) == 1
+
+    err = capsys.readouterr().err
+    assert "kipptaf_marts.fct_g changed during the build of kipptaf_marts.fct_f" in err
+    # Refused before any comparison spent on a query.
+    assert not [s for s in fakes.bq.ran if "-- outer" in s or "AS value" in s]
+
+
+def test_run_refuses_a_second_fact_the_file_does_not_list(fakes, tmp_path, capsys):
+    fakes.cube.joins = SECOND_FACT_JOIN
+
+    assert cli.main(["run", str(_file(tmp_path))]) == 1
+
+    err = capsys.readouterr().err
+    assert "kipptaf_marts.fct_g" in err and "also_facts" in err
 
 
 def test_run_refuses_sql_it_cannot_time_travel(fakes, tmp_path, capsys):
@@ -1586,6 +1936,29 @@ def test_prove_does_not_write_a_failed_proof(fakes, tmp_path, capsys):
 
     assert load_view_config(path).comparisons[0].proof is None
     assert "probe" in capsys.readouterr().out
+
+
+def test_prove_check_lists_stored_proofs_bigquery_rejects(
+    fakes, tmp_path, capsys, monkeypatch
+):
+    path = _file(tmp_path)
+    directory = tmp_path / "proofs" / "v"
+    directory.mkdir(parents=True)
+    (directory / "ada-region__cube_only.sql").write_text("SELECT 1")
+    seen = []
+
+    def check(cfg, where, *, wh, cube):
+        seen.append(where)
+        return ["ada-region__cube_only.sql: BigQuery rejects it (x)"]
+
+    monkeypatch.setattr(confirm, "check_proofs", check)
+
+    assert cli.main(["prove", str(path), "--check"]) == 0
+
+    assert seen == [directory]
+    out = capsys.readouterr().out
+    assert "Proofs BigQuery rejects:" in out
+    assert "ada-region__cube_only.sql: BigQuery rejects it (x)" in out
 
 
 def test_prove_check_lists_stale_proofs(fakes, tmp_path, capsys):
@@ -2564,6 +2937,41 @@ def test_triage_re_runs_the_stored_proofs_unless_told_not_to(
     assert cli.main(["triage", str(path), "--no-trace", "--no-proofs"]) == 0
 
     assert seen == [path.parent / "proofs" / "v"]
+
+
+def test_triage_of_one_comparison_prints_its_items_and_keeps_every_item(
+    fakes, tmp_path, monkeypatch, capsys
+):
+    path = _four(tmp_path)
+    assert cli.main(["run", str(path)]) == 0
+    seen = []
+    monkeypatch.setattr(
+        confirm, "run_stored", lambda cfg, run, d, **k: seen.append(k) or []
+    )
+    capsys.readouterr()
+
+    assert (
+        cli.main(["triage", str(path), "--no-trace", "--comparison", "ada-region-2"])
+        == 0
+    )
+
+    out = capsys.readouterr().out
+    assert "ada-region-2:" in out and "ada-region-1:" not in out
+    (saved,) = (tmp_path / "cache" / "v").glob("*/triage.json")
+    kept = {i["comparison"] for i in json.loads(saved.read_text())["items"]}
+    assert {"ada-region-1", "ada-region-2"} <= kept
+    (kwargs,) = seen
+    assert kwargs["comparisons"] == {"ada-region-2"}
+    assert kwargs["progress_dir"] == saved.parent
+
+
+def test_triage_refuses_a_comparison_the_view_lacks(fakes, tmp_path, capsys):
+    path = _four(tmp_path)
+    assert cli.main(["run", str(path)]) == 0
+
+    assert cli.main(["triage", str(path), "--no-trace", "--comparison", "nope"]) == 1
+
+    assert "nope" in capsys.readouterr().err
 
 
 def test_triage_proves_first_and_traces_only_what_no_proof_explains(

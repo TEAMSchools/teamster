@@ -16,6 +16,8 @@ from typing import Any, Literal
 from .config import ColumnPair, Comparison, RowSpec
 
 BUCKETS = ("match", "value_differs", "dims_differ", "dashboard_only", "cube_only")
+# The buckets of rows the 2 sides do not agree on: what a run saves for proofs.
+UNMATCHED = BUCKETS[1:]
 _RN = "__rn"
 _IN = "__in"
 # A `dims_differ` row's group-by values on the dashboard side, as `d:<column>`
@@ -101,8 +103,33 @@ def _bool_text(col: str) -> str:
     )
 
 
+# A DATE's text, or a midnight DATETIME's or UTC TIMESTAMP's: the texts BigQuery
+# casts them to. Anything else, a time past midnight included, is not a day.
+_DAY = "^[0-9]{4}-[0-9]{2}-[0-9]{2}([ T]00:00:00([.]0+)?([+]00(:?00)?|Z)?)?$"
+
+
+def _day(col: str) -> str:
+    """The DATE a date or a midnight timestamp names; NULL for anything else."""
+    text = f"CAST({col} AS STRING)"
+    return (
+        f"IF(REGEXP_CONTAINS({text}, '{_DAY}'), "
+        f"SAFE_CAST(SUBSTR({text}, 1, 10) AS DATE), NULL)"
+    )
+
+
+def _label(col: str) -> str:
+    """A group label: the day a date or a midnight timestamp names, else the
+    text. One day then groups once, whichever side holds the row."""
+    return f"COALESCE(CAST({_day(col)} AS STRING), CAST({col} AS STRING))"
+
+
 def _pair_matches(d: str, c: str) -> str:
-    """Null-safe, type-tolerant equality of one dashboard/cube value pair."""
+    """Null-safe, type-tolerant equality of one dashboard/cube value pair.
+
+    A date and a midnight timestamp of the same day match: Cube returns a
+    `type: time` member as a TIMESTAMP where the dashboard may hold a DATE, as
+    the cell keys already read them (`pipeline._key`).
+    """
     # Cast through STRING: SAFE_CAST(BOOL AS FLOAT64) fails at compile time.
     # TRUE and FALSE read as 1 and 0 so a BOOL matches a 0/1 column.
     number_d = f"SAFE_CAST({_bool_text(d)} AS FLOAT64)"
@@ -111,7 +138,8 @@ def _pair_matches(d: str, c: str) -> str:
         f"COALESCE(({d} IS NULL AND {c} IS NULL) "
         f"OR {number_d} = {number_c} "
         f"OR (({number_d} IS NULL OR {number_c} IS NULL) "
-        f"AND LOWER(CAST({d} AS STRING)) = LOWER(CAST({c} AS STRING))), FALSE)"
+        f"AND LOWER(CAST({d} AS STRING)) = LOWER(CAST({c} AS STRING))) "
+        f"OR {_day(d)} = {_day(c)}, FALSE)"
     )
 
 
@@ -158,7 +186,8 @@ def reconcile_sql(
     matches a NULL on the other side and nothing else, the empty string
     included.
     Temporal grains are not normalized: callers must emit date grains as DATE
-    on both sides.
+    on both sides. Value and group-by pairs read a date and a midnight
+    timestamp of the same day as equal.
 
     Args:
         cube_rows_sql: SELECT returning the grain, value and group-by columns
@@ -194,19 +223,21 @@ def reconcile_sql(
         rows,
         group_by,
         filters,
-        extra=[
-            f"COALESCE({pred}, FALSE) AS __{side}k{j}"
-            for j, pair in enumerate(cuts)
-            for side, pred in zip(("c", "d"), pair, strict=True)
-        ]
-        # The dashboard shows only the rows its filters keep.
-        + (
-            [" AND ".join(f"d.{flag}" for flag, _ in filters) + " AS __dkeep"]
-            if filters
-            else []
-        ),  # fmt: skip
+        extra=_cut_extras(cuts, filters),
         moved=True,
     )
+    return ctes + "\n" + _outer_sql(rows, group_names, filters, cuts, "joined")
+
+
+def _outer_sql(
+    rows: RowSpec,
+    group_names: list[str],
+    filters: Sequence[tuple[str, str]],
+    cuts: Sequence[tuple[str, str]],
+    source: str,
+) -> str:
+    """The reconcile's counting SELECT over `source` (`joined`'s columns),
+    after its `-- outer` marker."""
     stats = []
     for prefix, flag in [("", None), *((f"k{j}_", j) for j in range(len(cuts)))]:
         for side in ("c", "d"):
@@ -231,12 +262,284 @@ def reconcile_sql(
     )
     group_clause = ", ".join(["bucket", *group_names])
     return (
-        ctes
-        + "\n-- outer\n"
-        # trunk-ignore(bandit/B608): identifiers are validated in config.py; row SQL comes from Cube's compiled query
-        + f"SELECT {outer_select}\nFROM joined\n"
+        "-- outer\n"
+        # trunk-ignore(bandit/B608): identifiers are validated in config.py; the source is joined or the script's temp table
+        + f"SELECT {outer_select}\nFROM {source}\n"
         + f"GROUP BY {group_clause}\nORDER BY {group_clause}"
     )
+
+
+# A label value as BigQuery takes it (`saved.labels` writes them so).
+_LABEL_VALUE = re.compile(r"[a-z0-9_-]{0,63}")
+
+
+def _saved_joined(
+    cube_rows_sql: str,
+    dashboard_rows_sql: str,
+    rows: RowSpec,
+    group_by: list[ColumnPair],
+    filters: Sequence[tuple[str, str]],
+    cuts: Sequence[tuple[str, str]],
+) -> tuple[str, list[str]]:
+    """`joined` as the reconcile builds it, plus what a saved row needs: the
+    grain keys (`__k<i>`, `__rn`) and each side's own grain (`__gc<i>`,
+    `__gd<i>`, typed as that side types it)."""
+    return _joined(
+        cube_rows_sql,
+        dashboard_rows_sql,
+        rows,
+        group_by,
+        filters,
+        keys=True,
+        extra=_cut_extras(cuts, filters)
+        + _cell_labels(group_by)
+        + [f"c.{p.cube} AS __gc{i}" for i, p in enumerate(rows.grain)]
+        + [f"d.{p.dashboard} AS __gd{i}" for i, p in enumerate(rows.grain)],
+        moved=True,
+    )
+
+
+def _saved_select(
+    rows: RowSpec,
+    group_by: list[ColumnPair],
+    cuts: Sequence[tuple[str, str]],
+    source: str,
+) -> str:
+    """The unmatched rows a run saves, over `source` (`joined`'s columns).
+
+    Per row: `bucket`, `__row` (an id from the grain keys and the duplicate
+    number), each group-by column by its `cube` name and `__d_<column>` (the
+    dashboard's cell of a `dims_differ` row), both sides' grain, `__rn`, and
+    each cut's flag on each side (`__ck<j>`, `__dk<j>`).
+    """
+    keys = ", ".join([*(f"__k{i}" for i in range(len(rows.grain))), _RN])
+    columns = [
+        "bucket",
+        f"FARM_FINGERPRINT(TO_JSON_STRING(STRUCT({keys}))) AS __row",
+        *(p.cube for p in group_by),
+        *(f"__d_{p.cube}" for p in group_by),
+        *(f"__gc{i}" for i in range(len(rows.grain))),
+        *(f"__gd{i}" for i in range(len(rows.grain))),
+        _RN,
+        *(f"__{side}k{j}" for j in range(len(cuts)) for side in ("c", "d")),
+    ]
+    buckets = ", ".join(f"'{b}'" for b in UNMATCHED)
+    # trunk-ignore(bandit/B608): identifiers are validated in config.py; buckets are constants
+    return f"SELECT {', '.join(columns)}\nFROM {source}\nWHERE bucket IN ({buckets})"
+
+
+def reconcile_script(
+    cube_rows_sql: str,
+    dashboard_rows_sql: str,
+    rows: RowSpec,
+    group_by: list[ColumnPair],
+    filters: Sequence[tuple[str, str]] = (),
+    cuts: Sequence[tuple[str, str]] = (),
+    *,
+    table: str,
+    labels: dict[str, str] | None = None,
+    expire_days: int | None = None,
+    students: bool = False,
+) -> list[str]:
+    """The reconcile as 3 statements of one job: it saves the unmatched rows to
+    `table` and returns `reconcile_sql`'s counts.
+
+    The rows are joined once, into a temp table both later statements read, so
+    saving them costs no second scan of either side.
+
+    Args:
+        table: The saved table, as SQL names it; replaced if it exists.
+        labels: The table's labels; each value must be one BigQuery takes.
+        expire_days: Days until the table expires on its own.
+        students: Also return `cell_students_sql`'s counts from the same join:
+            every row then carries `__kind` (`counts` or `students`), with
+            `side` and `__cut` set on the `students` rows and the counts'
+            columns NULL there.
+
+    Returns:
+        The statements: the join into `__joined`, the saved table
+        (`_saved_select`'s rows), and the counts, with `reconcile_sql`'s
+        columns and its `-- outer` marker.
+
+    Raises:
+        ValueError: A label value BigQuery would not take.
+    """
+    ctes, group_names = _saved_joined(
+        cube_rows_sql, dashboard_rows_sql, rows, group_by, filters, cuts
+    )
+    options = []
+    if expire_days is not None:
+        options.append(
+            "expiration_timestamp = TIMESTAMP_ADD(CURRENT_TIMESTAMP(), "
+            f"INTERVAL {int(expire_days)} DAY)"
+        )
+    if labels:
+        for key, value in labels.items():
+            if not (_LABEL_VALUE.fullmatch(key) and _LABEL_VALUE.fullmatch(value)):
+                raise ValueError(f"not a BigQuery label: {key}={value!r}")
+        pairs = ", ".join(f"('{k}', '{v}')" for k, v in sorted(labels.items()))
+        options.append(f"labels = [{pairs}]")
+    head = f"CREATE OR REPLACE TABLE {table}"
+    if options:
+        head += "\nOPTIONS(" + ", ".join(options) + ")"
+    counts = _outer_sql(rows, group_names, filters, cuts, "__joined")
+    if students:
+        counts = _with_students(counts, rows, group_by, group_names, filters, cuts)
+    return [
+        f"CREATE TEMP TABLE __joined AS\n{ctes}\nSELECT * FROM joined",
+        f"{head}\nAS {_saved_select(rows, group_by, cuts, '__joined')}",
+        counts,
+    ]
+
+
+def _with_students(
+    counts: str,
+    rows: RowSpec,
+    group_by: list[ColumnPair],
+    group_names: list[str],
+    filters: Sequence[tuple[str, str]],
+    cuts: Sequence[tuple[str, str]],
+) -> str:
+    """The counts (`_outer_sql`) and each side's distinct students per cell and
+    cut over `__joined`, as one result told apart by `__kind`."""
+    stats = _stat_names(rows, cuts)
+    branches = [
+        # trunk-ignore(bandit/B608): identifiers are validated in config.py; no values are interpolated
+        f"SELECT 'counts' AS __kind, o.*, CAST(NULL AS STRING) AS side, "
+        f"CAST(NULL AS INT64) AS __cut FROM (\n{counts}\n) AS o"
+    ]
+    for side, j, where, labels, group in _student_branches(group_by, filters, cuts):
+        cell = dict(labels)
+        columns = (
+            ["'students'", "NULL"]
+            + [cell.get(name, "NULL") for name in group_names]
+            + ["NULL", "COUNT(DISTINCT __student)"]
+            + ["NULL"] * len(stats)
+            + [f"'{side}'", str(j)]
+        )
+        branches.append(
+            # trunk-ignore(bandit/B608): identifiers are validated in config.py; no values are interpolated
+            f"SELECT {', '.join(columns)} FROM __joined WHERE {where}{group}"
+        )
+    return "\nUNION ALL\n".join(branches)
+
+
+def _stat_names(rows: RowSpec, cuts: Sequence[tuple[str, str]]) -> list[str]:
+    """The per-side stat columns `_outer_sql` returns, in its order."""
+    names = []
+    for prefix in ["", *(f"k{j}_" for j in range(len(cuts)))]:
+        for side in ("c", "d"):
+            names.append(f"{_STATS}{prefix}{side}_rows")
+            for i in range(len(rows.values)):
+                names += [
+                    f"{_STATS}{prefix}{side}_n{i}",
+                    f"{_STATS}{prefix}{side}_sum{i}",
+                ]
+    return names
+
+
+def unmatched_rows_sql(
+    cube_rows_sql: str,
+    dashboard_rows_sql: str,
+    rows: RowSpec,
+    group_by: list[ColumnPair],
+    filters: Sequence[tuple[str, str]] = (),
+    cuts: Sequence[tuple[str, str]] = (),
+) -> str:
+    """The rows `reconcile_script` saves, as one query with no table: for a
+    dry run that needs no saved table (`prove --check`)."""
+    ctes, _ = _saved_joined(
+        cube_rows_sql, dashboard_rows_sql, rows, group_by, filters, cuts
+    )
+    return f"{ctes}\n{_saved_select(rows, group_by, cuts, 'joined')}"
+
+
+def _cut_extras(
+    cuts: Sequence[tuple[str, str]], filters: Sequence[tuple[str, str]]
+) -> list[str]:
+    """`joined`'s per-cut flags (`__ck<j>`, `__dk<j>`) and, with dashboard-only
+    filters, `__dkeep`: the rows the dashboard shows."""
+    return [
+        f"COALESCE({pred}, FALSE) AS __{side}k{j}"
+        for j, pair in enumerate(cuts)
+        for side, pred in zip(("c", "d"), pair, strict=True)
+    ] + (
+        [" AND ".join(f"d.{flag}" for flag, _ in filters) + " AS __dkeep"]
+        if filters
+        else []
+    )
+
+
+def cell_students_sql(
+    cube_rows_sql: str,
+    dashboard_rows_sql: str,
+    rows: RowSpec,
+    group_by: list[ColumnPair],
+    filters: Sequence[tuple[str, str]] = (),
+    cuts: Sequence[tuple[str, str]] = (),
+) -> str:
+    """Build the query that counts each side's distinct students per cell and cut.
+
+    Takes `reconcile_sql`'s arguments and joins the rows the same way. Each
+    side's rows count in that side's own cell (a `dims_differ` row in Cube's
+    cell on the Cube side, the dashboard's on the other), and the dashboard
+    counts only the rows its filters keep.
+
+    Returns:
+        One query returning `side` (`c` or `d`), `__cut` (the cut's index; 0
+        with no cuts), each group-by column by its `cube` name, and
+        `n_students` (distinct values of the first grain pair). No grain
+        column is returned.
+    """
+    ctes, _ = _joined(
+        cube_rows_sql,
+        dashboard_rows_sql,
+        rows,
+        group_by,
+        filters,
+        extra=_cut_extras(cuts, filters) + _cell_labels(group_by),
+    )
+    branches = []
+    for side, j, where, labels, group in _student_branches(group_by, filters, cuts):
+        columns = [f"'{side}' AS side", f"{j} AS __cut"]
+        columns += [f"{label} AS {cube}" for cube, label in labels]
+        columns.append("COUNT(DISTINCT __student) AS n_students")
+        branches.append(
+            # trunk-ignore(bandit/B608): identifiers are validated in config.py; row SQL comes from Cube's compiled query
+            f"SELECT {', '.join(columns)} FROM joined WHERE {where}{group}"
+        )
+    return ctes + "\n" + "\nUNION ALL\n".join(branches)
+
+
+def _cell_labels(group_by: list[ColumnPair]) -> list[str]:
+    """`joined`'s per-side cell labels: each group-by column as Cube labels it
+    (`__cl_<column>`) and as the dashboard does (`__dl_<column>`)."""
+    return [f"{_label(f'c.{p.cube}')} AS __cl_{p.cube}" for p in group_by] + [
+        f"{_label(f'd.{p.dashboard}')} AS __dl_{p.cube}" for p in group_by
+    ]
+
+
+def _student_branches(
+    group_by: list[ColumnPair],
+    filters: Sequence[tuple[str, str]],
+    cuts: Sequence[tuple[str, str]],
+) -> list[tuple[str, int, str, list[tuple[str, str]], str]]:
+    """Per side and cut: the side, the cut index, the rows it keeps (a WHERE
+    over `joined`'s columns), its cell columns (`cube` name, label column) and
+    its GROUP BY. Each side's rows count in that side's own cell, and the
+    dashboard counts only the rows its filters keep."""
+    out = []
+    for j in range(len(cuts) or 1):
+        for side in ("c", "d"):
+            keep = [f"__{side}in IS NOT NULL"]
+            if side == "d" and filters:
+                keep.append("__dkeep")
+            if cuts:
+                keep.append(f"__{side}k{j}")
+            labels = [(p.cube, f"__{side}l_{p.cube}") for p in group_by]
+            group = " GROUP BY " + ", ".join(e for _, e in labels) if group_by else ""
+            out.append((side, j, " AND ".join(keep), labels, group))
+    return out
 
 
 def _joined(
@@ -277,8 +580,7 @@ def _joined(
     both = f"c.{_IN} IS NOT NULL AND d.{_IN} IS NOT NULL"
 
     group_cols = [
-        f"COALESCE(CAST(c.{p.cube} AS STRING), CAST(d.{p.dashboard} AS STRING)) "
-        f"AS {p.cube}"
+        f"COALESCE({_label(f'c.{p.cube}')}, {_label(f'd.{p.dashboard}')}) AS {p.cube}"
         for p in group_by
     ]
     group_names = [p.cube for p in group_by]

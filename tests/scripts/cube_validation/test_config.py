@@ -8,6 +8,7 @@ from cube_validation.config import (
     ConfigError,
     load_view_config,
     mask_digits,
+    with_fact_dataset,
     write_decision,
     write_proof,
 )
@@ -348,6 +349,45 @@ def test_proof_without_cuts_reads_as_unknown(tmp_path):
     assert proof.totals_skipped is None
 
 
+def test_also_facts_load_as_listed(tmp_path):
+    text = EXAMPLE.replace(
+        "time_dimension: attendance_date\n",
+        "time_dimension: attendance_date\nalso_facts: [kipptaf_marts.fct_g]\n",
+    )
+
+    assert load_view_config(_write(tmp_path, text)).also_facts == [
+        "kipptaf_marts.fct_g"
+    ]
+    assert load_view_config(_write(tmp_path, EXAMPLE)).also_facts == []
+
+
+@pytest.mark.parametrize(
+    "value",
+    ["kipptaf_marts.fct_g", "[kipptaf_marts]", "[a.b.c]", "['a;b.c']", "[fct_g]"],
+)
+def test_also_facts_that_are_not_a_list_of_tables_are_refused(tmp_path, value):
+    text = EXAMPLE.replace(
+        "time_dimension: attendance_date\n",
+        f"time_dimension: attendance_date\nalso_facts: {value}\n",
+    )
+
+    with pytest.raises(ConfigError, match="also_facts"):
+        load_view_config(_write(tmp_path, text))
+
+
+def test_fact_dataset_moves_also_facts_with_the_fact(tmp_path):
+    text = EXAMPLE.replace(
+        "time_dimension: attendance_date\n",
+        "time_dimension: attendance_date\nalso_facts: [kipptaf_marts.fct_g]\n",
+    )
+
+    cfg = with_fact_dataset(
+        load_view_config(_write(tmp_path, text)), "zz_a_kipptaf_marts"
+    )
+
+    assert cfg.also_facts == ["zz_a_kipptaf_marts.fct_g"]
+
+
 @pytest.mark.parametrize(
     ("old", "new"),
     [
@@ -416,6 +456,23 @@ def test_rows_take_a_dashboard_side_scope(tmp_path):
 def test_rows_dashboard_scope_defaults_to_none(tmp_path):
     rows = load_view_config(_write(tmp_path, EXAMPLE)).comparisons[0].rows
     assert rows.dashboard_scope == []
+
+
+def test_rows_cell_defaults_to_the_mean_and_takes_count_students(tmp_path):
+    assert (
+        load_view_config(_write(tmp_path, EXAMPLE)).comparisons[0].rows.cell == "mean"
+    )
+
+    text = EXAMPLE.replace(VALUES, VALUES + "      cell: count_students\n", 1)
+    rows = load_view_config(_write(tmp_path, text)).comparisons[0].rows
+
+    assert rows.cell == "count_students"
+
+
+def test_rows_cell_refuses_another_kind(tmp_path):
+    text = EXAMPLE.replace(VALUES, VALUES + "      cell: share\n", 1)
+    with pytest.raises(ConfigError, match=r"rows\.cell.*count_students"):
+        load_view_config(_write(tmp_path, text))
 
 
 def test_rows_dashboard_scope_takes_only_a_column_name(tmp_path):
