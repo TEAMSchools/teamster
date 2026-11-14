@@ -1,6 +1,6 @@
 """Command line: `uv run python -m scripts.cube_validation <command> ...`.
 
-Commands: `discover`, `preflight`, `prove`, `check-api`, `run`, `triage`,
+Commands: `discover`, `preflight`, `prove`, `run`, `triage`,
 `triage confirm`, `add-decisions`, `reapply`, `review`, `record-answers`, `members`,
 `inventory-workbook`, `inventory`. Exit
 codes: 0 done, 1 refused (the message says why), 2 usage error. This module parses
@@ -243,12 +243,6 @@ def _parser() -> argparse.ArgumentParser:
         action="store_true",
         help="print each cut's export headers and stop; nothing is probed or written",
     )
-    max_usd(p)
-
-    p = sub.add_parser("check-api", help="Cube's API equals its compiled SQL")
-    view_file(p)
-    fact_dataset(p)
-    email(p)
     max_usd(p)
 
     p = sub.add_parser("run", help="validate a view at one fact build")
@@ -510,13 +504,6 @@ def _dispatch(args: argparse.Namespace) -> int:
 
     if args.command == "reapply":
         _reapply(cfg)
-        return 0
-
-    if args.command == "check-api":
-        cube = _cube(args)
-        pipeline.check_api(
-            cfg, wh=_warehouse(args), cube=cube, clock=utcnow, max_usd=args.max_usd
-        )
         return 0
 
     if args.command == "preflight":

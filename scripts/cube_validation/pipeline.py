@@ -64,8 +64,6 @@ from .moment import (
 from .report import MeasureResult, RunResult
 from .timetravel import PROJECT, AsOf, as_of, repin, utc_literal
 
-API_DECIMALS = checks.DECIMALS
-CHECK_API_CUTS = 3
 # A proof's probe is time-travelled to the refresh; keep a margin inside 7 days.
 PROOF_WINDOW = WINDOW - timedelta(hours=1)
 
@@ -2388,94 +2386,6 @@ def proof_source(view_file: Path) -> answers.ProofSource:
             f"{relative.parent.as_posix()}"
         )
     return answers.ProofSource(relative.as_posix(), base, blob)
-
-
-# --- check-api ---------------------------------------------------------------
-
-
-def _api_checks(cfg: ViewConfig) -> list[tuple[Comparison, dict, bool]]:
-    """The default cut by dims, then the other cuts, then the default total."""
-    picks: list[tuple[Comparison, dict, bool]] = []
-    for comparison in cfg.comparisons:
-        picks.append((comparison, {}, True))
-        picks += [(comparison, cut, True) for cut in comparison.cuts if cut]
-        picks.append((comparison, {}, False))
-    unique: dict[str, tuple[Comparison, dict, bool]] = {}
-    for comparison, cut, with_dims in picks:
-        if with_dims and not comparison.dims:
-            continue
-        query = cell_query(cfg.view, comparison, cut, with_dims)
-        unique.setdefault(
-            json.dumps(query, sort_keys=True), (comparison, cut, with_dims)
-        )
-    return list(unique.values())[:CHECK_API_CUTS]
-
-
-def _same(a: float | None, b: float | None) -> bool:
-    if a is None or b is None:
-        return a is b
-    return round(a, API_DECIMALS) == round(b, API_DECIMALS)
-
-
-def check_api(
-    cfg: ViewConfig, *, wh: Warehouse, cube: Cube, clock: Clock, max_usd: float
-) -> None:
-    """Check that `Cube.load` and the bound compiled SQL agree, run now.
-
-    Raises:
-        Refusal: They disagree on a cell, or a table they read rebuilt while
-            the check ran.
-    """
-    picks = _api_checks(cfg)
-    disagreements: list[str] = []
-    tables: set[str] = set()
-    with wh.budget(max_usd):
-        schools = network_schools(wh)
-        first = clock()
-        for comparison, cut, with_dims in picks:
-            query = cell_query(cfg.view, comparison, cut, with_dims)
-            bound = _cube_sql(cfg, cube, query, schools)
-            tables |= _as_of(bound, first, wh).tables
-            dims = [d.cube for d in comparison.dims] if with_dims else []
-            # The load runs this SQL in BigQuery, so it is priced like the rest.
-            wh.price(bound)
-            label = f"{comparison.id} {cut_label(cut)}" + (
-                f" by {', '.join(dims)}" if dims else " total"
-            )
-            api = _by_key(
-                cube.load(query),
-                lambda r, dims=dims: tuple(
-                    _key(r.get(_member(cfg.view, d))) for d in dims
-                ),
-                lambda r, m=comparison.measure: _number(r.get(_member(cfg.view, m))),
-                f"{label} API",
-            )
-            sql = _by_key(
-                wh.rows(wrap_cube(bound, cfg.view, dims, set(), comparison.measure)),
-                lambda r, dims=dims: tuple(_key(r[d]) for d in dims),
-                lambda r: _number(r["value"]),
-                f"{label} SQL",
-            )
-            bad = [
-                f"{label} {k}: API {api.get(k)}, SQL {sql.get(k)}"
-                for k in sorted(api.keys() | sql.keys())
-                if not _same(api.get(k), sql.get(k))
-            ]
-            disagreements += bad
-            print(f"{label}: {len(api)} rows, {'agree' if not bad else 'disagree'}.")
-        last = clock()
-        changed = changed_between(wh, sorted(tables), first, last)
-
-    if changed:
-        raise Refusal(f"{', '.join(changed)} rebuilt while the check ran; run it again")
-    if disagreements:
-        raise Refusal(
-            "Cube's API and its compiled SQL disagree:\n  " + "\n  ".join(disagreements)
-        )
-    print(
-        f"Cube's API and its compiled SQL agree on {len(picks)} of {len(picks)} "
-        f"checks at {API_DECIMALS} decimals."
-    )
 
 
 # --- prove -------------------------------------------------------------------

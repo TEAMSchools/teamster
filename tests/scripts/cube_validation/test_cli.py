@@ -731,7 +731,7 @@ def test_run_cube_rows_are_ungrouped_and_unlimited(fakes, tmp_path):
     assert "or" in row_queries[0]["filters"][0]
 
 
-@pytest.mark.parametrize("command", ["run", "check-api", "prove"])
+@pytest.mark.parametrize("command", ["run", "prove"])
 @pytest.mark.parametrize(
     "dataset",
     [
@@ -801,21 +801,6 @@ def test_run_refuses_a_cube_still_reading_prod_when_a_dev_build_is_named(
 
     assert code == 1
     assert "other than zz_cbaldor_kipptaf_marts.fct_f" in capsys.readouterr().err
-
-
-def test_check_api_accepts_a_dev_dataset(fakes, tmp_path):
-    fakes.cube.dataset = "zz_cbaldor_kipptaf_marts"
-
-    code = cli.main(
-        [
-            "check-api",
-            str(_file(tmp_path)),
-            "--fact-dataset",
-            "zz_cbaldor_kipptaf_marts",
-        ]
-    )
-
-    assert code == 0
 
 
 def test_run_refuses_comparison_without_proof(fakes, tmp_path, capsys):
@@ -1694,49 +1679,6 @@ def test_review_refuses_a_run_saved_in_the_old_group_shape(fakes, tmp_path, caps
 def test_review_refuses_a_view_never_run(fakes, tmp_path, capsys):
     assert cli.main(["review", str(_file(tmp_path)), "--domain", "Registrar"]) == 1
     assert "run" in capsys.readouterr().err
-
-
-# --- check-api ---------------------------------------------------------------
-
-
-def test_check_api_agrees_on_three_cuts(fakes, tmp_path, capsys):
-    assert cli.main(["check-api", str(_file(tmp_path))]) == 0
-
-    assert len(fakes.cube.loads) == 3
-    sql_runs = [s for s in fakes.bq.ran if "AS value" in s]
-    assert len(sql_runs) == 3
-    assert not any("FOR SYSTEM_TIME" in s for s in sql_runs)
-    assert "3 of 3" in capsys.readouterr().out
-
-
-def test_check_api_prices_the_api_side_before_it_loads(fakes, tmp_path, capsys):
-    # Only Cube's bound SQL itself: the SQL side wraps it, the rebuild check
-    # fingerprints the tables.
-    fakes.bq.cost = lambda sql: (
-        10.0
-        if "fct_f" in sql and "FROM (\n" not in sql and "farm_fingerprint" not in sql
-        else 0.0
-    )
-
-    argv = ["check-api", str(_file(tmp_path)), "--max-usd-per-day", "100"]
-    assert cli.main(argv) == 1
-
-    assert "5.00" in capsys.readouterr().err
-    assert fakes.cube.loads == []
-
-
-def test_check_api_refuses_disagreement(fakes, tmp_path, capsys):
-    fakes.cube._load = lambda q: [_load_row(q, 0.8)]
-
-    assert cli.main(["check-api", str(_file(tmp_path))]) == 1
-    assert "disagree" in capsys.readouterr().err
-
-
-def test_check_api_refuses_when_a_table_rebuilt(fakes, tmp_path, capsys):
-    fakes.bq.changed = ("fct_f",)
-
-    assert cli.main(["check-api", str(_file(tmp_path))]) == 1
-    assert "kipptaf_marts.fct_f" in capsys.readouterr().err
 
 
 # --- prove -------------------------------------------------------------------
@@ -4146,3 +4088,8 @@ def test_a_run_saved_before_null_aware_groups_refuses(fakes, tmp_path, capsys, c
     err = capsys.readouterr().err
     assert "this run predates NULL-aware groups; run again" in err
     assert f"`run --moment {start}`" in err and "proof" not in err
+
+
+def test_check_api_is_not_a_command(fakes, tmp_path, capsys):
+    assert cli.main(["check-api", str(_file(tmp_path))]) == 2
+    assert "invalid choice: 'check-api'" in capsys.readouterr().err
