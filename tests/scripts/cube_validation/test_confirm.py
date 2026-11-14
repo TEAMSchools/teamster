@@ -672,6 +672,9 @@ def test_check_sql_lets_a_literal_meet_an_id_that_names_no_one():
         "r.teacher_number = 7",
         "r.home_phone_number = 7",
         "r.guardian_phone_number = 7",
+        "r.payroll_file_number = 7",
+        "r.worker_number = 7",
+        "r.badge_number = 7",
     ],
 )
 def test_check_sql_refuses_a_literal_on_a_column_that_names_a_person(where):
@@ -689,6 +692,8 @@ def test_check_sql_refuses_a_literal_on_a_column_that_names_a_person(where):
         "r.performance_band_label_number = 3",
         "r.module_number = 2",
         "r.grade_level_number IN (5, 6)",
+        "r.section_number = 4",
+        "r.week_number = 12",
     ],
 )
 def test_check_sql_lets_a_literal_meet_a_category_number(where):

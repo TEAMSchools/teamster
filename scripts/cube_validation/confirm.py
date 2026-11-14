@@ -294,8 +294,7 @@ def identifying(comparison: Comparison) -> set[str]:
 
 
 # Numbers that name or reach a person (direct identifiers and contact details in
-# `.claude/rules/ferpa-pii.md`); any other `_number` column numbers a category,
-# such as a band or a module.
+# `.claude/rules/ferpa-pii.md`), whatever else the name says.
 _PERSON_NUMBERS = (
     "student_number",
     "studentnumber",
@@ -306,26 +305,45 @@ _PERSON_NUMBERS = (
     "school_specific_id",
 )
 _PEOPLE = ("student", "employee", "staff", "teacher")
+# What a `_number` column may number and still name no one. Any other
+# `_number` column is treated as naming a person: a missed identifier costs
+# more than a refused category.
+_CATEGORIES = (
+    "band",
+    "level",
+    "grade",
+    "module",
+    "unit",
+    "section",
+    "course",
+    "school",
+    "week",
+    "month",
+    "quarter",
+    "term",
+    "year",
+    "period",
+)
 
 
 def _identifies(column: str, student: set[str]) -> bool:
     """A column whose value can name or reach a student or staff member.
 
     The student grain column, a name or email column, a number that names or
-    reaches a person (`student_number`, `employee_number`, a phone number), or
-    an id, key, number or identifier of a student or staff member. A category
-    number (`module_number`, a band number) and another id (`assessment_id`)
-    name no one, so a proof may compare them with a literal.
+    reaches a person (`student_number`, `employee_number`, a phone number), an
+    id, key or identifier of a student or staff member, or any `_number`
+    column that does not number a category (`_CATEGORIES`, such as
+    `module_number` or a band number). Another id (`assessment_id`) names no
+    one, so a proof may compare it with a literal.
     """
     name = column.lower()
+    person = any(word in name for word in _PEOPLE)
     return (
         name in student
         or name.endswith(("_name", "_email"))
         or name.endswith(_PERSON_NUMBERS)
-        or (
-            any(word in name for word in _PEOPLE)
-            and name.endswith(("_id", "_key", "_number", "_identifier"))
-        )
+        or (person and name.endswith(("_id", "_key", "_number", "_identifier")))
+        or (name.endswith("_number") and not any(word in name for word in _CATEGORIES))
     )
 
 
