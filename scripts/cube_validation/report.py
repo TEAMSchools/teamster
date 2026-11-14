@@ -17,7 +17,6 @@ from dataclasses import dataclass, field
 from datetime import timezone
 from pathlib import Path
 
-from .checks import Finding
 from .compare import Gap, Group
 from .config import SEPARATED_DIGITS, Decision
 from .decisions import Applied
@@ -64,7 +63,6 @@ _SEPARATED_DIGITS = SEPARATED_DIGITS
 @dataclass
 class MeasureResult:
     measure: str
-    strongest: str
     verdict: str
     cells: dict[str, int] = field(default_factory=dict)
     open_groups: int = 0
@@ -80,7 +78,6 @@ class RunResult:
     moment: Build
     measures: list[MeasureResult]
     applied: Applied
-    findings: list[Finding] = field(default_factory=list)
     live_sources: list[str] = field(default_factory=list)
     changed_dims: list[str] = field(default_factory=list)
     scopes: list[str] = field(default_factory=list)
@@ -184,12 +181,6 @@ def shown_counts(total: int, parts: list[int], posted: bool) -> tuple[str, list[
     return str(total), [str(n) for n in parts]
 
 
-def _verdict_text(m: MeasureResult) -> str:
-    if m.verdict == "not validated" and m.strongest == "consistent only":
-        return "not validated (consistent only)"
-    return m.verdict
-
-
 def _bullets(items: list[str], empty: str = "None.") -> list[str]:
     return [f"- {i}" for i in items] if items else [empty]
 
@@ -254,7 +245,7 @@ def render_local(run: RunResult) -> str:
     out += ["", "## Measures", ""]
     for m in run.measures:
         cells = ", ".join(f"{k} {v}" for k, v in sorted(m.cells.items()))
-        line = f"- `{m.measure}`: {m.strongest}; {_verdict_text(m)}"
+        line = f"- `{m.measure}`: {m.verdict}"
         line = f"{line} ({cells})" if cells else line
         # The verdict reads cells only; row groups still open are named so
         # "validated" never hides them.
@@ -268,13 +259,6 @@ def render_local(run: RunResult) -> str:
             plural = "comparison" if m.open_cells == 1 else "comparisons"
             line += f"; cell differences to triage in {m.open_cells} {plural}"
         out.append(line)
-
-    if run.findings:
-        out += [
-            "",
-            "Anchors and identities read Cube's data as it is now, not at the "
-            "moment above.",
-        ]
 
     out += ["", "## Triage", ""]
     triage = []
@@ -431,13 +415,6 @@ def save_local(run: RunResult, text: str, root: Path | None = None) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text)
     return path
-
-
-def _num(measure: str, x: float) -> str:
-    """Mask a count anchor (`count_` measures) under 10; show other figures."""
-    if measure.startswith("count_") and float(x).is_integer():
-        return mask(int(x))
-    return f"{x:g}"
 
 
 def _clean(text: str) -> str:
@@ -995,8 +972,7 @@ def render_review_issue(
     Args:
         domain: The domain whose owner reviews (for example `Registrar`).
         runs: Validation runs; only domain-owner groups, domain-owner missing
-            cuts and filters (by caption, never a value), and anchor findings
-            for measures that read `judge the anchor` are kept.
+            cuts and filters (by caption, never a value) are kept.
         definitions: Per view, per comparison id, what each side counts
             (`dashboard`, `cube`). Shown side by side for a comparison with a
             domain-owner group, scrubbed like a reason.
@@ -1020,16 +996,6 @@ def render_review_issue(
     asked = _questions(runs, causes)
     kinds = [k for q in asked for k in q["kinds"]]
     asked_ids = [d.id for q in asked for _, d in q["decisions"]]
-    anchor_lines: list[str] = []
-    for run in runs:
-        judged = {m.measure for m in run.measures if m.verdict == "judge the anchor"}
-        for f in run.findings:
-            if f.kind == "anchor" and f.measure in judged and not f.passed:
-                anchor_lines.append(
-                    f"`{f.measure}` in `{run.view}`: Cube shows {_num(f.measure, f.left)}, "
-                    f"the source shows {_num(f.measure, f.right)}."
-                )
-
     definition_lines = []
     for run in runs:
         shown = defined_comparisons(asked, run.view)
@@ -1070,7 +1036,7 @@ def render_review_issue(
             if out_block:
                 blocks.append((q["id"], out_block))
         body = _review_body(
-            domain, question_lines, anchor_lines, definition_lines, check_lines,
+            domain, question_lines, definition_lines, check_lines,
             asked_ids, kinds, shown, also, moved=moved if blocks else 0,
             json_link=json_link,
         )  # fmt: skip
@@ -1160,7 +1126,6 @@ def _comment_chunks(blocks: list[tuple[str, list[str]]], moved: int = 1) -> list
 def _review_body(
     domain: str,
     question_lines: list[str],
-    anchor_lines: list[str],
     definition_lines: list[str],
     check_lines: list[str],
     asked_ids: list[str],
@@ -1173,19 +1138,18 @@ def _review_body(
     """The review body from its rendered parts; `moved` says the Reproduce
     blocks follow in comments (2: the hand checks too); `questions` is the
     JSON to post, without the `confirm` commands, which are the analyst's."""
-    # One question per bullet and per anchor finding.
     ids = sorted(set(asked_ids))
-    n = len(question_lines) + len(anchor_lines)
+    n = len(question_lines)
     plural = "question" if n == 1 else "questions"
     out = [
         "## What and why",
         "",
         f"The {domain} team owns the rule behind {n} {plural} in the Cube validation.",
-        "Cube and the dashboard disagree on them, or Cube disagrees with a source outside the dashboards.",
+        "Cube and the dashboard disagree on them.",
         f"Counts under {MASK_BELOW} show as `{mask(0)}`, and identifiers of students and staff are hidden.",
         "",
     ]
-    out += _bullets(question_lines + anchor_lines, "Nothing needs review.")
+    out += _bullets(question_lines, "Nothing needs review.")
     if also:
         out += [
             "",
@@ -1233,8 +1197,7 @@ def _review_body(
         f"Questions: {len(question_lines)}. Row-group parts: {kinds.count('group')}. "
         f"Cause parts: {kinds.count('cause')}. "
         f"Cell differences: {kinds.count('cells')}. "
-        f"Missing cuts and filters: {kinds.count('gap')}. "
-        f"Anchor findings: {len(anchor_lines)}.",
+        f"Missing cuts and filters: {kinds.count('gap')}.",
         "",
         "</details>",
         "",

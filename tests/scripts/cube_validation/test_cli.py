@@ -87,12 +87,6 @@ comparisons:
         - { dashboard: is_present, cube: attendance_value }
 """
     + PROOF
-    + """\
-identities:
-  - name: ada-ratio
-    left: avg_daily_attendance
-    right: sum_attendance_value / sum_membership_value
-"""
 )
 
 RECONCILE_ROWS = [
@@ -499,9 +493,8 @@ def test_run_saves_each_comparison_s_unmatched_rows_to_a_labelled_table(
 def _four(tmp_path):
     """The view file with its comparison repeated as `ada-region-1` to `-4`."""
     head, rest = YML.split("  - id: ada-region\n", 1)
-    block, tail = rest.split("identities:", 1)
-    blocks = "".join(f"  - id: ada-region-{i}\n" + block for i in range(1, 5))
-    return _file(tmp_path, head + blocks + "identities:" + tail)
+    blocks = "".join(f"  - id: ada-region-{i}\n" + rest for i in range(1, 5))
+    return _file(tmp_path, head + blocks)
 
 
 def _outer(bq):
@@ -841,34 +834,6 @@ def test_run_max_usd_sets_the_cap(fakes, tmp_path):
     )
 
 
-def _identity_sql(sql):
-    """Cube's compiled SQL for an identity load: no other query reads both sums."""
-    return "`v__sum_attendance_value`" in sql
-
-
-def test_run_prices_a_cube_load_before_it_runs(fakes, tmp_path, capsys):
-    fakes.bq.cost = lambda sql: 10.0 if _identity_sql(sql) else 0.0
-
-    # Above the run cap, under a raised daily cap: the run cap must refuse it.
-    argv = ["run", str(_file(tmp_path)), "--max-usd-per-day", "100"]
-    assert cli.main(argv) == 1
-
-    assert "5.00" in capsys.readouterr().err
-    assert fakes.cube.loads == []
-
-
-def test_run_cost_includes_cube_loads(fakes, tmp_path, capsys):
-    fakes.bq.cost = lambda sql: 1.0 if _identity_sql(sql) else 0.0
-
-    assert cli.main(["run", str(_file(tmp_path)), "--max-usd", "50"]) == 0
-
-    # 2 identity cuts, 1 load each.
-    (saved,) = (tmp_path / "cache" / "v").glob("*/run.json")
-    assert json.loads(saved.read_text())["cost_usd"] == pytest.approx(2.0)
-    cost = _section(capsys.readouterr().out, "## Cost", "##")
-    assert "$2.00" in cost and "Cube loads" in cost and "dry-run" in cost
-
-
 def test_run_names_dimensions_that_changed(fakes, tmp_path, capsys):
     fakes.bq.changed = ("dim_locations",)
 
@@ -896,8 +861,7 @@ def test_run_sends_and_names_set_scopes(fakes, tmp_path, capsys):
         {"member": "v.membership_value", "operator": "equals", "values": ["1"]},
         {"member": "v.attendance_value", "operator": "set"},
     ]
-    # Identity loads are compiled only to price them; scopes are a comparison's.
-    compared = [q for q in fakes.cube.compiled_queries if q not in fakes.cube.loads]
+    compared = fakes.cube.compiled_queries
     assert compared
     for query in compared:
         assert all(f in query["filters"] for f in wanted)
@@ -911,17 +875,15 @@ def test_run_never_signs_in_to_tableau(fakes, tmp_path):
     assert fakes.signed_in == 0
 
 
-def test_run_reports_cells_proofs_and_identity(fakes, tmp_path, capsys):
+def test_run_reports_cells_and_proofs(fakes, tmp_path, capsys):
     assert cli.main(["run", str(_file(tmp_path))]) == 0
 
     out = capsys.readouterr().out
     # The Miami group is still open, so the measure line says so.
     assert (
-        "`avg_daily_attendance`: matches a dashboard; validated (pass 2); "
-        "1 open row group to triage"
+        "`avg_daily_attendance`: differs (pass 2); 1 open row group to triage"
     ) in out
     assert "ada-region: last proven 2026-10-26T12:00:00+00:00" in out
-    assert "ada-ratio" in out
     assert "regions_region_name" in out and "Miami" in out
     assert list((tmp_path / "cache" / "v").glob("*/result.md"))
 
@@ -1004,30 +966,12 @@ def test_run_does_not_warn_on_a_recent_proof(fakes, tmp_path, capsys):
     assert "Warning: the proof" not in capsys.readouterr().out
 
 
-def test_run_reads_each_identity_cut_in_one_load(fakes, tmp_path, capsys):
-    fakes.cube._load = lambda q: [_load_row(q, 0.5)]
-
-    assert cli.main(["run", str(_file(tmp_path))]) == 0
-
-    # 2 cuts, 1 load each: both sides come from one result.
-    assert len(fakes.cube.loads) == 2
-    for query in fakes.cube.loads:
-        assert query["measures"] == [
-            "v.avg_daily_attendance",
-            "v.sum_attendance_value",
-            "v.sum_membership_value",
-        ]
-    out = capsys.readouterr().out
-    assert out.count("identity `ada-ratio`") == 2
-    assert "(passes)" in out and "(fails)" not in out
-
-
 def test_run_cells_that_differ_fail_the_dashboard_check(fakes, tmp_path, capsys):
     fakes.bq.probe = [{"region": "Newark", "value": 0.5}]
 
     assert cli.main(["run", str(_file(tmp_path))]) == 0
 
-    assert "matches a dashboard; differs" in capsys.readouterr().out
+    assert "differs" in capsys.readouterr().out
 
 
 def test_run_refuses_without_email(fakes, tmp_path, monkeypatch, capsys):
@@ -2145,10 +2089,8 @@ def test_prove_failure_output_is_summarized(fakes, tmp_path, capsys):
 
 
 def test_prove_several_comparisons_share_one_capture(fakes, tmp_path, capsys):
-    block = UNPROVEN.split("comparisons:\n", 1)[1].split("identities:", 1)[0]
-    text = UNPROVEN.replace(
-        "identities:", block.replace("id: ada-region", "id: ada-twin") + "identities:"
-    )
+    block = UNPROVEN.split("comparisons:\n", 1)[1]
+    text = UNPROVEN + block.replace("id: ada-region", "id: ada-twin")
     path = _file(tmp_path, text)
     argv = [
         "prove",
@@ -2404,12 +2346,8 @@ def test_prove_headers_prints_the_export_without_probing(fakes, tmp_path, capsys
 
 # --- Tableau sessions ------------------------------------------------------------
 
-TWIN = UNPROVEN.replace(
-    "identities:",
-    UNPROVEN.split("comparisons:\n", 1)[1]
-    .split("identities:", 1)[0]
-    .replace("id: ada-region", "id: ada-twin")
-    + "identities:",
+TWIN = UNPROVEN + UNPROVEN.split("comparisons:\n", 1)[1].replace(
+    "id: ada-region", "id: ada-twin"
 )
 TWO = ["--comparison", "ada-region", "--comparison", "ada-twin"]
 
@@ -3617,7 +3555,8 @@ def test_reapply_quiets_a_newly_decided_group_and_review_accepts_it(
     assert [d["id"] for d, _ in after["applied"]["quiet"]] == ["miami-scope"]
     assert after["applied"]["open"] == []
     assert after["measures"][0]["open_groups"] == 0
-    assert after["measures"][0]["verdict"] == measure["verdict"]
+    assert measure["verdict"] == "differs"
+    assert after["measures"][0]["verdict"] == "validated"
     assert after["cube_host"] == before["cube_host"]
     assert after["decisions_fingerprint"] != before["decisions_fingerprint"]
     out = capsys.readouterr().out
@@ -3631,6 +3570,22 @@ def test_reapply_quiets_a_newly_decided_group_and_review_accepts_it(
 
     _triage_everything(tmp_path)
     assert cli.main(["review", str(path), "--domain", "Registrar"]) == 0
+
+
+def test_reapply_marks_a_measure_validated_once_its_last_group_is_decided(
+    fakes, tmp_path, monkeypatch
+):
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+    (before,) = _saved_run(tmp_path)["measures"]
+    assert before["open_groups"] > 0
+    (result_md,) = (tmp_path / "cache" / "v").glob("*/result.md")
+    assert "`avg_daily_attendance`: differs" in result_md.read_text()
+    path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
+    _no_clients(monkeypatch)
+
+    assert cli.main(["reapply", str(path)]) == 0
+
+    assert "`avg_daily_attendance`: validated" in result_md.read_text()
 
 
 def test_reapply_keeps_a_decision_whose_sql_changed_open(

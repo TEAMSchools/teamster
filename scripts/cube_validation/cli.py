@@ -165,7 +165,7 @@ def _moment(value: str) -> datetime:
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="python -m scripts.cube_validation",
-        description="Validate Cube measures against dashboards, anchors and identities.",
+        description="Validate Cube measures against dashboards.",
     )
     sub = parser.add_subparsers(dest="command", required=True)
 

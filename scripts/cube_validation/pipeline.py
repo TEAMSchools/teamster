@@ -29,11 +29,10 @@ from typing import Any
 
 import tableauserverclient as TSC
 
-from . import answers, checkpoints, checks, compare, decisions
+from . import answers, checkpoints, compare, decisions
 from . import discover as finder
 from . import report, saved, tableau, triage
 from .bq import Warehouse
-from .checks import CheckResult, Finding
 from .compare import CellDiff, Gap, Group
 from .config import (
     WEEK_END_KEY,
@@ -70,9 +69,6 @@ PROOF_WINDOW = WINDOW - timedelta(hours=1)
 
 class Refusal(RuntimeError):
     """A command stopped on purpose; the message says why."""
-
-
-Clock = Callable[[], datetime]
 
 
 # --- filters and queries -----------------------------------------------------
@@ -1224,19 +1220,6 @@ def _clauses(comparison: Comparison, groups: list[Group], sides: _Sides) -> list
     )
 
 
-def _identity_cuts(cfg: ViewConfig, comparisons: list[Comparison]) -> list[dict]:
-    """Each comparison cut, keyed by Cube member, for the identities."""
-    cuts: dict[str, dict] = {}
-    for comparison in comparisons:
-        for cut in _cuts(comparison):
-            mapped = {
-                comparison.filters[caption].cube: value
-                for caption, value in effective_filters(comparison, cut).items()
-            }
-            cuts.setdefault(cut_label(mapped), mapped)
-    return list(cuts.values()) or [{}]
-
-
 def _priced_load(cube: Cube, wh: Warehouse, query: dict) -> list[dict]:
     """`Cube.load`, after a dry run of the SQL Cube compiles for the same query.
 
@@ -1245,57 +1228,6 @@ def _priced_load(cube: Cube, wh: Warehouse, query: dict) -> list[dict]:
     """
     wh.price(bind(cube.compiled(query)))
     return cube.load(query)
-
-
-def _load_value(cube: Cube, wh: Warehouse, query: dict, member: str) -> float | None:
-    rows = _priced_load(cube, wh, query)
-    if not rows or rows[0].get(member) is None:
-        return None
-    return float(rows[0][member])
-
-
-def _anchors_and_identities(
-    cfg: ViewConfig, cube: Cube, wh: Warehouse, comparisons: list[Comparison]
-) -> tuple[list[Finding], dict[str, list[CheckResult]]]:
-    """Run anchors and identities through `Cube.load` on current data.
-
-    Each load is priced first, so call this inside `wh.budget`.
-    """
-    findings: list[Finding] = []
-    results: dict[str, list[CheckResult]] = {}
-
-    for anchor in cfg.anchors:
-        # load_view_config requires time_dimension whenever anchors are set.
-        value = _load_value(
-            cube,
-            wh,
-            checks.anchor_query(anchor, cfg.view, cfg.time_dimension or ""),
-            _member(cfg.view, anchor.measure),
-        )
-        findings.append(
-            checks.anchor_finding(anchor, float("nan") if value is None else value)
-        )
-        results.setdefault(anchor.measure, []).append(CheckResult("anchor", False))
-
-    for identity in cfg.identities:
-        for cut in _identity_cuts(cfg, comparisons):
-            query = checks.identity_query(identity, cut, cfg.view)
-            rows = _priced_load(cube, wh, query)
-            row = rows[0] if rows else {}
-            # One row holds both sides; `right` reads only the names it uses.
-            values = {
-                m.split(".", 1)[1]: _number(row.get(m)) for m in query["measures"]
-            }
-            # trunk-ignore(pyright/reportArgumentType): identity_finding fails a None side
-            finding = checks.identity_finding(identity, values[identity.left], values)
-            finding = dataclasses.replace(
-                finding, detail=f"{finding.detail} (cut {cut_label(cut)})"
-            )
-            findings.append(finding)
-            results.setdefault(identity.left, []).append(
-                CheckResult("identity", finding.passed)
-            )
-    return findings, results
 
 
 def _open_counts(
@@ -1316,59 +1248,65 @@ def _open_counts(
     return groups, gaps, cells
 
 
+def verdict(
+    cells: dict[str, int], open_groups: int, open_gaps: int, open_cells: int
+) -> str:
+    """`validated` when every cell passes or is only dashboard-filtered and
+    nothing is left to triage, else `differs`.
+
+    Args:
+        cells: Cell count per verdict for one measure.
+        open_groups: Open row groups.
+        open_gaps: Open missing cuts and filters.
+        open_cells: Comparisons with open cell differences.
+
+    Returns:
+        `validated` or `differs`; a measure with no cells is `differs`.
+    """
+    clean = bool(cells) and all(v in ("pass", "dashboard_filtered") for v in cells)
+    open_items = open_groups or open_gaps or open_cells
+    return "validated" if clean and not open_items else "differs"
+
+
 def _measures(
     comparisons: list[Comparison],
     cells: list[Cell],
-    other: dict[str, list[CheckResult]],
     open_groups: list[Group],
     open_gaps: list[Gap],
     open_cells: list[CellDiff],
 ) -> list[MeasureResult]:
-    """The verdict reads cells only; open groups and gaps are counted beside it."""
-    results: dict[str, list[CheckResult]] = {}
+    """One result per measure: its cell counts, open items and verdict."""
     counts: dict[str, Counter] = {}
     for comparison in comparisons:
         mine = [c for c in cells if c.comparison == comparison.id]
-        # A cell only a dashboard-only filter drops is explained; it is counted
-        # beside the passes, and its filter is triaged as a missing filter.
-        passed = bool(mine) and all(
-            c.verdict in ("pass", "dashboard_filtered") for c in mine
-        )
-        results.setdefault(comparison.measure, []).append(
-            CheckResult("dashboard", passed)
-        )
         counts.setdefault(comparison.measure, Counter()).update(c.verdict for c in mine)
-    for measure, found in other.items():
-        results.setdefault(measure, []).extend(found)
     groups, gaps, open_cell_counts = _open_counts(
         comparisons, open_groups, open_gaps, open_cells
     )
     return [
         MeasureResult(
             measure,
-            checks.strongest_check(measure, found),
-            checks.verdict(found),
-            dict(counts.get(measure, {})),
+            verdict(
+                dict(found),
+                groups.get(measure, 0),
+                gaps.get(measure, 0),
+                open_cell_counts.get(measure, 0),
+            ),
+            dict(found),
             groups.get(measure, 0),
             gaps.get(measure, 0),
             open_cell_counts.get(measure, 0),
         )
-        for measure, found in results.items()
+        for measure, found in counts.items()
     ]
 
 
-def _extra_sections(cells: list[Cell], findings: list[Finding]) -> str:
+def _extra_sections(cells: list[Cell]) -> str:
     out = ["## Cells", ""]
     out += [
         f"- {c.comparison} {c.cut} {c.key}: dashboard {c.dashboard}, "
         f"Cube {c.cube} ({c.verdict})"
         for c in cells
-    ] or ["None."]
-    out += ["", "## Anchors and identities", ""]
-    out += [
-        f"- {f.kind} `{f.measure}`: {f.detail} "
-        f"({'passes' if f.passed else 'to judge' if f.kind == 'anchor' else 'fails'})"
-        for f in findings
     ] or ["None."]
     return "\n".join(out) + "\n"
 
@@ -1520,10 +1458,6 @@ def missing_members(
             queries.append(row_query(cfg.view, comparison))
         names = _unique(m for q in queries for m in _query_members(q))
         found += [f"{comparison.id}: {m}" for m in names if m not in known]
-    for anchor in cfg.anchors:
-        query = checks.anchor_query(anchor, cfg.view, cfg.time_dimension or "")
-        names = _unique(_query_members(query))
-        found += [f"anchor {anchor.measure}: {m}" for m in names if m not in known]
     return found
 
 
@@ -1744,7 +1678,6 @@ def run(
             )
             dims = sorted(sides.cube_tables - {cfg.fact, *cfg.also_facts})
             changed = changed_between(wh, dims, build.start, build.end)
-            findings, other = _anchors_and_identities(cfg, cube, wh, comparisons)
         finally:
             checkpoints.record_spend(folder, process, wh.spent)
         cost = checkpoints.total_spend(folder)
@@ -1771,13 +1704,11 @@ def run(
         measures=_measures(
             comparisons,
             sides.cells,
-            other,
             applied.open,
             applied.open_gaps,
             applied.open_cells,
         ),
         applied=applied,
-        findings=findings,
         live_sources=sorted(sides.live),
         changed_dims=changed,
         scopes=[
@@ -1810,7 +1741,7 @@ def run(
         cell_rows=sides.cell_rows,
         cell_students=sides.cell_students,
     )
-    text = report.render_local(result) + "\n" + _extra_sections(sides.cells, findings)
+    text = report.render_local(result) + "\n" + _extra_sections(sides.cells)
     print(text)
     saved = report.save_local(result, text, root=cache_root)
     saved.with_name("run.json").write_text(
@@ -1968,7 +1899,6 @@ def _run_from_json(data: dict) -> RunResult:
             ],
             causes=[Decision(**d) for d in applied.get("causes", [])],
         ),
-        findings=[Finding(**f) for f in data["findings"]],
         live_sources=data["live_sources"],
         changed_dims=data["changed_dims"],
         scopes=data["scopes"],
@@ -2101,7 +2031,7 @@ def reapply(cfg: ViewConfig, cache_root: Path) -> RunResult:
     cell differences and SQL fingerprints are re-sorted by the current
     decisions as `run` would sort them; a decision whose fingerprints differ
     from the run's still lands in `reconfirm`. Rewrites `run.json` and
-    `result.md` and runs no query. The verdict reads cells only, so it stays.
+    `result.md` and runs no query. The verdict is read again from the cells and the open counts.
     Clauses stay as the run computed them, over the groups open then, so a
     group a deleted decision reopens may show no clause until the next `run`.
 
@@ -2124,6 +2054,12 @@ def reapply(cfg: ViewConfig, cache_root: Path) -> RunResult:
         measures=[
             dataclasses.replace(
                 m,
+                verdict=verdict(
+                    m.cells,
+                    groups.get(m.measure, 0),
+                    gaps.get(m.measure, 0),
+                    cells.get(m.measure, 0),
+                ),
                 open_groups=groups.get(m.measure, 0),
                 open_gaps=gaps.get(m.measure, 0),
                 open_cells=cells.get(m.measure, 0),
@@ -2132,7 +2068,7 @@ def reapply(cfg: ViewConfig, cache_root: Path) -> RunResult:
         ],
         decisions_fingerprint=decisions.decisions_fingerprint(cfg.decisions),
     )
-    # The cells and anchors sections need every cell the run held; decisions
+    # The cells section needs every cell the run held; decisions
     # never change them, so the saved report's copy is kept.
     old = run_json.with_name("result.md")
     old_text = old.read_text() if old.exists() else ""
@@ -2962,7 +2898,6 @@ def prove_check(
         stale += [
             f"{line}, which Cube's model no longer has; fix the mapping and re-prove"
             for line in missing_members(cfg, proven, cube.meta())
-            if not line.startswith("anchor ")
         ]
     twbs: dict[str, str] = {}
     for comparison in cfg.comparisons:

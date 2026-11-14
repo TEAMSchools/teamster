@@ -43,17 +43,6 @@ comparisons:
     proof: null
   - id: second
     measure: other
-anchors:
-  - measure: avg_daily_attendance
-    value: 0.912
-    source: PowerSchool ADA report
-    as_of: 2026-10-15
-    date_range: [2026-08-12, 2026-10-15]
-    filters: { regions_region_name: Newark }
-identities:
-  - name: ada-is-attendance-over-membership
-    left: avg_daily_attendance
-    right: sum_attendance_value / sum_membership_value
 decisions:
   - id: example
     comparison: ada-y1-region
@@ -82,8 +71,6 @@ def test_loads_example(tmp_path):
     assert first.rows is not None and first.rows.grain[1].cube == "attendance_date"
     assert first.defaults["Region"] == ["Camden", "Newark", "Paterson"]
     assert first.proof is None
-    assert cfg.anchors[0].value == 0.912
-    assert cfg.identities[0].right == "sum_attendance_value / sum_membership_value"
     assert cfg.decisions[0].call == "deliberate"
 
 
@@ -246,7 +233,6 @@ def test_write_proof_adds_missing_key_and_replaces_existing(tmp_path):
     cfg = load_view_config(path)
     assert cfg.comparisons[1].proof is not None
     assert cfg.comparisons[1].proof.fingerprint == "b"
-    assert cfg.anchors[0].measure == "avg_daily_attendance"
 
 
 def test_write_proof_unknown_id(tmp_path):
@@ -262,30 +248,29 @@ def test_time_dimension_is_read(tmp_path):
     assert cfg.time_dimension == "attendance_date"
 
 
-def test_anchors_need_a_time_dimension(tmp_path):
-    text = EXAMPLE.replace("time_dimension: attendance_date\n", "")
+@pytest.mark.parametrize("key", ["anchors", "identities"])
+def test_an_anchor_or_identity_block_is_refused(tmp_path, key):
+    path = _write(tmp_path, EXAMPLE + f"{key}: []\n")
 
-    with pytest.raises(ConfigError, match="time_dimension"):
-        load_view_config(_write(tmp_path, text))
+    with pytest.raises(ConfigError, match=f"{key}: delete this block"):
+        load_view_config(path)
 
 
 def test_rows_need_a_time_dimension(tmp_path):
     text = EXAMPLE.replace("time_dimension: attendance_date\n", "")
-    text = text.split("anchors:")[0] + "identities:" + text.split("identities:")[1]
 
-    with pytest.raises(ConfigError, match="time_dimension.*rows"):
+    with pytest.raises(ConfigError, match="time_dimension.*comparison rows"):
         load_view_config(_write(tmp_path, text))
 
 
-def test_time_dimension_is_optional_without_anchors_or_rows(tmp_path):
+def test_time_dimension_is_optional_without_rows(tmp_path):
     text = EXAMPLE.replace("time_dimension: attendance_date\n", "")
-    text = text.split("anchors:")[0] + "identities:" + text.split("identities:")[1]
     head, tail = text.split("    rows:\n", 1)
     text = head + "    proof: null" + tail.split("    proof: null", 1)[1]
 
     cfg = load_view_config(_write(tmp_path, text))
 
-    assert cfg.time_dimension is None and cfg.anchors == []
+    assert cfg.time_dimension is None
     assert cfg.comparisons[0].rows is None
 
 

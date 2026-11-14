@@ -1,8 +1,7 @@
 """Load and validate the per-view Cube validation files.
 
 Each file at `src/cube/validation/<view>.yml` records the dashboard-to-Cube
-comparisons for one Cube view, the anchors and identities that check it, and
-the decisions made about differences. Cube loads only `src/cube/model/`, so
+comparisons for one Cube view and the decisions made about differences. Cube loads only `src/cube/model/`, so
 these files never reach the semantic layer.
 """
 
@@ -206,23 +205,6 @@ def row_population(comparison: Comparison) -> str | None:
 
 
 @dataclass(frozen=True)
-class Anchor:
-    measure: str
-    value: float
-    source: str
-    as_of: Any = None
-    date_range: list[Any] = field(default_factory=list)
-    filters: dict[str, Any] = field(default_factory=dict)
-
-
-@dataclass(frozen=True)
-class Identity:
-    name: str
-    left: str
-    right: str
-
-
-@dataclass(frozen=True)
 class Decision:
     id: str
     comparison: str
@@ -255,8 +237,6 @@ class ViewConfig:
     comparisons: list[Comparison]
     email: str | None = None
     time_dimension: str | None = None
-    anchors: list[Anchor] = field(default_factory=list)
-    identities: list[Identity] = field(default_factory=list)
     decisions: list[Decision] = field(default_factory=list)
     tasks: dict[str, str] = field(default_factory=dict)
     # Facts other than `fact` that the view's members read. Cube reads them at
@@ -591,25 +571,6 @@ def _filter_entry(reader: _Reader, side: str) -> dict[str, Any]:
     return {side: column, "operator": operator, "values": values}
 
 
-def _anchor(reader: _Reader) -> Anchor:
-    return Anchor(
-        measure=reader.get("measure", str, required=True),
-        value=reader.get("value", (int, float), required=True),
-        source=reader.get("source", str, required=True),
-        as_of=reader.data.get("as_of"),
-        date_range=reader.get("date_range", list, default=[]),
-        filters=reader.get("filters", dict, default={}),
-    )
-
-
-def _identity(reader: _Reader) -> Identity:
-    return Identity(
-        name=reader.get("name", str, required=True),
-        left=reader.get("left", str, required=True),
-        right=reader.get("right", str, required=True),
-    )
-
-
 def _child_node(node: yaml.Node | None, key: str | int) -> yaml.Node | None:
     """One key of a mapping node or one item of a sequence node, else None."""
     if isinstance(node, yaml.MappingNode) and isinstance(key, str):
@@ -785,14 +746,17 @@ def load_view_config(path: Path) -> ViewConfig:
         if ids.count(cid) > 1:
             root.fail(f"comparisons[{i}].id", f"duplicate comparison id {cid!r}")
 
-    anchors = [_anchor(r) for r in _list_of(root, "anchors")]
+    for key in ("anchors", "identities"):
+        if key in root.data:
+            root.fail(
+                key,
+                "delete this block; the validator checks Cube against dashboards only",
+            )
     time_dimension = _identifier(root, "time_dimension")
     # Row comparisons cast the time dimension to DATE on both sides; without
     # it a date grain joins TIMESTAMP text to DATE text and nothing matches.
-    if not time_dimension and (anchors or any(c.rows for c in comparisons)):
-        root.fail(
-            "time_dimension", "is required when anchors or comparison rows are set"
-        )
+    if not time_dimension and any(c.rows for c in comparisons):
+        root.fail("time_dimension", "is required when comparison rows are set")
 
     return ViewConfig(
         view=_identifier(root, "view", required=True),
@@ -800,8 +764,6 @@ def load_view_config(path: Path) -> ViewConfig:
         email=root.get("email", str),
         time_dimension=time_dimension,
         comparisons=comparisons,
-        anchors=anchors,
-        identities=[_identity(r) for r in _list_of(root, "identities")],
         decisions=[
             _decision(r, set(ids), _value_texts(tree, i))
             for i, r in enumerate(_list_of(root, "decisions"))

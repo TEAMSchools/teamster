@@ -4,10 +4,10 @@ import re
 from datetime import datetime, timezone
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation.answers import questions_json
+from cube_validation import pipeline
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation.checks import Finding
+from cube_validation.answers import questions_json
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.compare import CellDiff, Gap, Group
@@ -17,8 +17,6 @@ from cube_validation.config import ColumnPair, Comparison, Decision, ViewConfig
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.decisions import Applied
-
-# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.moment import Build
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
@@ -32,6 +30,9 @@ from cube_validation.report import (
     save_local,
     suppress,
 )
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+
 
 START = datetime(2026, 10, 27, 6, 0, tzinfo=timezone.utc)
 END = datetime(2026, 10, 27, 6, 5, 30, tzinfo=timezone.utc)
@@ -74,24 +75,11 @@ def _run(**overrides):
         view="enrollment_view",
         moment=Build(START, END, "job-1"),
         measures=[
-            MeasureResult("enrolled", "matches a dashboard", "validated", {"pass": 12}),
-            MeasureResult(
-                "withdrawn",
-                "matches a dashboard",
-                "differs",
-                {"pass": 10, "differs": 1},
-            ),
-            MeasureResult(
-                "seats", "anchored to a source", "judge the anchor", {"pass": 1}
-            ),
-            MeasureResult("ratio", "consistent only", "not validated", {}),
-            MeasureResult("misc", "none", "not validated", {}),
+            MeasureResult("enrolled", "validated", {"pass": 12}),
+            MeasureResult("withdrawn", "differs", {"pass": 10, "differs": 1}),
+            MeasureResult("seats", "differs", {"pass": 1, "differs": 1}),
         ],
         applied=applied,
-        findings=[
-            Finding("anchor", "seats", "seats vs state", 7.0, 1234.5, False),
-            Finding("identity", "ratio", "ratio identity", 1.0, 1.0, True),
-        ],
         live_sources=["kipptaf_extracts.rpt_enrollment"],
         changed_dims=["dim_students"],
         scopes=["region = Newark"],
@@ -109,25 +97,16 @@ def test_mask_small_counts():
     assert mask(0) == "<10"
 
 
-def test_consistent_only_measure_reads_not_validated():
-    text = render_local(_run())
-    assert "not validated (consistent only)" in text
-    assert "misc" in text and "(consistent only)" not in text.split("misc")[1]
-
-
 def test_measure_line_names_open_row_groups():
     measures = [
-        MeasureResult("enrolled", "matches a dashboard", "validated", {"pass": 135}, 2),
-        MeasureResult("left", "matches a dashboard", "validated", {"pass": 3}, 1),
-        MeasureResult("clean", "matches a dashboard", "validated", {"pass": 4}),
+        MeasureResult("enrolled", "validated", {"pass": 135}, 2),
+        MeasureResult("left", "validated", {"pass": 3}, 1),
+        MeasureResult("clean", "validated", {"pass": 4}),
     ]
     text = render_local(_run(measures=measures))
-    assert (
-        "- `enrolled`: matches a dashboard; validated (pass 135); "
-        "2 open row groups to triage"
-    ) in text
+    assert ("- `enrolled`: validated (pass 135); 2 open row groups to triage") in text
     assert "validated (pass 3); 1 open row group to triage" in text
-    assert "- `clean`: matches a dashboard; validated (pass 4)\n" in text
+    assert "- `clean`: validated (pass 4)\n" in text
 
 
 def test_local_result_names_partly_stale_values():
@@ -188,7 +167,6 @@ def test_review_issue_has_no_raw_small_counts():
     body = render_review_issue("Registrar", [_run()])
     assert "40 rows, 12 students" in body
     assert "<10 rows, <10 students" in body
-    assert "1234.5" in body
     assert "Camden" not in body  # deliberate group, not domain owner
 
 
@@ -205,7 +183,7 @@ def test_review_issue_structure_and_redaction():
     assert "withdrawn" not in body and "enrolled" not in body
 
 
-def _issue_with(group, reason="ok", findings=None, measures=None):
+def _issue_with(group, reason="ok", measures=None):
     d = Decision(
         "dx",
         "enrollment",
@@ -214,8 +192,6 @@ def _issue_with(group, reason="ok", findings=None, measures=None):
         {"column": group.dims[0][0], "values": [group.dims[0][1]]},
     )
     run = _run(applied=Applied(quiet=[(d, group)]))
-    if findings is not None:
-        run.findings = findings
     if measures is not None:
         run.measures = measures
     return render_review_issue("Registrar", [run])
@@ -317,27 +293,6 @@ def test_separated_ids_in_reason_redacted():
     )
 
 
-def test_passing_anchor_not_listed_and_count_masking():
-    measures = [
-        MeasureResult("count_seats", "anchored to a source", "judge the anchor"),
-        MeasureResult("rate", "anchored to a source", "judge the anchor"),
-        MeasureResult("fine", "anchored to a source", "judge the anchor"),
-    ]
-    findings = [
-        Finding("anchor", "count_seats", "d", 7.0, 8.0, False),
-        Finding("anchor", "rate", "d", 7.0, 8.0, False),
-        Finding("anchor", "fine", "d", 1.0, 1.0, True),
-    ]
-    g = Group("enrollment", (("region", "Newark"),), "value_differs", 40, 12)
-    body = _issue_with(g, findings=findings, measures=measures)
-    assert (
-        "`count_seats` in `enrollment_view`: Cube shows <10, the source shows <10."
-        in body
-    )
-    assert "`rate` in `enrollment_view`: Cube shows 7, the source shows 8." in body
-    assert "`fine`" not in body
-
-
 def test_save_local_writes_under_moment(tmp_path):
     run = _run()
     path = save_local(run, "hello", root=tmp_path)
@@ -357,13 +312,6 @@ def test_review_issue_names_every_dim_and_masks_each():
     assert "- Q1. `regions_region_name` = `Camden` in enrollment" in body
     assert "SECRETVAL" not in body
     assert "Reason: Camden <redacted> rows" in body
-
-
-def test_local_result_says_anchors_read_current_data():
-    caveat = "Anchors and identities read Cube's data as it is now"
-    assert caveat not in render_local(_run(findings=[]))
-    findings = [Finding("anchor", "rate", "d", 7.0, 8.0, False)]
-    assert caveat in render_local(_run(findings=findings))
 
 
 GAP_TEAM = Gap("cut", "Team", ("Roster",), ("tardy-roster", "absent-roster"))
@@ -596,8 +544,8 @@ def test_review_issue_counts_questions_and_lists_every_decision():
         )
     )
     body = render_review_issue("Registrar", [run])
-    # 3 decisions, however many groups they cover, plus the 1 anchor finding.
-    assert "owns the rule behind 4 questions" in body
+    # 3 decisions, however many groups they cover.
+    assert "owns the rule behind 3 questions" in body
     fold = body.split("<summary>For Claude</summary>", 1)[1]
     for decision_id in ("tardy-enrolled", "tardy-cells", "g1"):
         assert f"`{decision_id}`" in fold
@@ -697,7 +645,6 @@ def test_review_issue_merges_missing_fields_and_cells_that_share_a_reason():
         for c in ("tardy-roster", "oss-roster")
     ]  # fmt: skip
     run = _run(applied=Applied(quiet_gaps=gaps, quiet_cells=cells))
-    run.findings = []
     body = render_review_issue("Registrar", [run])
     assert (
         "- Q2. `Gender`, `Ethnicity` on `Roster` in `enrollment_view`: sheet filters "
@@ -755,7 +702,6 @@ def test_one_reason_across_decision_kinds_is_one_bullet():
             quiet_cells=[(cells, CellDiff("board", {"differs": 3}))],
         )
     )
-    run.findings = []
     body = render_review_issue("Registrar", [run])
     bullets = [x for x in body.splitlines() if OOD in x]
     assert bullets == [
@@ -774,7 +720,6 @@ def test_one_reason_across_files_is_one_bullet():
                      missing_filter="Enroll Status")  # fmt: skip
         g = Gap("filter", "Enroll Status", ("Roster",), ("c",))
         r = _run(view=view, applied=Applied(quiet_gaps=[(d, g)]))
-        r.findings = []
         return r
 
     body = render_review_issue(
@@ -904,7 +849,6 @@ def _cause_asks(reasons):
 
 def _cause_review(reasons):
     run = _run(applied=Applied())
-    run.findings = []
     causes = _cause_asks(reasons)
     cfg = ViewConfig(view="enrollment_view", fact="d.t", comparisons=[])
     questions = questions_json([run], [cfg], {}, {}, START, causes=causes)
@@ -933,3 +877,12 @@ def test_a_cause_question_with_one_reason_is_unchanged():
     assert questions[0]["reason"] == "Team filter was set by hand"
     assert "reasons" not in questions[0]
     assert "Reasons" not in body.split("## Proposed approach")[0]
+
+
+def test_a_measure_with_an_open_item_reads_differs():
+    assert pipeline.verdict({"pass": 3}, 1, 0, 0) == "differs"
+    assert pipeline.verdict({"pass": 3}, 0, 0, 0) == "validated"
+    assert (
+        pipeline.verdict({"pass": 2, "dashboard_filtered": 1}, 0, 0, 0) == "validated"
+    )
+    assert pipeline.verdict({"pass": 2, "differs": 1}, 0, 0, 0) == "differs"
