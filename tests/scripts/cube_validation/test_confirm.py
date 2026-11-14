@@ -1904,3 +1904,21 @@ def test_a_kept_outcome_is_not_reused_when_its_saved_rows_are_gone(
     )
 
     assert again.found is None and "no saved rows" in again.why
+
+
+def test_proofs_outside_the_comparisons_are_counted_in_one_line(
+    duck, tmp_path, offline, capsys
+):
+    _tables(duck)
+    run, wh = _sibling_run(), Wh(duck)
+    _save(duck, wh, run, cfg=CFG2)
+    directory, _ = _proof(tmp_path)
+
+    confirm.run_stored(
+        CFG2, run, directory, wh=wh, cube=None, progress_dir=tmp_path,
+        comparisons={"mastery-b"},
+    )  # fmt: skip
+
+    out = capsys.readouterr().out
+    assert "not run: outside --comparison" not in out
+    assert "1 proof outside --comparison not run (no kept outcome)." in out

@@ -1758,7 +1758,7 @@ def run_stored(
                 reused += 1
                 continue
             if comparisons is not None and comparison.id not in comparisons:
-                ran.why = f"proof {path.name} not run: outside --comparison"
+                ran.why = f"proof {path.name} not run: {_OUTSIDE}"
                 continue
             try:
                 sql, literals = proof_sql(
@@ -1814,12 +1814,20 @@ def run_stored(
         else:
             if progress_dir is not None:
                 progress.save(progress_dir, done, _to_progress(ran))
+    outside = [r for r in out if r.why.endswith(_OUTSIDE)]
     for ran in out:
-        if ran.why:
+        if ran.why and ran not in outside:
             print(ran.why)
+    if outside:
+        print(
+            f"{len(outside)} proof{'s' if len(outside) != 1 else ''} outside "
+            "--comparison not run (no kept outcome)."
+        )
     return out
 
 
+# Why a proof of a comparison `triage --comparison` left out did not run.
+_OUTSIDE = "outside --comparison"
 # What keeps one proof from running, besides a BigQuery error.
 _CANNOT_RUN = (pipeline.Refusal, CostCapError, ViewHistoryError, CubeError, CubeRefusal)
 
