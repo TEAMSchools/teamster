@@ -1,18 +1,50 @@
 models:
   - name: int_powerschool__gpa_term
+    description:
+      Term and year-to-date GPA, one row per student, academic year, and term.
+      GPA spans every school where the student earned GPA-eligible grades that
+      year, so join on studentid and yearid, not schoolid.
+    config:
+      meta:
+        contains_pii: true
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
               - studentid
-              - schoolid
               - yearid
               - term_name
+      # consumers pick one term per student-year with `and is_current`
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - studentid
+              - yearid
+          config:
+            where: is_current
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: schoolid != 999999
+          description: >-
+            A student's GPA row is labeled with the graduated-students school
+            (999999). The label comes from the student's latest PowerSchool
+            enrollment that year, so a graduate placeholder enrollment that
+            starts before the graduation year ended became the latest one. Fix
+            the entry date of the 999999 enrollment in PowerSchool. Until then
+            the row shows no school name.
+          config:
+            severity: warn
     columns:
       - name: studentid
         data_type: int64
       - name: schoolid
         data_type: int64
+        description:
+          The student's current school that year, the school of their latest
+          enrollment that year. When the student has GPA grades but no
+          enrollment that year, the school with the most potential GPA credit
+          hours, ties broken by the higher school number. A label for the row,
+          not a join key.
       - name: students_dcid
         data_type: int64
       - name: students_student_number
@@ -75,3 +107,95 @@ models:
         data_type: float64
       - name: gpa_semester
         data_type: float64
+
+unit_tests:
+  - name: int_powerschool__gpa_term__files_under_current_school
+    description:
+      A student whose most credit hours sit at one school but whose latest
+      enrollment that year is at another is filed under the enrollment school. A
+      student with grades and no enrollment that year falls back to the school
+      with the most credit hours.
+    model: int_powerschool__gpa_term
+    overrides:
+      vars:
+        current_academic_year: 2025
+    given:
+      - input: ref('base_powerschool__final_grades')
+        format: sql
+        rows: |
+          select
+            1 as studentid, 100 as schoolid, 35 as yearid, 'Q1' as storecode,
+            cast(90.0 as float64) as term_percent_grade,
+            cast(4.0 as float64) as term_grade_points,
+            'A' as y1_letter_grade,
+            cast(90.0 as float64) as y1_percent_grade_adjusted,
+            cast(4.0 as float64) as y1_grade_points,
+            cast(4.0 as float64) as y1_grade_points_unweighted,
+            cast(1.0 as float64) as potential_credit_hours,
+            true as termbin_is_current,
+            0 as exclude_from_gpa
+          union all
+          select
+            1, 100, 35, 'Q1', 80.0, 3.0, 'B', 80.0, 3.0, 3.0, 1.0, true, 0
+          union all
+          select
+            1, 200, 35, 'Q1', 70.0, 2.0, 'C', 70.0, 2.0, 2.0, 1.0, true, 0
+          union all
+          select
+            2, 100, 35, 'Q1', 90.0, 4.0, 'A', 90.0, 4.0, 4.0, 1.0, true, 0
+      - input: ref('stg_powerschool__storedgrades')
+        format: sql
+        rows: |
+          select
+            9 as studentid, 100 as schoolid, 30 as yearid, 'Q1' as storecode,
+            'X' as course_number, cast(null as float64) as percent,
+            cast(null as float64) as gpa_points, 'A' as grade, 0 as excludefromgpa,
+            'X' as gradescale_name_unweighted,
+            cast(1.0 as float64) as potentialcrhrs
+      - input: ref('stg_powerschool__courses')
+        format: sql
+        rows: |
+          select 'X' as course_number, cast(1.0 as float64) as credit_hours
+      - input: ref('int_powerschool__gradescaleitem_lookup')
+        format: sql
+        rows: |
+          select
+            cast(0.0 as float64) as min_cutoffpercentage,
+            cast(100.0 as float64) as max_cutoffpercentage,
+            'X' as gradescale_name,
+            cast(4.0 as float64) as grade_points
+      - input: ref('base_powerschool__student_enrollments')
+        format: sql
+        rows: |
+          select 1 as studentid, 35 as yearid, 200 as schoolid, 1 as rn_year
+          union all
+          select 1, 35, 100, 2
+      - input: ref('stg_powerschool__students')
+        format: sql
+        rows: |
+          select 1 as id, 11 as dcid, 8400001 as student_number
+          union all
+          select 2, 12, 8400002
+      - input: ref('stg_powerschool__schools')
+        format: sql
+        rows: |
+          select
+            100 as school_number, 'School 100' as name, 'S100' as abbreviation,
+            'HS' as school_level
+          union all
+          select 200, 'School 200', 'S200', 'HS'
+    expect:
+      rows:
+        # student 1's GPA spans both schools: (4 + 3 + 2) / 3
+        - studentid: 1
+          schoolid: 200
+          yearid: 35
+          term_name: Q1
+          gpa_y1: 3.0
+          is_current: true
+        - studentid: 2
+          schoolid: 100
+          yearid: 35
+          term_name: Q1
+          gpa_y1: 4.0
+          is_current: true

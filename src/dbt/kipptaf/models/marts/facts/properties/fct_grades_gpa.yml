@@ -135,3 +135,64 @@ models:
           desc then term desc. Use this flag to collapse to the latest GPA state
           per student-school. For "active term today" filters, traverse term_key
           to dim_terms.is_current instead.
+
+unit_tests:
+  - name: fct_grades_gpa__one_row_per_term_for_two_stints
+    description:
+      A student with two enrollments at one school in one year gets one row per
+      term, keyed to the later enrollment.
+    model: fct_grades_gpa
+    given:
+      - input: ref('int_students__student_enrollment_union')
+        format: sql
+        rows: |
+          select
+            'kippnewark' as _dbt_source_project, 200 as schoolid,
+            8400001 as student_number, date '2024-09-01' as entrydate,
+            date '2025-01-10' as exitdate, 2025 as academic_year, 2 as rn_year
+          union all
+          select
+            'kippnewark', 200, 8400001, date '2025-01-15', date '2025-06-30',
+            2025, 1
+      - input: ref('stg_google_sheets__reporting__terms')
+        format: sql
+        rows: |
+          select
+            'RT' as `type`, 'RT1' as code, 'Q1' as `name`,
+            date '2024-09-01' as `start_date`, date '2024-11-01' as end_date,
+            'Newark' as region, 999 as school_id, 'HS' as grade_band,
+            35 as powerschool_year_id
+      - input: ref('int_students__gpa_term')
+        format: sql
+        rows: |
+          select
+            'kippnewark' as _dbt_source_project, 200 as schoolid,
+            2025 as academic_year, 8400001 as student_number, 35 as yearid,
+            'Q1' as term_name, 'S1' as semester,
+            cast(3.5 as float64) as gpa_term, cast(3.4 as float64) as gpa_y1,
+            cast(3.3 as float64) as gpa_y1_unweighted,
+            cast(3.45 as float64) as gpa_semester, 0 as n_failing_y1,
+            cast(5.0 as float64) as total_credit_hours_term,
+            cast(5.0 as float64) as total_credit_hours_y1,
+            cast(90.0 as float64) as grade_avg_term,
+            cast(89.0 as float64) as grade_avg_y1
+      - input: ref('int_students__gpa_cumulative')
+        format: sql
+        rows: |
+          select
+            'kippnewark' as _dbt_source_project, 200 as schoolid,
+            2025 as calculated_academic_year, 8400001 as student_number,
+            1 as studentid,
+            cast(3.2 as float64) as cumulative_y1_gpa,
+            cast(3.1 as float64) as cumulative_y1_gpa_unweighted,
+            cast(3.3 as float64) as cumulative_y1_gpa_projected,
+            cast(20.0 as float64) as earned_credits_cum,
+            cast(22.0 as float64) as potential_credits_cum
+    expect:
+      rows:
+        # the later stint's key, md5 of 8400001-kippnewark-2025-2025-01-15
+        # trunk-ignore(gitleaks/generic-api-key): surrogate key hash, not a secret
+        - student_enrollment_key: 927163bea5309716a10a6a0ffd4b2a9e
+          academic_year: 2025
+          gpa_term: 3.5
+          is_current: true

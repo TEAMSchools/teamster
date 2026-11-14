@@ -2,15 +2,15 @@ models:
   - name: int_powerschool__gpa
     description: >-
       Term-grained GPA joined to the student's cumulative GPA, so a consumer
-      reads one row per student, school, year and term without joining the two
-      GPA models itself. The cumulative measures repeat across a student's term
+      reads one row per student, year and term without joining the two GPA
+      models itself. schoolid is a label from `int_powerschool__gpa_term`, not
+      part of the grain. The cumulative measures repeat across a student's term
       rows — they are cumulative to date, not per term.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
               - studentid
-              - schoolid
               - yearid
               - term_name
     columns:
