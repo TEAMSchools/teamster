@@ -336,8 +336,8 @@ needs them.
   refused with a message to delete the block, not silently ignored.
 - A formula difference reaches `cause` without a proof file; the matching rows
   are its evidence.
-- `run --comparison` replaces entries in a run at the same moment; `review`
-  refuses a run that lacks a confirmed comparison.
+- `run --comparison` replaces each named comparison's latest result (section
+  3a); `review` refuses while a comparison has no result or a stale one.
 - The reduce rule is named `latest`; more rules are added only when a dashboard
   needs one.
 - Trace depth 5.
