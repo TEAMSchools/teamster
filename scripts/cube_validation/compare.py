@@ -77,11 +77,14 @@ class CellDiff:
 
     `counts` maps each differing verdict to its cells; `causes` are read from
     the cells, the row groups and the two definitions, never from a student.
+    `kind` is `formula` for the cells no unmatched row lies in (every row in
+    them matched on both sides), else `cells`.
     """
 
     comparison_id: str
     counts: dict[str, int]
     causes: tuple[str, ...] = ()
+    kind: str = "cells"
 
 
 def _numbered(rows_sql: str, grain: list[str], values: list[str]) -> str:
@@ -433,8 +436,8 @@ def _joined(
     (`__k0`, ...) and duplicate number (`__rn`), for `trace_sql`. `extra`
     adds select expressions over `c` and `d` to `joined`. With `moved`, the
     group columns add the dashboard's cell of a row both sides hold in
-    different cells (`__moved`, `__d_<column>`). `cuts` are `reconcile_sql`'s: a row the 2 sides keep
-    under different cuts is `dims_differ` too.
+    different cells (`__moved`, `__d_<column>`). `cuts` are `reconcile_sql`'s:
+    a row the 2 sides keep under different cuts is `dims_differ` too.
     """
     cube_grain = [p.cube for p in rows.grain]
     dash_grain = [p.dashboard for p in rows.grain]

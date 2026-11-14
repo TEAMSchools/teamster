@@ -4,7 +4,7 @@ import re
 from datetime import datetime, timezone
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation import pipeline
+from cube_validation import pipeline, report
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.answers import questions_json
@@ -461,20 +461,50 @@ def test_local_result_lists_cell_differences_with_candidate_causes():
     assert "cell differences to triage in 1 comparison" in text
 
 
-def test_review_issue_carries_domain_owner_cell_differences():
-    d = Decision("cells-1", "enrollment", "domain_owner", "owner picks codes")
-    run = _run(applied=Applied(quiet_cells=[(d, TARDY_DIFF)]))
+def _formula(id, comparison, reason, **kw):
+    return Decision(id, comparison, "domain_owner", reason, formula=True, **kw)
+
+
+def _formula_diff(comparison, n):
+    return CellDiff(comparison, {"differs": n}, kind="formula")
+
+
+FORMULA_ASK = "cells differ while every row in them matches; which definition is right?"
+
+
+def test_a_formula_question_shows_both_definitions_and_masks_its_count():
+    d = _formula("formula-1", "enrollment", "owner picks codes")
+    small = dataclasses.replace(TARDY_DIFF, kind="formula")
+    run = _run(applied=Applied(quiet_cells=[(d, small)]))
     body = render_review_issue(
         "Registrar", [run], definitions={"enrollment_view": TARDY_DEFS}
     )
-    assert (
-        "`enrollment` in `enrollment_view`: 61 cells differ between Cube and the dashboard"
-        in body
-    )
+    assert f"- Q1. `enrollment` in `enrollment_view`: 61 {FORMULA_ASK} Reason:" in body
     assert "Reason: owner picks codes" in body
-    assert "Definitions side by side" in body
+    section = body.split("Definitions side by side", 1)[1]
+    assert "Dashboard: codes ET, T" in section and "Cube: codes T%" in section
     # Candidate causes stay local: they can name a cut or a value.
     assert "values differ beyond rounding" not in body
+    assert "Formula differences: 1" in body
+
+    few = Applied(quiet_cells=[(d, _formula_diff("enrollment", 4))])
+    body = render_review_issue("Registrar", [_run(applied=few)])
+    assert f"`enrollment` in `enrollment_view`: <10 {FORMULA_ASK}" in body
+    assert "4 cells" not in body
+    q = report._questions([_run(applied=few)])[0]
+    assert q["kinds"] == ["formula"]
+    assert report.defined_comparisons([q], "enrollment_view") == {"enrollment"}
+
+
+def test_a_formula_decision_reads_as_such_locally():
+    d = _formula("formula-1", "enrollment", "owner picks codes")
+    text = render_local(_run(applied=Applied(quiet_cells=[(d, TARDY_DIFF)])))
+    assert "`formula-1` (enrollment formula, domain_owner): owner picks codes" in text
+    open_formula = dataclasses.replace(TARDY_DIFF, kind="formula")
+    text = render_local(_run(applied=Applied(open_cells=[TARDY_DIFF, open_formula])))
+    section = text.split("## Cell differences", 1)[1].split("## ", 1)[0]
+    assert "- enrollment: 58 differ, 3 dashboard only\n" in section
+    assert "- enrollment formula difference: 58 differ, 3 dashboard only" in section
 
 
 ENROLLED_REASON = "The dashboard counts enrolled students only (enroll_status = 0)"
@@ -516,13 +546,13 @@ def test_review_issue_keeps_reviewed_values_in_a_reason():
 
 def test_review_issue_adds_no_period_after_a_question():
     q = "Should TD count as tardy?"
-    d = Decision("td", "enrollment", "domain_owner", q)
-    diff = CellDiff("enrollment", {"differs": 58})
+    d = _formula("td", "enrollment", q)
+    diff = _formula_diff("enrollment", 58)
     body = render_review_issue(
         "Registrar", [_run(applied=Applied(quiet_cells=[(d, diff)]))]
     )
     assert f"Reason: {q}\n" in body + "\n" and "?." not in body
-    tasked = Decision("td", "enrollment", "domain_owner", q, task="#6200")
+    tasked = _formula("td", "enrollment", q, task="#6200")
     body = render_review_issue(
         "Registrar", [_run(applied=Applied(quiet_cells=[(tasked, diff)]))]
     )
@@ -530,12 +560,12 @@ def test_review_issue_adds_no_period_after_a_question():
 
 
 def test_review_issue_counts_questions_and_lists_every_decision():
-    cells = Decision("tardy-cells", "tardy-roster", "domain_owner", "codes?")
+    cells = _formula("tardy-cells", "tardy-roster", "codes?")
     gap = _gap_decision()
     run = _run(
         applied=Applied(
             quiet=_enrolled_only(),
-            quiet_cells=[(cells, CellDiff("tardy-roster", {"differs": 58}))],
+            quiet_cells=[(cells, _formula_diff("tardy-roster", 58))],
             quiet_gaps=[(gap, GAP_TEAM)],
         )
     )
@@ -628,7 +658,7 @@ def test_decisions_with_different_reasons_stay_apart():
     )
 
 
-def test_review_issue_merges_missing_fields_and_cells_that_share_a_reason():
+def test_review_issue_merges_missing_fields_and_formula_differences_on_a_reason():
     reason = "Cube has no student filters for these."
     gaps = [
         (Decision(f"g-{f}", "", "domain_owner", reason, missing_filter=f),
@@ -636,8 +666,7 @@ def test_review_issue_merges_missing_fields_and_cells_that_share_a_reason():
         for f in ("Gender", "Ethnicity")
     ]  # fmt: skip
     cells = [
-        (Decision(f"c-{c}", c, "domain_owner", "Codes differ?"),
-         CellDiff(c, {"differs": 30}))
+        (_formula(f"c-{c}", c, "Codes differ?"), _formula_diff(c, 30))
         for c in ("tardy-roster", "oss-roster")
     ]  # fmt: skip
     run = _run(applied=Applied(quiet_gaps=gaps, quiet_cells=cells))
@@ -647,8 +676,8 @@ def test_review_issue_merges_missing_fields_and_cells_that_share_a_reason():
         "Cube has no member for. Reason: " + reason
     ) in body
     assert (
-        "- Q1. `tardy-roster`, `oss-roster` in `enrollment_view`: 60 cells differ "
-        "between Cube and the dashboard. Reason: Codes differ?"
+        f"- Q1. `tardy-roster`, `oss-roster` in `enrollment_view`: 60 {FORMULA_ASK} "
+        "Reason: Codes differ?"
     ) in body
     assert "owns the rule behind 2 questions" in body
 
@@ -689,21 +718,21 @@ OOD = "Board YOY leaves out out-of-district students"
 def test_one_reason_across_decision_kinds_is_one_bullet():
     rows = Decision("ood-rows", "board", "domain_owner", OOD,
                     {"column": "region", "values": ["Newark"]})  # fmt: skip
-    cells = Decision("ood-cells", "board", "domain_owner", OOD)
+    cells = _formula("ood-cells", "board", OOD)
     run = _run(
         applied=Applied(
             quiet=[
                 (rows, Group("board", (("region", "Newark"),), "cube_only", 400, 40))
             ],
-            quiet_cells=[(cells, CellDiff("board", {"differs": 3}))],
+            quiet_cells=[(cells, _formula_diff("board", 3))],
         )
     )
     body = render_review_issue("Registrar", [run])
     bullets = [x for x in body.splitlines() if OOD in x]
     assert bullets == [
         "- Q1. `region` = `Newark` in board of `enrollment_view` (cube_only): 1 row group, "
-        "400 rows, 40 students; `board` in `enrollment_view`: <10 cells differ "
-        "between Cube and the dashboard. Reason: " + OOD + "."
+        f"400 rows, 40 students; `board` in `enrollment_view`: <10 {FORMULA_ASK} "
+        "Reason: " + OOD + "."
     ]
     assert "owns the rule behind 1 question" in body
 

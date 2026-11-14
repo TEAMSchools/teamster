@@ -121,6 +121,8 @@ class FakeBigQuery:
         self.fail_once: str | None = None
         self.probe = probe or [{"region": "Newark", "value": 0.9123}]
         self.cells = cells
+        # The reconcile's result rows: each bucket and its rows per cut.
+        self.reconcile = RECONCILE_ROWS
         # Per cut index: cut 0 is `{}`, cut 1 is `{Region: Miami}`.
         self.students = [
             {"__cut": 0, "region": "Miami", "n_students": 12},
@@ -175,7 +177,7 @@ class FakeBigQuery:
                 return [{"f": int(hashlib.sha256(stamp.encode()).hexdigest()[:8], 16)}]
             return [{"f": 1}]
         if "-- outer" in sql:
-            return RECONCILE_ROWS
+            return self.reconcile
         if "AS n_students" in sql:
             return self.students
         if "AS value" in sql and "fct_f" in sql:
@@ -2441,8 +2443,101 @@ def test_run_opens_cell_differences(fakes, tmp_path, capsys):
     assert cli.main(["run", str(_file(tmp_path))]) == 0
     out = capsys.readouterr().out
     section = out.split("## Cell differences", 1)[1].split("## ", 1)[0]
-    assert "ada-region: 2 differ" in section
+    # No unmatched row lies in a Newark cell: a formula difference.
+    assert "ada-region formula difference: 2 differ" in section
     assert "Cube computes `avg_daily_attendance` as" in section
+
+
+DEFINED = YML.replace(
+    "    rows:\n",
+    '    definitions: { dashboard: "present days over days", cube: "sum over count" }\n'
+    "    rows:\n",
+    1,
+)
+NEWARK_MATCHES = [RECONCILE_ROWS[0]]
+
+
+def _latest_run(tmp_path):
+    saved = sorted(
+        (tmp_path / "cache" / "v").glob("*/run.json"), key=lambda p: p.stat().st_mtime
+    )
+    return saved[-1]
+
+
+def _triage_items(path, tmp_path):
+    assert cli.main(["triage", str(path), "--no-trace"]) == 0
+    loaded = json.loads((_latest_run(tmp_path).parent / "triage.json").read_text())
+    return {i["id"]: i for i in loaded["items"]}
+
+
+def test_a_cell_whose_rows_all_match_is_a_formula_difference(fakes, tmp_path):
+    # Newark differs in both cuts; the reconcile's only unmatched rows are Miami's.
+    fakes.bq.cells = [{"regions_region_name": "Newark", "value": 0.95}]
+    path = _file(tmp_path, DEFINED)
+    assert cli.main(["run", str(path)]) == 0
+
+    saved = json.loads(_latest_run(tmp_path).read_text())
+    (formula,) = saved["applied"]["open_cells"]
+    assert (formula["kind"], formula["counts"]) == ("formula", {"differs": 2})
+    assert formula["causes"][0] == "2 differing cells hold no unmatched row"
+    assert formula["causes"][-1] == (
+        "Recorded definitions: dashboard present days over days; Cube sum over count"
+    )
+
+    items = _triage_items(path, tmp_path)
+    item = items["ada-region:formula"]
+    assert (item["kind"], item["suggestion"]) == ("formula", "cause")
+    assert item["proof"]["kind"] == "formula"
+    assert item["stub"] == {"comparison": "ada-region", "formula": True}
+    assert "ada-region:cells" not in items
+
+
+def test_a_cell_that_gains_a_row_leaves_the_formula_claim(fakes, tmp_path, capsys):
+    # Run 1: Newark (cell A) and Camden (cell B) differ with every row matched.
+    fakes.bq.probe = [{"region": "Newark", "value": 0.9123},
+                      {"region": "Camden", "value": 0.9}]  # fmt: skip
+    fakes.bq.cells = [{"regions_region_name": "Newark", "value": 0.95},
+                      {"regions_region_name": "Camden", "value": 0.95}]  # fmt: skip
+    fakes.bq.reconcile = NEWARK_MATCHES
+    path = _file(tmp_path, DEFINED)
+    assert cli.main(["run", str(path)]) == 0
+    assert set(_triage_items(path, tmp_path)) == {"ada-region:formula"}
+    approved = _approved(tmp_path, [{"id": "which-rate", "call": "domain_owner",
+                                     "reason": "Which rate is right?",
+                                     "item": "ada-region:formula"}])  # fmt: skip
+    assert cli.main(["add-decisions", str(path), str(approved)]) == 0
+    (decision,) = load_view_config(path).decisions
+    assert decision.formula and decision.fingerprints == _saved_fingerprints(tmp_path)
+
+    # Run 2: an unproven Cube-only group lands in Newark under the default cut.
+    fakes.bq.reconcile = NEWARK_MATCHES + [
+        {"bucket": "cube_only", "regions_region_name": "Newark", "n_rows": 5,
+         "n_students": 5, "__s_k0_c_rows": 5, "__s_k0_d_rows": 0,
+         "__s_k1_c_rows": 0, "__s_k1_d_rows": 0},
+    ]  # fmt: skip
+    assert cli.main(["run", str(path)]) == 0
+
+    applied = json.loads(_latest_run(tmp_path).read_text())["applied"]
+    (cells,) = applied["open_cells"]
+    assert (cells["kind"], cells["counts"]) == ("cells", {"differs": 1})
+    ((d, quiet),) = applied["quiet_cells"]
+    assert d["id"] == "which-rate"
+    # Camden under both cuts, Newark under the Miami cut, where it has no row.
+    assert (quiet["kind"], quiet["counts"]) == ("formula", {"differs": 3})
+    items = _triage_items(path, tmp_path)
+    assert items["ada-region:cells"]["suggestion"] == "investigate"
+    assert "ada-region:formula" not in items
+
+
+def test_an_unplaceable_cell_is_never_a_formula_difference(fakes, tmp_path):
+    fakes.bq.cells = [{"regions_region_name": "Newark", "value": 0.95}]
+    text = YML.split("    rows:\n", 1)[0] + PROOF + YML.split(PROOF, 1)[1]
+    path = _file(tmp_path, text)
+    assert cli.main(["run", str(path)]) == 0
+
+    (diff,) = json.loads(_latest_run(tmp_path).read_text())["applied"]["open_cells"]
+    assert (diff["kind"], diff["counts"]) == ("cells", {"differs": 2})
+    assert not any("hold no unmatched row" in c for c in diff["causes"])
 
 
 def _saved_run(tmp_path):

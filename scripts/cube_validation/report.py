@@ -189,6 +189,8 @@ def _decision_line(d: Decision) -> str:
             ("cut", d.missing_cut) if d.missing_cut else ("filter", d.missing_filter)
         )
         return f"`{d.id}` (missing {kind} `{name}`, {d.call}): {d.reason}"
+    if d.formula:
+        return f"`{d.id}` ({d.comparison} formula, {d.call}): {d.reason}"
     return f"`{d.id}` ({d.comparison}, {d.call}): {d.reason}"
 
 
@@ -279,7 +281,8 @@ def render_local(run: RunResult) -> str:
             f"{n} {_CELL_WORDS.get(verdict, verdict)}"
             for verdict, n in diff.counts.items()
         )
-        out.append(f"- {diff.comparison_id}: {counts}")
+        what = " formula difference" if diff.kind == "formula" else ""
+        out.append(f"- {diff.comparison_id}{what}: {counts}")
         out += [f"  - {cause}" for cause in diff.causes]
 
     out += ["", "## Decisions", "", "Applied:"]
@@ -668,14 +671,15 @@ def _questions(
             add(run.view, "cause", [d], part, hidden, [d.comparison], key=key)
             questions[key].setdefault("asks", []).append((run.view, ask))
             questions[key]["head"] = _cause_head(ask)
+        # Only a `formula` decision quiets cells: a formula difference.
         for decisions, diffs in _by_reason(run.applied.quiet_cells):
             add(
                 run.view,
-                "cells",
+                "formula",
                 decisions,
                 f"{', '.join(f'`{c.comparison_id}`' for c in diffs)} in `{run.view}`: "
                 f"{mask(sum(n for c in diffs for n in c.counts.values()))} cells "
-                "differ between Cube and the dashboard",
+                "differ while every row in them matches; which definition is right?",
                 [],
                 [c.comparison_id for c in diffs],
             )
@@ -732,9 +736,9 @@ def also_decided(
         for decisions, diffs in _by_reason(run.applied.quiet_cells, owner=False):
             part = (
                 f"{', '.join(f'`{c.comparison_id}`' for c in diffs)} in "
-                f"`{run.view}`: cell differences"
+                f"`{run.view}`: a formula difference"
             )
-            add(("cells", part, decisions[0].call), part, [], decisions[0], [])
+            add(("formula", part, decisions[0].call), part, [], decisions[0], [])
         for decisions, gaps in _by_reason(run.applied.quiet_gaps, owner=False):
             part = _gap_part(run.view, gaps)
             add(("gap", part, decisions[0].call), part, [], decisions[0], [])
@@ -779,20 +783,20 @@ def question_reason(q: dict) -> str:
     reasons = question_reasons(q)
     if len(reasons) == 1:
         return reasons[0]
-    return " ".join(r if r.endswith(("?", "!", ".")) else f"{r}." for r in reasons)
+    return " ".join(_ended(r) for r in reasons)
 
 
 def defined_comparisons(questions: list[dict], view: str) -> set[str]:
     """The view's comparisons whose definitions the issue shows.
 
-    Those are the comparisons with a domain-owner row group, cause or cell
-    difference.
+    Those are the comparisons with a domain-owner row group, cause or
+    formula difference.
     """
     return {
         cid
         for q in questions
         for v, cid, kind in q["comparisons"]
-        if v == view and kind in ("group", "cause", "cells")
+        if v == view and kind in ("group", "cause", "formula")
     }
 
 
@@ -999,7 +1003,7 @@ def render_review_issue(
                 )
     # Numbered like the JSON's question ids, so a hand check names its bullet.
     question_lines = [
-        f"Q{n}. {'; '.join(question_parts(q))}. "
+        f"Q{n}. {_ended('; '.join(question_parts(q)))} "
         f"Reason: {_with_task(question_reason(q), q['task'])}"
         for n, q in enumerate(asked, start=1)
     ]
@@ -1046,6 +1050,11 @@ def render_review_issue(
             break
     comments += extra
     return body
+
+
+def _ended(text: str) -> str:
+    """`text` closed by a period, unless it already ends a sentence."""
+    return text if text.endswith(("?", "!", ".")) else f"{text}."
 
 
 def posted_json(questions: list[dict]) -> list[dict]:
@@ -1187,7 +1196,7 @@ def _review_body(
         else f"Decisions with call `domain_owner`: {', '.join(f'`{i}`' for i in ids) or 'none'}.",
         f"Questions: {len(question_lines)}. Row-group parts: {kinds.count('group')}. "
         f"Cause parts: {kinds.count('cause')}. "
-        f"Cell differences: {kinds.count('cells')}. "
+        f"Formula differences: {kinds.count('formula')}. "
         f"Missing cuts and filters: {kinds.count('gap')}.",
         "",
         "</details>",

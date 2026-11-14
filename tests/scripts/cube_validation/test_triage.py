@@ -452,6 +452,52 @@ def test_cell_sets_stay_in_investigate_whatever_the_trace_found():
     assert s.suggestion == "investigate"
 
 
+def _formula_run(n=3):
+    cells = CellDiff("enrollment", {"differs": 2})
+    formula = CellDiff("enrollment", {"differs": n}, kind="formula")
+    run = _run(cells=[cells, formula])
+    run.fingerprints = {"enrollment": {"cube": "c1", "dashboard": "d1"}}
+    return run
+
+
+def test_a_formula_difference_is_its_own_item():
+    by_id = {i.id: i for i in open_items(_formula_run())}
+
+    formula = by_id["enrollment:formula"]
+    assert formula.kind == "formula" and formula.comparison == "enrollment"
+    assert formula.stub == {"comparison": "enrollment", "formula": True}
+    assert by_id["enrollment:cells"].kind == "cells"
+
+
+def test_a_formula_difference_is_in_cause_on_the_run_s_own_evidence():
+    import hashlib
+
+    from cube_validation.triage import PROOF_KINDS
+
+    found = {s.item.id: s for s in suggest(_cfg(), _formula_run(), {}, traces={})}
+
+    s = found["enrollment:formula"]
+    assert s.suggestion == "cause"
+    assert s.cause == [{"side": "both", "step": "formula",
+                        "label": "differing cells hold no unmatched row",
+                        "n_rows": None}]  # fmt: skip
+    fp = json.dumps({"cube": "c1", "dashboard": "d1"}, sort_keys=True)
+    assert s.proof == {
+        "kind": "formula",
+        "fingerprint": hashlib.sha256(fp.encode()).hexdigest(),
+    }
+    assert "formula" in PROOF_KINDS
+    words = (
+        "differing cells hold no unmatched row: every row in them matched on both sides"
+    )
+    assert s.evidence == (f"3 {words}",)
+    # Posted to GitHub: the count is masked.
+    assert s.posted == (f"<10 {words}",)
+    assert found["enrollment:cells"].suggestion == "investigate"
+    big = {s.item.id: s for s in suggest(_cfg(), _formula_run(12), {}, traces={})}
+    assert big["enrollment:formula"].posted == (f"12 {words}",)
+
+
 # --- value_check -------------------------------------------------------------
 
 
@@ -655,6 +701,10 @@ def test_open_key_changes_when_a_group_or_cell_set_changes_its_counts():
     assert _open_key(cells) != _open_key(CellDiff("enrollment", {"differs": 4}))
     assert _open_key(cells) == _open_key(
         CellDiff("enrollment", {"differs": 3}, ("why",))
+    )
+    # A formula difference is another item than the cell set it split from.
+    assert _open_key(cells) != _open_key(
+        CellDiff("enrollment", {"differs": 3}, kind="formula")
     )
 
 

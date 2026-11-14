@@ -653,7 +653,13 @@ def row_group_cause(n_groups: int) -> str:
 def _cell_diffs(
     cfg: ViewConfig, comparisons: list[Comparison], sides: "_Sides", cube: Cube
 ) -> list[CellDiff]:
-    """Each comparison's differing cells, with candidate causes."""
+    """Each comparison's differing cells, with candidate causes.
+
+    A cell `coverage.placed` finds no group in is a formula difference: every
+    row in it matched on both sides. Those cells make the comparison's
+    `formula` diff; the rest, holding groups or unplaceable, its `cells` diff.
+    A cell that cannot be placed is never a formula difference.
+    """
     out = []
     for comparison in comparisons:
         differing = [
@@ -666,18 +672,42 @@ def _cell_diffs(
         expr = _measure_expression(
             cube.compiled({"measures": [member]}).sql, cfg.view, comparison.measure
         )
-        causes = candidate_causes(comparison, differing, comparison.decimals or 0, expr)
-        if comparison.rows is not None:
-            groups = [g for g in sides.groups if g.comparison_id == comparison.id]
-            causes.append(row_group_cause(len(groups)))
-        out.append(
-            CellDiff(
-                comparison.id,
-                dict(Counter(c.verdict for c in differing)),
-                tuple(causes),
+        formula: list[Cell] = []
+        cells: list[Cell] = []
+        for c in differing:
+            inside = coverage.placed(_coverage_cell(c), sides.groups, comparison)
+            (formula if inside == [] else cells).append(c)
+        if cells:
+            causes = candidate_causes(comparison, cells, comparison.decimals or 0, expr)
+            if comparison.rows is not None:
+                groups = [g for g in sides.groups if g.comparison_id == comparison.id]
+                causes.append(row_group_cause(len(groups)))
+            out.append(
+                CellDiff(
+                    comparison.id,
+                    dict(Counter(c.verdict for c in cells)),
+                    tuple(causes),
+                )
             )
-        )
+        if formula:
+            causes = [
+                f"{len(formula)} differing cells hold no unmatched row",
+                *candidate_causes(comparison, formula, comparison.decimals or 0, expr),
+            ]
+            out.append(
+                CellDiff(
+                    comparison.id,
+                    dict(Counter(c.verdict for c in formula)),
+                    tuple(causes),
+                    kind="formula",
+                )
+            )
     return out
+
+
+def _coverage_cell(c: Cell) -> dict:
+    """A cell as `coverage` reads it, the shape `run.json` saves it in."""
+    return {"cut": c.cut, "dims": [list(d) for d in c.dims]}
 
 
 # --- run ---------------------------------------------------------------------
@@ -1816,7 +1846,10 @@ def _gap(data: dict) -> Gap:
 
 
 def _cell_diff(data: dict) -> CellDiff:
-    return CellDiff(**{**data, "causes": tuple(data["causes"])})
+    """A run saved before formula differences split off holds `cells` only."""
+    return CellDiff(
+        **{**data, "causes": tuple(data["causes"]), "kind": data.get("kind", "cells")}
+    )
 
 
 def _run_from_json(data: dict) -> RunResult:
@@ -1953,9 +1986,9 @@ def check_claims(cfg: ViewConfig, cache_root: Path) -> None:
     can re-apply to, there is nothing to check against and nothing refuses.
 
     Raises:
-        Refusal: Two decisions claim the same group, gap or cells, or a cause
-            decision disagrees with the `group` decision closing a group its
-            proof covers (`triage.check_closed`).
+        Refusal: Two decisions claim the same group, gap or formula
+            difference, or a cause decision disagrees with the `group`
+            decision closing a group its proof covers (`triage.check_closed`).
     """
     try:
         saved, run_json = _reapplicable(cfg, cache_root)

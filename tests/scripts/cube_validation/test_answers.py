@@ -10,6 +10,7 @@ from cube_validation.answers import (
     Answer,
     AnswerError,
     HandCheck,
+    _covers,
     approved_decisions,
     cell_causes,
     example_cell,
@@ -296,7 +297,7 @@ def _owner_run(diff_cells, measure_cells=3):
             {"column": "region", "values": [value]},
         )  # fmt: skip
 
-    cells = Decision("c1", "enrollment", "domain_owner", "Codes differ?")
+    cells = Decision("c1", "enrollment", "domain_owner", "Codes differ?", formula=True)
     applied = Applied(
         quiet=[
             (group_decision("d-newark", "Newark"),
@@ -304,13 +305,18 @@ def _owner_run(diff_cells, measure_cells=3):
             (group_decision("d-camden", "Camden"),
              Group("enrollment", (("region", "Camden"),), "value_differs", 5, 5)),
         ],
-        quiet_cells=[(cells, CellDiff("enrollment", {"differs": measure_cells}))],
+        quiet_cells=[
+            (cells, CellDiff("enrollment", {"differs": measure_cells}, kind="formula"))
+        ],
     )  # fmt: skip
     run = _run(diff_cells)
     run.applied = applied
     return run
 
 
+FORMULA_EVIDENCE = (
+    "<10 differing cells hold no unmatched row: every row in them matched on both sides"
+)
 TRIAGE = {
     "enrollment": {
         "view": "enrollment",
@@ -336,6 +342,16 @@ TRIAGE = {
                 "stub": {"comparison": "enrollment", "cells": True},
                 "suggestion": "cause",
                 "evidence": ["no description or ai_context answers it"],
+                "candidates": [],
+            },
+            {
+                "id": "enrollment:formula",
+                "kind": "formula",
+                "comparison": "enrollment",
+                "label": "f",
+                "stub": {"comparison": "enrollment", "formula": True},
+                "suggestion": "cause",
+                "evidence": [FORMULA_EVIDENCE],
                 "candidates": [],
             },
             {
@@ -378,8 +394,8 @@ def test_questions_json_matches_markdown_questions_one_to_one():
         "cube": ["`enrollment` in `enrollment`: codes T%"],
     }
     assert questions[0]["evidence"] == ["note on <redacted>, student <redacted>"]
-    # No decision covers a cell set, so no cells item lends its evidence.
-    assert questions[1]["evidence"] == []
+    # Only the formula item lends its evidence: no decision covers a cell set.
+    assert questions[1]["evidence"] == [FORMULA_EVIDENCE]
     assert questions[0]["moment"] == {
         "start": START.isoformat(),
         "end": END.isoformat(),
@@ -595,7 +611,10 @@ TRIAGE = {
         {"id": "ada:region=Miami", "stub": {"comparison": "ada",
          "group": {"column": "regions_region_name", "values": ["Miami"]}}},
         {"id": "cut:Team", "stub": {"missing_cut": "Team"}},
-        {"id": "ada:cells", "stub": {"comparison": "ada", "cells": True}},
+        {"id": "ada:cells", "kind": "cells",
+         "stub": {"comparison": "ada", "cells": True}},
+        {"id": "ada:formula", "kind": "formula",
+         "stub": {"comparison": "ada", "formula": True}},
     ]
 }  # fmt: skip
 FPS = {"ada": {"cube": "c1", "dashboard": "d1"}}
@@ -607,10 +626,11 @@ def test_approved_decisions_take_the_stub_and_the_run_fingerprints():
          "item": "ada:region=Miami"},
         {"id": "team", "call": "deliberate", "reason": "r2", "task": "",
          "item": "cut:Team"},
-        {"id": "cells", "call": "domain_owner", "reason": "r3", "item": "ada:cells"},
+        {"id": "formula", "call": "domain_owner", "reason": "r3",
+         "item": "ada:formula"},
     ]  # fmt: skip
 
-    miami, team, cells = approved_decisions(approved, TRIAGE, FPS)
+    miami, team, formula = approved_decisions(approved, TRIAGE, FPS)
 
     assert miami == {
         "id": "miami",
@@ -623,7 +643,26 @@ def test_approved_decisions_take_the_stub_and_the_run_fingerprints():
     }
     assert team == {"id": "team", "missing_cut": "Team", "call": "deliberate",
                     "reason": "r2"}  # fmt: skip
-    assert cells["cells"] is True and cells["fingerprints"] == FPS["ada"]
+    assert formula == {"id": "formula", "comparison": "ada", "formula": True,
+                       "call": "domain_owner", "reason": "r3",
+                       "fingerprints": FPS["ada"]}  # fmt: skip
+
+
+def test_a_cell_set_takes_no_decision():
+    entry = {"id": "x", "call": "deliberate", "reason": "r", "item": "ada:cells"}
+
+    with pytest.raises(AnswerError, match="a cell set takes no decision"):
+        approved_decisions([entry], TRIAGE, FPS)
+
+
+def test_a_formula_decision_covers_only_its_comparison_s_formula_item():
+    d = Decision("f", "ada", "domain_owner", "r", formula=True)
+
+    assert _covers(d, {"comparison": "ada", "formula": True})
+    assert not _covers(d, {"comparison": "other", "formula": True})
+    assert not _covers(d, {"comparison": "ada", "cells": True})
+    group = Decision("g", "ada", "deliberate", "r", {"column": "x", "values": ["1"]})
+    assert not _covers(group, {"comparison": "ada", "formula": True})
 
 
 def test_a_missing_filter_in_cause_is_decided_across_the_view():
@@ -659,7 +698,7 @@ def test_approved_decisions_refuse(entry, match):
 
 
 def test_approved_decisions_refuse_a_comparison_the_run_has_no_fingerprints_for():
-    entry = {"id": "x", "call": "deliberate", "reason": "r", "item": "ada:cells"}
+    entry = {"id": "x", "call": "deliberate", "reason": "r", "item": "ada:formula"}
 
     with pytest.raises(AnswerError, match="fingerprints"):
         approved_decisions([entry], TRIAGE, {})

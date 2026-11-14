@@ -367,7 +367,8 @@ def hand_check(
 def _covers(d: Decision, stub: dict) -> bool:
     """True when a triage item's stub is the item `d` covers, by its key fields.
 
-    A cause decision names no item; the triage marks what it decides.
+    A cause decision names no item; the triage marks what it decides. A
+    `formula` decision covers its comparison's formula item alone.
     """
     if d.cause:
         return False
@@ -379,6 +380,8 @@ def _covers(d: Decision, stub: dict) -> bool:
     # No decision covers a cell set: triage closes covered cells itself.
     if stub.get("comparison") != d.comparison or stub.get("cells"):
         return False
+    if d.formula or stub.get("formula"):
+        return d.formula and stub.get("formula") is True
     group = stub.get("group") or {}
     return group.get("column") == (d.group.get("column") or "") and bool(
         {str(v) for v in group.get("values", [])}
@@ -1028,7 +1031,7 @@ def answer_changes(
     return out
 
 
-_STUB_KEYS = ("comparison", "group", "cells", "missing_cut", "missing_filter")
+_STUB_KEYS = ("comparison", "group", "formula", "missing_cut", "missing_filter")
 
 
 def _is_cause_item(item: dict) -> bool:
@@ -1100,9 +1103,10 @@ def approved_decisions(
     numbers are written `<n>`. No order of the entries changes the result.
 
     Every other item takes its key fields from the triage item's `stub`,
-    which holds its real values. Either kind takes the comparison's
-    `{cube, dashboard}` from the run's fingerprints. A missing cut or filter
-    covers the view, so it takes neither a comparison nor fingerprints.
+    which holds its real values; a formula difference's is `formula: true`.
+    Either kind takes the comparison's `{cube, dashboard}` from the run's
+    fingerprints. A missing cut or filter covers the view, so it takes
+    neither a comparison nor fingerprints. A cell set takes no decision.
 
     Args:
         approved: `[{"id", "call", "reason", "task", "item", "cause"}]`;
@@ -1120,11 +1124,11 @@ def approved_decisions(
         AnswerError: An entry is malformed, repeats an id or an (item,
             cause), takes an id the file has, has a reason that carries what
             `NOTE_REFUSALS` keeps out, names an item the triage does not list,
-            a row group no proof decides, or a cause the item lacks, leaves
-            out `cause` on an item with several, names a comparison the run has
-            no fingerprints for, or has a cause with no words, words 2 proofs
-            share, a decision with another call, or an answered decision whose
-            SQL or proof changed.
+            a cell set, a row group no proof decides, or a cause the item
+            lacks, leaves out `cause` on an item with several, names a
+            comparison the run has no fingerprints for, or has a cause with no
+            words, words 2 proofs share, a decision with another call, or an
+            answered decision whose SQL or proof changed.
     """
     items = {item.get("id"): item for item in triage.get("items", [])}
     proofs = _proofs_by_cause(list(items.values()))
@@ -1168,6 +1172,12 @@ def approved_decisions(
                 )
             fp = {"cube": fp["cube"], "dashboard": fp["dashboard"]}
 
+        if item.get("kind") == "cells" or stub.get("cells"):
+            raise AnswerError(
+                f"{where}: item {item_id!r} is a cell set; a cell set takes no "
+                "decision, since triage closes it once every group in its cells "
+                "is decided"
+            )
         if item.get("kind") == "group" and not _is_cause_item(item):
             raise AnswerError(
                 f"{where}: item {item_id!r} is a row group no proof decides; a "

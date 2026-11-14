@@ -65,9 +65,8 @@ def has_rows_in(g: Group, cell: dict) -> bool:
     Under the cell's cut, its Cube-side rows are more than 0 and its own
     columns agree with every cell dim, or its dashboard-side rows are more
     than 0 and the dashboard's columns (its `d:` ones when it has them)
-    agree. Values
-    compare by `pipeline._key`. A group with no `cut_rows` entry for the
-    cell's cut has no row there.
+    agree. Values compare by `pipeline._key`. A group with no `cut_rows`
+    entry for the cell's cut has no row there.
     """
     cut = cell.get("cut", "{}")
     counts = [(c, d) for label, c, d in g.cut_rows if label == cut]

@@ -216,6 +216,9 @@ class Decision:
     # read from the latest triage, never stored here; `fingerprints.proof` is
     # the proof file's.
     cause: dict[str, Any] = field(default_factory=dict)
+    # Covers the comparison's formula difference, in place of `group`: its
+    # differing cells that hold no unmatched row, whichever they are in a run.
+    formula: bool = False
     # The call the owner answered a cause decision with; set by
     # `record-answers`, so `review` asks it no more.
     answer: str = ""
@@ -614,14 +617,22 @@ def _decision(
     if task and not _TASK.fullmatch(task):
         reader.fail("task", f"must be an https:// link or #<issue>; got {task!r}")
     if "cells" in reader.data:
-        reader.fail("cells", "delete this decision; triage closes covered cells itself")
+        reader.fail(
+            "cells",
+            "delete this decision; covered cells need none, and a formula "
+            "difference takes formula: true",
+        )
     missing_cut = reader.get("missing_cut", str, default="")
     missing_filter = reader.get("missing_filter", str, default="")
-    keys = ("group", "missing_cut", "missing_filter", "cause")
+    formula = reader.get("formula", bool, default=False)
+    if "formula" in reader.data and not formula:
+        reader.fail("formula", "must be true; delete the key otherwise")
+    keys = ("group", "missing_cut", "missing_filter", "formula", "cause")
     named = [k for k in keys if reader.data.get(k)]
     if len(named) > 1:
         reader.fail(
-            named[1], "set only one of group, missing_cut, missing_filter and cause"
+            named[1],
+            "set only one of group, missing_cut, missing_filter, formula and cause",
         )
     if missing_cut or missing_filter:
         # A sheet field Cube lacks is missing from the view, not one comparison.
@@ -654,6 +665,7 @@ def _decision(
         missing_cut=missing_cut,
         missing_filter=missing_filter,
         cause=cause,
+        formula=formula,
         answer=answer,
     )
 

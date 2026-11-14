@@ -731,7 +731,43 @@ CELLS_DECISION = """\
 @pytest.mark.parametrize("value", ["true", "false"])
 def test_a_cells_decision_is_refused(tmp_path, value):
     text = EXAMPLE + CELLS_DECISION.replace("cells: true", f"cells: {value}")
-    with pytest.raises(ConfigError, match="cells: delete this decision; triage closes"):
+    with pytest.raises(
+        ConfigError,
+        match="cells: delete this decision; covered cells need none, and a "
+        "formula difference takes formula: true",
+    ):
+        load_view_config(_write(tmp_path, text))
+
+
+FORMULA_DECISION = CELLS_DECISION.replace("cells: true", "formula: true")
+
+
+def test_a_formula_decision_loads(tmp_path):
+    (*_, d) = load_view_config(_write(tmp_path, EXAMPLE + FORMULA_DECISION)).decisions
+    assert (d.id, d.comparison, d.formula) == ("tardy-cells", "ada-y1-region", True)
+    assert d.fingerprints == {"cube": "abc", "dashboard": "def"} and d.group == {}
+
+
+def test_a_formula_decision_needs_a_comparison(tmp_path):
+    text = EXAMPLE + FORMULA_DECISION.replace("    comparison: ada-y1-region\n", "")
+    with pytest.raises(ConfigError, match=r"comparison: is required"):
+        load_view_config(_write(tmp_path, text))
+
+
+def test_formula_and_group_are_exclusive(tmp_path):
+    both = FORMULA_DECISION.replace(
+        "formula: true\n", "formula: true\n    group: { column: x, values: ['1'] }\n"
+    )
+    with pytest.raises(
+        ConfigError,
+        match="set only one of group, missing_cut, missing_filter, formula and cause",
+    ):
+        load_view_config(_write(tmp_path, EXAMPLE + both))
+
+
+def test_formula_must_be_true(tmp_path):
+    text = EXAMPLE + FORMULA_DECISION.replace("formula: true", "formula: false")
+    with pytest.raises(ConfigError, match=r"formula: must be true"):
         load_view_config(_write(tmp_path, text))
 
 

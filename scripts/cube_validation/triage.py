@@ -39,6 +39,7 @@ from .report import (
     _is_identifier,
     _shown_value,
     _where,
+    mask,
 )
 from .timetravel import PROJECT
 
@@ -47,18 +48,22 @@ from .timetravel import PROJECT
 SUGGESTIONS = ("map_filters", "filters_nothing", "cause", "investigate")
 # What a `cause` rests on: a stored classification query (`confirm.py`), the
 # run's own reconcile (rows the sheet's dashboard-only filter drops), the
-# workbook XML (a missing cut or filter), or proven groups (a cell set).
-PROOF_KINDS = ("query", "reconcile", "workbook", "cells")
+# workbook XML (a missing cut or filter), proven groups (a cell set), or the
+# run's matched rows (a formula difference).
+PROOF_KINDS = ("query", "reconcile", "workbook", "cells", "formula")
+# A formula difference's cause: every row in its cells matched on both sides.
+FORMULA_LABEL = "differing cells hold no unmatched row"
 
 
 @dataclass(frozen=True)
 class Item:
     """One open item.
 
-    `kind` is `group`, `cells` or `gap`. `id` and `label` hide the values the
-    review issue hides; `label` shows exact counts and stays local. `stub` holds the key fields of the decision that would cover
-    the item, with a group's real values: it becomes decision YAML and stays in
-    the local cache, never posted.
+    `kind` is `group`, `cells`, `formula` or `gap`. `id` and `label` hide the
+    values the review issue hides; `label` shows exact counts and stays local.
+    `stub` holds the key fields of the decision that would cover the item,
+    with a group's real values: it becomes decision YAML and stays in the
+    local cache, never posted.
     """
 
     id: str
@@ -187,12 +192,15 @@ def _entries(run: RunResult) -> list[tuple[Item, Group | Gap | CellDiff]]:
             f"{n} {_CELL_WORDS.get(verdict, verdict)}"
             for verdict, n in diff.counts.items()
         )
+        # A formula difference is its own item, decided by `formula: true`;
+        # a cell set closes by coverage.
+        what = " formula difference" if diff.kind == "formula" else ""
         item = Item(
-            id=f"{diff.comparison_id}:cells",
-            kind="cells",
+            id=f"{diff.comparison_id}:{diff.kind}",
+            kind=diff.kind,
             comparison=diff.comparison_id,
-            label=f"{diff.comparison_id}: {counts}",
-            stub={"comparison": diff.comparison_id, "cells": True},
+            label=f"{diff.comparison_id}{what}: {counts}",
+            stub={"comparison": diff.comparison_id, diff.kind: True},
         )
         out.append((item, diff))
     return [(dataclasses.replace(i, key=_open_key(src)), src) for i, src in out]
@@ -232,7 +240,7 @@ def _open_key(source: Group | Gap | CellDiff) -> str:
     elif isinstance(source, Gap):
         raw = ["gap", source.kind, source.field]
     else:
-        raw = ["cells", source.comparison_id, sorted(source.counts.items())]
+        raw = [source.kind, source.comparison_id, sorted(source.counts.items())]
     return hashlib.sha256(json.dumps(raw).encode()).hexdigest()[:16]
 
 
@@ -740,6 +748,21 @@ def reconcile_proof(entry: dict) -> dict:
     }
 
 
+_FORMULA_CAUSE = {
+    "side": "both",
+    "step": "formula",
+    "label": FORMULA_LABEL,
+    "n_rows": None,
+}
+
+
+def _formula_proof(run: RunResult, comparison: str) -> dict:
+    """A formula difference's proof: the comparison's SQL fingerprints in the
+    run, whose reconcile matched every row in its cells."""
+    text = json.dumps(run.fingerprints.get(comparison) or {}, sort_keys=True)
+    return {"kind": "formula", "fingerprint": hashlib.sha256(text.encode()).hexdigest()}
+
+
 NO_ROWS = (
     "values differ on rows both sides have: no trace; prove them with "
     "`triage confirm --bucket value_differs`"
@@ -779,10 +802,11 @@ def suggest(
         filter the proof shows filters nothing, or whose values match a Cube
         member's, takes `filters_nothing` or `map_filters`; any other missing
         cut or filter is `cause`, a sheet step on the dashboard side, and so
-        is a group the sheet's dashboard-only filter drops. Every other item
-        is `investigate`, with the trace's leads and its comparison's doc lead
-        as evidence. Member descriptions are never evidence here: they have
-        not explained a missing row.
+        is a group the sheet's dashboard-only filter drops, and a formula
+        difference, on the run's matched rows (its count masked in `posted`).
+        Every other item is `investigate`, with the trace's leads and its
+        comparison's doc lead as evidence. Member descriptions are never
+        evidence here: they have not explained a missing row.
     """
     by_id = {c.id: c for c in cfg.comparisons}
     entries = _entries(run)
@@ -867,6 +891,14 @@ def suggest(
                     found = (MOVED_ROWS,)
                 else:
                     found = (NO_GRAIN,)
+            elif source.kind == "formula":
+                # The run's own reconcile matched every row in these cells,
+                # so the 2 formulas differ: no proof file is needed.
+                call, cause = "cause", [dict(_FORMULA_CAUSE)]
+                proof = _formula_proof(run, source.comparison_id)
+                n = sum(source.counts.values())
+                tail = f"{FORMULA_LABEL}: every row in them matched on both sides"
+                evidence, posted = (f"{n} {tail}",), (f"{mask(n)} {tail}",)
 
         if not call:
             call = "investigate"

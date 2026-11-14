@@ -28,7 +28,6 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-import time
 from collections import Counter
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -1314,10 +1313,13 @@ def link_cells(
 ) -> dict[str, tuple[int, int]]:
     """Move each cell set whose differing cells are all covered to `cause`.
 
-    A cell is covered when `coverage.placed` finds the groups with a row in
-    it, and each is closed by a `group` decision (`run.applied.quiet`) or an
-    open item in `cause`. A cell with no group in it, or one that cannot be
-    placed, stays open.
+    A cell is covered when the groups with a row in it (`coverage`) are each
+    closed by a `group` decision (`run.applied.quiet`) or an open item in
+    `cause`. A cell no group is in belongs to the comparison's formula
+    difference, its own item, and is left out of the cell set; in a run with
+    no formula difference for the comparison (saved before they split off)
+    it stays open. A cell that cannot be placed stays open. A `formula` item
+    is never linked here.
 
     Args:
         open_cells: Filled, per cell-set item id, with each cell left open:
@@ -1339,18 +1341,31 @@ def link_cells(
         groups, closed = _covering(run, item.comparison, entries)
         pool = [g for _, g in groups]
         ids = {id(g): gid for gid, g in groups}
-        cells = [c for c in run.diff_cells if c["comparison"] == item.comparison]
+        split = any(
+            d.comparison_id == item.comparison and d.kind == "formula"
+            for d in [*run.applied.open_cells, *(d for _, d in run.applied.quiet_cells)]
+        )
+        cells = []
         used: dict[str, None] = {}
         shut: dict[str, None] = {}
         left: list[dict] = []
-        for cell in cells:
-            inside = coverage.placed(cell, pool, spec) if spec else None
-            if inside is None:
-                why = (
-                    coverage.unplaced(cell, pool, spec)
-                    if spec
-                    else "the comparison is not in the validation file"
-                )
+        for cell in run.diff_cells:
+            if cell["comparison"] != item.comparison:
+                continue
+            why = (
+                coverage.unplaced(cell, pool, spec)
+                if spec
+                else "the comparison is not in the validation file"
+            )
+            inside = (
+                [g for g in pool if coverage.has_rows_in(g, cell)]
+                if why is None
+                else []
+            )
+            if why is None and not inside and split:
+                continue
+            cells.append(cell)
+            if why is not None:
                 left.append(
                     {"cell": cell, "groups": [], "why": f"cannot be placed: {why}"}
                 )
@@ -1814,7 +1829,7 @@ def run_confirm(
     max_usd: float,
     cache_root: Path,
     comparison: str,
-    bucket: str | None = None,
+    bucket: str,
     sql: Path | None = None,
     causes: list[str] | None = None,
     items: list[str] | None = None,

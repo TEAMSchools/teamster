@@ -251,9 +251,57 @@ def test_filling_in_a_task_keeps_the_decisions_fingerprint():
 
 
 DIFF = CellDiff("enrollment", {"differs": 58}, ("58 cells: values differ",))
+FORMULA = CellDiff(
+    "enrollment", {"differs": 4}, ("4 differing cells hold no unmatched row",),
+    kind="formula",
+)  # fmt: skip
 
 
-def test_no_decision_quiets_a_comparison_s_cell_differences():
+def _formula(id="f1", fingerprints=None):
+    return Decision(
+        id, "enrollment", "domain_owner", "which formula?", formula=True,
+        fingerprints=dict(FP) if fingerprints is None else fingerprints,
+    )  # fmt: skip
+
+
+def test_a_formula_decision_quiets_its_comparison_s_formula_cells():
+    d = _formula()
+
+    applied = apply([d], [], {"enrollment": FP}, cell_diffs=[DIFF, FORMULA])
+
+    assert applied.quiet_cells == [(d, FORMULA)]
+    assert applied.open_cells == [DIFF]
+    assert applied.reconfirm == applied.no_longer_needed == []
+
+
+def test_a_formula_decision_reconfirms_when_sql_changed():
+    d = _formula(fingerprints={**FP, "cube": "old"})
+
+    applied = apply([d], [], {"enrollment": FP}, cell_diffs=[FORMULA])
+
+    assert applied.reconfirm == [d] and applied.quiet_cells == []
+    assert applied.open_cells == [FORMULA]
+
+
+def test_a_formula_decision_never_quiets_a_cells_diff():
+    d = _formula()
+
+    applied = apply([d], [], {"enrollment": FP}, cell_diffs=[DIFF])
+
+    # No formula cells this run: the decision covers nothing.
+    assert applied.no_longer_needed == [d]
+    assert applied.open_cells == [DIFF] and applied.quiet_cells == []
+
+
+def test_two_formula_decisions_on_one_comparison_refuse():
+    with pytest.raises(ValueError, match="both claim the formula difference"):
+        apply(
+            [_formula("f1"), _formula("f2")], [], {"enrollment": FP},
+            cell_diffs=[FORMULA],
+        )  # fmt: skip
+
+
+def test_no_group_decision_quiets_a_comparison_s_cell_differences():
     d = Decision("d", "enrollment", "deliberate", "r",
                  {"column": "x", "values": ["1"]}, fingerprints=dict(FP))  # fmt: skip
 

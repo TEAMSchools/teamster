@@ -2,9 +2,11 @@
 
 A decision quiets the groups it names only while the SQL on both sides is the
 SQL it was made against. A `group` decision names its groups by one column's
-value. A `cause` decision names a proven cause, never a group: the latest
-triage, which re-runs every stored proof, says which items it decides
-(`triage.mark_decided`), so `apply` only checks its SQL. Pure: no I/O.
+value. A `formula` decision names its comparison's formula difference: the
+differing cells no unmatched row lies in. A `cause` decision names a proven
+cause, never a group: the latest triage, which re-runs every stored proof,
+says which items it decides (`triage.mark_decided`), so `apply` only checks
+its SQL. Pure: no I/O.
 """
 
 from __future__ import annotations
@@ -179,8 +181,9 @@ def apply(
         gaps: Sheet fields with no Cube member. A decision naming one by kind
             and field quiets it; it carries no fingerprints, because a re-prove
             rewrites the list it matches.
-        cell_diffs: Each comparison's differing cells; no decision quiets
-            them, so they all stay open.
+        cell_diffs: Each comparison's differing cells. A `formula` decision
+            quiets its comparison's `formula` diff while both fingerprints
+            hold; no decision quiets a `cells` diff, which coverage closes.
 
     Returns:
         Groups still open or quieted, decisions to reconfirm because the SQL
@@ -189,11 +192,13 @@ def apply(
         that match none. The values that do match stay quiet.
 
     Raises:
-        ValueError: Two decisions claim the same group.
+        ValueError: Two decisions claim the same group, or the same
+            comparison's formula difference.
     """
     applied = Applied()
     claimed: dict[int, Decision] = {}
     gap_claims: dict[tuple[str, str], Decision] = {}
+    formula_claims: dict[str, Decision] = {}
 
     for decision in decisions:
         if decision.cause:
@@ -229,6 +234,28 @@ def apply(
             applied.reconfirm.append(decision)
             continue
 
+        if decision.formula:
+            diff = next(
+                (
+                    d
+                    for d in cell_diffs
+                    if d.comparison_id == decision.comparison and d.kind == "formula"
+                ),
+                None,
+            )
+            if diff is None:
+                applied.no_longer_needed.append(decision)
+                continue
+            if decision.comparison in formula_claims:
+                raise ValueError(
+                    f"decisions {formula_claims[decision.comparison].id!r} and "
+                    f"{decision.id!r} both claim the formula difference of "
+                    f"{decision.comparison!r}"
+                )
+            formula_claims[decision.comparison] = decision
+            applied.quiet_cells.append((decision, diff))
+            continue
+
         column = decision.group.get("column")
         # A group's value is text; YAML reads an unquoted `9` as an int.
         values = list(
@@ -261,5 +288,6 @@ def apply(
 
     applied.open = [g for i, g in enumerate(groups) if i not in claimed]
     applied.open_gaps = [g for g in gaps if (g.kind, g.field) not in gap_claims]
-    applied.open_cells = list(cell_diffs)
+    quiet = {id(d) for _, d in applied.quiet_cells}
+    applied.open_cells = [d for d in cell_diffs if id(d) not in quiet]
     return applied

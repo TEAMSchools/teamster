@@ -921,6 +921,35 @@ def test_cells_link_only_to_groups_under_their_cut():
     assert only["why"] == "no unmatched row lies in it" and only["groups"] == []
 
 
+def test_a_cell_the_formula_item_holds_leaves_the_cell_set():
+    # Cell X lies in a proven group. Cell Y holds no unmatched row, so the
+    # run filed it in the comparison's formula item, not in the cell set.
+    cell = CELLS_RUN["diff_cells"][0]
+    y = {**cell, "key": "abbreviation=Y", "dims": [["abbreviation", "Y"]]}
+    formula = CellDiff("mastery", {"differs": 1}, kind="formula")
+    run = _run([_placed(3)], cells=[*CELLS_RUN["cells"], formula], diff_cells=[cell, y])
+    left: dict = {}
+
+    cells = _cells(run=run, left=left)
+
+    assert cells["suggestion"] == "cause" and left == {}
+    assert cells["evidence"][0].endswith(_group_ids(run)[0])
+
+
+def test_a_cell_with_no_row_stays_open_when_no_formula_item_holds_it():
+    # A run saved before formula differences split from the cell set.
+    cell = CELLS_RUN["diff_cells"][0]
+    y = {**cell, "key": "abbreviation=Y", "dims": [["abbreviation", "Y"]]}
+    left: dict = {}
+
+    cells = _cells(run=_run([_placed(3)], CELLS_RUN["cells"], [cell, y]), left=left)
+
+    assert cells["suggestion"] == "investigate"
+    ((only,),) = left.values()
+    assert only["cell"]["key"] == "abbreviation=Y"
+    assert only["why"] == "no unmatched row lies in it"
+
+
 def test_a_cell_covered_by_a_decided_group_and_a_proven_one_closes():
     quiet = _placed(4, bucket="dashboard_only")
     decision = Decision("closed-x", "mastery", "fix_cube", "r",
