@@ -462,9 +462,7 @@ def test_local_result_lists_cell_differences_with_candidate_causes():
 
 
 def test_review_issue_carries_domain_owner_cell_differences():
-    d = Decision(
-        "cells-1", "enrollment", "domain_owner", "owner picks codes", cells=True
-    )
+    d = Decision("cells-1", "enrollment", "domain_owner", "owner picks codes")
     run = _run(applied=Applied(quiet_cells=[(d, TARDY_DIFF)]))
     body = render_review_issue(
         "Registrar", [run], definitions={"enrollment_view": TARDY_DEFS}
@@ -518,13 +516,13 @@ def test_review_issue_keeps_reviewed_values_in_a_reason():
 
 def test_review_issue_adds_no_period_after_a_question():
     q = "Should TD count as tardy?"
-    d = Decision("td", "enrollment", "domain_owner", q, cells=True)
+    d = Decision("td", "enrollment", "domain_owner", q)
     diff = CellDiff("enrollment", {"differs": 58})
     body = render_review_issue(
         "Registrar", [_run(applied=Applied(quiet_cells=[(d, diff)]))]
     )
     assert f"Reason: {q}\n" in body + "\n" and "?." not in body
-    tasked = Decision("td", "enrollment", "domain_owner", q, task="#6200", cells=True)
+    tasked = Decision("td", "enrollment", "domain_owner", q, task="#6200")
     body = render_review_issue(
         "Registrar", [_run(applied=Applied(quiet_cells=[(tasked, diff)]))]
     )
@@ -532,9 +530,7 @@ def test_review_issue_adds_no_period_after_a_question():
 
 
 def test_review_issue_counts_questions_and_lists_every_decision():
-    cells = Decision(
-        "tardy-cells", "tardy-roster", "domain_owner", "codes?", cells=True
-    )
+    cells = Decision("tardy-cells", "tardy-roster", "domain_owner", "codes?")
     gap = _gap_decision()
     run = _run(
         applied=Applied(
@@ -640,7 +636,7 @@ def test_review_issue_merges_missing_fields_and_cells_that_share_a_reason():
         for f in ("Gender", "Ethnicity")
     ]  # fmt: skip
     cells = [
-        (Decision(f"c-{c}", c, "domain_owner", "Codes differ?", cells=True),
+        (Decision(f"c-{c}", c, "domain_owner", "Codes differ?"),
          CellDiff(c, {"differs": 30}))
         for c in ("tardy-roster", "oss-roster")
     ]  # fmt: skip
@@ -693,7 +689,7 @@ OOD = "Board YOY leaves out out-of-district students"
 def test_one_reason_across_decision_kinds_is_one_bullet():
     rows = Decision("ood-rows", "board", "domain_owner", OOD,
                     {"column": "region", "values": ["Newark"]})  # fmt: skip
-    cells = Decision("ood-cells", "board", "domain_owner", OOD, cells=True)
+    cells = Decision("ood-cells", "board", "domain_owner", OOD)
     run = _run(
         applied=Applied(
             quiet=[

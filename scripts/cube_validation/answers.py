@@ -96,12 +96,14 @@ class HandCheck:
     cause_students: int | None = None
 
 
-# The side whose rows a group's bucket counts, in `RunResult.cell_rows`.
+# The side whose rows a group's bucket counts: its index in a `Group.cut_rows`
+# entry (label, Cube rows, dashboard rows). On that side every row of the group
+# is shown, so its rows there under every cut are `n_rows`.
 _ROWS_SIDE = {
-    "cube_only": "c",
-    "dashboard_filtered": "c",
-    "value_differs": "c",
-    "dashboard_only": "d",
+    "cube_only": 1,
+    "dashboard_filtered": 1,
+    "value_differs": 1,
+    "dashboard_only": 2,
 }
 
 
@@ -129,8 +131,9 @@ def cell_causes(
     covers all its causes and every cut. So the count is a floor: the most
     students of one group that carries only that cause, splits by every one
     of the cell's dims with the cell's values, and has all its rows in the
-    cell's cut (the run's per-cut sums, `RunResult.cell_rows`). A cause with
-    no such group counts 0. Never a sum, which could count a student twice.
+    cell's cut (`Group.cut_rows`: its rows on its side under the cell's cut
+    are all its rows, `n_rows`, and more than 0). A cause with no such group
+    counts 0. Never a sum, which could count a student twice.
 
     Returns:
         `[(cell, {cause: students})]` in `run.diff_cells` order.
@@ -139,11 +142,6 @@ def cell_causes(
     from . import triage as triage_mod
 
     spec = next((c for c in cfg.comparisons if c.id == comparison), None)
-    single_cut = spec is not None and len(pipeline._cuts(spec)) == 1
-    entries: dict[tuple, list[dict]] = {}
-    for e in run.cell_rows.get(comparison) or []:
-        key = (e["bucket"], frozenset((k, v) for k, v in e["dims"]))
-        entries.setdefault(key, []).append(e)
 
     def whole_in(g, cell) -> bool:
         """Whether every row of `g` lies in `cell`: its dims and its cut."""
@@ -158,15 +156,10 @@ def cell_causes(
             ):
                 return False
         side = _ROWS_SIDE.get(g.bucket)
-        found = entries.get((g.bucket, frozenset(mine.items())), [])
-        if side is None or len(found) != 1:
+        if side is None:
             return False
-        (e,) = found
-        cuts = e.get("cuts") or {}
-        if not cuts:
-            return single_cut and e[side]["rows"] > 0
-        held = cuts.get(cell.get("cut", "{}"))
-        return held is not None and 0 < held[side]["rows"] == e[side]["rows"]
+        held = [c[side] for c in g.cut_rows if c[0] == cell.get("cut", "{}")]
+        return len(held) == 1 and 0 < held[0] == g.n_rows
 
     by_key = {
         item.get("key"): frozenset(
@@ -384,10 +377,9 @@ def _covers(d: Decision, stub: dict) -> bool:
             stub.get("missing_cut", ""),
             stub.get("missing_filter", ""),
         )
-    if stub.get("comparison") != d.comparison:
+    # No decision covers a cell set: triage closes covered cells itself.
+    if stub.get("comparison") != d.comparison or stub.get("cells"):
         return False
-    if d.cells:
-        return stub.get("cells") is True
     group = stub.get("group") or {}
     return group.get("column") == (d.group.get("column") or "") and bool(
         {str(v) for v in group.get("values", [])}

@@ -4,7 +4,6 @@ import pytest
 from cube_validation.compare import (
     Group,
     _label,
-    cell_students_sql,
     cell_verdict,
     clauses_for,
     groups_from,
@@ -412,102 +411,58 @@ def test_unmatched_rows_inline_are_the_saved_rows(duck):
     assert inline == duck.rows("SELECT * FROM saved_t ORDER BY __row")
 
 
-def test_the_save_script_also_counts_students_per_cell_in_the_same_job(duck):
+REGION_ROWS = RowSpec(
+    grain=[ColumnPair("student", "lea"), ColumnPair("item", "aid")],
+    values=[ColumnPair("ok_d", "ok_c")],
+)
+NEWARK, MIAMI = '{"Region": "Newark"}', '{"Region": "Miami"}'
+
+
+def _by_region(duck):
+    """Synthetic rows over 2 cuts, Region Newark and Region Miami: student 1 is
+    Cube's only, in Newark; student 2 the dashboard's only, in Miami; the
+    dashboard's filter drops student 3, whom both sides hold in Newark."""
+    duck.table(
+        "c_rows",
+        "lea BIGINT, aid VARCHAR, region VARCHAR, ok_c BOOLEAN",
+        [(1, "a", "Newark", True), (3, "a", "Newark", True)],
+    )
+    duck.table(
+        "d_rows",
+        "student BIGINT, item VARCHAR, region VARCHAR, ok_d BOOLEAN, __df0 BOOLEAN",
+        [(2, "a", "Miami", True, True), (3, "a", "Newark", True, False)],
+    )
+    return duck.rows(
+        reconcile_sql(
+            "SELECT * FROM c_rows",
+            "SELECT * FROM d_rows",
+            REGION_ROWS,
+            [],
+            filters=[("__df0", "future")],
+            cuts=[
+                ("c.region = 'Newark'", "d.region = 'Newark'"),
+                ("c.region = 'Miami'", "d.region = 'Miami'"),
+            ],
+        )
+    )
+
+
+def test_each_group_carries_its_rows_per_cut_on_each_side(duck):
+    groups = groups_from("c1", _by_region(duck), [NEWARK, MIAMI])
+
+    by_bucket = {g.bucket: g for g in groups}
+    assert by_bucket["cube_only"].cut_rows == ((NEWARK, 1, 0), (MIAMI, 0, 0))
+    assert by_bucket["dashboard_only"].cut_rows == ((NEWARK, 0, 0), (MIAMI, 0, 1))
+    # The dashboard counts only the rows its filters keep.
+    assert by_bucket["dashboard_filtered"].cut_rows[0] == (NEWARK, 1, 0)
+
+
+def test_the_reconcile_returns_no_value_sums(duck):
     _save_tables(duck)
-    *setup, last = reconcile_script(*SAVE_ARGS, table="saved_t", students=True)
-    for statement in setup:
-        duck.rows(statement)
+    row = duck.rows(reconcile_sql(*SAVE_ARGS, cuts=[("TRUE", "TRUE")]))[0]
 
-    got = duck.rows(last)
-
-    counts = [
-        {k: v for k, v in r.items() if k not in ("__kind", "side", "__cut")}
-        for r in got
-        if r["__kind"] == "counts"
-    ]
-    students = [
-        (r["side"], r["__cut"], r["school"], r["n_students"])
-        for r in got
-        if r["__kind"] == "students"
-    ]
-    assert counts == duck.rows(reconcile_sql(*SAVE_ARGS))
-    assert sorted(students) == sorted(
-        (r["side"], r["__cut"], r["school"], r["n_students"])
-        for r in duck.rows(cell_students_sql(*SAVE_ARGS))
-    )
-
-
-def test_cell_students_count_each_student_once_per_side_and_cell(duck):
-    # Synthetic: student 1 holds 2 Cube rows in X; student 3 is the dashboard's
-    # alone, in Y.
-    duck.table(
-        "c_rows",
-        "lea BIGINT, aid VARCHAR, school VARCHAR",
-        [(1, "a", "X"), (1, "b", "X"), (2, "c", "X")],
-    )
-    duck.table(
-        "d_rows",
-        "student BIGINT, item VARCHAR, school VARCHAR",
-        [(1, "a", "X"), (3, "d", "Y")],
-    )
-    rows = RowSpec(
-        grain=[ColumnPair("student", "lea"), ColumnPair("item", "aid")], values=[]
-    )
-
-    got = duck.rows(
-        cell_students_sql(
-            "SELECT lea, aid, school FROM c_rows",
-            "SELECT student, item, school FROM d_rows",
-            rows,
-            [ColumnPair("school", "school")],
-        )
-    )
-
-    assert sorted(
-        (r["side"], r["__cut"], r["school"], r["n_students"]) for r in got
-    ) == [
-        ("c", 0, "X", 2),
-        ("d", 0, "X", 1),
-        ("d", 0, "Y", 1),
-    ]
-
-
-def test_cell_students_count_the_dashboard_s_cell_and_its_kept_rows_per_cut(duck):
-    # Synthetic: both sides hold student 1, Cube in X and the dashboard in Y
-    # (dims_differ); the dashboard's filter drops student 2, and cut 1 keeps
-    # only region B.
-    duck.table(
-        "c_rows",
-        "lea BIGINT, aid VARCHAR, school VARCHAR, region VARCHAR",
-        [(1, "a", "X", "A"), (2, "b", "X", "B")],
-    )
-    duck.table(
-        "d_rows",
-        "student BIGINT, item VARCHAR, school VARCHAR, region VARCHAR, f BOOLEAN",
-        [(1, "a", "Y", "A", True), (2, "b", "X", "B", False)],
-    )
-    rows = RowSpec(
-        grain=[ColumnPair("student", "lea"), ColumnPair("item", "aid")], values=[]
-    )
-
-    got = duck.rows(
-        cell_students_sql(
-            "SELECT lea, aid, school, region FROM c_rows",
-            "SELECT student, item, school, region, f AS __df0 FROM d_rows",
-            rows,
-            [ColumnPair("school", "school")],
-            filters=[("__df0", "f")],
-            cuts=[("TRUE", "TRUE"), ("c.region = 'B'", "d.region = 'B'")],
-        )
-    )
-
-    assert sorted(
-        (r["side"], r["__cut"], r["school"], r["n_students"]) for r in got
-    ) == [
-        ("c", 0, "X", 2),
-        ("c", 1, "X", 1),
-        ("d", 0, "Y", 1),
-    ]
+    assert any(k.endswith("_rows") and k.startswith("__s_") for k in row)
+    assert not any(k.endswith(("_n0", "_sum0")) for k in row)
 
 
 def test_reconcile_counts_rows_a_dashboard_only_filter_drops_apart():
@@ -711,7 +666,7 @@ MOVED_ROWS = RowSpec(
 MOVED_BY = [ColumnPair("grade_d", "grade_c")]
 
 
-def _moved(duck):
+def _moved(duck, cuts=()):
     """Synthetic rows: student 1 matches in grade 1; student 2 is in grade 1 on
     Cube and grade 2 on the dashboard; student 3 is Cube's only, in grade 2."""
     duck.table(
@@ -730,6 +685,7 @@ def _moved(duck):
             "SELECT * FROM `teamster-332318.d.dash_t`",
             MOVED_ROWS,
             MOVED_BY,
+            cuts=cuts,
         )
     )
 
@@ -745,20 +701,12 @@ def test_a_row_in_another_cell_on_each_side_is_its_own_bucket(duck):
     assert by["cube_only"].dims == (("grade_c", "2"),)
 
 
-def test_the_reconcile_keeps_each_side_s_rows_and_sums_per_cell(duck):
-    from cube_validation.compare import cell_rows_from
+def test_a_row_in_another_cell_counts_on_both_sides(duck):
+    groups = groups_from("x", _moved(duck, [("TRUE", "TRUE")]), ["{}"])
 
-    rows = {
-        (r["bucket"], tuple(map(tuple, r["dims"]))): r
-        for r in cell_rows_from(_moved(duck))
-    }
-
-    match = rows[("match", (("grade_c", "1"),))]
-    assert match["c"] == match["d"] == {"rows": 1, "n": [1], "sum": [1.0]}
-    moved = rows[("dims_differ", (("grade_c", "1"),))]
-    assert moved["dash_dims"] == [["grade_c", "2"]]
-    assert moved["c"] == moved["d"] == {"rows": 1, "n": [1], "sum": [0.0]}
-    assert rows[("cube_only", (("grade_c", "2"),))]["d"]["rows"] == 0
+    by = {g.bucket: g for g in groups}
+    assert by["dims_differ"].cut_rows == (("{}", 1, 1),)
+    assert by["cube_only"].cut_rows == (("{}", 1, 0),)
 
 
 # --- a Cube time member beside a dashboard date ---------------------------------
@@ -868,8 +816,6 @@ def test_text_that_is_not_a_date_compares_as_before(duck, cube_week, dash_week, 
 
 
 def test_rows_the_dashboard_filters_out_count_on_cube_s_side_only(duck):
-    from cube_validation.compare import cell_rows_from
-
     # Student 1 matches; the dashboard drops student 2 (Cube keeps it) and
     # student 4 (Cube lacks it too); student 3 is Cube's only.
     duck.table(
@@ -890,20 +836,17 @@ def test_rows_the_dashboard_filters_out_count_on_cube_s_side_only(duck):
             MOVED_ROWS,
             MOVED_BY,
             filters=[("__df0", "future")],
+            cuts=[("TRUE", "TRUE")],
         )
     )
 
-    by = {r["bucket"]: r for r in cell_rows_from(result)}
-    assert set(by) == {"match", "dashboard_filtered", "cube_only"}
-    assert by["dashboard_filtered"]["c"] == {"rows": 1, "n": [1], "sum": [0.0]}
-    assert by["dashboard_filtered"]["d"] == {"rows": 0, "n": [0], "sum": [0.0]}
-    # Student 4 shares the match row's group but neither side shows it.
-    assert by["match"]["c"] == by["match"]["d"] == {"rows": 1, "n": [1], "sum": [1.0]}
+    by = {g.bucket: g for g in groups_from("x", result, ["{}"])}
+    assert set(by) == {"dashboard_filtered", "cube_only"}
+    assert by["dashboard_filtered"].cut_rows == (("{}", 1, 0),)
+    assert by["cube_only"].cut_rows == (("{}", 1, 0),)
 
 
-def test_the_reconcile_keeps_sums_per_cut(duck):
-    from cube_validation.compare import cell_rows_from
-
+def test_the_reconcile_keeps_rows_per_cut(duck):
     rows = RowSpec(
         grain=[
             ColumnPair("student", "lea"),
@@ -937,9 +880,6 @@ def test_the_reconcile_keeps_sums_per_cut(duck):
         )
     )
 
-    by = {r["bucket"]: r for r in cell_rows_from(result, ["overall", "standard"])}
-    match = by["match"]["cuts"]
-    assert match["overall"]["c"] == {"rows": 1, "n": [1], "sum": [1.0]}
-    assert match["standard"]["d"] == {"rows": 1, "n": [1], "sum": [0.0]}
-    only = by["cube_only"]["cuts"]
-    assert only["standard"]["c"]["rows"] == 1 and only["overall"]["c"]["rows"] == 0
+    by = {g.bucket: g for g in groups_from("x", result, ["overall", "standard"])}
+    assert set(by) == {"cube_only"}
+    assert by["cube_only"].cut_rows == (("overall", 0, 0), ("standard", 1, 0))

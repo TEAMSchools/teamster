@@ -24,7 +24,7 @@ _IN = "__in"
 # dims of its group; its own dims are Cube's.
 DASH_PREFIX = "d:"
 _MOVED = "__moved"
-# Per group and side, its rows and each value column's non-null count and sum.
+# Per group, cut and side, its rows.
 _STATS = "__s_"
 
 Verdict = Literal["pass", "differs", "dashboard_only", "cube_only"]
@@ -35,7 +35,10 @@ class Group:
     """One non-match bucket of one result row, with every group-by column.
 
     A NULL value reads `""` in `dims`, as an empty string does; `nulls` names
-    the columns that were NULL, so the two stay apart.
+    the columns that were NULL, so the two stay apart. `cut_rows` holds, per
+    cut label (`pipeline.cut_label`), the group's rows on the Cube side and on
+    the dashboard side under that cut; the dashboard counts only the rows its
+    filters keep.
     """
 
     comparison_id: str
@@ -44,6 +47,7 @@ class Group:
     n_rows: int
     n_students: int
     nulls: tuple[str, ...] = ()
+    cut_rows: tuple[tuple[str, int, int], ...] = ()
 
     def value_of(self, column: str) -> str | None:
         """The group's value in `column`; `""` names a row with no group-by."""
@@ -201,8 +205,8 @@ def reconcile_sql(
             one drops that Cube has reads `dashboard_filtered`, with the label
             in `__filter`; one Cube lacks too is a match.
         cuts: Per cut, the predicate that keeps its rows on the Cube side and
-            on the dashboard side (over `c.` and `d.` columns), so the per-side
-            sums are also kept per cut (`__s_k<j>_c_rows`, ...).
+            on the dashboard side (over `c.` and `d.` columns), so each side's
+            rows are also counted per cut (`__s_k<j>_c_rows`, ...).
 
     A row both sides hold with the same values whose group-by columns differ
     (Cube files it in one cell, the dashboard in another) reads `dims_differ`:
@@ -212,10 +216,10 @@ def reconcile_sql(
     Returns:
         One query returning `bucket`, each group-by column, `n_rows`,
         `n_students` (distinct values of the first grain pair), and per side
-        (`c`, `d`) its rows and each value column's non-null count and sum
-        (`__s_c_rows`, `__s_c_n0`, `__s_c_sum0`, ...). The dashboard side
-        counts only the rows its filters keep, so a `dashboard_filtered`
-        row adds to Cube's cell alone. No grain or value column is returned.
+        (`c`, `d`) its rows, over every cut (`__s_c_rows`) and per cut
+        (`__s_k<j>_c_rows`). The dashboard side counts only the rows its
+        filters keep, so a `dashboard_filtered` row adds to Cube's side
+        alone. No grain or value column is returned.
     """
     ctes, group_names = _joined(
         cube_rows_sql,
@@ -226,11 +230,10 @@ def reconcile_sql(
         extra=_cut_extras(cuts, filters),
         moved=True,
     )
-    return ctes + "\n" + _outer_sql(rows, group_names, filters, cuts, "joined")
+    return ctes + "\n" + _outer_sql(group_names, filters, cuts, "joined")
 
 
 def _outer_sql(
-    rows: RowSpec,
     group_names: list[str],
     filters: Sequence[tuple[str, str]],
     cuts: Sequence[tuple[str, str]],
@@ -248,14 +251,6 @@ def _outer_sql(
                 shown.append(f"__{side}k{flag}")
             keep = " AND ".join(shown)
             stats.append(f"COUNTIF({keep}) AS {_STATS}{prefix}{side}_rows")
-            for i in range(len(rows.values)):
-                value = f"__{side}v{i}"
-                if len(shown) > 1:
-                    value = f"IF({' AND '.join(shown[1:])}, {value}, NULL)"
-                stats += [
-                    f"COUNT({value}) AS {_STATS}{prefix}{side}_n{i}",
-                    f"SUM({value}) AS {_STATS}{prefix}{side}_sum{i}",
-                ]
     outer_select = ", ".join(
         ["bucket", *group_names, "COUNT(*) AS n_rows"]
         + ["COUNT(DISTINCT __student) AS n_students", *stats]
@@ -292,7 +287,6 @@ def _saved_joined(
         filters,
         keys=True,
         extra=_cut_extras(cuts, filters)
-        + _cell_labels(group_by)
         + [f"c.{p.cube} AS __gc{i}" for i, p in enumerate(rows.grain)]
         + [f"d.{p.dashboard} AS __gd{i}" for i, p in enumerate(rows.grain)],
         moved=True,
@@ -339,7 +333,6 @@ def reconcile_script(
     table: str,
     labels: dict[str, str] | None = None,
     expire_days: int | None = None,
-    students: bool = False,
 ) -> list[str]:
     """The reconcile as 3 statements of one job: it saves the unmatched rows to
     `table` and returns `reconcile_sql`'s counts.
@@ -351,10 +344,6 @@ def reconcile_script(
         table: The saved table, as SQL names it; replaced if it exists.
         labels: The table's labels; each value must be one BigQuery takes.
         expire_days: Days until the table expires on its own.
-        students: Also return `cell_students_sql`'s counts from the same join:
-            every row then carries `__kind` (`counts` or `students`), with
-            `side` and `__cut` set on the `students` rows and the counts'
-            columns NULL there.
 
     Returns:
         The statements: the join into `__joined`, the saved table
@@ -382,60 +371,11 @@ def reconcile_script(
     head = f"CREATE OR REPLACE TABLE {table}"
     if options:
         head += "\nOPTIONS(" + ", ".join(options) + ")"
-    counts = _outer_sql(rows, group_names, filters, cuts, "__joined")
-    if students:
-        counts = _with_students(counts, rows, group_by, group_names, filters, cuts)
     return [
         f"CREATE TEMP TABLE __joined AS\n{ctes}\nSELECT * FROM joined",
         f"{head}\nAS {_saved_select(rows, group_by, cuts, '__joined')}",
-        counts,
+        _outer_sql(group_names, filters, cuts, "__joined"),
     ]
-
-
-def _with_students(
-    counts: str,
-    rows: RowSpec,
-    group_by: list[ColumnPair],
-    group_names: list[str],
-    filters: Sequence[tuple[str, str]],
-    cuts: Sequence[tuple[str, str]],
-) -> str:
-    """The counts (`_outer_sql`) and each side's distinct students per cell and
-    cut over `__joined`, as one result told apart by `__kind`."""
-    stats = _stat_names(rows, cuts)
-    branches = [
-        # trunk-ignore(bandit/B608): identifiers are validated in config.py; no values are interpolated
-        f"SELECT 'counts' AS __kind, o.*, CAST(NULL AS STRING) AS side, "
-        f"CAST(NULL AS INT64) AS __cut FROM (\n{counts}\n) AS o"
-    ]
-    for side, j, where, labels, group in _student_branches(group_by, filters, cuts):
-        cell = dict(labels)
-        columns = (
-            ["'students'", "NULL"]
-            + [cell.get(name, "NULL") for name in group_names]
-            + ["NULL", "COUNT(DISTINCT __student)"]
-            + ["NULL"] * len(stats)
-            + [f"'{side}'", str(j)]
-        )
-        branches.append(
-            # trunk-ignore(bandit/B608): identifiers are validated in config.py; no values are interpolated
-            f"SELECT {', '.join(columns)} FROM __joined WHERE {where}{group}"
-        )
-    return "\nUNION ALL\n".join(branches)
-
-
-def _stat_names(rows: RowSpec, cuts: Sequence[tuple[str, str]]) -> list[str]:
-    """The per-side stat columns `_outer_sql` returns, in its order."""
-    names = []
-    for prefix in ["", *(f"k{j}_" for j in range(len(cuts)))]:
-        for side in ("c", "d"):
-            names.append(f"{_STATS}{prefix}{side}_rows")
-            for i in range(len(rows.values)):
-                names += [
-                    f"{_STATS}{prefix}{side}_n{i}",
-                    f"{_STATS}{prefix}{side}_sum{i}",
-                ]
-    return names
 
 
 def unmatched_rows_sql(
@@ -468,78 +408,6 @@ def _cut_extras(
         if filters
         else []
     )
-
-
-def cell_students_sql(
-    cube_rows_sql: str,
-    dashboard_rows_sql: str,
-    rows: RowSpec,
-    group_by: list[ColumnPair],
-    filters: Sequence[tuple[str, str]] = (),
-    cuts: Sequence[tuple[str, str]] = (),
-) -> str:
-    """Build the query that counts each side's distinct students per cell and cut.
-
-    Takes `reconcile_sql`'s arguments and joins the rows the same way. Each
-    side's rows count in that side's own cell (a `dims_differ` row in Cube's
-    cell on the Cube side, the dashboard's on the other), and the dashboard
-    counts only the rows its filters keep.
-
-    Returns:
-        One query returning `side` (`c` or `d`), `__cut` (the cut's index; 0
-        with no cuts), each group-by column by its `cube` name, and
-        `n_students` (distinct values of the first grain pair). No grain
-        column is returned.
-    """
-    ctes, _ = _joined(
-        cube_rows_sql,
-        dashboard_rows_sql,
-        rows,
-        group_by,
-        filters,
-        extra=_cut_extras(cuts, filters) + _cell_labels(group_by),
-    )
-    branches = []
-    for side, j, where, labels, group in _student_branches(group_by, filters, cuts):
-        columns = [f"'{side}' AS side", f"{j} AS __cut"]
-        columns += [f"{label} AS {cube}" for cube, label in labels]
-        columns.append("COUNT(DISTINCT __student) AS n_students")
-        branches.append(
-            # trunk-ignore(bandit/B608): identifiers are validated in config.py; row SQL comes from Cube's compiled query
-            f"SELECT {', '.join(columns)} FROM joined WHERE {where}{group}"
-        )
-    return ctes + "\n" + "\nUNION ALL\n".join(branches)
-
-
-def _cell_labels(group_by: list[ColumnPair]) -> list[str]:
-    """`joined`'s per-side cell labels: each group-by column as Cube labels it
-    (`__cl_<column>`) and as the dashboard does (`__dl_<column>`)."""
-    return [f"{_label(f'c.{p.cube}')} AS __cl_{p.cube}" for p in group_by] + [
-        f"{_label(f'd.{p.dashboard}')} AS __dl_{p.cube}" for p in group_by
-    ]
-
-
-def _student_branches(
-    group_by: list[ColumnPair],
-    filters: Sequence[tuple[str, str]],
-    cuts: Sequence[tuple[str, str]],
-) -> list[tuple[str, int, str, list[tuple[str, str]], str]]:
-    """Per side and cut: the side, the cut index, the rows it keeps (a WHERE
-    over `joined`'s columns), its cell columns (`cube` name, label column) and
-    its GROUP BY. Each side's rows count in that side's own cell, and the
-    dashboard counts only the rows its filters keep."""
-    out = []
-    for j in range(len(cuts) or 1):
-        for side in ("c", "d"):
-            keep = [f"__{side}in IS NOT NULL"]
-            if side == "d" and filters:
-                keep.append("__dkeep")
-            if cuts:
-                keep.append(f"__{side}k{j}")
-            labels = [(p.cube, f"__{side}l_{p.cube}") for p in group_by]
-            group = " GROUP BY " + ", ".join(e for _, e in labels) if group_by else ""
-            out.append((side, j, " AND ".join(keep), labels, group))
-    return out
 
 
 def _joined(
@@ -636,14 +504,6 @@ def _joined(
             ),
             f"c.{_IN} AS __cin",
             f"d.{_IN} AS __din",
-            *(
-                f"SAFE_CAST({_bool_text(f'{side}.{name}')} AS FLOAT64) AS __{side}v{i}"
-                for side, names in (
-                    ("c", [p.cube for p in rows.values]),
-                    ("d", [p.dashboard for p in rows.values]),
-                )
-                for i, name in enumerate(names)
-            ),
             *extra,
         ]
     )
@@ -835,18 +695,23 @@ def many_ids(step_id: str) -> list[str]:
     return [s for s in step_id[len(MANY) :].split(_SEP) if s]
 
 
-def groups_from(comparison_id: str, result_rows: list[dict]) -> list[Group]:
+def groups_from(
+    comparison_id: str, result_rows: list[dict], cut_labels: Sequence[str] = ()
+) -> list[Group]:
     """Turn `reconcile_sql` result rows into groups, leaving out the matches.
 
     Args:
         comparison_id: The comparison the rows belong to.
         result_rows: Rows from the query, each with `bucket`, `n_rows`,
-            `n_students` and any group-by columns.
+            `n_students`, any group-by columns and each cut's rows per side.
+        cut_labels: The label of each cut passed to it as `cuts`, in order.
 
     Returns:
         One `Group` per non-match row, carrying all its group-by columns in
         query order, so a row's students are counted once. A NULL value
         becomes an empty string, and its column is listed in `nulls`.
+        `cut_rows` holds each cut's rows on the Cube and dashboard sides
+        (`__s_k<j>_c_rows`, `__s_k<j>_d_rows`).
     """
     out = []
     for row in result_rows:
@@ -873,6 +738,14 @@ def groups_from(comparison_id: str, result_rows: list[dict]) -> list[Group]:
                 n_rows=int(row["n_rows"]),
                 n_students=int(row["n_students"]),
                 nulls=tuple(k for k, v in dims if v is None),
+                cut_rows=tuple(
+                    (
+                        label,
+                        int(row[f"{_STATS}k{j}_c_rows"] or 0),
+                        int(row[f"{_STATS}k{j}_d_rows"] or 0),
+                    )
+                    for j, label in enumerate(cut_labels)
+                ),
             )
         )
     return out
@@ -888,72 +761,6 @@ def _cell_dims(row: dict) -> list[tuple[str, Any]]:
 
 
 _RESERVED = {"bucket", "n_rows", "n_students", "__filter", _MOVED}
-
-
-def _side_stats(row: dict, prefix: str) -> dict:
-    """One side's `rows`, and per value column its non-null `n` and `sum`."""
-
-    def ordered(kind: str) -> list[str]:
-        return sorted(
-            (k for k in row if re.fullmatch(f"{re.escape(prefix)}{kind}\\d+", k)),
-            key=_index,
-        )
-
-    return {
-        "rows": int(row.get(f"{prefix}rows") or 0),
-        "n": [int(row[k] or 0) for k in ordered("n")],
-        "sum": [float(row[k] or 0) for k in ordered("sum")],
-    }
-
-
-def cell_rows_from(
-    result_rows: list[dict], cut_labels: Sequence[str] = ()
-) -> list[dict]:
-    """Each result row's rows and value sums per side, for sizing a cell.
-
-    Args:
-        result_rows: Rows from `reconcile_sql`.
-        cut_labels: The label of each cut passed to it as `cuts`, in order.
-
-    Returns:
-        Per result row, matches included: `bucket`, `dims` (Cube's cell, as
-        [column, value] pairs), `dash_dims` (the dashboard's cell when it
-        differs, else None), `c` and `d` each as `rows`, `n` and `sum` (per
-        value column) over every cut, and `cuts`: per cut label, the same
-        `c` and `d` over that cut's rows. Counts and sums only, never a row.
-    """
-    out = []
-    for row in result_rows:
-        dims = [[k, None if v is None else str(v)] for k, v in _cell_dims(row)]
-        dash = None
-        if row.get(_MOVED):
-            dash = [
-                [k[4:], None if v is None else str(v)]
-                for k, v in row.items()
-                if k.startswith("__d_")
-            ]
-        sides = {side: _side_stats(row, f"{_STATS}{side}_") for side in ("c", "d")}
-        cuts = {
-            label: {
-                side: _side_stats(row, f"{_STATS}k{j}_{side}_") for side in ("c", "d")
-            }
-            for j, label in enumerate(cut_labels)
-        }
-        out.append(
-            {
-                "bucket": row["bucket"],
-                "dims": dims,
-                "dash_dims": dash,
-                **sides,
-                "cuts": cuts,
-            }
-        )
-    return out
-
-
-def _index(key: str) -> int:
-    digits = re.search(r"(\d+)$", key)
-    return int(digits[1]) if digits else -1
 
 
 # Config operator names that Cube spells differently.

@@ -1261,17 +1261,10 @@ def _bucket_items(run: RunResult, comparison: str, bucket: str):
     ]
 
 
-def _counts_rows(comparison: Comparison | None) -> bool:
-    """A comparison whose rows carry no value column counts them: each row is
-    1 toward its cell."""
-    return bool(comparison and comparison.rows and not comparison.rows.values)
-
-
 def _in_cut(g: Group, comparison: Comparison | None, cut: str) -> bool:
     """Whether a group's columns allow its rows under a cell's cut.
 
-    A cut filter on a column the group does not split by allows any value;
-    for a count measure the size check then catches rows outside the cut.
+    A cut filter on a column the group does not split by allows any value.
     """
     if comparison is None:
         return True
@@ -1288,9 +1281,6 @@ def _in_cut(g: Group, comparison: Comparison | None, cut: str) -> bool:
         if pipeline._key(held) not in {pipeline._key(v) for v in values}:
             return False
     return True
-
-
-_SIGN = {"cube_only": 1, "dashboard_filtered": 1, "dashboard_only": -1}
 
 
 def _agrees(values, dims) -> bool:
@@ -1318,128 +1308,19 @@ def _in_cells(g: Group, cell: dict) -> tuple[bool, bool]:
     return cube, _agrees(lambda col: _dash_value(g, col), cell["dims"])
 
 
-def _per_cut(entries: list[dict], cell: dict) -> bool:
-    """Whether the run kept the sums of the cell's own cut (`cut_flags`)."""
-    return cell.get("cut", "{}") in (entries[0].get("cuts") or {})
-
-
-def _sizable(spec: Comparison | None, entries: list[dict], cell: dict) -> bool:
-    """Whether the run's per-cell sums can rebuild this cell from its rows.
-
-    Needs 1 value column and the cell's every dim among the reconcile's group
-    columns. The rows must be the cut's own: sums the run kept per cut, a
-    single cut, or each cut's captions among the group columns.
-    """
-    if not (spec and spec.rows and len(spec.rows.values) == 1 and entries):
-        return False
-    columns = {col for col, _ in entries[0]["dims"]}
-    if any(col not in columns for col, _ in cell["dims"]):
-        return False
-    if _per_cut(entries, cell):
-        return True
-    cuts = pipeline._cuts(spec)
-    if len(cuts) == 1:
-        return True
-    for cut in cuts:
-        for caption in {**spec.defaults, **cut}:
-            pair = spec.filters.get(caption)
-            if pair is None or pair.cube not in columns:
-                return False
-    return True
-
-
-def _rebuilt(spec: Comparison, entries: list[dict], cell: dict) -> tuple:
-    """Each side's mean of the value column over the cell's rows, or None.
-
-    The cut's own sums when the run kept them per cut; else every entry the
-    cut's captions allow (`_in_cut`).
-    """
-    cut = cell.get("cut", "{}")
-    per_cut = _per_cut(entries, cell)
-    out = []
-    for side in ("c", "d"):
-        n = total = 0.0
-        for e in entries:
-            dims = e["dash_dims"] if side == "d" and e["dash_dims"] else e["dims"]
-            values = dict(dims)
-            stats = e["cuts"][cut][side] if per_cut else e[side]
-            if not stats["rows"] or not _agrees(values.get, cell["dims"]):
-                continue
-            held = Group(
-                spec.id, tuple((k, v or "") for k, v in dims), e["bucket"], 0, 0
-            )
-            if not per_cut and not _in_cut(held, spec, cut):
-                continue
-            n += stats["n"][0]
-            total += stats["sum"][0]
-        out.append(total / n if n else None)
-    return tuple(out)
-
-
-def _students_rebuilt(
-    students: list[dict], cell: dict
-) -> tuple[float | None, float | None] | None:
-    """Each side's distinct students in the cell under its cut, or None when
-    the counts cannot size it (a cell dim the counts do not group by).
-
-    A side with no entry for the cell has no students there: its cell shows
-    nothing.
-    """
-    out = []
-    for side in ("c", "d"):
-        found = None
-        for e in students:
-            if e["side"] != side or e["cut"] != cell.get("cut", "{}"):
-                continue
-            columns = dict(e["dims"])
-            if any(col not in columns for col, _ in cell["dims"]):
-                return None
-            if _agrees(columns.get, cell["dims"]):
-                if found is not None:
-                    return None
-                found = float(e["n"])
-        out.append(found)
-    return out[0], out[1]
-
-
-def _reproduces(spec: Comparison, entries: list[dict], cell: dict) -> bool:
-    """Whether both sides' cells, rebuilt from their rows, show the run's values."""
-    cube, dashboard = _rebuilt(spec, entries, cell)
-    decimals = spec.decimals or 0
-    return (
-        compare.cell_verdict(cell.get("cube"), cube, decimals) == "pass"
-        and compare.cell_verdict(cell.get("dashboard"), dashboard, decimals) == "pass"
-    )
-
-
 def link_cells(
     run: RunResult,
     items: list[dict],
     comparison: str | None = None,
     cfg: ViewConfig | None = None,
     open_cells: dict[str, list[dict]] | None = None,
-) -> dict[str, tuple[int, int, float]]:
+) -> dict[str, tuple[int, int]]:
     """Move each cell set whose differing cells' rows all lie in proven groups.
 
     A cell's rows lie in the open groups of its comparison whose columns agree
     with the cell's dims and its cut (a `dims_differ` group's in both its
     cells). A cell no open group agrees with, or one a group outside `cause`
-    agrees with, is not linked. Its size is checked too:
-
-    - A comparison that counts its rows: the cell's difference (Cube minus
-      dashboard) must equal the linked groups' net rows (Cube-only and
-      dashboard-filtered rows add, dashboard-only rows take away; a
-      `dims_differ` group adds to Cube's cell and takes from the dashboard's).
-    - A comparison whose `rows.cell` is `count_students`: each side's cell,
-      rebuilt as its distinct students under the cell's cut
-      (`RunResult.cell_students`), must show the run's value. A cell the
-      counts do not cover is not linked.
-    - Any other comparison with 1 value column: each side's cell, rebuilt as
-      the mean of that column over the cell's rows from the run's per-cell
-      sums (`RunResult.cell_rows`), must show the run's value. A cell the sums
-      cannot rebuild (another value column count, a dim or cut column the
-      reconcile does not group by) is not linked. A run saved before those
-      sums links as before, and says its sizes went unchecked.
+    agrees with, is not linked.
 
     Args:
         open_cells: Filled, per cell-set item id, with each cell not linked:
@@ -1448,8 +1329,7 @@ def link_cells(
             masked.
 
     Returns:
-        Per cell-set item id: the differing cells not linked, all of them, and
-        the summed gap between the cells' differences and their proven rows.
+        Per cell-set item id: the differing cells not linked, and all of them.
     """
     entries = triage._entries(run)
     by_id = {i["id"]: i for i in items}
@@ -1459,27 +1339,21 @@ def link_cells(
         if item.kind != "cells" or (comparison and item.comparison != comparison):
             continue
         spec = by_cmp.get(item.comparison)
-        counts = _counts_rows(spec)
         groups = [
             (i.id, g)
             for i, g in entries
             if isinstance(g, Group) and g.comparison_id == item.comparison
         ]
         cells = [c for c in run.diff_cells if c["comparison"] == item.comparison]
-        sums = run.cell_rows.get(item.comparison)
-        students_kind = bool(spec and spec.rows and spec.rows.cell == "count_students")
-        students = run.cell_students.get(item.comparison)
-        unlinked, used, gap, unsized, unbuilt = 0, {}, 0.0, 0, 0
+        unlinked, used = 0, {}
         left: list[dict] = []
         for cell in cells:
             match = [
-                (gid, g, sides)
+                (gid, g)
                 for gid, g in groups
-                if _in_cut(g, spec, cell.get("cut", "{}"))
-                and any(sides := _in_cells(g, cell))
+                if _in_cut(g, spec, cell.get("cut", "{}")) and any(_in_cells(g, cell))
             ]
-            proven = [gid for gid, _, _ in match if by_id[gid]["suggestion"] == "cause"]
-            said = [[gid, g.bucket, by_id[gid]["suggestion"]] for gid, g, _ in match]
+            proven = [gid for gid, _ in match if by_id[gid]["suggestion"] == "cause"]
             if not match or len(proven) < len(match):
                 unlinked += 1
                 why = (
@@ -1488,71 +1362,11 @@ def link_cells(
                     if match
                     else "no open group agrees with the cell"
                 )
+                said = [[gid, g.bucket, by_id[gid]["suggestion"]] for gid, g in match]
                 left.append({"cell": cell, "groups": said, "why": why})
                 continue
-            if counts:
-                net = 0
-                for _, g, (in_cube, in_dash) in match:
-                    if g.bucket == "dims_differ":
-                        net += g.n_rows * (int(in_cube) - int(in_dash))
-                    else:
-                        net += _SIGN.get(g.bucket, 0) * g.n_rows
-                differs = (cell.get("cube") or 0) - (cell.get("dashboard") or 0)
-                if abs(differs - net) > 1e-9:
-                    unlinked += 1
-                    gap += abs(differs - net)
-                    why = (
-                        f"size gap: the cell differs by {differs:g}, its groups' "
-                        f"net rows are {net:g}"
-                    )
-                    left.append({"cell": cell, "groups": said, "why": why})
-                    continue
-            elif students_kind:
-                rebuilt = _students_rebuilt(students, cell) if students else None
-                if rebuilt is None:
-                    unlinked += 1
-                    unsized += 1
-                    why = (
-                        "cannot be sized: the run counted no students for it, or "
-                        "a dim the counts do not group by"
-                    )
-                    left.append({"cell": cell, "groups": said, "why": why})
-                    continue
-                cube, dash = rebuilt
-                if not (
-                    compare.cell_verdict(cell.get("cube"), cube, 0) == "pass"
-                    and compare.cell_verdict(cell.get("dashboard"), dash, 0) == "pass"
-                ):
-                    unlinked += 1
-                    unbuilt += 1
-                    why = (
-                        f"does not rebuild from its rows: rebuilt Cube {_shown(cube)}, "
-                        f"dashboard {_shown(dash)}"
-                    )
-                    left.append({"cell": cell, "groups": said, "why": why})
-                    continue
-            elif sums is not None:
-                if not _sizable(spec, sums, cell):
-                    unlinked += 1
-                    unsized += 1
-                    why = (
-                        "cannot be sized: not 1 value column, or a dim or cut "
-                        "column the reconcile does not group by"
-                    )
-                    left.append({"cell": cell, "groups": said, "why": why})
-                    continue
-                if not _reproduces(spec, sums, cell):
-                    unlinked += 1
-                    unbuilt += 1
-                    cube, dash = _rebuilt(spec, sums, cell)
-                    why = (
-                        f"does not rebuild from its rows: rebuilt Cube {_shown(cube)}, "
-                        f"dashboard {_shown(dash)}"
-                    )
-                    left.append({"cell": cell, "groups": said, "why": why})
-                    continue
             used |= dict.fromkeys(proven)
-        out[item.id] = (unlinked, len(cells), gap)
+        out[item.id] = (unlinked, len(cells))
         if open_cells is not None and left:
             open_cells[item.id] = left
         target = by_id[item.id]
@@ -1566,8 +1380,6 @@ def link_cells(
             line = (
                 f"every differing cell's rows lie in proven groups: {', '.join(used)}"
             )
-            if not counts and not students_kind and sums is None:
-                line += "; cell sizes not checked: the run predates per-cell sums"
             target.update(
                 suggestion="cause",
                 cause=list(merged.values()),
@@ -1579,31 +1391,15 @@ def link_cells(
             if target.get("suggestion") == "cause":
                 target.update(suggestion="investigate", cause=None, proof=None)
             if not cells:
-                line = posted = "the run lists no differing cells to link; `run` again"
+                line = "the run lists no differing cells to link; `run` again"
             else:
                 line = (
                     f"{unlinked} of {len(cells)} differing cells have rows outside "
                     "proven groups"
                 )
-                posted = line
-                if gap:
-                    line += f"; their differences exceed the proven rows by {gap:g}"
-                    posted += "; their differences exceed the proven rows"
-                if unbuilt:
-                    line += (
-                        f"; {unbuilt} do not rebuild from their rows (the mean of "
-                        "the value column over each side's rows is not the cell)"
-                    )
-                    posted += "; some do not rebuild from their rows"
-                if unsized:
-                    line += (
-                        f"; {unsized} cannot be sized from the run's per-cell sums "
-                        "(a dim or cut column the reconcile does not group by)"
-                    )
-                    posted += "; some cannot be sized"
             target["evidence"] = [line, *_unlinked(target.get("evidence"))]
             target["evidence_posted"] = [
-                posted,
+                line,
                 *_unlinked(target.get("evidence_posted")),
             ]
     return out
@@ -2092,18 +1888,13 @@ def run_confirm(
         linked = link_cells(run, all_items, comparison, cfg, left)
         if not linked:
             raise pipeline.Refusal(f"{comparison}: no open cell set to confirm")
-        for item_id, (unlinked, total, gap) in linked.items():
+        for item_id, (unlinked, total) in linked.items():
             if unlinked:
                 print(f"{item_id}: the cells left open (local only, not masked):")
                 print("\n".join(open_cell_lines(left.get(item_id, []))))
-                over = (
-                    f"; their differences exceed the proven rows by {gap:g}"
-                    if gap
-                    else ""
-                )
                 raise pipeline.Refusal(
                     f"{item_id}: {unlinked} of {total} differing cells have rows "
-                    f"outside groups in `cause`{over}; prove those groups first"
+                    "outside groups in `cause`; prove those groups first"
                 )
         _mark(run, all_items, cfg)
         _save_triage(path, loaded, all_items)

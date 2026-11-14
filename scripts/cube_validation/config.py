@@ -1,8 +1,8 @@
 """Load and validate the per-view Cube validation files.
 
 Each file at `src/cube/validation/<view>.yml` records the dashboard-to-Cube
-comparisons for one Cube view and the decisions made about differences. Cube loads only `src/cube/model/`, so
-these files never reach the semantic layer.
+comparisons for one Cube view and the decisions made about differences. Cube
+loads only `src/cube/model/`, so these files never reach the semantic layer.
 """
 
 from __future__ import annotations
@@ -95,13 +95,6 @@ class RowSpec:
     # probe and the cells keep every row, so a cell with no rows in scope
     # still shows (blank) on both.
     dashboard_scope: list[dict[str, Any]] = field(default_factory=list)
-    # How a cell is rebuilt from its rows to size it (`ROW_CELLS`): the mean of
-    # the value column, or the count of distinct students (the first grain
-    # column) for a measure that counts students.
-    cell: str = "mean"
-
-
-ROW_CELLS = ("mean", "count_students")
 
 
 @dataclass(frozen=True)
@@ -217,8 +210,6 @@ class Decision:
     # of `group`, and covers the whole view, so it has no `comparison`.
     missing_cut: str = ""
     missing_filter: str = ""
-    # Covers the comparison's cell differences instead of a row group.
-    cells: bool = False
     # Covers the row groups whose triage cause names this `{side, label}`, in
     # place of `group`: `label` is the words of a stored proof's bucket, with
     # each number of 5 or more digits written `<n>`. Which groups it covers is
@@ -359,11 +350,9 @@ def _comparison(reader: _Reader) -> Comparison:
     rows = None
     if reader.data.get("rows") is not None:
         rows_reader = reader.child("rows", reader.data["rows"])
-        cell = rows_reader.get("cell", str, default="mean")
-        if cell not in ROW_CELLS:
-            rows_reader.fail("cell", f"must be one of {', '.join(ROW_CELLS)}")
+        if "cell" in rows_reader.data:
+            rows_reader.fail("cell", "delete it; cells close by coverage")
         rows = RowSpec(
-            cell=cell,
             grain=_pairs(rows_reader, "grain"),
             values=_pairs(rows_reader, "values"),
             dashboard_scope=[
@@ -624,16 +613,16 @@ def _decision(
     # link, never free text that could name a person.
     if task and not _TASK.fullmatch(task):
         reader.fail("task", f"must be an https:// link or #<issue>; got {task!r}")
+    if "cells" in reader.data:
+        reader.fail("cells", "delete this decision; triage closes covered cells itself")
     missing_cut = reader.get("missing_cut", str, default="")
     missing_filter = reader.get("missing_filter", str, default="")
-    keys = ("group", "missing_cut", "missing_filter", "cells", "cause")
+    keys = ("group", "missing_cut", "missing_filter", "cause")
     named = [k for k in keys if reader.data.get(k)]
     if len(named) > 1:
         reader.fail(
-            named[1],
-            "set only one of group, missing_cut, missing_filter, cells and cause",
+            named[1], "set only one of group, missing_cut, missing_filter and cause"
         )
-    cells = reader.get("cells", bool, default=False)
     if missing_cut or missing_filter:
         # A sheet field Cube lacks is missing from the view, not one comparison.
         for key in ("comparison", "fingerprints"):
@@ -664,7 +653,6 @@ def _decision(
         fingerprints=reader.get("fingerprints", dict, default={}),
         missing_cut=missing_cut,
         missing_filter=missing_filter,
-        cells=bool(cells),
         cause=cause,
         answer=answer,
     )
@@ -913,7 +901,6 @@ def _holds(d: Decision, asked: dict[str, Any]) -> bool:
         and d.task == asked.get("task", "")
         and d.comparison == asked.get("comparison", "")
         and d.group == asked.get("group", {})
-        and d.cells == bool(asked.get("cells", False))
         and d.missing_cut == asked.get("missing_cut", "")
         and d.missing_filter == asked.get("missing_filter", "")
         and d.cause == asked.get("cause", {})

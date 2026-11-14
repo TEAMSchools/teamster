@@ -443,20 +443,10 @@ def test_rows_dashboard_scope_defaults_to_none(tmp_path):
     assert rows.dashboard_scope == []
 
 
-def test_rows_cell_defaults_to_the_mean_and_takes_count_students(tmp_path):
-    assert (
-        load_view_config(_write(tmp_path, EXAMPLE)).comparisons[0].rows.cell == "mean"
-    )
-
-    text = EXAMPLE.replace(VALUES, VALUES + "      cell: count_students\n", 1)
-    rows = load_view_config(_write(tmp_path, text)).comparisons[0].rows
-
-    assert rows.cell == "count_students"
-
-
-def test_rows_cell_refuses_another_kind(tmp_path):
-    text = EXAMPLE.replace(VALUES, VALUES + "      cell: share\n", 1)
-    with pytest.raises(ConfigError, match=r"rows\.cell.*count_students"):
+@pytest.mark.parametrize("kind", ["mean", "count_students"])
+def test_rows_cell_is_refused(tmp_path, kind):
+    text = EXAMPLE.replace(VALUES, VALUES + f"      cell: {kind}\n", 1)
+    with pytest.raises(ConfigError, match=r"rows\.cell: delete it; cells close by"):
         load_view_config(_write(tmp_path, text))
 
 
@@ -738,14 +728,10 @@ CELLS_DECISION = """\
 """
 
 
-def test_cells_decision_loads(tmp_path):
-    d = load_view_config(_write(tmp_path, EXAMPLE + CELLS_DECISION)).decisions[1]
-    assert d.cells is True and d.comparison == "ada-y1-region" and d.group == {}
-
-
-def test_cells_decision_takes_no_group(tmp_path):
-    text = EXAMPLE + CELLS_DECISION + "    group: { column: region, values: [x] }\n"
-    with pytest.raises(ConfigError, match="only one of group"):
+@pytest.mark.parametrize("value", ["true", "false"])
+def test_a_cells_decision_is_refused(tmp_path, value):
+    text = EXAMPLE + CELLS_DECISION.replace("cells: true", f"cells: {value}")
+    with pytest.raises(ConfigError, match="cells: delete this decision; triage closes"):
         load_view_config(_write(tmp_path, text))
 
 
@@ -1012,12 +998,7 @@ CAUSE_DECISION = """\
 def test_cause_decision_loads(tmp_path):
     d = load_view_config(_write(tmp_path, EXAMPLE + CAUSE_DECISION)).decisions[1]
 
-    assert (d.comparison, d.group, d.cells, d.answer) == (
-        "ada-y1-region",
-        {},
-        False,
-        "",
-    )
+    assert (d.comparison, d.group, d.answer) == ("ada-y1-region", {}, "")
     assert d.cause == {
         "side": "cube",
         "label": "score has no section on the anchor date",

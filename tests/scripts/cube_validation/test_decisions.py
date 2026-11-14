@@ -250,31 +250,16 @@ def test_filling_in_a_task_keeps_the_decisions_fingerprint():
     assert decisions_fingerprint([before]) != decisions_fingerprint([changed])
 
 
-def _cells_decision(fingerprints=None):
-    return Decision(
-        id="cells-1", comparison="enrollment", call="domain_owner", reason="r",
-        fingerprints=dict(FP) if fingerprints is None else fingerprints, cells=True,
-    )  # fmt: skip
-
-
 DIFF = CellDiff("enrollment", {"differs": 58}, ("58 cells: values differ",))
 
 
-def test_cells_decision_quiets_its_comparison_cell_differences():
-    applied = apply([_cells_decision()], [], {"enrollment": FP}, cell_diffs=[DIFF])
-    assert applied.quiet_cells == [(_cells_decision(), DIFF)]
-    assert applied.open_cells == []
+def test_no_decision_quiets_a_comparison_s_cell_differences():
+    d = Decision("d", "enrollment", "deliberate", "r",
+                 {"column": "x", "values": ["1"]}, fingerprints=dict(FP))  # fmt: skip
 
+    applied = apply([d], [], {"enrollment": FP}, cell_diffs=[DIFF])
 
-def test_cells_decision_reconfirms_when_sql_changed():
-    stale = _cells_decision({"cube": "old", "dashboard": "d1"})
-    applied = apply([stale], [], {"enrollment": FP}, cell_diffs=[DIFF])
-    assert applied.reconfirm == [stale] and applied.open_cells == [DIFF]
-
-
-def test_cells_decision_with_no_differences_is_no_longer_needed():
-    applied = apply([_cells_decision()], [], {"enrollment": FP}, cell_diffs=[])
-    assert applied.no_longer_needed == [_cells_decision()]
+    assert applied.open_cells == [DIFF] and applied.quiet_cells == []
 
 
 # --- cause decisions (T17) ---------------------------------------------------

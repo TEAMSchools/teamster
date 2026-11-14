@@ -886,18 +886,6 @@ def test_cells_refuse_with_the_count_left_outside_proven_groups(tmp_path, monkey
         _cells(tmp_path, monkeypatch, proven=False)
 
 
-def test_cells_refuse_when_the_difference_is_not_the_proven_rows(tmp_path, monkeypatch):
-    # Cube shows 2 more than the dashboard, but the proven group holds 3 rows.
-    run = _run(
-        [_group(3)],
-        cells=CELLS_RUN["cells"],
-        diff_cells=[{**CELLS_RUN["diff_cells"][0], "cube": 3.0}],
-    )
-
-    with pytest.raises(pipeline.Refusal, match="exceed the proven rows by 1"):
-        _cells(tmp_path, monkeypatch, run=run)
-
-
 def test_cells_link_only_to_groups_under_their_cut(tmp_path, monkeypatch):
     by_school = Comparison(
         id="mastery",
@@ -1135,7 +1123,6 @@ CFG2 = ViewConfig(view="v", fact="m.fct", comparisons=[COMPARISON, SIBLING])
 
 
 def test_comparisons_that_differ_only_in_dims_share_a_row_population():
-    from dataclasses import replace
 
     by_region = replace(COMPARISON, id="r", dims=[ColumnPair("region", "region")])
     narrower = replace(COMPARISON, id="n", scope=[{"school": ["X"]}])
@@ -1374,89 +1361,7 @@ def test_confirm_refuses_a_reproduce_query_bigquery_refuses(
     assert not (tmp_path / "validation").exists()
 
 
-# --- sizing a rate cell from its rows; rows that sit in another cell ------------------
-
-RATE = Comparison(
-    id="mastery",
-    measure="pct",
-    dims=[ColumnPair("school", "abbreviation")],
-    rows=RowSpec(grain=ROWS.grain, values=[ColumnPair("ok", "ok")]),
-    decimals=2,
-)
-RATE_CFG = ViewConfig(view="v", fact="m.fct", comparisons=[RATE])
-
-
-def _side(rows, n, total):
-    return {"rows": rows, "n": [n], "sum": [float(total)]}
-
-
-def _entry(bucket, school, c, d, dash=None):
-    return {"bucket": bucket, "dims": [["abbreviation", school]],
-            "dash_dims": dash, "c": c, "d": d}  # fmt: skip
-
-
-# Synthetic school X: 1 matched row (1 on both sides) and 3 rows only Cube
-# holds (0 each): Cube's cell is 1/4, the dashboard's 1/1.
-X_ROWS = [
-    _entry("match", "X", _side(1, 1, 1), _side(1, 1, 1)),
-    _entry("cube_only", "X", _side(3, 3, 0), _side(0, 0, 0)),
-]
-
-
-def _rate_run(cube, dashboard, cell_rows=X_ROWS, groups=None):
-    from dataclasses import replace
-
-    run = _run(
-        groups or [_group(3)],
-        cells=CELLS_RUN["cells"],
-        diff_cells=[{**CELLS_RUN["diff_cells"][0], "cube": cube,
-                     "dashboard": dashboard}],
-    )  # fmt: skip
-    return replace(run, cell_rows={} if cell_rows is None else {"mastery": cell_rows})
-
-
-STUDENTS = replace(
-    RATE,
-    measure="count_students",
-    decimals=0,
-    rows=replace(RATE.rows, cell="count_students"),
-)
-STUDENTS_CFG = ViewConfig(view="v", fact="m.fct", comparisons=[STUDENTS])
-# Synthetic school X: 5 distinct students in Cube's cell, 3 in the dashboard's.
-CELL_X = [
-    {"side": "c", "cut": "{}", "dims": [["abbreviation", "X"]], "n": 5},
-    {"side": "d", "cut": "{}", "dims": [["abbreviation", "X"]], "n": 3},
-]
-
-
-def _students_run(cube, dashboard, students=CELL_X):
-    return replace(_rate_run(cube, dashboard), cell_students={"mastery": students})
-
-
-def test_a_student_count_cell_links_when_its_students_rebuild_both_sides(
-    tmp_path, monkeypatch
-):
-    cells = _cells(tmp_path, monkeypatch, run=_students_run(5.0, 3.0), cfg=STUDENTS_CFG)
-
-    assert cells["suggestion"] == "cause"
-
-
-def test_a_student_count_cell_its_students_do_not_rebuild_stays_open(
-    tmp_path, monkeypatch, capsys
-):
-    with pytest.raises(pipeline.Refusal, match="1 of 1 differing cells"):
-        _cells(tmp_path, monkeypatch, run=_students_run(6.0, 3.0), cfg=STUDENTS_CFG)
-
-    assert "rebuilt Cube 5, dashboard 3" in capsys.readouterr().out
-
-
-def test_a_student_count_cell_a_run_did_not_count_cannot_be_sized(
-    tmp_path, monkeypatch, capsys
-):
-    with pytest.raises(pipeline.Refusal, match="1 of 1 differing cells"):
-        _cells(tmp_path, monkeypatch, run=_students_run(5.0, 3.0, []), cfg=STUDENTS_CFG)
-
-    assert "cannot be sized" in capsys.readouterr().out
+# --- cells left open; rows that sit in another cell ---------------------------------
 
 
 def test_check_proofs_lists_a_proof_bigquery_rejects(tmp_path, offline, monkeypatch):
@@ -1508,41 +1413,24 @@ def test_check_proofs_lists_a_proof_its_own_checks_refuse(
     assert lines[1].startswith("nobody__cube_only.sql: names no comparison of v")
 
 
-def test_a_rate_cell_links_when_its_rows_rebuild_both_sides(tmp_path, monkeypatch):
-    cells = _cells(tmp_path, monkeypatch, run=_rate_run(0.25, 1.0), cfg=RATE_CFG)
-
-    assert cells["suggestion"] == "cause"
-
-
-def test_a_rate_cell_its_rows_do_not_rebuild_stays_open(tmp_path, monkeypatch):
-    # The proven Cube-only rows explain 1/4, but Cube shows 0.20: other rows
-    # (moved, or outside the reconcile) changed the cell too.
-    with pytest.raises(pipeline.Refusal, match="1 of 1 differing cells"):
-        _cells(tmp_path, monkeypatch, run=_rate_run(0.20, 1.0), cfg=RATE_CFG)
-
-
-def test_rows_the_dashboard_filters_out_rebuild_cube_s_cell_only():
-    # Synthetic: 7 of 20 match on both sides; Cube keeps 1 more row (0) the
-    # dashboard filters out, so Cube shows 7/21 and the dashboard 7/20.
-    entries = [
-        _entry("match", "X", _side(20, 20, 7), _side(20, 20, 7)),
-        _entry("dashboard_filtered", "X", _side(1, 1, 0), _side(0, 0, 0)),
-    ]
-    cell = {"dims": [["abbreviation", "X"]], "cube": 7 / 21, "dashboard": 0.35}
-
-    assert confirm._rebuilt(RATE, entries, cell) == (7 / 21, 0.35)
-    assert confirm._reproduces(RATE, entries, cell)
-
-
 def test_a_cells_refusal_names_each_open_cell_and_why(tmp_path, monkeypatch, capsys):
-    with pytest.raises(pipeline.Refusal, match="1 of 1 differing cells"):
-        _cells(tmp_path, monkeypatch, run=_rate_run(0.20, 1.0), cfg=RATE_CFG)
+    # Cell Y holds no open group; cell X's proven group links.
+    cell = CELLS_RUN["diff_cells"][0]
+    run = _run(
+        [_group(3)],
+        cells=CELLS_RUN["cells"],
+        diff_cells=[cell, {**cell, "key": "abbreviation=Y",
+                           "dims": [["abbreviation", "Y"]], "cube": 0.2}],
+    )  # fmt: skip
+
+    with pytest.raises(pipeline.Refusal, match="1 of 2 differing cells"):
+        _cells(tmp_path, monkeypatch, run=run)
 
     out = capsys.readouterr().out
     assert "mastery:cells: the cells left open (local only, not masked):" in out
-    assert "- abbreviation=X | cut {} | Cube 0.2, dashboard 1" in out
-    assert "cube_only (cause)" in out
-    assert "open: does not rebuild from its rows: rebuilt Cube 0.25, dashboard 1" in out
+    assert "- abbreviation=Y | cut {} | Cube 0.2, dashboard 1" in out
+    assert "abbreviation=X" not in out
+    assert "open: no open group agrees with the cell" in out
 
 
 def test_a_cell_with_an_unproven_group_says_so(tmp_path, monkeypatch, capsys):
@@ -1552,33 +1440,6 @@ def test_a_cell_with_an_unproven_group_says_so(tmp_path, monkeypatch, capsys):
     out = capsys.readouterr().out
     assert "cube_only (investigate)" in out
     assert "open: 1 of its 1 groups are not in `cause`" in out
-
-
-def test_a_run_saved_before_cell_sums_links_and_says_sizes_went_unchecked(
-    tmp_path, monkeypatch
-):
-    run = _rate_run(0.20, 1.0, cell_rows=None)
-
-    cells = _cells(tmp_path, monkeypatch, run=run, cfg=RATE_CFG)
-
-    assert cells["suggestion"] == "cause"
-    assert "cell sizes not checked" in cells["evidence"][0]
-
-
-def test_a_rate_cell_under_a_cut_the_reconcile_does_not_group_by_stays_open(
-    tmp_path, monkeypatch
-):
-    from dataclasses import replace
-
-    by_region = replace(
-        RATE,
-        cuts=[{}, {"Region": "R"}],
-        filters={"Region": ColumnPair("region", "region")},
-    )
-    cfg = ViewConfig(view="v", fact="m.fct", comparisons=[by_region])
-
-    with pytest.raises(pipeline.Refusal, match="1 of 1 differing cells"):
-        _cells(tmp_path, monkeypatch, run=_rate_run(0.25, 1.0), cfg=cfg)
 
 
 def test_a_moved_group_sits_in_cube_s_cell_and_the_dashboard_s():
@@ -1595,7 +1456,7 @@ def test_a_moved_group_sits_in_cube_s_cell_and_the_dashboard_s():
     assert confirm._in_cells(moved, {"dims": []}) == (True, True)
 
 
-def test_a_count_cell_takes_moved_rows_out_of_the_dashboard_s_cell(
+def test_a_cell_links_to_rows_the_dashboard_files_in_it_and_cube_elsewhere(
     tmp_path, monkeypatch
 ):
     moved = Group(
@@ -1642,30 +1503,6 @@ def test_a_proof_classifies_rows_that_sit_in_another_cell(duck, tmp_path, offlin
     assert item["cause"][0]["n_rows"] == 1
 
 
-def test_two_cell_sets_link_on_a_run_saved_before_cell_sums():
-    # A run with no per-cell sums used to crash on the second cell set.
-    sib = Group("mastery-b", (("abbreviation", "X"),), "cube_only", 3, 3)
-    cell = CELLS_RUN["diff_cells"][0]
-    run = _run(
-        [_group(3), sib],
-        cells=[
-            CellDiff("mastery", {"differs": 1}),
-            CellDiff("mastery-b", {"differs": 1}),
-        ],
-        diff_cells=[cell, {**cell, "comparison": "mastery-b"}],
-    )
-    items = _items2(run)
-    for item in items:
-        if item["kind"] == "group":
-            item.update(suggestion="cause", cause=[{"side": "dashboard",
-                        "step": "C1", "label": "fails ok1", "n_rows": 3}])  # fmt: skip
-
-    linked = confirm.link_cells(run, items, cfg=CFG2)
-
-    assert set(linked) == {"mastery:cells", "mastery-b:cells"}
-    assert {i["suggestion"] for i in items if i["kind"] == "cells"} == {"cause"}
-
-
 BY_TYPE = Comparison(
     id="mastery",
     measure="pct",
@@ -1697,7 +1534,6 @@ def test_cut_flags_skip_a_caption_every_cut_shares():
 
 
 def test_a_varying_cut_caption_becomes_a_row_column_on_both_sides():
-    from dataclasses import replace
 
     by_region = replace(
         BY_TYPE,
@@ -1712,26 +1548,6 @@ def test_a_varying_cut_caption_becomes_a_row_column_on_both_sides():
     assert ColumnPair("region", "region") in pipeline._row_pairs(by_region)
     # A caption every cut shares stays out of the rows.
     assert ColumnPair("year", "year") not in pipeline._row_pairs(by_region)
-
-
-def test_a_rate_cell_under_a_cut_is_sized_by_that_cut_s_sums(tmp_path, monkeypatch):
-    from dataclasses import replace
-
-    standard = '{"Response Type": "standard"}'
-    # Over both cuts the cell would read 2/5; under `standard` alone it is 1/4.
-    entries = [
-        {**_entry("match", "X", _side(2, 2, 2), _side(2, 2, 2)),
-         "cuts": {standard: {"c": _side(1, 1, 1), "d": _side(1, 1, 1)}}},
-        {**_entry("cube_only", "X", _side(3, 3, 0), _side(0, 0, 0)),
-         "cuts": {standard: {"c": _side(3, 3, 0), "d": _side(0, 0, 0)}}},
-    ]  # fmt: skip
-    cfg = ViewConfig(view="v", fact="m.fct", comparisons=[BY_TYPE])
-    run = _rate_run(0.25, 1.0, cell_rows=entries)
-    run = replace(run, diff_cells=[{**run.diff_cells[0], "cut": standard}])
-
-    cells = _cells(tmp_path, monkeypatch, run=run, cfg=cfg)
-
-    assert cells["suggestion"] == "cause"
 
 
 EXISTS_REPRODUCE = """SELECT r.school, COUNT(*) AS n_rows

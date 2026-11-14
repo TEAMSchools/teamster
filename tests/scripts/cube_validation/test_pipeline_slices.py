@@ -11,16 +11,22 @@ def _slice() -> pipeline._Sides:
         cube_tables={"m.fct"},
         live={"g.sheet"},
         cells=[pipeline.Cell("c", "{}", "X", 1.0, 2.0, "differs", (("school", "X"),))],
-        groups=[Group("c", (("school", ""),), "cube_only", 3, 2, ("school",))],
+        groups=[
+            Group(
+                "c",
+                (("school", ""),),
+                "cube_only",
+                3,
+                2,
+                ("school",),
+                cut_rows=(("{}", 3, 0), ('{"Region": "Miami"}', 1, 0)),
+            )
+        ],
         sql={"c": ("SELECT d", "SELECT c")},
         fingerprints={"c": {"cube": "1", "dashboard": "2"}},
         moved={"m.dim": False},
         cell_sql={"c": {"{}": ["d", "c"]}},
         cell_sql_usd={"c": {"{}": [0.1, 0.2]}},
-        cell_rows={"c": [{"bucket": "match"}]},
-        cell_students={
-            "c": [{"side": "c", "cut": "{}", "dims": [["school", "X"]], "n": 5}]
-        },
         students={"c": {("{}", ("X",)): 12}},
     )
 
@@ -28,7 +34,10 @@ def _slice() -> pipeline._Sides:
 def test_a_comparison_slice_survives_json():
     s = _slice()
 
-    assert pipeline._Sides.from_json(json.loads(json.dumps(s.to_json()))) == s
+    back = pipeline._Sides.from_json(json.loads(json.dumps(s.to_json())))
+
+    assert back == s
+    assert back.groups[0].cut_rows == (("{}", 3, 0), ('{"Region": "Miami"}', 1, 0))
 
 
 def test_merging_slices_adds_every_part():

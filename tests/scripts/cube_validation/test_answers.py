@@ -117,26 +117,22 @@ def test_a_cause_s_example_needs_10_of_its_own_students_and_the_most_wins():
     assert example_cell(run, "enrollment", "C3", cells) is None
 
 
-def _floor_run(groups, rows):
+def _floor_run(groups):
     run = _run([_cell("a", 10, 20)])
     run.applied = Applied(open=list(groups))
-    run.cell_rows = {"enrollment": rows}
     return run
 
 
-def _rows(bucket, c_rows, in_cut, cut=CUT):
-    side = {"rows": c_rows, "n": [0], "sum": [0.0]}
-    shown = {"rows": in_cut, "n": [0], "sum": [0.0]}
-    none = {"rows": 0, "n": [0], "sum": [0.0]}
-    return {"bucket": bucket, "dims": [list(d) for d in DIMS], "dash_dims": None,
-            "c": side, "d": none, "cuts": {cut: {"c": shown, "d": none}}}  # fmt: skip
+def _floor_group(bucket, in_cut, n_rows=30, cut=CUT):
+    """A group of `n_rows` rows, `in_cut` of them under `cut` on its own side."""
+    rows = (cut, 0, in_cut) if bucket == "dashboard_only" else (cut, in_cut, 0)
+    return Group("enrollment", tuple(map(tuple, DIMS)), bucket, n_rows, 25,
+                 cut_rows=(rows, ('{"Grade": "8"}', 0, 0)))  # fmt: skip
 
 
 def test_a_cause_s_students_in_a_cell_are_only_what_its_groups_prove():
-    g = Group("enrollment", tuple(map(tuple, DIMS)), "cube_only", 30, 25)
-
-    def floor(groups, rows, causes):
-        run = _floor_run(groups, rows)
+    def floor(groups, causes):
+        run = _floor_run(groups)
         items = [
             {"key": it.key, "kind": "group",
              "cause": [{"side": "cube", "label": c} for c in causes]}
@@ -146,11 +142,16 @@ def test_a_cause_s_students_in_a_cell_are_only_what_its_groups_prove():
         return held
 
     # All 30 rows in the cell's cut, 1 cause: its 25 students count.
-    assert floor([g], [_rows("cube_only", 30, 30)], ["C1"]) == {"cube: C1": 25}
+    assert floor([_floor_group("cube_only", 30)], ["C1"]) == {"cube: C1": 25}
+    # On the dashboard side, a dashboard-only group's rows count.
+    assert floor([_floor_group("dashboard_only", 30)], ["C1"]) == {"cube: C1": 25}
     # Rows in another cut too: which students are in this one is unknown.
-    assert floor([g], [_rows("cube_only", 30, 12)], ["C1"]) == {"cube: C1": 0}
+    assert floor([_floor_group("cube_only", 12)], ["C1"]) == {"cube: C1": 0}
+    # No rows at all under the cell's cut, or none recorded for it.
+    assert floor([_floor_group("cube_only", 0, n_rows=0)], ["C1"]) == {"cube: C1": 0}
+    assert floor([_floor_group("cube_only", 30, cut="{}")], ["C1"]) == {"cube: C1": 0}
     # 2 causes share the group's students: neither count is known.
-    assert floor([g], [_rows("cube_only", 30, 30)], ["C1", "C2"]) == {
+    assert floor([_floor_group("cube_only", 30)], ["C1", "C2"]) == {
         "cube: C1": 0,
         "cube: C2": 0,
     }
@@ -283,7 +284,7 @@ def _owner_run(diff_cells, measure_cells=3):
             {"column": "region", "values": [value]},
         )  # fmt: skip
 
-    cells = Decision("c1", "enrollment", "domain_owner", "Codes differ?", cells=True)
+    cells = Decision("c1", "enrollment", "domain_owner", "Codes differ?")
     applied = Applied(
         quiet=[
             (group_decision("d-newark", "Newark"),
@@ -365,7 +366,8 @@ def test_questions_json_matches_markdown_questions_one_to_one():
         "cube": ["`enrollment` in `enrollment`: codes T%"],
     }
     assert questions[0]["evidence"] == ["note on <redacted>, student <redacted>"]
-    assert questions[1]["evidence"] == ["no description or ai_context answers it"]
+    # No decision covers a cell set, so no cells item lends its evidence.
+    assert questions[1]["evidence"] == []
     assert questions[0]["moment"] == {
         "start": START.isoformat(),
         "end": END.isoformat(),
@@ -1027,8 +1029,7 @@ def test_pinned_sql_too_long_to_post_is_left_out_before_anything_else(monkeypatc
 
 
 def test_recorded_cause_students_are_used_as_counted():
-    g = Group("enrollment", tuple(map(tuple, DIMS)), "cube_only", 30, 25)
-    run = _floor_run([g], [_rows("cube_only", 30, 12)])
+    run = _floor_run([_floor_group("cube_only", 12)])
     items = [{"key": it.key, "kind": "group", "cause": [{"side": "cube", "label": "C1"}]}
              for it in triage_mod.open_items(run)]  # fmt: skip
     counted = [{"cause": "cube: C1", "cut": CUT, "dims": DIMS, "n": 14}]

@@ -743,10 +743,6 @@ class _Sides:
     cell_sql_usd: dict[str, dict[str, list[float]]] = dataclasses.field(
         default_factory=dict
     )
-    cell_rows: dict[str, list[dict]] = dataclasses.field(default_factory=dict)
-    # Per comparison counting students, each side's distinct students per cell
-    # and cut (`RunResult.cell_students`).
-    cell_students: dict[str, list[dict]] = dataclasses.field(default_factory=dict)
     # Per comparison with `rows`, distinct students by (cut label, cell key).
     students: dict[str, dict[tuple[str, tuple[str, ...]], int]] = dataclasses.field(
         default_factory=dict
@@ -765,8 +761,6 @@ class _Sides:
             "fingerprints",
             "cell_sql",
             "cell_sql_usd",
-            "cell_rows",
-            "cell_students",
             "students",
         ):
             getattr(self, name).update(getattr(other, name))
@@ -784,8 +778,6 @@ class _Sides:
             "moved": self.moved,
             "cell_sql": self.cell_sql,
             "cell_sql_usd": self.cell_sql_usd,
-            "cell_rows": self.cell_rows,
-            "cell_students": self.cell_students,
             "students": {
                 cid: [[cut, list(key), n] for (cut, key), n in by.items()]
                 for cid, by in self.students.items()
@@ -803,17 +795,12 @@ class _Sides:
             cube_tables=set(data["cube_tables"]),
             live=set(data["live"]),
             cells=[Cell(**{**c, "dims": pairs(c["dims"])}) for c in data["cells"]],
-            groups=[
-                Group(**{**g, "dims": pairs(g["dims"]), "nulls": tuple(g["nulls"])})
-                for g in data["groups"]
-            ],
+            groups=[_group(g) for g in data["groups"]],
             sql={k: (v[0], v[1]) for k, v in data["sql"].items()},
             fingerprints=data["fingerprints"],
             moved=data["moved"],
             cell_sql=data["cell_sql"],
             cell_sql_usd=data["cell_sql_usd"],
-            cell_rows=data["cell_rows"],
-            cell_students=data["cell_students"],
             students={
                 cid: {(cut, tuple(key)): n for cut, key, n in entries}
                 for cid, entries in data["students"].items()
@@ -914,8 +901,7 @@ def _reconcile_args(
     cfg: ViewConfig, comparison: Comparison, sides: RowSides
 ) -> tuple[tuple, dict]:
     """The positional and keyword arguments every row query of a comparison
-    takes (`compare.reconcile_script`, `unmatched_rows_sql`,
-    `cell_students_sql`)."""
+    takes (`compare.reconcile_script`, `unmatched_rows_sql`)."""
     flags = cut_flags(comparison) or []
     args = (
         wrap_cube(sides.cube_rows_sql, cfg.view, sides.columns, _date_cubes(cfg), None),
@@ -940,8 +926,7 @@ def save_script(
 
     With `labels`, the table carries them and expires after
     `saved.SAVED_DAYS`; without (an offline test on DuckDB), it is a plain
-    table. A comparison counting students (`rows.cell`) also gets each side's
-    distinct students per cell and cut from the same job.
+    table.
     """
     args, kwargs = _reconcile_args(cfg, comparison, sides)
     return compare.reconcile_script(
@@ -950,8 +935,6 @@ def save_script(
         table=table,
         labels=labels,
         expire_days=saved.SAVED_DAYS if labels is not None else None,
-        students=comparison.rows is not None
-        and comparison.rows.cell == "count_students",
     )
 
 
@@ -1074,27 +1057,9 @@ def _compare_one(
                 ),
             )
         )
-        counted = [r for r in result if r.get("__kind", "counts") == "students"]
-        result = [
-            {k: v for k, v in r.items() if k not in ("__kind", "side", "__cut")}
-            for r in result
-            if r.get("__kind", "counts") == "counts"
-        ]
-        sides.groups += compare.groups_from(comparison.id, result)
-        sides.cell_rows[comparison.id] = compare.cell_rows_from(
-            result, [label for label, _, _ in flags]
+        sides.groups += compare.groups_from(
+            comparison.id, result, [label for label, _, _ in flags]
         )
-        if comparison.rows.cell == "count_students":
-            labels = [label for label, _, _ in flags]
-            sides.cell_students[comparison.id] = [
-                {
-                    "side": r["side"],
-                    "cut": labels[int(r["__cut"])],
-                    "dims": [[p.cube, r[p.cube]] for p in group_dims(comparison)],
-                    "n": r["n_students"],
-                }
-                for r in counted
-            ]
         sides.sql[comparison.id] = (dash_at.sql, cube_at.sql)
         # Only a student column counts students; without one in the grain,
         # every cell's `n_students` stays None, so none is an example cell.
@@ -1738,8 +1703,6 @@ def run(
         diff_cells=_diff_cells(sides),
         cell_sql=sides.cell_sql,
         cell_sql_usd=sides.cell_sql_usd,
-        cell_rows=sides.cell_rows,
-        cell_students=sides.cell_students,
     )
     text = report.render_local(result) + "\n" + _extra_sections(sides.cells)
     print(text)
@@ -1845,12 +1808,13 @@ def _json_default(value: Any) -> Any:
 
 
 def _group(data: dict) -> Group:
-    """JSON stores `dims` as lists; a group compares by tuples."""
+    """JSON stores `dims` and `cut_rows` as lists; a group compares by tuples."""
     return Group(
         **{
             **data,
             "dims": tuple(tuple(d) for d in data["dims"]),
             "nulls": tuple(data.get("nulls") or ()),
+            "cut_rows": tuple(tuple(c) for c in data.get("cut_rows") or ()),
         }
     )
 
@@ -1915,8 +1879,6 @@ def _run_from_json(data: dict) -> RunResult:
         diff_cells=data.get("diff_cells", []),
         cell_sql=data.get("cell_sql", {}),
         cell_sql_usd=data.get("cell_sql_usd", {}),
-        cell_rows=data.get("cell_rows", {}),
-        cell_students=data.get("cell_students", {}),
         cube_host=data.get("cube_host", ""),
         fact=data.get("fact", ""),
     )
@@ -2031,9 +1993,10 @@ def reapply(cfg: ViewConfig, cache_root: Path) -> RunResult:
     cell differences and SQL fingerprints are re-sorted by the current
     decisions as `run` would sort them; a decision whose fingerprints differ
     from the run's still lands in `reconfirm`. Rewrites `run.json` and
-    `result.md` and runs no query. The verdict is read again from the cells and the open counts.
-    Clauses stay as the run computed them, over the groups open then, so a
-    group a deleted decision reopens may show no clause until the next `run`.
+    `result.md` and runs no query. The verdict is read again from the cells
+    and the open counts. Clauses stay as the run computed them, over the
+    groups open then, so a group a deleted decision reopens may show no clause
+    until the next `run`.
 
     Raises:
         Refusal: The view has no saved run, the run predates what re-applying

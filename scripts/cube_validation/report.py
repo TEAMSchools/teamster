@@ -109,13 +109,6 @@ class RunResult:
     diff_cells: list[dict] = field(default_factory=list)
     cell_sql: dict[str, dict[str, list[str]]] = field(default_factory=dict)
     cell_sql_usd: dict[str, dict[str, list[float]]] = field(default_factory=dict)
-    # Per comparison with `rows`, each reconcile row's rows and value sums per
-    # side (`compare.cell_rows_from`), to size a rate cell; counts only.
-    cell_rows: dict[str, list[dict]] = field(default_factory=dict)
-    # Per comparison whose `rows.cell` is `count_students`, each side's
-    # distinct students per cell and cut (`compare.cell_students_sql`), to size
-    # a cell that counts students: `{"side", "cut", "dims", "n"}`; counts only.
-    cell_students: dict[str, list[dict]] = field(default_factory=dict)
 
 
 def mask(n: int) -> str:
@@ -191,8 +184,6 @@ def _decision_line(d: Decision) -> str:
             f"`{d.id}` ({d.comparison}, {d.cause.get('side')} cause "
             f"`{_clean(str(d.cause.get('label')))}`, {d.call}): {d.reason}"
         )
-    if d.cells:
-        return f"`{d.id}` ({d.comparison} cells, {d.call}): {d.reason}"
     if d.missing_cut or d.missing_filter:
         kind, name = (
             ("cut", d.missing_cut) if d.missing_cut else ("filter", d.missing_filter)
@@ -247,8 +238,8 @@ def render_local(run: RunResult) -> str:
         cells = ", ".join(f"{k} {v}" for k, v in sorted(m.cells.items()))
         line = f"- `{m.measure}`: {m.verdict}"
         line = f"{line} ({cells})" if cells else line
-        # The verdict reads cells only; row groups still open are named so
-        # "validated" never hides them.
+        # Any open item makes the verdict `differs` (`pipeline.verdict`); each
+        # kind is named with its count so the reader knows what to triage.
         if m.open_groups:
             plural = "group" if m.open_groups == 1 else "groups"
             line += f"; {m.open_groups} open row {plural} to triage"

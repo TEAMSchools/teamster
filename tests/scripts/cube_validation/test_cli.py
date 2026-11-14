@@ -101,6 +101,11 @@ RECONCILE_ROWS = [
         "regions_region_name": "Miami",
         "n_rows": 30,
         "n_students": 12,
+        # Each cut's rows on each side: the YML's cuts `{}` and Region Miami.
+        "__s_k0_c_rows": 0,
+        "__s_k0_d_rows": 30,
+        "__s_k1_c_rows": 0,
+        "__s_k1_d_rows": 30,
     },
 ]
 
@@ -423,53 +428,6 @@ def test_run_keeps_student_rows_in_bigquery(fakes, tmp_path, capsys):
                 ), branch
     out = capsys.readouterr().out
     assert "student_number" not in out
-
-
-def test_run_counts_each_side_s_students_per_cell_for_a_student_count(fakes, tmp_path):
-    text = YML.replace(
-        "        - { dashboard: is_present, cube: attendance_value }\n",
-        "        - { dashboard: is_present, cube: attendance_value }\n"
-        "      cell: count_students\n",
-        1,
-    )
-    students = [
-        {"__kind": "students", "side": "c", "__cut": 1,
-         "regions_region_name": "Miami", "n_students": 3},
-        {"__kind": "students", "side": "d", "__cut": 1,
-         "regions_region_name": "Miami", "n_students": 2},
-    ]  # fmt: skip
-    real = fakes.bq.answer
-
-    def answer(sql):
-        if "-- outer" in sql and "'students'" in sql:
-            counts = [
-                {**r, "__kind": "counts", "side": None, "__cut": None}
-                for r in RECONCILE_ROWS
-            ]
-            return counts + students
-        return real(sql)
-
-    fakes.bq.answer = answer
-
-    assert cli.main(["run", str(_file(tmp_path, text))]) == 0
-
-    (saved,) = (tmp_path / "cache" / "v").glob("*/run.json")
-    data = json.loads(saved.read_text())
-    miami = '{"Region": "Miami"}'
-    assert data["cell_students"] == {
-        "ada-region": [
-            {"side": "c", "cut": miami,
-             "dims": [["regions_region_name", "Miami"]], "n": 3},
-            {"side": "d", "cut": miami,
-             "dims": [["regions_region_name", "Miami"]], "n": 2},
-        ]
-    }  # fmt: skip
-    # The counts come from the reconcile's own job: no second scan of both sides.
-    (script,) = _outer(fakes.bq)
-    assert "COUNT(DISTINCT __student)" in script and "'students'" in script
-    assert not [s for s in fakes.bq.ran if "FROM joined WHERE __cin" in s]
-    # The students rows never reach the groups.
-    assert {g["comparison_id"] for g in data["applied"]["open"]} <= {"ada-region"}
 
 
 def test_run_saves_each_comparison_s_unmatched_rows_to_a_labelled_table(
@@ -2467,31 +2425,13 @@ def test_run_probes_again_without_dashboard_filters_only_when_set(fakes, tmp_pat
     assert sum("enroll_status IN (0)" not in s for s in probes()) == plain
 
 
-def test_run_opens_and_quiets_cell_differences(fakes, tmp_path, capsys):
+def test_run_opens_cell_differences(fakes, tmp_path, capsys):
     fakes.bq.cells = [{"regions_region_name": "Newark", "value": 0.95}]
     assert cli.main(["run", str(_file(tmp_path))]) == 0
     out = capsys.readouterr().out
     section = out.split("## Cell differences", 1)[1].split("## ", 1)[0]
     assert "ada-region: 2 differ" in section
     assert "Cube computes `avg_daily_attendance` as" in section
-
-    fp = _saved_fingerprints(tmp_path)
-    text = (
-        YML
-        + f"""\
-decisions:
-  - id: ada-cells
-    comparison: ada-region
-    cells: true
-    call: deliberate
-    reason: known definition difference
-    fingerprints: {{ cube: {fp["cube"]}, dashboard: {fp["dashboard"]} }}
-"""
-    )
-    assert cli.main(["run", str(_file(tmp_path, text))]) == 0
-    out = capsys.readouterr().out
-    assert "`ada-cells` (ada-region cells, deliberate)" in out
-    assert "cell differences to triage" not in out
 
 
 def _saved_run(tmp_path):
@@ -2536,6 +2476,10 @@ def test_run_saves_differing_cells_and_their_pinned_sql(fakes, tmp_path):
     assert dashboard in fakes.bq.ran and cube in fakes.bq.ran
     usd = saved["cell_sql_usd"]["ada-region"]
     assert set(usd) == set(sql) and all(len(v) == 2 for v in usd.values())
+    # A cell is sized by coverage, from each group's rows per cut.
+    assert "cell_rows" not in saved and "cell_students" not in saved
+    (group,) = saved["applied"]["open"]
+    assert group["cut_rows"] == [["{}", 0, 30], ['{"Region": "Miami"}', 0, 30]]
 
 
 def test_run_counts_a_cells_students_under_its_dashboard_filters(fakes, tmp_path):
@@ -2622,6 +2566,32 @@ def test_old_run_json_without_new_fields_still_loads(fakes, tmp_path):
 
     assert result.diff_cells == [] and result.cell_sql == {}
     assert result.cell_sql_usd == {}
+
+
+@pytest.mark.parametrize("key", ["strongest", "findings"])
+def test_an_old_run_json_with_a_measure_s_findings_is_older(
+    fakes, tmp_path, capsys, key
+):
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+    (saved,) = (tmp_path / "cache" / "v").glob("*/run.json")
+    data = json.loads(saved.read_text())
+    data["measures"][0][key] = []
+    saved.write_text(json.dumps(data))
+    capsys.readouterr()
+
+    assert cli.main(["review", str(_file(tmp_path)), "--domain", "Registrar"]) == 1
+    assert "older validator" in capsys.readouterr().err
+
+
+def test_an_old_run_json_s_cell_sizes_are_ignored(fakes, tmp_path):
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+    saved = _saved_run(tmp_path)
+    saved["cell_rows"] = {"ada-region": [{"bucket": "match"}]}
+    saved["cell_students"] = {"ada-region": []}
+
+    result = pipeline._run_from_json(saved)
+
+    assert not hasattr(result, "cell_rows") and not hasattr(result, "cell_students")
 
 
 def test_run_json_round_trips_the_hand_check_fields(fakes, tmp_path):

@@ -179,8 +179,8 @@ def apply(
         gaps: Sheet fields with no Cube member. A decision naming one by kind
             and field quiets it; it carries no fingerprints, because a re-prove
             rewrites the list it matches.
-        cell_diffs: Each comparison's differing cells. A `cells` decision
-            quiets its comparison's while both fingerprints hold.
+        cell_diffs: Each comparison's differing cells; no decision quiets
+            them, so they all stay open.
 
     Returns:
         Groups still open or quieted, decisions to reconfirm because the SQL
@@ -194,7 +194,6 @@ def apply(
     applied = Applied()
     claimed: dict[int, Decision] = {}
     gap_claims: dict[tuple[str, str], Decision] = {}
-    cell_claims: dict[str, Decision] = {}
 
     for decision in decisions:
         if decision.cause:
@@ -230,23 +229,6 @@ def apply(
             applied.reconfirm.append(decision)
             continue
 
-        if decision.cells:
-            diff = next(
-                (d for d in cell_diffs if d.comparison_id == decision.comparison), None
-            )
-            if diff is None:
-                applied.no_longer_needed.append(decision)
-                continue
-            if decision.comparison in cell_claims:
-                raise ValueError(
-                    f"decisions {cell_claims[decision.comparison].id!r} and "
-                    f"{decision.id!r} both claim the cells of "
-                    f"{decision.comparison!r}"
-                )
-            cell_claims[decision.comparison] = decision
-            applied.quiet_cells.append((decision, diff))
-            continue
-
         column = decision.group.get("column")
         # A group's value is text; YAML reads an unquoted `9` as an int.
         values = list(
@@ -279,5 +261,5 @@ def apply(
 
     applied.open = [g for i, g in enumerate(groups) if i not in claimed]
     applied.open_gaps = [g for g in gaps if (g.kind, g.field) not in gap_claims]
-    applied.open_cells = [d for d in cell_diffs if d.comparison_id not in cell_claims]
+    applied.open_cells = list(cell_diffs)
     return applied
