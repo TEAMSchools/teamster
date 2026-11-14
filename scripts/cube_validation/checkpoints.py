@@ -34,6 +34,9 @@ class Unfinished:
     moment: Build
     last_at: datetime
     done: int
+    # The fact table the run read (`ViewConfig.fact`), so a run of another
+    # (a `--fact-dataset` dev build) never resumes it.
+    fact: str = ""
 
 
 def _write_json(path: Path, data: dict) -> None:
@@ -60,14 +63,15 @@ def _moment_json(moment: Build) -> dict:
     }
 
 
-def start(folder: Path, moment: Build, process: str) -> None:
-    """Mark the folder's run unfinished at `moment`, keeping what earlier
-    processes spent, and add `process` at $0."""
+def start(folder: Path, moment: Build, process: str, fact: str = "") -> None:
+    """Mark the folder's run of `fact` unfinished at `moment`, keeping what
+    earlier processes spent, and add `process` at $0."""
     spent = (_read_state(folder) or {}).get("spent", {})
     _write_json(
         folder / STATE,
         {
             "moment": _moment_json(moment),
+            "fact": fact,
             "finished": False,
             "spent": {**spent, process: spent.get(process, 0.0)},
         },
@@ -147,22 +151,39 @@ def unfinished(folder: Path) -> Unfinished | None:
         ),
         last_at=max(datetime.fromisoformat(e["at"]) for e in entries),
         done=len(entries),
+        fact=state.get("fact", ""),
     )
 
 
-def find_unfinished(root: Path, view: str) -> Unfinished | None:
-    """The view's unfinished run with the latest checkpoint, or None."""
+def find_unfinished(
+    root: Path, view: str, fact: str | None = None
+) -> Unfinished | None:
+    """The view's unfinished run with the latest checkpoint, or None; with
+    `fact`, only a run of that fact table."""
     found = [
         u
         for folder in ((root / view).iterdir() if (root / view).is_dir() else [])
-        if (u := unfinished(folder)) is not None
+        if (u := unfinished(folder)) is not None and fact in (None, u.fact)
     ]
     return max(found, key=lambda u: u.last_at, default=None)
 
 
-def clear(folder: Path) -> None:
+def clear(folder: Path, keep_spend_of: str | None = None) -> None:
     """Remove the folder's checkpoints, run state and triage progress; keep
-    its finished results (`run.json`, `result.md`, `triage.json`)."""
+    its finished results (`run.json`, `result.md`, `triage.json`).
+
+    With `keep_spend_of` (a fact table), what an unfinished run of that fact
+    spent stays, so the run that starts here reports the true total even when
+    the earlier one stopped before its first checkpoint.
+    """
+    state = _read_state(folder) or {}
+    keep = (
+        keep_spend_of is not None
+        and not state.get("finished", True)
+        and state.get("fact", "") == keep_spend_of
+    )
     shutil.rmtree(folder / DIR, ignore_errors=True)
     for name in (STATE, TRIAGE_PROGRESS):
         (folder / name).unlink(missing_ok=True)
+    if keep and state.get("spent"):
+        _write_json(folder / STATE, {"finished": False, "spent": state["spent"]})

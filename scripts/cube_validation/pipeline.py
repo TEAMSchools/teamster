@@ -1590,13 +1590,13 @@ def _run_folder(
         )
         folder = report.run_dir(cache_root, cfg.view, build)
         there = checkpoints.unfinished(folder)
-        if restart or there is None:
-            checkpoints.clear(folder)
+        if restart or there is None or there.fact != cfg.fact:
+            checkpoints.clear(folder, keep_spend_of=None if restart else cfg.fact)
         else:
             resuming(there, build)
         return folder, build
 
-    unfinished = checkpoints.find_unfinished(cache_root, cfg.view)
+    unfinished = checkpoints.find_unfinished(cache_root, cfg.view, cfg.fact)
     if unfinished is not None and restart:
         checkpoints.clear(unfinished.folder)
         unfinished = None
@@ -1630,7 +1630,7 @@ def _run_folder(
         fact_builds(wh, cfg.fact, since=now - WINDOW), now, None, cfg.fact
     )
     folder = report.run_dir(cache_root, cfg.view, build)
-    checkpoints.clear(folder)
+    checkpoints.clear(folder, keep_spend_of=None if restart else cfg.fact)
     return folder, build
 
 
@@ -1723,7 +1723,7 @@ def run(
             clock=clock,
         )
         process = f"{clock().isoformat()}-{uuid.uuid4().hex[:8]}"
-        checkpoints.start(folder, build, process)
+        checkpoints.start(folder, build, process, cfg.fact)
         try:
             sides = _compare_all(
                 cfg,

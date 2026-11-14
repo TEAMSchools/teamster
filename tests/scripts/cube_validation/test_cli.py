@@ -612,6 +612,40 @@ def test_a_moment_with_an_unfinished_run_resumes_it_whatever_its_age(
     assert (folder / "run.json").exists()
 
 
+def test_a_run_stopped_before_its_first_checkpoint_keeps_its_spend(fakes, tmp_path):
+    path = _four(tmp_path)
+    fakes.bq.cost = lambda sql: 0.01
+    fakes.bq.fail_once = "ada_region_1"
+    assert cli.main(["run", str(path)]) == 1
+    folder = next((tmp_path / "cache" / "v").iterdir())
+    first = checkpoints.total_spend(folder)
+    assert first > 0
+
+    assert cli.main(["run", str(path)]) == 0
+
+    state = json.loads((folder / checkpoints.STATE).read_text())
+    assert len(state["spent"]) == 2
+    run_json = json.loads((folder / "run.json").read_text())
+    assert run_json["cost_usd"] == pytest.approx(sum(state["spent"].values()))
+    assert run_json["cost_usd"] > first
+
+
+def test_a_stopped_run_of_another_fact_is_not_resumed(fakes, tmp_path, capsys):
+    path = _four(tmp_path)
+    fakes.bq.fail_once = "ada_region_3"
+    assert cli.main(["run", str(path)]) == 1
+    fakes.cube.dataset = "zz_cbaldor_kipptaf_marts"
+    fakes.bq.ran.clear()
+    capsys.readouterr()
+
+    assert (
+        cli.main(["run", str(path), "--fact-dataset", "zz_cbaldor_kipptaf_marts"]) == 0
+    )
+
+    assert "Resuming" not in capsys.readouterr().out
+    assert len(_outer(fakes.bq)) == 4
+
+
 def test_restart_clears_the_unfinished_run(fakes, tmp_path):
     path = _four(tmp_path)
     fakes.bq.fail_once = "ada_region_3"
