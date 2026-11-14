@@ -1,0 +1,26 @@
+<!-- @dsCard group="Spacing" viewport="700x170" name="Spacing scale" subtitle="4px base grid, 1–32" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../styles.css">
+<style>
+  body { margin: 0; padding: 22px 28px; background: var(--surface-card); display:flex; align-items:flex-end; gap: 14px; }
+  .col { display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .bar { background: var(--kipp-indigo); width: 100%; border-radius: var(--radius-sm); }
+  .col span { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); }
+  .col { width: 46px; }
+</style>
+</head>
+<body>
+  <div class="col"><div class="bar" style="height:4px"></div><span>1·4</span></div>
+  <div class="col"><div class="bar" style="height:8px"></div><span>2·8</span></div>
+  <div class="col"><div class="bar" style="height:12px"></div><span>3·12</span></div>
+  <div class="col"><div class="bar" style="height:16px"></div><span>4·16</span></div>
+  <div class="col"><div class="bar" style="height:24px"></div><span>6·24</span></div>
+  <div class="col"><div class="bar" style="height:32px"></div><span>8·32</span></div>
+  <div class="col"><div class="bar" style="height:48px"></div><span>12·48</span></div>
+  <div class="col"><div class="bar" style="height:64px"></div><span>16·64</span></div>
+  <div class="col"><div class="bar" style="height:80px"></div><span>20·80</span></div>
+</body>
+</html>

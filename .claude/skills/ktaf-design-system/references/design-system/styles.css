@@ -1,0 +1,13 @@
+/* ============================================================
+   KIPP NJ | Miami Design System — global entry point.
+   Consumers link THIS one file. Import order matters:
+   fonts → tokens → base. Keep this file @import-only.
+   ============================================================ */
+
+@import url('./tokens/fonts.css');
+@import url('./tokens/colors.css');
+@import url('./tokens/typography.css');
+@import url('./tokens/spacing.css');
+@import url('./tokens/elevation.css');
+@import url('./tokens/motion.css');
+@import url('./tokens/base.css');

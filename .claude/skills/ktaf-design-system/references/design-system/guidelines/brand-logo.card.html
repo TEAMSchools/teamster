@@ -1,0 +1,78 @@
+<!-- @dsCard group="Brand" viewport="700x520" name="Logo variants" subtitle="Horizontal & stacked — 4-color, white, 2-color, indigo-only" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../styles.css">
+<style>
+  body { margin: 0; padding: 20px; background: var(--surface-card); }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .swatch {
+    border-radius: var(--radius-md); overflow: hidden;
+    border: 1px solid var(--border-subtle);
+    display: flex; flex-direction: column;
+  }
+  .swatch .bg {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    padding: 20px 24px; min-height: 88px;
+  }
+  .swatch img { max-height: 56px; width: auto; max-width: 100%; }
+  .swatch .meta {
+    padding: 7px 10px; border-top: 1px solid var(--border-subtle);
+    font-family: var(--font-mono); font-size: 10px; color: var(--text-muted);
+  }
+</style>
+</head>
+<body>
+  <div class="grid">
+    <div class="swatch">
+      <div class="bg" style="background:#fff">
+        <img src="../assets/logo-horizontal-4c.png" alt="Horizontal 4-color">
+      </div>
+      <div class="meta">horizontal · 4-color · on white</div>
+    </div>
+    <div class="swatch">
+      <div class="bg" style="background:var(--kipp-indigo)">
+        <img src="../assets/logo-horizontal-white.png" alt="Horizontal white">
+      </div>
+      <div class="meta">horizontal · all white · on indigo</div>
+    </div>
+    <div class="swatch">
+      <div class="bg" style="background:var(--kipp-indigo)">
+        <img src="../assets/logo-horizontal-white-2c.png" alt="Horizontal white 2-color">
+      </div>
+      <div class="meta">horizontal · white 2-color · on indigo</div>
+    </div>
+    <div class="swatch">
+      <div class="bg" style="background:#fff">
+        <img src="../assets/logo-horizontal-indigo.png" alt="Horizontal indigo">
+      </div>
+      <div class="meta">horizontal · indigo only · on white</div>
+    </div>
+    <div class="swatch">
+      <div class="bg" style="background:#fff">
+        <img src="../assets/logo-stacked-4c.png" alt="Stacked 4-color">
+      </div>
+      <div class="meta">stacked · 4-color · on white</div>
+    </div>
+    <div class="swatch">
+      <div class="bg" style="background:var(--kipp-indigo)">
+        <img src="../assets/logo-stacked-white.png" alt="Stacked white">
+      </div>
+      <div class="meta">stacked · all white · on indigo</div>
+    </div>
+    <div class="swatch">
+      <div class="bg" style="background:var(--kipp-indigo)">
+        <img src="../assets/logo-stacked-white-2c.png" alt="Stacked white 2-color">
+      </div>
+      <div class="meta">stacked · white 2-color · on indigo</div>
+    </div>
+    <div class="swatch">
+      <div class="bg" style="background:#fff">
+        <img src="../assets/logo-stacked-indigo.png" alt="Stacked indigo">
+      </div>
+      <div class="meta">stacked · indigo only · on white</div>
+    </div>
+  </div>
+</body>
+</html>

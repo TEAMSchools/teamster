@@ -80,6 +80,10 @@ lint:
         - .claude/skills/zendesk-help-articles/references/design-system/**
       linters:
         - ALL
+    - paths:
+        - .claude/skills/ktaf-design-system/references/design-system/**
+      linters:
+        - ALL
   definitions:
     - name: ruff
       commands:

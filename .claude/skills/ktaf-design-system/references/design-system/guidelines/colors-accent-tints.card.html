@@ -1,0 +1,50 @@
+<!-- @dsCard group="Colors" viewport="700x230" name="Accent tints" subtitle="Each accent steps down to soft fills for banners, chips and surfaces" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../styles.css">
+<style>
+  body { margin: 0; padding: 20px; background: var(--surface-card); }
+  .grid { display: grid; gap: 10px; }
+  .ramp { display: grid; grid-template-columns: 70px repeat(5, 1fr); align-items: center; gap: 0; }
+  .tag { font-family: var(--font-brand); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-strong); }
+  .ramp .c { height: 44px; display:flex; align-items:flex-end; padding:5px; }
+  .ramp .c:first-of-type { border-radius: var(--radius-md) 0 0 var(--radius-md); }
+  .ramp .c:last-of-type { border-radius: 0 var(--radius-md) var(--radius-md) 0; }
+  .l { font-family: var(--font-mono); font-size: 10px; }
+</style>
+</head>
+<body>
+  <div class="grid">
+    <div class="ramp"><span class="tag">Orange</span>
+      <div class="c" style="background:var(--orange-700)"><span class="l" style="color:#fff">700</span></div>
+      <div class="c" style="background:var(--orange-500)"><span class="l" style="color:var(--kipp-indigo)">500</span></div>
+      <div class="c" style="background:var(--orange-200)"><span class="l" style="color:var(--kipp-indigo)">200</span></div>
+      <div class="c" style="background:var(--orange-100)"><span class="l" style="color:var(--kipp-indigo)">100</span></div>
+      <div class="c" style="background:var(--orange-50)"><span class="l" style="color:var(--kipp-indigo)">50</span></div>
+    </div>
+    <div class="ramp"><span class="tag">Blue</span>
+      <div class="c" style="background:var(--blue-700)"><span class="l" style="color:#fff">700</span></div>
+      <div class="c" style="background:var(--blue-500)"><span class="l" style="color:var(--kipp-indigo)">500</span></div>
+      <div class="c" style="background:var(--blue-200)"><span class="l" style="color:var(--kipp-indigo)">200</span></div>
+      <div class="c" style="background:var(--blue-100)"><span class="l" style="color:var(--kipp-indigo)">100</span></div>
+      <div class="c" style="background:var(--blue-50)"><span class="l" style="color:var(--kipp-indigo)">50</span></div>
+    </div>
+    <div class="ramp"><span class="tag">Red</span>
+      <div class="c" style="background:var(--red-700)"><span class="l" style="color:#fff">700</span></div>
+      <div class="c" style="background:var(--red-500)"><span class="l" style="color:#fff">500</span></div>
+      <div class="c" style="background:var(--red-200)"><span class="l" style="color:var(--kipp-indigo)">200</span></div>
+      <div class="c" style="background:var(--red-100)"><span class="l" style="color:var(--kipp-indigo)">100</span></div>
+      <div class="c" style="background:var(--red-50)"><span class="l" style="color:var(--kipp-indigo)">50</span></div>
+    </div>
+    <div class="ramp"><span class="tag">Green</span>
+      <div class="c" style="background:var(--green-700)"><span class="l" style="color:#fff">700</span></div>
+      <div class="c" style="background:var(--green-500)"><span class="l" style="color:var(--kipp-indigo)">500</span></div>
+      <div class="c" style="background:var(--green-200)"><span class="l" style="color:var(--kipp-indigo)">200</span></div>
+      <div class="c" style="background:var(--green-100)"><span class="l" style="color:var(--kipp-indigo)">100</span></div>
+      <div class="c" style="background:var(--green-50)"><span class="l" style="color:var(--kipp-indigo)">50</span></div>
+    </div>
+  </div>
+</body>
+</html>
