@@ -373,3 +373,27 @@ migration. A reader that meets an old run's per-cell sums ignores them.
 - The progress line's exact format.
 - Which tests to delete with the removed code, and which to rewrite for
   coverage.
+
+## Revision 2026-11-14: skip, don't stop
+
+Decided by the owner while reviewing the plan. The validator was stopping a
+whole run over one comparison's problem; problems now stay with the analyst
+while the rest of the work goes on.
+
+- **`compare` skips a comparison instead of refusing the run** when it has no
+  `rebuild_check`, its sheet query changed since it, it maps a member Cube
+  lacks, or its workbook changed since it. A changed `also_facts` table skips
+  only the comparisons whose Cube SQL reads it. Skips print before any spend
+  with their reasons, and a skipped comparison keeps its previous result. The
+  run refuses only when every comparison is skipped.
+- **Still stops:** spend caps, and anything that would put a student or staff
+  value where it should not go.
+- **`ask-owner` posts what is ready.** Questions with a proven cause go to the
+  owner as before. Items still in `investigate`, and comparisons that are
+  missing, stale or skipped, are listed in a "Still with the analyst" section
+  with masked counts and the trace's lead, so the owner can say if one looks
+  familiar. They are not questions: `record-answers` never reads them. The issue
+  body is rendered again as more items settle.
+- This replaces the anti-goal "a formula difference closes as `deliberate`
+  without the owner seeing it" only in wording: unsettled items are now shown to
+  the owner, never decided for them.

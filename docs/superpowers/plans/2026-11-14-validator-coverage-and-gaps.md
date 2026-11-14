@@ -857,6 +857,80 @@ def test_ask_owner_refuses_a_missing_or_stale_comparison(tmp_path): ...
 
 ---
 
+### Task 8a: Skip a comparison instead of stopping the run; `review` posts what is ready
+
+Spec: _Revision 2026-11-14: skip, don't stop_.
+
+**Files:**
+
+- Modify: `P/pipeline.py` (`run`, the `also_facts` check, the Task 7 workbook
+  check), `P/report.py` (the review body), `P/answers.py` (`questions_json`),
+  `P/triage.py` (`proven_triage`), `P/latest.py` (a skipped comparison keeps its
+  previous result)
+- Test: `T/test_cli.py`, `T/test_report.py`, `T/test_answers.py`,
+  `T/test_triage.py`
+
+**Interfaces:**
+
+- Consumes: Task 7's workbook check, Task 8's `latest` results and
+  `run.missing`.
+- Produces:
+  - `pipeline.Skip(comparison: str, why: str)`. `run` collects skips before any
+    spend instead of raising `Refusal` for: no proof, probe changed since the
+    proof, a member Cube's `/meta` lacks, workbook changed since the proof, and
+    a listed `also_facts` table that changed during the build, for the
+    comparisons whose Cube SQL reads it only. It prints each as
+    `Skipping <id>: <why>.`, runs the rest, and records them as
+    `RunResult.skipped: list[dict]` (`{"comparison", "why"}`). It refuses only
+    when every confirmed comparison is skipped:
+    `"<view>: every comparison was skipped; see the reasons above"`.
+  - A skipped comparison's previous latest result is untouched; `sort` names it
+    "not compared: <why>".
+  - `proven_triage` no longer refuses on an item in `investigate`, a missing
+    comparison or a stale one. It returns them as `unsettled`.
+  - The review issue body gains a section, after the questions and before "Also
+    decided": `## Still with the analyst`. One line per unsettled item:
+    comparison, item label, bucket or kind, masked row and cell counts
+    (`report.mask`), and the trace's lead or "no lead yet". Missing, stale and
+    skipped comparisons are listed by id and reason. No stub values, no SQL. It
+    opens with one plain sentence saying these are not yet explained, and that
+    the owner may comment if one looks familiar.
+  - `questions_json` leaves unsettled items out, so `record-answers` never reads
+    one as an answer.
+  - `review` still refuses: a question with no triage evidence (as today), and a
+    stale triage (another moment, or explanations changed since).
+
+- [ ] **Step 1: Write the failing tests.**
+
+```python
+# T/test_cli.py
+def test_a_comparison_without_a_proof_is_skipped_and_the_rest_run(fakes, tmp_path, capsys):
+    assert "Skipping c2: no proof" in capsys.readouterr().out  # and c1's queries ran
+def test_a_missing_cube_member_skips_only_its_comparison(fakes, tmp_path): ...
+def test_a_changed_workbook_skips_only_its_comparisons(fakes, tmp_path): ...
+def test_a_changed_second_fact_skips_only_the_comparisons_that_read_it(fakes, tmp_path): ...
+def test_run_refuses_when_every_comparison_is_skipped(fakes, tmp_path): ...
+def test_a_skipped_comparison_keeps_its_previous_result(fakes, tmp_path): ...
+
+# T/test_report.py
+def test_review_posts_ready_questions_and_lists_unsettled_items(tmp_path):
+    # 1 owner cause + 1 investigate group: body has the question and
+    # "## Still with the analyst" with the group's masked count; no stub value
+def test_unsettled_counts_under_10_are_masked(tmp_path): ...
+
+# T/test_answers.py
+def test_unsettled_items_are_not_in_the_questions_json(tmp_path): ...
+```
+
+- [ ] **Step 2: Run to fail.**
+- [ ] **Step 3: Implement.**
+- [ ] **Step 4: Run** the whole suite.
+- [ ] **Step 5: Commit** the modified files:
+      `feat(cube): skip a comparison instead of stopping, and post the owner's ready questions`
+      with body `Refs #6410`.
+
+---
+
 ### Task 9: Sheet filters Cube might not offer (#6346)
 
 **Files:**
@@ -1056,9 +1130,20 @@ def test_tied_latest_rows_both_stay(duck): ...
     (`proof.proven_at` and `proof.probe_fingerprint` are reached only through
     `proof`, so the `proof` refusal covers them).
   - `pipeline.probe_fingerprint` → `sheet_query_fingerprint`;
-    `pipeline.probe_sql` → `sheet_query`. Other Python names (modules,
-    `pipeline.run`, `triage.run_triage`, `confirm.Proof`) stay: `pipeline`
-    imports the `compare` module, so a `compare` function there would shadow it.
+    `pipeline.probe_sql` → `sheet_query`.
+  - Modules (owner's decision, so a traceback names the command that ran):
+    `discover.py`→`find_field.py`, `preflight.py`→`read_sheet.py`,
+    `triage.py`→`sort.py`, `confirm.py`→`explain.py`,
+    `compare.py`→`reconcile.py` (frees the name `compare`),
+    `progress.py`→`explain_progress.py`. Their tests follow
+    (`T/test_triage.py`→`T/test_sort.py`, and so on). Other modules keep their
+    names.
+  - Functions behind each command take its name: `pipeline.run`→`compare`,
+    `triage.run_triage`→`sort.sort_run`,
+    `confirm.run_confirm`→`explain.explain`,
+    `confirm.Proof`→`explain.Explanation`, and the `cli` dispatch for each
+    renamed command. `pipeline` imports `reconcile`, so `pipeline.compare`
+    shadows nothing.
   - Explanations: `confirm.proofs_dir` → `explanations_dir`, path
     `<validation file dir>/explanations/<view>`. When `proofs/<view>` exists and
     `explanations/<view>` does not, `sort` and `explain` refuse:
@@ -1070,6 +1155,15 @@ def test_tied_latest_rows_both_stay(duck): ...
   - Every refusal or print that names a command uses the new name (rg sweep:
     ``rg -n "`(run|prove|triage|triage confirm|add-decisions|review|discover|preflight)\b" P``
     and the same without backticks in f-strings).
+
+- [ ] **Step 0: Rename the files only, in their own commit.** `git mv` each
+      module and test file above, fix every import (package, tests,
+      `tests/scripts/cube_validation/conftest.py`) and nothing else, run the
+      whole suite (same count as before), and commit
+      `refactor(cube): name the validator's modules after their commands` with
+      body `Refs #6410`. A rename-only commit keeps `git log --follow` and blame
+      tracing each file. Steps 1-5 below then rename functions, keys and
+      messages.
 
 Decision: the spec's `probe` / `probe_sql` → `sheet_query` row is split into 2
 keys, `sheet_query` (the aggregate) and `sheet_query_sql` (the template), since
