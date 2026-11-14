@@ -304,7 +304,10 @@ def _parser() -> argparse.ArgumentParser:
     max_usd(p)
     p.add_argument("--comparison", required=True, help="the comparison it proves")
     p.add_argument(
-        "--bucket", choices=confirm.PROVABLE, help="the unmatched rows it classifies"
+        "--bucket",
+        required=True,
+        choices=confirm.PROVABLE,
+        help="the unmatched rows it classifies",
     )
     p.add_argument(
         "--sql",
@@ -322,11 +325,6 @@ def _parser() -> argparse.ArgumentParser:
         action="append",
         default=[],
         help="triage item ids to report (comma-separated); all are proven",
-    )
-    p.add_argument(
-        "--cells",
-        action="store_true",
-        help="confirm the comparison's cell set from its proven groups; no query",
     )
 
     p = sub.add_parser(
@@ -474,18 +472,11 @@ def _dispatch(args: argparse.Namespace) -> int:
         return 0
 
     if args.command == "triage-confirm":
-        if not args.cells and not args.bucket:
-            raise pipeline.Refusal("pass --bucket, or --cells")
-        if args.cells:
-            # No query runs, so no warehouse or Cube is needed.
-            wh, cube = None, None
-        else:
-            wh, cube = _warehouse(args), _cube(args)
         return confirm.run_confirm(
             cfg,
             args.view,
-            wh=wh,
-            cube=cube,
+            wh=_warehouse(args),
+            cube=_cube(args),
             max_usd=args.max_usd,
             cache_root=cache_root(),
             comparison=args.comparison,
@@ -493,7 +484,6 @@ def _dispatch(args: argparse.Namespace) -> int:
             sql=args.sql,
             causes=args.cause,
             items=[i for flag in args.items for i in flag.split(",") if i],
-            cells=args.cells,
         )
 
     if args.command == "add-decisions":

@@ -846,6 +846,24 @@ def test_run_reports_cells_and_proofs(fakes, tmp_path, capsys):
     assert list((tmp_path / "cache" / "v").glob("*/result.md"))
 
 
+def test_run_names_a_comparison_whose_cells_cannot_be_covered(fakes, tmp_path, capsys):
+    rows = YML[YML.index("    rows:\n") : YML.index(PROOF)]
+    assert cli.main(["run", str(_file(tmp_path, YML.replace(rows, "")))]) == 0
+
+    out = capsys.readouterr().out
+    assert (
+        "Comparison ada-region: its cells cannot be covered (the comparison has "
+        "no rows); its differing cells stay open."
+    ) in out
+    assert "cannot be covered" not in _run_out(fakes, tmp_path / "with-rows", capsys)
+
+
+def _run_out(fakes, tmp_path, capsys):
+    tmp_path.mkdir()
+    assert cli.main(["run", str(_file(tmp_path)), "--restart"]) == 0
+    return capsys.readouterr().out
+
+
 def _browser_section(out):
     return _section(out, "## Cuts to prove in the browser", "##")
 
@@ -2921,7 +2939,19 @@ def test_triage_confirm_reaches_its_command(fakes, tmp_path, monkeypatch):
 
     assert seen["comparison"] == "ada-region" and seen["bucket"] == "cube_only"
     assert seen["causes"] == ["C1=cube:words"] and seen["items"] == ["a", "b", "c"]
-    assert cli.main(["triage", "confirm", str(path), "--comparison", "x"]) == 1
+    assert "cells" not in seen
+
+
+def test_triage_confirm_takes_no_cells_flag(fakes, tmp_path, monkeypatch):
+    path = _file(tmp_path)
+    monkeypatch.setattr(
+        confirm, "run_confirm", lambda *a, **k: pytest.fail("confirm ran")
+    )
+
+    argv = ["triage", "confirm", str(path), "--comparison", "ada-region"]
+    assert cli.main([*argv, "--cells"]) == 2
+    # Every confirm proves a bucket.
+    assert cli.main(argv) == 2
 
 
 def test_triage_command_writes_triage_json_beside_latest_run(fakes, tmp_path, capsys):
@@ -3989,7 +4019,15 @@ def _drop_nulls(tmp_path):
     "command",
     [
         ["triage", "{path}", "--no-trace"],
-        ["triage", "confirm", "{path}", "--comparison", "ada-region", "--cells"],
+        [
+            "triage",
+            "confirm",
+            "{path}",
+            "--comparison",
+            "ada-region",
+            "--bucket",
+            "cube_only",
+        ],
         ["add-decisions", "{path}", "{approved}"],
     ],
 )

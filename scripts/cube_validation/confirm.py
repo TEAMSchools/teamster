@@ -19,7 +19,8 @@ item keys, cause literals and counts, refusing a row the proof drops or
 repeats and a cause that is no string literal of the proof. Every `triage`
 re-runs every stored proof on the current run's rows; an item whose rows a
 proof fully explains (no `UNEXPLAINED` row) goes to `cause`. A cell set goes
-to `cause` when every differing cell's rows lie in groups in `cause`.
+to `cause` when every group with a row in each differing cell is in `cause` or
+closed by a decision (`coverage`).
 """
 
 from __future__ import annotations
@@ -39,13 +40,13 @@ from sqlglot import exp
 from sqlglot.errors import SqlglotError
 from sqlglot.tokens import TokenType
 
-from . import compare, decisions, pipeline, progress, saved, trace, triage
+from . import compare, coverage, decisions, pipeline, progress, saved, trace, triage
 from .bq import CostCapError, ViewHistoryError, Warehouse
 from .compare import Group
 from .config import Comparison, ViewConfig, id_like, mask_digits, row_population
 from .cube_client import Cube, CubeError, CubeRefusal, network_schools
 from .moment import Build, MomentError, pick_moment
-from .report import RunResult, shown_counts
+from .report import RunResult, mask, shown_counts
 from .timetravel import PROJECT, utc_literal
 from .trace import TIMEOUT_S, TRACED, _failure
 
@@ -716,7 +717,9 @@ def bucket_rows_sql(comparison: Comparison, bucket: str, source: str) -> str:
     column (the dashboard's cell, which a `dims_differ` group names) and each
     cut's flag (`__cut<j>`). The grain and the cut flags are read on the side
     holding the row: the dashboard's for a `dashboard_only` row, else Cube's (a
-    value-differing row is on both sides; Cube types its grain).
+    value-differing row is on both sides; Cube types its grain). A
+    `dims_differ` row adds the dashboard's cut flags (`__dcut<j>`): each side
+    may file it under another cut.
     """
     if comparison.rows is None:
         raise pipeline.Refusal(f"comparison {comparison.id!r} has no rows to prove")
@@ -734,6 +737,10 @@ def bucket_rows_sql(comparison: Comparison, bucket: str, source: str) -> str:
         *(f"__g{side}{i} AS {p.cube}" for i, p in enumerate(comparison.rows.grain)),
         "__rn",
         *(f"__{side}k{j} AS __cut{j}" for j in range(len(flags))),
+        *(
+            f"__dk{j} AS __dcut{j}"
+            for j in range(len(flags) if bucket == "dims_differ" else 0)
+        ),
     ]
     # trunk-ignore(bandit/B608): identifiers are validated in config.py; the bucket is checked above
     return f"SELECT {', '.join(columns)}\nFROM {source}\nWHERE bucket = '{bucket}'"
@@ -752,8 +759,8 @@ class StudentCount:
 
     The rows are `unmatched_sql`'s `__f` (`bucket_rows_sql`); `student` is the
     first grain column; `dims` the cell's columns; `moved` adds each
-    `dims_differ` row to the dashboard's cell too; `cuts` is how many
-    `__cut<j>` flags the rows carry.
+    `dims_differ` row to the dashboard's cell too, under the dashboard's cut
+    flags (`__dcut<j>`); `cuts` is how many `__cut<j>` flags the rows carry.
     """
 
     student: str
@@ -810,9 +817,9 @@ def _with_students(
 ) -> str:
     """`proof_query` with the cause-student counts after the item counts."""
 
-    def placed(dim) -> str:
+    def placed(dim, flag: str = "__cut") -> str:
         cols = ", ".join(f"CAST(f.{dim(d)} AS STRING) AS {d}" for d in s.dims)
-        flags = "".join(f", f.__cut{j}" for j in range(s.cuts))
+        flags = "".join(f", f.{flag}{j} AS __cut{j}" for j in range(s.cuts))
         return (
             # trunk-ignore(bandit/B608): identifiers are validated in config.py; cause literals are quoted by pipeline._lit
             f"SELECT per.cause, {cols + ', ' if cols else ''}f.{s.student} AS __st"
@@ -822,7 +829,7 @@ def _with_students(
 
     places = [placed(lambda d: d)]
     if s.moved:
-        places.append(placed(lambda d: f"__d_{d}"))
+        places.append(placed(lambda d: f"__d_{d}", "__dcut"))
     cell = "TO_JSON_STRING(STRUCT(" + ", ".join(s.dims) + "))" if s.dims else "'{}'"
     nulls = "CAST(NULL AS STRING) AS item_key, cause, " + ", ".join(
         f"CAST(NULL AS INT64) AS {c}"
@@ -1261,51 +1268,28 @@ def _bucket_items(run: RunResult, comparison: str, bucket: str):
     ]
 
 
-def _in_cut(g: Group, comparison: Comparison | None, cut: str) -> bool:
-    """Whether a group's columns allow its rows under a cell's cut.
-
-    A cut filter on a column the group does not split by allows any value.
-    """
-    if comparison is None:
-        return True
-    try:
-        chosen = {**comparison.defaults, **json.loads(cut or "{}")}
-    except json.JSONDecodeError:
-        return True
-    for caption, value in chosen.items():
-        pair = comparison.filters.get(caption)
-        held = g.value_of(pair.cube) if pair else None
-        if held is None:
-            continue
-        values = value if isinstance(value, list) else [value]
-        if pipeline._key(held) not in {pipeline._key(v) for v in values}:
-            return False
-    return True
+# `link_cells`' evidence lines, which the next link replaces.
+_COVERED = "every differing cell is covered by proven or decided groups"
+_UNCOVERED = "differing cells are not covered"
+_NO_CELLS = "the run lists no differing cells to link"
 
 
-def _agrees(values, dims) -> bool:
-    """Whether a cell's dims agree with a group's columns (`values(col)`); a
-    column the group does not split by agrees with any value."""
-    return all(
-        values(col) is None or pipeline._key(values(col)) == pipeline._key(value)
-        for col, value in dims
-    )
-
-
-def _dash_value(g: Group, column: str) -> str | None:
-    return g.value_of(f"{compare.DASH_PREFIX}{column}")
-
-
-def _in_cells(g: Group, cell: dict) -> tuple[bool, bool]:
-    """Whether a group's rows sit in a cell on the Cube side, the dashboard's.
-
-    A `dims_differ` group's rows sit in Cube's cell (its own columns) on one
-    side and the dashboard's (its `d:` columns) on the other.
-    """
-    cube = _agrees(g.value_of, cell["dims"])
-    if g.bucket != "dims_differ":
-        return cube, cube
-    return cube, _agrees(lambda col: _dash_value(g, col), cell["dims"])
+def _covering(
+    run: RunResult, comparison: str, entries
+) -> tuple[list[tuple[str | None, Group]], dict[str, tuple]]:
+    """A comparison's groups, each with its open item id (None when a `group`
+    decision closed it), and each closed group's key with its decision."""
+    groups: list[tuple[str | None, Group]] = [
+        (i.id, g)
+        for i, g in entries
+        if isinstance(g, Group) and g.comparison_id == comparison
+    ]
+    closed = {}
+    for d, g in run.applied.quiet:
+        if g.comparison_id == comparison:
+            groups.append((None, g))
+            closed[triage._open_key(g)] = (d, g)
+    return groups, closed
 
 
 def link_cells(
@@ -1315,21 +1299,21 @@ def link_cells(
     cfg: ViewConfig | None = None,
     open_cells: dict[str, list[dict]] | None = None,
 ) -> dict[str, tuple[int, int]]:
-    """Move each cell set whose differing cells' rows all lie in proven groups.
+    """Move each cell set whose differing cells are all covered to `cause`.
 
-    A cell's rows lie in the open groups of its comparison whose columns agree
-    with the cell's dims and its cut (a `dims_differ` group's in both its
-    cells). A cell no open group agrees with, or one a group outside `cause`
-    agrees with, is not linked.
+    A cell is covered when `coverage.placed` finds the groups with a row in
+    it, and each is closed by a `group` decision (`run.applied.quiet`) or an
+    open item in `cause`. A cell with no group in it, or one that cannot be
+    placed, stays open.
 
     Args:
-        open_cells: Filled, per cell-set item id, with each cell not linked:
-            the cell, the groups it matched (`[id, bucket, suggestion]`) and
+        open_cells: Filled, per cell-set item id, with each cell left open:
+            the cell, the groups in it (`[id, bucket, suggestion]`) and
             `why`. For the terminal only: a cell's dims and values are not
             masked.
 
     Returns:
-        Per cell-set item id: the differing cells not linked, and all of them.
+        Per cell-set item id: the differing cells left open, and all of them.
     """
     entries = triage._entries(run)
     by_id = {i["id"]: i for i in items}
@@ -1339,51 +1323,79 @@ def link_cells(
         if item.kind != "cells" or (comparison and item.comparison != comparison):
             continue
         spec = by_cmp.get(item.comparison)
-        groups = [
-            (i.id, g)
-            for i, g in entries
-            if isinstance(g, Group) and g.comparison_id == item.comparison
-        ]
+        groups, closed = _covering(run, item.comparison, entries)
+        pool = [g for _, g in groups]
+        ids = {id(g): gid for gid, g in groups}
         cells = [c for c in run.diff_cells if c["comparison"] == item.comparison]
-        unlinked, used = 0, {}
+        used: dict[str, None] = {}
+        shut: dict[str, None] = {}
         left: list[dict] = []
         for cell in cells:
-            match = [
-                (gid, g)
-                for gid, g in groups
-                if _in_cut(g, spec, cell.get("cut", "{}")) and any(_in_cells(g, cell))
-            ]
-            proven = [gid for gid, _ in match if by_id[gid]["suggestion"] == "cause"]
-            if not match or len(proven) < len(match):
-                unlinked += 1
+            inside = coverage.placed(cell, pool, spec) if spec else None
+            if inside is None:
                 why = (
-                    f"{len(match) - len(proven)} of its {len(match)} groups are not "
-                    "in `cause`"
-                    if match
-                    else "no open group agrees with the cell"
+                    coverage.unplaced(cell, pool, spec)
+                    if spec
+                    else "the comparison is not in the validation file"
                 )
-                said = [[gid, g.bucket, by_id[gid]["suggestion"]] for gid, g in match]
-                left.append({"cell": cell, "groups": said, "why": why})
+                left.append(
+                    {"cell": cell, "groups": [], "why": f"cannot be placed: {why}"}
+                )
                 continue
-            used |= dict.fromkeys(proven)
-        out[item.id] = (unlinked, len(cells))
+            if not inside:
+                left.append(
+                    {"cell": cell, "groups": [], "why": "no unmatched row lies in it"}
+                )
+                continue
+            said = []
+            short = 0
+            for g in inside:
+                gid = ids[id(g)]
+                if gid is None:
+                    said.append([triage._open_key(g), g.bucket, "closed by a decision"])
+                    continue
+                state = by_id[gid]["suggestion"]
+                said.append([gid, g.bucket, state])
+                short += state != "cause"
+            if short:
+                left.append(
+                    {
+                        "cell": cell,
+                        "groups": said,
+                        "why": f"{short} of its {len(inside)} groups are not in cause",
+                    }
+                )
+                continue
+            for g in inside:
+                if (gid := ids[id(g)]) is None:
+                    shut[triage._open_key(g)] = None
+                else:
+                    used[gid] = None
+        out[item.id] = (len(left), len(cells))
         if open_cells is not None and left:
             open_cells[item.id] = left
         target = by_id[item.id]
-        if cells and not unlinked:
+        if cells and not left:
             merged: dict[tuple, dict] = {}
             for gid in used:
                 for c in by_id[gid]["cause"] or []:
                     k = (c["side"], c["step"], c["label"])
                     entry = merged.setdefault(k, {**c, "n_rows": 0})
                     entry["n_rows"] += c["n_rows"] or 0
-            line = (
-                f"every differing cell's rows lie in proven groups: {', '.join(used)}"
-            )
+            # A closed group's rows are explained by the decision closing it.
+            for key in shut:
+                d, g = closed[key]
+                k = ("both", "decision", f"closed by {d.id}")
+                entry = merged.setdefault(
+                    k, {"side": k[0], "step": k[1], "label": k[2], "n_rows": 0}
+                )
+                entry["n_rows"] += g.n_rows
+            named = [*used, *([f"{len(shut)} closed by a decision"] if shut else [])]
+            line = f"{_COVERED}: {', '.join(named)}"
             target.update(
                 suggestion="cause",
                 cause=list(merged.values()),
-                proof={"kind": "cells", "groups": list(used)},
+                proof={"kind": "cells", "groups": list(used), "closed": list(shut)},
                 evidence=[line],
                 evidence_posted=[line],
             )
@@ -1391,15 +1403,13 @@ def link_cells(
             if target.get("suggestion") == "cause":
                 target.update(suggestion="investigate", cause=None, proof=None)
             if not cells:
-                line = "the run lists no differing cells to link; `run` again"
+                line = posted = f"{_NO_CELLS}; `run` again"
             else:
-                line = (
-                    f"{unlinked} of {len(cells)} differing cells have rows outside "
-                    "proven groups"
-                )
+                line = f"{len(left)} of {len(cells)} {_UNCOVERED}"
+                posted = f"{mask(len(left))} of {mask(len(cells))} {_UNCOVERED}"
             target["evidence"] = [line, *_unlinked(target.get("evidence"))]
             target["evidence_posted"] = [
-                line,
+                posted,
                 *_unlinked(target.get("evidence_posted")),
             ]
     return out
@@ -1434,7 +1444,7 @@ def _unlinked(lines: list[str] | None) -> list[str]:
     return [
         e
         for e in lines or []
-        if "differing cells have rows" not in e and "no differing cells" not in e
+        if not e.startswith(_COVERED) and _UNCOVERED not in e and _NO_CELLS not in e
     ]
 
 
@@ -1795,12 +1805,11 @@ def run_confirm(
     sql: Path | None = None,
     causes: list[str] | None = None,
     items: list[str] | None = None,
-    cells: bool = False,
 ) -> int:
     """Run a new or edited proof once, save it, and re-sort the triage.
 
-    With `cells`, runs no query: confirms the comparison's cell set when every
-    differing cell's rows lie in groups in `cause`.
+    The comparison's cell set is linked again (`link_cells`); each cell it
+    leaves open prints with why, in the terminal only.
 
     Args:
         cfg: The view's config.
@@ -1810,22 +1819,20 @@ def run_confirm(
         max_usd: The cap for this command.
         cache_root: The local cache holding the run and its triage.
         comparison: The comparison the proof covers.
-        bucket: `cube_only` or `dashboard_only`.
+        bucket: One of `PROVABLE`.
         sql: The proof's SQL; it may carry a `-- cause` block. Defaults to
             the stored proof, to re-run it after an edit.
         causes: `<bucket>=<side>:<plain words>` per bucket, added to (and
             replacing entries of) the SQL's own block.
         items: Triage item ids to print; every item of the bucket is proven
             either way.
-        cells: Confirm the comparison's cell set instead.
 
     Returns:
         0.
 
     Raises:
         pipeline.Refusal: No triage of the latest run; an unknown comparison
-            or bucket; a proof that fails a check; or, with `cells`, a
-            differing cell whose rows are not all in proven groups.
+            or bucket; or a proof that fails a check.
         CostCapError: The proof would pass a cap.
     """
     run, run_json = pipeline.latest_run(cfg, cache_root)
@@ -1835,25 +1842,6 @@ def run_confirm(
     if target is None:
         raise pipeline.Refusal(f"{cfg.view}: no comparison {comparison!r}")
     wanted = set(items or []) or None
-
-    if cells:
-        left: dict[str, list[dict]] = {}
-        linked = link_cells(run, all_items, comparison, cfg, left)
-        if not linked:
-            raise pipeline.Refusal(f"{comparison}: no open cell set to confirm")
-        for item_id, (unlinked, total) in linked.items():
-            if unlinked:
-                print(f"{item_id}: the cells left open (local only, not masked):")
-                print("\n".join(open_cell_lines(left.get(item_id, []))))
-                raise pipeline.Refusal(
-                    f"{item_id}: {unlinked} of {total} differing cells have rows "
-                    "outside groups in `cause`; prove those groups first"
-                )
-        _mark(run, all_items, cfg)
-        _save_triage(path, loaded, all_items)
-        _report(all_items, set(linked))
-        print(f"Saved {path}")
-        return 0
 
     if bucket not in PROVABLE:
         raise pipeline.Refusal(f"--bucket must be one of {', '.join(PROVABLE)}")
@@ -1920,7 +1908,8 @@ def run_confirm(
     apply_outcomes(all_items, proof, found)
     keep_students(loaded, target.id, proof.bucket, students)
     apply_runs(run, all_items, shared, cfg, loaded)
-    link_cells(run, all_items, comparison, cfg)
+    left: dict[str, list[dict]] = {}
+    link_cells(run, all_items, comparison, cfg, left)
     _mark(run, all_items, cfg)
     _save_triage(path, loaded, all_items)
     moved = sum(1 for o in found.values() if o.explained)
@@ -1935,6 +1924,9 @@ def run_confirm(
         print(f"Also {sibling} (same rows): {n} of {len(r.found)} items proven.")
         reported |= set(r.found)
     _report(all_items, wanted or reported)
+    for item_id, open_cells in left.items():
+        print(f"{item_id}: the cells left open (local only, not masked):")
+        print("\n".join(open_cell_lines(open_cells)))
     print(f"Saved {path}")
     return 0
 

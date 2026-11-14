@@ -17,6 +17,7 @@ import xml.etree.ElementTree as ET
 from collections.abc import Callable
 from dataclasses import dataclass
 
+from . import coverage
 from . import discover as finder
 from . import tableau
 from .builder import Member
@@ -580,7 +581,9 @@ def report(
     for `sheets`.
 
     `workbook` returns a comparison workbook's label and XML; it is called
-    with None for a sheet no comparison names.
+    with None for a sheet no comparison names. A comparison whose differing
+    cells coverage cannot place (`coverage.unplaceable`) says why; it does
+    not block.
     """
     wanted = sheets or list(dict.fromkeys(c.sheet for c in cfg.comparisons if c.sheet))
     blocks = []
@@ -601,5 +604,7 @@ def report(
                 lines += [f"      - {b}" for b in dict.fromkeys(before)]
             else:
                 lines.append("    Before prove: nothing blocks")
+            if comparison and (why := coverage.unplaceable(comparison)):
+                lines.append(f"    Cells cannot be covered: {why}")
         blocks.append("\n".join(lines))
     return "\n\n".join(blocks)

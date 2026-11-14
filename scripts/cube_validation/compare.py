@@ -208,10 +208,11 @@ def reconcile_sql(
             on the dashboard side (over `c.` and `d.` columns), so each side's
             rows are also counted per cut (`__s_k<j>_c_rows`, ...).
 
-    A row both sides hold with the same values whose group-by columns differ
-    (Cube files it in one cell, the dashboard in another) reads `dims_differ`:
+    A row both sides hold with the same values that the 2 sides file in
+    different cells, by a group-by column or by a cut, reads `dims_differ`:
     its group columns are Cube's, and `__moved` with a `__d_<column>` per
-    group-by column gives the dashboard's.
+    group-by column gives the dashboard's. Its rows per cut and side say which
+    cut each side files it under.
 
     Returns:
         One query returning `bucket`, each group-by column, `n_rows`,
@@ -229,6 +230,7 @@ def reconcile_sql(
         filters,
         extra=_cut_extras(cuts, filters),
         moved=True,
+        cuts=cuts,
     )
     return ctes + "\n" + _outer_sql(group_names, filters, cuts, "joined")
 
@@ -290,6 +292,7 @@ def _saved_joined(
         + [f"c.{p.cube} AS __gc{i}" for i, p in enumerate(rows.grain)]
         + [f"d.{p.dashboard} AS __gd{i}" for i, p in enumerate(rows.grain)],
         moved=True,
+        cuts=cuts,
     )
 
 
@@ -419,6 +422,7 @@ def _joined(
     keys: bool = False,
     extra: Sequence[str] = (),
     moved: bool = False,
+    cuts: Sequence[tuple[str, str]] = (),
 ) -> tuple[str, list[str]]:
     """The `c`, `d` and `joined` CTEs of `reconcile_sql`, and the group columns.
 
@@ -426,7 +430,8 @@ def _joined(
     (`__k0`, ...) and duplicate number (`__rn`), for `trace_sql`. `extra`
     adds select expressions over `c` and `d` to `joined`. With `moved`, the
     group columns add a `dims_differ` row's dashboard cell (`__moved`,
-    `__d_<column>`).
+    `__d_<column>`). `cuts` are `reconcile_sql`'s: a row the 2 sides keep
+    under different cuts is `dims_differ` too.
     """
     cube_grain = [p.cube for p in rows.grain]
     dash_grain = [p.dashboard for p in rows.grain]
@@ -445,6 +450,11 @@ def _joined(
         " AND ".join(_pair_matches(f"d.{p.dashboard}", f"c.{p.cube}") for p in group_by)
         or "TRUE"
     )
+    # The same cell on both sides: the group-by columns, then each cut's flag.
+    same_cell = " AND ".join(
+        ([dims_same] if group_by else [])
+        + [f"COALESCE({c}, FALSE) = COALESCE({d}, FALSE)" for c, d in cuts]
+    )
     both = f"c.{_IN} IS NOT NULL AND d.{_IN} IS NOT NULL"
 
     group_cols = [
@@ -453,7 +463,7 @@ def _joined(
     ]
     group_names = [p.cube for p in group_by]
     if group_by and moved:
-        differ = f"{both} AND {all_same} AND NOT ({dims_same})"
+        differ = f"{both} AND {all_same} AND NOT ({same_cell})"
         group_cols += [f"IF({differ}, TRUE, NULL) AS {_MOVED}"] + [
             f"IF({differ}, CAST(d.{p.dashboard} AS STRING), NULL) AS __d_{p.cube}"
             for p in group_by
@@ -482,7 +492,7 @@ def _joined(
             f"WHEN d.{_IN} IS NULL THEN 'cube_only' "
             + "".join(filtered)
             + f"WHEN NOT ({all_same}) THEN 'value_differs' "
-            + (f"WHEN NOT ({dims_same}) THEN 'dims_differ' " if group_by else "")
+            + (f"WHEN NOT ({same_cell}) THEN 'dims_differ' " if same_cell else "")
             + "ELSE 'match' END AS bucket",
             f"COALESCE(CAST(c.{first.cube} AS STRING), "
             f"CAST(d.{first.dashboard} AS STRING)) AS __student",

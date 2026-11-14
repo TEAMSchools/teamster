@@ -464,6 +464,11 @@ def mark_decided(
     holds: the comparison's SQL and the item's proof file are the ones it was
     made on. A decision that no longer holds counts as none.
 
+    A cell set in `cause` on its covering groups (`proof.kind` `cells`) gets
+    `decided`, true when every item its proof names (`proof.groups`) is
+    decided; the groups a `group` decision closed (`proof.closed`) are
+    decided by it.
+
     A holding cause decision on a group a `group` decision also covers,
     stale or not, is redundant when their calls agree and refused when they
     differ.
@@ -529,6 +534,12 @@ def mark_decided(
             posted = item.get("evidence_posted", evidence)
             item["evidence"] = [*lines, *evidence]
             item["evidence_posted"] = [*lines, *posted]
+    # After the groups, which a cell set's mark reads, wherever it is listed.
+    marked = {i["id"]: i.get("decided") is True for i in items if decidable(i)}
+    for item in items:
+        proof = item.get("proof") or {}
+        if item.get("suggestion") == "cause" and proof.get("kind") == "cells":
+            item["decided"] = all(marked.get(g, False) for g in proof["groups"])
 
 
 def _covers_group(d: Decision, g: Group) -> bool:
@@ -735,8 +746,8 @@ NO_ROWS = (
 )
 NO_GRAIN = "not traced: the comparison has no `rows` grain"
 MOVED_ROWS = (
-    "rows both sides hold sit in different cells (Cube's columns, then the "
-    "dashboard's as `d:`): no trace; prove them with "
+    "rows both sides hold sit in different cells, by a column or by a cut "
+    "(Cube's columns, then the dashboard's as `d:`): no trace; prove them with "
     "`triage confirm --bucket dims_differ`"
 )
 

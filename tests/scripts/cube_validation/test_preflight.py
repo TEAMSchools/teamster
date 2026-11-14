@@ -239,6 +239,25 @@ def test_report_ends_each_comparison_with_before_prove():
     )
 
 
+def test_preflight_names_a_comparison_whose_cells_cannot_be_covered():
+    rows = RowSpec(
+        grain=[ColumnPair("student", "student_number")],
+        values=[ColumnPair("ok", "ok")],
+    )
+
+    def report(comparison):
+        cfg = type("Cfg", (), {"view": "v", "comparisons": [comparison]})()
+        return preflight.report(cfg, lambda wb: ("w.twb", TWB), MEMBERS)
+
+    text = report(_comparison())
+    assert "\n    Cells cannot be covered: the comparison has no rows" in text
+    on_grain = _comparison(rows=rows, dims=[ColumnPair("student", "student_number")])
+    assert "    Cells cannot be covered: its dims student_number are part of the " in (
+        report(on_grain)
+    )
+    assert "Cells cannot be covered" not in report(_comparison(rows=rows))
+
+
 VIEW = """\
 view: v
 fact: kipptaf_marts.fct_f

@@ -735,6 +735,35 @@ def test_a_split_group_stays_undecided_until_both_causes_are_decided(tmp_path):
     assert both["decided"] is True
 
 
+def test_a_cells_item_is_decided_once_every_covering_group_is(tmp_path):
+    run = _fp_run(_groups("Newark", "Miami"))
+    newark, miami = open_items(run)
+    proof = _proof_file(tmp_path)
+    groups = [_item(newark, proof, ("cube", NO_SECTION, 30)),
+              _item(miami, proof, ("dashboard", LATE, 30))]  # fmt: skip
+    cells = {"id": "enrollment:cells", "kind": "cells", "comparison": "enrollment",
+             "suggestion": "cause", "cause": groups[0]["cause"],
+             "proof": {"kind": "cells", "groups": [newark.id, miami.id],
+                       "closed": ["0123456789abcdef"]}}  # fmt: skip
+    a = _cause_decision("a", NO_SECTION, proof=proof["fingerprint"])
+    b = _cause_decision("b", LATE, side="dashboard", proof=proof["fingerprint"])
+
+    # The cell set comes first: it is marked after the groups it rests on.
+    half = copy.deepcopy([cells, *groups])
+    both = copy.deepcopy([cells, *groups])
+    mark_decided(run, half, [a])
+    mark_decided(run, both, [a, b])
+
+    assert half[0]["decided"] is False
+    assert both[0]["decided"] is True
+    # A cell set whose covering groups are all closed is decided by their
+    # `group` decisions.
+    closed_only = copy.deepcopy(cells)
+    closed_only["proof"]["groups"] = []
+    mark_decided(run, [closed_only], [])
+    assert closed_only["decided"] is True
+
+
 def test_a_changed_proof_file_re_opens_the_decision(tmp_path):
     run = _fp_run(_groups("Newark"))
     (key,) = open_items(run)

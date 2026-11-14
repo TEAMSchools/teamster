@@ -122,10 +122,10 @@ def cell_causes(
     they are. A triage saved before them gives None, and the count is then
     the floor below.
 
-    A cell's rows lie in the groups whose columns agree with its dims and cut
-    (`confirm._in_cut`, `confirm._in_cells`, as `--cells` links them); each
-    group carries its triage item's causes (`triage.cause_key`), and a group
-    with none carries `""`.
+    A cell's rows lie in the open groups with a row in it (`coverage.placed`,
+    as `triage` links cells; none when the cell cannot be placed); each group
+    carries its triage item's causes (`triage.cause_key`), and a group with
+    none carries `""`.
 
     A cause's students in a cell are not recorded: a group's `n_students`
     covers all its causes and every cut. So the count is a floor: the most
@@ -138,7 +138,7 @@ def cell_causes(
     Returns:
         `[(cell, {cause: students})]` in `run.diff_cells` order.
     """
-    from . import compare, confirm, pipeline
+    from . import compare, coverage, pipeline
     from . import triage as triage_mod
 
     spec = next((c for c in cfg.comparisons if c.id == comparison), None)
@@ -194,11 +194,10 @@ def cell_causes(
             # Only a cell whose dims are the counted columns has a count.
             if set(dims) == set(names):
                 held = dict(counted.get(key, {}))
+        pool = [g for _, g in groups]
+        inside = (coverage.placed(cell, pool, spec) if spec else None) or []
         for key, g in groups:
-            if not (
-                confirm._in_cut(g, spec, cell.get("cut", "{}"))
-                and any(confirm._in_cells(g, cell))
-            ):
+            if not any(g is p for p in inside):
                 continue
             causes = by_key.get(key, frozenset({""}))
             for cause in causes:

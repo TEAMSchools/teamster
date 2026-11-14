@@ -2,11 +2,12 @@ import contextlib
 import json
 from dataclasses import replace
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 import pytest
 
 # trunk-ignore(pyright/reportAttributeAccessIssue): conftest.py registers cube_validation
-from cube_validation import confirm, pipeline, progress, saved, trace, triage
+from cube_validation import confirm, coverage, pipeline, progress, saved, trace, triage
 from cube_validation.bq import CostCapError
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
@@ -846,47 +847,54 @@ CELLS_RUN = dict(
          "n_students": 3},
     ],
 )  # fmt: skip
+_SIDE = {"dashboard_only": 2}
 
 
-def _cells(tmp_path, monkeypatch, proven=True, run=None, cfg=CFG):
-    run = run or _run([_group(3)], **CELLS_RUN)
-    path = _saved(tmp_path, monkeypatch, run)
-    saved = json.loads(path.read_text())
-    for item in saved["items"]:
-        if item["kind"] == "group" and proven:
+def _placed(n, school="X", bucket="cube_only", cut="{}"):
+    """A group whose rows sit under `cut` on the side its bucket holds."""
+    rows = [cut, 0, 0]
+    rows[_SIDE.get(bucket, 1)] = n
+    return replace(_group(n, school, bucket), cut_rows=(tuple(rows),))
+
+
+def _group_ids(run):
+    return [i.id for i in triage.open_items(run) if i.kind == "group"]
+
+
+def _cells(run=None, cfg=CFG, proven: bool | list = True, left=None):
+    """Link the run's cell set over its triage items, as every triage does."""
+    run = run or _run([_placed(3)], **CELLS_RUN)
+    items = _items(run)
+    chosen = proven if isinstance(proven, list) else []
+    for item in items:
+        if item["kind"] == "group" and (proven is True or item["id"] in chosen):
             item.update(suggestion="cause", cause=[{"side": "dashboard",
                         "step": "C1", "label": "fails ok1", "n_rows": 3}])  # fmt: skip
-    path.write_text(json.dumps(saved))
-    confirm.run_confirm(
-        cfg,
-        tmp_path / "v.yml",
-        wh=None,
-        cube=None,
-        max_usd=1.0,
-        cache_root=tmp_path,
-        comparison="mastery",
-        cells=True,
-    )
-    return _by_id(json.loads(path.read_text())["items"])["mastery:cells"]
+    confirm.link_cells(run, items, "mastery", cfg, left)
+    return _by_id(items)["mastery:cells"]
 
 
-def test_cells_confirm_when_every_differing_cell_lies_in_proven_groups(
-    tmp_path, monkeypatch
-):
-    cells = _cells(tmp_path, monkeypatch)
+def test_cells_confirm_when_every_differing_cell_lies_in_proven_groups():
+    cells = _cells()
 
     assert cells["suggestion"] == "cause"
     assert cells["cause"] == [
         {"side": "dashboard", "step": "C1", "label": "fails ok1", "n_rows": 3}
     ]
+    (group_id,) = _group_ids(_run([_placed(3)]))
+    assert cells["proof"] == {"kind": "cells", "groups": [group_id], "closed": []}
 
 
-def test_cells_refuse_with_the_count_left_outside_proven_groups(tmp_path, monkeypatch):
-    with pytest.raises(pipeline.Refusal, match="1 of 1 differing cells"):
-        _cells(tmp_path, monkeypatch, proven=False)
+def test_cells_stay_open_with_the_count_left_outside_proven_groups():
+    cells = _cells(proven=False)
+
+    assert cells["suggestion"] == "investigate" and cells["proof"] is None
+    assert cells["evidence"][0] == "1 of 1 differing cells are not covered"
+    # The posted copy masks both counts.
+    assert cells["evidence_posted"][0] == "<10 of <10 differing cells are not covered"
 
 
-def test_cells_link_only_to_groups_under_their_cut(tmp_path, monkeypatch):
+def test_cells_link_only_to_groups_under_their_cut():
     by_school = Comparison(
         id="mastery",
         measure="pct",
@@ -895,16 +903,107 @@ def test_cells_link_only_to_groups_under_their_cut(tmp_path, monkeypatch):
         filters={"School": ColumnPair("school", "abbreviation")},
     )
     cfg = ViewConfig(view="v", fact="m.fct", comparisons=[by_school])
-    # The cell sits under the cut School = Y; the only proven group is X.
+    # The cell sits under the cut School = Y; the only proven group has rows
+    # under School = X alone.
+    x, y = '{"School": "X"}', '{"School": "Y"}'
+    proven = replace(_group(3), cut_rows=((x, 3, 0), (y, 0, 0)))
     run = _run(
-        [_group(3)],
+        [proven],
         cells=CELLS_RUN["cells"],
-        diff_cells=[{**CELLS_RUN["diff_cells"][0], "cut": '{"School": "Y"}',
-                     "dims": []}],
-    )  # fmt: skip
+        diff_cells=[{**CELLS_RUN["diff_cells"][0], "cut": y}],
+    )
+    left: dict = {}
 
-    with pytest.raises(pipeline.Refusal, match="1 of 1 differing cells"):
-        _cells(tmp_path, monkeypatch, run=run, cfg=cfg)
+    cells = _cells(run=run, cfg=cfg, left=left)
+
+    assert cells["suggestion"] == "investigate"
+    ((only,),) = left.values()
+    assert only["why"] == "no unmatched row lies in it" and only["groups"] == []
+
+
+def test_a_cell_covered_by_a_decided_group_and_a_proven_one_closes():
+    quiet = _placed(4, bucket="dashboard_only")
+    decision = Decision("closed-x", "mastery", "fix_cube", "r",
+                        group={"column": "abbreviation", "values": ["X"]})  # fmt: skip
+    run = _run([_placed(3)], **CELLS_RUN)
+    run.applied.quiet.append((decision, quiet))
+
+    cells = _cells(run=run)
+
+    assert cells["suggestion"] == "cause"
+    assert cells["proof"] == {
+        "kind": "cells",
+        "groups": _group_ids(run),
+        "closed": [triage._open_key(quiet)],
+    }
+    assert {"side": "both", "step": "decision", "label": "closed by closed-x",
+            "n_rows": 4} in cells["cause"]  # fmt: skip
+
+
+def test_a_cell_covered_only_by_decided_groups_still_has_a_cause():
+    decision = Decision("closed-x", "mastery", "fix_cube", "r",
+                        group={"column": "abbreviation", "values": ["X"]})  # fmt: skip
+    run = _run([], **CELLS_RUN)
+    run.applied.quiet.append((decision, _placed(3)))
+
+    cells = _cells(run=run)
+
+    assert cells["suggestion"] == "cause"
+    assert cells["cause"] == [
+        {"side": "both", "step": "decision", "label": "closed by closed-x",
+         "n_rows": 3}
+    ]  # fmt: skip
+    assert cells["proof"]["groups"] == []
+
+
+def test_a_cell_with_one_unproven_group_stays_in_investigate():
+    # Cell X holds a proven group and an unproven one; cell Y a proven one.
+    cell = CELLS_RUN["diff_cells"][0]
+    run = _run(
+        [_placed(3), _placed(2, bucket="dashboard_only"), _placed(5, "Y")],
+        cells=CELLS_RUN["cells"],
+        diff_cells=[cell, {**cell, "key": "abbreviation=Y",
+                           "dims": [["abbreviation", "Y"]]}],
+    )  # fmt: skip
+    # The unproven group is cell X's dashboard_only one, the 2nd of its id.
+    proven = [i for i in _group_ids(run) if not i.endswith("#2")]
+    left: dict = {}
+
+    cells = _cells(run=run, proven=proven, left=left)
+
+    assert cells["suggestion"] == "investigate"
+    assert cells["evidence"][0] == "1 of 2 differing cells are not covered"
+    ((only,),) = left.values()
+    assert only["cell"]["key"] == "abbreviation=X"
+    assert only["why"] == "1 of its 2 groups are not in cause"
+
+
+def test_a_cell_whose_groups_lack_rows_per_cut_stays_open_and_says_why():
+    # A run saved before rows per cut were kept: its groups cannot be placed.
+    left: dict = {}
+
+    cells = _cells(run=_run([_group(3)], **CELLS_RUN), left=left)
+
+    assert cells["suggestion"] == "investigate"
+    ((only,),) = left.values()
+    assert only["why"] == f"cannot be placed: {coverage.NOT_RECORDED}"
+
+
+def test_a_cell_on_a_grain_dim_cannot_be_covered():
+    on_grain = replace(COMPARISON, dims=[ColumnPair("student", "lea")])
+    cfg = ViewConfig(view="v", fact="m.fct", comparisons=[on_grain])
+    run = _run(
+        [replace(_placed(3), dims=())],
+        cells=CELLS_RUN["cells"],
+        diff_cells=[{**CELLS_RUN["diff_cells"][0], "dims": [["lea", "1"]]}],
+    )
+    left: dict = {}
+
+    cells = _cells(run=run, cfg=cfg, left=left)
+
+    assert cells["suggestion"] == "investigate"
+    ((only,),) = left.values()
+    assert only["why"] == ("cannot be placed: its dims lea are part of the row grain")
 
 
 def test_a_null_group_and_an_empty_string_group_are_proven_apart(
@@ -1029,6 +1128,47 @@ def test_a_proof_counts_each_cause_s_students_per_cell_and_cut(duck, tmp_path, o
         {"cause": triage.cause_key(*CAUSES["C2"]), "cut": cut,
          "dims": [["abbreviation", "X"]], "n": 1, "bucket": "cube_only"},
     ]  # fmt: skip
+
+
+BY_GRADE = replace(
+    COMPARISON,
+    filters={"Grade": ColumnPair("grade", "grade")},
+    cuts=[{"Grade": "5"}, {"Grade": "6"}],
+)
+
+
+def test_a_row_each_side_files_under_another_cut_counts_in_each_side_s_cell(duck):
+    # Saved rows: Cube files student 1 under Grade 5, the dashboard under 6.
+    duck.table(
+        "saved_t",
+        "bucket VARCHAR, __row BIGINT, abbreviation VARCHAR, "
+        "__d_abbreviation VARCHAR, __gc0 BIGINT, __gc1 VARCHAR, __gd0 BIGINT, "
+        "__gd1 VARCHAR, __rn BIGINT, __ck0 BOOLEAN, __dk0 BOOLEAN, "
+        "__ck1 BOOLEAN, __dk1 BOOLEAN",
+        [("dims_differ", 7, "X", "X", 1, "a", 1, "a", 1, True, False, False,
+          True)],
+    )  # fmt: skip
+    group = Group("mastery", (("abbreviation", "X"), ("d:abbreviation", "X")),
+                  "dims_differ", 1, 1)  # fmt: skip
+    proof = confirm.Proof(
+        Path("p.sql"), "mastery", "dims_differ",
+        {"C1": ("dashboard", "the dashboard files it under another grade")},
+        "SELECT u.__row, 'C1' AS cause FROM {unmatched} AS u", {},
+    )  # fmt: skip
+    ctes, select = confirm.unmatched_sql(
+        BY_GRADE, "dims_differ", [("G1", group)], "saved_t"
+    )
+
+    rows = duck.rows(
+        confirm.proof_query(
+            ctes, select, proof.body, {"C1"},
+            confirm._student_count(BY_GRADE, "dims_differ"),
+        )
+    )  # fmt: skip
+
+    grade_5, grade_6 = [label for label, _, _ in pipeline.cut_flags(BY_GRADE)]
+    found = confirm.cause_students(rows, proof, BY_GRADE)
+    assert sorted((e["cut"], e["n"]) for e in found) == [(grade_5, 1), (grade_6, 1)]
 
 
 def test_kept_counts_take_the_larger_of_2_buckets_proofs_on_one_cell():
@@ -1364,58 +1504,43 @@ def test_confirm_refuses_a_reproduce_query_bigquery_refuses(
 # --- cells left open; rows that sit in another cell ---------------------------------
 
 
-def test_a_cells_refusal_names_each_open_cell_and_why(tmp_path, monkeypatch, capsys):
-    # Cell Y holds no open group; cell X's proven group links.
+def test_open_cell_lines_name_each_open_cell_and_why():
+    # Cell Y holds no unmatched row; cell X's proven group covers it.
     cell = CELLS_RUN["diff_cells"][0]
     run = _run(
-        [_group(3)],
+        [_placed(3)],
         cells=CELLS_RUN["cells"],
         diff_cells=[cell, {**cell, "key": "abbreviation=Y",
                            "dims": [["abbreviation", "Y"]], "cube": 0.2}],
     )  # fmt: skip
+    left: dict = {}
 
-    with pytest.raises(pipeline.Refusal, match="1 of 2 differing cells"):
-        _cells(tmp_path, monkeypatch, run=run)
+    _cells(run=run, left=left)
 
-    out = capsys.readouterr().out
-    assert "mastery:cells: the cells left open (local only, not masked):" in out
+    out = "\n".join(confirm.open_cell_lines(left["mastery:cells"]))
     assert "- abbreviation=Y | cut {} | Cube 0.2, dashboard 1" in out
     assert "abbreviation=X" not in out
-    assert "open: no open group agrees with the cell" in out
+    assert "open: no unmatched row lies in it" in out
 
 
-def test_a_cell_with_an_unproven_group_says_so(tmp_path, monkeypatch, capsys):
-    with pytest.raises(pipeline.Refusal):
-        _cells(tmp_path, monkeypatch, proven=False)
+def test_open_cell_lines_name_an_unproven_group():
+    left: dict = {}
 
-    out = capsys.readouterr().out
+    _cells(proven=False, left=left)
+
+    out = "\n".join(confirm.open_cell_lines(left["mastery:cells"]))
     assert "cube_only (investigate)" in out
-    assert "open: 1 of its 1 groups are not in `cause`" in out
+    assert "open: 1 of its 1 groups are not in cause" in out
 
 
-def test_a_moved_group_sits_in_cube_s_cell_and_the_dashboard_s():
-    moved = Group(
-        "mastery",
-        (("abbreviation", "X"), ("d:abbreviation", "Y")),
-        "dims_differ",
-        2,
-        2,
-    )
-
-    assert confirm._in_cells(moved, {"dims": [["abbreviation", "X"]]}) == (True, False)
-    assert confirm._in_cells(moved, {"dims": [["abbreviation", "Y"]]}) == (False, True)
-    assert confirm._in_cells(moved, {"dims": []}) == (True, True)
-
-
-def test_a_cell_links_to_rows_the_dashboard_files_in_it_and_cube_elsewhere(
-    tmp_path, monkeypatch
-):
+def test_a_cell_links_to_rows_the_dashboard_files_in_it_and_cube_elsewhere():
     moved = Group(
         "mastery",
         (("abbreviation", "Y"), ("d:abbreviation", "X")),
         "dims_differ",
         3,
         3,
+        cut_rows=(("{}", 3, 3),),
     )
     # In cell X the dashboard holds 3 rows Cube files under Y: Cube shows 3 fewer.
     run = _run(
@@ -1424,7 +1549,7 @@ def test_a_cell_links_to_rows_the_dashboard_files_in_it_and_cube_elsewhere(
         diff_cells=[{**CELLS_RUN["diff_cells"][0], "cube": 1.0, "dashboard": 4.0}],
     )
 
-    cells = _cells(tmp_path, monkeypatch, run=run)
+    cells = _cells(run=run)
 
     assert cells["suggestion"] == "cause"
 

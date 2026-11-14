@@ -29,7 +29,7 @@ from typing import Any
 
 import tableauserverclient as TSC
 
-from . import answers, checkpoints, compare, decisions
+from . import answers, checkpoints, compare, coverage, decisions
 from . import discover as finder
 from . import report, saved, tableau, triage
 from .bq import Warehouse
@@ -1596,6 +1596,12 @@ def run(
     totals = _unproven_totals(comparisons)
     for line in totals:
         print(f"{line}.")
+    for comparison in comparisons:
+        if why := coverage.unplaceable(comparison):
+            print(
+                f"Comparison {comparison.id}: its cells cannot be covered ({why}); "
+                "its differing cells stay open."
+            )
 
     with wh.budget(max_usd):
         folder, build = _run_folder(

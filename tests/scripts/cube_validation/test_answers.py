@@ -23,7 +23,13 @@ from cube_validation.answers import (
 from cube_validation.compare import CellDiff, Group
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation.config import ColumnPair, Comparison, Decision, ViewConfig
+from cube_validation.config import (
+    ColumnPair,
+    Comparison,
+    Decision,
+    RowSpec,
+    ViewConfig,
+)
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.decisions import Applied, apply
@@ -65,7 +71,7 @@ def _run(cells):
     )
 
 
-def _cfg(dashboard_region="regions_region_name"):
+def _cfg(dashboard_region="regions_region_name", rows=None):
     cmp = Comparison(
         id="enrollment",
         measure="student_count",
@@ -76,6 +82,7 @@ def _cfg(dashboard_region="regions_region_name"):
         workbook="Attendance",
         sheet="Enrollment by Region",
         defaults={"Academic Year": "2026", "Grade": ["6", "7", "8"]},
+        rows=rows,
     )
     return ViewConfig(view="enrollment", fact="d.t", comparisons=[cmp])
 
@@ -117,6 +124,10 @@ def test_a_cause_s_example_needs_10_of_its_own_students_and_the_most_wins():
     assert example_cell(run, "enrollment", "C3", cells) is None
 
 
+# The row grain a comparison needs before its groups can be placed in a cell.
+FLOOR_ROWS = RowSpec(grain=[ColumnPair("student_number", "student_number")], values=[])
+
+
 def _floor_run(groups):
     run = _run([_cell("a", 10, 20)])
     run.applied = Applied(open=list(groups))
@@ -138,7 +149,7 @@ def test_a_cause_s_students_in_a_cell_are_only_what_its_groups_prove():
              "cause": [{"side": "cube", "label": c} for c in causes]}
             for it in triage_mod.open_items(run)
         ]  # fmt: skip
-        ((_, held),) = cell_causes(run, _cfg(), "enrollment", items)
+        ((_, held),) = cell_causes(run, _cfg(rows=FLOOR_ROWS), "enrollment", items)
         return held
 
     # All 30 rows in the cell's cut, 1 cause: its 25 students count.
@@ -147,9 +158,10 @@ def test_a_cause_s_students_in_a_cell_are_only_what_its_groups_prove():
     assert floor([_floor_group("dashboard_only", 30)], ["C1"]) == {"cube: C1": 25}
     # Rows in another cut too: which students are in this one is unknown.
     assert floor([_floor_group("cube_only", 12)], ["C1"]) == {"cube: C1": 0}
-    # No rows at all under the cell's cut, or none recorded for it.
-    assert floor([_floor_group("cube_only", 0, n_rows=0)], ["C1"]) == {"cube: C1": 0}
-    assert floor([_floor_group("cube_only", 30, cut="{}")], ["C1"]) == {"cube: C1": 0}
+    # No rows under the cell's cut, or none recorded for it: no row in the
+    # cell, so the cause is not in it at all.
+    assert floor([_floor_group("cube_only", 0, n_rows=0)], ["C1"]) == {}
+    assert floor([_floor_group("cube_only", 30, cut="{}")], ["C1"]) == {}
     # 2 causes share the group's students: neither count is known.
     assert floor([_floor_group("cube_only", 30)], ["C1", "C2"]) == {
         "cube: C1": 0,
@@ -1034,10 +1046,10 @@ def test_recorded_cause_students_are_used_as_counted():
              for it in triage_mod.open_items(run)]  # fmt: skip
     counted = [{"cause": "cube: C1", "cut": CUT, "dims": DIMS, "n": 14}]
 
-    ((_, held),) = cell_causes(run, _cfg(), "enrollment", items, counted)
+    ((_, held),) = cell_causes(run, _cfg(rows=FLOOR_ROWS), "enrollment", items, counted)
     assert held == {"cube: C1": 14}
     # Counted, and none in this cell: 0, though the group agrees with it.
-    ((_, held),) = cell_causes(run, _cfg(), "enrollment", items, [])
+    ((_, held),) = cell_causes(run, _cfg(rows=FLOOR_ROWS), "enrollment", items, [])
     assert held == {"cube: C1": 0}
 
 
