@@ -1622,6 +1622,28 @@ def _unproven_totals(comparisons: list[Comparison]) -> list[str]:
     return out
 
 
+def _say_caveats(ready: list[Comparison], skips: list[Skip]) -> list[str]:
+    """Print what `ready`'s comparisons leave unchecked, and return the totals
+    lines for `run.json`.
+
+    Called once every skip is known, so a skipped comparison, whose latest
+    result this run does not touch, has neither a totals line
+    (`_unproven_totals`) nor an uncoverable-cells line.
+    """
+    gone = {s.comparison for s in skips}
+    kept = [c for c in ready if c.id not in gone]
+    totals = _unproven_totals(kept)
+    for line in totals:
+        print(f"{line}.")
+    for comparison in kept:
+        if why := coverage.unplaceable(comparison):
+            print(
+                f"Comparison {comparison.id}: its cells cannot be covered ({why}); "
+                "its differing cells stay open."
+            )
+    return totals
+
+
 def reshape_text(
     shelves: dict[str, Any], reshaped: tableau.Reshaped | None = None
 ) -> str:
@@ -2048,27 +2070,20 @@ def compare(
                 f"{comparison.rebuild_check.matched_at}."
             )
 
-    totals = _unproven_totals(ready)
-    for line in totals:
-        print(f"{line}.")
-    for comparison in ready:
-        if why := coverage.unplaceable(comparison):
-            print(
-                f"Comparison {comparison.id}: its cells cannot be covered ({why}); "
-                "its differing cells stay open."
-            )
-
     results_dir = latest.folder(cache_root / cfg.view, cfg.fact)
-    compose = functools.partial(
-        _compose,
-        cfg,
-        comparisons,
-        results_dir,
-        cube=cube,
-        cube_host=cube_host,
-        totals=totals,
-        cache_root=cache_root,
-    )
+
+    def compose(**kwargs) -> RunResult:
+        return _compose(
+            cfg,
+            comparisons,
+            results_dir,
+            cube=cube,
+            cube_host=cube_host,
+            totals=_say_caveats(ready, skips),
+            cache_root=cache_root,
+            **kwargs,
+        )
+
     with wh.budget(max_usd):
         schools = network_schools(wh)
         sql_skips = functools.partial(
@@ -2134,6 +2149,7 @@ def compare(
                     "Nothing is compared."
                 )
             else:
+                _say_caveats(ready, skips)
                 print(OTHERS_CURRENT if skips else ALL_CURRENT)
                 return None
             newest = max((r.moment for r in results.values()), key=lambda m: m.end)

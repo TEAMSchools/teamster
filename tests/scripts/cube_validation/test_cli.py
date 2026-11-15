@@ -1093,6 +1093,52 @@ def test_a_failed_dry_run_skips_only_its_comparison(fakes, tmp_path, capsys):
     assert [s["comparison"] for s in saved["skipped"]] == ["c2"]
 
 
+def _says_nothing_of_c2(out, tmp_path):
+    """No totals or uncoverable-cells line for `c2`, printed or in run.json."""
+    assert "c2: totals not matched" not in out
+    assert "Comparison c2: its cells cannot be covered" not in out
+    saved = json.loads(_latest_run(tmp_path).read_text())
+    assert [t for t in saved["totals"] if t.startswith("c2:")] == []
+    assert [t for t in saved["totals"] if t.startswith("c1:")] != []
+
+
+def test_a_skipped_comparison_has_no_totals_or_uncoverable_cells_line(
+    fakes, tmp_path, monkeypatch, capsys
+):
+    # Every comparison's cells read uncoverable, and neither rebuild check
+    # records a totals count.
+    monkeypatch.setattr(pipeline.coverage, "unplaceable", lambda c: "a reason")
+    path = _two(tmp_path, _reads_membership)
+    assert cli.main(["compare", str(path)]) == 0
+    assert "Comparison c1: its cells cannot be covered" in capsys.readouterr().out
+    capsys.readouterr()
+
+    # Skipped before the price: its SQL cannot be built today.
+    _second_fact_for_membership(fakes)
+    fakes.bq.build = LATER
+    assert cli.main(["compare", str(path), "--all"]) == 0
+    out = capsys.readouterr().out
+    assert "Skipping c2: its SQL cannot be built today: " in out
+    _says_nothing_of_c2(out, tmp_path)
+
+
+def test_a_comparison_skipped_after_the_price_has_no_totals_line(
+    fakes, tmp_path, monkeypatch, capsys
+):
+    monkeypatch.setattr(pipeline.coverage, "unplaceable", lambda c: "a reason")
+    path = _two(tmp_path, _reads_membership)
+    assert cli.main(["compare", str(path)]) == 0
+    fakes.bq.build = LATER
+    capsys.readouterr()
+    _bigquery_refuses(fakes, "`v__membership_value`", dry=True)
+
+    assert cli.main(["compare", str(path), "--all"]) == 0
+
+    out = capsys.readouterr().out
+    assert "Skipping c2: its dry run failed in BigQuery" in out
+    _says_nothing_of_c2(out, tmp_path)
+
+
 def test_sql_that_cannot_be_built_at_the_run_s_moment_skips_its_comparison(
     fakes, tmp_path, monkeypatch, capsys
 ):
