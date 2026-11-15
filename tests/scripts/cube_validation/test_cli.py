@@ -2379,7 +2379,7 @@ def test_dashboard_view_edit_asks_to_reconfirm(fakes, tmp_path, capsys):
 
     out = capsys.readouterr().out
     assert "miami-scope" in _section(out, "To re-confirm", "No longer needed")
-    assert "`regions_region_name` = `Miami`" in _section(out, "## Triage", "##")
+    assert "`regions_region_name` = `Miami`" in _section(out, "## Sort", "##")
 
 
 def test_reordered_school_list_keeps_decisions(fakes, tmp_path, capsys):

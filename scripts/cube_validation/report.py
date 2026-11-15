@@ -278,7 +278,7 @@ def render_local(run: RunResult) -> str:
             line += f"; cell differences to sort in {m.open_cells} {plural}"
         out.append(line)
 
-    out += ["", "## Triage", ""]
+    out += ["", "## Sort", ""]
     triage = []
     for g in run.applied.open:
         line = (

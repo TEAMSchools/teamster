@@ -142,7 +142,7 @@ def test_local_result_section_order_and_triage():
     text = render_local(_run())
     heads = [
         "## Measures",
-        "## Triage",
+        "## Sort",
         "## Decisions",
         "## Sources read live",
         "## Dimensions that changed",

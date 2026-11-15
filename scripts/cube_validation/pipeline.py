@@ -1072,8 +1072,7 @@ def stale_comparisons(
     The fingerprints mask the moment, so a new build alone, or changed data,
     is not stale. A comparison whose SQL cannot be built today, a member Cube
     no longer compiles included, is named with why, and the others are still
-    checked. Compiles and expands only; no
-    query bills.
+    checked. Compiles and expands only; no query bills.
     """
     build = Build(now, now, "now")
     out: dict[str, str] = {}
@@ -2046,10 +2045,9 @@ def compare(
     queries fails in BigQuery, whose spend stays counted (`_compare_all`). A
     BigQuery error is skipped as its job and reason code, never its message,
     which can quote values; only a cap (`CostCapError`) stops the run. The
-    skips are kept in
-    `run.json` as `skipped`. Every query a comparison bills is
-    priced before the first one runs (`_compare_all`), and `ticker` prints a
-    line as each comparison finishes. Each comparison it finishes is
+    skips are kept in `run.json` as `skipped`. Every query a comparison bills
+    is priced before the first one runs (`_compare_all`), and `ticker` prints
+    a line as each comparison finishes. Each comparison it finishes is
     checkpointed in the run folder; a stopped run started again skips them
     (`_run_folder` says when it resumes). A checkpoint whose comparison entry
     or SQL changed is compared again. `cost_usd` adds what every process spent

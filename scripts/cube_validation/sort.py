@@ -1351,18 +1351,18 @@ def sort_run(
 ) -> list[Suggestion]:
     """Sort each open item of the view's latest run into a pile and print them.
 
-    Re-runs every stored explanation in `explanations` on the run's rows first
-    (`explain.run_stored`; None skips them): only an explanation moves a row group
-    to `cause`. Then traces the row groups no explanation explains
+    Re-runs every stored explanation in `explanations` on the run's rows
+    first (`explain.run_stored`; None skips them): only an explanation moves a
+    row group to `cause`. Then traces the row groups no explanation explains
     (`trace.trace_run`) unless `trace_rows` is False, for leads. Both count
     against `max_usd` and the daily cap with the value checks. A cap or
-    `trace_max_minutes` hit partway stops the trace; what it found is kept
-    and the batch is still written, as it is when an explanation cannot run. Prints
-    `batch_lines`. Writes every item to `triage.json`
-    beside that run's `run.json`, with the run's moment, decisions
-    fingerprint and open items (see `proven_triage`), each explained row group
-    marked by the cause decisions that decide it (`mark_decided`): it stays in the local
-    cache, and its stubs and causes carry real values and exact counts.
+    `trace_max_minutes` hit partway stops the trace; what it found is kept and
+    the batch is still written, as it is when an explanation cannot run.
+    Prints `batch_lines`. Writes every item to `triage.json` beside that run's
+    `run.json`, with the run's moment, decisions fingerprint and open items
+    (see `proven_triage`), each explained row group marked by the cause
+    decisions that decide it (`mark_decided`): it stays in the local cache,
+    and its stubs and causes carry real values and exact counts.
 
     Each confirmed comparison whose result in the run is missing or stale at
     `now` (`pipeline.stale_comparisons` over `pipeline.composed_results`),
@@ -1373,13 +1373,13 @@ def sort_run(
     not as the run reconciled it.
 
     Each explanation's outcome is kept beside `run.json` as it finishes
-    (`explain_progress`), so a stopped sort skips the explanations it finished. With
-    `comparisons`, only their explanations run and only their row groups are traced
-    or printed; `triage.json` still holds every item, the others' from their
-    kept explanation outcomes.
+    (`explain_progress`), so a stopped sort skips the explanations it
+    finished. With `comparisons`, only their explanations run and only their
+    row groups are traced or printed; `triage.json` still holds every item,
+    the others' from their kept explanation outcomes.
 
-    `ticker` (a new one by default) prints a progress line after each explanation
-    runs and after each level of the trace.
+    `ticker` (a new one by default) prints a progress line after each
+    explanation runs and after each level of the trace.
 
     Raises:
         pipeline.Refusal: The view has no usable saved run (see

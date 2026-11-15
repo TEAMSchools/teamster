@@ -598,7 +598,6 @@ def _nested_under(node: _Group | str | None, ref: str) -> _Group | str:
                 items = list(node.items)
                 items[i] = _nested_under(items[i], ref)
                 return _Group(items, node.ops)
-        return _Group([ref, *node.items], ["*"] * len(node.items))
     if isinstance(node, _Group) and {"/", "*"} <= set(node.ops):
         raise ValueError(
             f"cannot add {ref} to a shelf that mixes / and *; reshape the sheet by hand"
