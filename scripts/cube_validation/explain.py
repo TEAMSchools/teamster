@@ -717,7 +717,7 @@ def unmatched_sql(
         tests = [
             f"{_joined_column(column)} IS NULL"
             if column in nulls
-            else f"{_joined_column(column)} = {pipeline._lit(value)}"
+            else f"{_joined_column(column)} = {pipeline.lit(value)}"
             for column, value in g.dims
         ]
         if dims:
@@ -726,7 +726,7 @@ def unmatched_sql(
             moved = any(c.startswith(reconcile.DASH_PREFIX) for c, _ in g.dims)
             tests.append(f"COALESCE({reconcile._MOVED}, FALSE) = {str(moved).upper()}")
         test = " AND ".join(tests)
-        whens.append(f"WHEN {test or 'TRUE'} THEN {pipeline._lit(item_id)}")
+        whens.append(f"WHEN {test or 'TRUE'} THEN {pipeline.lit(item_id)}")
     key = f"CASE {' '.join(whens)} END" if whens else "CAST(NULL AS STRING)"
     ctes = f"WITH __f AS (\n{bucket_rows_sql(comparison, bucket, source)}\n)"
     columns = [
@@ -822,13 +822,13 @@ def explanation_query(
     its dims as JSON) the distinct students the explanation gives that cause
     (`n_students`): counted in BigQuery, never listed.
     """
-    allowed = ", ".join(pipeline._lit(v) for v in sorted(literals))
+    allowed = ", ".join(pipeline.lit(v) for v in sorted(literals))
     proof = body.replace(PLACEHOLDER, "__u")
     head = f"{ctes},\n" if ctes else "WITH "
     if students is not None:
         return _with_students(head, select, proof, allowed, students)
     return (
-        # trunk-ignore(bandit/B608): the explanation is the analyst's read-only SQL, vetted by check_sql; cause literals are quoted by pipeline._lit
+        # trunk-ignore(bandit/B608): the explanation is the analyst's read-only SQL, vetted by check_sql; cause literals are quoted by pipeline.lit
         f"{head}__u AS (\n{select}\n),\n__p AS (\n{proof}\n),\n"
         "__per AS (\n  SELECT __row, COUNT(*) AS __times, "
         f"MIN(IF(cause IN ({allowed}), cause, NULL)) AS cause, "
@@ -856,7 +856,7 @@ def _with_students(
         cols = ", ".join(f"CAST(f.{dim(d)} AS STRING) AS {d}" for d in s.dims)
         flags = "".join(f", f.{flag}{j} AS __cut{j}" for j in range(s.cuts))
         return (
-            # trunk-ignore(bandit/B608): identifiers are validated in config.py; cause literals are quoted by pipeline._lit
+            # trunk-ignore(bandit/B608): identifiers are validated in config.py; cause literals are quoted by pipeline.lit
             f"SELECT per.cause, {cols + ', ' if cols else ''}f.{s.student} AS __st"
             f"{flags} FROM __per AS per JOIN __f AS f ON f.__row = per.__row "
             f"WHERE per.cause IN ({allowed}) AND per.__times = 1{where}"
@@ -1153,7 +1153,7 @@ def explanation_sql(
             the build end.
     """
     literals = check_sql(proof.body, grain_names(comparison), identifying(comparison))
-    at = pipeline._as_of(proof.body, build.start, wh)
+    at = pipeline.checked_as_of(proof.body, build.start, wh)
     body = trace._one_moment(
         at,
         set(sides.cube.tables - sides.dashboard.tables),

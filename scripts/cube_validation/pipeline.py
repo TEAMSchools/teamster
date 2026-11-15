@@ -119,7 +119,7 @@ def _refuse_all_skipped(
 # --- filters and queries -----------------------------------------------------
 
 
-def _cuts(comparison: Comparison) -> list[dict[str, Any]]:
+def comparison_cuts(comparison: Comparison) -> list[dict[str, Any]]:
     return comparison.cuts or [{}]
 
 
@@ -148,7 +148,7 @@ def _cube_text(value: Any) -> str:
     return str(value).lower() if isinstance(value, bool) else str(value)
 
 
-def _member(view: str, name: str) -> str:
+def member_name(view: str, name: str) -> str:
     return name if "." in name else f"{view}.{name}"
 
 
@@ -157,7 +157,7 @@ def _cut_cube_filters(
 ) -> list[dict]:
     return [
         {
-            "member": _member(view, comparison.filters[caption].cube),
+            "member": member_name(view, comparison.filters[caption].cube),
             "operator": "equals",
             "values": [_cube_text(v) for v in _values(value)],
         }
@@ -165,14 +165,14 @@ def _cut_cube_filters(
     ]
 
 
-def _scope_cube_filters(view: str, comparison: Comparison) -> list[dict]:
+def scope_cube_filters(view: str, comparison: Comparison) -> list[dict]:
     return [
-        {**f, "member": _member(view, f["member"])}
+        {**f, "member": member_name(view, f["member"])}
         for f in reconcile.scope_filters(comparison)
     ]
 
 
-def _lit(value: Any) -> str:
+def lit(value: Any) -> str:
     """A BigQuery literal, escaped the way Cube's parameters are bound."""
     return bind(Compiled("?", [value], []))
 
@@ -182,15 +182,15 @@ def _column_predicate(column: str, value: Any) -> str:
     text = [str(v) for v in _values(value) if not isinstance(v, (bool, int, float))]
     parts = []
     if text:
-        parts.append(f"CAST({column} AS STRING) IN ({', '.join(map(_lit, text))})")
+        parts.append(f"CAST({column} AS STRING) IN ({', '.join(map(lit, text))})")
     if direct:
-        parts.append(f"{column} IN ({', '.join(map(_lit, direct))})")
+        parts.append(f"{column} IN ({', '.join(map(lit, direct))})")
     return parts[0] if len(parts) == 1 else "(" + " OR ".join(parts) + ")"
 
 
-_SQL_COMPARE = {"gt": ">", "gte": ">=", "lt": "<", "lte": "<="}
+SQL_COMPARE = {"gt": ">", "gte": ">=", "lt": "<", "lte": "<="}
 # How a run result names each Cube scope operator.
-_SCOPE_WORDS = {"equals": "in", "notEquals": "not in", **_SQL_COMPARE}
+_SCOPE_WORDS = {"equals": "in", "notEquals": "not in", **SQL_COMPARE}
 
 
 # The coming Sunday in New York, as Tableau's `TODAY() + 8 - weekday` (Sunday is
@@ -208,15 +208,15 @@ def _week_end_sql(days: int) -> str:
     return f"DATE_ADD({_TODAY}, INTERVAL {_WEEK_END}{offset} DAY)"
 
 
-def _dashboard_filter_sql(entry: dict[str, Any]) -> str:
+def dashboard_filter_sql(entry: dict[str, Any]) -> str:
     """One `dashboard_filters` entry as SQL; `not_equals` keeps nulls, as Cube's does."""
     column, operator = entry["dashboard"], entry["operator"]
     if operator == "set":
         return f"{column} IS NOT NULL"
     if (days := entry.get(WEEK_END_KEY)) is not None:
-        return f"{column} {_SQL_COMPARE[operator]} {_week_end_sql(days)}"
-    if operator in _SQL_COMPARE:
-        return f"{column} {_SQL_COMPARE[operator]} {_lit(entry['values'][0])}"
+        return f"{column} {SQL_COMPARE[operator]} {_week_end_sql(days)}"
+    if operator in SQL_COMPARE:
+        return f"{column} {SQL_COMPARE[operator]} {lit(entry['values'][0])}"
     match = _column_predicate(column, entry["values"])
     return match if operator == "equals" else f"({column} IS NULL OR NOT {match})"
 
@@ -234,14 +234,15 @@ def dashboard_predicate(
         for caption, value in effective_filters(comparison, cut).items()
     ]
     if with_filters:
-        parts += [_dashboard_filter_sql(e) for e in comparison.dashboard_filters]
+        parts += [dashboard_filter_sql(e) for e in comparison.dashboard_filters]
     return " AND ".join(parts) or "TRUE"
 
 
 def _any_cut_predicate(comparison: Comparison, with_filters: bool = True) -> str:
     """OR of every cut, so a row-level reconcile counts each row once."""
     preds = [
-        dashboard_predicate(comparison, cut, with_filters) for cut in _cuts(comparison)
+        dashboard_predicate(comparison, cut, with_filters)
+        for cut in comparison_cuts(comparison)
     ]
     if "TRUE" in preds:
         return "TRUE"
@@ -254,7 +255,7 @@ def _varying_captions(comparison: Comparison) -> list[str]:
     A caption with one value in every cut (a default no cut changes) cannot
     split the cells.
     """
-    chosen = [effective_filters(comparison, cut) for cut in _cuts(comparison)]
+    chosen = [effective_filters(comparison, cut) for cut in comparison_cuts(comparison)]
     captions = dict.fromkeys(c for f in chosen for c in f)
     return [
         c
@@ -269,9 +270,9 @@ def cut_flags(comparison: Comparison) -> list[tuple[str, str, str]] | None:
     `rows`.
 
     Only the captions that vary across cuts (`_varying_captions`) split the
-    cells; `_row_pairs` makes each of them a row column on both sides.
+    cells; `row_pairs` makes each of them a row column on both sides.
     """
-    cuts = _cuts(comparison)
+    cuts = comparison_cuts(comparison)
     if comparison.rows is None:
         return None
     chosen = [effective_filters(comparison, cut) for cut in cuts]
@@ -294,7 +295,9 @@ def cut_flags(comparison: Comparison) -> list[tuple[str, str, str]] | None:
 
 
 def _any_cut_cube_filters(view: str, comparison: Comparison) -> list[dict]:
-    per_cut = [_cut_cube_filters(view, comparison, cut) for cut in _cuts(comparison)]
+    per_cut = [
+        _cut_cube_filters(view, comparison, cut) for cut in comparison_cuts(comparison)
+    ]
     if any(not f for f in per_cut):
         return []
     if len(per_cut) == 1:
@@ -308,14 +311,14 @@ def cell_query(
     """Return the Cube query for a comparison's cells under one cut."""
     dims = comparison.dims if with_dims else []
     return {
-        "measures": [_member(view, comparison.measure)],
-        "dimensions": [_member(view, d.cube) for d in dims],
+        "measures": [member_name(view, comparison.measure)],
+        "dimensions": [member_name(view, d.cube) for d in dims],
         "filters": _cut_cube_filters(view, comparison, cut)
-        + _scope_cube_filters(view, comparison),
+        + scope_cube_filters(view, comparison),
     }
 
 
-def _row_pairs(comparison: Comparison) -> list[ColumnPair]:
+def row_pairs(comparison: Comparison) -> list[ColumnPair]:
     """The columns a comparison's row SQL selects on each side.
 
     With `rows`: the grain, the values, the dims, and each caption that varies
@@ -332,7 +335,7 @@ def _row_pairs(comparison: Comparison) -> list[ColumnPair]:
     return pairs
 
 
-def _unique(names: Iterable[str]) -> list[str]:
+def unique(names: Iterable[str]) -> list[str]:
     return list(dict.fromkeys(names))
 
 
@@ -340,15 +343,15 @@ def row_query(view: str, comparison: Comparison) -> dict:
     """Return the ungrouped Cube query for a comparison's rows over every cut."""
     return {
         "dimensions": [
-            _member(view, c) for c in _unique(p.cube for p in _row_pairs(comparison))
+            member_name(view, c) for c in unique(p.cube for p in row_pairs(comparison))
         ],
         "filters": _any_cut_cube_filters(view, comparison)
-        + _scope_cube_filters(view, comparison),
+        + scope_cube_filters(view, comparison),
         "ungrouped": True,
     }
 
 
-def _dashboard_ref(comparison: Comparison) -> str:
+def dashboard_ref(comparison: Comparison) -> str:
     if not comparison.dashboard_view or comparison.dashboard_view.count(".") != 1:
         raise Refusal(
             f"comparison {comparison.id!r}: `dashboard_view` must be dataset.view"
@@ -364,7 +367,7 @@ def _dashboard_ref(comparison: Comparison) -> str:
     return f"(SELECT *, {computed} FROM {table})"
 
 
-def _date_cubes(cfg: ViewConfig) -> set[str]:
+def date_cubes(cfg: ViewConfig) -> set[str]:
     return {cfg.time_dimension} if cfg.time_dimension else set()
 
 
@@ -388,32 +391,32 @@ def dashboard_rows_sql(cfg: ViewConfig, comparison: Comparison) -> str:
     latest value keeps every tied row, for the reconcile to report as
     duplicates.
     """
-    dates = _date_cubes(cfg)
+    dates = date_cubes(cfg)
     seen: dict[str, bool] = {}
-    for p in _row_pairs(comparison):
+    for p in row_pairs(comparison):
         seen.setdefault(p.dashboard, p.cube in dates)
     cols = [
         f"DATE({name}) AS {name}" if is_date else name for name, is_date in seen.items()
     ] + [
-        f"COALESCE({_dashboard_filter_sql(e)}, FALSE) AS {flag}"
+        f"COALESCE({dashboard_filter_sql(e)}, FALSE) AS {flag}"
         for e, (flag, _) in zip(
-            comparison.dashboard_filters, _filter_flags(comparison), strict=True
+            comparison.dashboard_filters, filter_flags(comparison), strict=True
         )
     ]
     where = _any_cut_predicate(comparison, with_filters=False)
     if scope := comparison.rows.dashboard_scope if comparison.rows else []:
-        parts = [where, *map(_dashboard_filter_sql, scope)]
+        parts = [where, *map(dashboard_filter_sql, scope)]
         where = " AND ".join(f"({p})" for p in parts)
     reduce = comparison.rows.reduce if comparison.rows else {}
     if reduce:
         cols.append(f"{reduce['by']} AS __reduce_by")
     # trunk-ignore(bandit/B608): identifiers are validated in config.py and values are bound or literal-escaped
-    sql = f"SELECT {', '.join(cols)} FROM {_dashboard_ref(comparison)} WHERE {where}"
+    sql = f"SELECT {', '.join(cols)} FROM {dashboard_ref(comparison)} WHERE {where}"
     if not reduce:
         return sql
     split = [comparison.filters[c].dashboard for c in _varying_captions(comparison)]
-    keys = ", ".join(_unique([p.dashboard for p in comparison.rows.grain] + split))
-    kept = [f"{flag} AND " for flag, _ in _filter_flags(comparison)]
+    keys = ", ".join(unique([p.dashboard for p in comparison.rows.grain] + split))
+    kept = [f"{flag} AND " for flag, _ in filter_flags(comparison)]
     order = (
         f"({''.join(kept)}TRUE) DESC, __reduce_by DESC" if kept else "__reduce_by DESC"
     )
@@ -429,11 +432,11 @@ def _students_sql(cfg: ViewConfig, comparison: Comparison, student: str) -> str:
 
     Each branch reads exactly the rows its cut's cells come from: the cut's
     predicate with the `dashboard_filters`, grouped by the dims as
-    `sheet_query_sql` groups them. `__cut` is the cut's index in `_cuts`.
+    `sheet_query_sql` groups them. `__cut` is the cut's index in `comparison_cuts`.
     """
     # trunk-ignore(bandit/B608): identifiers are validated in config.py and values are bound or literal-escaped
-    rows = f"SELECT * FROM {_dashboard_ref(comparison)}"
-    dates = _date_cubes(cfg)
+    rows = f"SELECT * FROM {dashboard_ref(comparison)}"
+    dates = date_cubes(cfg)
     dims = [
         f"DATE({d.dashboard}) AS {d.dashboard}" if d.cube in dates else d.dashboard
         for d in comparison.dims
@@ -446,11 +449,11 @@ def _students_sql(cfg: ViewConfig, comparison: Comparison, student: str) -> str:
         # trunk-ignore(bandit/B608): identifiers are validated in config.py and values are bound or literal-escaped
         f"(SELECT {', '.join([f'{i} AS __cut', *dims, count])} FROM ({rows}) "
         f"WHERE {dashboard_predicate(comparison, cut)}{group})"
-        for i, cut in enumerate(_cuts(comparison))
+        for i, cut in enumerate(comparison_cuts(comparison))
     )
 
 
-def _filter_flags(comparison: Comparison) -> list[tuple[str, str]]:
+def filter_flags(comparison: Comparison) -> list[tuple[str, str]]:
     """Each dashboard-only filter's flag column and label (its column)."""
     return [
         (f"__df{i}", e["dashboard"]) for i, e in enumerate(comparison.dashboard_filters)
@@ -479,7 +482,7 @@ def sheet_query(
     leaves out the `dashboard_filters`, to name the cells they drop.
     """
     # trunk-ignore(bandit/B608): identifiers are validated in config.py and values are bound or literal-escaped
-    rows = f"SELECT * FROM {_dashboard_ref(comparison)}"
+    rows = f"SELECT * FROM {dashboard_ref(comparison)}"
     where = dashboard_predicate(comparison, cut, with_filters)
     names = [d.dashboard for d in comparison.dims]
     if comparison.sheet_query_sql:
@@ -490,7 +493,7 @@ def sheet_query(
         raise Refusal(
             f"comparison {comparison.id!r} has no sheet_query or sheet_query_sql"
         )
-    dates = _date_cubes(cfg)
+    dates = date_cubes(cfg)
     select = [
         f"DATE({d.dashboard}) AS {d.dashboard}" if d.cube in dates else d.dashboard
         for d in comparison.dims
@@ -525,7 +528,7 @@ def wrap_cube(
 # --- cells -------------------------------------------------------------------
 
 
-def _key(value: Any) -> str:
+def value_key(value: Any) -> str:
     """Cell key text: dates by day, booleans as `true`/`false`, numbers by
     value, else the text.
 
@@ -606,20 +609,20 @@ def _cells(
     where = f"{comparison.id} {cut_label(cut)}"
     dash = _by_key(
         dash_rows,
-        lambda r: tuple(_key(r[d.dashboard]) for d in comparison.dims),
+        lambda r: tuple(value_key(r[d.dashboard]) for d in comparison.dims),
         lambda r: _number(r["value"]),
         f"{where} dashboard",
     )
     cube = _by_key(
         cube_rows,
-        lambda r: tuple(_key(r[d.cube]) for d in comparison.dims),
+        lambda r: tuple(value_key(r[d.cube]) for d in comparison.dims),
         lambda r: _number(r["value"]),
         f"{where} Cube",
     )
     unfiltered = (
         _by_key(
             unfiltered_rows,
-            lambda r: tuple(_key(r[d.dashboard]) for d in comparison.dims),
+            lambda r: tuple(value_key(r[d.dashboard]) for d in comparison.dims),
             lambda r: _number(r["value"]),
             f"{where} dashboard without its dashboard-only filters",
         )
@@ -731,7 +734,7 @@ def row_group_cause(n_groups: int) -> str:
 def _cell_diffs(
     cfg: ViewConfig,
     comparisons: list[Comparison],
-    sides: "_Sides",
+    sides: "Sides",
     cube: Cube,
     older: frozenset[str] = frozenset(),
 ) -> tuple[list[CellDiff], set[Cell]]:
@@ -757,7 +760,7 @@ def _cell_diffs(
         ]  # fmt: skip
         if not differing:
             continue
-        member = _member(cfg.view, comparison.measure)
+        member = member_name(cfg.view, comparison.measure)
         try:
             compiled = cube.compiled({"measures": [member]}).sql
         except CubeError:
@@ -765,7 +768,7 @@ def _cell_diffs(
                 raise
             expr = "a measure Cube cannot compile today"
         else:
-            expr = _measure_expression(compiled, cfg.view, comparison.measure)
+            expr = measure_expression(compiled, cfg.view, comparison.measure)
         formula: list[Cell] = []
         cells: list[Cell] = []
         for c in differing:
@@ -835,7 +838,7 @@ def sheet_query_fingerprint(cfg: ViewConfig, comparison: Comparison) -> str:
     return hashlib.sha256("\n".join([base, *extras]).encode()).hexdigest()
 
 
-def _as_of(sql: str, ts: datetime, wh: Warehouse) -> AsOf:
+def checked_as_of(sql: str, ts: datetime, wh: Warehouse) -> AsOf:
     """`as_of`, with its fail-closed refusals (an unknown table, a deep view)."""
     try:
         return as_of(sql, ts, wh)
@@ -849,7 +852,7 @@ def _masked(at: AsOf, ts: datetime) -> str:
 
 
 @dataclasses.dataclass
-class _Sides:
+class Sides:
     """What a run collects across comparisons, or one comparison's slice of it.
 
     Each comparison returns its own slice (`_execute`); `compare` merges them
@@ -873,7 +876,7 @@ class _Sides:
         default_factory=dict
     )
 
-    def merge(self, other: _Sides) -> None:
+    def merge(self, other: Sides) -> None:
         """Add another slice: its sets, cells, groups and every per-comparison
         entry."""
         self.cube_tables |= other.cube_tables
@@ -910,7 +913,7 @@ class _Sides:
         }
 
     @classmethod
-    def from_json(cls, data: dict) -> _Sides:
+    def from_json(cls, data: dict) -> Sides:
         """The slice `to_json` wrote, with its tuples restored."""
 
         def pairs(dims) -> tuple:
@@ -920,7 +923,7 @@ class _Sides:
             cube_tables=set(data["cube_tables"]),
             live=set(data["live"]),
             cells=[Cell(**{**c, "dims": pairs(c["dims"])}) for c in data["cells"]],
-            groups=[_group(g) for g in data["groups"]],
+            groups=[group_from_json(g) for g in data["groups"]],
             sql={k: (v[0], v[1]) for k, v in data["sql"].items()},
             fingerprints=data["fingerprints"],
             moved=data["moved"],
@@ -933,7 +936,7 @@ class _Sides:
         )
 
 
-class _Expand:
+class Expand:
     """Compile Cube queries and expand SQL as of a moment, each once.
 
     One per comparison: the cells, the rows and the fingerprints read the same
@@ -957,12 +960,12 @@ class _Expand:
 
     def at(self, sql: str, ts: datetime) -> AsOf:
         if (sql, ts) not in self._expanded:
-            self._expanded[(sql, ts)] = _as_of(sql, ts, self._wh)
+            self._expanded[(sql, ts)] = checked_as_of(sql, ts, self._wh)
         return self._expanded[(sql, ts)]
 
 
-def _fingerprints(
-    cfg: ViewConfig, comparison: Comparison, ex: _Expand, build: Build
+def expanded_fingerprints(
+    cfg: ViewConfig, comparison: Comparison, ex: Expand, build: Build
 ) -> dict[str, str]:
     """Both sides' SQL fingerprints: each side's cell and row SQL, expanded
     through every view as of the moment and with the moment masked, so a view
@@ -1007,7 +1010,7 @@ def side_fingerprints(
 ) -> dict[str, str]:
     """The `cube` and `dashboard` fingerprints `compare` records for a comparison,
     from compiled and expanded SQL only: no query runs."""
-    return _fingerprints(cfg, comparison, _Expand(cfg, cube, schools, wh), build)
+    return expanded_fingerprints(cfg, comparison, Expand(cfg, cube, schools, wh), build)
 
 
 def checkpoint_fingerprint(comparison: Comparison, fingerprints: dict[str, str]) -> str:
@@ -1090,8 +1093,8 @@ def stale_comparisons(
             today = side_fingerprints(
                 cfg, c, wh=wh, cube=cube, build=build, schools=schools
             )
-        except _SQL_ERRORS as exc:
-            out[c.id] = _sql_broken(exc)
+        except SQL_ERRORS as exc:
+            out[c.id] = sql_broken(exc)
             continue
         if checkpoint_fingerprint(c, today) == held.fingerprint:
             continue
@@ -1108,20 +1111,20 @@ def stale_comparisons(
     return out
 
 
-def _reconcile_args(
+def reconcile_args(
     cfg: ViewConfig, comparison: Comparison, sides: RowSides
 ) -> tuple[tuple, dict]:
     """The positional and keyword arguments every row query of a comparison
     takes (`reconcile.reconcile_script`, `unmatched_rows_sql`)."""
     flags = cut_flags(comparison) or []
     args = (
-        wrap_cube(sides.cube_rows_sql, cfg.view, sides.columns, _date_cubes(cfg), None),
+        wrap_cube(sides.cube_rows_sql, cfg.view, sides.columns, date_cubes(cfg), None),
         sides.dashboard.sql,
         comparison.rows,
         group_dims(comparison),
     )
     return args, {
-        "filters": _filter_flags(comparison),
+        "filters": filter_flags(comparison),
         "cuts": [(c, d) for _, c, d in flags],
     }
 
@@ -1139,7 +1142,7 @@ def save_script(
     `saved.SAVED_DAYS`; without (an offline test on DuckDB), it is a plain
     table.
     """
-    args, kwargs = _reconcile_args(cfg, comparison, sides)
+    args, kwargs = reconcile_args(cfg, comparison, sides)
     return reconcile.reconcile_script(
         *args,
         **kwargs,
@@ -1151,7 +1154,7 @@ def save_script(
 
 def inline_unmatched(cfg: ViewConfig, comparison: Comparison, sides: RowSides) -> str:
     """The rows `save_script` saves, as one query with no table, for a dry run."""
-    args, kwargs = _reconcile_args(cfg, comparison, sides)
+    args, kwargs = reconcile_args(cfg, comparison, sides)
     return reconcile.unmatched_rows_sql(*args, **kwargs)
 
 
@@ -1244,15 +1247,15 @@ def _plan_one(
     a table both sides read changed during the build is a priced scan, so
     `_compare_all` answers it after the price (`_settle_moved`).
     """
-    dates = _date_cubes(cfg)
+    dates = date_cubes(cfg)
     dims = [d.cube for d in comparison.dims]
-    ex = _Expand(cfg, cube, schools, wh)
+    ex = Expand(cfg, cube, schools, wh)
     cube_sql, at = ex.cube_sql, ex.at
-    fingerprints = _fingerprints(cfg, comparison, ex, build)
+    fingerprints = expanded_fingerprints(cfg, comparison, ex, build)
     cube_tables: set[str] = set()
     live: set[str] = set()
     cuts: list[_CutPlan] = []
-    for cut in _cuts(comparison):
+    for cut in comparison_cuts(comparison):
         cube_at = at(cube_sql(cell_query(cfg.view, comparison, cut)), build.end)
         dash_at = at(sheet_query(cfg, comparison, cut), build.start)
         cube_tables |= cube_at.tables
@@ -1287,7 +1290,7 @@ def _plan_one(
             cube=cube_at,
             dashboard=dash_at,
             cube_rows_sql=repin(cube_at.sql, shared, build.end, build.start),
-            columns=_unique(p.cube for p in _row_pairs(comparison)),
+            columns=unique(p.cube for p in row_pairs(comparison)),
         )
         unmatched_sql = inline_unmatched(cfg, comparison, rows)
         # Only a student column counts students; without one in the grain,
@@ -1343,7 +1346,7 @@ def _execute(
     wh: Warehouse,
     build: Build,
     prices: list[float],
-) -> _Sides:
+) -> Sides:
     """Run a plan's queries; return its comparison's slice of the run.
 
     The rows are reconciled in one job that also saves the unmatched ones to
@@ -1356,12 +1359,12 @@ def _execute(
             means `queries()` and this function no longer agree.
     """
     comparison = plan.comparison
-    sides = _Sides(
+    sides = Sides(
         cube_tables=set(plan.cube_tables), live=set(plan.live), moved=dict(plan.moved)
     )
     sides.fingerprints[comparison.id] = plan.fingerprints
     price = iter(prices)
-    for cut, step in zip(_cuts(comparison), plan.cuts, strict=True):
+    for cut, step in zip(comparison_cuts(comparison), plan.cuts, strict=True):
         sides.cell_sql.setdefault(comparison.id, {})[step.label] = [
             step.dash_sql,
             step.cube_sql,
@@ -1403,11 +1406,11 @@ def _execute(
         sides.sql[comparison.id] = (plan.rows.dashboard.sql, plan.rows.cube.sql)
     if plan.students_sql is not None:
         next(price)
-        cuts = _cuts(comparison)
+        cuts = comparison_cuts(comparison)
         sides.students[comparison.id] = {
             (
                 cut_label(cuts[int(r["__cut"])]),
-                tuple(_key(r[d.dashboard]) for d in comparison.dims),
+                tuple(value_key(r[d.dashboard]) for d in comparison.dims),
             ): r["n_students"]
             for r in wh.rows(plan.students_sql)
         }
@@ -1459,10 +1462,10 @@ def row_sides(
     if comparison.rows is None:
         raise Refusal(f"comparison {comparison.id!r} has no rows to trace")
 
-    ex = _Expand(cfg, cube, schools, wh)
+    ex = Expand(cfg, cube, schools, wh)
     cube_at = ex.at(ex.cube_sql(row_query(cfg.view, comparison), rows=True), build.end)
     dash_at = ex.at(dashboard_rows_sql(cfg, comparison), build.start)
-    now = _fingerprints(cfg, comparison, ex, build)
+    now = expanded_fingerprints(cfg, comparison, ex, build)
     changed = sorted(k for k in now if now[k] != fingerprints.get(k))
     if changed:
         raise Refusal(
@@ -1474,15 +1477,15 @@ def row_sides(
         cube=cube_at,
         dashboard=dash_at,
         cube_rows_sql=repin(cube_at.sql, shared, build.end, build.start),
-        columns=_unique(p.cube for p in _row_pairs(comparison)),
+        columns=unique(p.cube for p in row_pairs(comparison)),
     )
 
 
-def _clauses(comparison: Comparison, groups: list[Group], sides: _Sides) -> list[str]:
+def _clauses(comparison: Comparison, groups: list[Group], sides: Sides) -> list[str]:
     if comparison.id not in sides.sql:
         return []
     by_cube = {d.cube: d.dashboard for d in comparison.dims}
-    columns = _unique(
+    columns = unique(
         name
         for g in groups
         if g.comparison_id == comparison.id
@@ -1492,13 +1495,13 @@ def _clauses(comparison: Comparison, groups: list[Group], sides: _Sides) -> list
     if not columns:
         return []
     dash_sql, cube_sql = sides.sql[comparison.id]
-    return _unique(
+    return unique(
         reconcile.clauses_for(columns, dash_sql)
         + reconcile.clauses_for(columns, cube_sql)
     )
 
 
-def _priced_load(cube: Cube, wh: Warehouse, query: dict) -> list[dict]:
+def priced_load(cube: Cube, wh: Warehouse, query: dict) -> list[dict]:
     """`Cube.load`, after a dry run of the SQL Cube compiles for the same query.
 
     Cube runs that SQL in BigQuery, so call this inside `wh.budget`: the price
@@ -1607,7 +1610,7 @@ def _browser_cuts(comparisons: list[Comparison]) -> list[str]:
             continue
         out += [
             f"{comparison.id}: {cut_label(cut)} (no export matched it)"
-            for cut in _cuts(comparison)
+            for cut in comparison_cuts(comparison)
             if cut_label(cut) not in recorded
         ]
     return out
@@ -1750,10 +1753,12 @@ def missing_members(
     }
     found: list[str] = []
     for comparison in comparisons:
-        queries = [cell_query(cfg.view, comparison, cut) for cut in _cuts(comparison)]
+        queries = [
+            cell_query(cfg.view, comparison, cut) for cut in comparison_cuts(comparison)
+        ]
         if comparison.rows is not None:
             queries.append(row_query(cfg.view, comparison))
-        names = _unique(m for q in queries for m in _query_members(q))
+        names = unique(m for q in queries for m in _query_members(q))
         found += [f"{comparison.id}: {m}" for m in names if m not in known]
     return found
 
@@ -1853,10 +1858,10 @@ def _early_skips(
 
 # What building a comparison's SQL raises when it cannot be built: a
 # BigQuery error comes from a lookup it makes, such as a view's history.
-_SQL_ERRORS = (Refusal, CubeRefusal, CubeError, ViewHistoryError, GoogleAPIError)
+SQL_ERRORS = (Refusal, CubeRefusal, CubeError, ViewHistoryError, GoogleAPIError)
 
 
-def _sql_broken(exc: Exception) -> str:
+def sql_broken(exc: Exception) -> str:
     """Why a comparison's SQL cannot be built: a BigQuery error as fixed words
     with its job and reason code, never its message, which can quote values."""
     if isinstance(exc, GoogleAPIError):
@@ -1889,8 +1894,8 @@ def _sql_skips(
     for c in comparisons:
         try:
             side_fingerprints(cfg, c, wh=wh, cube=cube, build=build, schools=schools)
-        except _SQL_ERRORS as exc:
-            out.append(Skip(c.id, _sql_broken(exc)))
+        except SQL_ERRORS as exc:
+            out.append(Skip(c.id, sql_broken(exc)))
     return out
 
 
@@ -2092,7 +2097,7 @@ def compare(
     results_dir = latest.folder(cache_root / cfg.view, cfg.fact)
 
     def compose(**kwargs) -> RunResult:
-        return _compose(
+        return compose_run(
             cfg,
             comparisons,
             results_dir,
@@ -2152,8 +2157,8 @@ def compare(
                 "reasons above"
             )
         if not selected:
-            last = _last_run(cfg, cache_root)
-            if not _composed_from(last, comparisons, results):
+            last = last_run(cfg, cache_root)
+            if not composed_from(last, comparisons, results):
                 # A run stopped after keeping its results, before composing.
                 print(
                     "Composing run.json again from the latest results: the last "
@@ -2220,7 +2225,7 @@ def compare(
     )
 
 
-def _last_run(cfg: ViewConfig, cache_root: Path) -> dict | None:
+def last_run(cfg: ViewConfig, cache_root: Path) -> dict | None:
     """The view's last readable `run.json` of `cfg.fact`, or None.
 
     A run saved before runs recorded their fact is no fact's run.
@@ -2239,12 +2244,12 @@ def _last_run(cfg: ViewConfig, cache_root: Path) -> dict | None:
     return None
 
 
-def _composed_from(
+def composed_from(
     data: dict | None,
     comparisons: list[Comparison],
     results: dict[str, latest.Latest],
 ) -> bool:
-    """Whether `data` (`_last_run`) was composed from exactly `results`: every
+    """Whether `data` (`last_run`) was composed from exactly `results`: every
     comparison's moment, entry and SQL fingerprints, and as `missing` the
     comparisons with no result (a skipped one's)."""
     if data is None:
@@ -2261,7 +2266,7 @@ def _composed_from(
     )
 
 
-def _compose(
+def compose_run(
     cfg: ViewConfig,
     comparisons: list[Comparison],
     results_dir: Path,
@@ -2289,9 +2294,9 @@ def _compose(
     results = latest.read_all(results_dir, cfg.fact)
     composed = [c for c in comparisons if c.id in results]
     left_out = [c.id for c in comparisons if c.id not in results]
-    sides = _Sides(moved={f: False for f in cfg.also_facts})
+    sides = Sides(moved={f: False for f in cfg.also_facts})
     for c in composed:
-        sides.merge(_Sides.from_json(results[c.id].data))
+        sides.merge(Sides.from_json(results[c.id].data))
     changed = sorted(
         {t for c in composed for t in results[c.id].data.get("changed_dims", [])}
     )
@@ -2341,10 +2346,10 @@ def _compose(
                 f"{', '.join(map(str, f['values']))}"
             )
             for c in comparisons
-            for f in _scope_cube_filters(cfg.view, c)
+            for f in scope_cube_filters(cfg.view, c)
         ],
         dashboard_filters=[
-            f"{c.id}: {_dashboard_filter_sql(e)}"
+            f"{c.id}: {dashboard_filter_sql(e)}"
             for c in comparisons
             for e in c.dashboard_filters
         ],
@@ -2435,7 +2440,7 @@ def _compare_all(
             or a query would.
     """
     kept = checkpoints.read_all(folder)
-    slices: dict[str, tuple[str, _Sides]] = {}
+    slices: dict[str, tuple[str, Sides]] = {}
     plans: list[_Plan] = []
     skips: list[Skip] = []
     for comparison in comparisons:
@@ -2449,7 +2454,7 @@ def _compare_all(
                     ),
                 )
                 if now == fingerprint:
-                    slices[comparison.id] = (fingerprint, _Sides.from_json(data))
+                    slices[comparison.id] = (fingerprint, Sides.from_json(data))
                     continue
                 print(
                     f"Comparison {comparison.id}: its config or SQL changed since "
@@ -2460,9 +2465,9 @@ def _compare_all(
                     cfg, comparison, wh=wh, cube=cube, build=build, schools=schools
                 )
             )
-        except _SQL_ERRORS as exc:
+        except SQL_ERRORS as exc:
             # Built at the run's moment, which `_sql_skips` did not check.
-            skips.append(Skip(comparison.id, _sql_broken(exc)))
+            skips.append(Skip(comparison.id, sql_broken(exc)))
 
     # One dry run at a time; one that fails skips the comparison it prices.
     prices: list[list[float]] = []
@@ -2484,7 +2489,7 @@ def _compare_all(
     dims = sorted(cube_tables - {cfg.fact, *cfg.also_facts})
     shared = sorted({t for p in plans for t in p.shared if t not in known})
     # Each table once, at both ends of the build, whichever checks need it.
-    scanned = _unique([*cfg.also_facts, *shared, *dims])
+    scanned = unique([*cfg.also_facts, *shared, *dims])
     scan_usd = 0.0
     for t in list(scanned):
         try:
@@ -2540,7 +2545,7 @@ def _compare_all(
             kept_plans.append((plan, priced))
     _say_skips(skips[said:])
 
-    def keep(comparison: Comparison, fingerprint: str, one: _Sides) -> None:
+    def keep(comparison: Comparison, fingerprint: str, one: Sides) -> None:
         latest.write(
             results_dir,
             comparison.id,
@@ -2585,7 +2590,7 @@ def _compare_all(
     return skips
 
 
-def _diff_cells(sides: _Sides, formula: set[Cell]) -> list[dict]:
+def _diff_cells(sides: Sides, formula: set[Cell]) -> list[dict]:
     """Every cell that neither passes nor is dashboard-filtered, for run.json.
 
     `kind` names the item holding it: `formula` for a cell in `formula`
@@ -2615,7 +2620,7 @@ def _json_default(value: Any) -> Any:
     raise TypeError(f"{type(value).__name__} is not JSON serializable")
 
 
-def _group(data: dict) -> Group:
+def group_from_json(data: dict) -> Group:
     """JSON stores `dims` and `cut_rows` as lists; a group compares by tuples."""
     return Group(
         **{
@@ -2659,8 +2664,8 @@ def _run_from_json(data: dict) -> RunResult:
         moment=_build(data["moment"]),
         measures=[MeasureResult(**m) for m in data["measures"]],
         applied=Applied(
-            open=[_group(g) for g in applied["open"]],
-            quiet=[(Decision(**d), _group(g)) for d, g in applied["quiet"]],
+            open=[group_from_json(g) for g in applied["open"]],
+            quiet=[(Decision(**d), group_from_json(g)) for d, g in applied["quiet"]],
             reconfirm=[Decision(**d) for d in applied["reconfirm"]],
             no_longer_needed=[Decision(**d) for d in applied["no_longer_needed"]],
             partly_stale=[
@@ -2720,7 +2725,7 @@ def _saved_run(cfg: ViewConfig, cache_root: Path) -> tuple[dict, Path]:
     The latest run is the `run.json` of the fact the command was given
     (`--fact-dataset` names a dev build's) written last, whatever moment it
     read. A run saved before runs recorded their fact is no fact's run, as in
-    `_last_run`: it never stands in for one.
+    `last_run`: it never stands in for one.
 
     Raises:
         Refusal: The view has no saved run of `cfg.fact`; the message names
@@ -3487,7 +3492,7 @@ def _capture(
     measures = [c.get("name") or "" for c in columns if c.get("role") == "measure"]
     if not measures:
         raise Refusal(f"sheet {sheet!r} lists no measure")
-    exportable, browser = tableau.split_cuts(_cuts(comparison), twb)
+    exportable, browser = tableau.split_cuts(comparison_cuts(comparison), twb)
     if not exportable:
         raise Refusal(f"comparison {comparison.id!r} has no cut a REST export can take")
     captures = {} if captures is None else captures
@@ -3591,7 +3596,9 @@ def rebuild_sheet(
         for cut, rows in zip(exportable, snap.exports, strict=True):
             label = cut_label(cut)
             probe_rows = wh.rows(
-                _as_of(sheet_query(cfg, comparison, cut), snap.refresh_started, wh).sql
+                checked_as_of(
+                    sheet_query(cfg, comparison, cut), snap.refresh_started, wh
+                ).sql
             )
             if not rows or not probe_rows:
                 side = "export" if not rows else "sheet query"
@@ -3844,7 +3851,7 @@ def _outer_from(sql: str) -> int:
     return -1
 
 
-def _measure_expression(sql: str, view: str, measure: str) -> str:
+def measure_expression(sql: str, view: str, measure: str) -> str:
     """The SELECT expression of a measure-only compiled query, alias dropped."""
     end = _outer_from(sql)
     head = sql if end < 0 else sql[:end]
@@ -3872,8 +3879,8 @@ def find_field(
     measure; `limit` None prints every candidate. With `twb_path` the one local
     workbook is read instead of the exposures' downloads, and `tbl` is unused.
     """
-    compiled = cube.compiled({"measures": [_member(cfg.view, measure)]})
-    member_sql = _measure_expression(compiled.sql, cfg.view, measure)
+    compiled = cube.compiled({"measures": [member_name(cfg.view, measure)]})
+    member_sql = measure_expression(compiled.sql, cfg.view, measure)
 
     found: list[finder.Candidate] = []
     twbs: dict[str, str] = {}

@@ -1317,7 +1317,7 @@ def test_a_row_with_no_cube_value_keys_to_its_group_and_counts_in_each_side_s_ce
     assert group.dims == (("abbreviation", ""), ("d:abbreviation", "Newark"))
     assert {r["item_key"]: r["n"] for r in rows if r["__kind"] == "count"} == {"G1": 1}
     found = explain.cause_students(rows, proof, BY_GRADE)
-    assert sorted((pipeline._key(e["dims"][0][1]), e["n"]) for e in found) == [
+    assert sorted((pipeline.value_key(e["dims"][0][1]), e["n"]) for e in found) == [
         ("", 1),
         ("Newark", 1),
     ]
@@ -1781,9 +1781,9 @@ def test_a_varying_cut_caption_becomes_a_row_column_on_both_sides():
 
     assert [label for label, _, _ in flags] == ['{"Region": "A"}', '{"Region": "B"}']
     assert "c.region" in flags[1][1] and "d.region" in flags[1][2]
-    assert ColumnPair("region", "region") in pipeline._row_pairs(by_region)
+    assert ColumnPair("region", "region") in pipeline.row_pairs(by_region)
     # A caption every cut shares stays out of the rows.
-    assert ColumnPair("year", "year") not in pipeline._row_pairs(by_region)
+    assert ColumnPair("year", "year") not in pipeline.row_pairs(by_region)
 
 
 EXISTS_REPRODUCE = """SELECT r.school, COUNT(*) AS n_rows

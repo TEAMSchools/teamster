@@ -542,9 +542,9 @@ def _check(
         return [{f"enrollment.{member}": v} for v in theirs]
 
     monkeypatch.setattr(
-        pipeline, "_as_of", lambda sql, ts, wh_: SimpleNamespace(sql=sql)
+        pipeline, "checked_as_of", lambda sql, ts, wh_: SimpleNamespace(sql=sql)
     )
-    monkeypatch.setattr(pipeline, "_priced_load", load)
+    monkeypatch.setattr(pipeline, "priced_load", load)
     cfg = _cfg(missing_columns={"School Level": column})
     object.__setattr__(cfg.comparisons[0], "dashboard_view", "ds.rpt_d")
     verdict = value_check(
@@ -621,10 +621,10 @@ def test_value_check_reads_the_dashboard_as_of_the_run_start(monkeypatch):
     seen = []
     monkeypatch.setattr(
         pipeline,
-        "_as_of",
+        "checked_as_of",
         lambda sql, ts, wh: seen.append(ts) or SimpleNamespace(sql=sql),
     )
-    monkeypatch.setattr(pipeline, "_priced_load", lambda c, w, q: [])
+    monkeypatch.setattr(pipeline, "priced_load", lambda c, w, q: [])
     cfg = _cfg()
     object.__setattr__(cfg.comparisons[0], "dashboard_view", "ds.rpt_d")
     value_check(_Wh(["a"]), object(), cfg, "col", "m", Build(START, END, "j"), set())

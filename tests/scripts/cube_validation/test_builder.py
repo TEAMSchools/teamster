@@ -200,7 +200,7 @@ def test_measure_expression_keeps_a_from_inside_a_function():
         "TRIM(BOTH ' ' FROM 'a from b') x\nFROM kipptaf_marts.fct_a AS `t`"
     )
 
-    assert pipeline._measure_expression(sql, "v", "m") == (
+    assert pipeline.measure_expression(sql, "v", "m") == (
         "count(distinct EXTRACT(YEAR FROM `t`.d)) , TRIM(BOTH ' ' FROM 'a from b') x"
     )
 

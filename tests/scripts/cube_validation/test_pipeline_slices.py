@@ -6,8 +6,8 @@ from cube_validation.config import Comparison
 from cube_validation.reconcile import Group
 
 
-def _slice() -> pipeline._Sides:
-    return pipeline._Sides(
+def _slice() -> pipeline.Sides:
+    return pipeline.Sides(
         cube_tables={"m.fct"},
         live={"g.sheet"},
         cells=[pipeline.Cell("c", "{}", "X", 1.0, 2.0, "differs", (("school", "X"),))],
@@ -34,7 +34,7 @@ def _slice() -> pipeline._Sides:
 def test_a_comparison_slice_survives_json():
     s = _slice()
 
-    back = pipeline._Sides.from_json(json.loads(json.dumps(s.to_json())))
+    back = pipeline.Sides.from_json(json.loads(json.dumps(s.to_json())))
 
     assert back == s
     assert back.groups[0].cut_rows == (("{}", 3, 0), ('{"Region": "Miami"}', 1, 0))
@@ -42,7 +42,7 @@ def test_a_comparison_slice_survives_json():
 
 def test_merging_slices_adds_every_part():
     a = _slice()
-    b = pipeline._Sides(
+    b = pipeline.Sides(
         cube_tables={"m.dim"},
         cells=[pipeline.Cell("d", "{}", "Y", 1.0, 1.0, "pass", ())],
         fingerprints={"d": {"cube": "3", "dashboard": "4"}},

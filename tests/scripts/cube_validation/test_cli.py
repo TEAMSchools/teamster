@@ -847,7 +847,7 @@ def test_a_run_json_with_no_fact_is_older_than_any_fact_s_run(fakes, tmp_path):
 
     data, found = pipeline._saved_run(cfg, tmp_path / "cache")
     assert found == good and "legacy" not in data
-    assert "legacy" not in pipeline._last_run(cfg, tmp_path / "cache")
+    assert "legacy" not in pipeline.last_run(cfg, tmp_path / "cache")
 
     # With no run of any fact, the legacy run is refused as an older one.
     good.unlink()
@@ -3133,11 +3133,11 @@ def test_export_cells_sum_every_split_row_even_identical_ones():
 
 def test_cell_keys_read_tableau_export_dates_as_the_same_day():
     # Tableau's export writes a date as M/D/YYYY; the probe and Cube write ISO.
-    assert pipeline._key("9/21/2026") == "2026-09-21"
-    assert pipeline._key("09/07/2026") == pipeline._key("2026-09-07")
-    assert pipeline._key("2026-09-21T00:00:00.000") == "2026-09-21"
-    assert pipeline._key("9/21") == "9/21"
-    assert pipeline._key("13/45/2026") == "13/45/2026"
+    assert pipeline.value_key("9/21/2026") == "2026-09-21"
+    assert pipeline.value_key("09/07/2026") == pipeline.value_key("2026-09-07")
+    assert pipeline.value_key("2026-09-21T00:00:00.000") == "2026-09-21"
+    assert pipeline.value_key("9/21") == "9/21"
+    assert pipeline.value_key("13/45/2026") == "13/45/2026"
 
 
 def test_prove_keeps_a_real_all_member(fakes, tmp_path, capsys):

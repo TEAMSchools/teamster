@@ -144,7 +144,7 @@ def _bool_word(col: str) -> str:
 
 def _label(col: str) -> str:
     """A group label: the day a date or a midnight timestamp names, a boolean
-    as `true`/`false`, else the text. `pipeline._key` reads it as the cell key
+    as `true`/`false`, else the text. `pipeline.value_key` reads it as the cell key
     of the value it labels, so a group is placed by the cell its side files
     it under."""
     return (
@@ -153,12 +153,12 @@ def _label(col: str) -> str:
     )
 
 
-# A number as `pipeline._key` reads one (Decimal's finite forms).
+# A number as `pipeline.value_key` reads one (Decimal's finite forms).
 _NUMBER = "^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)([eE][+-]?[0-9]+)?$"
 
 
 def _cell_key(col: str) -> str:
-    """`pipeline._key` in SQL: 2 values key alike here when their cell keys
+    """`pipeline.value_key` in SQL: 2 values key alike here when their cell keys
     match. A day, a boolean word, a number by value, else the trimmed text;
     NULL stays NULL."""
     text = f"TRIM(CAST({col} AS STRING))"
@@ -184,7 +184,7 @@ def _pair_matches(d: str, c: str) -> str:
 
     A date and a midnight timestamp of the same day match: Cube returns a
     `type: time` member as a TIMESTAMP where the dashboard may hold a DATE, as
-    the cell keys already read them (`pipeline._key`).
+    the cell keys already read them (`pipeline.value_key`).
     """
     # Cast through STRING: SAFE_CAST(BOOL AS FLOAT64) fails at compile time.
     # TRUE and FALSE read as 1 and 0 so a BOOL matches a 0/1 column.

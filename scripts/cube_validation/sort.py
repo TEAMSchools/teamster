@@ -801,7 +801,7 @@ def _filter_cause(
         ).items()
     }
     label = f"sheet filter {captions.get(column, column)}"
-    sql = pipeline._dashboard_filter_sql(entry)
+    sql = pipeline.dashboard_filter_sql(entry)
     cause = [
         {
             "side": "dashboard",
@@ -1220,13 +1220,14 @@ def value_check(
         f"WHERE {column} IS NOT NULL LIMIT {REFERENCE_MAX_VALUES + 1}"
     )
     dash = {
-        str(r["value"]) for r in wh.rows(pipeline._as_of(sql, moment.start, wh).sql)
+        str(r["value"])
+        for r in wh.rows(pipeline.checked_as_of(sql, moment.start, wh).sql)
     }
     if len(dash) > REFERENCE_MAX_VALUES:
         return _NOT_COMPARED
 
     key = f"{cfg.view}.{member}"
-    rows = pipeline._priced_load(
+    rows = pipeline.priced_load(
         cube, wh, {"dimensions": [key], "limit": REFERENCE_MAX_VALUES + 1}
     )
     # Count before dropping nulls: a null can fill the limit and cut the set short.

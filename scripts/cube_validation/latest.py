@@ -32,7 +32,7 @@ class Latest:
     """One comparison's latest result.
 
     `fingerprint` is its `pipeline.checkpoint_fingerprint` when it ran, and
-    `entry` its `entry_fingerprint`. `data` is its `_Sides.to_json()` slice,
+    `entry` its `entry_fingerprint`. `data` is its `Sides.to_json()` slice,
     with the dimension tables Cube read that changed during its build under
     `changed_dims`. `fact` is the `dataset.table` it read.
     """

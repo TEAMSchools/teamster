@@ -406,7 +406,7 @@ class _Side:
             sql,
             self.cfg.view,
             self.sides.columns,
-            pipeline._date_cubes(self.cfg),
+            pipeline.date_cubes(self.cfg),
             None,
         )
 
@@ -418,13 +418,13 @@ class _Side:
                 self.sides.cube_rows_sql,
                 self.cfg.view,
                 self.sides.columns,
-                pipeline._date_cubes(self.cfg),
+                pipeline.date_cubes(self.cfg),
                 None,
             ),
             self.sides.dashboard.sql,
             self.comparison.rows,
             pipeline.group_dims(self.comparison),
-            pipeline._filter_flags(self.comparison),
+            pipeline.filter_flags(self.comparison),
             bucket=self.bucket,
             side=self.side,
             variants=variants,
@@ -744,7 +744,9 @@ class _Bucket:
                 continue
             why = "not readable as of the moment"
             try:
-                at = pipeline._as_of(node["compiled_code"], side.build.start, self.wh)
+                at = pipeline.checked_as_of(
+                    node["compiled_code"], side.build.start, self.wh
+                )
                 why = "changed during the build"
                 sql = _one_moment(at, self.end_tables, self.moved, side.build, self.wh)
                 child = _Frame(

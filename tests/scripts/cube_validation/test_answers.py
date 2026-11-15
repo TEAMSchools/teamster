@@ -290,7 +290,7 @@ def _cfg_for(dims):
 
 
 def test_typed_dims_get_predicates_valid_for_their_column_type():
-    # Keys are `pipeline._key` text: '7', 'true', '' and an ISO date.
+    # Keys are `pipeline.value_key` text: '7', 'true', '' and an ISO date.
     assert _where([["regions_region_name", "1.50"]]) == (
         "SAFE_CAST(regions_region_name AS NUMERIC) = 1.5"
     )

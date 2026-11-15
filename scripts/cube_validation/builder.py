@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from . import find_field as finder
 from .cube_client import _FACT, Cube, CubeError, CubeRefusal, bind
 from .decisions import sql_fingerprint
-from .pipeline import _measure_expression
+from .pipeline import measure_expression
 
 
 @dataclass(frozen=True)
@@ -71,7 +71,7 @@ def members(cube: Cube, skipped: list[dict] | None = None) -> list[Member]:
 
             try:
                 compiled = cube.compiled({"measures": [name]})
-                sql = _measure_expression(bind(compiled), owner, short)
+                sql = measure_expression(bind(compiled), owner, short)
             except (CubeError, CubeRefusal) as exc:
                 if skipped is not None:
                     skipped.append({"name": name, "reason": str(exc)})

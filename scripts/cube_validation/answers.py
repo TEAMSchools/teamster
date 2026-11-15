@@ -151,9 +151,9 @@ def cell_causes(
             if not k.startswith(reconcile.DASH_PREFIX) and k != "dashboard_filter"
         }
         for column, value in cell["dims"]:
-            if column not in mine or pipeline._key(mine[column]) != pipeline._key(
-                value
-            ):
+            if column not in mine or pipeline.value_key(
+                mine[column]
+            ) != pipeline.value_key(value):
                 return False
         side = _ROWS_SIDE.get(g.bucket)
         if side is None:
@@ -177,7 +177,7 @@ def cell_causes(
     ]
     counted: dict[tuple, dict[str, int]] = {}
     for e in recorded or []:
-        key = (e["cut"], tuple(pipeline._key(v) for _, v in e["dims"]))
+        key = (e["cut"], tuple(pipeline.value_key(v) for _, v in e["dims"]))
         counted.setdefault(key, {})[e["cause"]] = int(e["n"])
     out = []
     for cell in run.diff_cells:
@@ -189,7 +189,7 @@ def cell_causes(
             names = [p.cube for p in pipeline.group_dims(spec)] if spec else []
             key = (
                 cell.get("cut", "{}"),
-                tuple(pipeline._key(dims.get(n)) for n in names),
+                tuple(pipeline.value_key(dims.get(n)) for n in names),
             )
             # Only a cell whose dims are the counted columns has a count.
             if set(dims) == set(names):
@@ -278,7 +278,7 @@ def example_cell(
 
 
 def _predicate(column: str, key: str) -> str:
-    """Match a column against the text `pipeline._key` made of its value.
+    """Match a column against the text `pipeline.value_key` made of its value.
 
     `_key` writes NULL as '', numbers as plain decimals and booleans as
     true/false, so a bare `column = '7'` fails on a number and `= ''` misses a
@@ -459,7 +459,7 @@ def _cube_query(cfg: ViewConfig, check: HandCheck) -> dict:
     query = pipeline.cell_query(cfg.view, comparison, json.loads(check.cut or "{}"))
     query["filters"] = query["filters"] + [
         {
-            "member": pipeline._member(cfg.view, member),
+            "member": pipeline.member_name(cfg.view, member),
             "operator": "equals",
             "values": [value],
         }

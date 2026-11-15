@@ -48,7 +48,7 @@ def _agrees(value_of, dims) -> bool:
     """Whether every cell dim holds the value `value_of` gives its column."""
     return all(
         value_of(column) is not None
-        and pipeline._key(value_of(column)) == pipeline._key(value)
+        and pipeline.value_key(value_of(column)) == pipeline.value_key(value)
         for column, value in dims
     )
 
@@ -65,7 +65,7 @@ def has_rows_in(g: Group, cell: dict) -> bool:
     Under the cell's cut, its Cube-side rows are more than 0 and its own
     columns agree with every cell dim, or its dashboard-side rows are more
     than 0 and the dashboard's columns (its `d:` ones when it has them)
-    agree. Values compare by `pipeline._key`. A group with no `cut_rows`
+    agree. Values compare by `pipeline.value_key`. A group with no `cut_rows`
     entry for the cell's cut has no row there.
     """
     cut = cell.get("cut", "{}")
