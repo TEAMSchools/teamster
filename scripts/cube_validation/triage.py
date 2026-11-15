@@ -93,7 +93,9 @@ class Suggestion:
     proven. `proof` is what the cause rests on, typed by `kind`
     (`PROOF_KINDS`); a stored proof's also names its file. `evidence`
     shows exact counts; `posted` is the same lines masked for the review
-    issue (`report.shown_counts`), or None when it equals `evidence`.
+    issue (`report.shown_counts`), or None when it equals `evidence`. A
+    sheet filter's first evidence line says whether Cube offers it; names
+    only, never a value.
     """
 
     item: Item
@@ -107,6 +109,9 @@ class Suggestion:
     # every cause has one. None on an item no cause decision decides.
     decisions: dict[str, str | None] | None = None
     decided: bool | None = None
+    # A sheet filter's default call (`deliberate`, `fix_cube`) when the
+    # evidence settles it; empty when the action is a mapping.
+    default_call: str = ""
 
 
 def _stub_dim(g: Group, open_groups: list[Group]) -> tuple[str, str]:
@@ -849,6 +854,27 @@ MOVED_ROWS = (
 )
 
 
+def _filter_label(
+    cfg: ViewConfig, caption: str, candidates: tuple[str, ...]
+) -> tuple[str, str]:
+    """A sheet filter's evidence label and default call, from names alone.
+
+    A candidate member wins, even for a workbook calc: a name match is a
+    lead, so the label says to check before mapping. Without one, the
+    proof's `missing_columns` tells a workbook-only field from a gap in Cube.
+    """
+    if candidates:
+        names = ", ".join(f"`{m}`" for m in candidates)
+        return (
+            f"Cube offers it as {names}, unmapped: "
+            "check before mapping it under `filters:`",
+            "",
+        )
+    if not _missing_column(cfg, caption):
+        return "Workbook-only field: no datasource column behind it", "deliberate"
+    return "Cube has no member: a gap", "fix_cube"
+
+
 def suggest(
     cfg: ViewConfig,
     run: RunResult,
@@ -890,6 +916,7 @@ def suggest(
         verdict_lines: tuple[str, ...] = ()
         candidates: tuple[str, ...] = ()
         call = ""
+        default_call = ""
         cause: list[dict] | None = None
         proof: dict | None = None
         found: tuple[str, ...] = ()
@@ -985,7 +1012,25 @@ def suggest(
         if posted is None:
             posted = evidence
 
-        out.append(Suggestion(item, call, evidence, candidates, cause, proof, posted))
+        if isinstance(source, Gap) and source.kind == "filter":
+            label, default_call = _filter_label(
+                cfg, source.field, _candidates(source.field, docs)
+            )
+            candidates = candidates or _candidates(source.field, docs)
+            evidence, posted = (label, *evidence), (label, *posted)
+
+        out.append(
+            Suggestion(
+                item,
+                call,
+                evidence,
+                candidates,
+                cause,
+                proof,
+                posted,
+                default_call=default_call,
+            )
+        )
 
     return sorted(out, key=lambda s: SUGGESTIONS.index(s.suggestion))
 
@@ -1035,6 +1080,8 @@ def batch_lines(run: RunResult, found: list[Suggestion]) -> list[str]:
             lines += [f"    {line}" for line in s.evidence]
             if s.candidates:
                 lines.append(f"    candidates: {', '.join(s.candidates)}")
+            if s.default_call:
+                lines.append(f"    default call: {s.default_call}")
         if len(group) > BATCH_CAP:
             lines.append(f"  … {len(group) - BATCH_CAP:,} more in triage.json")
     return lines
@@ -1052,6 +1099,7 @@ def _as_json(s: Suggestion) -> dict:
         "proof": s.proof,
         "decisions": s.decisions,
         "decided": s.decided,
+        "default_call": s.default_call,
     }
 
 
@@ -1068,6 +1116,7 @@ def _from_json(d: dict) -> Suggestion:
         tuple(d["evidence_posted"]),
         d.get("decisions"),
         d.get("decided"),
+        d.get("default_call", ""),
     )
 
 

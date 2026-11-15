@@ -3977,7 +3977,7 @@ def test_triage_command_writes_triage_json_beside_latest_run(fakes, tmp_path, ca
     assert set(item) == {
         "id", "kind", "comparison", "label", "stub",
         "suggestion", "evidence", "evidence_posted", "candidates", "cause",
-        "proof", "key", "decisions", "decided",
+        "proof", "key", "decisions", "decided", "default_call",
     }  # fmt: skip
     assert item["stub"]["group"]["values"] == ["Miami"]
     assert (item["suggestion"], item["cause"]) == ("investigate", None)

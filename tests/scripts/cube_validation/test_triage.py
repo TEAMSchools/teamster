@@ -69,7 +69,10 @@ def test_unrestricting_filter_suggests_filters_nothing():
     [s] = suggest(cfg, _run(gaps=[_gap()]), {})
 
     assert s.suggestion == "filters_nothing"
-    assert s.evidence == ("keeps every member on Roster",)
+    assert s.evidence == (
+        "Workbook-only field: no datasource column behind it",
+        "keeps every member on Roster",
+    )
 
 
 def test_copy_note_suggests_filters_nothing():
@@ -81,7 +84,10 @@ def test_copy_note_suggests_filters_nothing():
     [s] = suggest(cfg, _run(gaps=[_gap()]), {})
 
     assert s.suggestion == "filters_nothing"
-    assert s.evidence == ("copy of Grade",)
+    assert s.evidence == (
+        "Workbook-only field: no datasource column behind it",
+        "copy of Grade",
+    )
 
 
 def test_caption_match_lists_candidates_without_value_check():
@@ -109,7 +115,11 @@ def test_same_values_suggests_map_filters():
     assert seen == [("Grade Level", "grade_level")]
     assert s.suggestion == "map_filters"
     assert s.candidates == ("grade_level",)
-    assert s.evidence == ("grade_level: same values on 9 of 9",)
+    assert s.evidence == (
+        "Cube offers it as `grade_level`, unmapped: "
+        "check before mapping it under `filters:`",
+        "grade_level: same values on 9 of 9",
+    )
 
 
 def test_every_verdict_reaches_the_evidence_but_only_same_maps():
@@ -174,7 +184,10 @@ def test_member_docs_are_never_evidence_on_a_group_or_cell_set():
     assert gap.suggestion == "cause"
     assert s.evidence == (NOT_TRACED, lead["enrollment"])
     assert cells.evidence == (lead["enrollment"],)
-    assert gap.evidence == ("Roster carries it; Cube has no member for it",)
+    assert gap.evidence == (
+        "Workbook-only field: no datasource column behind it",
+        "Roster carries it; Cube has no member for it",
+    )
 
 
 def test_piles_sort_in_batch_order_investigate_last():
@@ -758,7 +771,7 @@ def _item(it, proof, *causes):
             "evidence_posted": ["proof line"], "candidates": [],
             "cause": [{"side": side, "step": "b", "label": label, "n_rows": n}
                       for side, label, n in causes],
-            "proof": proof}  # fmt: skip
+            "proof": proof, "default_call": ""}  # fmt: skip
 
 
 def _cause_decision(id, label, side="cube", call="domain_owner", proof=None, **kw):
@@ -1282,3 +1295,87 @@ def test_the_gate_returns_items_in_investigate_as_unsettled(tmp_path):
 
     assert [i["id"] for i in loaded["unsettled"]] == [camden.id]
     assert [i["id"] for i in loaded["items"]] == [newark.id, camden.id]
+
+
+# --- sheet filters Cube might not offer (#6346) -------------------------------
+
+
+def test_a_filter_that_filters_nothing_still_names_its_candidate_member():
+    cfg = _cfg(restricting_filters=["Region"], filter_notes={"Region": "copy of Grade"})
+    docs = {"v_region": _doc("v_region", title="Region")}
+
+    [s] = suggest(cfg, _run(gaps=[_gap("Region")]), docs)
+
+    assert s.suggestion == "filters_nothing"
+    assert s.evidence[0].startswith("Cube offers it as `v_region`")
+    assert "check before mapping" in s.evidence[0]
+    assert s.default_call == ""
+
+
+def test_a_filter_with_no_member_and_no_column_is_workbook_only():
+    cfg = _cfg(restricting_filters=["Enroll Status"])
+
+    [s] = suggest(cfg, _run(gaps=[_gap()]), {})
+
+    assert s.evidence[0] == "Workbook-only field: no datasource column behind it"
+    assert s.default_call == "deliberate"
+
+
+def test_a_filter_with_a_column_and_no_member_is_a_gap_for_cube():
+    cfg = _cfg(
+        restricting_filters=["Enroll Status"],
+        missing_columns={"Enroll Status": "enroll_status"},
+    )
+
+    [s] = suggest(cfg, _run(gaps=[_gap()]), {})
+
+    assert s.evidence[0] == "Cube has no member: a gap"
+    assert s.default_call == "fix_cube"
+
+
+def test_a_candidate_beats_workbook_only():
+    cfg = _cfg(restricting_filters=["Region"])
+    docs = {
+        "v_region": _doc("v_region", title="Region"),
+        "v_zone": _doc("v_zone", description="Region zone"),
+    }
+
+    [s] = suggest(cfg, _run(gaps=[_gap("Region")]), docs)
+
+    assert s.evidence[0] == (
+        "Cube offers it as `v_region`, `v_zone`, unmapped: "
+        "check before mapping it under `filters:`"
+    )
+    assert s.default_call == ""
+    assert not any("Workbook-only" in line for line in s.evidence)
+
+
+def test_a_cut_gap_gets_no_filter_label():
+    cfg = _cfg(restricting_filters=["Week"])
+
+    [s] = suggest(cfg, _run(gaps=[_gap("Week", "cut")]), {})
+
+    assert s.default_call == ""
+    assert not s.evidence[0].startswith(("Cube ", "Workbook-only"))
+
+
+def test_the_default_call_round_trips_through_triage_json():
+    cfg = _cfg(restricting_filters=["Enroll Status"])
+    [s] = suggest(cfg, _run(gaps=[_gap()]), {})
+
+    d = _as_json(s)
+
+    assert d["default_call"] == "deliberate"
+    assert _from_json(d).default_call == "deliberate"
+    assert (
+        _from_json({k: v for k, v in d.items() if k != "default_call"}).default_call
+        == ""
+    )
+
+
+def test_the_batch_prints_the_default_call():
+    cfg = _cfg(restricting_filters=["Enroll Status"])
+    run = _run(gaps=[_gap()])
+    found = suggest(cfg, run, {})
+
+    assert "    default call: deliberate" in batch_lines(run, found)
