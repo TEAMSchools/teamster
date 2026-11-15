@@ -496,17 +496,21 @@ def _unmatched_totals(comparisons: list[Comparison]) -> list[str]:
     return out
 
 
-def _say_caveats(ready: list[Comparison], skips: list[Skip]) -> list[str]:
-    """Print what `ready`'s comparisons leave unchecked, and return the totals
-    lines for `run.json`.
+def _say_caveats(comparisons: list[Comparison], skips: list[Skip]) -> list[str]:
+    """Print what the confirmed `comparisons` leave unchecked, and return the
+    totals lines for `run.json`.
 
-    Called once every skip is known, so a skipped comparison, whose latest
-    result this run does not touch, has neither a totals line
-    (`_unmatched_totals`) nor an uncoverable-cells line.
+    Called once every skip is known. A skipped comparison keeps its latest
+    result, which leaves its sheet's total rows unchecked just as before, so it
+    keeps its totals line (`_unmatched_totals`) when it has a rebuild check; one
+    skipped for having none already says to run `rebuild-sheet`. Only a
+    comparison compared in this run gets an uncoverable-cells line.
     """
     gone = {s.comparison for s in skips}
-    kept = [c for c in ready if c.id not in gone]
-    totals = _unmatched_totals(kept)
+    kept = [c for c in comparisons if c.id not in gone]
+    totals = _unmatched_totals(
+        [c for c in comparisons if c.id not in gone or c.rebuild_check]
+    )
     for line in totals:
         print(f"{line}.")
     for comparison in kept:
@@ -842,7 +846,7 @@ def compare(
             results_dir,
             cube=cube,
             cube_host=cube_host,
-            totals=_say_caveats(ready, skips),
+            totals=_say_caveats(comparisons, skips),
             cache_root=cache_root,
             **kwargs,
         )
@@ -912,7 +916,7 @@ def compare(
                     "Nothing is compared."
                 )
             else:
-                _say_caveats(ready, skips)
+                _say_caveats(comparisons, skips)
                 print(OTHERS_CURRENT if skips else ALL_CURRENT)
                 return None
             newest = max((r.moment for r in results.values()), key=lambda m: m.end)

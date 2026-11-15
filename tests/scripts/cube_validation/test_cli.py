@@ -1099,15 +1099,16 @@ def test_a_failed_dry_run_skips_only_its_comparison(fakes, tmp_path, capsys):
 
 
 def _says_nothing_of_c2(out, tmp_path):
-    """No totals or uncoverable-cells line for `c2`, printed or in run.json."""
-    assert "c2: totals not matched" not in out
+    """No uncoverable-cells line for skipped `c2`, but its totals line stays,
+    printed and in run.json: the latest result it keeps has the same gap."""
     assert "Comparison c2: its cells cannot be covered" not in out
+    assert "c2: totals not matched: unknown" in out
     saved = json.loads(_latest_run(tmp_path).read_text())
-    assert [t for t in saved["totals"] if t.startswith("c2:")] == []
+    assert [t for t in saved["totals"] if t.startswith("c2:")] != []
     assert [t for t in saved["totals"] if t.startswith("c1:")] != []
 
 
-def test_a_skipped_comparison_has_no_totals_or_uncoverable_cells_line(
+def test_a_skipped_comparison_keeps_its_totals_line_but_no_uncoverable_cells_line(
     fakes, tmp_path, monkeypatch, capsys
 ):
     # Every comparison's cells read uncoverable, and neither rebuild check
@@ -1127,7 +1128,7 @@ def test_a_skipped_comparison_has_no_totals_or_uncoverable_cells_line(
     _says_nothing_of_c2(out, tmp_path)
 
 
-def test_a_comparison_skipped_after_the_price_has_no_totals_line(
+def test_a_comparison_skipped_after_the_price_keeps_its_totals_line(
     fakes, tmp_path, monkeypatch, capsys
 ):
     monkeypatch.setattr(coverage, "unplaceable", lambda c: "a reason")

@@ -268,13 +268,15 @@ refuses when the view's only run read another fact.
    result as that comparison's latest. Then it prints "<id>: totals not matched"
    for a comparison whose rebuild check skipped the export's total rows or
    records no count, and "Comparison <id>: its cells cannot be covered (<why>)"
-   for one without `rows` or whose dims sit in the row grain; a skipped
-   comparison gets neither line. A validation is each comparison's latest
-   result, each at its own moment; `run.json` is composed from them. To add a
-   comparison, `rebuild-sheet` it, then `compare --comparison <id>`: the others
-   keep their results. Decisions are re-applied offline, with no new `compare`.
-   To check a mart change before it merges, pass
-   `--fact-dataset zz_<user>_kipptaf_marts` (see _Running a command_).
+   for one without `rows` or whose dims sit in the row grain. A skipped
+   comparison keeps its totals line, since the result it keeps leaves the same
+   total rows unchecked, but gets no cells line. A validation is each
+   comparison's latest result, each at its own moment; `run.json` is composed
+   from them. To add a comparison, `rebuild-sheet` it, then
+   `compare --comparison <id>`: the others keep their results. Decisions are
+   re-applied offline, with no new `compare`. To check a mart change before it
+   merges, pass `--fact-dataset zz_<user>_kipptaf_marts` (see _Running a
+   command_).
 
    `compare` saves each comparison's unmatched rows to a table in
    `teamster-332318.cube_validation_scratch` (Data Team only; each table expires
