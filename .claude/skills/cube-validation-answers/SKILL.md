@@ -41,9 +41,12 @@ validation files or runs the validator, and neither does this session.
    instead, as one fenced `json` block. Either is a list of questions, each with
    `id`, `reason`, `decisions`, `views`, `definitions`, `evidence`, `counts`,
    `hand_checks`, `moment`, `expires` and `expired`; a cause question also has
-   `reproduce`. Read its comments too: skip a question an earlier answers
-   comment of the owner's already covers, unless they want to change it, and
-   then send them to the analyst.
+   `reproduce`. `moment` is the earliest of its comparisons' moments, and
+   `expires` follows from it. A section "Still with the analyst" in the issue
+   lists differences not explained yet: they are not questions, so never ask
+   them or answer them in the comment. Read its comments too: skip a question an
+   earlier answers comment of the owner's already covers, unless they want to
+   change it, and then send them to the analyst.
 2. Say how many questions there are. A question with `expired: true` has pinned
    SQL that no longer runs: the owner can answer without the checks, check a
    cause through its `reproduce` entries (which never expire), or wait for the
@@ -61,7 +64,10 @@ validation files or runs the validator, and neither does this session.
       `definitions.cube`), code groups spelled out.
    3. Who differs: the filters on each side, and the rows and students only one
       side counts, by school or grade, from `counts` as given.
-   4. What triage found (`evidence`) and why it is the owner's call.
+   4. What the validator found (`evidence`) and why it is the owner's call.
+      Evidence that "differing cells hold no unmatched row" is a formula
+      difference: both sides hold the same rows and compute the number
+      differently, so ask which calculation is right.
    5. The owner's checks, one per `hand_checks` entry. The dashboard: the sheet
       (`sheet` in `workbook`), every filter to set there (`filters`), the cell
       to read (`dims`, or the total), and the number to expect (`dashboard`)
@@ -84,7 +90,7 @@ validation files or runs the validator, and neither does this session.
       run with the Cube connector (Cube applies their access) and compare with
       the dashboard number in the hand check of the same `comparison`; each
       `queries` entry's `sql` to paste into BigQuery, labeled today's data whose
-      counts drift from the run; and each `proofs` entry's file
+      counts drift from the run; and each `explanations` entry's file
       (`<blob>/<path>`, or `path` when `blob` is null), with its count query
       (its `query` index into `queries`, or none yet). The issue's comments may
       repeat the checks and Reproduce blocks; read them from the JSON.

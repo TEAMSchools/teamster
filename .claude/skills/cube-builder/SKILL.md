@@ -16,8 +16,8 @@ dashboard before it merges. One GitHub issue per dashboard, titled "Build
 <dashboard> in Cube", is the hub: it holds the inventory, the disagreements and
 the plan, and every builder PR refs it.
 
-The commands live in `scripts/cube_validation/`. `members`, `prove`, `check-api`
-and `run` need credentials: run them through the `cube-validation` skill's
+The commands live in `scripts/cube_validation/`. `members`, `rebuild-sheet` and
+`compare` need credentials: run them through the `cube-validation` skill's
 "Running a command" runner. `inventory-workbook` and `inventory` need none:
 `uv run python -m scripts.cube_validation <command> ...` from the checkout that
 holds the package. Keep the builder's working files in
@@ -108,7 +108,7 @@ _Build_ step 4.
 
    | Tier | What it needs                                           |
    | ---- | ------------------------------------------------------- |
-   | 1    | Nothing new: a comparison and a proof                   |
+   | 1    | Nothing new: a comparison and its rebuild check         |
    | 2    | New Cube members over columns a mart already has        |
    | 3    | New columns on an existing fact or dimension, then 2    |
    | 4    | A new cube over an existing mart                        |
@@ -130,11 +130,11 @@ Build shallowest tier first, one PR type at a time. Each PR follows the root
 CLAUDE.md branch flow, is based on `origin/main`, and carries
 `Refs #<build issue>`.
 
-Comparisons, proofs and decisions go in `src/cube/validation/<view>.yml` on the
-dashboard's own validation branch, never in a builder PR. Base that branch on
-the branch that carries the validator: `origin/main` once the validator has
-merged, else the validator's branch. The runner's `PKG` is the
-`scripts/cube_validation` of that branch's checkout.
+Comparisons, explanations and decisions go in the validation file
+`src/cube/validation/<view>.yml` on the dashboard's own validation branch, never
+in a builder PR. Base that branch on the branch that carries the validator:
+`origin/main` once the validator has merged, else the validator's branch. The
+runner's `PKG` is the `scripts/cube_validation` of that branch's checkout.
 
 | PR type         | What it changes                           | Reviewer           |
 | --------------- | ----------------------------------------- | ------------------ |
@@ -154,10 +154,11 @@ merged, else the validator's branch. The runner's `PKG` is the
    - Start the server with a throwaway `CUBEJS_API_SECRET=<local value>`.
    - In the runner, `monkeypatch.setenv` `CUBE_API_SECRET` to that same value
      and `CUBE_REST_URL` to `http://localhost:4000/cubejs-api/v1`.
-   - Smoke-test one `check-api` before relying on the server.
 3. While the column exists only in the dev build, redirect the copy's
    `sql_table` to `zz_<user>_kipptaf_marts` (never the working tree) and pass
-   `--fact-dataset zz_<user>_kipptaf_marts` to `check-api`, `prove` and `run`.
+   `--fact-dataset zz_<user>_kipptaf_marts` to `rebuild-sheet`, `compare`,
+   `sort` and `explain`: each reads that build's run, kept apart from
+   production's.
 4. After writing a new measure, copy `~/.cache/cube-validation/members.json`
    aside, then run `members` against the local Cube. A
    `same SQL: <new>, <other>` line means the new measure is `<other>` under
@@ -167,21 +168,22 @@ merged, else the validator's branch. The runner's `PKG` is the
 5. On the validation branch, add the comparison that proves the piece by the
    `cube-validation` runbook steps 2 and 3. A new dimension is proven by slicing
    an existing measure by it (the new dimension mapped under `dims`). Give the
-   comparison a `rows:` block: without it a differing cell can never be traced
-   to a cause, and `review` stays blocked. Slicing an existing measure brings
-   back that measure's known causes; read them in the view's validation file
-   before calling a difference a bug in the new piece.
-6. Run the `cube-validation` runbook steps 4 to 7: `prove`, `check-api`,
-   `prove --check`, `run`.
-7. The PR description says what was proven, the moment, the branch, and the
-   `Cube:` and `Fact:` lines `run` printed.
-8. After a type 3 PR merges and its production build lands, rerun `run` for the
-   type 2 PR without `--fact-dataset` and update its description.
+   comparison a `rows:` block whose grain leaves out the new dimension:
+   otherwise a differing cell can never be covered and stays open. Slicing an
+   existing measure brings back that measure's known causes; read them in the
+   view's validation file before calling a difference a bug in the new piece.
+6. Run the `cube-validation` runbook steps 4 and 5: `rebuild-sheet`, then
+   `compare --comparison <id>`.
+7. The PR description says what was checked, the moment, the branch, and the
+   `Cube:` and `Fact:` lines `compare` printed.
+8. After a type 3 PR merges and its production build lands, run
+   `compare --comparison <id>` for the type 2 PR without `--fact-dataset` and
+   update its description.
 
 ## Finish
 
 1. When every tier has merged, open "Validate <dashboard> in Cube" and run the
-   whole dashboard through the `cube-validation` runbook, triage included; the
+   whole dashboard through the `cube-validation` runbook, `sort` included; the
    owner answers with the `cube-validation-answers` skill.
 2. With the analyst's approval, move the dashboard's Asana stage subtasks from
    "Built in Cube" toward "Matches within tolerance", as far as the validation
