@@ -1251,3 +1251,34 @@ def test_waiting_comparisons_name_the_missing_the_stale_and_the_edited():
         "c2": "Cube's SQL changed",
         "c3": "its entry or rebuild check changed",
     }
+
+
+def test_waiting_comparisons_name_a_skipped_one_by_why_it_was_skipped():
+    c1, c2 = (Comparison(id=f"c{i}", measure="m", confirmed=True) for i in (1, 2))
+    cfg = ViewConfig(view="v", fact="d.t", comparisons=[c1, c2])
+    run = replace(
+        _run(),
+        missing=["c1"],
+        entries={"c2": latest.entry_fingerprint(c2)},
+        skipped=[
+            {"comparison": "c1", "why": "no proof; run `prove` first"},
+            {"comparison": "c2", "why": "workbook changed since its proof"},
+        ],
+    )
+
+    assert comparisons_waiting(cfg, run, {}) == {
+        "c1": "not compared: no proof; run `prove` first",
+        "c2": "not compared: workbook changed since its proof",
+    }
+
+
+def test_the_gate_returns_items_in_investigate_as_unsettled(tmp_path):
+    run = _fp_run(_groups("Newark", "Camden"))
+    newark, camden = open_items(run)
+    proven = _item(newark, _proof_file(tmp_path), ("cube", NO_SECTION, 30))
+    left = {**_item(camden, None), "suggestion": "investigate", "cause": None}
+
+    loaded = proven_triage(run, _write_run_triage(tmp_path, run, [proven, left]))
+
+    assert [i["id"] for i in loaded["unsettled"]] == [camden.id]
+    assert [i["id"] for i in loaded["items"]] == [newark.id, camden.id]

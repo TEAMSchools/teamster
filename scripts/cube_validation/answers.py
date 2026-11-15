@@ -651,7 +651,8 @@ def questions_json(
         configs: Their views' configs, for each hand check's column names.
         definitions: Per view, per comparison id, `dashboard` and `cube` text.
         triage: Per view, its `triage.json`; a view without one has no
-            evidence.
+            evidence. Items still in `investigate` are left out, so
+            `record-answers` never reads one as an answer.
         now: The current time, to say whether the pinned SQL still runs.
         causes: Per view, the owner's cause questions (`triage.cause_asks`).
         sources: Per view, where its stored proofs live, for a cause
@@ -702,11 +703,13 @@ def questions_json(
                             f"`{cid}` in `{view}`: {definition_text(sides[side])}"
                         )
 
+        # An item still in `investigate` is with the analyst, never evidence.
         items = [
             item
             for view, d in q["decisions"]
             for item in triage.get(view, {}).get("items", [])
-            if _covers(d, item.get("stub") or {})
+            if item.get("suggestion") != "investigate"
+            and _covers(d, item.get("stub") or {})
         ]
         lines = [line for item in items for line in item.get("evidence", [])]
         if "asks" in q:

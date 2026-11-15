@@ -1,9 +1,9 @@
 """Gather evidence and sort each open item of a run into a pile.
 
 An open item is a row group, a comparison's cell differences, or a missing cut
-or filter. A pile never applies a call: the analyst reads it and decides, and
-an item in `investigate` blocks every decision on the view until it reaches a
-proven cause. The trace (`trace.py`) only leads: a row group reaches `cause`
+or filter. A pile never applies a call: the analyst reads it and decides. An
+item in `investigate` blocks `add-decisions` on the view until it reaches a
+proven cause; `review` lists it as still with the analyst. The trace (`trace.py`) only leads: a row group reaches `cause`
 when `triage confirm` (`confirm.py`) checks a classification query that names
 each of its unmatched rows' cause. A missing cut or filter the sheet carries,
 and rows the sheet's own dashboard-only filter drops, are their own proof.
@@ -36,6 +36,7 @@ from .report import (
     _CELL_WORDS,
     CauseAsk,
     RunResult,
+    Unsettled,
     _gap_line,
     _is_identifier,
     _shown_value,
@@ -55,6 +56,8 @@ SUGGESTIONS = ("map_filters", "filters_nothing", "cause", "investigate")
 PROOF_KINDS = ("query", "reconcile", "workbook", "cells", "formula")
 # A formula difference's cause: every row in its cells matched on both sides.
 FORMULA_LABEL = "differing cells hold no unmatched row"
+# How `sort` and `review` name a comparison the latest run skipped.
+NOT_COMPARED = "not compared"
 
 
 @dataclass(frozen=True)
@@ -267,17 +270,21 @@ def comparisons_waiting(
 ) -> dict[str, str]:
     """Each confirmed comparison still with the analyst, and why, in config order.
 
-    A comparison is waiting when the run holds no result of it, its result
-    was stale when the triage ran (`loaded["stale"]`), or its entry changed
-    since the result (`latest.entry_fingerprint` against `run.entries`,
-    offline). Nothing refuses over them: the rest of the view goes on.
+    A comparison is waiting when the run skipped it (`not compared: <why>`),
+    the run holds no result of it, its result was stale when the triage ran
+    (`loaded["stale"]`), or its entry changed since the result
+    (`latest.entry_fingerprint` against `run.entries`, offline). Nothing
+    refuses over them: the rest of the view goes on.
     """
     stale = loaded.get("stale") or {}
+    skipped = {s["comparison"]: s["why"] for s in run.skipped}
     out: dict[str, str] = {}
     for c in cfg.comparisons:
         if not c.confirmed:
             continue
-        if c.id in run.missing:
+        if c.id in skipped:
+            out[c.id] = f"{NOT_COMPARED}: {skipped[c.id]}"
+        elif c.id in run.missing:
             out[c.id] = pipeline.NEVER_COMPARED
         elif c.id in stale:
             out[c.id] = stale[c.id]
@@ -292,14 +299,14 @@ def proven_triage(
     recorded: list[Decision] | None = None,
     base: Path | None = None,
 ) -> dict:
-    """Read the triage of the view's latest run, refusing while any item is unproven.
+    """Read the triage of the view's latest run, refusing one that is stale or
+    whose proven items do not hold.
 
-    Nothing is recorded or reviewed for a view until every one of its items has
-    left `investigate`. The gate is per view file: it reads only the triage
-    beside that view's latest `run.json`, so one view's open item blocks
-    `add-decisions` on that file and any `review` that includes it. Decisions
-    written since triage may close items; an item open in the run but absent
-    from the triage refuses.
+    The gate is per view file: it reads only the triage beside that view's
+    latest `run.json`. Decisions written since triage may close items; an
+    item open in the run but absent from the triage refuses. Items still in
+    `investigate` do not refuse: they come back under `unsettled`, so
+    `review` lists them and `add-decisions` refuses on them.
 
     Args:
         run: The view's latest run (see `pipeline.latest_run`).
@@ -313,10 +320,14 @@ def proven_triage(
         pipeline.Refusal: No triage sits beside the run, it is unreadable or of
             another moment, the run has an open item the triage did not see,
             an item sits in a pile this validator does not sort into (a triage
-            from an older validator), a `cause` item has no cause, an item is
-            in `investigate`, a row group or cell set in `cause` rests on no
-            proof, a proof an item rests on changed since, or a cause decision
-            and a `group` decision disagree on one group.
+            from an older validator), a `cause` item has no cause, a decision
+            closes an item in `investigate`, a row group or cell set in
+            `cause` rests on no proof, a proof an item rests on changed since,
+            or a cause decision and a `group` decision disagree on one group.
+
+    Returns:
+        The triage as `triage.json` holds it, with `unsettled`: its items
+        still in `investigate`.
     """
     view, found = run.view, run_json.parent / "triage.json"
     again = f"run `triage` for {run.moment.start:%Y-%m-%d %H:%M} UTC"
@@ -363,12 +374,6 @@ def proven_triage(
                 "triage holds in `investigate`; delete the decision and prove "
                 "the item (cube-validation skill, step 8)"
             )
-    if n := piles["investigate"]:
-        raise pipeline.Refusal(
-            f"{view}: {n} triage item{'' if n == 1 else 's'} in `investigate`; "
-            "prove each with `triage confirm` (cube-validation skill, step 8), "
-            "then re-run `triage`"
-        )
     # Every cause rests on a typed proof (`PROOF_KINDS`).
     if bare := sum(
         1
@@ -394,7 +399,60 @@ def proven_triage(
             mark_decided(run, _closed(loaded), recorded, refuse=True)
         except pipeline.Refusal as exc:
             raise pipeline.Refusal(f"{view}: {exc}") from exc
+    loaded["unsettled"] = [i for i in items if i["suggestion"] == "investigate"]
     return loaded
+
+
+def refuse_unsettled(view: str, loaded: dict) -> None:
+    """Refuse while a `proven_triage` holds an item in `investigate`.
+
+    Raises:
+        pipeline.Refusal: Any item is unsettled.
+    """
+    if n := len(loaded.get("unsettled") or []):
+        raise pipeline.Refusal(
+            f"{view}: {n} triage item{'' if n == 1 else 's'} in `investigate`; "
+            "prove each with `triage confirm` (cube-validation skill, step 8), "
+            "then re-run `triage`"
+        )
+
+
+def unsettled(run: RunResult, loaded: dict) -> list[Unsettled]:
+    """The triage's items still in `investigate`, as `review` lists them.
+
+    Each is matched to the run's open item by its `_open_key` for its bucket
+    and counts; one the run no longer holds keeps its kind and no count. Read
+    `loaded` through `posted_triage`, so a lead's counts are masked.
+    """
+    sources = {_open_key(src): src for _, src in _entries(run)}
+    out = []
+    for item in loaded.get("items", []):
+        if item.get("suggestion") != "investigate":
+            continue
+        source = sources.get(item.get("key", ""))
+        lead = next((e for e in item.get("evidence", []) if e.startswith("lead: ")), "")
+        common = {
+            "view": run.view,
+            "comparison": item.get("comparison", ""),
+            "item": item["id"],
+            "lead": lead,
+        }
+        if isinstance(source, Group):
+            hidden = tuple(
+                v for c, v in source.dims if _shown_value(source, c, v) == "<redacted>"
+            )
+            out.append(
+                Unsettled(
+                    **common, what=source.bucket, rows=source.n_rows, hidden=hidden
+                )
+            )
+        elif isinstance(source, CellDiff):
+            out.append(
+                Unsettled(**common, what=source.kind, cells=sum(source.counts.values()))
+            )
+        else:
+            out.append(Unsettled(**common, what=item.get("kind", "item")))
+    return out
 
 
 def _closed(loaded: dict) -> list[dict]:
@@ -1251,9 +1309,10 @@ def run_triage(
     cache, and its stubs and causes carry real values and exact counts.
 
     Each confirmed comparison whose result in the run is missing or stale at
-    `now` (`pipeline.stale_comparisons` over `pipeline.composed_results`), or
-    whose SQL cannot be built today, is printed and written to `triage.json`
-    under `stale`, so `comparisons_waiting` can name it.
+    `now` (`pipeline.stale_comparisons` over `pipeline.composed_results`),
+    whose SQL cannot be built today, or which the run skipped (`not compared:
+    <why>`), is printed and written to `triage.json` under `stale`, so
+    `comparisons_waiting` can name it.
 
     Each proof's outcome is kept beside `run.json` as it finishes
     (`progress`), so a stopped triage skips the proofs it finished. With
@@ -1305,6 +1364,8 @@ def run_triage(
             schools=prepared.schools,
             now=now or datetime.now(timezone.utc),
         )
+        # A comparison `run` skipped keeps its older result: say why.
+        stale |= {s["comparison"]: f"{NOT_COMPARED}: {s['why']}" for s in run.skipped}
         for cid, why in stale.items():
             print(f"{cfg.view}: comparison {cid} {why}; compare it, then sort.")
         if trace_rows:

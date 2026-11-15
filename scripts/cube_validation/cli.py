@@ -652,14 +652,16 @@ def _add_decisions(cfg: ViewConfig, path: Path, approved_path: Path) -> int:
 
     Stubs and proven causes come from the triage beside the latest run and
     fingerprints from that run; a cause already decided keeps its decision
-    (see `answers.approved_decisions`). Refuses while that triage is stale or
-    holds an unproven item (see `triage.proven_triage`), or when a cause
+    (see `answers.approved_decisions`). Refuses while that triage is stale
+    (`triage.proven_triage`) or holds an item in `investigate`
+    (`triage.refuse_unsettled`), or when a cause
     decision would disagree with a `group` decision on one group. The whole
     batch is written or none of it.
     """
     approved = _read_json(approved_path, "approved")
     run, run_json = pipeline.latest_run(cfg, cache_root())
     saved = triage.proven_triage(run, run_json, cfg.decisions, path.parent)
+    triage.refuse_unsettled(cfg.view, saved)
 
     decisions = answers.approved_decisions(
         approved, saved, run.fingerprints, existing=cfg.decisions

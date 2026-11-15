@@ -118,6 +118,9 @@ class RunResult:
     moments: dict[str, Build] = field(default_factory=dict)
     entries: dict[str, str] = field(default_factory=dict)
     missing: list[str] = field(default_factory=list)
+    # The comparisons this compare process skipped, each `{comparison, why}`
+    # (`pipeline.Skip`); each keeps its latest result from before.
+    skipped: list[dict] = field(default_factory=list)
 
     def moment_of(self, comparison_id: str) -> Build:
         """The moment the comparison's rows were read: its own, or the run's
@@ -251,6 +254,9 @@ def render_local(run: RunResult) -> str:
         out += _moment_lines(run.moments)
     if run.missing:
         out += ["", f"Not compared yet: {', '.join(run.missing)}."]
+    if run.skipped:
+        skips = "; ".join(f"{s['comparison']} ({s['why']})" for s in run.skipped)
+        out += ["", f"Skipped this run, each keeping its latest result: {skips}."]
     out += ["", f"Cube: {run.cube_host}", "", f"Fact: {run.fact}"]
 
     out += ["", "## Measures", ""]
@@ -670,6 +676,70 @@ def _gap_part(view: str, gaps: list[Gap]) -> str:
     )
 
 
+# Why a comparison's SQL cannot be built (`pipeline.stale_comparisons`). The
+# error after it can quote SQL, so the review issue stops at these words.
+SQL_BROKEN = "its SQL cannot be built today"
+
+
+@dataclass(frozen=True)
+class Unsettled:
+    """One open item still in triage's `investigate` pile, as `review` lists it.
+
+    `item` is its triage id, which masks values as the issue does. `what` is
+    a row group's bucket, else the item's kind. `rows` and `cells` are exact
+    here and masked when listed. `lead` is the trace's first lead, masked
+    (`evidence_posted`), or empty; `hidden` holds the values it must lose.
+    """
+
+    view: str
+    comparison: str
+    item: str
+    what: str
+    rows: int | None = None
+    cells: int | None = None
+    lead: str = ""
+    hidden: tuple[str, ...] = ()
+
+
+def _posted_why(why: str) -> str:
+    """Why a comparison waits, as the issue shows it: no SQL, no long digits."""
+    at = why.find(SQL_BROKEN)
+    if at != -1:
+        why = why[: at + len(SQL_BROKEN)]
+    return _safe_reason(why, [])
+
+
+def still_with_analyst(
+    items: list[Unsettled], waiting: dict[str, dict[str, str]]
+) -> list[str]:
+    """The review's lines for what is not settled yet, never asked as questions.
+
+    One line per item in `investigate`: its comparison, triage id, bucket or
+    kind, masked row or cell count, and the trace's lead or `no lead yet`.
+    Then one line per comparison in `waiting` (per view, id to why: missing,
+    stale or skipped, `triage.comparisons_waiting`). No stub value and no SQL.
+    """
+    out = []
+    for u in items:
+        counts = [
+            f"{mask(n)} {word}"
+            for n, word in ((u.rows, "rows"), (u.cells, "cells"))
+            if n is not None
+        ]
+        lead = _safe_reason(u.lead, list(u.hidden)) if u.lead else "no lead yet"
+        out.append(
+            f"`{u.comparison}` in `{u.view}`: "
+            + ", ".join([f"`{_clean(u.item)}` ({u.what})", *counts])
+            + f"; {lead}"
+        )
+    out += [
+        f"`{cid}` in `{view}`: {_posted_why(why)}"
+        for view, whys in waiting.items()
+        for cid, why in whys.items()
+    ]
+    return out
+
+
 def _questions(
     runs: list[RunResult], causes: dict[str, list[CauseAsk]] | None = None
 ) -> list[dict]:
@@ -1025,6 +1095,7 @@ def render_review_issue(
     comments: list[str] | None = None,
     decided: dict[str, list[CauseAsk]] | None = None,
     json_link: str | None = None,
+    still: list[str] | None = None,
 ) -> str:
     """Render the issue body asking a domain owner to judge open items.
 
@@ -1047,6 +1118,8 @@ def render_review_issue(
             (`triage.cause_asks` with `owner=False`), for `also_decided`.
         json_link: Where the questions JSON is committed (`posted_json` of
             `questions`); the body links it instead of carrying the block.
+        still: What is not settled yet (`still_with_analyst`), listed after
+            the questions under its own heading and never asked.
 
     Returns:
         Markdown in the feature-request structure. Every count is masked and
@@ -1098,7 +1171,7 @@ def render_review_issue(
         body = _review_body(
             domain, question_lines, definition_lines, check_lines,
             asked_ids, kinds, shown, also, moved=moved if blocks else 0,
-            json_link=json_link, moment_lines=moment_lines,
+            json_link=json_link, moment_lines=moment_lines, still=still,
         )  # fmt: skip
         return body, _comment_chunks(blocks, moved) if moved and blocks else []
 
@@ -1215,6 +1288,7 @@ def _review_body(
     moved: int,
     json_link: str | None = None,
     moment_lines: list[str] | None = None,
+    still: list[str] | None = None,
 ) -> str:
     """The review body from its rendered parts; `moved` says the Reproduce
     blocks follow in comments (2: the hand checks too); `questions` is the
@@ -1231,6 +1305,15 @@ def _review_body(
         "",
     ]
     out += _bullets(question_lines, "Nothing needs review.")
+    if still:
+        out += [
+            "",
+            "## Still with the analyst",
+            "",
+            "These differences are not explained yet, so they are not questions. "
+            "If one looks familiar, say so in a comment.",
+            "",
+        ] + _bullets(still)
     if also:
         out += [
             "",

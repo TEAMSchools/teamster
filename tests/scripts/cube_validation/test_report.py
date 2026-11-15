@@ -988,3 +988,105 @@ def test_review_issue_lists_each_comparison_s_moment():
         "- enrollment: 2026-10-24 06:00 to 2026-10-24 06:05 UTC\n"
         "- withdrawn: 2026-10-27 06:00 to 2026-10-27 06:05 UTC"
     ) in differ
+
+
+# --- still with the analyst --------------------------------------------------
+
+# trunk-ignore(pyright/reportAttributeAccessIssue): conftest.py registers cube_validation
+from cube_validation import triage  # noqa: E402
+
+
+def _left_in_investigate(run, evidence):
+    """Each of `run`'s open row groups as a triage item still in `investigate`,
+    its stub holding the group's real values as `triage.json` does."""
+    return {
+        "items": [
+            {
+                **dataclasses.asdict(item),
+                "suggestion": "investigate",
+                "evidence": [evidence],
+                "evidence_posted": [evidence],
+                "candidates": [],
+                "cause": None,
+                "proof": None,
+            }
+            for item in triage.open_items(run)
+            if item.kind == "group"
+        ]
+    }
+
+
+def _still(run, loaded, waiting=None):
+    return report.still_with_analyst(triage.unsettled(run, loaded), waiting or {})
+
+
+def test_review_posts_ready_questions_and_lists_unsettled_items():
+    run = _run()
+    lead = "lead: relaxing the school filter brings back 30 of 40 rows"
+    still = _still(
+        run, _left_in_investigate(run, lead), {run.view: {"seats": "never compared"}}
+    )
+
+    body = render_review_issue("Registrar", [run], still=still)
+
+    head, section = body.split("## Still with the analyst\n", 1)
+    assert "Q1. " in head
+    section = section.split("Also decided")[0]
+    assert "not explained yet" in section and "comment" in section
+    assert (
+        "- `enrollment` in `enrollment_view`: `enrollment:grade_level=9` "
+        f"(value_differs), 40 rows; {lead}"
+    ) in section
+    assert "- `seats` in `enrollment_view`: never compared" in section
+    assert body.index("## Still with the analyst") < body.index("Also decided")
+    assert "SELECT" not in section
+
+
+def test_unsettled_counts_under_10_are_masked():
+    small = Group("enrollment", (("region", "Paterson"),), "cube_only", 7, 3)
+    run = _run(applied=Applied(open=[small]))
+
+    still = _still(run, _left_in_investigate(run, "not traced (`triage --no-trace`)"))
+
+    (line,) = still
+    assert line == (
+        "`enrollment` in `enrollment_view`: `enrollment:region=<redacted>` "
+        "(cube_only), <10 rows; no lead yet"
+    )
+
+
+def test_unsettled_cells_and_reasons_are_posted_without_their_detail():
+    diff = CellDiff("enrollment", {"differs": 4, "cube_blank": 2})
+    run = _run(applied=Applied(open_cells=[diff]))
+    loaded = {
+        "items": [
+            {
+                **dataclasses.asdict(item),
+                "suggestion": "investigate",
+                "evidence": ["no description or ai_context answers it"],
+            }
+            for item in triage.open_items(run)
+        ]
+    }
+    waiting = {
+        run.view: {"seats": "its SQL cannot be built today: SELECT x FROM t_12345"}
+    }
+
+    still = _still(run, loaded, waiting)
+
+    assert still == [
+        "`enrollment` in `enrollment_view`: `enrollment:cells` (cells), <10 cells; "
+        "no lead yet",
+        "`seats` in `enrollment_view`: its SQL cannot be built today",
+    ]
+
+
+def test_local_result_names_the_comparisons_skipped():
+    text = render_local(
+        _run(skipped=[{"comparison": "seats", "why": "no proof; run `prove` first"}])
+    )
+
+    assert (
+        "Skipped this run, each keeping its latest result: seats (no proof; run "
+        "`prove` first)."
+    ) in text

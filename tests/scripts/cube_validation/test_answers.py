@@ -395,6 +395,35 @@ def _questions(run, cfg=None, triage=TRIAGE):
     return questions_json([run], [cfg or _cfg()], DEFS, triage, START)
 
 
+# `TRIAGE` is bound again further down, for the decisions-in tests.
+OWNER_TRIAGE = TRIAGE
+
+
+def test_unsettled_items_are_not_in_the_questions_json():
+    run = _owner_run([_cell(cube=25.0)])
+    left = {
+        "id": "enrollment:region=<redacted>#2",
+        "kind": "group",
+        "comparison": "enrollment",
+        "label": "w",
+        # The same stub as a group an owner decision covers.
+        "stub": {
+            "comparison": "enrollment",
+            "group": {"column": "region", "values": ["Camden"]},
+        },
+        "suggestion": "investigate",
+        "evidence": ["lead: relaxing UNSETTLED brings back 3 of 5 rows"],
+        "candidates": [],
+    }
+    items = [*OWNER_TRIAGE["enrollment"]["items"], left]
+    triage = {"enrollment": {**OWNER_TRIAGE["enrollment"], "items": items}}
+
+    questions = _questions(run, triage=triage)
+
+    assert "UNSETTLED" not in json.dumps(questions)
+    assert [q["id"] for q in questions] == ["Q1", "Q2"]
+
+
 def test_questions_json_matches_markdown_questions_one_to_one():
     run = _owner_run([_cell(cube=25.0)])
     questions = _questions(run)

@@ -396,13 +396,16 @@ def test_run_uses_start_for_dashboard_and_end_for_cube(fakes, tmp_path):
     assert {_literal_after(s, "fct_f") for s in cells} == {utc_literal(END)}
 
 
-def test_run_refuses_a_member_cube_dropped_before_it_spends(fakes, tmp_path, capsys):
+def test_run_skips_a_member_cube_dropped_before_it_spends(fakes, tmp_path, capsys):
     fakes.cube.dropped = {"v.attendance_value"}
 
     assert cli.main(["run", str(_file(tmp_path))]) == 1
 
-    err = capsys.readouterr().err
-    assert "ada-region" in err and "v.attendance_value" in err
+    captured = capsys.readouterr()
+    assert "Skipping ada-region: Cube's model has no member for v.attendance_value" in (
+        captured.out
+    )
+    assert "v: every comparison was skipped; see the reasons above" in captured.err
     assert fakes.bq.ran == [] and fakes.cube.compiled_queries == []
 
 
@@ -694,12 +697,32 @@ def test_a_comparison_edited_since_its_checkpoint_is_compared_again(
 LATER = (START + timedelta(hours=2), END + timedelta(hours=2))
 
 
-def _two(tmp_path):
-    """The view file with its comparison repeated as `c1` and `c2`."""
-    head, rest = YML.split("  - id: ada-region\n", 1)
-    return _file(
-        tmp_path, head + "".join(f"  - id: {c}\n" + rest for c in ("c1", "c2"))
-    )
+def _two(tmp_path, c2=lambda entry: entry, text=YML):
+    """The view file with its comparison repeated as `c1` and `c2`; `c2` edits
+    the second entry's text."""
+    head, rest = text.split("  - id: ada-region\n", 1)
+    return _file(tmp_path, head + f"  - id: c1\n{rest}" + c2(f"  - id: c2\n{rest}"))
+
+
+def _unproven(entry):
+    return entry.replace(PROOF, "    proof: null\n")
+
+
+def _reads_membership(entry):
+    """The entry's rows read `membership_value`, which `c1` never reads."""
+    return entry.replace("cube: attendance_value", "cube: membership_value")
+
+
+def _second_fact_for_membership(fakes):
+    """Cube's SQL joins `fct_g` for a query naming `membership_value` only."""
+    compiled = fakes.cube.compiled
+
+    def joined(query):
+        named = "v.membership_value" in query.get("dimensions", [])
+        fakes.cube.joins = SECOND_FACT_JOIN if named else ""
+        return compiled(query)
+
+    fakes.cube.compiled = joined
 
 
 def _scripts_for(bq):
@@ -725,6 +748,193 @@ def test_run_comparison_runs_only_that_one_and_keeps_the_others(fakes, tmp_path)
     assert saved["missing"] == []
     assert set(saved["fingerprints"]) == {"c1", "c2"}
     assert {c["comparison"] for c in saved["diff_cells"]} <= {"c1", "c2"}
+
+
+def test_a_comparison_without_a_proof_is_skipped_and_the_rest_run(
+    fakes, tmp_path, capsys
+):
+    assert cli.main(["run", str(_two(tmp_path, _unproven))]) == 0
+
+    out = capsys.readouterr().out
+    assert "Skipping c2: no proof; run `prove` first." in out
+    assert out.index("Skipping c2") < out.index("(dry run)")
+    assert _scripts_for(fakes.bq) == ["c1"]
+    saved = json.loads(_latest_run(tmp_path).read_text())
+    assert saved["skipped"] == [
+        {"comparison": "c2", "why": "no proof; run `prove` first"}
+    ]
+    assert saved["missing"] == ["c2"]
+
+
+def test_a_missing_cube_member_skips_only_its_comparison(fakes, tmp_path, capsys):
+    fakes.cube.dropped = {"v.membership_value"}
+
+    assert cli.main(["run", str(_two(tmp_path, _reads_membership))]) == 0
+
+    out = capsys.readouterr().out
+    assert "Skipping c2: Cube's model has no member for v.membership_value" in out
+    assert out.index("Skipping c2") < out.index("(dry run)")
+    assert _scripts_for(fakes.bq) == ["c1"]
+    assert "membership_value" not in json.dumps(fakes.cube.compiled_queries)
+
+
+def test_a_changed_workbook_skips_only_its_comparisons(fakes, tmp_path, capsys):
+    path = _two(tmp_path, lambda e: e.replace("workbook: wb-1", "workbook: wb-2"))
+    proven = fakes.tbl.updated
+    published = datetime(2026, 10, 30, tzinfo=timezone.utc)  # after the proof
+    fakes.tbl.workbook_updated = lambda luid: published if luid == "wb-2" else proven
+
+    assert cli.main(["run", str(path)]) == 0
+
+    out = capsys.readouterr().out
+    assert (
+        "Skipping c2: workbook changed since its proof: c2: workbook published "
+        "2026-10-30T00:00:00+00:00"
+    ) not in out
+    assert (
+        "Skipping c2: workbook changed since its proof: workbook published "
+        "2026-10-30T00:00:00+00:00"
+    ) in out
+    assert "the sheet's formulas or filters changed; re-prove." in out
+    assert out.index("Skipping c2") < out.index("(dry run)")
+    assert _scripts_for(fakes.bq) == ["c1"]
+
+
+def test_a_changed_second_fact_skips_only_the_comparisons_that_read_it(
+    fakes, tmp_path, capsys
+):
+    path = _two(tmp_path, _reads_membership, text=ALSO_FACTS_YML)
+    _second_fact_for_membership(fakes)
+    fakes.bq.changed = ("fct_g",)
+
+    assert cli.main(["run", str(path)]) == 0
+
+    out = capsys.readouterr().out
+    assert (
+        "Skipping c2: kipptaf_marts.fct_g changed during the build of "
+        "kipptaf_marts.fct_f"
+    ) in out
+    # Its scans are priced first; its own priced queries are simply not run.
+    assert out.index("(dry run)") < out.index("Skipping c2")
+    assert _scripts_for(fakes.bq) == ["c1"]
+    assert len(_compared(fakes.bq)) == 6
+
+
+def test_a_plain_run_with_only_a_skipped_comparison_left_compares_nothing(
+    fakes, tmp_path, capsys
+):
+    path = _two(tmp_path, _unproven)
+    assert cli.main(["run", str(path)]) == 0
+    fakes.bq.ran.clear()
+    capsys.readouterr()
+
+    assert cli.main(["run", str(path)]) == 0
+
+    out = capsys.readouterr().out
+    assert "Skipping c2: no proof; run `prove` first." in out
+    assert (
+        "Every comparison not skipped has a current latest result; pass --all to "
+        "compare every one again."
+    ) in out
+    assert "Composing run.json again" not in out
+    assert not _compared(fakes.bq)
+
+
+def test_run_refuses_when_every_comparison_is_skipped(fakes, tmp_path, capsys):
+    path = _two(tmp_path, text=YML.replace(PROOF, "    proof: null\n"))
+
+    assert cli.main(["run", str(path)]) == 1
+
+    captured = capsys.readouterr()
+    assert "Skipping c1: no proof" in captured.out
+    assert "Skipping c2: no proof" in captured.out
+    assert "v: every comparison was skipped; see the reasons above" in captured.err
+    assert fakes.bq.ran == [] and fakes.cube.compiled_queries == []
+
+
+def _drop_proof(path, comparison):
+    """Clear one comparison's proof in a written validation file."""
+    head, entry = path.read_text().split(f"  - id: {comparison}\n", 1)
+    entry = re.sub(r"    proof:\n(?:      .*\n)+", "    proof: null\n", entry, count=1)
+    path.write_text(f"{head}  - id: {comparison}\n{entry}")
+
+
+def test_a_skipped_comparison_keeps_its_previous_result(fakes, tmp_path, capsys):
+    path = _two(tmp_path)
+    assert cli.main(["run", str(path)]) == 0
+    results = latest.folder(tmp_path / "cache" / "v", "kipptaf_marts.fct_f")
+    before = latest._file(results, "c2").read_text()
+    _drop_proof(path, "c2")
+    fakes.bq.build = LATER
+    fakes.bq.ran.clear()
+
+    assert cli.main(["run", str(path), "--all"]) == 0
+
+    assert _scripts_for(fakes.bq) == ["c1"]
+    assert latest._file(results, "c2").read_text() == before
+    saved = json.loads(_latest_run(tmp_path).read_text())
+    assert saved["moments"]["c1"]["end"] == LATER[1].isoformat()
+    assert saved["moments"]["c2"]["end"] == END.isoformat()
+    assert saved["skipped"] == [
+        {"comparison": "c2", "why": "no proof; run `prove` first"}
+    ]
+    assert "Skipped this run, each keeping its latest result: c2 (no proof" in (
+        capsys.readouterr().out
+    )
+
+
+def test_a_comparison_whose_sql_cannot_be_built_is_skipped_before_any_spend(
+    fakes, tmp_path, capsys
+):
+    path = _two(tmp_path, _reads_membership)
+    assert cli.main(["run", str(path)]) == 0
+    # c2's Cube SQL now reads a second fact the file does not list.
+    _second_fact_for_membership(fakes)
+    fakes.bq.ran.clear()
+    capsys.readouterr()
+
+    assert cli.main(["run", str(path)]) == 0
+
+    out = capsys.readouterr().out
+    assert "Skipping c2: its SQL cannot be built today: " in out
+    assert "Comparison c2:" not in out
+    assert not _compared(fakes.bq)
+
+    fakes.bq.build = LATER
+    assert cli.main(["run", str(path), "--all"]) == 0
+
+    out = capsys.readouterr().out
+    assert "Skipping c2: its SQL cannot be built today: " in out
+    assert out.index("Skipping c2") < out.index("(dry run)")
+    assert _scripts_for(fakes.bq) == ["c1"]
+
+
+def test_a_never_compared_comparison_whose_sql_cannot_be_built_is_skipped(
+    fakes, tmp_path, capsys
+):
+    _second_fact_for_membership(fakes)
+
+    assert cli.main(["run", str(_two(tmp_path, _reads_membership))]) == 0
+
+    out = capsys.readouterr().out
+    assert "Skipping c2: its SQL cannot be built today: " in out
+    assert "fct_g" in out and "also_facts" in out
+    assert _scripts_for(fakes.bq) == ["c1"]
+
+
+def test_triage_and_review_name_a_skipped_comparison(fakes, tmp_path, capsys):
+    path = _two(tmp_path, _unproven)
+    assert cli.main(["run", str(path)]) == 0
+    capsys.readouterr()
+
+    assert cli.main(["triage", str(path), "--no-trace", "--no-proofs"]) == 0
+
+    out = capsys.readouterr().out
+    assert "v: comparison c2 not compared: no proof; run `prove` first" in out
+    assert cli.main(["review", str(path), "--domain", "Registrar"]) == 0
+    body = capsys.readouterr().out
+    section = body.split("## Still with the analyst", 1)[1]
+    assert "- `c2` in `v`: not compared: no proof; run prove first\n" in section
 
 
 def test_run_refuses_a_comparison_it_does_not_hold(fakes, tmp_path, capsys):
@@ -999,7 +1209,8 @@ def test_run_cube_rows_are_ungrouped_and_unlimited(fakes, tmp_path):
     assert cli.main(["run", str(_file(tmp_path))]) == 0
 
     row_queries = [q for q in fakes.cube.compiled_queries if q.get("ungrouped")]
-    assert len(row_queries) == 1
+    # Built once to check it builds today, once to plan: 1 query either way.
+    assert len({json.dumps(q, sort_keys=True) for q in row_queries}) == 1
     assert "LIMIT 10000" not in _reconcile(fakes.bq)
     # One reconcile covers both cuts, so a row is never counted twice.
     assert "or" in row_queries[0]["filters"][0]
@@ -1074,16 +1285,20 @@ def test_run_refuses_a_cube_still_reading_prod_when_a_dev_build_is_named(
     )
 
     assert code == 1
-    assert "other than zz_cbaldor_kipptaf_marts.fct_f" in capsys.readouterr().err
+    captured = capsys.readouterr()
+    assert "Skipping ada-region: its SQL cannot be built today: " in captured.out
+    assert "other than zz_cbaldor_kipptaf_marts.fct_f" in captured.out
+    assert "v: every comparison was skipped; see the reasons above" in captured.err
 
 
-def test_run_refuses_comparison_without_proof(fakes, tmp_path, capsys):
+def test_run_skips_comparison_without_proof(fakes, tmp_path, capsys):
     path = _file(tmp_path, YML.replace(PROOF, "    proof: null\n"))
 
     assert cli.main(["run", str(path)]) == 1
 
-    err = capsys.readouterr().err
-    assert "ada-region" in err and "prove" in err
+    captured = capsys.readouterr()
+    assert "Skipping ada-region: no proof; run `prove` first." in captured.out
+    assert "v: every comparison was skipped; see the reasons above" in captured.err
     assert fakes.bq.ran == [] and fakes.cube.compiled_queries == []
 
 
@@ -1127,7 +1342,7 @@ def _billed(bq):
     return _compared(bq) + [q for q in bq.ran if "farm_fingerprint" in q]
 
 
-def test_run_refuses_a_changed_workbook_before_any_query(fakes, tmp_path, capsys):
+def test_run_skips_a_changed_workbook_before_any_query(fakes, tmp_path, capsys):
     path = _republished(fakes, tmp_path)
     fakes.tbl.updated = datetime(2026, 10, 30, tzinfo=timezone.utc)  # after the proof
     fakes.tbl.twb = fakes.tbl.twb.replace(
@@ -1136,10 +1351,13 @@ def test_run_refuses_a_changed_workbook_before_any_query(fakes, tmp_path, capsys
 
     assert cli.main(["run", str(path)]) == 1
 
-    err = capsys.readouterr().err
-    assert "workbook changed since its proof: ada-region: workbook published" in err
-    assert "the sheet's formulas or filters changed" in err
-    assert err.rstrip().endswith("`prove` ada-region again")
+    captured = capsys.readouterr()
+    assert (
+        "Skipping ada-region: workbook changed since its proof: workbook published"
+        in captured.out
+    )
+    assert "the sheet's formulas or filters changed; re-prove." in captured.out
+    assert "v: every comparison was skipped; see the reasons above" in captured.err
     assert fakes.bq.ran == [] and fakes.cube.compiled_queries == []
 
 
@@ -1549,14 +1767,18 @@ def test_cube_row_dimension_edit_asks_to_reconfirm(fakes, tmp_path, capsys):
     assert "miami-scope" in _section(out, "To re-confirm", "No longer needed")
 
 
-def test_run_refuses_a_probe_changed_since_its_proof(fakes, tmp_path, capsys):
+def test_run_skips_a_probe_changed_since_its_proof(fakes, tmp_path, capsys):
     path = _file(tmp_path)
     path.write_text(path.read_text().replace("avg(is_present)", "sum(is_present)"))
 
     assert cli.main(["run", str(path)]) == 1
 
-    err = capsys.readouterr().err
-    assert "ada-region" in err and "prove" in err
+    captured = capsys.readouterr()
+    assert (
+        "Skipping ada-region: the probe is not the one its proof covers; run "
+        "`prove` again." in captured.out
+    )
+    assert "v: every comparison was skipped; see the reasons above" in captured.err
     assert fakes.bq.ran == []
 
 
@@ -1611,7 +1833,7 @@ def test_run_reads_a_listed_second_fact_that_held_during_the_build(fakes, tmp_pa
     )
 
 
-def test_run_refuses_a_listed_second_fact_that_changed_during_the_build(
+def test_run_skips_a_listed_second_fact_that_changed_during_the_build(
     fakes, tmp_path, capsys
 ):
     fakes.cube.joins = SECOND_FACT_JOIN
@@ -1619,22 +1841,28 @@ def test_run_refuses_a_listed_second_fact_that_changed_during_the_build(
 
     assert cli.main(["run", str(_file(tmp_path, ALSO_FACTS_YML))]) == 1
 
-    err = capsys.readouterr().err
-    assert "kipptaf_marts.fct_g changed during the build of kipptaf_marts.fct_f" in err
+    captured = capsys.readouterr()
+    assert (
+        "Skipping ada-region: kipptaf_marts.fct_g changed during the build of "
+        "kipptaf_marts.fct_f" in captured.out
+    )
+    assert "v: every comparison was skipped; see the reasons above" in captured.err
     # Refused before any comparison spent on a query.
     assert not [s for s in fakes.bq.ran if "-- outer" in s or "AS value" in s]
 
 
-def test_run_refuses_a_second_fact_the_file_does_not_list(fakes, tmp_path, capsys):
+def test_run_skips_a_second_fact_the_file_does_not_list(fakes, tmp_path, capsys):
     fakes.cube.joins = SECOND_FACT_JOIN
 
     assert cli.main(["run", str(_file(tmp_path))]) == 1
 
-    err = capsys.readouterr().err
-    assert "kipptaf_marts.fct_g" in err and "also_facts" in err
+    captured = capsys.readouterr()
+    assert "Skipping ada-region: its SQL cannot be built today: " in captured.out
+    assert "kipptaf_marts.fct_g" in captured.out and "also_facts" in captured.out
+    assert "v: every comparison was skipped; see the reasons above" in captured.err
 
 
-def test_run_refuses_sql_it_cannot_time_travel(fakes, tmp_path, capsys):
+def test_run_skips_sql_it_cannot_time_travel(fakes, tmp_path, capsys):
     text = YML.replace(
         "    probe: avg(is_present)\n",
         "    probe_sql: SELECT region, avg(x) AS value FROM ({rows}) AS r "
@@ -1642,7 +1870,10 @@ def test_run_refuses_sql_it_cannot_time_travel(fakes, tmp_path, capsys):
     )
 
     assert cli.main(["run", str(_file(tmp_path, text))]) == 1
-    assert "kipptaf_x.lookup" in capsys.readouterr().err
+    captured = capsys.readouterr()
+    assert "Skipping ada-region: its SQL cannot be built today: " in captured.out
+    assert "kipptaf_x.lookup" in captured.out
+    assert "v: every comparison was skipped; see the reasons above" in captured.err
 
 
 def test_unexpected_error_is_not_reported_as_a_refusal(fakes, tmp_path, monkeypatch):
@@ -1864,7 +2095,9 @@ def test_review_refuses_a_view_never_triaged(fakes, tmp_path, capsys):
     assert captured.out == ""
 
 
-def test_review_refuses_while_an_item_is_in_investigate(fakes, tmp_path, capsys):
+def test_review_lists_items_in_investigate_still_with_the_analyst(
+    fakes, tmp_path, capsys
+):
     assert cli.main(["run", str(_file(tmp_path))]) == 0
     path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
     assert cli.main(["run", str(path), "--all"]) == 0
@@ -1878,12 +2111,13 @@ def test_review_refuses_while_an_item_is_in_investigate(fakes, tmp_path, capsys)
     )
     capsys.readouterr()
 
-    assert cli.main(["review", str(path), "--domain", "Registrar"]) == 1
+    assert cli.main(["review", str(path), "--domain", "Registrar"]) == 0
 
-    captured = capsys.readouterr()
-    assert "v: 2 triage items in `investigate`" in captured.err
-    assert "step 8" in captured.err
-    assert captured.out == ""
+    body = capsys.readouterr().out
+    section = body.split("## Still with the analyst", 1)[1].split("## Proposed")[0]
+    assert "`j` (group); no lead yet" in section
+    assert "`k` (group); no lead yet" in section
+    assert "Q1." in body.split("## Still with the analyst", 1)[0]
 
 
 def test_review_refuses_a_triage_from_before_the_investigate_pile(

@@ -46,6 +46,7 @@ from .config import (
 from .cube_client import (
     Compiled,
     Cube,
+    CubeError,
     CubeRefusal,
     bind,
     drop_limit,
@@ -72,6 +73,33 @@ PROOF_WINDOW = WINDOW - timedelta(hours=1)
 
 class Refusal(RuntimeError):
     """A command stopped on purpose; the message says why."""
+
+
+@dataclasses.dataclass(frozen=True)
+class Skip:
+    """A comparison `run` leaves out, and why; it keeps its latest result."""
+
+    comparison: str
+    why: str
+
+
+def _say_skips(skips: list[Skip]) -> None:
+    for s in skips:
+        print(f"Skipping {s.comparison}: {s.why}.")
+
+
+def _refuse_all_skipped(
+    cfg: ViewConfig, comparisons: list[Comparison], skips: list[Skip]
+) -> None:
+    """Refuse when every one of `comparisons` is skipped: nothing would run.
+
+    Raises:
+        Refusal: Every comparison is in `skips`.
+    """
+    if {c.id for c in comparisons} <= {s.comparison for s in skips}:
+        raise Refusal(
+            f"{cfg.view}: every comparison was skipped; see the reasons above"
+        )
 
 
 # --- filters and queries -----------------------------------------------------
@@ -654,14 +682,20 @@ def row_group_cause(n_groups: int) -> str:
 
 
 def _cell_diffs(
-    cfg: ViewConfig, comparisons: list[Comparison], sides: "_Sides", cube: Cube
+    cfg: ViewConfig,
+    comparisons: list[Comparison],
+    sides: "_Sides",
+    cube: Cube,
+    skipped: frozenset[str] = frozenset(),
 ) -> tuple[list[CellDiff], set[Cell]]:
     """Each comparison's differing cells, with candidate causes.
 
     A cell `coverage.placed` finds no group in is a formula difference: every
     row in it matched on both sides. Those cells make the comparison's
     `formula` diff; the rest, holding groups or unplaceable, its `cells` diff.
-    A cell that cannot be placed is never a formula difference.
+    A cell that cannot be placed is never a formula difference. A comparison
+    in `skipped` composes its older cells even when Cube can no longer
+    compile its measure.
 
     Returns:
         The diffs, and the formula cells, which `_diff_cells` marks so later
@@ -677,9 +711,14 @@ def _cell_diffs(
         if not differing:
             continue
         member = _member(cfg.view, comparison.measure)
-        expr = _measure_expression(
-            cube.compiled({"measures": [member]}).sql, cfg.view, comparison.measure
-        )
+        try:
+            compiled = cube.compiled({"measures": [member]}).sql
+        except CubeError:
+            if comparison.id not in skipped:
+                raise
+            expr = "a measure Cube cannot compile today"
+        else:
+            expr = _measure_expression(compiled, cfg.view, comparison.measure)
         formula: list[Cell] = []
         cells: list[Cell] = []
         for c in differing:
@@ -938,7 +977,7 @@ def checkpoint_fingerprint(comparison: Comparison, fingerprints: dict[str, str])
 
 NEVER_COMPARED = "never compared"
 ENTRY_CHANGED = "its entry or rebuild check changed"
-SQL_BROKEN = "its SQL cannot be built today"
+SQL_BROKEN = report.SQL_BROKEN
 
 
 def composed_results(cfg: ViewConfig, run: RunResult) -> dict[str, latest.Latest]:
@@ -1632,24 +1671,104 @@ def missing_members(
     return found
 
 
-def _refuse_moved_facts(cfg: ViewConfig, build: Build, changed: set[str]) -> None:
-    """Refuse when a fact in `cfg.also_facts` is among the `changed` tables.
+def _moved_fact_skips(
+    cfg: ViewConfig, build: Build, changed: set[str], reads: dict[str, set[str]]
+) -> list[Skip]:
+    """Skip each comparison whose Cube SQL reads a fact in `cfg.also_facts`
+    that is among the `changed` tables.
 
     The moment is a build of `cfg.fact`: the dashboard is read at its start and
     Cube at its end, so a second fact must hold still in between, or Cube's
     answer mixes 2 moments of it. A second fact has no build of its own to
     pick, so only this check applies to it.
 
-    Raises:
-        Refusal: Such a fact changed between the build start and end.
+    Args:
+        reads: Per comparison id, the tables its Cube SQL reads.
     """
-    if moved := [f for f in cfg.also_facts if f in changed]:
-        raise Refusal(
-            f"{', '.join(moved)} changed during the build of {cfg.fact} "
-            f"({utc_literal(build.start)} to {utc_literal(build.end)}); Cube reads "
-            "it at the build end and the dashboard's inputs are read at the "
-            "start, so pick another build with `--moment`"
-        )
+    moved = [f for f in cfg.also_facts if f in changed]
+    out = []
+    for cid, tables in reads.items():
+        if facts := [f for f in moved if f in tables]:
+            out.append(
+                Skip(
+                    cid,
+                    f"{', '.join(facts)} changed during the build of {cfg.fact} "
+                    f"({utc_literal(build.start)} to {utc_literal(build.end)}); "
+                    "Cube reads it at the build end and the dashboard's inputs "
+                    "are read at the start, so pick another build with `--moment`",
+                )
+            )
+    return out
+
+
+def _proof_skips(
+    cfg: ViewConfig, comparisons: list[Comparison], *, tbl: tableau.Tableau, cube: Cube
+) -> list[Skip]:
+    """The comparisons `run` skips before any query, in the order found.
+
+    A comparison is skipped when it has no proof, its probe changed since the
+    proof, it maps a member Cube's `/meta` lacks (`missing_members`), or its
+    workbook changed since the proof (`workbook_check`). Each check reads
+    only the comparisons no earlier check skipped.
+    """
+    skips: list[Skip] = []
+
+    def left() -> list[Comparison]:
+        gone = {s.comparison for s in skips}
+        return [c for c in comparisons if c.id not in gone]
+
+    for c in comparisons:
+        if c.proof is None:
+            skips.append(Skip(c.id, "no proof; run `prove` first"))
+        elif c.proof.probe_fingerprint != probe_fingerprint(cfg, c):
+            skips.append(
+                Skip(
+                    c.id,
+                    "the probe is not the one its proof covers; run `prove` again",
+                )
+            )
+    meta = cube.meta()
+    for c in left():
+        if missing := missing_members(cfg, [c], meta):
+            members = ", ".join(line.removeprefix(f"{c.id}: ") for line in missing)
+            skips.append(
+                Skip(
+                    c.id,
+                    f"Cube's model has no member for {members}; fix the mapping, "
+                    "then `prove` it again",
+                )
+            )
+    remaining = left()
+    stale = workbook_check(cfg, remaining, tbl=tbl, cube=cube)
+    for c in remaining:
+        if lines := [
+            s.removeprefix(f"{c.id}: ") for s in stale if s.startswith(f"{c.id}: ")
+        ]:
+            skips.append(
+                Skip(c.id, f"workbook changed since its proof: {'; '.join(lines)}")
+            )
+    return skips
+
+
+def _sql_skips(
+    cfg: ViewConfig,
+    comparisons: list[Comparison],
+    *,
+    wh: Warehouse,
+    cube: Cube,
+    schools: set[str],
+    now: datetime,
+) -> list[Skip]:
+    """Each of `comparisons` whose SQL cannot be built today, as
+    `stale_comparisons` words it. Compiles and expands only; no query bills."""
+    build = Build(now, now, "now")
+    out = []
+    for c in comparisons:
+        try:
+            side_fingerprints(cfg, c, wh=wh, cube=cube, build=build, schools=schools)
+        except (Refusal, CubeRefusal, ViewHistoryError) as exc:
+            out.append(Skip(c.id, f"{SQL_BROKEN}: {exc}"))
+    return out
 
 
 # A stopped run resumes on its own within this long of its last checkpoint;
@@ -1752,6 +1871,10 @@ ALL_CURRENT = (
     "Every comparison's latest result is current; pass --all to compare every one "
     "again."
 )
+OTHERS_CURRENT = (
+    "Every comparison not skipped has a current latest result; pass --all to "
+    "compare every one again."
+)
 
 
 def run(
@@ -1786,22 +1909,28 @@ def run(
     result there.
 
     `cube_host` is printed with `cfg.fact` so the result says what it was
-    proven against. Before any query, each confirmed comparison's workbook is
-    checked against its proof (`workbook_check`). Every query a comparison
-    bills is priced before the first one runs (`_compare_all`), and `ticker`
-    prints a line as each comparison finishes. Each comparison it finishes is
+    proven against. A problem with one comparison skips it instead of
+    stopping the run: each skip prints `Skipping <id>: <why>.`, the rest are
+    compared, and the skipped one keeps its latest result. Before any query,
+    a confirmed comparison is skipped when it has no proof, its probe or
+    workbook changed since the proof, or it maps a member Cube lacks
+    (`_proof_skips`); before the price, when its SQL cannot be built today
+    (`_sql_skips`); after the price, when its Cube SQL reads a fact in
+    `also_facts` that changed during the build (`_compare_all`). The skips
+    are kept in `run.json` as `skipped`. Every query a comparison bills is
+    priced before the first one runs (`_compare_all`), and `ticker` prints a
+    line as each comparison finishes. Each comparison it finishes is
     checkpointed in the run folder; a stopped run started again skips them
     (`_run_folder` says when it resumes). A checkpoint whose comparison entry
     or SQL changed is compared again. `cost_usd` adds what every process spent
     on this run's folder.
 
     Raises:
-        Refusal: `only` names no confirmed comparison; a confirmed
-            comparison has no proof, its probe changed since the proof, its
-            workbook changed since the proof, or it lacks a key it needs; a
-            fact in `also_facts` changed during the build; both sides' rows
-            read a table that changed during the build; or an unfinished run
-            needs `--resume` or `--restart` (`_run_folder`).
+        Refusal: `only` names no confirmed comparison; every confirmed
+            comparison, or every one `only` names, is skipped; a confirmed
+            comparison lacks a key it needs; both sides' rows read a table
+            that changed during the build; or an unfinished run needs
+            `--resume` or `--restart` (`_run_folder`).
         CostCapError: The priced queries would pass `max_usd` or the day's
             cap.
         MomentError: No usable build in the 7-day window.
@@ -1821,41 +1950,15 @@ def run(
             f"--comparison: {', '.join(unknown)} is no confirmed comparison of "
             f"{cfg.view}"
         )
-    unproven = [c.id for c in comparisons if c.proof is None]
-    if unproven:
-        raise Refusal(
-            f"comparison {', '.join(map(repr, unproven))} has no proof; "
-            "run `prove` first"
-        )
     for comparison in comparisons:
         _require(comparison, "dashboard_view", "decimals")
-    changed_probes = [
-        c.id
-        for c in comparisons
-        if c.proof and c.proof.probe_fingerprint != probe_fingerprint(cfg, c)
-    ]
-    if changed_probes:
-        raise Refusal(
-            f"comparison {', '.join(map(repr, changed_probes))}: the probe is not "
-            "the one its proof covers; run `prove` again"
-        )
-    # A member the model dropped would refuse only after every query ran.
-    if missing := missing_members(cfg, comparisons, cube.meta()):
-        raise Refusal(
-            "Cube's model has no member for "
-            + "; ".join(missing)
-            + ". Fix each mapping, then `prove` that comparison again"
-        )
-    # Every confirmed comparison, before the run folder or any query.
-    if stale := workbook_check(cfg, comparisons, tbl=tbl, cube=cube):
-        ids = [
-            c.id for c in comparisons if any(s.startswith(f"{c.id}: ") for s in stale)
-        ]
-        raise Refusal(
-            f"workbook changed since its proof: {'; '.join(stale)}; "
-            f"`prove` {', '.join(ids)} again"
-        )
-    for comparison in comparisons:
+    # Every confirmed comparison, before the run folder or any query; a member
+    # the model dropped would refuse only after every query ran.
+    skips = _proof_skips(cfg, comparisons, tbl=tbl, cube=cube)
+    _say_skips(skips)
+    _refuse_all_skipped(cfg, comparisons, skips)
+    ready = [c for c in comparisons if c.id not in {s.comparison for s in skips}]
+    for comparison in ready:
         if comparison.proof:
             print(f"Proof for {comparison.id}: proven {comparison.proof.proven_at}.")
 
@@ -1882,38 +1985,69 @@ def run(
     )
     with wh.budget(max_usd):
         schools = network_schools(wh)
+        sql_skips = functools.partial(
+            _sql_skips, cfg, wh=wh, cube=cube, schools=schools, now=now
+        )
+        results: dict[str, latest.Latest] = {}
         if only:
-            selected = [c for c in comparisons if c.id in only]
+            selected = [c for c in ready if c.id in only]
+            broken = sql_skips(selected)
         elif every:
-            selected = comparisons
+            selected = ready
+            broken = sql_skips(selected)
         else:
             results = latest.read_all(results_dir)
             whys = stale_comparisons(
                 cfg,
-                comparisons,
+                ready,
                 results,
                 wh=wh,
                 cube=cube,
                 schools=schools,
                 now=now,
             )
+            broken = [
+                Skip(cid, why)
+                for cid, why in whys.items()
+                if why.startswith(SQL_BROKEN)
+            ]
             for cid, why in whys.items():
-                print(f"Comparison {cid}: {why}.")
-            selected = [c for c in comparisons if c.id in whys]
-            if not selected and _composed_from(cfg, cache_root, comparisons, results):
-                print(ALL_CURRENT)
+                if not why.startswith(SQL_BROKEN):
+                    print(f"Comparison {cid}: {why}.")
+            selected = [c for c in ready if c.id in whys]
+            # Only a result to compare against made `stale_comparisons` build
+            # the SQL; build the rest's too.
+            broken += sql_skips(
+                [c for c in selected if whys[c.id] in (NEVER_COMPARED, ENTRY_CHANGED)]
+            )
+        # Before the run folder and the price: a skipped comparison's queries
+        # are neither priced nor run.
+        _say_skips(broken)
+        skips += broken
+        _refuse_all_skipped(cfg, comparisons, skips)
+        selected = [c for c in selected if c.id not in {s.comparison for s in broken}]
+        if not selected and only:
+            raise Refusal(
+                f"{cfg.view}: every comparison asked for was skipped; see the "
+                "reasons above"
+            )
+        if not selected:
+            if _composed_from(cfg, cache_root, comparisons, results):
+                print(OTHERS_CURRENT if skips else ALL_CURRENT)
                 return None
-            if not selected:
-                # A run stopped after keeping its results, before composing.
-                newest = max((r.moment for r in results.values()), key=lambda m: m.end)
-                folder = report.run_dir(cache_root, cfg.view, newest)
-                print(
-                    "Composing run.json again from the latest results: the last "
-                    "one predates them. Nothing is compared."
-                )
-                return compose(
-                    build=newest, folder=folder, cost=checkpoints.total_spend(folder)
-                )
+            # A run stopped after keeping its results, before composing.
+            newest = max((r.moment for r in results.values()), key=lambda m: m.end)
+            folder = report.run_dir(cache_root, cfg.view, newest)
+            print(
+                "Composing run.json again from the latest results: the last "
+                "one predates them. Nothing is compared."
+            )
+            return compose(
+                build=newest,
+                folder=folder,
+                cost=checkpoints.total_spend(folder),
+                skipped=skips,
+            )
         folder, build = _run_folder(
             cfg,
             wh,
@@ -1928,7 +2062,7 @@ def run(
         process = f"{clock().isoformat()}-{uuid.uuid4().hex[:8]}"
         checkpoints.start(folder, build, process, cfg.fact)
         try:
-            _compare_all(
+            skips += _compare_all(
                 cfg,
                 selected,
                 wh=wh,
@@ -1944,7 +2078,8 @@ def run(
         finally:
             checkpoints.record_spend(folder, process, wh.spent)
         cost = checkpoints.total_spend(folder)
-    return compose(build=build, folder=folder, cost=cost)
+    _refuse_all_skipped(cfg, comparisons, skips)
+    return compose(build=build, folder=folder, cost=cost, skipped=skips)
 
 
 def _composed_from(
@@ -1954,7 +2089,8 @@ def _composed_from(
     results: dict[str, latest.Latest],
 ) -> bool:
     """Whether the view's last `run.json` of `cfg.fact` was composed from
-    exactly `results`: every comparison's moment, entry and SQL fingerprints."""
+    exactly `results`: every comparison's moment, entry and SQL fingerprints,
+    and as `missing` the comparisons with no result (a skipped one's)."""
     saved = [
         (path.stat().st_mtime, path)
         for path in (cache_root / cfg.view).glob("*/run.json")
@@ -1966,14 +2102,15 @@ def _composed_from(
             continue
         if data.get("fact") != cfg.fact:
             continue
-        return not data.get("missing") and all(
-            c.id in results
-            and (data.get("moments") or {}).get(c.id)
+        held = [c for c in comparisons if c.id in results]
+        none = [c.id for c in comparisons if c.id not in results]
+        return (data.get("missing") or []) == none and all(
+            (data.get("moments") or {}).get(c.id)
             == checkpoints._moment_json(results[c.id].moment)
             and (data.get("entries") or {}).get(c.id) == results[c.id].entry
             and (data.get("fingerprints") or {}).get(c.id)
             == results[c.id].data.get("fingerprints", {}).get(c.id)
-            for c in comparisons
+            for c in held
         )
     return False
 
@@ -1990,10 +2127,12 @@ def _compose(
     build: Build,
     folder: Path,
     cost: float,
+    skipped: Iterable[Skip] = (),
 ) -> RunResult:
     """Compose, print and save `run.json` in `folder` from every confirmed
     comparison's latest result, in config order; `build` and `cost` are the
-    folder's. Compiles Cube's measure only; no query bills.
+    folder's, and `skipped` what this process skipped, whose older results
+    compose like the rest. Compiles Cube's measure only; no query bills.
 
     Raises:
         Refusal: Two decisions claim one item (`decisions.apply`).
@@ -2009,7 +2148,10 @@ def _compose(
     )
 
     gaps, gaps_unknown = _gaps(comparisons)
-    cell_diffs, formula_cells = _cell_diffs(cfg, comparisons, sides, cube)
+    skipped = list(skipped)
+    cell_diffs, formula_cells = _cell_diffs(
+        cfg, comparisons, sides, cube, frozenset(s.comparison for s in skipped)
+    )
     try:
         applied = decisions.apply(
             cfg.decisions,
@@ -2071,6 +2213,7 @@ def _compose(
         moments={c.id: results[c.id].moment for c in composed},
         entries={c.id: results[c.id].entry for c in composed},
         missing=left_out,
+        skipped=[dataclasses.asdict(s) for s in skipped],
     )
     text = report.render_local(result) + "\n" + _extra_sections(sides.cells)
     print(text)
@@ -2111,17 +2254,20 @@ def _compare_all(
     schools: set[str],
     results_dir: Path,
     ticker: report.Ticker | None = None,
-) -> None:
+) -> list[Skip]:
     """Compare each of `comparisons` at `build` and keep each one's result as
-    its latest (`latest.write`). Call inside `wh.budget`.
+    its latest (`latest.write`); return the comparisons it skipped. Call
+    inside `wh.budget`.
 
     A comparison with a checkpoint whose fingerprint still holds is taken from
     it; the rest are planned (`_plan_one`). Before anything that bills, every
     table fingerprint the run needs (the second facts, the tables both sides'
     rows read, Cube's dimension tables) and every planned query is dry-run one
     at a time, and the total is refused when it would pass a cap. The
-    fingerprints then run, and their refusals come before any comparison
-    query. The comparisons are compared one at a time, each checkpointed (with
+    fingerprints then run before any comparison query: a comparison whose
+    Cube SQL reads a second fact that changed during the build is skipped,
+    its priced queries left unrun and its latest result kept
+    (`_moved_fact_skips`). The comparisons are compared one at a time, each checkpointed (with
     the spend so far) as it finishes, so a stop loses at most the one in
     progress. Each result keeps the dimension tables it read that changed
     during the build (`changed_dims`). A held checkpoint is kept as the
@@ -2129,8 +2275,7 @@ def _compare_all(
 
     Raises:
         CostCapError: The priced total would pass the run's or the day's cap.
-        Refusal: A second fact, or a table both sides' rows read, changed
-            during the build.
+        Refusal: A table both sides' rows read changed during the build.
     """
     kept = checkpoints.read_all(folder)
     slices: dict[str, tuple[str, _Sides]] = {}
@@ -2176,8 +2321,22 @@ def _compare_all(
     wh.refuse_past_caps(total)
 
     changed = set(changed_between(wh, scanned, build.start, build.end))
-    _refuse_moved_facts(cfg, build, changed)
-    for plan in plans:
+    skips = _moved_fact_skips(
+        cfg,
+        build,
+        changed,
+        {p.comparison.id: p.cube_tables for p in plans}
+        | {cid: held.cube_tables for cid, (_, held) in slices.items()},
+    )
+    _say_skips(skips)
+    gone = {s.comparison for s in skips}
+    kept_plans = [
+        (plan, priced)
+        for plan, priced in zip(plans, prices, strict=True)
+        if plan.comparison.id not in gone
+    ]
+    slices = {cid: v for cid, v in slices.items() if cid not in gone}
+    for plan, _ in kept_plans:
         _settle_moved(plan, known, changed)
 
     def keep(comparison: Comparison, fingerprint: str, one: _Sides) -> None:
@@ -2202,7 +2361,7 @@ def _compare_all(
     for cid, (fingerprint, held) in slices.items():
         if cid not in stored or stored[cid].moment.end <= build.end:
             keep(by_id[cid], fingerprint, held)
-    for plan, priced in zip(plans, prices, strict=True):
+    for plan, priced in kept_plans:
         comparison = plan.comparison
         one = _execute(cfg, plan, wh=wh, build=build, prices=priced)
         fingerprint = checkpoint_fingerprint(comparison, plan.fingerprints)
@@ -2211,6 +2370,7 @@ def _compare_all(
         checkpoints.record_spend(folder, process, wh.spent)
         if ticker is not None:
             ticker.say("compare", comparison.id, wh.spent)
+    return skips
 
 
 def _diff_cells(sides: _Sides, formula: set[Cell]) -> list[dict]:
@@ -2326,6 +2486,7 @@ def _run_from_json(data: dict) -> RunResult:
         moments={k: _build(v) for k, v in data.get("moments", {}).items()},
         entries=data.get("entries", {}),
         missing=data.get("missing", []),
+        skipped=data.get("skipped", []),
     )
 
 
@@ -2559,7 +2720,10 @@ def review(
 
     Reads only the local cache: each run and its triage (see
     `triage.proven_triage`), matching triage items to decisions by their stubs,
-    and to cause decisions by the causes the triage proved.
+    and to cause decisions by the causes the triage proved. What is ready is
+    asked; what is not settled yet (items still in `investigate`, and
+    comparisons missing, stale or skipped, `triage.comparisons_waiting`) is
+    listed under "Still with the analyst" and never asked.
     Nothing is posted; a question with no triage evidence, and a body near
     GitHub's cap, are named on stderr.
 
@@ -2579,9 +2743,8 @@ def review(
 
     Raises:
         Refusal: A view has no usable saved run (see `latest_run`), or its
-            triage is missing, stale, unreadable, holds an unproven item, or
-            has a cause decision and a `group` decision disagreeing (see
-            `triage.proven_triage`). With `json_file`: the file is new or
+            triage is missing, stale, unreadable, or has a cause decision and
+            a `group` decision disagreeing (see `triage.proven_triage`). With `json_file`: the file is new or
             changed, or its commit is not pushed (it is written; commit and
             push it, then review again).
     """
@@ -2594,13 +2757,13 @@ def review(
         for (run, run_json), cfg, base in zip(saved, configs, bases, strict=True)
     }
     found = {view: triage.posted_triage(loaded) for view, loaded in proven.items()}
-    for run, cfg in zip(runs, configs, strict=True):
-        for cid, why in triage.comparisons_waiting(cfg, run, proven[run.view]).items():
-            # stderr, so the note never lands in the issue body.
-            print(
-                f"{run.view}: comparison {cid} {why}; compare it, then sort",
-                file=sys.stderr,
-            )
+    still = report.still_with_analyst(
+        [u for run in runs for u in triage.unsettled(run, found[run.view])],
+        {
+            run.view: triage.comparisons_waiting(cfg, run, proven[run.view])
+            for run, cfg in zip(runs, configs, strict=True)
+        },
+    )
     # One question per unanswered owner cause, over the groups it decides.
     causes = {
         run.view: triage.cause_asks(
@@ -2634,7 +2797,7 @@ def review(
     if json_file is not None:
         link = _review_file(Path(json_file), report.posted_json(questions))
     body = report.render_review_issue(
-        domain, runs, definitions, questions, causes, comments, decided, link
+        domain, runs, definitions, questions, causes, comments, decided, link, still
     )
     if len(body) > BODY_WARN_CHARS:
         # stderr, so the warning never lands in the issue body.
