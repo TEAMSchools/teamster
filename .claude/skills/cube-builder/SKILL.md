@@ -160,12 +160,12 @@ runner's `PKG` is the `scripts/cube_validation` of that branch's checkout.
    `--fact-dataset zz_<user>_kipptaf_marts` to `rebuild-sheet`, `compare`,
    `sort` and `explain`: each reads that build's run, kept apart from
    production's.
-4. After writing a new measure, copy `~/.cache/cube-validation/members.json`
-   aside, then run `members` against the local Cube. A
-   `same SQL: <new>, <other>` line means the new measure is `<other>` under
-   another name: confirm in `members.json`, drop the new one and reuse
-   `<other>`. Restore the copy, or rerun `members` against Cube Cloud, before
-   any later `inventory`.
+4. Before relying on the local Cube, copy
+   `~/.cache/cube-validation/members.json` aside, then run `members` against it:
+   the new members must be listed before any query bills. For a new measure, a
+   `same SQL: <new>, <other>` line means it is `<other>` under another name:
+   confirm in `members.json`, drop the new one and reuse `<other>`. Restore the
+   copy, or rerun `members` against Cube Cloud, before any later `inventory`.
 5. On the validation branch, add the comparison that checks the piece by the
    `cube-validation` runbook steps 2 and 3. A new dimension is checked by
    slicing an existing measure by it (the new dimension mapped under `dims`).

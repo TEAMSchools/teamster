@@ -238,18 +238,22 @@ refuses when the view's only run read another fact.
      table, or whose 2 sides' rows read a table, that changed during the build,
      and one whose query fails in BigQuery (its spend stays counted). A BigQuery
      reason names the job id and reason code, never BigQuery's message: look the
-     job up for the message. A skipped comparison keeps its previous result. Fix
-     what each reason names (most say to run `rebuild-sheet` again). Only a cap
-     stops the run; `compare` refuses when every comparison is skipped.
+     job up for the message. A failed dry run has no job (`job ?`): run that dry
+     run again by hand to see the message. A skipped comparison keeps its
+     previous result. Fix what each reason names (most say to run
+     `rebuild-sheet` again). Of BigQuery's errors, only a cap stops the run;
+     `compare` refuses when every comparison is skipped.
    - It names each comparison it will compare and why: `never compared`,
      `its entry or rebuild check changed`, `Cube's SQL changed` or
-     `the dashboard SQL changed` (the sheet query or the dbt models it reads). A
+     `the dashboard SQL changed` (the sheet query or the dbt views it reads). A
      plain `compare` compares only those; `--comparison <id>` (repeatable)
      compares the ones named, and `--all` every one. Changed data alone does not
      make a result stale: to re-validate after a data change, run
-     `compare --all`. With nothing stale, a plain `compare` prints "Every
-     comparison's latest result is current" and compares nothing; that is not a
-     failure.
+     `compare --all`. A dbt table model is read as data, so a plain `compare`
+     cannot see a change to its SQL either: after one, run `compare --all`
+     (#6158 tracks catching it in CI). With nothing stale, a plain `compare`
+     prints "Every comparison's latest result is current" and compares nothing;
+     that is not a failure.
    - It dry-runs every query and fingerprint scan it will send and prints one
      total, `Compare: N queries, $X (dry run)`, plus the save script's reads of
      its temp table, which the dry run cannot price and BigQuery caps per query.
