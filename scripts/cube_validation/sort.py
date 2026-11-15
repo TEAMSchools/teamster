@@ -715,7 +715,8 @@ def posted_triage(loaded: dict) -> dict:
 
 
 def _candidates(caption: str, docs: dict[str, MemberDoc]) -> tuple[str, ...]:
-    """Name the non-measure members whose name, title or description holds the caption."""
+    """Name the non-measure members whose name, title or description holds the
+    caption."""
     wanted = _tokens(caption)
     if not wanted:
         return ()
@@ -969,8 +970,9 @@ def suggest(
                             "n_rows": None,
                         }
                     ]
+                    sheets = ", ".join(gap.sheets)
                     evidence = (
-                        f"{', '.join(gap.sheets)} carries it; Cube has no member for it",
+                        f"{sheets} carries it; Cube has no member for it",
                         *verdict_lines,
                     )
         else:
@@ -1064,9 +1066,8 @@ def batch_lines(run: RunResult, found: list[Suggestion]) -> list[str]:
     for comparison in dict.fromkeys(s.item.comparison for s in found):
         mine = [s for s in found if s.item.comparison == comparison]
         lines.append(f"  {comparison or '(no comparison)'}: {len(mine):,} items")
-        lines.append(
-            f"    by suggestion: {_counts(Counter(s.suggestion for s in mine), SUGGESTIONS)}"
-        )
+        by_pile = _counts(Counter(s.suggestion for s in mine), SUGGESTIONS)
+        lines.append(f"    by suggestion: {by_pile}")
         lines.append(f"    by kind: {_counts(Counter(s.item.kind for s in mine))}")
         in_buckets = Counter(buckets[s.item.id] for s in mine if s.item.id in buckets)
         if in_buckets:
@@ -1155,7 +1156,8 @@ def pii_members(meta: dict, view: str) -> set[str]:
 
 
 def _dashboard_view(cfg: ViewConfig, column: str) -> str:
-    """The dashboard table behind `column`: the comparison that names it, else the first."""
+    """The dashboard table behind `column`: the comparison that names it, else
+    the first."""
     for c in cfg.comparisons:
         if (
             c.rebuild_check
@@ -1212,7 +1214,8 @@ def value_check(
 
     dataset, name = table.split(".")
     sql = (
-        f"SELECT DISTINCT CAST({column} AS STRING) AS value "  # trunk-ignore(bandit/B608)
+        # trunk-ignore(bandit/B608): the names are checked against _SQL_NAME and _TABLE
+        f"SELECT DISTINCT CAST({column} AS STRING) AS value "
         f"FROM `{PROJECT}`.`{dataset}`.`{name}` "
         f"WHERE {column} IS NOT NULL LIMIT {REFERENCE_MAX_VALUES + 1}"
     )
@@ -1365,8 +1368,9 @@ def sort_run(
     `now` (`pipeline.stale_comparisons` over `pipeline.composed_results`),
     whose SQL cannot be built today, or which the run skipped (`not compared:
     <why>`), is printed and written to `triage.json` under `stale`, so
-    `comparisons_waiting` can name it. A skipped comparison's row groups are
-    neither checked for the trace nor traced.
+    `comparisons_waiting` can name it. Such a comparison's row groups are
+    neither checked for the trace nor traced: its SQL may not build today, or
+    not as the run reconciled it.
 
     Each explanation's outcome is kept beside `run.json` as it finishes
     (`explain_progress`), so a stopped sort skips the explanations it finished. With
@@ -1437,7 +1441,7 @@ def sort_run(
                 cube=cube,
                 manifest_path=manifest or trace.MANIFEST,
                 prepared=prepared,
-                skip=_groups_of(run, set(skipped)),
+                skip=_groups_of(run, set(stale)),
             )
         # Explanations first: they are the only path to `cause`, so a trace that
         # hits a cap never un-explains an item, and nothing they explain is
@@ -1472,7 +1476,7 @@ def sort_run(
                 max_minutes=trace_max_minutes or trace.TRACE_MAX_MINUTES,
                 skip=explain.explained(ran)
                 | _outside(run, wanted)
-                | _groups_of(run, set(skipped)),
+                | _groups_of(run, set(stale)),
                 prepared=prepared,
                 ticker=ticker,
             )
@@ -1526,7 +1530,8 @@ def sort_run(
 
 def _groups_of(run: RunResult, comparisons: set[str]) -> set[tuple]:
     """The `trace.item_key` of every open row group of `comparisons`: the
-    comparisons the run skipped, whose SQL the trace may not build today."""
+    stale or skipped ones, whose SQL the trace may not build today, or not as
+    the run reconciled it."""
     return {
         trace.item_key(g) for g in run.applied.open if g.comparison_id in comparisons
     }

@@ -203,7 +203,8 @@ class ItemTrace:
         return parts
 
     def evidence(self, posted: bool = False) -> tuple[str, ...]:
-        """Lines for the batch; with `posted`, small counts and what reveals them masked."""
+        """Lines for the batch; with `posted`, small counts and what reveals them
+        masked."""
         causes = self.steps.most_common()
         _, texts = shown_counts(self.n_rows, self._parts(), posted)
         lines = [

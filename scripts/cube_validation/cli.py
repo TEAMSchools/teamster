@@ -365,7 +365,7 @@ def _parser() -> argparse.ArgumentParser:
     p.add_argument(
         "approved",
         type=Path,
-        help='JSON list of {"id", "call", "reason", "task", "item"}',
+        help='JSON list of {"id", "call", "reason", "task", "item", "cause"}',
     )
 
     p = sub.add_parser(

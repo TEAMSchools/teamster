@@ -1229,6 +1229,46 @@ def test_triage_names_a_member_cube_dropped_since_the_run(fakes, tmp_path):
     assert "v.membership_value" in stale["c2"] and "c1" not in stale
 
 
+def test_sort_with_the_trace_waits_for_a_comparison_whose_member_cube_dropped(
+    fakes, tmp_path, capsys
+):
+    # Cube dropped c2's member after the compare, which did not skip it. c1's
+    # rows all match, so only c2 has row groups for the trace.
+    path = _two(tmp_path, _reads_membership)
+    assert cli.main(["compare", str(path)]) == 0
+    fakes.bq.reconcile = [RECONCILE_ROWS[0]]
+    fakes.bq.build = LATER
+    assert cli.main(["compare", str(path), "--comparison", "c1"]) == 0
+    fakes.cube.dropped = {"v.membership_value"}
+    capsys.readouterr()
+
+    code = cli.main(
+        ["sort", str(path), "--no-explanations", "--manifest", str(tmp_path / "m")]
+    )
+
+    captured = capsys.readouterr()
+    assert code == 0, captured.err
+    assert "v: comparison c2 its SQL cannot be built today" in captured.out
+
+
+def test_sort_with_the_trace_waits_for_a_comparison_whose_cube_sql_changed(
+    fakes, tmp_path, capsys
+):
+    fakes.bq.views = {"rpt_d": VIEW_D}
+    path = _two(tmp_path)
+    assert cli.main(["compare", str(path)]) == 0
+    fakes.cube.exprs = {"regions_region_name": "UPPER(`t`.regions_region_name)"}
+    capsys.readouterr()
+
+    code = cli.main(
+        ["sort", str(path), "--no-explanations", "--manifest", str(tmp_path / "m")]
+    )
+
+    captured = capsys.readouterr()
+    assert code == 0, captured.err
+    assert "v: comparison c1 Cube's SQL changed" in captured.out
+
+
 def test_triage_neither_checks_nor_traces_a_skipped_comparison_s_groups(
     fakes, tmp_path, monkeypatch
 ):
@@ -5367,3 +5407,10 @@ def test_triage_confirm_is_refused_as_explain(capsys):
 def test_the_old_no_proofs_flag_is_refused_with_its_new_name(capsys):
     assert cli.main(["sort", "x.yml", "--no-proofs"]) == 2
     assert "`--no-proofs` is now `--no-explanations`" in capsys.readouterr().err
+
+
+def test_decide_help_names_every_key_an_approved_entry_takes(capsys):
+    cli.main(["decide", "--help"])
+
+    help_text = " ".join(capsys.readouterr().out.split())
+    assert '{"id", "call", "reason", "task", "item", "cause"}' in help_text
