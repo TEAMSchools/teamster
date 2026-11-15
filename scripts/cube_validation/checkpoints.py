@@ -42,10 +42,15 @@ class Unfinished:
 
 def _write_json(path: Path, data: dict) -> None:
     """Replace `path` whole, so a stop mid-write keeps the last whole file."""
+    _write_text(path, json.dumps(data))
+
+
+def _write_text(path: Path, text: str) -> None:
+    """Replace `path` whole, so a stop mid-write keeps the last whole file."""
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.")
     with os.fdopen(fd, "w") as f:
-        json.dump(data, f)
+        f.write(text)
     os.replace(tmp, path)
 
 

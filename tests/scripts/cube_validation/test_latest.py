@@ -2,7 +2,7 @@ from dataclasses import replace
 from datetime import datetime, timezone
 
 # trunk-ignore(pyright/reportAttributeAccessIssue): conftest.py registers cube_validation
-from cube_validation import latest
+from cube_validation import latest, pipeline
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.config import Comparison, RebuildCheck
@@ -31,9 +31,9 @@ def test_a_result_round_trips_with_its_moment(tmp_path):
     latest.write(folder, "ada-region", result)
     latest.write(folder, "ada/odd id", other)
 
-    assert latest.read_all(folder) == {"ada-region": result, "ada/odd id": other}
+    assert latest.read_all(folder, "") == {"ada-region": result, "ada/odd id": other}
     assert folder == tmp_path / "v" / latest.DIR / "kipptaf_marts"
-    assert latest.read_all(tmp_path / "nothing") == {}
+    assert latest.read_all(tmp_path / "nothing", "") == {}
 
 
 def test_a_dev_build_s_results_are_kept_apart_from_production(tmp_path):
@@ -43,8 +43,10 @@ def test_a_dev_build_s_results_are_kept_apart_from_production(tmp_path):
 
     latest.write(prod, "c1", result)
 
-    assert prod != dev and latest.read_all(dev) == {}
-    assert latest.read_all(prod)["c1"].fact == "kipptaf_marts.fct_f"
+    assert prod != dev and latest.read_all(dev, "kipptaf_marts.fct_f") == {}
+    assert latest.read_all(prod, "kipptaf_marts.fct_f")["c1"].fact == (
+        "kipptaf_marts.fct_f"
+    )
 
 
 def test_a_result_missing_a_key_is_skipped(tmp_path, capsys):
@@ -53,7 +55,7 @@ def test_a_result_missing_a_key_is_skipped(tmp_path, capsys):
     (path,) = folder.glob("*.json")
     path.write_text('{"comparison": "c1"}')
 
-    assert latest.read_all(folder) == {}
+    assert latest.read_all(folder, "") == {}
     assert "cannot be read" in capsys.readouterr().out
 
 
@@ -71,3 +73,29 @@ def test_the_entry_fingerprint_changes_with_the_rebuild_check():
 
     assert same == latest.entry_fingerprint(comparison)
     assert len({same, rebuilt, edited}) == 3
+
+
+def test_definitions_change_neither_fingerprint():
+    # The analyst adds `definitions:` after a formula difference; the
+    # comparison's result stays current and its saved rows stay its own.
+    comparison = Comparison(id="c", measure="m")
+    defined = replace(comparison, definitions={"m": "students present / enrolled"})
+    sides = {"cube": "c", "dashboard": "d"}
+
+    assert latest.entry_fingerprint(defined) == latest.entry_fingerprint(comparison)
+    assert pipeline.checkpoint_fingerprint(
+        defined, sides
+    ) == pipeline.checkpoint_fingerprint(comparison, sides)
+
+
+def test_a_result_of_another_fact_is_not_read(tmp_path, capsys):
+    # One dataset's folder, 2 facts: the view's fact moved to fct_g.
+    folder = latest.folder(tmp_path / "v", "kipptaf_marts.fct_f")
+    latest.write(
+        folder,
+        "c1",
+        latest.Latest(BUILD, "f", "e", "t", {}, fact="kipptaf_marts.fct_f"),
+    )
+
+    assert latest.read_all(folder, "kipptaf_marts.fct_g") == {}
+    assert set(latest.read_all(folder, "kipptaf_marts.fct_f")) == {"c1"}

@@ -40,7 +40,9 @@ from google.api_core.exceptions import GoogleAPIError
 from sqlglot.errors import SqlglotError
 
 from . import pipeline, reconcile
-from .bq import JOB_ID, CostCapError, Warehouse
+from .bq import CostCapError, Warehouse
+from .bq import failure_reason as _reason
+from .bq import job_failure as _failure
 from .config import Comparison, ViewConfig
 from .cube_client import Cube, network_schools
 from .moment import Build, changed_between
@@ -428,18 +430,6 @@ class _Side:
             include=include,
             combine=combine,
         )
-
-
-def _reason(exc: GoogleAPIError) -> str:
-    """A BigQuery error's reason code, such as `invalidQuery`: its message can
-    quote values."""
-    errors = getattr(exc, "errors", None) or [{}]
-    return errors[0].get("reason") or type(exc).__name__
-
-
-def _failure(exc: GoogleAPIError) -> str:
-    """A BigQuery error as its job and reason: its message can quote values."""
-    return f"job {getattr(exc, JOB_ID, '') or '?'}, {_reason(exc)}"
 
 
 def _dry_runs(wh: Warehouse, queries: list[str]) -> list[float | GoogleAPIError]:

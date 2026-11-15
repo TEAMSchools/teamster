@@ -51,9 +51,15 @@ def folder(view_dir: Path, fact: str) -> Path:
 
 
 def entry_fingerprint(comparison: Comparison) -> str:
-    """The comparison's config entry, its rebuild check (`rebuild_check`) included."""
+    """The comparison's config entry, its rebuild check (`rebuild_check`)
+    included and its `definitions` left out: words for the owner change no
+    result."""
     return hashlib.sha256(
-        json.dumps(dataclasses.asdict(comparison), sort_keys=True, default=str).encode()
+        json.dumps(
+            dataclasses.asdict(dataclasses.replace(comparison, definitions={})),
+            sort_keys=True,
+            default=str,
+        ).encode()
     ).hexdigest()
 
 
@@ -81,11 +87,12 @@ def write(results: Path, comparison_id: str, result: Latest) -> None:
     )
 
 
-def read_all(results: Path) -> dict[str, Latest]:
-    """Every comparison's latest result in `results` (`folder`), by id.
+def read_all(results: Path, fact: str) -> dict[str, Latest]:
+    """Every comparison's latest result of `fact` in `results` (`folder`), by id.
 
     A file that cannot be read is skipped and named; its comparison then
-    reads as never compared.
+    reads as never compared. So does a result of another fact in the same
+    dataset.
     """
     out: dict[str, Latest] = {}
     for path in sorted(results.glob("*.json")):
@@ -106,4 +113,4 @@ def read_all(results: Path) -> dict[str, Latest]:
             )
         except (OSError, ValueError, KeyError, TypeError):
             print(f"Latest result {path.name} skipped: it cannot be read.")
-    return out
+    return {cid: r for cid, r in out.items() if r.fact == fact}

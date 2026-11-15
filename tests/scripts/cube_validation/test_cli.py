@@ -764,6 +764,76 @@ def test_run_comparison_runs_only_that_one_and_keeps_the_others(fakes, tmp_path)
     assert {c["comparison"] for c in saved["diff_cells"]} <= {"c1", "c2"}
 
 
+def test_the_price_line_says_what_it_leaves_out(fakes, tmp_path, capsys):
+    assert cli.main(["compare", str(_file(tmp_path))]) == 0
+
+    assert (
+        "(dry run), plus the save script's temp-table reads, capped per query."
+    ) in capsys.readouterr().out
+
+
+def test_a_comparison_run_composes_another_cube_cannot_compile_today(
+    fakes, tmp_path, capsys
+):
+    path = _two(
+        tmp_path,
+        lambda e: e.replace(
+            "measure: avg_daily_attendance", "measure: sum_attendance_value"
+        ),
+    )
+    # Every cell differs, so composing compiles each comparison's measure.
+    fakes.bq.sheet_query = [{"region": "Newark", "value": 0.5}]
+    assert cli.main(["compare", str(path)]) == 0
+    fakes.bq.build = LATER
+    compiled = fakes.cube.compiled
+
+    def compile_c1_measure(query):
+        if query == {"measures": ["v.avg_daily_attendance"]}:
+            raise CubeError("Cube GET /sql: v.avg_daily_attendance not found")
+        return compiled(query)
+
+    fakes.cube.compiled = compile_c1_measure
+    capsys.readouterr()
+
+    assert cli.main(["compare", str(path), "--comparison", "c2"]) == 0
+
+    saved = json.loads(_latest_run(tmp_path).read_text())
+    assert saved["moments"]["c2"]["end"] == LATER[1].isoformat()
+    causes = [d["causes"] for d in saved["applied"]["open_cells"]]
+    assert any("a measure Cube cannot compile today" in " ".join(c) for c in causes)
+
+
+def test_run_json_is_written_whole(fakes, tmp_path, monkeypatch):
+    written = []
+    write = checkpoints._write_text
+
+    def spy(path, text):
+        written.append(path.name)
+        write(path, text)
+
+    monkeypatch.setattr(checkpoints, "_write_text", spy)
+
+    assert cli.main(["compare", str(_file(tmp_path))]) == 0
+
+    assert "run.json" in written
+
+
+def test_a_command_reads_past_an_unreadable_run_json(fakes, tmp_path):
+    path = _file(tmp_path)
+    assert cli.main(["compare", str(path)]) == 0
+    good = _latest_run(tmp_path)
+    # A newer run.json cut short mid-write.
+    torn = good.parent.parent / "2026-10-23T000000Z" / "run.json"
+    torn.parent.mkdir()
+    torn.write_text('{"view": "v", "fac')
+    os.utime(torn, (good.stat().st_mtime + 60,) * 2)
+    cfg = load_view_config(path)
+
+    data, found = pipeline._saved_run(cfg, tmp_path / "cache")
+
+    assert found == good and data["view"] == "v"
+
+
 def test_a_comparison_without_a_proof_is_skipped_and_the_rest_run(
     fakes, tmp_path, capsys
 ):
@@ -958,6 +1028,155 @@ def test_a_never_compared_comparison_whose_sql_cannot_be_built_is_skipped(
     assert "Skipping c2: its SQL cannot be built today: " in out
     assert "fct_g" in out and "also_facts" in out
     assert _scripts_for(fakes.bq) == ["c1"]
+
+
+def _bigquery_refuses(fakes, marker, *, dry):
+    """BigQuery refuses every dry run (`dry`) or run of a query holding
+    `marker`, with a message that quotes a value."""
+    query = fakes.bq.query
+
+    def refusing(sql, job_config=None):
+        is_dry = bool(job_config is not None and job_config.dry_run)
+        if marker in sql and is_dry == dry:
+            raise BadRequest(
+                "No matching signature for value 'Student 12345'",
+                errors=[{"reason": "invalidQuery"}],
+            )
+        return query(sql, job_config)
+
+    fakes.bq.query = refusing
+
+
+def test_a_failed_dry_run_skips_only_its_comparison(fakes, tmp_path, capsys):
+    path = _two(tmp_path, _reads_membership)
+    assert cli.main(["compare", str(path)]) == 0
+    results = latest.folder(tmp_path / "cache" / "v", "kipptaf_marts.fct_f")
+    before = latest._file(results, "c2").read_text()
+    fakes.bq.build = LATER
+    fakes.bq.ran.clear()
+    capsys.readouterr()
+    # Only c2's rows read membership_value as a column.
+    _bigquery_refuses(fakes, "`v__membership_value`", dry=True)
+
+    assert cli.main(["compare", str(path), "--all"]) == 0
+
+    out = capsys.readouterr().out
+    assert (
+        "Skipping c2: its dry run failed in BigQuery (job ?, invalidQuery); "
+        "compare it again later."
+    ) in out
+    assert "12345" not in out
+    assert _scripts_for(fakes.bq) == ["c1"]
+    assert latest._file(results, "c2").read_text() == before
+    saved = json.loads(_latest_run(tmp_path).read_text())
+    assert [s["comparison"] for s in saved["skipped"]] == ["c2"]
+
+
+def test_sql_that_cannot_be_built_at_the_run_s_moment_skips_its_comparison(
+    fakes, tmp_path, monkeypatch, capsys
+):
+    path = _two(tmp_path)
+    plan_one = pipeline._plan_one
+
+    def plan(cfg, comparison, *, build, **kwargs):
+        if comparison.id == "c2":
+            raise pipeline.ViewHistoryError("no CREATE_VIEW job for d.v before then")
+        return plan_one(cfg, comparison, build=build, **kwargs)
+
+    monkeypatch.setattr(pipeline, "_plan_one", plan)
+
+    assert cli.main(["compare", str(path)]) == 0
+
+    out = capsys.readouterr().out
+    assert (
+        "Skipping c2: its SQL cannot be built today: no CREATE_VIEW job for d.v "
+        "before then."
+    ) in out
+    assert _scripts_for(fakes.bq) == ["c1"]
+
+
+def test_a_held_checkpoint_whose_sql_cannot_be_built_skips_its_comparison(
+    fakes, tmp_path, monkeypatch, capsys
+):
+    path = _four(tmp_path)
+    fakes.bq.fail_once = "ada_region_3"
+    assert cli.main(["compare", str(path)]) == 1
+    fakes.bq.ran.clear()
+    capsys.readouterr()
+    fingerprints = pipeline.side_fingerprints
+
+    def broken(cfg, comparison, *, build, **kwargs):
+        # Only at the run's moment: the check at today's builds it fine.
+        if comparison.id == "ada-region-1" and build.job_id != "now":
+            raise pipeline.ViewHistoryError("no CREATE_VIEW job for d.v before then")
+        return fingerprints(cfg, comparison, build=build, **kwargs)
+
+    monkeypatch.setattr(pipeline, "side_fingerprints", broken)
+
+    assert cli.main(["compare", str(path), "--all"]) == 0
+
+    out = capsys.readouterr().out
+    assert "Skipping ada-region-1: its SQL cannot be built today: " in out
+    assert [_first(r"__(ada_region_\d)_", s) for s in _outer(fakes.bq)] == [
+        "ada_region_3",
+        "ada_region_4",
+    ]
+
+
+def test_a_tableau_error_on_one_workbook_skips_only_its_comparison(
+    fakes, tmp_path, monkeypatch, capsys
+):
+    path = _two(tmp_path, lambda e: e.replace("workbook: wb-1", "workbook: wb-2"))
+    updated = fakes.tbl.workbook_updated
+
+    def answer(luid):
+        if luid == "wb-2":
+            raise TSC.ServerResponseError("404", "Resource Not Found", "gone")
+        return updated(luid)
+
+    monkeypatch.setattr(fakes.tbl, "workbook_updated", answer)
+
+    assert cli.main(["compare", str(path)]) == 0
+
+    out = capsys.readouterr().out
+    assert (
+        "Skipping c2: the workbook could not be checked: Tableau answered 404 "
+        "Resource Not Found"
+    ) in out
+    assert _scripts_for(fakes.bq) == ["c1"]
+
+
+def test_a_bigquery_error_while_comparing_skips_it_and_keeps_its_spend(
+    fakes, tmp_path, capsys
+):
+    path = _two(tmp_path)
+    assert cli.main(["compare", str(path)]) == 0
+    results = latest.folder(tmp_path / "cache" / "v", "kipptaf_marts.fct_f")
+    before = latest._file(results, "c2").read_text()
+    fakes.bq.build = LATER
+    fakes.bq.cost = lambda sql: 0.01
+    fakes.bq.ran.clear()
+    capsys.readouterr()
+    # c2's reconcile, which saves its rows to a table named for it.
+    _bigquery_refuses(fakes, "__c2_", dry=False)
+
+    assert cli.main(["compare", str(path), "--all"]) == 0
+
+    out = capsys.readouterr().out
+    assert (
+        "Skipping c2: a query failed in BigQuery (job ?, invalidQuery); compare it "
+        "again later."
+    ) in out
+    assert "12345" not in out
+    assert _scripts_for(fakes.bq) == ["c1"]
+    assert latest._file(results, "c2").read_text() == before
+    folder = report.run_dir(tmp_path / "cache", "v", report.Build(*LATER, "job-1"))
+    saved = json.loads((folder / "run.json").read_text())
+    assert [s["comparison"] for s in saved["skipped"]] == ["c2"]
+    # c1's 6 queries and c2's 4 cell queries ran before c2's reconcile failed;
+    # every query that ran is in the run's spend.
+    assert len(_compared(fakes.bq)) == 10
+    assert saved["cost_usd"] == pytest.approx(0.01 * len(fakes.bq.ran), rel=1e-3)
 
 
 def test_sort_and_review_go_on_past_a_comparison_skipped_for_a_missing_member(
@@ -1377,7 +1596,8 @@ def test_a_resumed_older_moment_never_replaces_a_newer_result(fakes, tmp_path):
     assert cli.main(["compare", str(path), "--all", "--moment", END.isoformat()]) == 0
 
     kept = latest.read_all(
-        latest.folder(tmp_path / "cache" / "v", "kipptaf_marts.fct_f")
+        latest.folder(tmp_path / "cache" / "v", "kipptaf_marts.fct_f"),
+        "kipptaf_marts.fct_f",
     )
     assert kept["c1"].moment.end == LATER[1]
     assert kept["c2"].moment.end == END

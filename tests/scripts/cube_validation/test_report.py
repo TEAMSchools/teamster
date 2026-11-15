@@ -1129,3 +1129,19 @@ def test_an_expired_hand_check_says_to_compare_every_comparison():
     }  # fmt: skip
     text = "\n".join(report._hand_check_lines("Q1", check))
     assert "re-run `compare --all` for a fresh moment" in text
+
+
+def test_a_bigquery_skip_posts_its_fixed_words_and_no_message():
+    from google.api_core.exceptions import BadRequest
+
+    exc = BadRequest(
+        "No matching signature for value 'Student 12345'",
+        errors=[{"reason": "invalidQuery"}],
+    )
+    exc.job_id = "job_x"
+
+    skip = pipeline._bigquery_skip("c2", "a query", exc)
+
+    assert report._posted_why(skip.why) == (
+        "a query failed in BigQuery (job job_x, invalidQuery); compare it again later"
+    )

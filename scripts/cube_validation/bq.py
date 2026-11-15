@@ -392,6 +392,18 @@ _SPEND_FILE = "spend.json"
 JOB_ID = "job_id"
 
 
+def failure_reason(exc: GoogleAPIError) -> str:
+    """A BigQuery error's reason code, such as `invalidQuery`: its message can
+    quote values."""
+    errors = getattr(exc, "errors", None) or [{}]
+    return errors[0].get("reason") or type(exc).__name__
+
+
+def job_failure(exc: GoogleAPIError) -> str:
+    """A BigQuery error as its job and reason: its message can quote values."""
+    return f"job {getattr(exc, JOB_ID, '') or '?'}, {failure_reason(exc)}"
+
+
 def _today() -> str:
     return datetime.now(timezone.utc).date().isoformat()
 

@@ -29,11 +29,12 @@ from pathlib import Path
 from typing import Any
 
 import tableauserverclient as TSC
+from google.api_core.exceptions import GoogleAPIError
 
 from . import answers, checkpoints, coverage, decisions
 from . import find_field as finder
 from . import latest, reconcile, report, saved, sort, tableau
-from .bq import ViewHistoryError, Warehouse
+from .bq import CostCapError, ViewHistoryError, Warehouse, job_failure
 from .config import (
     WEEK_END_KEY,
     ColumnPair,
@@ -720,7 +721,7 @@ def _cell_diffs(
     comparisons: list[Comparison],
     sides: "_Sides",
     cube: Cube,
-    skipped: frozenset[str] = frozenset(),
+    older: frozenset[str] = frozenset(),
 ) -> tuple[list[CellDiff], set[Cell]]:
     """Each comparison's differing cells, with candidate causes.
 
@@ -728,8 +729,8 @@ def _cell_diffs(
     row in it matched on both sides. Those cells make the comparison's
     `formula` diff; the rest, holding groups or unplaceable, its `cells` diff.
     A cell that cannot be placed is never a formula difference. A comparison
-    in `skipped` composes its older cells even when Cube can no longer
-    compile its measure.
+    in `older` (not compared by this process) composes its older cells even
+    when Cube can no longer compile its measure.
 
     Returns:
         The diffs, and the formula cells, which `_diff_cells` marks so later
@@ -748,7 +749,7 @@ def _cell_diffs(
         try:
             compiled = cube.compiled({"measures": [member]}).sql
         except CubeError:
-            if comparison.id not in skipped:
+            if comparison.id not in older:
                 raise
             expr = "a measure Cube cannot compile today"
         else:
@@ -999,10 +1000,14 @@ def side_fingerprints(
 
 def checkpoint_fingerprint(comparison: Comparison, fingerprints: dict[str, str]) -> str:
     """What a comparison's saved work holds for: its config entry and both
-    sides' SQL. Any edit to either makes the saved work stale."""
+    sides' SQL. Any edit to either makes the saved work stale, but its
+    `definitions`, which change no result."""
     return hashlib.sha256(
         json.dumps(
-            [dataclasses.asdict(comparison), fingerprints],
+            [
+                dataclasses.asdict(dataclasses.replace(comparison, definitions={})),
+                fingerprints,
+            ],
             sort_keys=True,
             default=str,
         ).encode()
@@ -1750,6 +1755,9 @@ def _moved_fact_skips(
     return out
 
 
+# How `workbook_check` starts a line for a workbook Tableau would not answer for.
+TABLEAU_ANSWERED = "Tableau answered"
+
 # The keys a comparison needs before `compare` can build its queries.
 _NEEDED = ("dashboard_view", "decimals")
 
@@ -1762,8 +1770,8 @@ def _proof_skips(
     A comparison is skipped when it lacks a key a run needs (`_NEEDED`), it
     has no rebuild check, its sheet query changed since the check, it maps a
     member Cube's `/meta` lacks (`missing_members`), or its workbook changed
-    since the check (`workbook_check`). Each check reads only the comparisons no
-    earlier check skipped.
+    since the check or Tableau errs on it (`workbook_check`). Each check reads
+    only the comparisons no earlier check skipped.
     """
     skips: list[Skip] = []
 
@@ -1801,13 +1809,26 @@ def _proof_skips(
         if lines := [
             s.removeprefix(f"{c.id}: ") for s in stale if s.startswith(f"{c.id}: ")
         ]:
-            skips.append(
-                Skip(
-                    c.id,
-                    f"workbook changed since its rebuild check: {'; '.join(lines)}",
-                )
+            what = (
+                "the workbook could not be checked"
+                if lines[0].startswith(TABLEAU_ANSWERED)
+                else "workbook changed since its rebuild check"
             )
+            skips.append(Skip(c.id, f"{what}: {'; '.join(lines)}"))
     return skips
+
+
+# What building a comparison's SQL raises when it cannot be built.
+_SQL_ERRORS = (Refusal, CubeRefusal, CubeError, ViewHistoryError)
+
+
+def _bigquery_skip(comparison: str, what: str, exc: GoogleAPIError) -> Skip:
+    """A skip for a BigQuery error: fixed words with the job and reason code,
+    never BigQuery's message, which can quote values."""
+    return Skip(
+        comparison,
+        f"{what} failed in BigQuery ({job_failure(exc)}); compare it again later",
+    )
 
 
 def _sql_skips(
@@ -1826,7 +1847,7 @@ def _sql_skips(
     for c in comparisons:
         try:
             side_fingerprints(cfg, c, wh=wh, cube=cube, build=build, schools=schools)
-        except (Refusal, CubeRefusal, CubeError, ViewHistoryError) as exc:
+        except _SQL_ERRORS as exc:
             out.append(Skip(c.id, f"{SQL_BROKEN}: {exc}"))
     return out
 
@@ -1974,10 +1995,15 @@ def compare(
     compared, and the skipped one keeps its latest result. Before any query,
     a confirmed comparison is skipped when it lacks a key it needs, has no
     rebuild check, its sheet query or workbook changed since the check, or it
-    maps a member Cube lacks (`_proof_skips`); before the price, when its SQL
-    cannot be built today (`_sql_skips`); after the price, when its Cube SQL
-    reads a fact in `also_facts` that changed during the build, or both sides'
-    rows read a table that did (`_compare_all`). The skips are kept in
+    maps a member Cube lacks, or Tableau errs on its workbook
+    (`_proof_skips`); before the price, when its SQL cannot be built today
+    (`_sql_skips`) or at the run's moment, or a dry run it needs fails; after
+    the price, when its Cube SQL reads a fact in `also_facts` that changed
+    during the build, both sides' rows read a table that did, or one of its
+    queries fails in BigQuery, whose spend stays counted (`_compare_all`). A
+    BigQuery error is skipped as its job and reason code, never its message,
+    which can quote values; only a cap (`CostCapError`) stops the run. The
+    skips are kept in
     `run.json` as `skipped`. Every query a comparison bills is
     priced before the first one runs (`_compare_all`), and `ticker` prints a
     line as each comparison finishes. Each comparison it finishes is
@@ -2056,7 +2082,7 @@ def compare(
             selected = ready
             broken = sql_skips(selected)
         else:
-            results = latest.read_all(results_dir)
+            results = latest.read_all(results_dir, cfg.fact)
             whys = stale_comparisons(
                 cfg,
                 ready,
@@ -2149,7 +2175,14 @@ def compare(
             checkpoints.record_spend(folder, process, wh.spent)
         cost = checkpoints.total_spend(folder)
     _refuse_all_skipped(cfg, comparisons, skips)
-    return compose(build=build, folder=folder, cost=cost, skipped=skips)
+    gone = {s.comparison for s in skips}
+    return compose(
+        build=build,
+        folder=folder,
+        cost=cost,
+        skipped=skips,
+        compared=[c.id for c in selected if c.id not in gone],
+    )
 
 
 def _last_run(cfg: ViewConfig, cache_root: Path) -> dict | None:
@@ -2203,16 +2236,19 @@ def _compose(
     folder: Path,
     cost: float,
     skipped: Iterable[Skip] = (),
+    compared: Iterable[str] = (),
 ) -> RunResult:
     """Compose, print and save `run.json` in `folder` from every confirmed
     comparison's latest result, in config order; `build` and `cost` are the
     folder's, and `skipped` what this process skipped, whose older results
-    compose like the rest. Compiles Cube's measure only; no query bills.
+    compose like the rest. Compiles Cube's measure only; no query bills. Only
+    the comparisons in `compared` (this process compared them) refuse when
+    Cube cannot compile their measure; the rest compose their older cells.
 
     Raises:
         Refusal: Two decisions claim one item (`decisions.apply`).
     """
-    results = latest.read_all(results_dir)
+    results = latest.read_all(results_dir, cfg.fact)
     composed = [c for c in comparisons if c.id in results]
     left_out = [c.id for c in comparisons if c.id not in results]
     sides = _Sides(moved={f: False for f in cfg.also_facts})
@@ -2224,8 +2260,9 @@ def _compose(
 
     gaps, gaps_unknown = _gaps(comparisons)
     skipped = list(skipped)
+    now = set(compared)
     cell_diffs, formula_cells = _cell_diffs(
-        cfg, comparisons, sides, cube, frozenset(s.comparison for s in skipped)
+        cfg, comparisons, sides, cube, frozenset(c.id for c in comparisons) - now
     )
     try:
         applied = decisions.apply(
@@ -2295,8 +2332,9 @@ def _compose(
     text = report.render_local(result) + "\n" + _extra_sections(sides.cells)
     print(text)
     saved = report.save_local(result, text, root=cache_root)
-    saved.with_name("run.json").write_text(
-        json.dumps(dataclasses.asdict(result), default=_json_default, indent=1)
+    checkpoints._write_text(
+        saved.with_name("run.json"),
+        json.dumps(dataclasses.asdict(result), default=_json_default, indent=1),
     )
     checkpoints.finish(folder)
     print(f"Saved {saved}")
@@ -2350,33 +2388,52 @@ def _compare_all(
     most the one in progress. Each result keeps the dimension tables it read
     that changed during the build (`changed_dims`). A held checkpoint is kept
     as the latest result only when no later moment's result has replaced it
-    since.
+    since. A comparison whose SQL cannot be built at `build`, whose dry run
+    or a table scan it needs fails, or one of whose queries fails in BigQuery
+    is skipped and the rest run.
 
     Raises:
-        CostCapError: The priced total would pass the run's or the day's cap.
+        CostCapError: The priced total would pass the run's or the day's cap,
+            or a query would.
     """
     kept = checkpoints.read_all(folder)
     slices: dict[str, tuple[str, _Sides]] = {}
     plans: list[_Plan] = []
+    skips: list[Skip] = []
     for comparison in comparisons:
-        if comparison.id in kept:
-            fingerprint, data = kept[comparison.id]
-            now = checkpoint_fingerprint(
-                comparison,
-                side_fingerprints(
+        try:
+            if comparison.id in kept:
+                fingerprint, data = kept[comparison.id]
+                now = checkpoint_fingerprint(
+                    comparison,
+                    side_fingerprints(
+                        cfg, comparison, wh=wh, cube=cube, build=build, schools=schools
+                    ),
+                )
+                if now == fingerprint:
+                    slices[comparison.id] = (fingerprint, _Sides.from_json(data))
+                    continue
+                print(
+                    f"Comparison {comparison.id}: its config or SQL changed since "
+                    "its saved result; comparing it again."
+                )
+            plans.append(
+                _plan_one(
                     cfg, comparison, wh=wh, cube=cube, build=build, schools=schools
-                ),
+                )
             )
-            if now == fingerprint:
-                slices[comparison.id] = (fingerprint, _Sides.from_json(data))
-                continue
-            print(
-                f"Comparison {comparison.id}: its config or SQL changed since its "
-                "saved result; comparing it again."
-            )
-        plans.append(
-            _plan_one(cfg, comparison, wh=wh, cube=cube, build=build, schools=schools)
-        )
+        except _SQL_ERRORS as exc:
+            # Built at the run's moment, which `_sql_skips` did not check.
+            skips.append(Skip(comparison.id, f"{SQL_BROKEN}: {exc}"))
+
+    # One dry run at a time; one that fails skips the comparison it prices.
+    prices: list[list[float]] = []
+    for plan in list(plans):
+        try:
+            prices.append([wh.estimate(sql) for sql in plan.queries()])
+        except GoogleAPIError as exc:
+            plans.remove(plan)
+            skips.append(_bigquery_skip(plan.comparison.id, "its dry run", exc))
 
     # The second facts have their own check below, and a held checkpoint
     # already answered its shared tables, so neither joins `shared`.
@@ -2390,16 +2447,43 @@ def _compare_all(
     shared = sorted({t for p in plans for t in p.shared if t not in known})
     # Each table once, at both ends of the build, whichever checks need it.
     scanned = _unique([*cfg.also_facts, *shared, *dims])
-    scans = [fingerprint_sql(t, ts) for t in scanned for ts in (build.start, build.end)]
-    scan_usd = sum(wh.estimate(sql) for sql in scans)
-    prices = [[wh.estimate(sql) for sql in plan.queries()] for plan in plans]
+    scan_usd = 0.0
+    for t in list(scanned):
+        try:
+            scan_usd += sum(
+                wh.estimate(fingerprint_sql(t, ts)) for ts in (build.start, build.end)
+            )
+        except GoogleAPIError as exc:
+            # Unscanned, so every comparison that reads it is skipped.
+            scanned.remove(t)
+            readers = [
+                p.comparison.id for p in plans if t in p.cube_tables | set(p.shared)
+            ]
+            readers += [cid for cid, (_, h) in slices.items() if t in h.cube_tables]
+            skips += [
+                _bigquery_skip(cid, f"the dry run of a scan of {t}", exc)
+                for cid in readers
+            ]
+    gone = {s.comparison for s in skips}
+    slices = {cid: v for cid, v in slices.items() if cid not in gone}
+    priced = [
+        (p, pr)
+        for p, pr in zip(plans, prices, strict=True)
+        if p.comparison.id not in gone
+    ]
+    plans, prices = [p for p, _ in priced], [pr for _, pr in priced]
+    _say_skips(skips)
+    said = len(skips)
     total = scan_usd + sum(map(sum, prices))
-    n = len(scans) + sum(map(len, prices))
-    print(f"Compare: {n} queries, ${total:.2f} (dry run)")
+    n = 2 * len(scanned) + sum(map(len, prices))
+    print(
+        f"Compare: {n} queries, ${total:.2f} (dry run), plus the save script's "
+        "temp-table reads, capped per query."
+    )
     wh.refuse_past_caps(total)
 
     changed = set(changed_between(wh, scanned, build.start, build.end))
-    skips = _moved_fact_skips(
+    skips += _moved_fact_skips(
         cfg,
         build,
         changed,
@@ -2416,7 +2500,7 @@ def _compare_all(
             skips.append(skip)
         else:
             kept_plans.append((plan, priced))
-    _say_skips(skips)
+    _say_skips(skips[said:])
 
     def keep(comparison: Comparison, fingerprint: str, one: _Sides) -> None:
         latest.write(
@@ -2436,13 +2520,24 @@ def _compare_all(
         )
 
     by_id = {c.id: c for c in comparisons}
-    stored = latest.read_all(results_dir)
+    stored = latest.read_all(results_dir, cfg.fact)
     for cid, (fingerprint, held) in slices.items():
         if cid not in stored or stored[cid].moment.end <= build.end:
             keep(by_id[cid], fingerprint, held)
     for plan, priced in kept_plans:
         comparison = plan.comparison
-        one = _execute(cfg, plan, wh=wh, build=build, prices=priced)
+        try:
+            one = _execute(cfg, plan, wh=wh, build=build, prices=priced)
+        except CostCapError:
+            raise
+        except GoogleAPIError as exc:
+            # Its spend stays counted; the rest still run, so a resume does
+            # not stop at it again.
+            skip = _bigquery_skip(comparison.id, "a query", exc)
+            _say_skips([skip])
+            skips.append(skip)
+            checkpoints.record_spend(folder, process, wh.spent)
+            continue
         fingerprint = checkpoint_fingerprint(comparison, plan.fingerprints)
         checkpoints.write(folder, comparison.id, fingerprint, one.to_json(), clock())
         keep(comparison, fingerprint, one)
@@ -2599,7 +2694,10 @@ def _saved_run(cfg: ViewConfig, cache_root: Path) -> tuple[dict, Path]:
     )
     other = None
     for path in saved:
-        data = json.loads(path.read_text())
+        try:
+            data = json.loads(path.read_text())
+        except (OSError, ValueError):
+            continue
         fact = data.get("fact", "") if isinstance(data, dict) else ""
         if fact in ("", cfg.fact):
             return data, path
@@ -3582,7 +3680,8 @@ def workbook_check(
     filters). A republish that changed neither is printed as such and not
     listed. A rebuild check without `source_fingerprint` cannot rule out a datasource
     change, so it is stale after any republish. A matched comparison that maps a
-    member Cube's `/meta` no longer lists is stale too.
+    member Cube's `/meta` no longer lists is stale too, and one whose workbook
+    Tableau errs on reads `TABLEAU_ANSWERED` and its error.
 
     Args:
         cfg: The view's config.
@@ -3608,7 +3707,18 @@ def workbook_check(
         if proof is None:
             stale.append(f"{comparison.id}: no rebuild check")
             continue
-        updated = tbl.workbook_updated(comparison.workbook)
+        try:
+            updated = tbl.workbook_updated(comparison.workbook)
+            if comparison.workbook not in twbs and proof.workbook_updated_at:
+                if updated > datetime.fromisoformat(proof.workbook_updated_at):
+                    twbs[comparison.workbook] = tbl.download_twb(comparison.workbook)
+        except TSC.ServerResponseError as exc:
+            # One workbook's error is its comparisons' alone.
+            stale.append(
+                f"{comparison.id}: {TABLEAU_ANSWERED} {exc.code} {exc.summary}; "
+                "try again, or re-run `rebuild-sheet` if the workbook moved"
+            )
+            continue
         if not proof.workbook_updated_at:
             stale.append(
                 f"{comparison.id}: rebuild check has no workbook_updated_at; "
@@ -3621,8 +3731,6 @@ def workbook_check(
             f"workbook published {updated.isoformat()}, after the rebuild check's "
             f"{proof.workbook_updated_at}"
         )
-        if comparison.workbook not in twbs:
-            twbs[comparison.workbook] = tbl.download_twb(comparison.workbook)
         twb, sheet = twbs[comparison.workbook], comparison.sheet or ""
         try:
             formulas = tableau.formula_fingerprint(twb, sheet)
