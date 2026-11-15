@@ -1174,7 +1174,7 @@ def approved_decisions(
         if item.get("suggestion") == "investigate":
             raise AnswerError(
                 f"{where}: item {item_id!r} is still in `investigate`; run `explain` "
-                "on it (cube-validation skill, step 8), then re-run `sort`"
+                "on it (cube-validation skill, step 6), then re-run `sort`"
             )
         named = _text(entry, "cause", where, required=False)
         stub = item.get("stub") or {}
