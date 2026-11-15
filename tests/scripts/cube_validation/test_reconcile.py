@@ -1136,8 +1136,6 @@ def test_a_key_every_filter_drops_keeps_its_latest_dropped_row(duck):
 
 
 def test_the_scope_applies_before_the_reduce(duck):
-    from dataclasses import replace
-
     dash = [
         (1, "Q1", "A", date(2026, 9, 1), 0),
         (1, "Q1", "A", date(2026, 9, 2), 1),
