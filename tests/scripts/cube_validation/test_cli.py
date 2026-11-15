@@ -1032,6 +1032,29 @@ def test_triage_neither_checks_nor_traces_a_skipped_comparison_s_groups(
     assert seen["ready"] == seen["trace"] == keys["c2"]
 
 
+def test_triage_gives_the_proofs_and_the_trace_one_ticker(fakes, tmp_path, monkeypatch):
+    path = _two(tmp_path, _reads_membership)
+    assert cli.main(["run", str(path)]) == 0
+    seen = []
+
+    def stored(*args, ticker=None, **kwargs):
+        seen.append(ticker)
+        return []
+
+    def traced(*args, ticker=None, **kwargs):
+        seen.append(ticker)
+        return trace.TraceResult({})
+
+    monkeypatch.setattr(trace, "check_ready", lambda *a, **k: None)
+    monkeypatch.setattr(confirm, "run_stored", stored)
+    monkeypatch.setattr(trace, "trace_run", traced)
+
+    assert cli.main(["triage", str(path)]) == 0
+
+    assert len(seen) == 2 and seen[0] is seen[1]
+    assert isinstance(seen[0], report.Ticker)
+
+
 def test_review_posts_the_masked_lead_of_an_item_with_the_analyst(
     fakes, tmp_path, capsys
 ):
@@ -4057,7 +4080,9 @@ def test_triage_traces_the_rows_by_default(fakes, tmp_path, capsys, monkeypatch)
     run = pipeline._run_from_json(json.loads(saved.read_text()))
     seen = {}
 
-    def traced(cfg, run_, *, wh, cube, manifest_path, max_minutes, skip, prepared):
+    def traced(
+        cfg, run_, *, wh, cube, manifest_path, max_minutes, skip, prepared, ticker
+    ):
         seen["manifest"], seen["minutes"] = manifest_path, max_minutes
         found = {}
         for g in run_.applied.open:

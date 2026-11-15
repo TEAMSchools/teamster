@@ -37,6 +37,7 @@ from .report import (
     _CELL_WORDS,
     CauseAsk,
     RunResult,
+    Ticker,
     Unsettled,
     _gap_line,
     _is_identifier,
@@ -1334,6 +1335,7 @@ def run_triage(
     proofs: Path | None = None,
     comparisons: list[str] | None = None,
     now: datetime | None = None,
+    ticker: Ticker | None = None,
 ) -> list[Suggestion]:
     """Sort each open item of the view's latest run into a pile and print them.
 
@@ -1362,6 +1364,9 @@ def run_triage(
     `comparisons`, only their proofs run and only their row groups are traced
     or printed; `triage.json` still holds every item, the others' from their
     kept proof outcomes.
+
+    `ticker` (a new one by default) prints a progress line after each proof
+    runs and after each level of the trace.
 
     Raises:
         pipeline.Refusal: The view has no usable saved run (see
@@ -1393,6 +1398,7 @@ def run_triage(
 
     from . import confirm
 
+    ticker = ticker or Ticker(confirm._utcnow, confirm._utcnow())
     prepared = trace.Prepared()
     with wh.budget(max_usd):
         prepared.schools = network_schools(wh)
@@ -1441,6 +1447,7 @@ def run_triage(
                 prepared=prepared,
                 progress_dir=run_json.parent,
                 comparisons=wanted,
+                ticker=ticker,
             )
             if proofs is not None
             else [],
@@ -1458,6 +1465,7 @@ def run_triage(
                 | _outside(run, wanted)
                 | _groups_of(run, set(skipped)),
                 prepared=prepared,
+                ticker=ticker,
             )
             if trace_rows
             else None

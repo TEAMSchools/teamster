@@ -1900,3 +1900,20 @@ def test_proofs_outside_the_comparisons_are_counted_in_one_line(
     out = capsys.readouterr().out
     assert "not run: outside --comparison" not in out
     assert "1 proof outside --comparison not run (no kept outcome)." in out
+
+
+def test_each_explanation_run_prints_a_progress_line(duck, tmp_path, offline):
+    _tables(duck)
+    run = _run([_group(3)])
+    wh = _saved_wh(duck, run)
+    wh.spent = 0.25
+    directory, path = _proof(tmp_path)
+    said = []
+
+    class Ticks:
+        def say(self, step, comparison, spent):
+            said.append((step, comparison, spent))
+
+    confirm.run_stored(CFG, run, directory, wh=wh, cube=None, ticker=Ticks())
+
+    assert said == [("sort explain", path.name, 0.25)]

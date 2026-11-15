@@ -1047,3 +1047,206 @@ def test_a_side_too_long_at_level_0_stops_only_its_bucket(monkeypatch):
 
     assert "alone is too long" in result.items[trace.item_key(cube_only)].stopped
     assert not result.items[trace.item_key(dash_only)].stopped
+
+
+# --- a model the trace cannot read is skipped, not the bucket (#6181) ------------
+
+TWO = (
+    "SELECT u.student, u.item, u.school FROM ("
+    "SELECT student, item, school FROM `teamster-332318.d.int_a` UNION ALL "
+    "SELECT student, item, school FROM `teamster-332318.d.int_b`) AS u"
+)
+KEPT = "student BIGINT, item VARCHAR, school VARCHAR, keep BOOLEAN"
+
+
+def _two_models(duck, tmp_path):
+    """Rows 1 and 2 are missing from `int_a` and `int_b`; each model's `keep`
+    drops one of them."""
+    _cube_rows(duck, [(1, "a", "X"), (2, "b", "X")])
+    duck.table("raw_a", KEPT, [(1, "a", "X", False)])
+    duck.table("raw_b", KEPT, [(2, "b", "X", False)])
+    duck.table("int_a", "student BIGINT, item VARCHAR, school VARCHAR", [])
+    duck.table("int_b", "student BIGINT, item VARCHAR, school VARCHAR", [])
+    return _manifest(
+        tmp_path,
+        {
+            name: (
+                "select student, item, school "
+                f"from `teamster-332318`.`d`.`raw_{name[-1]}` where keep",
+                [],
+            )
+            for name in ("int_a", "int_b")
+        },
+    )
+
+
+def _bucket(duck, dash, groups, *, levels, manifest, wh):
+    return trace._Bucket(
+        _side(dash),
+        groups,
+        wh=wh,
+        manifest=manifest,
+        levels=levels,
+        end_tables=set(),
+        moved={},
+        meter=trace._Meter(None),
+    )
+
+
+def _holds_a(sql):
+    # Every level-1 query that reads int_a's own SQL names its variant.
+    return "'!int_a'" in sql
+
+
+def test_a_model_whose_query_fails_is_skipped_and_the_others_descend(duck, tmp_path):
+    manifest = _two_models(duck, tmp_path)
+    wh = DuckWarehouse(duck)
+
+    def rows(sql, timeout_s=None):
+        if _holds_a(sql):
+            raise BadRequest(
+                "Bad int64 value: 12345", errors=[{"reason": "resourcesExceeded"}]
+            )
+        return duck.rows(sql)
+
+    wh.rows = rows
+    bucket = _bucket(duck, TWO, [_group(2)], levels=1, manifest=manifest, wh=wh)
+
+    found = bucket.run()[trace.item_key(_group(2))]
+
+    assert found.steps == {"dashboard:int_b/main:1": 1}
+    assert bucket.blocked == {"int_a": "resourcesExceeded"}
+    assert found.consistent and not found.stopped
+
+
+def test_a_model_whose_dry_run_fails_is_skipped_not_the_bucket(duck, tmp_path):
+    manifest = _two_models(duck, tmp_path)
+    wh = DuckWarehouse(duck)
+
+    def estimate(sql):
+        if _holds_a(sql):
+            raise BadRequest("x", errors=[{"reason": "invalidQuery"}])
+        return 0.0
+
+    wh.estimate = estimate
+    bucket = _bucket(duck, TWO, [_group(2)], levels=1, manifest=manifest, wh=wh)
+
+    found = bucket.run()[trace.item_key(_group(2))]
+
+    assert found.steps == {"dashboard:int_b/main:1": 1}
+    assert bucket.blocked == {"int_a": "invalidQuery"}
+    assert not found.stopped
+
+
+def test_a_stopped_bucket_prints_its_model_chain(duck, tmp_path, capsys):
+    _cube_rows(duck, [(424242, "a", "X")])
+    duck.table("raw_x", KEPT, [(424242, "a", "X", False)])
+    duck.table("int_x", "student BIGINT, item VARCHAR, school VARCHAR", [])
+    manifest = _manifest(
+        tmp_path,
+        {
+            "int_x": (
+                "select student, item, school "
+                "from `teamster-332318`.`d`.`raw_x` where keep",
+                [],
+            )
+        },
+    )
+    dash = "SELECT x.student, x.item, x.school FROM `teamster-332318.d.int_x` AS x"
+    wh = DuckWarehouse(duck)
+
+    def rows(sql, timeout_s=None):
+        if "'!int_x'" in sql:
+            raise BadRequest(
+                "Bad int64 value: 424242", errors=[{"reason": "resourcesExceeded"}]
+            )
+        return duck.rows(sql)
+
+    wh.rows = rows
+    bucket = _bucket(duck, dash, [_group(1)], levels=1, manifest=manifest, wh=wh)
+
+    bucket.run()
+
+    out = capsys.readouterr().out
+    assert "Trace mastery cube_only chain: " in out
+    assert "the dashboard SQL > int_x: resourcesExceeded" in out
+    assert bucket.chain() == ["the dashboard SQL > int_x: resourcesExceeded"]
+    assert "424242" not in out
+
+
+def test_the_trace_descends_up_to_5_levels(duck, tmp_path):
+    _cube_rows(duck, [(1, "a", "X")])
+    cols = "student BIGINT, item VARCHAR, school VARCHAR"
+    duck.table("raw", KEPT, [(1, "a", "X", False)])
+    for i in range(1, 6):
+        duck.table(f"m{i}", cols, [])
+    models = {
+        f"m{i}": (
+            f"select student, item, school from `teamster-332318`.`d`.`m{i + 1}`",
+            [f"m{i + 1}"],
+        )
+        for i in range(1, 5)
+    }
+    models["m5"] = (
+        "select student, item, school from `teamster-332318`.`d`.`raw` where keep",
+        [],
+    )
+    manifest = _manifest(tmp_path, models)
+    dash = "SELECT m.student, m.item, m.school FROM `teamster-332318.d.m1` AS m"
+
+    shallow = _trace(duck, dash, [_group(1)], levels=4, manifest=manifest)
+    deep = _trace(duck, dash, [_group(1)], levels=trace.MAX_LEVELS, manifest=manifest)
+
+    assert trace.MAX_LEVELS == 5
+    assert not shallow[trace.item_key(_group(1))].steps
+    found = deep[trace.item_key(_group(1))]
+    assert _proven(found)
+    assert list(found.labels.values()) == ["m5/main: keep"]
+
+
+def test_a_cap_still_stops_the_whole_bucket(duck, tmp_path):
+    from cube_validation.bq import CostCapError
+
+    manifest = _two_models(duck, tmp_path)
+    wh = DuckWarehouse(duck)
+    wh.estimate = lambda sql: 5.0 if _holds_a(sql) else 0.0
+
+    def refuse(usd):
+        if usd >= 5.0:
+            raise CostCapError("these queries would pass the $1.00 cap")
+
+    wh.refuse_past_caps = refuse
+    bucket = _bucket(duck, TWO, [_group(2)], levels=1, manifest=manifest, wh=wh)
+
+    with pytest.raises(trace.Stopped) as caught:
+        bucket.run()
+
+    assert "cap" in caught.value.reason
+    assert "int_a" not in bucket.blocked
+    assert caught.value.found[trace.item_key(_group(2))].stopped
+
+
+class _Ticks:
+    def __init__(self):
+        self.said = []
+
+    def say(self, step, comparison, spent):
+        self.said.append((step, comparison, spent))
+
+
+def test_each_trace_level_prints_a_progress_line(duck, tmp_path, monkeypatch):
+    side = _side(FLAT)
+    monkeypatch.setattr(trace, "network_schools", lambda wh: set())
+    monkeypatch.setattr(pipeline, "row_sides", lambda *a, **k: side.sides)
+    _cube_rows(duck, [(1, "a", "X")])
+    duck.table("fact", FACT, [(1, "a", "X", False, True)])
+    run = RunResult(
+        view="v", moment=BUILD, measures=[], applied=Applied(open=[_group(1)])
+    )
+    wh = DuckWarehouse(duck)
+    wh.spent = 0.5
+    ticks = _Ticks()
+
+    trace.trace_run(CFG, run, wh=wh, cube=None, levels=0, ticker=ticks)
+
+    assert ticks.said == [("sort trace", "mastery cube_only", 0.5)]

@@ -45,7 +45,7 @@ from .compare import Group
 from .config import Comparison, ViewConfig, id_like, mask_digits, row_population
 from .cube_client import Cube, CubeError, CubeRefusal, network_schools
 from .moment import Build, MomentError, pick_moment
-from .report import RunResult, mask, shown_counts
+from .report import RunResult, Ticker, mask, shown_counts
 from .timetravel import PROJECT, utc_literal
 from .trace import TIMEOUT_S, TRACED, _failure
 
@@ -1518,6 +1518,7 @@ def run_stored(
     prepared: trace.Prepared | None = None,
     progress_dir: Path | None = None,
     comparisons: set[str] | None = None,
+    ticker: Ticker | None = None,
 ) -> list[Ran]:
     """Run every stored proof of the view on the run's saved rows. Call inside
     `wh.budget`.
@@ -1537,6 +1538,7 @@ def run_stored(
         progress_dir: Where finished outcomes are kept; None keeps none.
         comparisons: Run only these comparisons' proofs; another's outcome is
             reused when kept, else it reads "not run: outside --comparison".
+        ticker: Prints a progress line after each proof runs.
 
     Raises:
         CostCapError: The proofs to run, together, would pass the run's or the
@@ -1643,6 +1645,8 @@ def run_stored(
         else:
             if progress_dir is not None:
                 progress.save(progress_dir, done, _to_progress(ran))
+        if ticker is not None:
+            ticker.say("sort explain", name, wh.spent)
     outside = [r for r in out if r.why.endswith(_OUTSIDE)]
     for ran in out:
         if ran.why and ran not in outside:
