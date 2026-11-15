@@ -1015,8 +1015,8 @@ def _hand_check_lines(question_id: str, check: dict) -> list[str]:
         pass
     elif check["expired"]:
         line += (
-            f"The pinned SQL stopped working at {check['expires']}; re-run `compare` "
-            "for a fresh moment."
+            f"The pinned SQL stopped working at {check['expires']}; re-run "
+            "`compare --all` for a fresh moment."
         )
     else:
         line += f"The pinned SQL works until {check['expires']}."

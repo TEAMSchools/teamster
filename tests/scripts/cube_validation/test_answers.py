@@ -1057,7 +1057,7 @@ def test_a_long_body_moves_the_reproduce_blocks_to_comments(monkeypatch):
         q["reproduce"] = {
             "queries": [{"bucket": "C1", "sql": "SELECT 1 AS n_rows" + " " * 400}],
             "explanations": [], "cube": [], "expires": "2026-11-06",
-            "after": ["compare v.yml", "sort v.yml"],
+            "after": ["compare v.yml --all", "sort v.yml"],
         }  # fmt: skip
     inline = render_review_issue("Registrar", [run], DEFS, questions, causes, [])
     # Every block fits 1 comment, but not the body and a block together.
@@ -1293,7 +1293,7 @@ def test_a_cause_reproduces_through_cube_a_count_query_and_the_proof(tmp_path):
         "explain src/cube/validation/e.yml --comparison enrollment --bucket cube_only"
     )
     assert proof["after"] == [
-        "compare src/cube/validation/e.yml",
+        "compare src/cube/validation/e.yml --all",
         "sort src/cube/validation/e.yml",
     ]
     assert proof["url"] == f"https://x/blob/b/dir/{path}"

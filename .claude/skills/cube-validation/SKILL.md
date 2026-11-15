@@ -87,10 +87,12 @@ included (it prints the new one). A refusal is an answer: fix its cause, do not
 retry around it.
 
 Every command that reads a run reads the latest run of one fact: with
-`--fact-dataset` (on `rebuild-sheet`, `compare`, `sort` and `explain`) that dev
-build's, otherwise the validation file's `fact:` (production). `decide`,
-`reapply`, `ask-owner` and `record-answers` take no `--fact-dataset`, so they
-read production's. A command refuses when the view's only run read another fact.
+`--fact-dataset zz_<user>_kipptaf_marts` (on `rebuild-sheet`, `compare`, `sort`
+and `explain`) that dbt dev build's, otherwise the validation file's `fact:`
+(production). A dev build's results are kept apart from production's, so give
+every command of one check the same flag. `decide`, `reapply`, `ask-owner` and
+`record-answers` take no `--fact-dataset`, so they read production's. A command
+refuses when the view's only run read another fact.
 
 ## Runbook
 
@@ -241,7 +243,9 @@ read production's. A command refuses when the view's only run read another fact.
      plain `compare` compares only those; `--comparison <id>` (repeatable)
      compares the ones named, and `--all` every one. Changed data alone does not
      make a result stale: to re-validate after a data change, run
-     `compare --all`.
+     `compare --all`. With nothing stale, a plain `compare` prints "Every
+     comparison's latest result is current" and compares nothing; that is not a
+     failure.
    - It dry-runs every query and fingerprint scan it will send and prints one
      total, `Compare: N queries, $X (dry run)`, refusing past `--max-usd` or
      what is left of the daily cap, `--max-usd-per-day` (UTC day, shared by
@@ -257,10 +261,8 @@ read production's. A command refuses when the view's only run read another fact.
    result, each at its own moment; `run.json` is composed from them. To add a
    comparison, `rebuild-sheet` it, then `compare --comparison <id>`: the others
    keep their results. Decisions are re-applied offline, with no new `compare`.
-   `--fact-dataset zz_<user>_kipptaf_marts` reads the fact from a dbt dev build
-   instead of the file's `fact:`, to check a mart change before it merges; its
-   results are kept apart from production's, so give `sort` and `explain` the
-   same flag.
+   To check a mart change before it merges, pass
+   `--fact-dataset zz_<user>_kipptaf_marts` (see _Running a command_).
 
    `compare` saves each comparison's unmatched rows to a table in
    `teamster-332318.cube_validation_scratch` (Data Team only; each table expires
@@ -355,10 +357,8 @@ read production's. A command refuses when the view's only run read another fact.
       Counts only. A whole key missing points straight at a cause.
    4. Then propose one hypothesis per cluster: its lead, the model predicate it
       names, and the one aggregate query that tests it. Run it once the analyst
-      agrees. Queries return counts only; rows stay in BigQuery. Test each flag
-      of a `where` alone: one label (such as a week join) can hide 2 causes. A
-      year a row is filed under can be null, so a filter on that year can drop
-      rows without a sign.
+      agrees. Queries return counts only; rows stay in BigQuery. Test each
+      predicate of a `where` alone: one label can hide 2 causes.
    5. After 2 failed hypotheses on one cluster, or about $0.50 spent, stop and
       ask the analyst for context.
    6. Write the explanation: one query per comparison and bucket that reads
@@ -499,10 +499,9 @@ read production's. A command refuses when the view's only run read another fact.
        that issue fixes (`fix_source` for source data, `fix_cube` for the Cube
        model), with the issue as `task`.
      - Owner: a question only the owner can settle about the explained step,
-       such as whether a kind of record should count, which date files a row
-       under a year, or which of 2 formulas is right (a formula difference). It
-       becomes a `domain_owner` decision with an empty `task`, and only these
-       become questions in `ask-owner`.
+       such as which side's rule is intended, or which of 2 formulas is right (a
+       formula difference). It becomes a `domain_owner` decision with an empty
+       `task`, and only these become questions in `ask-owner`.
 
    `not compared: identifier column` means values were not compared, for
    privacy; never compare them by hand. An explained row group is decided on its
@@ -621,10 +620,10 @@ read production's. A command refuses when the view's only run read another fact.
    chat's Cube connector, each distinct `-- reproduce` count query once
    (numbered only when there are several, so "1" never reads as a count; labeled
    today's data), then per explanation file a branch link and the `explain` that
-   re-explains it at the run's moment, and the `compare` plus `sort` after time
-   travel ends. Commit and push the explanations before posting, or the link
-   finds nothing. When the checks and Reproduce blocks would take the body past
-   GitHub's 65,536-character cap, they move out of it into numbered comment
+   re-explains it at the run's moment, and the `compare --all` plus `sort` after
+   time travel ends. Commit and push the explanations before posting, or the
+   link finds nothing. When the checks and Reproduce blocks would take the body
+   past GitHub's 65,536-character cap, they move out of it into numbered comment
    files that stderr names: post the issue, then each file as a comment, in
    order (the linked JSON holds everything the owner's session reads). stderr
    names any question with no sort evidence: `sort` that view and render again

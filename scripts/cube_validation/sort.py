@@ -380,7 +380,7 @@ def proven_triage(
             raise pipeline.Refusal(
                 f"{view}: decision {d.id!r} closes item {i['id']!r}, which the "
                 "sort holds in `investigate`; delete the decision and run `explain` "
-                "on the item (cube-validation skill, step 6)"
+                "on the item (see `explain` in the cube-validation skill)"
             )
     # Every cause rests on a typed explanation (`PROOF_KINDS`).
     if bare := sum(

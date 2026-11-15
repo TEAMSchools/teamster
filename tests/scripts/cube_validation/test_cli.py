@@ -4475,7 +4475,8 @@ def test_add_decisions_writes_what_is_ready_while_an_item_waits_in_investigate(
     assert cli.main(["decide", str(path), str(waiting)]) == 1
 
     err = capsys.readouterr().err
-    assert "item 'j' is still in `investigate`" in err and "step 6" in err
+    assert "item 'j' is still in `investigate`" in err
+    assert "see `explain` in the cube-validation skill" in err
     assert path.read_text() == before
 
     # The proven item writes; the other stays open.

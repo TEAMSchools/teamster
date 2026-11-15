@@ -518,7 +518,7 @@ def reproduce_json(
                     f"{proof.comparison if proof else cid} --bucket "
                     f"{proof.bucket if proof else '<bucket>'}"
                 ),
-                "after": [f"compare {file}", f"sort {file}"],
+                "after": [f"compare {file} --all", f"sort {file}"],
                 "expires": (
                     run.moment_of(cid).start + timedelta(days=TIME_TRAVEL_DAYS)
                 ).isoformat(),
@@ -1174,7 +1174,8 @@ def approved_decisions(
         if item.get("suggestion") == "investigate":
             raise AnswerError(
                 f"{where}: item {item_id!r} is still in `investigate`; run `explain` "
-                "on it (cube-validation skill, step 6), then re-run `sort`"
+                "on it (see `explain` in the cube-validation skill), then re-run "
+                "`sort`"
             )
         named = _text(entry, "cause", where, required=False)
         stub = item.get("stub") or {}

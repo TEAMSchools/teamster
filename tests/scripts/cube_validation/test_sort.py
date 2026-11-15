@@ -1127,7 +1127,9 @@ def test_a_decision_closing_an_item_triage_holds_in_investigate_refuses(tmp_path
     run_json = _write_run_triage(tmp_path, run, [item])
 
     with pytest.raises(
-        pipeline.Refusal, match=r"decision 'hand' closes item .* `investigate`"
+        pipeline.Refusal,
+        match=r"decision 'hand' closes item .* `investigate`.*see `explain` in the "
+        "cube-validation skill",
     ):
         proven_triage(run, run_json)
 

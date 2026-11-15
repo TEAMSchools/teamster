@@ -43,10 +43,11 @@ validation files or runs the validator, and neither does this session.
    `hand_checks`, `moment`, `expires` and `expired`; a cause question also has
    `reproduce`. `moment` is the earliest of its comparisons' moments, and
    `expires` follows from it. A section "Still with the analyst" in the issue
-   lists differences not explained yet: they are not questions, so never ask
-   them or answer them in the comment. Read its comments too: skip a question an
-   earlier answers comment of the owner's already covers, unless they want to
-   change it, and then send them to the analyst.
+   lists differences not explained yet, and comparisons never compared, stale or
+   skipped: they are not questions, so never ask them or answer them in the
+   comment. Read its comments too: skip a question an earlier answers comment of
+   the owner's already covers, unless they want to change it, and then send them
+   to the analyst.
 2. Say how many questions there are. A question with `expired: true` has pinned
    SQL that no longer runs: the owner can answer without the checks, check a
    cause through its `reproduce` entries (which never expire), or wait for the

@@ -1116,3 +1116,16 @@ def test_a_posted_lead_names_each_step_s_scope_never_its_sql():
         "<10 of 40 rows"
     )
     assert "JOIN" not in line and "x / 2" not in line
+
+
+def test_an_expired_hand_check_says_to_compare_every_comparison():
+    # Changed data alone is not stale: a plain `compare` would compare nothing.
+    check = {
+        "view": "v", "comparison": "c", "cut": "{}", "dims": [],
+        "dashboard": "1", "cube": "2", "dashboard_sql": "S", "cube_sql": "T",
+        "dashboard_usd": 0.01, "cube_usd": 0.01, "expires": "2026-11-06",
+        "expired": True, "workbook": "w", "sheet": "s", "filters": {},
+        "mixed": False,
+    }  # fmt: skip
+    text = "\n".join(report._hand_check_lines("Q1", check))
+    assert "re-run `compare --all` for a fresh moment" in text
