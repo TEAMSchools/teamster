@@ -2118,6 +2118,34 @@ def test_a_resumed_run_prices_only_the_comparisons_left(fakes, tmp_path, capsys)
     assert "] compare ada-region-3:" in out and "] compare ada-region-4:" in out
 
 
+def test_a_failed_scan_dry_run_skips_every_comparison_reading_the_table(
+    fakes, tmp_path, capsys
+):
+    path = _four(tmp_path)
+    fakes.bq.fail_once = "ada_region_3"
+    assert cli.main(["compare", str(path)]) == 1
+    fakes.bq.ran.clear()
+    capsys.readouterr()
+    # The scan of a dimension table every comparison's Cube SQL reads.
+    _bigquery_refuses(fakes, "`dim_locations` AS t", dry=True)
+
+    # `--all` resumes the stopped run, holding the checkpoints of 1 and 2.
+    assert cli.main(["compare", str(path), "--all"]) == 1
+
+    captured = capsys.readouterr()
+    out = captured.out
+    assert "every comparison was skipped" in captured.err
+    # Held checkpoints 1 and 2 as well as 3 and 4, left to compare.
+    for i in range(1, 5):
+        assert (
+            f"Skipping ada-region-{i}: the dry run of a scan of "
+            "kipptaf_marts.dim_locations failed in BigQuery (job ?, invalidQuery); "
+            "compare it again later."
+        ) in out
+    assert "12345" not in out
+    assert not _compared(fakes.bq)
+
+
 def test_run_names_dimensions_that_changed(fakes, tmp_path, capsys):
     fakes.bq.changed = ("dim_locations",)
 

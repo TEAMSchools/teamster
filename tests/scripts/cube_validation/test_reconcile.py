@@ -456,7 +456,7 @@ def test_each_group_carries_its_rows_per_cut_on_each_side(duck):
     assert by_bucket["cube_only"].cut_rows == ((NEWARK, 1, 0), (MIAMI, 0, 0))
     assert by_bucket["dashboard_only"].cut_rows == ((NEWARK, 0, 0), (MIAMI, 0, 1))
     # The dashboard counts only the rows its filters keep.
-    assert by_bucket["dashboard_filtered"].cut_rows[0] == (NEWARK, 1, 0)
+    assert by_bucket["dashboard_filtered"].cut_rows == ((NEWARK, 1, 0), (MIAMI, 0, 0))
 
 
 def test_a_key_in_2_cuts_pairs_its_rows_within_each_cut(duck):
@@ -1057,8 +1057,10 @@ def test_the_reduce_keeps_each_keys_latest_row_within_each_cut(duck):
 
 
 def test_a_key_every_filter_drops_keeps_its_latest_dropped_row(duck):
+    # Both rows fail the filter; their values differ, so the one kept shows
+    # it is the latest, not the first or the largest.
     dash = [
-        (1, "Q1", "A", date(2026, 9, 1), 0),
+        (1, "Q1", "A", date(2026, 9, 1), 2),
         (1, "Q1", "A", date(2026, 9, 3), 0),
     ]
     only_chronic = {"dashboard": "is_chronic", "operator": "equals", "values": [1]}
