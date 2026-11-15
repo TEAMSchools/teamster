@@ -45,6 +45,7 @@ from . import (
     explain_progress,
     pipeline,
     reconcile,
+    results,
     saved,
     sort,
     trace,
@@ -1895,7 +1896,7 @@ def explain(
             or bucket; or an explanation that fails a check.
         CostCapError: The explanation would pass a cap.
     """
-    run, run_json = pipeline.latest_run(cfg, cache_root)
+    run, run_json = results.latest_run(cfg, cache_root)
     path, loaded = _load_sort(run, run_json)
     all_items = loaded.get("items", [])
     target = next((c for c in cfg.comparisons if c.id == comparison), None)

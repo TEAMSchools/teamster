@@ -1,7 +1,7 @@
 import dataclasses
 
 # trunk-ignore(pyright/reportAttributeAccessIssue): conftest.py registers cube_validation
-from cube_validation import coverage, pipeline
+from cube_validation import compare, coverage, results
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.config import ColumnPair, Comparison, RowSpec
@@ -306,11 +306,11 @@ def _placed_cells(duck, cube, dash, cube_type="VARCHAR", dash_type="VARCHAR"):
     dash_rows = duck.rows(
         "SELECT region_d, COUNT(*) AS value FROM dash_t GROUP BY region_d"
     )
-    cells = pipeline._cells(spec, {"Grade": "5"}, dash_rows, cube_rows, 0)
+    cells = compare._cells(spec, {"Grade": "5"}, dash_rows, cube_rows, 0)
     return groups, {
-        c.key: coverage.placed(pipeline._coverage_cell(c), groups, spec)
+        c.key: coverage.placed(results._coverage_cell(c), groups, spec)
         for c in cells
-        if c.verdict in pipeline.DIFFERING
+        if c.verdict in results.DIFFERING
     }
 
 

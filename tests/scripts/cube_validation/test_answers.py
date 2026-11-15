@@ -1248,6 +1248,7 @@ from dataclasses import replace as _replace  # noqa: E402
 
 from cube_validation import explain as explain_mod  # noqa: E402
 from cube_validation import pipeline as pipeline_mod  # noqa: E402
+from cube_validation import review as review_mod  # noqa: E402
 from cube_validation.answers import (  # noqa: E402
     ExplanationSource,
     merged_reproduce,
@@ -1381,7 +1382,7 @@ def test_a_proof_source_links_the_branch_and_never_the_remote_s_credentials(tmp_
     view.parent.mkdir(parents=True)
     view.write_text("")
 
-    source = pipeline_mod.explanation_source(view)
+    source = review_mod.explanation_source(view)
 
     assert source.view_file == "src/cube/validation/v.yml"
     assert source.blob == "https://github.com/org/repo/blob/feat/x/src/cube/validation"
@@ -1392,7 +1393,7 @@ def test_a_proof_source_outside_git_has_no_link(tmp_path):
     view = tmp_path / "v.yml"
     view.write_text("")
 
-    source = pipeline_mod.explanation_source(view)
+    source = review_mod.explanation_source(view)
 
     assert source.blob is None and source.base == tmp_path
 
@@ -1414,37 +1415,37 @@ def test_the_review_file_is_linked_only_once_committed_and_pushed(tmp_path):
     view.parent.mkdir()
     view.write_text("")
     cfg = ViewConfig(view="v", fact="d.t", comparisons=[])
-    path = pipeline_mod.review_file([view], [cfg], "DDI")
+    path = review_mod.review_file([view], [cfg], "DDI")
     assert path == tmp_path / "src" / "reviews" / "v.json"
     data = [{"id": "Q1", "counts": ["<10 rows"]}]
 
     with pytest.raises(pipeline_mod.Refusal, match="wrote .*commit and push it"):
-        pipeline_mod._review_file(path, data)
+        review_mod._review_file(path, data)
     assert json.loads(path.read_text()) == data
     with pytest.raises(pipeline_mod.Refusal, match="not committed and pushed"):
-        pipeline_mod._review_file(path, data)
+        review_mod._review_file(path, data)
 
     git("add", ".")
     git("commit", "-q", "-m", "review")
     with pytest.raises(pipeline_mod.Refusal, match="not committed and pushed"):
-        pipeline_mod._review_file(path, data)  # committed, not pushed
+        review_mod._review_file(path, data)  # committed, not pushed
 
     git("update-ref", "refs/remotes/origin/feat/x", "HEAD")
     sha = git("rev-parse", "HEAD")
     link = f"https://github.com/org/repo/blob/{sha}/src/reviews/v.json"
-    assert pipeline_mod._review_file(path, data) == link
+    assert review_mod._review_file(path, data) == link
     # The commit hook's formatting is no change; other questions are.
     path.write_text(json.dumps(data, indent=4))
     git("commit", "-q", "-am", "fmt")
     git("update-ref", "refs/remotes/origin/feat/x", "HEAD")
-    assert pipeline_mod._review_file(path, data).endswith("/src/reviews/v.json")
+    assert review_mod._review_file(path, data).endswith("/src/reviews/v.json")
     with pytest.raises(pipeline_mod.Refusal, match="wrote"):
-        pipeline_mod._review_file(path, [{"id": "Q2"}])
+        review_mod._review_file(path, [{"id": "Q2"}])
 
 
 def test_a_review_across_views_is_named_for_its_domain(tmp_path):
     cfgs = [ViewConfig(view=v, fact="d.t", comparisons=[]) for v in ("a", "b")]
-    path = pipeline_mod.review_file([tmp_path / "a.yml"], cfgs, "Data & Analytics")
+    path = review_mod.review_file([tmp_path / "a.yml"], cfgs, "Data & Analytics")
     assert path == tmp_path / "reviews" / "data-analytics.json"
 
 

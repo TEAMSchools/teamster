@@ -4,7 +4,8 @@ Commands: `find-field`, `read-sheet`, `rebuild-sheet`, `compare`, `sort`,
 `explain`, `decide`, `reapply`, `ask-owner`, `record-answers`, `describe`,
 `members`, `inventory-workbook`, `inventory`. Exit codes: 0 done, 1 refused
 (the message says why), 2 usage error. This module parses arguments and builds
-the clients; `pipeline.py` does the work. Tests replace
+the clients; the command modules (`compare`, `results`, `rebuild`, `review`)
+and their shared core, `pipeline`, do the work. Tests replace
 `make_warehouse`, `make_cube`, `tableau_session`, `utcnow` and `cache_root`.
 """
 
@@ -32,11 +33,15 @@ import yaml
 from . import (
     answers,
     builder,
+    compare,
     describe,
     explain,
     pipeline,
     read_sheet,
+    rebuild,
     report,
+    results,
+    review,
     sort,
     tableau,
     trace,
@@ -423,14 +428,14 @@ def _dispatch(args: argparse.Namespace) -> int:
         configs = [_load(v) for v in args.views]
         comments: list[str] = []
         print(
-            pipeline.ask_owner(
+            review.ask_owner(
                 configs,
                 args.domain,
                 cache_root(),
                 now=utcnow(),
                 view_files=args.views,
                 comments=comments,
-                json_file=pipeline.review_file(args.views, configs, args.domain),
+                json_file=review.review_file(args.views, configs, args.domain),
             )
         )
         if comments:
@@ -475,7 +480,7 @@ def _dispatch(args: argparse.Namespace) -> int:
         wh = _warehouse(args)
         # Tableau, for the workbook check before any query.
         with tableau_session() as tbl:
-            pipeline.compare(
+            compare.compare(
                 cfg,
                 wh=wh,
                 cube=cube,
@@ -567,7 +572,7 @@ def _dispatch(args: argparse.Namespace) -> int:
             refused = _each(
                 args.comparison,
                 tbl,
-                lambda cid: pipeline.rebuild_sheet_headers(
+                lambda cid: rebuild.rebuild_sheet_headers(
                     cfg, args.view, cid, tbl=tbl, captures=captures
                 ),
             )
@@ -577,7 +582,7 @@ def _dispatch(args: argparse.Namespace) -> int:
                 args.comparison,
                 tbl,
                 resume=f"rebuild-sheet {args.view}",
-                step=lambda cid: pipeline.rebuild_sheet(
+                step=lambda cid: rebuild.rebuild_sheet(
                     cfg,
                     args.view,
                     cid,
@@ -600,7 +605,7 @@ RUN_AGAIN = (
 
 def _reapply(cfg: ViewConfig) -> None:
     """Re-apply a file's decisions to its saved run and say what is open."""
-    run = pipeline.reapply(cfg, cache_root())
+    run = results.reapply(cfg, cache_root())
     counts = (
         f"{len(run.applied.open)} open groups, {len(run.applied.open_gaps)} open "
         f"gaps, {len(run.applied.open_cells)} open cell diffs"
@@ -661,7 +666,7 @@ def _check_claims(writes: list[tuple[Path, dict]], also=None) -> None:
         for path, copy in copies.items():
             try:
                 rehearsed = load_view_config(copy)
-                pipeline.check_claims(rehearsed, cache_root())
+                results.check_claims(rehearsed, cache_root())
                 if also is not None:
                     also(rehearsed)
             except pipeline.Refusal as exc:
@@ -680,7 +685,7 @@ def _decide(cfg: ViewConfig, path: Path, approved_path: Path) -> int:
     group. The whole batch is written or none of it.
     """
     approved = _read_json(approved_path, "approved")
-    run, run_json = pipeline.latest_run(cfg, cache_root())
+    run, run_json = results.latest_run(cfg, cache_root())
     saved = sort.checked_sort(run, run_json, cfg.decisions, path.parent)
 
     decisions = answers.approved_decisions(

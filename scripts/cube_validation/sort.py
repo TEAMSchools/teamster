@@ -26,7 +26,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
-from . import decisions, latest, pipeline, trace
+from . import decisions, latest, pipeline, results, trace
 from .bq import CostCapError, Warehouse
 from .config import Comparison, Decision, RebuildCheck, ViewConfig, mask_digits
 from .cube_client import Cube, MemberDoc, member_docs, network_schools
@@ -292,11 +292,11 @@ def comparisons_waiting(
         if c.id in skipped:
             out[c.id] = f"{NOT_COMPARED}: {skipped[c.id]}"
         elif c.id in run.missing:
-            out[c.id] = pipeline.NEVER_COMPARED
+            out[c.id] = results.NEVER_COMPARED
         elif c.id in stale:
             out[c.id] = stale[c.id]
         elif c.id in run.entries and latest.entry_fingerprint(c) != run.entries[c.id]:
-            out[c.id] = pipeline.ENTRY_CHANGED
+            out[c.id] = results.ENTRY_CHANGED
     return out
 
 
@@ -316,7 +316,7 @@ def checked_sort(
     `ask-owner` lists them, and `decide` decides the rest.
 
     Args:
-        run: The view's latest run (see `pipeline.latest_run`).
+        run: The view's latest run (see `results.latest_run`).
         run_json: The `run.json` it came from.
         recorded: The view's decisions. When given, each explained row group is
             marked by the cause decisions that decide it (`mark_decided`).
@@ -1366,7 +1366,7 @@ def sort_run(
     and its stubs and causes carry real values and exact counts.
 
     Each confirmed comparison whose result in the run is missing or stale at
-    `now` (`pipeline.stale_comparisons` over `pipeline.composed_results`),
+    `now` (`results.stale_comparisons` over `results.composed_results`),
     whose SQL cannot be built today, or which the run skipped (`not compared:
     <why>`), is printed and written to `triage.json` under `stale`, so
     `comparisons_waiting` can name it. Such a comparison's row groups are
@@ -1384,7 +1384,7 @@ def sort_run(
 
     Raises:
         pipeline.Refusal: The view has no usable saved run (see
-            `pipeline.latest_run`), its SQL changed since the run, the
+            `results.latest_run`), its SQL changed since the run, the
             manifest lacks compiled SQL the trace needs, or a comparison asked
             for is not in the view.
         CostCapError: The value checks, the explanations together, or the trace
@@ -1395,7 +1395,7 @@ def sort_run(
         raise pipeline.Refusal(
             f"--comparison: {', '.join(sorted(unknown))} is no comparison of {cfg.view}"
         )
-    run, run_json = pipeline.latest_run(cfg, cache_root)
+    run, run_json = results.latest_run(cfg, cache_root)
     meta = cube.meta()
     docs = member_docs(meta, cfg.view)
     pii = pii_members(meta, cfg.view)
@@ -1420,10 +1420,10 @@ def sort_run(
         # can leave older than `latest/`. A comparison the run skipped is
         # named by why; its SQL may not build today.
         skipped = {s["comparison"]: s["why"] for s in run.skipped}
-        stale = pipeline.stale_comparisons(
+        stale = results.stale_comparisons(
             cfg,
             [c for c in cfg.comparisons if c.id not in skipped],
-            pipeline.composed_results(cfg, run),
+            results.composed_results(cfg, run),
             wh=wh,
             cube=cube,
             schools=prepared.schools,

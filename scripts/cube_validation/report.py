@@ -677,7 +677,7 @@ def _gap_part(view: str, gaps: list[Gap]) -> str:
     )
 
 
-# Why a comparison's SQL cannot be built (`pipeline.stale_comparisons`). The
+# Why a comparison's SQL cannot be built (`results.stale_comparisons`). The
 # error after it can quote SQL, so the review issue stops at these words.
 SQL_BROKEN = "its SQL cannot be built today"
 

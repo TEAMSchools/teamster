@@ -4,7 +4,7 @@ import re
 from datetime import datetime, timezone
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation import pipeline, report
+from cube_validation import compare, pipeline, report
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.answers import questions_json
@@ -1140,7 +1140,7 @@ def test_a_bigquery_skip_posts_its_fixed_words_and_no_message():
     )
     exc.job_id = "job_x"
 
-    skip = pipeline._bigquery_skip("c2", "a query", exc)
+    skip = compare._bigquery_skip("c2", "a query", exc)
 
     assert report._posted_why(skip.why) == (
         "a query failed in BigQuery (job job_x, invalidQuery); compare it again later"

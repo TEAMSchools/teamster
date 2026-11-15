@@ -17,10 +17,15 @@ import tableauserverclient as TSC
 from cube_validation import (
     checkpoints,
     cli,
+    compare,
+    coverage,
     explain,
     latest,
     pipeline,
+    rebuild,
     report,
+    results,
+    review,
     sort,
     tableau,
     trace,
@@ -211,7 +216,7 @@ class FakeCube:
     def compiled(self, query):
         self.compiled_queries.append(query)
         # Cube refuses to compile a member its model no longer has.
-        if gone := sorted(set(pipeline._query_members(query)) & self.dropped):
+        if gone := sorted(set(rebuild._query_members(query)) & self.dropped):
             raise CubeError(f"Cube GET /sql: {', '.join(gone)} not found")
         dims = [m.split(".", 1)[1] for m in query.get("dimensions", [])]
         measures = [m.split(".", 1)[1] for m in query.get("measures", [])]
@@ -343,7 +348,7 @@ def fakes(monkeypatch, tmp_path):
         path.write_text(json.dumps(data, indent=2))
         return f"https://github.com/o/r/blob/abc/{path.name}"
 
-    monkeypatch.setattr(pipeline, "_review_file", linked)
+    monkeypatch.setattr(review, "_review_file", linked)
     monkeypatch.setenv("CUBE_REST_URL", "http://cube.test/cubejs-api/v1")
     monkeypatch.setenv("CUBE_API_SECRET", "not-a-secret")
     monkeypatch.setenv("CUBE_VALIDATION_EMAIL", "analyst@example.org")
@@ -829,7 +834,7 @@ def test_a_command_reads_past_an_unreadable_run_json(fakes, tmp_path):
     os.utime(torn, (good.stat().st_mtime + 60,) * 2)
     cfg = load_view_config(path)
 
-    data, found = pipeline._saved_run(cfg, tmp_path / "cache")
+    data, found = results._saved_run(cfg, tmp_path / "cache")
 
     assert found == good and data["view"] == "v"
 
@@ -845,14 +850,14 @@ def test_a_run_json_with_no_fact_is_older_than_any_fact_s_run(fakes, tmp_path):
     os.utime(legacy, (good.stat().st_mtime + 60,) * 2)
     cfg = load_view_config(path)
 
-    data, found = pipeline._saved_run(cfg, tmp_path / "cache")
+    data, found = results._saved_run(cfg, tmp_path / "cache")
     assert found == good and "legacy" not in data
-    assert "legacy" not in pipeline.last_run(cfg, tmp_path / "cache")
+    assert "legacy" not in results.last_run(cfg, tmp_path / "cache")
 
     # With no run of any fact, the legacy run is refused as an older one.
     good.unlink()
     with pytest.raises(pipeline.Refusal, match="older validator"):
-        pipeline._saved_run(cfg, tmp_path / "cache")
+        results._saved_run(cfg, tmp_path / "cache")
 
 
 def test_a_comparison_without_a_proof_is_skipped_and_the_rest_run(
@@ -1107,7 +1112,7 @@ def test_a_skipped_comparison_has_no_totals_or_uncoverable_cells_line(
 ):
     # Every comparison's cells read uncoverable, and neither rebuild check
     # records a totals count.
-    monkeypatch.setattr(pipeline.coverage, "unplaceable", lambda c: "a reason")
+    monkeypatch.setattr(coverage, "unplaceable", lambda c: "a reason")
     path = _two(tmp_path, _reads_membership)
     assert cli.main(["compare", str(path)]) == 0
     assert "Comparison c1: its cells cannot be covered" in capsys.readouterr().out
@@ -1125,7 +1130,7 @@ def test_a_skipped_comparison_has_no_totals_or_uncoverable_cells_line(
 def test_a_comparison_skipped_after_the_price_has_no_totals_line(
     fakes, tmp_path, monkeypatch, capsys
 ):
-    monkeypatch.setattr(pipeline.coverage, "unplaceable", lambda c: "a reason")
+    monkeypatch.setattr(coverage, "unplaceable", lambda c: "a reason")
     path = _two(tmp_path, _reads_membership)
     assert cli.main(["compare", str(path)]) == 0
     fakes.bq.build = LATER
@@ -1143,14 +1148,14 @@ def test_sql_that_cannot_be_built_at_the_run_s_moment_skips_its_comparison(
     fakes, tmp_path, monkeypatch, capsys
 ):
     path = _two(tmp_path)
-    plan_one = pipeline._plan_one
+    plan_one = compare._plan_one
 
     def plan(cfg, comparison, *, build, **kwargs):
         if comparison.id == "c2":
             raise pipeline.ViewHistoryError("no CREATE_VIEW job for d.v before then")
         return plan_one(cfg, comparison, build=build, **kwargs)
 
-    monkeypatch.setattr(pipeline, "_plan_one", plan)
+    monkeypatch.setattr(compare, "_plan_one", plan)
 
     assert cli.main(["compare", str(path)]) == 0
 
@@ -1186,7 +1191,8 @@ def test_a_bigquery_error_building_sql_skips_its_comparison_before_the_price(
         _lookup_fails(comparison)
         return fingerprints(cfg, comparison, **kwargs)
 
-    monkeypatch.setattr(pipeline, "side_fingerprints", failing)
+    monkeypatch.setattr(results, "side_fingerprints", failing)
+    monkeypatch.setattr(compare, "side_fingerprints", failing)
     capsys.readouterr()
 
     # A plain compare checks the held result's SQL (`stale_comparisons`);
@@ -1203,13 +1209,13 @@ def test_a_bigquery_error_building_sql_at_the_run_s_moment_skips_it(
     fakes, tmp_path, monkeypatch, capsys
 ):
     path = _two(tmp_path)
-    plan_one = pipeline._plan_one
+    plan_one = compare._plan_one
 
     def plan(cfg, comparison, *, build, **kwargs):
         _lookup_fails(comparison)
         return plan_one(cfg, comparison, build=build, **kwargs)
 
-    monkeypatch.setattr(pipeline, "_plan_one", plan)
+    monkeypatch.setattr(compare, "_plan_one", plan)
 
     assert cli.main(["compare", str(path)]) == 0
 
@@ -1234,7 +1240,8 @@ def test_a_held_checkpoint_whose_sql_cannot_be_built_skips_its_comparison(
             raise pipeline.ViewHistoryError("no CREATE_VIEW job for d.v before then")
         return fingerprints(cfg, comparison, build=build, **kwargs)
 
-    monkeypatch.setattr(pipeline, "side_fingerprints", broken)
+    monkeypatch.setattr(results, "side_fingerprints", broken)
+    monkeypatch.setattr(compare, "side_fingerprints", broken)
 
     assert cli.main(["compare", str(path), "--all"]) == 0
 
@@ -1356,7 +1363,8 @@ def test_a_skip_whose_message_varies_is_recorded_once(
             raise pipeline.ViewHistoryError(f"no view job (attempt {len(calls)})")
         return fingerprints(cfg, comparison, **kwargs)
 
-    monkeypatch.setattr(pipeline, "side_fingerprints", broken)
+    monkeypatch.setattr(results, "side_fingerprints", broken)
+    monkeypatch.setattr(compare, "side_fingerprints", broken)
     capsys.readouterr()
 
     assert cli.main(["compare", str(path)]) == 0
@@ -1430,7 +1438,7 @@ def test_triage_neither_checks_nor_traces_a_skipped_comparison_s_groups(
     assert cli.main(["compare", str(path)]) == 0
     fakes.cube.dropped = {"v.membership_value"}
     assert cli.main(["compare", str(path)]) == 0  # records c2's skip
-    run = pipeline._run_from_json(json.loads(_latest_run(tmp_path).read_text()))
+    run = results._run_from_json(json.loads(_latest_run(tmp_path).read_text()))
     seen = {}
 
     def ready(*args, skip=frozenset(), **kwargs):
@@ -2049,13 +2057,13 @@ def test_execute_refuses_prices_its_queries_do_not_use(fakes, tmp_path):
     cfg = load_view_config(path)
     wh = Warehouse(client=fakes.bq)
     build = report.Build(START, END, "j")
-    plan = pipeline._plan_one(
+    plan = compare._plan_one(
         cfg, cfg.comparisons[0], wh=wh, cube=fakes.cube, build=build, schools={"A", "B"}
     )
     prices = [0.0] * (len(plan.queries()) + 1)
 
     with pytest.raises(RuntimeError, match="prices left over: .*queries"):
-        pipeline._execute(cfg, plan, wh=wh, build=build, prices=prices)
+        compare._execute(cfg, plan, wh=wh, build=build, prices=prices)
 
 
 def test_run_builds_its_warehouse_before_it_signs_in_to_tableau(
@@ -2551,7 +2559,7 @@ def test_unexpected_error_is_not_reported_as_a_refusal(fakes, tmp_path, monkeypa
     def broken(*args, **kwargs):
         raise KeyError("bug")
 
-    monkeypatch.setattr(pipeline, "compare", broken)
+    monkeypatch.setattr(compare, "compare", broken)
 
     with pytest.raises(KeyError):
         cli.main(["compare", str(_file(tmp_path))])
@@ -2695,7 +2703,7 @@ def _write_sorted(run_json, items=(), open_keys=None):
 
     `open_keys` defaults to every open item of that run.
     """
-    run = pipeline._run_from_json(json.loads(run_json.read_text()))
+    run = results._run_from_json(json.loads(run_json.read_text()))
     # Each item of an open group carries its stable key, as `sort` writes.
     keys = {i.id: i.key for i in sort.open_items(run)}
     items = [{"key": keys.get(i["id"], ""), **i} for i in items]
@@ -2912,7 +2920,7 @@ def test_review_warns_when_the_body_nears_githubs_cap(
     assert "65,536" not in capsys.readouterr().err
 
     long = pipeline.report.BODY_WARN_CHARS + 1
-    monkeypatch.setattr(pipeline.report, "render_review_issue", lambda *a: "x" * long)
+    monkeypatch.setattr(report, "render_review_issue", lambda *a: "x" * long)
     assert cli.main(["ask-owner", str(path), "--domain", "Registrar"]) == 0
     captured = capsys.readouterr()
     assert captured.out.startswith("x" * long)
@@ -3073,7 +3081,7 @@ def test_export_cells_reads_an_unquoted_numeric_alias_key_back():
     ]
     probe = [{"grade_level": 0, "value": 0.94}, {"grade_level": 1, "value": 0.95}]
 
-    cells, totals, _ = pipeline._export_cells(
+    cells, totals, _ = rebuild._export_cells(
         comparison, rows, {"Grade Level": "grade_level"}, "Rate", columns, probe
     )
 
@@ -3098,7 +3106,7 @@ def test_export_cells_count_identical_pane_rows_once():
         {"Region": "Newark", "Title": "B", "Distance": "0.3"},
     ]
 
-    cells, _, _ = pipeline._export_cells(
+    cells, _, _ = rebuild._export_cells(
         comparison, rows, {"Region": "region"}, "Distance", [], []
     )
 
@@ -3123,7 +3131,7 @@ def test_export_cells_sum_every_split_row_even_identical_ones():
         {"Region": "Camden", "Count": "5"},
     ]
 
-    cells, _, summed = pipeline._export_cells(
+    cells, _, summed = rebuild._export_cells(
         comparison, rows, {"Region": "region"}, "Count", [], []
     )
 
@@ -3185,7 +3193,7 @@ def test_prove_does_not_write_a_failed_proof(fakes, tmp_path, capsys):
 def _workbook_check(fakes, path, ids=None):
     cfg = load_view_config(path)
     chosen = [c for c in cfg.comparisons if ids is None or c.id in ids]
-    return pipeline.workbook_check(cfg, chosen, tbl=fakes.tbl, cube=fakes.cube)
+    return rebuild.workbook_check(cfg, chosen, tbl=fakes.tbl, cube=fakes.cube)
 
 
 def test_prove_takes_no_check_flag(fakes, tmp_path, capsys):
@@ -3346,7 +3354,7 @@ def test_two_rows_on_one_cell_refuse():
     with pytest.raises(
         pipeline.Refusal, match="c .*dashboard: 2 rows share the cell 0"
     ):
-        pipeline._cells(comparison, {}, dash, cube, 3)
+        compare._cells(comparison, {}, dash, cube, 3)
 
 
 # --- prove: sheet shape --------------------------------------------------------
@@ -3943,7 +3951,7 @@ def test_a_run_saved_before_formula_differences_reads_its_cells_as_cell_sets(
     for cell in saved["diff_cells"]:
         del cell["kind"]
 
-    run = pipeline._run_from_json(saved)
+    run = results._run_from_json(saved)
 
     assert [d.kind for d in run.applied.open_cells] == ["cells"]
     assert [d.kind for _, d in run.applied.quiet_cells] == ["cells"]
@@ -4101,7 +4109,7 @@ def test_old_run_json_without_new_fields_still_loads(fakes, tmp_path):
     for name in ("diff_cells", "cell_sql", "cell_sql_usd"):
         del saved[name]
 
-    result = pipeline._run_from_json(saved)
+    result = results._run_from_json(saved)
 
     assert result.diff_cells == [] and result.cell_sql == {}
     assert result.cell_sql_usd == {}
@@ -4128,7 +4136,7 @@ def test_an_old_run_json_s_cell_sizes_are_ignored(fakes, tmp_path):
     saved["cell_rows"] = {"ada-region": [{"bucket": "match"}]}
     saved["cell_students"] = {"ada-region": []}
 
-    result = pipeline._run_from_json(saved)
+    result = results._run_from_json(saved)
 
     assert not hasattr(result, "cell_rows") and not hasattr(result, "cell_students")
 
@@ -4138,7 +4146,7 @@ def test_run_json_round_trips_the_hand_check_fields(fakes, tmp_path):
     assert cli.main(["compare", str(_file(tmp_path))]) == 0
     saved = _saved_run(tmp_path)
 
-    result = pipeline._run_from_json(saved)
+    result = results._run_from_json(saved)
 
     assert result.diff_cells == saved["diff_cells"]
     assert result.cell_sql == saved["cell_sql"]
@@ -4267,7 +4275,7 @@ def test_probe_fingerprint_covers_shelves(tmp_path):
 def test_reshape_text_names_cleared_filters():
     shelves = {"drop": ["Week"], "clear_filters": ["Discipline", "Term"]}
     assert (
-        pipeline.reshape_text(shelves)
+        rebuild.reshape_text(shelves)
         == "dropped Week; cleared the filters on Discipline, Term"
     )
 
@@ -4279,7 +4287,7 @@ def test_reshape_text_names_removed_and_recomputed_table_calcs():
         recomputed={"rows": ("Difference in Avg. X",), "columns": ("Rank of Y",)},
     )
 
-    assert pipeline.reshape_text({"drop": ["Week"]}, reshaped) == (
+    assert rebuild.reshape_text({"drop": ["Week"]}, reshaped) == (
         "dropped Week; removed the table calcs Difference in Avg. X (along Week); "
         "recomputes along the new rows: Difference in Avg. X; recomputes along "
         "the new columns: Rank of Y"
@@ -4298,7 +4306,7 @@ def test_run_names_a_reshaped_proof(fakes, tmp_path, capsys):
         "ada-region: last matched 2026-10-26T12:00:00+00:00; matched on a reshaped "
         "copy: dropped Team, Region; added Region to columns" in section
     )
-    assert pipeline._run_from_json(_saved_run(tmp_path)).reshaped == {
+    assert results._run_from_json(_saved_run(tmp_path)).reshaped == {
         "ada-region": "dropped Team, Region; added Region to columns"
     }
 
@@ -4370,7 +4378,7 @@ def test_triage_proves_first_and_traces_only_what_no_proof_explains(
     path = _file(tmp_path)
     assert cli.main(["compare", str(path)]) == 0
     (saved,) = (tmp_path / "cache" / "v").glob("*/run.json")
-    run = pipeline._run_from_json(json.loads(saved.read_text()))
+    run = results._run_from_json(json.loads(saved.read_text()))
     (group,) = run.applied.open
     proof = explain.Explanation(
         path.parent / "explanations" / "v" / f"ada-region__{group.bucket}.sql",
@@ -4415,7 +4423,7 @@ def test_triage_classifies_a_group_a_group_decision_closes(
     path = _with_decision(_saved_fingerprints(tmp_path), tmp_path, call="fix_cube")
     assert cli.main(["reapply", str(path)]) == 0
     (saved,) = (tmp_path / "cache" / "v").glob("*/run.json")
-    run = pipeline._run_from_json(json.loads(saved.read_text()))
+    run = results._run_from_json(json.loads(saved.read_text()))
     assert run.applied.open == []
     ((_, group),) = run.applied.quiet
     proof = explain.Explanation(
@@ -4498,7 +4506,7 @@ def test_triage_command_writes_triage_json_beside_latest_run(fakes, tmp_path, ca
     )
     assert set(written["moment"]) == {"start", "end", "job_id", "moments"}
     assert written["moment"]["moments"] == {"ada-region": "2026-10-22T204400Z"}
-    run = pipeline._run_from_json(json.loads(saved.read_text()))
+    run = results._run_from_json(json.loads(saved.read_text()))
     assert written["open"] == sort.open_keys(run) and written["open"]
     item = written["items"][0]
     assert set(item) == {
@@ -4579,7 +4587,7 @@ def test_triage_traces_the_rows_by_default(fakes, tmp_path, capsys, monkeypatch)
     path = _file(tmp_path)
     assert cli.main(["compare", str(path)]) == 0
     (saved,) = (tmp_path / "cache" / "v").glob("*/run.json")
-    run = pipeline._run_from_json(json.loads(saved.read_text()))
+    run = results._run_from_json(json.loads(saved.read_text()))
     seen = {}
 
     def traced(
@@ -4657,7 +4665,7 @@ def test_triage_writes_its_batch_when_the_trace_stops(
     path = _file(tmp_path)
     assert cli.main(["compare", str(path)]) == 0
     (saved,) = (tmp_path / "cache" / "v").glob("*/run.json")
-    run = pipeline._run_from_json(json.loads(saved.read_text()))
+    run = results._run_from_json(json.loads(saved.read_text()))
     (open_group,) = run.applied.open
     stopped = trace.ItemTrace("dashboard", open_group.n_rows)
     stopped.unknown = open_group.n_rows
@@ -4945,7 +4953,7 @@ def _closed_by_a_group_decision(tmp_path):
     path = _with_decision(_saved_fingerprints(tmp_path), tmp_path, call="fix_cube")
     assert cli.main(["reapply", str(path)]) == 0
     (run_json,) = (tmp_path / "cache" / "v").glob("*/run.json")
-    run = pipeline._run_from_json(json.loads(run_json.read_text()))
+    run = results._run_from_json(json.loads(run_json.read_text()))
     ((_, miami),) = run.applied.quiet
     _write_sorted(run_json, [_sorted_item("e", item_id="other")])
     found = run_json.parent / "triage.json"

@@ -8,11 +8,13 @@ import pytest
 
 # trunk-ignore(pyright/reportAttributeAccessIssue): conftest.py registers cube_validation
 from cube_validation import (
+    compare,
     coverage,
     explain,
     explain_progress,
     pipeline,
     reconcile,
+    results,
     saved,
     sort,
     trace,
@@ -145,7 +147,7 @@ def _save(duck, wh, run, cfg=CFG):
         except explain.CubeError:  # a test whose rebuild fails: the default rows
             sides = SIDES
         duck.rows("DROP TABLE IF EXISTS __joined")
-        for statement in pipeline.save_script(
+        for statement in compare.save_script(
             cfg, c, sides, saved.table_sql(table), None
         ):
             duck.rows(statement)
@@ -803,7 +805,7 @@ def test_a_formatting_only_edit_keeps_the_fingerprint(tmp_path):
 def _saved(tmp_path, monkeypatch, run):
     run_json = tmp_path / "cache" / "v" / "m" / "run.json"
     run_json.parent.mkdir(parents=True)
-    monkeypatch.setattr(pipeline, "latest_run", lambda cfg, root: (run, run_json))
+    monkeypatch.setattr(results, "latest_run", lambda cfg, root: (run, run_json))
     path = run_json.parent / "triage.json"
     path.write_text(
         json.dumps(
@@ -823,7 +825,7 @@ def _confirm(duck, tmp_path, causes, **kw):
     draft = tmp_path / "draft.sql"
     draft.write_text(EXPLANATION)
     wh = Wh(duck)
-    _save(duck, wh, pipeline.latest_run(CFG, tmp_path)[0])
+    _save(duck, wh, results.latest_run(CFG, tmp_path)[0])
     explain.explain(
         CFG,
         tmp_path / "validation" / "v.yml",
@@ -1583,7 +1585,7 @@ def _draft(tmp_path, text):
 
 def _confirm_text(duck, tmp_path, text, wh=None):
     wh = wh or Wh(duck)
-    _save(duck, wh, pipeline.latest_run(CFG, tmp_path)[0])
+    _save(duck, wh, results.latest_run(CFG, tmp_path)[0])
     explain.explain(
         CFG,
         tmp_path / "validation" / "v.yml",
