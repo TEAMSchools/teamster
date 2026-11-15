@@ -834,6 +834,27 @@ def test_a_command_reads_past_an_unreadable_run_json(fakes, tmp_path):
     assert found == good and data["view"] == "v"
 
 
+def test_a_run_json_with_no_fact_is_older_than_any_fact_s_run(fakes, tmp_path):
+    path = _file(tmp_path)
+    assert cli.main(["compare", str(path)]) == 0
+    good = _latest_run(tmp_path)
+    # A newer run.json saved before runs recorded their fact.
+    legacy = good.parent.parent / "2026-10-23T000000Z" / "run.json"
+    legacy.parent.mkdir()
+    legacy.write_text(json.dumps({"view": "v", "legacy": True}))
+    os.utime(legacy, (good.stat().st_mtime + 60,) * 2)
+    cfg = load_view_config(path)
+
+    data, found = pipeline._saved_run(cfg, tmp_path / "cache")
+    assert found == good and "legacy" not in data
+    assert "legacy" not in pipeline._last_run(cfg, tmp_path / "cache")
+
+    # With no run of any fact, the legacy run is refused as an older one.
+    good.unlink()
+    with pytest.raises(pipeline.Refusal, match="older validator"):
+        pipeline._saved_run(cfg, tmp_path / "cache")
+
+
 def test_a_comparison_without_a_proof_is_skipped_and_the_rest_run(
     fakes, tmp_path, capsys
 ):

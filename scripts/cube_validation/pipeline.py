@@ -2186,7 +2186,10 @@ def compare(
 
 
 def _last_run(cfg: ViewConfig, cache_root: Path) -> dict | None:
-    """The view's last readable `run.json` of `cfg.fact`, or None."""
+    """The view's last readable `run.json` of `cfg.fact`, or None.
+
+    A run saved before runs recorded their fact is no fact's run.
+    """
     saved = [
         (path.stat().st_mtime, path)
         for path in (cache_root / cfg.view).glob("*/run.json")
@@ -2681,33 +2684,40 @@ def _saved_run(cfg: ViewConfig, cache_root: Path) -> tuple[dict, Path]:
 
     The latest run is the `run.json` of the fact the command was given
     (`--fact-dataset` names a dev build's) written last, whatever moment it
-    read. A run saved before runs recorded their fact counts as any fact's.
+    read. A run saved before runs recorded their fact is no fact's run, as in
+    `_last_run`: it never stands in for one.
 
     Raises:
         Refusal: The view has no saved run of `cfg.fact`; the message names
-            the fact of the latest run there is, if any.
+            the fact of the latest run there is, if any, else says the saved
+            run is an older validator's.
     """
     saved = sorted(
         (cache_root / cfg.view).glob("*/run.json"),
         key=lambda p: p.stat().st_mtime,
         reverse=True,
     )
-    other = None
+    other, legacy = None, None
     for path in saved:
         try:
             data = json.loads(path.read_text())
         except (OSError, ValueError):
             continue
-        fact = data.get("fact", "") if isinstance(data, dict) else ""
-        if fact in ("", cfg.fact):
+        fact = data.get("fact") if isinstance(data, dict) else None
+        if not fact:
+            legacy = legacy or path
+        elif fact == cfg.fact:
             return data, path
-        other = other or fact
+        else:
+            other = other or fact
     if other:
         raise Refusal(
             f"{cfg.view}: no saved run of {cfg.fact}; the latest run read "
             f"{other}, which this command does not use. `compare` it, or pass "
             "--fact-dataset to read that build"
         )
+    if legacy:
+        raise _older(cfg, legacy)
     raise Refusal(f"{cfg.view}: no saved run; `compare` it first")
 
 
