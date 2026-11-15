@@ -1,4 +1,5 @@
 import re
+from datetime import date
 
 import pytest
 from cube_validation.compare import (
@@ -883,3 +884,85 @@ def test_the_reconcile_keeps_rows_per_cut(duck):
     by = {g.bucket: g for g in groups_from("x", result, ["overall", "standard"])}
     assert set(by) == {"cube_only"}
     assert by["cube_only"].cut_rows == (("overall", 0, 0), ("standard", 1, 0))
+
+
+def _daily(reduce):
+    from cube_validation import pipeline
+    from cube_validation.config import ViewConfig
+
+    comparison = Comparison(
+        id="c",
+        measure="m",
+        dashboard_view="kipptaf_tableau.dash_t",
+        dashboard_filters=reduce.pop("filters", []),
+        rows=RowSpec(
+            grain=[ColumnPair("student", "lea"), ColumnPair("period", "per")],
+            values=[ColumnPair("is_chronic", "chronic_c")],
+            reduce=reduce,
+        ),
+    )
+    cfg = ViewConfig(view="v", fact="kipptaf_marts.fct_f", comparisons=[comparison])
+    return pipeline.dashboard_rows_sql(cfg, comparison)
+
+
+def _daily_buckets(duck, dash_rows, cube_rows, reduce):
+    duck.table("cube_t", "lea BIGINT, per VARCHAR, chronic_c INTEGER", cube_rows)
+    duck.table(
+        "dash_t",
+        "student BIGINT, period VARCHAR, calendardate DATE, is_chronic INTEGER",
+        dash_rows,
+    )
+    rows = RowSpec(
+        grain=[ColumnPair("student", "lea"), ColumnPair("period", "per")],
+        values=[ColumnPair("is_chronic", "chronic_c")],
+    )
+    result = duck.rows(
+        reconcile_sql(
+            "SELECT * FROM `teamster-332318.m.cube_t`",
+            _daily(reduce),
+            rows,
+            [],
+        )
+    )
+    return {r["bucket"] for r in result}
+
+
+def test_daily_dashboard_rows_reduce_to_the_latest_per_key_and_match(duck):
+    dash = [(1, "Q1", date(2026, 9, d), v) for d, v in ((1, 0), (2, 0), (3, 1))]
+    cube = [(1, "Q1", 1)]
+
+    assert _daily_buckets(
+        duck, dash, cube, {"rule": "latest", "by": "calendardate"}
+    ) == {"match"}
+    # Without the reduce the 3 daily rows are duplicates and differ.
+    assert _daily_buckets(duck, dash, cube, {}) != {"match"}
+
+
+def test_tied_latest_rows_both_stay(duck):
+    dash = [(1, "Q1", date(2026, 9, 3), 1), (1, "Q1", date(2026, 9, 3), 1)]
+
+    buckets = _daily_buckets(
+        duck, dash, [(1, "Q1", 1)], {"rule": "latest", "by": "calendardate"}
+    )
+
+    assert buckets == {"match", "dashboard_only"}
+
+
+def test_the_reduce_runs_after_the_dashboard_filters(duck):
+    # The latest day fails the filter; the key's latest passing day is kept.
+    dash = [(1, "Q1", date(2026, 9, 1), 1), (1, "Q1", date(2026, 9, 3), 0)]
+    keep_first = {
+        "dashboard": "is_chronic",
+        "operator": "equals",
+        "values": [1],
+    }
+    sql = _daily({"rule": "latest", "by": "calendardate", "filters": [keep_first]})
+    duck.table(
+        "dash_t",
+        "student BIGINT, period VARCHAR, calendardate DATE, is_chronic INTEGER",
+        dash,
+    )
+
+    kept = [r for r in duck.rows(sql) if r["__df0"]]
+
+    assert [r["is_chronic"] for r in kept] == [1]

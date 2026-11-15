@@ -457,6 +457,37 @@ def test_rows_dashboard_scope_takes_only_a_column_name(tmp_path):
         load_view_config(_write(tmp_path, text))
 
 
+REDUCE = "      reduce: { rule: latest, by: calendardate }\n"
+
+
+def test_rows_reduce_takes_latest_and_a_column(tmp_path):
+    text = EXAMPLE.replace(VALUES, VALUES + REDUCE, 1)
+
+    rows = load_view_config(_write(tmp_path, text)).comparisons[0].rows
+
+    assert rows.reduce == {"rule": "latest", "by": "calendardate"}
+
+
+def test_rows_reduce_defaults_to_none(tmp_path):
+    rows = load_view_config(_write(tmp_path, EXAMPLE)).comparisons[0].rows
+    assert rows.reduce == {}
+
+
+@pytest.mark.parametrize(
+    "reduce, why",
+    [
+        ("{ rule: first, by: d }", "must be one of latest"),
+        ("{ rule: latest }", "by"),
+        ('{ rule: latest, by: "d; drop" }', "identifier"),
+        ("{ rule: latest, by: d, sql: x }", "sql"),
+    ],
+)
+def test_rows_reduce_refuses(tmp_path, reduce, why):
+    text = EXAMPLE.replace(VALUES, VALUES + f"      reduce: {reduce}\n", 1)
+    with pytest.raises(ConfigError, match=why):
+        load_view_config(_write(tmp_path, text))
+
+
 def test_sheet_field_and_split_rows_load(tmp_path):
     text = EXAMPLE.replace(
         SHAPE, SHAPE + '    sheet_field: "# Tardy"\n    split_rows: sum\n'

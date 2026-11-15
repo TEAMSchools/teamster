@@ -365,6 +365,13 @@ def dashboard_rows_sql(cfg: ViewConfig, comparison: Comparison) -> str:
     (`__df0`, ...) that says whether it keeps the row, so the reconcile can
     count them apart from rows Cube alone has. Rows outside `rows.dashboard_scope`
     are left out.
+
+    With `rows.reduce`, the rows above are cut to the latest per grain key. The
+    cuts, `dashboard_scope` and `dashboard_filters` decide first which rows
+    compete: a row every filter keeps outranks one a filter drops, so a key
+    whose latest day a filter drops reads its latest kept day. A tie on the
+    latest value keeps every tied row, for the reconcile to report as
+    duplicates.
     """
     dates = _date_cubes(cfg)
     seen: dict[str, bool] = {}
@@ -382,9 +389,22 @@ def dashboard_rows_sql(cfg: ViewConfig, comparison: Comparison) -> str:
     if scope := comparison.rows.dashboard_scope if comparison.rows else []:
         parts = [where, *map(_dashboard_filter_sql, scope)]
         where = " AND ".join(f"({p})" for p in parts)
+    reduce = comparison.rows.reduce if comparison.rows else {}
+    if reduce:
+        cols.append(f"{reduce['by']} AS __reduce_by")
+    # trunk-ignore(bandit/B608): identifiers are validated in config.py and values are bound or literal-escaped
+    sql = f"SELECT {', '.join(cols)} FROM {_dashboard_ref(comparison)} WHERE {where}"
+    if not reduce:
+        return sql
+    keys = ", ".join(p.dashboard for p in comparison.rows.grain)
+    kept = [f"{flag} AND " for flag, _ in _filter_flags(comparison)]
+    order = (
+        f"({''.join(kept)}TRUE) DESC, __reduce_by DESC" if kept else "__reduce_by DESC"
+    )
     return (
-        # trunk-ignore(bandit/B608): identifiers are validated in config.py and values are bound or literal-escaped
-        f"SELECT {', '.join(cols)} FROM {_dashboard_ref(comparison)} WHERE {where}"
+        # trunk-ignore(bandit/B608): identifiers are validated in config.py
+        f"SELECT * EXCEPT (__reduce_by) FROM ({sql}) "
+        f"QUALIFY RANK() OVER (PARTITION BY {keys} ORDER BY {order}) = 1"
     )
 
 

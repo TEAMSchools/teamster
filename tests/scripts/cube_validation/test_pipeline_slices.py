@@ -70,3 +70,22 @@ def test_a_changed_comparison_entry_changes_its_checkpoint_fingerprint():
     assert pipeline.checkpoint_fingerprint(a, fp) != pipeline.checkpoint_fingerprint(
         a, {**fp, "cube": "9"}
     )
+
+
+def test_adding_a_reduce_makes_the_comparison_stale():
+    from cube_validation import latest
+    from cube_validation.config import ColumnPair, RowSpec, ViewConfig
+
+    rows = RowSpec(grain=[ColumnPair("student", "lea")], values=[ColumnPair("v", "vc")])
+    plain = Comparison(
+        id="c", measure="m", dashboard_view="d.t", rows=rows, confirmed=True
+    )
+    reduced = replace(
+        plain, rows=replace(rows, reduce={"rule": "latest", "by": "calendardate"})
+    )
+    cfg = ViewConfig(view="v", fact="kipptaf_marts.fct_f", comparisons=[plain])
+
+    assert latest.entry_fingerprint(plain) != latest.entry_fingerprint(reduced)
+    assert pipeline.dashboard_rows_sql(cfg, plain) != pipeline.dashboard_rows_sql(
+        cfg, reduced
+    )

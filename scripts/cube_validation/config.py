@@ -65,6 +65,9 @@ WEEK_END_KEY = "days_from_week_end"
 # How `prove` treats export rows that share every mapped dim: `refuse` fails
 # the proof; `sum` adds them, which is right only for a field that adds up.
 SPLIT_ROWS = ("refuse", "sum")
+# How `rows.reduce` cuts the dashboard rows to one per grain key: `latest`
+# keeps the row with the latest value of the `by` column.
+REDUCE_RULES = ("latest",)
 
 # Every config value the SQL builders interpolate must pass one of these, so a
 # validation file cannot carry SQL text into a query.
@@ -95,6 +98,9 @@ class RowSpec:
     # probe and the cells keep every row, so a cell with no rows in scope
     # still shows (blank) on both.
     dashboard_scope: list[dict[str, Any]] = field(default_factory=list)
+    # `{rule, by}`: one dashboard row per grain key before the reconcile, for a
+    # dashboard that stores 1 row per key per day. Empty keeps every row.
+    reduce: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -340,6 +346,19 @@ def _pairs(reader: _Reader, key: str) -> list[ColumnPair]:
     return [_pair(item) for item in _list_of(reader, key)]
 
 
+def _reduce(reader: _Reader) -> dict[str, str]:
+    if reader.data.get("reduce") is None:
+        return {}
+    spec = reader.child("reduce", reader.data["reduce"])
+    for key in spec.data:
+        if key not in ("rule", "by"):
+            spec.fail(key, "unknown key; `reduce` takes only rule and by")
+    rule = spec.get("rule", str, required=True)
+    if rule not in REDUCE_RULES:
+        spec.fail("rule", f"must be one of {', '.join(REDUCE_RULES)}; got {rule!r}")
+    return {"rule": rule, "by": _identifier(spec, "by", required=True)}
+
+
 def _comparison(reader: _Reader) -> Comparison:
     probe = reader.get("probe", str)
     probe_sql = reader.get("probe_sql", str)
@@ -362,6 +381,7 @@ def _comparison(reader: _Reader) -> Comparison:
                 _filter_entry(r, "dashboard")
                 for r in _list_of(rows_reader, "dashboard_scope")
             ],
+            reduce=_reduce(rows_reader),
         )
 
     proof = None
