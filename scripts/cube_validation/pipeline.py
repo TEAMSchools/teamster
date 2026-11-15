@@ -721,7 +721,7 @@ def candidate_causes(
 def row_group_cause(n_groups: int) -> str:
     """The cause line a row-level comparison adds: its row groups, or none."""
     return (
-        f"{n_groups} row groups on this comparison (see Triage) may explain part of it"
+        f"{n_groups} row groups on this comparison (see Sort) may explain part of it"
         if n_groups
         else "every row matches on the grain and values, so the 2 definitions or "
         "their filters differ"
