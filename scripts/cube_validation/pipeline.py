@@ -85,6 +85,18 @@ class Skip:
     why: str
 
 
+def _skip_keys(skips: Iterable[Skip]) -> list[tuple[str, str]]:
+    """Each skip as its comparison and the stable head of its reason.
+
+    The head is the text before the first `:` or `(`, past which a reason
+    carries what varies between runs (an error's message, a job id, a
+    build's times), so the same skip twice keys alike.
+    """
+    return [
+        (s.comparison, re.split(r"[:(]", s.why, maxsplit=1)[0].strip()) for s in skips
+    ]
+
+
 def _say_skips(skips: list[Skip]) -> None:
     for s in skips:
         print(f"Skipping {s.comparison}: {s.why}.")
@@ -2140,9 +2152,9 @@ def compare(
                     "Composing run.json again from the latest results: the last "
                     "one predates them. Nothing is compared."
                 )
-            elif (last or {}).get("skipped", []) != [
-                dataclasses.asdict(s) for s in skips
-            ]:
+            elif _skip_keys(
+                Skip(**s) for s in (last or {}).get("skipped", [])
+            ) != _skip_keys(skips):
                 # So `ask-owner` lists what is skipped now.
                 print(
                     "Composing run.json again to record the comparisons skipped. "

@@ -1285,6 +1285,37 @@ def test_sort_and_review_go_on_past_a_comparison_skipped_for_a_missing_member(
     )
 
 
+def test_a_skip_whose_message_varies_is_recorded_once(
+    fakes, tmp_path, monkeypatch, capsys
+):
+    path = _two(tmp_path)
+    assert cli.main(["compare", str(path)]) == 0
+    fingerprints = pipeline.side_fingerprints
+    calls = []
+
+    def broken(cfg, comparison, **kwargs):
+        if comparison.id == "c2":
+            calls.append(1)
+            # A message that differs on every call, like a job id.
+            raise pipeline.ViewHistoryError(f"no view job (attempt {len(calls)})")
+        return fingerprints(cfg, comparison, **kwargs)
+
+    monkeypatch.setattr(pipeline, "side_fingerprints", broken)
+    capsys.readouterr()
+
+    assert cli.main(["compare", str(path)]) == 0
+    assert "Composing run.json again to record the comparisons skipped" in (
+        capsys.readouterr().out
+    )
+
+    # Skipped again for the same reason: nothing to write.
+    assert cli.main(["compare", str(path)]) == 0
+    out = capsys.readouterr().out
+    assert "Skipping c2: its SQL cannot be built today: " in out
+    assert "Composing run.json again" not in out
+    assert "Every comparison not skipped has a current latest result" in out
+
+
 def test_triage_names_a_member_cube_dropped_since_the_run(fakes, tmp_path):
     path = _two(tmp_path, _reads_membership)
     assert cli.main(["compare", str(path)]) == 0
