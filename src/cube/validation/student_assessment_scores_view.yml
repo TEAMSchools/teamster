@@ -1,0 +1,1229 @@
+view: student_assessment_scores_view
+fact: kipptaf_marts.fct_assessment_scores_enrollment_scoped
+# Weeks are the only date on any compared sheet; rows cast this to DATE on both sides.
+time_dimension: school_week_start_date
+
+# Each comparison opens with `- id:`: write_rebuild_check finds a comparison by
+# that line, so a comparison that opens with its `<<:` merge cannot be written.
+shared:
+  ddi: &ddi
+    confirmed: true
+    rebuild_check: null
+    workbook: 6d82b643-59a8-4106-b2f9-97ddf7f638e7
+    dashboard_view: kipptaf_tableau.rpt_tableau__ddi_dashboard
+    filters:
+      Academic Year: { dashboard: academic_year, cube: academic_year }
+      Response Type: { dashboard: response_type, cube: response_type }
+    # The DKI overall sheets keep only overall rows, which also keeps out the
+    # staff walkthrough rows Cube does not hold.
+    defaults:
+      Academic Year: 2026
+      Response Type: overall
+    cuts: []
+    rows:
+      grain:
+        - { dashboard: student_number, cube: lea_student_identifier }
+        - { dashboard: assessment_id, cube: source_assessment_id }
+        - { dashboard: response_type_code, cube: response_type_code }
+      values:
+        - { dashboard: is_mastery, cube: is_mastery }
+  ddi_standard: &ddi_standard
+    <<: *ddi
+    # The DKI standards sheets keep only standard rows.
+    defaults:
+      Academic Year: 2026
+      Response Type: standard
+  asmt: &asmt
+    confirmed: true
+    rebuild_check: null
+    workbook: 6d82b643-59a8-4106-b2f9-97ddf7f638e7
+    dashboard_view: kipptaf_tableau.rpt_tableau__assessment_dashboard
+    filters:
+      Academic Year: { dashboard: academic_year, cube: academic_year }
+      Module Number Raw: { dashboard: module_number, cube: module_code }
+    defaults:
+      Academic Year: 2026
+    cuts: []
+    rows:
+      grain:
+        - { dashboard: student_number, cube: lea_student_identifier }
+        - { dashboard: assessment_id, cube: source_assessment_id }
+        - { dashboard: standard_code, cube: response_type_code }
+      values:
+        - { dashboard: percent_correct, cube: percent_correct }
+  sot: &sot
+    <<: *asmt
+    sheet: Standards Over Time - Overview
+    defaults: {}
+    dims:
+      - { dashboard: academic_year, cube: academic_year }
+      - { dashboard: subject_area, cube: academic_subject }
+      - { dashboard: response_type, cube: response_type }
+    shelves:
+      drop: [Standard Domain, Standard Code]
+      add: { rows: [Subject Area, Response Type] }
+      clear_filters: [Subject Area (group), Response Type]
+
+comparisons:
+  - id: pct_proficient__dki_grid
+    <<: *ddi
+    measure: pct_proficient
+    sheet: DKI - Assessment Mastery Grid
+    sheet_field: Avg. Is Mastery Int
+    decimals: 2
+    dims:
+      - { dashboard: week_start_monday, cube: school_week_start_date }
+      - { dashboard: module_code, cube: module_code }
+      - { dashboard: school, cube: abbreviation }
+      - { dashboard: grade_level, cube: grade_level }
+      - { dashboard: subject_area, cube: academic_subject }
+    sheet_query: AVG(is_mastery_int)
+    shelves:
+      drop: [Grade/Subject]
+      add: { rows: [Grade Level, Subject Area] }
+      clear_filters: [Discipline, Exclude Future Assessments]
+    definitions:
+      dashboard:
+        AVG(is_mastery_int), 1 when is_mastery is true and 0 when false.
+      cube: Proficient scores over scores carrying a verdict (count_scored).
+    rebuild_check:
+      fingerprint: 3c570b06fff00569956ab30062ec5971502aa895511df28e3e73d894b00496c6
+      cells: 1508
+      matched_at: "2026-11-15T23:25:15.027952+00:00"
+      workbook_updated_at: "2026-11-15T06:43:02+00:00"
+      sheet_query_fingerprint: f3685fe7924bda3addac247857aa8060b6d9b1bef450363a8d92404878f5f0bb
+      source_fingerprint: d9ff221cb778a49a9bbdfcf16e8dbfe368b7b1640fb68fa44caad7c655e18817
+      cuts:
+        - "{}"
+      totals_skipped: 7980
+      shelves:
+        drop:
+          - Grade/Subject
+        clear_filters:
+          - Discipline
+          - Exclude Future Assessments
+        add:
+          rows:
+            - Grade Level
+            - Subject Area
+      missing_cuts: []
+      missing_filters:
+        - Dibels Most Recent Composite
+        - Discipline
+        - Exclude Future Assessments
+        - Grade/Subject
+        - Head Of School
+        - IEP Status
+        - Ml Status
+        - Region
+        - School Level
+        - Student Tier
+        - Term
+        - gifted_and_talented
+        - is_low_25_fl
+        - is_sipps
+        - state_test_proficiency
+      restricting_filters: []
+      filter_notes: {}
+      missing_columns:
+        state_test_proficiency: state_test_proficiency
+        Region: region
+        Ml Status: ml_status
+        Dibels Most Recent Composite: dibels_most_recent_composite
+        Student Tier: nj_student_tier
+        is_sipps: is_sipps
+        gifted_and_talented: gifted_and_talented
+        Head Of School: head_of_school
+        is_low_25_fl: is_low_25_fl
+        Term: term
+        IEP Status: iep_status
+        School Level: school_level
+
+  - id: pct_proficient__dki_standards_grid
+    <<: *ddi_standard
+    measure: pct_proficient
+    sheet: DKI - Standards Mastery Grid
+    sheet_field: Avg. Is Mastery Int
+    decimals: 2
+    dims:
+      - { dashboard: week_start_monday, cube: school_week_start_date }
+      - { dashboard: module_code, cube: module_code }
+      - { dashboard: school, cube: abbreviation }
+      - {
+          dashboard: response_type_description,
+          cube: response_type_description,
+        }
+    sheet_query: AVG(is_mastery_int)
+    shelves:
+      drop: [View by - O3 Standards]
+      add: { rows: [Response Type Description] }
+      clear_filters: [Discipline, Exclude Future Assessments]
+    definitions:
+      dashboard: AVG(is_mastery_int) over standard rows.
+      cube:
+        Proficient scores over scores carrying a verdict (count_scored),
+        standard rows.
+    rebuild_check:
+      fingerprint: b4a7b64517ef44a003b7ff638e1cbcfbc13ab082122ff2481e5bcd1194f68b4d
+      cells: 5436
+      matched_at: "2026-11-15T23:27:03.148589+00:00"
+      workbook_updated_at: "2026-11-15T06:43:02+00:00"
+      sheet_query_fingerprint: 0a3c897b71d52e1df31d74b935d8ceb5e5921ac1856e5e178d01581f2ec0e03c
+      source_fingerprint: d9ff221cb778a49a9bbdfcf16e8dbfe368b7b1640fb68fa44caad7c655e18817
+      cuts:
+        - "{}"
+      totals_skipped: 19933
+      shelves:
+        drop:
+          - View by - O3 Standards
+        clear_filters:
+          - Discipline
+          - Exclude Future Assessments
+        add:
+          rows:
+            - Response Type Description
+      missing_cuts: []
+      missing_filters:
+        - Dibels Most Recent Composite
+        - Discipline
+        - Exclude Future Assessments
+        - Grade Level
+        - Head Of School
+        - IEP Status
+        - Ml Status
+        - Region
+        - School Level
+        - Student Tier
+        - Subject Area
+        - Term
+        - gifted_and_talented
+        - is_low_25_fl
+        - is_sipps
+        - state_test_proficiency
+      restricting_filters: []
+      filter_notes: {}
+      missing_columns:
+        Subject Area: subject_area
+        Ml Status: ml_status
+        is_sipps: is_sipps
+        is_low_25_fl: is_low_25_fl
+        state_test_proficiency: state_test_proficiency
+        Region: region
+        Dibels Most Recent Composite: dibels_most_recent_composite
+        Grade Level: grade_level
+        Student Tier: nj_student_tier
+        gifted_and_talented: gifted_and_talented
+        Head Of School: head_of_school
+        Term: term
+        IEP Status: iep_status
+        School Level: school_level
+
+  # Off until the validator compares text values: rebuild-sheet reads every
+  # export value as a number. grade_goal_distance carries the same goal logic.
+  - id: grade_goal_status__dki_table
+    <<: *ddi
+    confirmed: false
+    measure: grade_goal_status
+    sheet: DKI - Assessment Mastery Table
+    sheet_field: School/Grade Goal Status
+    decimals: 2
+    dims:
+      - { dashboard: school, cube: abbreviation }
+      - { dashboard: grade_level, cube: grade_level }
+      - { dashboard: subject_area, cube: academic_subject }
+    dashboard_columns:
+      grade_goal_tableau:
+        "CASE WHEN region IN ('Camden', 'Newark', 'Paterson') AND grade_level <
+        9 AND (CASE WHEN subject_area IN ('CCR 1', 'CCR 3', 'CCR 4') THEN 'CCR'
+        WHEN subject_area IN ('AP Language', 'English 100', 'English 200',
+        'English 300', 'English 400', 'Text Study') THEN 'ELA' WHEN subject_area
+        IN ('Algebra I', 'Algebra I MS', 'Algebra II', 'AP Pre Calculus',
+        'Geometry', 'Geometry Honors', 'Math 4', 'Mathematics') THEN 'Math' WHEN
+        subject_area IN ('Biology', 'Chemistry', 'Human Anatomy and Physiology',
+        'Physics', 'Science') THEN 'Science' WHEN subject_area IN ('African
+        American Studies', 'AP African American Studies', 'AP US History', 'AP
+        World History', 'Economics and Civics', 'Social Studies', 'US History',
+        'US History AfricanAmerican', 'World History') THEN 'Social Studies'
+        WHEN subject_area IN ('Spanish') THEN 'World Language' ELSE 'Other' END)
+        = 'ELA' AND module_type = 'ET' THEN 0.8 WHEN region IN ('Camden',
+        'Newark', 'Paterson') AND grade_level > 9 AND module_type = 'ET' THEN
+        0.8 WHEN region IN ('Camden', 'Newark', 'Paterson') AND grade_level <= 2
+        AND (CASE WHEN subject_area IN ('CCR 1', 'CCR 3', 'CCR 4') THEN 'CCR'
+        WHEN subject_area IN ('AP Language', 'English 100', 'English 200',
+        'English 300', 'English 400', 'Text Study') THEN 'ELA' WHEN subject_area
+        IN ('Algebra I', 'Algebra I MS', 'Algebra II', 'AP Pre Calculus',
+        'Geometry', 'Geometry Honors', 'Math 4', 'Mathematics') THEN 'Math' WHEN
+        subject_area IN ('Biology', 'Chemistry', 'Human Anatomy and Physiology',
+        'Physics', 'Science') THEN 'Science' WHEN subject_area IN ('African
+        American Studies', 'AP African American Studies', 'AP US History', 'AP
+        World History', 'Economics and Civics', 'Social Studies', 'US History',
+        'US History AfricanAmerican', 'World History') THEN 'Social Studies'
+        WHEN subject_area IN ('Spanish') THEN 'World Language' ELSE 'Other' END)
+        IN ('ELA', 'Math') AND module_type IN ('QA', 'CRQ') THEN CASE
+        CONCAT(region, ' ', CAST(grade_level AS STRING), ' ', (CASE WHEN
+        subject_area IN ('CCR 1', 'CCR 3', 'CCR 4') THEN 'CCR' WHEN subject_area
+        IN ('AP Language', 'English 100', 'English 200', 'English 300', 'English
+        400', 'Text Study') THEN 'ELA' WHEN subject_area IN ('Algebra I',
+        'Algebra I MS', 'Algebra II', 'AP Pre Calculus', 'Geometry', 'Geometry
+        Honors', 'Math 4', 'Mathematics') THEN 'Math' WHEN subject_area IN
+        ('Biology', 'Chemistry', 'Human Anatomy and Physiology', 'Physics',
+        'Science') THEN 'Science' WHEN subject_area IN ('African American
+        Studies', 'AP African American Studies', 'AP US History', 'AP World
+        History', 'Economics and Civics', 'Social Studies', 'US History', 'US
+        History AfricanAmerican', 'World History') THEN 'Social Studies' WHEN
+        subject_area IN ('Spanish') THEN 'World Language' ELSE 'Other' END))
+        WHEN 'Newark 0 ELA' THEN 0.78 WHEN 'Newark 1 ELA' THEN 0.63 WHEN 'Newark
+        2 ELA' THEN 0.76 WHEN 'Newark 0 Math' THEN 0.9 WHEN 'Newark 1 Math' THEN
+        0.79 WHEN 'Newark 2 Math' THEN 0.71 WHEN 'Camden 0 ELA' THEN 0.61 WHEN
+        'Camden 1 ELA' THEN 0.63 WHEN 'Camden 2 ELA' THEN 0.76 WHEN 'Camden 0
+        Math' THEN 0.83 WHEN 'Camden 1 Math' THEN 0.77 WHEN 'Camden 2 Math' THEN
+        0.53 WHEN 'Paterson 0 ELA' THEN 0.78 WHEN 'Paterson 1 ELA' THEN 0.5 WHEN
+        'Paterson 2 ELA' THEN 0.64 WHEN 'Paterson 0 Math' THEN 0.9 WHEN
+        'Paterson 1 Math' THEN 0.78 WHEN 'Paterson 2 Math' THEN 0.79 END WHEN
+        region IN ('Camden', 'Newark', 'Paterson') AND grade_level > 0 AND
+        grade_level < 9 AND (CASE WHEN subject_area IN ('CCR 1', 'CCR 3', 'CCR
+        4') THEN 'CCR' WHEN subject_area IN ('AP Language', 'English 100',
+        'English 200', 'English 300', 'English 400', 'Text Study') THEN 'ELA'
+        WHEN subject_area IN ('Algebra I', 'Algebra I MS', 'Algebra II', 'AP Pre
+        Calculus', 'Geometry', 'Geometry Honors', 'Math 4', 'Mathematics') THEN
+        'Math' WHEN subject_area IN ('Biology', 'Chemistry', 'Human Anatomy and
+        Physiology', 'Physics', 'Science') THEN 'Science' WHEN subject_area IN
+        ('African American Studies', 'AP African American Studies', 'AP US
+        History', 'AP World History', 'Economics and Civics', 'Social Studies',
+        'US History', 'US History AfricanAmerican', 'World History') THEN
+        'Social Studies' WHEN subject_area IN ('Spanish') THEN 'World Language'
+        ELSE 'Other' END) = 'Math' AND module_type = 'CRQ' THEN grade_goal + 0.1
+        WHEN region IN ('Camden', 'Newark', 'Paterson') AND grade_level > 2 AND
+        (CASE WHEN subject_area IN ('CCR 1', 'CCR 3', 'CCR 4') THEN 'CCR' WHEN
+        subject_area IN ('AP Language', 'English 100', 'English 200', 'English
+        300', 'English 400', 'Text Study') THEN 'ELA' WHEN subject_area IN
+        ('Algebra I', 'Algebra I MS', 'Algebra II', 'AP Pre Calculus',
+        'Geometry', 'Geometry Honors', 'Math 4', 'Mathematics') THEN 'Math' WHEN
+        subject_area IN ('Biology', 'Chemistry', 'Human Anatomy and Physiology',
+        'Physics', 'Science') THEN 'Science' WHEN subject_area IN ('African
+        American Studies', 'AP African American Studies', 'AP US History', 'AP
+        World History', 'Economics and Civics', 'Social Studies', 'US History',
+        'US History AfricanAmerican', 'World History') THEN 'Social Studies'
+        WHEN subject_area IN ('Spanish') THEN 'World Language' ELSE 'Other' END)
+        IN ('ELA', 'Math', 'Science') AND module_type = 'TP' THEN grade_goal +
+        0.1 ELSE grade_goal END"
+    sheet_query: >-
+      CASE WHEN MAX(grade_goal_tableau) < AVG(is_mastery_int) THEN 'exceeded'
+      WHEN MAX(grade_goal_tableau) = AVG(is_mastery_int) THEN 'met' WHEN
+      MAX(grade_goal_tableau) > AVG(is_mastery_int) THEN 'not met' END
+    shelves:
+      drop: [Grade/Subject]
+      add: { rows: [Grade Level, Subject Area] }
+      clear_filters: [Measure Names, Discipline, Exclude Future Assessments]
+
+  # The goal sheets show overall rows only.
+  - id: grade_goal_distance__grid_grade
+    <<: *ddi
+    measure: grade_goal_distance
+    sheet: School - Mastery Grid Grade
+    sheet_field: Goal Distance - Grade/Subject
+    decimals: 2
+    dims:
+      - { dashboard: week_start_monday, cube: school_week_start_date }
+      - { dashboard: grade_level, cube: grade_level }
+      - { dashboard: subject_area, cube: academic_subject }
+    dashboard_columns:
+      grade_goal_tableau:
+        "CASE WHEN region IN ('Camden', 'Newark', 'Paterson') AND grade_level <
+        9 AND (CASE WHEN subject_area IN ('CCR 1', 'CCR 3', 'CCR 4') THEN 'CCR'
+        WHEN subject_area IN ('AP Language', 'English 100', 'English 200',
+        'English 300', 'English 400', 'Text Study') THEN 'ELA' WHEN subject_area
+        IN ('Algebra I', 'Algebra I MS', 'Algebra II', 'AP Pre Calculus',
+        'Geometry', 'Geometry Honors', 'Math 4', 'Mathematics') THEN 'Math' WHEN
+        subject_area IN ('Biology', 'Chemistry', 'Human Anatomy and Physiology',
+        'Physics', 'Science') THEN 'Science' WHEN subject_area IN ('African
+        American Studies', 'AP African American Studies', 'AP US History', 'AP
+        World History', 'Economics and Civics', 'Social Studies', 'US History',
+        'US History AfricanAmerican', 'World History') THEN 'Social Studies'
+        WHEN subject_area IN ('Spanish') THEN 'World Language' ELSE 'Other' END)
+        = 'ELA' AND module_type = 'ET' THEN 0.8 WHEN region IN ('Camden',
+        'Newark', 'Paterson') AND grade_level > 9 AND module_type = 'ET' THEN
+        0.8 WHEN region IN ('Camden', 'Newark', 'Paterson') AND grade_level <= 2
+        AND (CASE WHEN subject_area IN ('CCR 1', 'CCR 3', 'CCR 4') THEN 'CCR'
+        WHEN subject_area IN ('AP Language', 'English 100', 'English 200',
+        'English 300', 'English 400', 'Text Study') THEN 'ELA' WHEN subject_area
+        IN ('Algebra I', 'Algebra I MS', 'Algebra II', 'AP Pre Calculus',
+        'Geometry', 'Geometry Honors', 'Math 4', 'Mathematics') THEN 'Math' WHEN
+        subject_area IN ('Biology', 'Chemistry', 'Human Anatomy and Physiology',
+        'Physics', 'Science') THEN 'Science' WHEN subject_area IN ('African
+        American Studies', 'AP African American Studies', 'AP US History', 'AP
+        World History', 'Economics and Civics', 'Social Studies', 'US History',
+        'US History AfricanAmerican', 'World History') THEN 'Social Studies'
+        WHEN subject_area IN ('Spanish') THEN 'World Language' ELSE 'Other' END)
+        IN ('ELA', 'Math') AND module_type IN ('QA', 'CRQ') THEN CASE
+        CONCAT(region, ' ', CAST(grade_level AS STRING), ' ', (CASE WHEN
+        subject_area IN ('CCR 1', 'CCR 3', 'CCR 4') THEN 'CCR' WHEN subject_area
+        IN ('AP Language', 'English 100', 'English 200', 'English 300', 'English
+        400', 'Text Study') THEN 'ELA' WHEN subject_area IN ('Algebra I',
+        'Algebra I MS', 'Algebra II', 'AP Pre Calculus', 'Geometry', 'Geometry
+        Honors', 'Math 4', 'Mathematics') THEN 'Math' WHEN subject_area IN
+        ('Biology', 'Chemistry', 'Human Anatomy and Physiology', 'Physics',
+        'Science') THEN 'Science' WHEN subject_area IN ('African American
+        Studies', 'AP African American Studies', 'AP US History', 'AP World
+        History', 'Economics and Civics', 'Social Studies', 'US History', 'US
+        History AfricanAmerican', 'World History') THEN 'Social Studies' WHEN
+        subject_area IN ('Spanish') THEN 'World Language' ELSE 'Other' END))
+        WHEN 'Newark 0 ELA' THEN 0.78 WHEN 'Newark 1 ELA' THEN 0.63 WHEN 'Newark
+        2 ELA' THEN 0.76 WHEN 'Newark 0 Math' THEN 0.9 WHEN 'Newark 1 Math' THEN
+        0.79 WHEN 'Newark 2 Math' THEN 0.71 WHEN 'Camden 0 ELA' THEN 0.61 WHEN
+        'Camden 1 ELA' THEN 0.63 WHEN 'Camden 2 ELA' THEN 0.76 WHEN 'Camden 0
+        Math' THEN 0.83 WHEN 'Camden 1 Math' THEN 0.77 WHEN 'Camden 2 Math' THEN
+        0.53 WHEN 'Paterson 0 ELA' THEN 0.78 WHEN 'Paterson 1 ELA' THEN 0.5 WHEN
+        'Paterson 2 ELA' THEN 0.64 WHEN 'Paterson 0 Math' THEN 0.9 WHEN
+        'Paterson 1 Math' THEN 0.78 WHEN 'Paterson 2 Math' THEN 0.79 END WHEN
+        region IN ('Camden', 'Newark', 'Paterson') AND grade_level > 0 AND
+        grade_level < 9 AND (CASE WHEN subject_area IN ('CCR 1', 'CCR 3', 'CCR
+        4') THEN 'CCR' WHEN subject_area IN ('AP Language', 'English 100',
+        'English 200', 'English 300', 'English 400', 'Text Study') THEN 'ELA'
+        WHEN subject_area IN ('Algebra I', 'Algebra I MS', 'Algebra II', 'AP Pre
+        Calculus', 'Geometry', 'Geometry Honors', 'Math 4', 'Mathematics') THEN
+        'Math' WHEN subject_area IN ('Biology', 'Chemistry', 'Human Anatomy and
+        Physiology', 'Physics', 'Science') THEN 'Science' WHEN subject_area IN
+        ('African American Studies', 'AP African American Studies', 'AP US
+        History', 'AP World History', 'Economics and Civics', 'Social Studies',
+        'US History', 'US History AfricanAmerican', 'World History') THEN
+        'Social Studies' WHEN subject_area IN ('Spanish') THEN 'World Language'
+        ELSE 'Other' END) = 'Math' AND module_type = 'CRQ' THEN grade_goal + 0.1
+        WHEN region IN ('Camden', 'Newark', 'Paterson') AND grade_level > 2 AND
+        (CASE WHEN subject_area IN ('CCR 1', 'CCR 3', 'CCR 4') THEN 'CCR' WHEN
+        subject_area IN ('AP Language', 'English 100', 'English 200', 'English
+        300', 'English 400', 'Text Study') THEN 'ELA' WHEN subject_area IN
+        ('Algebra I', 'Algebra I MS', 'Algebra II', 'AP Pre Calculus',
+        'Geometry', 'Geometry Honors', 'Math 4', 'Mathematics') THEN 'Math' WHEN
+        subject_area IN ('Biology', 'Chemistry', 'Human Anatomy and Physiology',
+        'Physics', 'Science') THEN 'Science' WHEN subject_area IN ('African
+        American Studies', 'AP African American Studies', 'AP US History', 'AP
+        World History', 'Economics and Civics', 'Social Studies', 'US History',
+        'US History AfricanAmerican', 'World History') THEN 'Social Studies'
+        WHEN subject_area IN ('Spanish') THEN 'World Language' ELSE 'Other' END)
+        IN ('ELA', 'Math', 'Science') AND module_type = 'TP' THEN grade_goal +
+        0.1 ELSE grade_goal END"
+    sheet_query: MAX(grade_goal_tableau) - AVG(is_mastery_int)
+    shelves:
+      drop: [Grade/Subject, View By - School]
+      add: { rows: [Grade Level, Subject Area] }
+      clear_filters:
+        [School, Discipline, Exclude Future Assessments, Select Chart Type]
+    definitions:
+      dashboard:
+        "MAX of the workbook's Grade Goal (Differentiated) calc (the raw
+        grade_goal plus hard-coded ET, K-2 QA/CRQ, Math CRQ and TP rules) minus
+        AVG(is_mastery_int)."
+      cube:
+        The highest grade_goal_differentiated (the dbt goal rules) minus
+        pct_proficient.
+    rebuild_check:
+      fingerprint: 850efa37cd41ddb56e07256baa62dcfe687856c9134c32c66f61d3038f9463c0
+      cells: 483
+      matched_at: "2026-11-15T23:28:46.839706+00:00"
+      workbook_updated_at: "2026-11-15T06:43:02+00:00"
+      sheet_query_fingerprint: 7f035cbc8130f7190124be648364e260f449ccc86c1c99b4022708406a2430de
+      source_fingerprint: d9ff221cb778a49a9bbdfcf16e8dbfe368b7b1640fb68fa44caad7c655e18817
+      cuts:
+        - "{}"
+      totals_skipped: 0
+      shelves:
+        drop:
+          - Grade/Subject
+          - View By - School
+        clear_filters:
+          - School
+          - Discipline
+          - Exclude Future Assessments
+          - Select Chart Type
+        add:
+          rows:
+            - Grade Level
+            - Subject Area
+      missing_cuts: []
+      missing_filters:
+        - Course Teacher Name
+        - Dibels Most Recent Composite
+        - Discipline
+        - Exclude Future Assessments
+        - IEP Status
+        - Is Mastery Int - Custom
+        - Ml Status
+        - Module Code
+        - Module Type
+        - School
+        - Select Chart Type
+        - Standard
+        - Student Tier
+        - Term
+        - Week of
+        - is_low_25_fl
+        - is_sipps
+        - state_test_proficiency
+      restricting_filters: []
+      filter_notes:
+        Select Chart Type: display switch on Chart Type
+      missing_columns:
+        Module Code: module_code
+        Module Type: module_type
+        Ml Status: ml_status
+        is_sipps: is_sipps
+        is_low_25_fl: is_low_25_fl
+        Course Teacher Name: course_teacher_name
+        state_test_proficiency: state_test_proficiency
+        Dibels Most Recent Composite: dibels_most_recent_composite
+        Student Tier: nj_student_tier
+        School: school
+        Term: term
+        IEP Status: iep_status
+
+  - id: school_goal_distance__lines_all
+    <<: *ddi
+    measure: school_goal_distance
+    sheet: School - Mastery Lines All
+    sheet_field: Goal Distance - School
+    decimals: 2
+    dims:
+      - { dashboard: week_start_monday, cube: school_week_start_date }
+      - { dashboard: school, cube: abbreviation }
+    dashboard_columns:
+      school_goal_tableau:
+        "CASE WHEN region IN ('Camden', 'Newark', 'Paterson') AND grade_level <
+        9 AND (CASE WHEN subject_area IN ('CCR 1', 'CCR 3', 'CCR 4') THEN 'CCR'
+        WHEN subject_area IN ('AP Language', 'English 100', 'English 200',
+        'English 300', 'English 400', 'Text Study') THEN 'ELA' WHEN subject_area
+        IN ('Algebra I', 'Algebra I MS', 'Algebra II', 'AP Pre Calculus',
+        'Geometry', 'Geometry Honors', 'Math 4', 'Mathematics') THEN 'Math' WHEN
+        subject_area IN ('Biology', 'Chemistry', 'Human Anatomy and Physiology',
+        'Physics', 'Science') THEN 'Science' WHEN subject_area IN ('African
+        American Studies', 'AP African American Studies', 'AP US History', 'AP
+        World History', 'Economics and Civics', 'Social Studies', 'US History',
+        'US History AfricanAmerican', 'World History') THEN 'Social Studies'
+        WHEN subject_area IN ('Spanish') THEN 'World Language' ELSE 'Other' END)
+        = 'ELA' AND module_type = 'ET' THEN 0.8 WHEN region IN ('Camden',
+        'Newark', 'Paterson') AND grade_level > 9 AND module_type = 'ET' THEN
+        0.8 WHEN region IN ('Camden', 'Newark', 'Paterson') AND grade_level <= 2
+        AND (CASE WHEN subject_area IN ('CCR 1', 'CCR 3', 'CCR 4') THEN 'CCR'
+        WHEN subject_area IN ('AP Language', 'English 100', 'English 200',
+        'English 300', 'English 400', 'Text Study') THEN 'ELA' WHEN subject_area
+        IN ('Algebra I', 'Algebra I MS', 'Algebra II', 'AP Pre Calculus',
+        'Geometry', 'Geometry Honors', 'Math 4', 'Mathematics') THEN 'Math' WHEN
+        subject_area IN ('Biology', 'Chemistry', 'Human Anatomy and Physiology',
+        'Physics', 'Science') THEN 'Science' WHEN subject_area IN ('African
+        American Studies', 'AP African American Studies', 'AP US History', 'AP
+        World History', 'Economics and Civics', 'Social Studies', 'US History',
+        'US History AfricanAmerican', 'World History') THEN 'Social Studies'
+        WHEN subject_area IN ('Spanish') THEN 'World Language' ELSE 'Other' END)
+        IN ('ELA', 'Math') AND module_type IN ('QA', 'CRQ') THEN CASE
+        CONCAT(region, ' ', CAST(grade_level AS STRING), ' ', (CASE WHEN
+        subject_area IN ('CCR 1', 'CCR 3', 'CCR 4') THEN 'CCR' WHEN subject_area
+        IN ('AP Language', 'English 100', 'English 200', 'English 300', 'English
+        400', 'Text Study') THEN 'ELA' WHEN subject_area IN ('Algebra I',
+        'Algebra I MS', 'Algebra II', 'AP Pre Calculus', 'Geometry', 'Geometry
+        Honors', 'Math 4', 'Mathematics') THEN 'Math' WHEN subject_area IN
+        ('Biology', 'Chemistry', 'Human Anatomy and Physiology', 'Physics',
+        'Science') THEN 'Science' WHEN subject_area IN ('African American
+        Studies', 'AP African American Studies', 'AP US History', 'AP World
+        History', 'Economics and Civics', 'Social Studies', 'US History', 'US
+        History AfricanAmerican', 'World History') THEN 'Social Studies' WHEN
+        subject_area IN ('Spanish') THEN 'World Language' ELSE 'Other' END))
+        WHEN 'Newark 0 ELA' THEN 0.78 WHEN 'Newark 1 ELA' THEN 0.63 WHEN 'Newark
+        2 ELA' THEN 0.76 WHEN 'Newark 0 Math' THEN 0.9 WHEN 'Newark 1 Math' THEN
+        0.79 WHEN 'Newark 2 Math' THEN 0.71 WHEN 'Camden 0 ELA' THEN 0.61 WHEN
+        'Camden 1 ELA' THEN 0.63 WHEN 'Camden 2 ELA' THEN 0.76 WHEN 'Camden 0
+        Math' THEN 0.83 WHEN 'Camden 1 Math' THEN 0.77 WHEN 'Camden 2 Math' THEN
+        0.53 WHEN 'Paterson 0 ELA' THEN 0.78 WHEN 'Paterson 1 ELA' THEN 0.5 WHEN
+        'Paterson 2 ELA' THEN 0.64 WHEN 'Paterson 0 Math' THEN 0.9 WHEN
+        'Paterson 1 Math' THEN 0.78 WHEN 'Paterson 2 Math' THEN 0.79 END WHEN
+        region IN ('Camden', 'Newark', 'Paterson') AND grade_level > 0 AND
+        grade_level < 9 AND (CASE WHEN subject_area IN ('CCR 1', 'CCR 3', 'CCR
+        4') THEN 'CCR' WHEN subject_area IN ('AP Language', 'English 100',
+        'English 200', 'English 300', 'English 400', 'Text Study') THEN 'ELA'
+        WHEN subject_area IN ('Algebra I', 'Algebra I MS', 'Algebra II', 'AP Pre
+        Calculus', 'Geometry', 'Geometry Honors', 'Math 4', 'Mathematics') THEN
+        'Math' WHEN subject_area IN ('Biology', 'Chemistry', 'Human Anatomy and
+        Physiology', 'Physics', 'Science') THEN 'Science' WHEN subject_area IN
+        ('African American Studies', 'AP African American Studies', 'AP US
+        History', 'AP World History', 'Economics and Civics', 'Social Studies',
+        'US History', 'US History AfricanAmerican', 'World History') THEN
+        'Social Studies' WHEN subject_area IN ('Spanish') THEN 'World Language'
+        ELSE 'Other' END) = 'Math' AND module_type = 'CRQ' THEN school_goal +
+        0.1 WHEN region IN ('Camden', 'Newark', 'Paterson') AND grade_level > 2
+        AND (CASE WHEN subject_area IN ('CCR 1', 'CCR 3', 'CCR 4') THEN 'CCR'
+        WHEN subject_area IN ('AP Language', 'English 100', 'English 200',
+        'English 300', 'English 400', 'Text Study') THEN 'ELA' WHEN subject_area
+        IN ('Algebra I', 'Algebra I MS', 'Algebra II', 'AP Pre Calculus',
+        'Geometry', 'Geometry Honors', 'Math 4', 'Mathematics') THEN 'Math' WHEN
+        subject_area IN ('Biology', 'Chemistry', 'Human Anatomy and Physiology',
+        'Physics', 'Science') THEN 'Science' WHEN subject_area IN ('African
+        American Studies', 'AP African American Studies', 'AP US History', 'AP
+        World History', 'Economics and Civics', 'Social Studies', 'US History',
+        'US History AfricanAmerican', 'World History') THEN 'Social Studies'
+        WHEN subject_area IN ('Spanish') THEN 'World Language' ELSE 'Other' END)
+        IN ('ELA', 'Math', 'Science') AND module_type = 'TP' THEN school_goal +
+        0.1 ELSE school_goal END"
+    sheet_query: MAX(school_goal_tableau) - AVG(is_mastery_int)
+    shelves:
+      clear_filters:
+        [School, Discipline, Exclude Future Assessments, Select Chart Type]
+    definitions:
+      dashboard:
+        "MAX of the workbook's School Goal (Differentiated) calc (the raw
+        school_goal plus hard-coded ET, K-2 QA/CRQ, Math CRQ and TP rules) minus
+        AVG(is_mastery_int)."
+      cube:
+        The highest school_goal_differentiated (the dbt goal rules) minus
+        pct_proficient.
+
+  - id: region_goal_distance__lines_all
+    <<: *ddi
+    measure: region_goal_distance
+    sheet: Region - Mastery Lines All
+    sheet_field: Goal Distance - Region
+    decimals: 2
+    dims:
+      - { dashboard: week_start_monday, cube: school_week_start_date }
+      - { dashboard: region, cube: region_name }
+    dashboard_columns:
+      region_goal_tableau:
+        "CASE WHEN region IN ('Camden', 'Newark', 'Paterson') AND grade_level <
+        9 AND (CASE WHEN subject_area IN ('CCR 1', 'CCR 3', 'CCR 4') THEN 'CCR'
+        WHEN subject_area IN ('AP Language', 'English 100', 'English 200',
+        'English 300', 'English 400', 'Text Study') THEN 'ELA' WHEN subject_area
+        IN ('Algebra I', 'Algebra I MS', 'Algebra II', 'AP Pre Calculus',
+        'Geometry', 'Geometry Honors', 'Math 4', 'Mathematics') THEN 'Math' WHEN
+        subject_area IN ('Biology', 'Chemistry', 'Human Anatomy and Physiology',
+        'Physics', 'Science') THEN 'Science' WHEN subject_area IN ('African
+        American Studies', 'AP African American Studies', 'AP US History', 'AP
+        World History', 'Economics and Civics', 'Social Studies', 'US History',
+        'US History AfricanAmerican', 'World History') THEN 'Social Studies'
+        WHEN subject_area IN ('Spanish') THEN 'World Language' ELSE 'Other' END)
+        = 'ELA' AND module_type = 'ET' THEN 0.8 WHEN region IN ('Camden',
+        'Newark', 'Paterson') AND grade_level > 9 AND module_type = 'ET' THEN
+        0.8 WHEN region IN ('Camden', 'Newark', 'Paterson') AND grade_level <= 2
+        AND (CASE WHEN subject_area IN ('CCR 1', 'CCR 3', 'CCR 4') THEN 'CCR'
+        WHEN subject_area IN ('AP Language', 'English 100', 'English 200',
+        'English 300', 'English 400', 'Text Study') THEN 'ELA' WHEN subject_area
+        IN ('Algebra I', 'Algebra I MS', 'Algebra II', 'AP Pre Calculus',
+        'Geometry', 'Geometry Honors', 'Math 4', 'Mathematics') THEN 'Math' WHEN
+        subject_area IN ('Biology', 'Chemistry', 'Human Anatomy and Physiology',
+        'Physics', 'Science') THEN 'Science' WHEN subject_area IN ('African
+        American Studies', 'AP African American Studies', 'AP US History', 'AP
+        World History', 'Economics and Civics', 'Social Studies', 'US History',
+        'US History AfricanAmerican', 'World History') THEN 'Social Studies'
+        WHEN subject_area IN ('Spanish') THEN 'World Language' ELSE 'Other' END)
+        IN ('ELA', 'Math') AND module_type IN ('QA', 'CRQ') THEN CASE
+        CONCAT(region, ' ', CAST(grade_level AS STRING), ' ', (CASE WHEN
+        subject_area IN ('CCR 1', 'CCR 3', 'CCR 4') THEN 'CCR' WHEN subject_area
+        IN ('AP Language', 'English 100', 'English 200', 'English 300', 'English
+        400', 'Text Study') THEN 'ELA' WHEN subject_area IN ('Algebra I',
+        'Algebra I MS', 'Algebra II', 'AP Pre Calculus', 'Geometry', 'Geometry
+        Honors', 'Math 4', 'Mathematics') THEN 'Math' WHEN subject_area IN
+        ('Biology', 'Chemistry', 'Human Anatomy and Physiology', 'Physics',
+        'Science') THEN 'Science' WHEN subject_area IN ('African American
+        Studies', 'AP African American Studies', 'AP US History', 'AP World
+        History', 'Economics and Civics', 'Social Studies', 'US History', 'US
+        History AfricanAmerican', 'World History') THEN 'Social Studies' WHEN
+        subject_area IN ('Spanish') THEN 'World Language' ELSE 'Other' END))
+        WHEN 'Newark 0 ELA' THEN 0.78 WHEN 'Newark 1 ELA' THEN 0.63 WHEN 'Newark
+        2 ELA' THEN 0.76 WHEN 'Newark 0 Math' THEN 0.9 WHEN 'Newark 1 Math' THEN
+        0.79 WHEN 'Newark 2 Math' THEN 0.71 WHEN 'Camden 0 ELA' THEN 0.61 WHEN
+        'Camden 1 ELA' THEN 0.63 WHEN 'Camden 2 ELA' THEN 0.76 WHEN 'Camden 0
+        Math' THEN 0.83 WHEN 'Camden 1 Math' THEN 0.77 WHEN 'Camden 2 Math' THEN
+        0.53 WHEN 'Paterson 0 ELA' THEN 0.78 WHEN 'Paterson 1 ELA' THEN 0.5 WHEN
+        'Paterson 2 ELA' THEN 0.64 WHEN 'Paterson 0 Math' THEN 0.9 WHEN
+        'Paterson 1 Math' THEN 0.78 WHEN 'Paterson 2 Math' THEN 0.79 END WHEN
+        region IN ('Camden', 'Newark', 'Paterson') AND grade_level > 0 AND
+        grade_level < 9 AND (CASE WHEN subject_area IN ('CCR 1', 'CCR 3', 'CCR
+        4') THEN 'CCR' WHEN subject_area IN ('AP Language', 'English 100',
+        'English 200', 'English 300', 'English 400', 'Text Study') THEN 'ELA'
+        WHEN subject_area IN ('Algebra I', 'Algebra I MS', 'Algebra II', 'AP Pre
+        Calculus', 'Geometry', 'Geometry Honors', 'Math 4', 'Mathematics') THEN
+        'Math' WHEN subject_area IN ('Biology', 'Chemistry', 'Human Anatomy and
+        Physiology', 'Physics', 'Science') THEN 'Science' WHEN subject_area IN
+        ('African American Studies', 'AP African American Studies', 'AP US
+        History', 'AP World History', 'Economics and Civics', 'Social Studies',
+        'US History', 'US History AfricanAmerican', 'World History') THEN
+        'Social Studies' WHEN subject_area IN ('Spanish') THEN 'World Language'
+        ELSE 'Other' END) = 'Math' AND module_type = 'CRQ' THEN region_goal +
+        0.1 WHEN region IN ('Camden', 'Newark', 'Paterson') AND grade_level > 2
+        AND (CASE WHEN subject_area IN ('CCR 1', 'CCR 3', 'CCR 4') THEN 'CCR'
+        WHEN subject_area IN ('AP Language', 'English 100', 'English 200',
+        'English 300', 'English 400', 'Text Study') THEN 'ELA' WHEN subject_area
+        IN ('Algebra I', 'Algebra I MS', 'Algebra II', 'AP Pre Calculus',
+        'Geometry', 'Geometry Honors', 'Math 4', 'Mathematics') THEN 'Math' WHEN
+        subject_area IN ('Biology', 'Chemistry', 'Human Anatomy and Physiology',
+        'Physics', 'Science') THEN 'Science' WHEN subject_area IN ('African
+        American Studies', 'AP African American Studies', 'AP US History', 'AP
+        World History', 'Economics and Civics', 'Social Studies', 'US History',
+        'US History AfricanAmerican', 'World History') THEN 'Social Studies'
+        WHEN subject_area IN ('Spanish') THEN 'World Language' ELSE 'Other' END)
+        IN ('ELA', 'Math', 'Science') AND module_type = 'TP' THEN region_goal +
+        0.1 ELSE region_goal END"
+    sheet_query: MAX(region_goal_tableau) - AVG(is_mastery_int)
+    shelves:
+      clear_filters: [Region, Discipline, Exclude Future Assessments]
+    definitions:
+      dashboard:
+        "MAX of the workbook's Region Goal (Differentiated) calc (the raw
+        region_goal plus hard-coded ET, K-2 QA/CRQ, Math CRQ and TP rules) minus
+        AVG(is_mastery_int)."
+      cube:
+        The highest region_goal_differentiated (the dbt goal rules) minus
+        pct_proficient.
+    rebuild_check:
+      fingerprint: b5b6b8f4fa9282b4fc8dc804f82f58b818e44bb943b18bc275309b0429037bcb
+      cells: 49
+      matched_at: "2026-11-15T23:31:22.352417+00:00"
+      workbook_updated_at: "2026-11-15T06:43:02+00:00"
+      sheet_query_fingerprint: d8a16b75cdb1e33bf475d2dbeeda10a102d009b3bcf9cf5e950b6eef37c536e5
+      source_fingerprint: d9ff221cb778a49a9bbdfcf16e8dbfe368b7b1640fb68fa44caad7c655e18817
+      cuts:
+        - "{}"
+      totals_skipped: 0
+      shelves:
+        clear_filters:
+          - Region
+          - Discipline
+          - Exclude Future Assessments
+      missing_cuts: []
+      missing_filters:
+        - Dibels Most Recent Composite
+        - Discipline
+        - Exclude Future Assessments
+        - Grade Level
+        - Head Of School
+        - IEP Status
+        - Is Mastery Int - Custom
+        - Ml Status
+        - Module Code
+        - Module Type
+        - School Level
+        - Standard
+        - is_low_25_fl
+        - is_sipps
+        - state_test_proficiency
+      restricting_filters: []
+      filter_notes: {}
+      missing_columns:
+        Module Code: module_code
+        Module Type: module_type
+        state_test_proficiency: state_test_proficiency
+        Ml Status: ml_status
+        Dibels Most Recent Composite: dibels_most_recent_composite
+        Grade Level: grade_level
+        is_sipps: is_sipps
+        Head Of School: head_of_school
+        is_low_25_fl: is_low_25_fl
+        IEP Status: iep_status
+        School Level: school_level
+
+  # count_assessments and avg_percent_correct share one export.
+  - id: count_assessments__standards_over_time
+    <<: *sot
+    measure: count_assessments
+    sheet_field: "# Asmt"
+    decimals: 0
+    sheet_query: COUNT(DISTINCT assessment_id)
+    rebuild_check:
+      fingerprint: 66dc25901c3ce90cbf48427635d6049312202f18f30e7b960f72badc9a11a0f7
+      cells: 223
+      matched_at: "2026-11-15T23:32:40.944720+00:00"
+      workbook_updated_at: "2026-11-15T06:43:02+00:00"
+      sheet_query_fingerprint: ac8c0205db17c926bcd977ed63ad77dd59edcf3bf4861074542b80880c3072f0
+      source_fingerprint: 04be9335ed594489d483384947c2521c87f3d1b070ec97d8f4ea38c63f69f74a
+      cuts:
+        - "{}"
+      totals_skipped: 0
+      shelves:
+        drop:
+          - Standard Domain
+          - Standard Code
+        clear_filters:
+          - Subject Area (group)
+          - Response Type
+        add:
+          rows:
+            - Subject Area
+            - Response Type
+      missing_cuts: []
+      missing_filters:
+        - "# Students Complete - Assessment ID"
+        - Administered At
+        - C 504 Status
+        - Cohort
+        - Grade Level
+        - Lastfirst
+        - Lep Status
+        - Module Type
+        - Region
+        - Schoolid
+        - Scope
+        - Standard Domain
+        - Subject Area (group)
+        - Teacher Name
+        - Team
+        - Territory
+        - Title
+      restricting_filters: []
+      filter_notes: {}
+      missing_columns:
+        Title: title
+        Schoolid: schoolid
+        Team: team
+        Module Type: module_type
+        Teacher Name: teacher_name
+        Administered At: administered_at
+        Cohort: cohort
+        Lep Status: lep_status
+        Region: region
+        Grade Level: grade_level
+        Standard Domain: standard_domain
+        Territory: territory
+        Scope: scope
+        Lastfirst: lastfirst
+        C 504 Status: c_504_status
+
+  - id: avg_percent_correct__standards_over_time
+    <<: *sot
+    measure: avg_percent_correct
+    sheet_field: Avg. Percent Correct
+    decimals: 0
+    sheet_query: AVG(percent_correct)
+    rebuild_check:
+      fingerprint: 66dc25901c3ce90cbf48427635d6049312202f18f30e7b960f72badc9a11a0f7
+      cells: 223
+      matched_at: "2026-11-15T23:33:58.233306+00:00"
+      workbook_updated_at: "2026-11-15T06:43:02+00:00"
+      sheet_query_fingerprint: 88c05701b026119857c75db7aefad0b025bd888698be9d515a38b957933730ef
+      source_fingerprint: 04be9335ed594489d483384947c2521c87f3d1b070ec97d8f4ea38c63f69f74a
+      cuts:
+        - "{}"
+      totals_skipped: 0
+      shelves:
+        drop:
+          - Standard Domain
+          - Standard Code
+        clear_filters:
+          - Subject Area (group)
+          - Response Type
+        add:
+          rows:
+            - Subject Area
+            - Response Type
+      missing_cuts: []
+      missing_filters:
+        - "# Students Complete - Assessment ID"
+        - Administered At
+        - C 504 Status
+        - Cohort
+        - Grade Level
+        - Lastfirst
+        - Lep Status
+        - Module Type
+        - Region
+        - Schoolid
+        - Scope
+        - Standard Domain
+        - Subject Area (group)
+        - Teacher Name
+        - Team
+        - Territory
+        - Title
+      restricting_filters: []
+      filter_notes: {}
+      missing_columns:
+        Title: title
+        Schoolid: schoolid
+        Team: team
+        Module Type: module_type
+        Teacher Name: teacher_name
+        Administered At: administered_at
+        Cohort: cohort
+        Lep Status: lep_status
+        Region: region
+        Grade Level: grade_level
+        Standard Domain: standard_domain
+        Territory: territory
+        Scope: scope
+        Lastfirst: lastfirst
+        C 504 Status: c_504_status
+
+  - id: count_students__score_distribution
+    <<: *asmt
+    measure: count_students
+    sheet: Score Distribution - Bar Chart
+    sheet_field: Distinct count of Student Number
+    decimals: 0
+    dims:
+      - { dashboard: schoolid, cube: school_id }
+      - { dashboard: academic_year, cube: academic_year }
+    defaults: {}
+    sheet_query: COUNT(DISTINCT student_number)
+    shelves:
+      drop: ["% Correct - Module (bin)"]
+      clear_filters: [School Level (School), Module Type, Subject Area]
+    definitions:
+      dashboard: COUNTD(student_number) over every response row.
+      cube: Distinct students (per student-year) with a score.
+    rebuild_check:
+      fingerprint: ef93acf01988fd2519c42a44e9ce4d93b0c65b3f6419bebe665fcbce1682fef1
+      cells: 47
+      matched_at: "2026-11-15T23:34:00.498717+00:00"
+      workbook_updated_at: "2026-11-15T06:43:02+00:00"
+      sheet_query_fingerprint: 8a9e59d18ad6a612fde64ca2cf4c600c8aae1d32fcb32f23dee505904441abfb
+      source_fingerprint: 04be9335ed594489d483384947c2521c87f3d1b070ec97d8f4ea38c63f69f74a
+      cuts:
+        - "{}"
+      totals_skipped: 0
+      shelves:
+        drop:
+          - "% Correct - Module (bin)"
+        clear_filters:
+          - School Level (School)
+          - Module Type
+          - Subject Area
+      missing_cuts: []
+      missing_filters:
+        - Grade Level
+        - Module Type
+        - School Level (School)
+        - Subject Area
+        - Team
+        - Territory
+      restricting_filters: []
+      filter_notes: {}
+      missing_columns:
+        Team: team
+        Module Type: module_type
+        Territory: territory
+        Subject Area: subject_area
+        Grade Level: grade_level
+
+  # pct_taken also covers count_assigned and count_taken, its denominator and
+  # numerator, which no sheet shows on their own.
+  - id: pct_taken__assessments_over_time
+    <<: *asmt
+    measure: pct_taken
+    sheet: Module - Overall - Assessments Over Time
+    sheet_field: Avg. % Completion
+    decimals: 2
+    dims:
+      - { dashboard: module_type, cube: module_type }
+      - { dashboard: module_number, cube: module_code }
+      - { dashboard: grade_level, cube: grade_level }
+    # % Completion sums fixed-grain counts, so its >= 0.75 filter needs nested
+    # windows, which no dashboard_columns expression can hold. Tableau averages
+    # it once per fixed group, not per row.
+    sheet_query_sql: >-
+      WITH base AS (SELECT * FROM ({rows}) WHERE {where}), fixed_in AS (SELECT
+      *,
+        COUNT(DISTINCT IF(response_type = 'overall' AND percent_correct IS NOT
+      NULL,
+          student_number, NULL)) OVER (PARTITION BY academic_year, subject_area,
+          module_type, module_number, schoolid, grade_level, is_pathways) AS
+      n_complete,
+        COUNT(DISTINCT IF(response_type = 'overall', student_number, NULL)) OVER
+          (PARTITION BY academic_year, subject_area, module_type, module_number,
+          schoolid, grade_level, is_pathways) AS n_possible
+        FROM base),
+      fixed_out AS (SELECT *,
+        SAFE_DIVIDE(
+          SUM(n_complete) OVER (PARTITION BY academic_year, subject_area,
+            module_type, module_number, schoolid, grade_level, is_replacement),
+          SUM(n_possible) OVER (PARTITION BY academic_year, subject_area,
+            module_type, module_number, schoolid, grade_level, is_replacement))
+          AS pct_completion
+        FROM fixed_in),
+      fixed_groups AS (SELECT DISTINCT academic_year, subject_area, module_type,
+        module_number, schoolid, grade_level, is_replacement, pct_completion
+        FROM fixed_out WHERE pct_completion >= 0.75)
+      SELECT {dims}, AVG(pct_completion) AS value FROM fixed_groups GROUP BY
+      {dims}
+    shelves:
+      clear_filters:
+        [
+          Subject Area (group),
+          Dashboard View Filter,
+          Is Normed Scope,
+          Response Type,
+        ]
+    definitions:
+      dashboard: >-
+        AVG(% Completion), the average across school, subject and replacement
+        groups of # Students Complete over # Students Possible (distinct
+        students with an overall row, with and without a percent_correct),
+        showing only groups at 75% completion or more.
+      cube:
+        Assessments sat (count_taken) over assessments assigned
+        (count_assigned), Illuminate only.
+    rebuild_check:
+      fingerprint: 61f22060602a79ac904c20d0bdc1b9285b20664dae760a8684edb5e59c5c84bf
+      cells: 157
+      matched_at: "2026-11-15T23:35:16.816825+00:00"
+      workbook_updated_at: "2026-11-15T06:43:02+00:00"
+      sheet_query_fingerprint: 76dc0d3b854477e916c1e37dc9bf29cc3a130c2db65c73bdd0d424a6dd04eac9
+      source_fingerprint: 04be9335ed594489d483384947c2521c87f3d1b070ec97d8f4ea38c63f69f74a
+      cuts:
+        - "{}"
+      totals_skipped: 22
+      shelves:
+        clear_filters:
+          - Subject Area (group)
+          - Dashboard View Filter
+          - Is Normed Scope
+          - Response Type
+      missing_cuts: []
+      missing_filters:
+        - "% Completion"
+        - C 504 Status
+        - Dashboard View Filter
+        - Is Foundations
+        - Is Normed Scope
+        - Is Replacement
+        - Lep Status
+        - NJ Tutoring
+        - Region
+        - Response Type
+        - School Level (School)
+        - Schoolid
+        - Subject Area
+        - Subject Area (group)
+        - Team
+        - Territory
+        - dibels_most_recent_composite
+        - head_of_school
+        - is_low_25_fl
+        - is_sipps
+        - nj_student_tier
+        - state_test_proficiency
+      restricting_filters:
+        - "% Completion"
+      filter_notes:
+        Dashboard View Filter: display switch on Dashboard View
+      missing_columns:
+        Response Type: response_type
+        Schoolid: schoolid
+        Team: team
+        Subject Area: subject_area
+        is_sipps: is_sipps
+        is_low_25_fl: is_low_25_fl
+        Is Foundations: is_foundations
+        Is Replacement: is_replacement
+        state_test_proficiency: state_test_proficiency
+        Lep Status: lep_status
+        Is Normed Scope: is_normed_scope
+        Region: region
+        dibels_most_recent_composite: dibels_most_recent_composite
+        nj_student_tier: nj_student_tier
+        head_of_school: head_of_school
+        Territory: territory
+        C 504 Status: c_504_status
+
+  - id: pct_students_at_level__dki_bars
+    <<: *ddi
+    measure: pct_students_at_level
+    sheet: DKI - Assessment Mastery Bars
+    sheet_field: "% of Total Student Count"
+    decimals: 2
+    dims:
+      - { dashboard: school, cube: abbreviation }
+      - { dashboard: module_code, cube: module_code }
+      - { dashboard: grade_level, cube: grade_level }
+      - { dashboard: subject_area, cube: academic_subject }
+      - { dashboard: Calculation_3457427549115576330, cube: mastery_level }
+    dashboard_columns:
+      Calculation_3457427549115576330:
+        "COALESCE(CASE WHEN school_level = 'HS' THEN CASE WHEN
+        performance_band_label_number = 1 THEN 'Below' WHEN
+        performance_band_label_number = 2 THEN 'Approaching' WHEN
+        performance_band_label_number IN (3, 4, 5) THEN 'At/Above' END ELSE CASE
+        WHEN performance_band_label_number IN (1, 2) THEN 'Below' WHEN
+        performance_band_label_number = 3 THEN 'Approaching' WHEN
+        performance_band_label_number IN (4, 5) THEN 'At/Above' END END,
+        CAST(performance_band_label_number AS STRING))"
+    # Tableau's percent of total on a distinct count divides by the distinct
+    # students in the partition, not the sum of the marks.
+    sheet_query_sql: >-
+      WITH base AS (SELECT *, COUNT(DISTINCT student_number) OVER (PARTITION BY
+        school, module_code, grade_level, subject_area) AS n_cell
+        FROM ({rows}) WHERE {where})
+      SELECT {dims}, COUNT(DISTINCT student_number) / ANY_VALUE(n_cell) AS value
+      FROM base GROUP BY {dims}
+    shelves:
+      drop: [Grade/Subject]
+      add: { rows: [Grade Level, Subject Area] }
+      clear_filters:
+        [
+          Discipline,
+          Exclude Future Assessments,
+          "Action (Grade/Subject,Module Code,School,Week Start Monday)",
+        ]
+    definitions:
+      dashboard: >-
+        Percent of distinct students in each of 3 levels, grouped from fixed
+        band numbers (ES/MS 1-2 Below, 3 Approaching, 4-5 At/Above; HS 1 Below,
+        2 Approaching, 3-5 At/Above).
+      cube: >-
+        Percent of distinct students at each mastery_level, set relative to each
+        band set's mastery band.
+    rebuild_check:
+      fingerprint: 8be8411cbf75a6f2141e46e61238e18c998d4fcd1f58de2bdefc33d3cc0d6be5
+      cells: 3831
+      matched_at: "2026-11-15T23:36:36.177072+00:00"
+      workbook_updated_at: "2026-11-15T06:43:02+00:00"
+      sheet_query_fingerprint: c69695c78db4dd393843cd75c5a45891c5b5bb2e0fa5c90b64e7b353a15cc3ba
+      source_fingerprint: d9ff221cb778a49a9bbdfcf16e8dbfe368b7b1640fb68fa44caad7c655e18817
+      cuts:
+        - "{}"
+      totals_skipped: 0
+      shelves:
+        drop:
+          - Grade/Subject
+        clear_filters:
+          - Discipline
+          - Exclude Future Assessments
+          - Action (Grade/Subject,Module Code,School,Week Start Monday)
+        add:
+          rows:
+            - Grade Level
+            - Subject Area
+      missing_cuts: []
+      missing_filters:
+        - Dibels Most Recent Composite
+        - Discipline
+        - Exclude Future Assessments
+        - Head Of School
+        - IEP Status
+        - Ml Status
+        - Region
+        - School Level
+        - Student Tier
+        - Term
+        - Week Start Monday
+        - gifted_and_talented
+        - is_low_25_fl
+        - is_sipps
+        - state_test_proficiency
+      restricting_filters: []
+      filter_notes: {}
+      missing_columns:
+        state_test_proficiency: state_test_proficiency
+        Region: region
+        Week Start Monday: week_start_monday
+        Ml Status: ml_status
+        Dibels Most Recent Composite: dibels_most_recent_composite
+        Student Tier: nj_student_tier
+        is_sipps: is_sipps
+        gifted_and_talented: gifted_and_talented
+        Head Of School: head_of_school
+        is_low_25_fl: is_low_25_fl
+        Term: term
+        IEP Status: iep_status
+        School Level: school_level
+
+  - id: pct_students_at_level__dki_standards_bars
+    <<: *ddi_standard
+    measure: pct_students_at_level
+    sheet: DKI - Standards Mastery Bars
+    sheet_field: "% of Total Student Count"
+    decimals: 2
+    dims:
+      - { dashboard: school, cube: abbreviation }
+      - { dashboard: module_code, cube: module_code }
+      - {
+          dashboard: response_type_description,
+          cube: response_type_description,
+        }
+      - { dashboard: Calculation_3457427549115576330, cube: mastery_level }
+    dashboard_columns:
+      Calculation_3457427549115576330:
+        "COALESCE(CASE WHEN school_level = 'HS' THEN CASE WHEN
+        performance_band_label_number = 1 THEN 'Below' WHEN
+        performance_band_label_number = 2 THEN 'Approaching' WHEN
+        performance_band_label_number IN (3, 4, 5) THEN 'At/Above' END ELSE CASE
+        WHEN performance_band_label_number IN (1, 2) THEN 'Below' WHEN
+        performance_band_label_number = 3 THEN 'Approaching' WHEN
+        performance_band_label_number IN (4, 5) THEN 'At/Above' END END,
+        CAST(performance_band_label_number AS STRING))"
+    sheet_query_sql: >-
+      WITH base AS (SELECT *, COUNT(DISTINCT student_number) OVER (PARTITION BY
+        school, module_code, response_type_description) AS n_cell
+        FROM ({rows}) WHERE {where})
+      SELECT {dims}, COUNT(DISTINCT student_number) / ANY_VALUE(n_cell) AS value
+      FROM base GROUP BY {dims}
+    shelves:
+      drop: [View by - O3 Standards]
+      add: { rows: [Response Type Description] }
+      clear_filters:
+        [
+          Discipline,
+          Exclude Future Assessments,
+          "Action (View by - O3 Standards,Module Code,School,Week Start Monday)",
+        ]
+    definitions:
+      dashboard: >-
+        Percent of distinct students in each of 3 levels on standard rows,
+        grouped from fixed band numbers (ES/MS 1-2 Below, 3 Approaching, 4-5
+        At/Above; HS 1 Below, 2 Approaching, 3-5 At/Above).
+      cube: >-
+        Percent of distinct students at each mastery_level on standard rows, set
+        relative to each band set's mastery band.
+    rebuild_check:
+      fingerprint: 78347b3b04aa2ee285f42dc974b9add4f6a22da850d4e37fe9e1b7598740bfab
+      cells: 13437
+      matched_at: "2026-11-15T23:38:38.243926+00:00"
+      workbook_updated_at: "2026-11-15T06:43:02+00:00"
+      sheet_query_fingerprint: 85f2516b30289fc933574ce2624842b00a2f2b499c5cf5b0f0159d85a01fe4e0
+      source_fingerprint: d9ff221cb778a49a9bbdfcf16e8dbfe368b7b1640fb68fa44caad7c655e18817
+      cuts:
+        - "{}"
+      totals_skipped: 0
+      shelves:
+        drop:
+          - View by - O3 Standards
+        clear_filters:
+          - Discipline
+          - Exclude Future Assessments
+          - Action (View by - O3 Standards,Module Code,School,Week Start Monday)
+        add:
+          rows:
+            - Response Type Description
+      missing_cuts: []
+      missing_filters:
+        - Dibels Most Recent Composite
+        - Discipline
+        - Exclude Future Assessments
+        - Grade Level
+        - Head Of School
+        - IEP Status
+        - Ml Status
+        - Region
+        - School Level
+        - Student Tier
+        - Subject Area
+        - Term
+        - View by - O3 Standards
+        - Week Start Monday
+        - gifted_and_talented
+        - is_low_25_fl
+        - is_sipps
+        - state_test_proficiency
+      restricting_filters: []
+      filter_notes: {}
+      missing_columns:
+        Week Start Monday: week_start_monday
+        Subject Area: subject_area
+        Ml Status: ml_status
+        is_sipps: is_sipps
+        is_low_25_fl: is_low_25_fl
+        state_test_proficiency: state_test_proficiency
+        Region: region
+        Dibels Most Recent Composite: dibels_most_recent_composite
+        Grade Level: grade_level
+        Student Tier: nj_student_tier
+        gifted_and_talented: gifted_and_talented
+        Head Of School: head_of_school
+        Term: term
+        IEP Status: iep_status
+        School Level: school_level
