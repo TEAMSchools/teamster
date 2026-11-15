@@ -511,7 +511,7 @@ def test_confirm_refreshes_the_decision_marks(duck, tmp_path, monkeypatch, offli
     decided = [
         Decision(f"d{i}", "mastery", "deliberate", "r",
                  cause={"side": side, "label": words},
-                 fingerprints={"cube": "c", "dashboard": "d", "proof": fp})
+                 fingerprints={"cube": "c", "dashboard": "d", "explanation": fp})
         for i, (side, words) in enumerate(CAUSES.values())
     ]  # fmt: skip
     cfg = ViewConfig(view="v", fact="m.fct", comparisons=[COMPARISON],

@@ -1067,7 +1067,7 @@ CAUSE_DECISION = """\
       label: score has no section on the anchor date
     call: domain_owner
     reason: the owner says whether a score with no section counts
-    fingerprints: { cube: abc, dashboard: def, proof: "0f0f" }
+    fingerprints: { cube: abc, dashboard: def, explanation: "0f0f" }
 """
 
 
@@ -1079,7 +1079,7 @@ def test_cause_decision_loads(tmp_path):
         "side": "cube",
         "label": "score has no section on the anchor date",
     }
-    assert d.fingerprints["proof"] == "0f0f"
+    assert d.fingerprints["explanation"] == "0f0f"
 
 
 LABEL_LINE = "      label: score has no section on the anchor date\n"
@@ -1129,7 +1129,7 @@ def test_write_decision_round_trips_a_cause_decision(tmp_path):
         "reason": "r",
         "task": "#1",
         "answer": "fix_cube",
-        "fingerprints": {"cube": "abc", "dashboard": "def", "proof": "0f"},
+        "fingerprints": {"cube": "abc", "dashboard": "def", "explanation": "0f"},
     }
 
     write_decision(path, decision)
@@ -1171,4 +1171,16 @@ def test_an_old_key_is_refused_with_its_new_name(tmp_path, old, new):
 
     assert str(exc.value) == (
         f"{path}: comparisons[0].{old}: renamed; write it as {new}"
+    )
+
+
+def test_an_old_decision_proof_fingerprint_is_refused_with_its_new_name(tmp_path):
+    old = CAUSE_DECISION.replace('explanation: "0f0f"', 'proof: "0f0f"')
+    path = _write(tmp_path, EXAMPLE + old)
+
+    with pytest.raises(ConfigError) as exc:
+        load_view_config(path)
+
+    assert str(exc.value) == (
+        f"{path}: decisions[1].fingerprints.proof: renamed; write it as explanation"
     )

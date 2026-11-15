@@ -381,6 +381,7 @@ def reconcile_script(
     if options:
         head += "\nOPTIONS(" + ", ".join(options) + ")"
     return [
+        # trunk-ignore(bandit/B608): identifiers are validated in config.py; labels are checked above and the row SQL is the tool's own
         f"CREATE TEMP TABLE __joined AS\n{ctes}\nSELECT * FROM joined",
         f"{head}\nAS {_saved_select(rows, group_by, cuts, '__joined')}",
         _outer_sql(group_names, filters, cuts, "__joined"),

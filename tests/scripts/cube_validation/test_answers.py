@@ -810,7 +810,7 @@ def _existing(id="no-section", label=NO_SECTION, call="domain_owner", proof="p1"
               cube="c1", **kw):  # fmt: skip
     return Decision(id, "enrollment", call, "kept reason",
                     cause={"side": "cube", "label": label},
-                    fingerprints={"cube": cube, "dashboard": "d1", "proof": proof},
+                    fingerprints={"cube": cube, "dashboard": "d1", "explanation": proof},
                     **kw)  # fmt: skip
 
 
@@ -826,7 +826,7 @@ def test_a_proven_group_becomes_a_decision_on_its_cause():
         "cause": {"side": "cube", "label": "score dated after week <n>"},
         "call": "domain_owner",
         "reason": "r",
-        "fingerprints": {"cube": "c1", "dashboard": "d1", "proof": "p1"},
+        "fingerprints": {"cube": "c1", "dashboard": "d1", "explanation": "p1"},
     }
     assert "20250701" not in json.dumps(decision)
 
@@ -862,7 +862,11 @@ def test_a_cause_decision_on_a_changed_proof_is_re_approved():
 
     assert (decision["id"], decision["call"], decision["reason"]) == (
         "no-section", "fix_cube", "fresh")  # fmt: skip
-    assert decision["fingerprints"] == {"cube": "c1", "dashboard": "d1", "proof": "p1"}
+    assert decision["fingerprints"] == {
+        "cube": "c1",
+        "dashboard": "d1",
+        "explanation": "p1",
+    }
 
 
 def _d2_d4():

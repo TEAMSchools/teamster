@@ -219,10 +219,10 @@ class Decision:
     missing_cut: str = ""
     missing_filter: str = ""
     # Covers the row groups whose triage cause names this `{side, label}`, in
-    # place of `group`: `label` is the words of a stored explanation's bucket, with
-    # each number of 5 or more digits written `<n>`. Which groups it covers is
-    # read from the latest triage, never stored here; `fingerprints.proof` is
-    # the explanation file's.
+    # place of `group`: `label` is the words of a stored explanation's bucket,
+    # with each number of 5 or more digits written `<n>`. Which groups it covers
+    # is read from the latest triage, never stored here;
+    # `fingerprints.explanation` is the explanation file's.
     cause: dict[str, Any] = field(default_factory=dict)
     # Covers the comparison's formula difference, in place of `group`: its
     # differing cells that hold no unmatched row, whichever they are in a run.
@@ -689,6 +689,11 @@ def _decision(
     cause = reader.get("cause", dict, default={})
     if cause:
         _cause(reader.child("cause", cause))
+    fingerprints = reader.get("fingerprints", dict, default={})
+    if "proof" in fingerprints:
+        reader.child("fingerprints", fingerprints).fail(
+            "proof", "renamed; write it as explanation"
+        )
     answer = reader.get("answer", str, default="")
     if answer and not cause:
         reader.fail("answer", "belongs to a cause decision")
@@ -701,7 +706,7 @@ def _decision(
         reason=reader.get("reason", str, required=True),
         group=group,
         task=task,
-        fingerprints=reader.get("fingerprints", dict, default={}),
+        fingerprints=fingerprints,
         missing_cut=missing_cut,
         missing_filter=missing_filter,
         cause=cause,

@@ -779,7 +779,7 @@ def _item(it, proof, *causes):
 def _cause_decision(id, label, side="cube", call="domain_owner", proof=None, **kw):
     return Decision(id, "enrollment", call, "r",
                     cause={"side": side, "label": label},
-                    fingerprints={**FPS, "proof": proof or "", **kw.pop("fps", {})},
+                    fingerprints={**FPS, "explanation": proof or "", **kw.pop("fps", {})},
                     **kw)  # fmt: skip
 
 
@@ -1107,7 +1107,7 @@ def test_sheet_filtered_groups_share_one_cause_decision_and_no_group_stub(tmp_pa
         "label": "sheet filter Exclude Future Assessments",
     }
     assert "group" not in decision
-    assert decision["fingerprints"]["proof"] == items[0]["proof"]["fingerprint"]
+    assert decision["fingerprints"]["explanation"] == items[0]["proof"]["fingerprint"]
     marked = [dict(i) for i in items]
     mark_decided(run, marked, [Decision(**decision)])
     assert all(i["decided"] for i in marked)

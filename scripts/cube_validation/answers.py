@@ -1285,7 +1285,7 @@ def approved_decisions(
                         target.pop("task", None)
                         if task:
                             target["task"] = task
-                        target["fingerprints"] = {**fp, "proof": proof}
+                        target["fingerprints"] = {**fp, "explanation": proof}
                         out.append(target)
             if target is None:
                 new += 1
@@ -1301,7 +1301,7 @@ def approved_decisions(
                     "call": call,
                     "reason": reason,
                     **({"task": task} if task else {}),
-                    "fingerprints": {**fp, "proof": proof},
+                    "fingerprints": {**fp, "explanation": proof},
                 }
                 out.append(target)
             elif target["call"] != call:
@@ -1309,7 +1309,7 @@ def approved_decisions(
                     f"{where}: the {side} cause {label!r} is decided "
                     f"{target['call']} in {target['id']!r}, not {call}"
                 )
-            elif target["fingerprints"].get("proof") != proof:
+            elif target["fingerprints"].get("explanation") != proof:
                 raise AnswerError(
                     f"{where}: {target['id']!r} was approved on another version of "
                     "the explanation; re-run `sort`"

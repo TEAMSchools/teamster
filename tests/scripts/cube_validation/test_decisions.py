@@ -337,7 +337,9 @@ def _cause(id="c1", call="deliberate", fingerprints=None):
         call=call,
         reason="known",
         cause={"side": "cube", "label": "score has no section"},
-        fingerprints={**FP, "proof": "p1"} if fingerprints is None else fingerprints,
+        fingerprints={**FP, "explanation": "p1"}
+        if fingerprints is None
+        else fingerprints,
     )
 
 
@@ -361,7 +363,7 @@ def test_apply_never_quiets_a_group_from_a_cause_decision():
 
 
 def test_apply_reconfirms_a_cause_decision_whose_sql_changed_or_has_no_proof():
-    stale = _cause(fingerprints={**FP, "cube": "old", "proof": "p1"})
+    stale = _cause(fingerprints={**FP, "cube": "old", "explanation": "p1"})
     bare = _cause("c2", fingerprints=dict(FP))
 
     applied = apply([stale, bare], [_group()], {"enrollment": FP})

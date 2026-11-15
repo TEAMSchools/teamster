@@ -4322,7 +4322,7 @@ def test_add_decisions_takes_stub_from_triage_and_fingerprints_from_run(
     assert miami.cause == {"side": "dashboard", "label": "x"}
     assert miami.fingerprints == {
         **_saved_fingerprints(tmp_path),
-        "proof": STORED_PROOF["fingerprint"],
+        "explanation": STORED_PROOF["fingerprint"],
     }
     assert (team.missing_cut, team.comparison, team.fingerprints) == ("Team", "", {})
     assert cfg.comparisons[0].rebuild_check is not None
@@ -4990,7 +4990,7 @@ decisions:
     call: domain_owner
     reason: Should a score with no section count?
     task: "#7"
-    fingerprints: { cube: abc, dashboard: def, proof: "0f" }
+    fingerprints: { cube: abc, dashboard: def, explanation: "0f" }
 """
 
 
@@ -5006,7 +5006,7 @@ def test_record_answers_writes_onto_the_cause_decision(tmp_path, capsys):
     assert (d.call, d.task, d.answer) == ("fix_cube", "#6150", "fix_cube")
     assert d.reason.endswith("Owner: a score needs its section")
     assert d.cause == {"side": "cube", "label": "score has no section"}
-    assert d.fingerprints == {"cube": "abc", "dashboard": "def", "proof": "0f"}
+    assert d.fingerprints == {"cube": "abc", "dashboard": "def", "explanation": "0f"}
 
 
 def _approve(path, tmp_path, entry):
@@ -5040,7 +5040,7 @@ def test_a_changed_proof_re_opens_a_cause_decision_for_re_approval(
 
     (d,) = load_view_config(path).decisions
     assert (d.id, d.call, d.reason) == ("a", "fix_cube", "r2")
-    assert d.fingerprints["proof"] == STORED_PROOF["fingerprint"]
+    assert d.fingerprints["explanation"] == STORED_PROOF["fingerprint"]
     assert "re-approved a" in capsys.readouterr().out
 
 

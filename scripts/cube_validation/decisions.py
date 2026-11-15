@@ -147,7 +147,7 @@ def cause_state(d: Decision, proof: str, current: dict[str, str]) -> str:
         for side in ("cube", "dashboard")
     ):
         return "sql"
-    if not d.fingerprints.get("proof") or d.fingerprints["proof"] != proof:
+    if not d.fingerprints.get("explanation") or d.fingerprints["explanation"] != proof:
         return "proof"
     return "holds"
 
@@ -207,7 +207,7 @@ def apply(
             # that it has an explanation at all, can fail.
             state = cause_state(
                 decision,
-                decision.fingerprints.get("proof", ""),
+                decision.fingerprints.get("explanation", ""),
                 fingerprints.get(decision.comparison) or {},
             )
             (applied.causes if state == "holds" else applied.reconfirm).append(decision)
