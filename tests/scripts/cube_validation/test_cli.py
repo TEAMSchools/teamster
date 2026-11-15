@@ -1162,6 +1162,62 @@ def test_sql_that_cannot_be_built_at_the_run_s_moment_skips_its_comparison(
     assert _scripts_for(fakes.bq) == ["c1"]
 
 
+LOOKUP_FAILED = (
+    "Skipping c2: its SQL cannot be built today: a lookup failed in BigQuery "
+    "(job ?, notFound)."
+)
+
+
+def _lookup_fails(comparison):
+    if comparison.id == "c2":
+        raise BadRequest(
+            "Not found: value 'Student 12345'", errors=[{"reason": "notFound"}]
+        )
+
+
+def test_a_bigquery_error_building_sql_skips_its_comparison_before_the_price(
+    fakes, tmp_path, monkeypatch, capsys
+):
+    path = _two(tmp_path)
+    assert cli.main(["compare", str(path)]) == 0
+    fingerprints = pipeline.side_fingerprints
+
+    def failing(cfg, comparison, **kwargs):
+        _lookup_fails(comparison)
+        return fingerprints(cfg, comparison, **kwargs)
+
+    monkeypatch.setattr(pipeline, "side_fingerprints", failing)
+    capsys.readouterr()
+
+    # A plain compare checks the held result's SQL (`stale_comparisons`);
+    # `--all` builds every comparison's (`_sql_skips`).
+    for args in ([], ["--all"]):
+        fakes.bq.build = LATER
+        assert cli.main(["compare", str(path), *args]) == 0
+        out = capsys.readouterr().out
+        assert LOOKUP_FAILED in out
+        assert "12345" not in out
+
+
+def test_a_bigquery_error_building_sql_at_the_run_s_moment_skips_it(
+    fakes, tmp_path, monkeypatch, capsys
+):
+    path = _two(tmp_path)
+    plan_one = pipeline._plan_one
+
+    def plan(cfg, comparison, *, build, **kwargs):
+        _lookup_fails(comparison)
+        return plan_one(cfg, comparison, build=build, **kwargs)
+
+    monkeypatch.setattr(pipeline, "_plan_one", plan)
+
+    assert cli.main(["compare", str(path)]) == 0
+
+    out = capsys.readouterr().out
+    assert LOOKUP_FAILED in out and "12345" not in out
+    assert _scripts_for(fakes.bq) == ["c1"]
+
+
 def test_a_held_checkpoint_whose_sql_cannot_be_built_skips_its_comparison(
     fakes, tmp_path, monkeypatch, capsys
 ):

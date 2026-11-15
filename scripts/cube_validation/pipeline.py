@@ -1091,8 +1091,8 @@ def stale_comparisons(
             today = side_fingerprints(
                 cfg, c, wh=wh, cube=cube, build=build, schools=schools
             )
-        except (Refusal, CubeRefusal, CubeError, ViewHistoryError) as exc:
-            out[c.id] = f"{SQL_BROKEN}: {exc}"
+        except _SQL_ERRORS as exc:
+            out[c.id] = _sql_broken(exc)
             continue
         if checkpoint_fingerprint(c, today) == held.fingerprint:
             continue
@@ -1852,8 +1852,17 @@ def _proof_skips(
     return skips
 
 
-# What building a comparison's SQL raises when it cannot be built.
-_SQL_ERRORS = (Refusal, CubeRefusal, CubeError, ViewHistoryError)
+# What building a comparison's SQL raises when it cannot be built: a
+# BigQuery error comes from a lookup it makes, such as a view's history.
+_SQL_ERRORS = (Refusal, CubeRefusal, CubeError, ViewHistoryError, GoogleAPIError)
+
+
+def _sql_broken(exc: Exception) -> str:
+    """Why a comparison's SQL cannot be built: a BigQuery error as fixed words
+    with its job and reason code, never its message, which can quote values."""
+    if isinstance(exc, GoogleAPIError):
+        return f"{SQL_BROKEN}: a lookup failed in BigQuery ({job_failure(exc)})"
+    return f"{SQL_BROKEN}: {exc}"
 
 
 def _bigquery_skip(comparison: str, what: str, exc: GoogleAPIError) -> Skip:
@@ -1882,7 +1891,7 @@ def _sql_skips(
         try:
             side_fingerprints(cfg, c, wh=wh, cube=cube, build=build, schools=schools)
         except _SQL_ERRORS as exc:
-            out.append(Skip(c.id, f"{SQL_BROKEN}: {exc}"))
+            out.append(Skip(c.id, _sql_broken(exc)))
     return out
 
 
@@ -2455,7 +2464,7 @@ def _compare_all(
             )
         except _SQL_ERRORS as exc:
             # Built at the run's moment, which `_sql_skips` did not check.
-            skips.append(Skip(comparison.id, f"{SQL_BROKEN}: {exc}"))
+            skips.append(Skip(comparison.id, _sql_broken(exc)))
 
     # One dry run at a time; one that fails skips the comparison it prices.
     prices: list[list[float]] = []
