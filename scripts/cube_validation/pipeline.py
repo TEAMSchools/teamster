@@ -2342,16 +2342,35 @@ _REAPPLY_KEYS = (
 
 
 def _saved_run(cfg: ViewConfig, cache_root: Path) -> tuple[dict, Path]:
-    """The latest `run.json` as JSON, and its path.
+    """The latest `run.json` of `cfg.fact` as JSON, and its path.
 
-    The latest run is the `run.json` written last, whatever moment it read.
+    The latest run is the `run.json` of the fact the command was given
+    (`--fact-dataset` names a dev build's) written last, whatever moment it
+    read. A run saved before runs recorded their fact counts as any fact's.
+
+    Raises:
+        Refusal: The view has no saved run of `cfg.fact`; the message names
+            the fact of the latest run there is, if any.
     """
     saved = sorted(
-        (cache_root / cfg.view).glob("*/run.json"), key=lambda p: p.stat().st_mtime
+        (cache_root / cfg.view).glob("*/run.json"),
+        key=lambda p: p.stat().st_mtime,
+        reverse=True,
     )
-    if not saved:
-        raise Refusal(f"{cfg.view}: no saved run; `run` it first")
-    return json.loads(saved[-1].read_text()), saved[-1]
+    other = None
+    for path in saved:
+        data = json.loads(path.read_text())
+        fact = data.get("fact", "") if isinstance(data, dict) else ""
+        if fact in ("", cfg.fact):
+            return data, path
+        other = other or fact
+    if other:
+        raise Refusal(
+            f"{cfg.view}: no saved run of {cfg.fact}; the latest run read "
+            f"{other}, which this command does not use. `run` it, or pass "
+            "--fact-dataset to read that build"
+        )
+    raise Refusal(f"{cfg.view}: no saved run; `run` it first")
 
 
 def _older(cfg: ViewConfig, run_json: Path) -> Refusal:
@@ -2499,13 +2518,14 @@ def reapply(cfg: ViewConfig, cache_root: Path) -> RunResult:
 def latest_run(cfg: ViewConfig, cache_root: Path) -> tuple[RunResult, Path]:
     """Return the view's latest saved run and the `run.json` it came from.
 
-    The latest run is the `run.json` written last, whatever moment it read.
+    The latest run is the `run.json` of `cfg.fact` written last, whatever
+    moment it read (`_saved_run`).
 
     Raises:
-        Refusal: The view has no saved run, its saved run is in a shape this
-            validator cannot read or predates NULL-aware groups, or its
-            decisions changed since the run (a run saved before runs recorded
-            them counts as changed).
+        Refusal: The view has no saved run of `cfg.fact`, its saved run is
+            in a shape this validator cannot read or predates NULL-aware
+            groups, or its decisions changed since the run (a run saved
+            before runs recorded them counts as changed).
     """
     data, run_json = _saved_run(cfg, cache_root)
     try:
@@ -2567,14 +2587,6 @@ def review(
     """
     saved = [latest_run(cfg, cache_root) for cfg in configs]
     runs = [run for run, _ in saved]
-    for run, cfg in zip(runs, configs, strict=True):
-        if run.fact and run.fact != cfg.fact:
-            # stderr, so the warning never lands in the issue body.
-            print(
-                f"warning: {cfg.view}: the latest run read {run.fact}, not "
-                f"{cfg.fact}; this review is of a dev build, not the validation",
-                file=sys.stderr,
-            )
     # Stored proof paths are relative to each validation file's directory.
     bases = [f.parent for f in view_files] if view_files else [None] * len(configs)
     proven = {

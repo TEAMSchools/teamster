@@ -908,18 +908,32 @@ def test_a_dev_build_keeps_its_results_apart_from_production(fakes, tmp_path, ca
     assert "Every comparison's latest result is current" in capsys.readouterr().out
     assert not _outer(fakes.bq)
 
+    # Each command reads the latest run of the fact it was given, though the
+    # dev run's is newer: a plain triage reads production's.
+    prod_folder = report.run_dir(tmp_path / "cache", "v", report.Build(START, END, "j"))
+    dev_folder = report.run_dir(tmp_path / "cache", "v", report.Build(*LATER, "j"))
+    assert _triaged_stale(path, tmp_path) == {}
+    assert (prod_folder / "triage.json").exists()
+    assert not (dev_folder / "triage.json").exists()
+    fakes.cube.dataset = DEV
+    argv = ["triage", str(path), "--no-trace", "--no-proofs", "--fact-dataset", DEV]
+    assert cli.main(argv) == 0
+    dev_triage = json.loads((dev_folder / "triage.json").read_text())
+    assert dev_triage["stale"] == {"c1": "never compared"}
 
-def test_review_warns_when_the_latest_run_read_a_dev_build(fakes, tmp_path, capsys):
+
+def test_review_refuses_a_dev_build_s_run_for_production(fakes, tmp_path, capsys):
     path = _file(tmp_path)
     fakes.cube.dataset = DEV
     assert cli.main(["run", str(path), "--fact-dataset", DEV]) == 0
     capsys.readouterr()
 
-    cli.main(["review", str(path), "--domain", "Registrar"])
+    assert cli.main(["review", str(path), "--domain", "Registrar"]) == 1
 
     err = capsys.readouterr().err
     assert (
-        f"warning: v: the latest run read {DEV}.fct_f, not kipptaf_marts.fct_f" in err
+        f"v: no saved run of kipptaf_marts.fct_f; the latest run read {DEV}.fct_f"
+        in err
     )
 
 
