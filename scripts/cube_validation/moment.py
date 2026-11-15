@@ -92,19 +92,24 @@ def pick_moment(
     return chosen
 
 
-def fingerprint(wh: _Rows, table: str, ts: datetime) -> int:
-    """Return an order-independent hash of every row of `dataset.table` at `ts`.
+def fingerprint_sql(table: str, ts: datetime) -> str:
+    """The query `fingerprint` runs, so a caller can price it first.
 
     XOR cancels a pair of identical rows, so the row count is hashed in too.
     """
     ds, name = table.split(".")
-    rows = wh.rows(
+    return (
         # trunk-ignore(bandit/B608): identifiers are validated in config.py and values are bound or literal-escaped
         "SELECT farm_fingerprint(format('%d:%d', "
         "coalesce(bit_xor(farm_fingerprint(to_json_string(t))), 0), count(*))) AS f "
         f"FROM `{PROJECT}`.`{ds}`.`{name}` AS t "
         f"FOR SYSTEM_TIME AS OF TIMESTAMP '{utc_literal(ts)}'"
     )
+
+
+def fingerprint(wh: _Rows, table: str, ts: datetime) -> int:
+    """Return an order-independent hash of every row of `dataset.table` at `ts`."""
+    rows = wh.rows(fingerprint_sql(table, ts))
 
     return int(rows[0]["f"] or 0)
 

@@ -805,6 +805,11 @@ def _compared(bq):
     ]
 
 
+def _billed(bq):
+    """Every query `run` prices: a comparison's and each table fingerprint."""
+    return _compared(bq) + [q for q in bq.ran if "farm_fingerprint" in q]
+
+
 def test_run_refuses_a_changed_workbook_before_any_query(fakes, tmp_path, capsys):
     path = _republished(fakes, tmp_path)
     fakes.tbl.updated = datetime(2026, 10, 30, tzinfo=timezone.utc)  # after the proof
@@ -838,15 +843,94 @@ def test_run_dry_runs_every_billed_query_before_the_first_runs(fakes, tmp_path):
     first_billed = next(
         i
         for i, (kind, sql) in enumerate(fakes.bq.log)
-        if kind == "run" and sql in _compared(fakes.bq)
+        if kind == "run" and sql in _billed(fakes.bq)
     )
     assert "dry" not in kinds[first_billed:]
     dry = [sql for kind, sql in fakes.bq.log if kind == "dry"]
-    # 2 cuts of 2 sides, the unmatched rows and the student count.
-    assert len(dry) == 6
-    for sql in _compared(fakes.bq):
+    # 2 cuts of 2 sides, the unmatched rows, the student count, and
+    # dim_locations' fingerprint at each end of the build.
+    assert len(dry) == 8
+    assert len([s for s in _billed(fakes.bq) if "farm_fingerprint" in s]) == 2
+    for sql in _billed(fakes.bq):
         # The save script is priced by its join alone: its table is not made yet.
         assert sql in dry or "CREATE TEMP TABLE" in sql
+
+
+def test_run_prices_a_second_facts_fingerprint_before_it_scans(fakes, tmp_path, capsys):
+    fakes.cube.joins = SECOND_FACT_JOIN
+    fakes.bq.cost = lambda sql: 10.0 if "farm_fingerprint" in sql else 0.0
+
+    path = _file(tmp_path, ALSO_FACTS_YML)
+    assert cli.main(["run", str(path), "--max-usd-per-day", "100"]) == 1
+
+    assert "would pass the $5.00 cap" in capsys.readouterr().err
+    assert not _billed(fakes.bq)
+
+
+def test_run_fingerprints_a_shared_dimension_once_per_end(fakes, tmp_path):
+    fakes.bq.views = {"rpt_d": SHARED_VIEW}
+
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+
+    # The rows' moved check and the dims check share 1 scan at each end.
+    scans = [s for s in fakes.bq.ran if "farm_fingerprint" in s]
+    assert len(scans) == 2 and all("dim_locations" in s for s in scans)
+    dry = [sql for kind, sql in fakes.bq.log if kind == "dry"]
+    assert all(s in dry for s in scans)
+
+
+def test_run_keeps_each_cuts_dashboard_and_cube_price_with_its_query(fakes, tmp_path):
+    text = YML.replace(
+        "    rows:\n",
+        "    dashboard_filters:\n      - { dashboard: enroll_status, values: [0] }\n"
+        "    rows:\n",
+        1,
+    )
+
+    def cost(sql):
+        if "AS value" not in sql:
+            return 0.0
+        if "fct_f" in sql:
+            return 0.2
+        miami = 0.01 if "'Miami'" in sql else 0.0
+        return (0.1 if "enroll_status" in sql else 0.3) + miami
+
+    fakes.bq.cost = cost
+    args = ["run", str(_file(tmp_path, text)), "--max-usd", "50"]
+    assert cli.main(args + ["--max-usd-per-day", "50"]) == 0
+
+    usd = _saved_run(tmp_path)["cell_sql_usd"]["ada-region"]
+    assert usd["{}"] == pytest.approx([0.1, 0.2])
+    assert usd['{"Region": "Miami"}'] == pytest.approx([0.11, 0.2])
+
+
+def test_execute_refuses_prices_its_queries_do_not_use(fakes, tmp_path):
+    path = _file(tmp_path)
+    cfg = load_view_config(path)
+    wh = Warehouse(client=fakes.bq)
+    build = report.Build(START, END, "j")
+    plan = pipeline._plan_one(
+        cfg, cfg.comparisons[0], wh=wh, cube=fakes.cube, build=build, schools={"A", "B"}
+    )
+    prices = [0.0] * (len(plan.queries()) + 1)
+
+    with pytest.raises(AssertionError, match="queries"):
+        pipeline._execute(cfg, plan, wh=wh, build=build, prices=prices)
+
+
+def test_run_builds_its_warehouse_before_it_signs_in_to_tableau(
+    fakes, tmp_path, monkeypatch
+):
+    signed_in_then = []
+
+    def warehouse():
+        signed_in_then.append(fakes.signed_in)
+        return Warehouse(client=fakes.bq)
+
+    monkeypatch.setattr(cli, "make_warehouse", warehouse)
+
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+    assert signed_in_then == [0] and fakes.signed_in == 1
 
 
 def test_run_prints_the_priced_total_then_a_progress_line_per_comparison(
@@ -858,7 +942,8 @@ def test_run_prints_the_priced_total_then_a_progress_line_per_comparison(
     assert cli.main(args) == 0
 
     out = capsys.readouterr().out
-    assert "Compare: 24 queries, $6.00 (dry run)" in out
+    # 6 queries a comparison, and dim_locations scanned at each end.
+    assert "Compare: 26 queries, $6.50 (dry run)" in out
     lines = re.findall(
         r"\[\d\d:\d\d:\d\d UTC \+\d+m\d\ds\] compare (ada-region-\d): "
         r"\$\d+\.\d\d spent",
@@ -880,7 +965,8 @@ def test_a_resumed_run_prices_only_the_comparisons_left(fakes, tmp_path, capsys)
     assert cli.main(["run", str(path)]) == 0
 
     out = capsys.readouterr().out
-    assert "Compare: 12 queries" in out
+    # Comparisons 3 and 4, and the dims scan, which covers the held ones too.
+    assert "Compare: 14 queries" in out
     assert "] compare ada-region-1:" not in out
     assert "] compare ada-region-3:" in out and "] compare ada-region-4:" in out
 

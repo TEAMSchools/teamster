@@ -58,6 +58,7 @@ from .moment import (
     MomentError,
     changed_between,
     fact_builds,
+    fingerprint_sql,
     pick_moment,
 )
 from .report import MeasureResult, RunResult
@@ -1015,20 +1016,22 @@ class _Plan:
     """Everything comparing one comparison will run, built before any of it
     bills (`_plan_one`), so `run` can price the whole run first.
 
-    `moved` holds the answer for every table both sides' rows read, and
-    `shared` lists those tables.
+    `shared` lists the tables both sides' rows read. `moved` holds whether
+    each changed during the build; it is empty until `_compare_all` has
+    fingerprinted them, after the price.
     """
 
-    cfg: ViewConfig
     comparison: Comparison
     fingerprints: dict[str, str]
     cuts: list[_CutPlan]
     rows: RowSides | None
-    moved: dict[str, bool]
+    # The save script's rows as 1 query (`inline_unmatched`), to price it.
+    unmatched_sql: str | None
     shared: list[str]
     students_sql: str | None
     cube_tables: set[str]
     live: set[str]
+    moved: dict[str, bool] = dataclasses.field(default_factory=dict)
 
     def queries(self) -> list[str]:
         """Every query that bills, in the order `_execute` reads their prices:
@@ -1044,8 +1047,8 @@ class _Plan:
             out += [cut.dash_sql, cut.cube_sql]
             if cut.unfiltered_sql is not None:
                 out.append(cut.unfiltered_sql)
-        if self.rows is not None:
-            out.append(inline_unmatched(self.cfg, self.comparison, self.rows))
+        if self.unmatched_sql is not None:
+            out.append(self.unmatched_sql)
         if self.students_sql is not None:
             out.append(self.students_sql)
         return out
@@ -1059,20 +1062,13 @@ def _plan_one(
     cube: Cube,
     build: Build,
     schools: set[str],
-    moved: dict[str, bool],
 ) -> _Plan:
     """Compile, expand and fingerprint one comparison's queries; run none that
     bills.
 
-    View history and `changed_between` run here, since they decide which
-    queries exist.
-
-    Args:
-        moved: The tables already checked for a change during the build. The
-            plan's `moved` holds the answer for every table both sides read.
-
-    Raises:
-        Refusal: Both sides' rows read a table that changed during the build.
+    Only view history runs here, since it decides which queries exist. Whether
+    a table both sides read changed during the build is a priced scan, so
+    `_compare_all` answers it after the price (`_settle_moved`).
     """
     dates = _date_cubes(cfg)
     dims = [d.cube for d in comparison.dims]
@@ -1102,33 +1098,24 @@ def _plan_one(
             )
         )
 
-    rows, students_sql = None, None
+    rows, unmatched_sql, students_sql = None, None, None
     shared: list[str] = []
-    slice_moved: dict[str, bool] = {}
     if comparison.rows is not None:
         cube_at = at(cube_sql(row_query(cfg.view, comparison), rows=True), build.end)
         dash_at = at(dashboard_rows_sql(cfg, comparison), build.start)
         cube_tables |= cube_at.tables
         live |= cube_at.live | dash_at.live
         shared = sorted(cube_at.tables & dash_at.tables)
-        unknown = [t for t in shared if t not in moved]
-        changed = set(changed_between(wh, unknown, build.start, build.end))
-        slice_moved = {t: moved.get(t, t in changed) for t in shared}
-        if both_moved := [t for t in shared if slice_moved[t]]:
-            raise Refusal(
-                f"comparison {comparison.id!r}: both sides read "
-                f"{', '.join(both_moved)}, which changed during the build; BigQuery "
-                "reads a table at 1 moment per query, so the rows cannot be "
-                "reconciled at this build"
-            )
-        # Unchanged between start and end, so the Cube side reads its shared
-        # tables at the start: BigQuery refuses 1 table at 2 moments.
+        # Unchanged between start and end (`_settle_moved` refuses otherwise),
+        # so the Cube side reads its shared tables at the start: BigQuery
+        # refuses 1 table at 2 moments.
         rows = RowSides(
             cube=cube_at,
             dashboard=dash_at,
             cube_rows_sql=repin(cube_at.sql, shared, build.end, build.start),
             columns=_unique(p.cube for p in _row_pairs(comparison)),
         )
+        unmatched_sql = inline_unmatched(cfg, comparison, rows)
         # Only a student column counts students; without one in the grain,
         # every cell's `n_students` stays None, so none is an example cell.
         student = next(
@@ -1142,17 +1129,33 @@ def _plan_one(
         if student:
             students_sql = at(_students_sql(cfg, comparison, student), build.start).sql
     return _Plan(
-        cfg=cfg,
         comparison=comparison,
         fingerprints=fingerprints,
         cuts=cuts,
         rows=rows,
-        moved=slice_moved,
+        unmatched_sql=unmatched_sql,
         shared=shared,
         students_sql=students_sql,
         cube_tables=cube_tables,
         live=live,
     )
+
+
+def _settle_moved(plan: _Plan, known: dict[str, bool], changed: set[str]) -> None:
+    """Fill `plan.moved` for every table both sides read, from `known` (a held
+    checkpoint's answer, or a second fact) else `changed`.
+
+    Raises:
+        Refusal: Such a table changed during the build.
+    """
+    plan.moved = {t: known.get(t, t in changed) for t in plan.shared}
+    if both_moved := [t for t in plan.shared if plan.moved[t]]:
+        raise Refusal(
+            f"comparison {plan.comparison.id!r}: both sides read "
+            f"{', '.join(both_moved)}, which changed during the build; BigQuery "
+            "reads a table at 1 moment per query, so the rows cannot be "
+            "reconciled at this build"
+        )
 
 
 def _execute(
@@ -1171,7 +1174,8 @@ def _execute(
 
     Args:
         prices: Each of `plan.queries()`'s dry-run prices, in its order; a
-            cut's 2 cell prices are kept as its `cell_sql_usd`.
+            cut's 2 cell prices are kept as its `cell_sql_usd`. One left over
+            means `queries()` and this function no longer agree.
     """
     comparison = plan.comparison
     sides = _Sides(
@@ -1199,6 +1203,7 @@ def _execute(
         )
 
     if plan.rows is not None:
+        next(price)  # the unmatched rows, which stood in for the save script
         flags = cut_flags(comparison) or []
         result = wh.script(
             save_script(
@@ -1219,6 +1224,7 @@ def _execute(
         )
         sides.sql[comparison.id] = (plan.rows.dashboard.sql, plan.rows.cube.sql)
     if plan.students_sql is not None:
+        next(price)
         cuts = _cuts(comparison)
         sides.students[comparison.id] = {
             (
@@ -1227,6 +1233,7 @@ def _execute(
             ): r["n_students"]
             for r in wh.rows(plan.students_sql)
         }
+    assert next(price, None) is None, "prices left over: plan.queries() changed"
     return sides
 
 
@@ -1541,8 +1548,8 @@ def missing_members(
     return found
 
 
-def _refuse_moved_facts(cfg: ViewConfig, wh: Warehouse, build: Build) -> None:
-    """Refuse when a fact in `cfg.also_facts` changed during the build.
+def _refuse_moved_facts(cfg: ViewConfig, build: Build, changed: set[str]) -> None:
+    """Refuse when a fact in `cfg.also_facts` is among the `changed` tables.
 
     The moment is a build of `cfg.fact`: the dashboard is read at its start and
     Cube at its end, so a second fact must hold still in between, or Cube's
@@ -1552,7 +1559,7 @@ def _refuse_moved_facts(cfg: ViewConfig, wh: Warehouse, build: Build) -> None:
     Raises:
         Refusal: Such a fact changed between the build start and end.
     """
-    if moved := changed_between(wh, cfg.also_facts, build.start, build.end):
+    if moved := [f for f in cfg.also_facts if f in changed]:
         raise Refusal(
             f"{', '.join(moved)} changed during the build of {cfg.fact} "
             f"({utc_literal(build.start)} to {utc_literal(build.end)}); Cube reads "
@@ -1763,7 +1770,7 @@ def run(
         process = f"{clock().isoformat()}-{uuid.uuid4().hex[:8]}"
         checkpoints.start(folder, build, process, cfg.fact)
         try:
-            sides = _compare_all(
+            sides, changed = _compare_all(
                 cfg,
                 comparisons,
                 wh=wh,
@@ -1774,8 +1781,6 @@ def run(
                 clock=clock,
                 ticker=ticker,
             )
-            dims = sorted(sides.cube_tables - {cfg.fact, *cfg.also_facts})
-            changed = changed_between(wh, dims, build.start, build.end)
         finally:
             checkpoints.record_spend(folder, process, wh.spent)
         cost = checkpoints.total_spend(folder)
@@ -1859,26 +1864,27 @@ def _compare_all(
     process: str,
     clock: Callable[[], datetime],
     ticker: report.Ticker | None = None,
-) -> _Sides:
-    """Every comparison's slice, merged in config order. Call inside
-    `wh.budget`.
+) -> tuple[_Sides, list[str]]:
+    """Every comparison's slice, merged in config order, and the dimension
+    tables Cube read that changed during the build. Call inside `wh.budget`.
 
     A comparison with a checkpoint whose fingerprint still holds is taken from
-    it. The rest are planned (`_plan_one`), every query they would bill is
-    dry-run one at a time, and the total is refused when it would pass a cap,
-    before the first billed query. They are then compared one at a time, each
-    checkpointed (with the spend so far) as it finishes, so a stop loses at
-    most the one in progress.
+    it; the rest are planned (`_plan_one`). Before anything that bills, every
+    table fingerprint the run needs (the second facts, the tables both sides'
+    rows read, Cube's dimension tables) and every planned query is dry-run one
+    at a time, and the total is refused when it would pass a cap. The
+    fingerprints then run, and their refusals come before any comparison
+    query. The comparisons are compared one at a time, each checkpointed (with
+    the spend so far) as it finishes, so a stop loses at most the one in
+    progress.
 
     Raises:
         CostCapError: The priced total would pass the run's or the day's cap.
+        Refusal: A second fact, or a table both sides' rows read, changed
+            during the build.
     """
-    _refuse_moved_facts(cfg, wh, build)
     schools = network_schools(wh)
     kept = checkpoints.read_all(folder)
-    # The second facts held still, or the check above refused: no comparison
-    # or dims check scans them again.
-    moved = {f: False for f in cfg.also_facts}
     slices: dict[str, _Sides] = {}
     plans: list[_Plan] = []
     for comparison in comparisons:
@@ -1892,28 +1898,39 @@ def _compare_all(
             )
             if now == fingerprint:
                 slices[comparison.id] = _Sides.from_json(data)
-                moved |= slices[comparison.id].moved
                 continue
             print(
                 f"Comparison {comparison.id}: its config or SQL changed since its "
                 "saved result; comparing it again."
             )
-        plan = _plan_one(
-            cfg,
-            comparison,
-            wh=wh,
-            cube=cube,
-            build=build,
-            schools=schools,
-            moved=moved,
+        plans.append(
+            _plan_one(cfg, comparison, wh=wh, cube=cube, build=build, schools=schools)
         )
-        moved |= plan.moved
-        plans.append(plan)
 
+    # The second facts have their own check below, and a held checkpoint
+    # already answered its shared tables, so neither joins `shared`.
+    known = {f: False for f in cfg.also_facts}
+    for held in slices.values():
+        known |= held.moved
+    cube_tables = set().union(
+        *(p.cube_tables for p in plans), *(h.cube_tables for h in slices.values())
+    )
+    dims = sorted(cube_tables - {cfg.fact, *cfg.also_facts})
+    shared = sorted({t for p in plans for t in p.shared if t not in known})
+    # Each table once, at both ends of the build, whichever checks need it.
+    scanned = _unique([*cfg.also_facts, *shared, *dims])
+    scans = [fingerprint_sql(t, ts) for t in scanned for ts in (build.start, build.end)]
+    scan_usd = sum(wh.estimate(sql) for sql in scans)
     prices = [[wh.estimate(sql) for sql in plan.queries()] for plan in plans]
-    total = sum(map(sum, prices))
-    print(f"Compare: {sum(map(len, prices))} queries, ${total:.2f} (dry run)")
+    total = scan_usd + sum(map(sum, prices))
+    n = len(scans) + sum(map(len, prices))
+    print(f"Compare: {n} queries, ${total:.2f} (dry run)")
     wh.refuse_past_caps(total)
+
+    changed = set(changed_between(wh, scanned, build.start, build.end))
+    _refuse_moved_facts(cfg, build, changed)
+    for plan in plans:
+        _settle_moved(plan, known, changed)
 
     for plan, priced in zip(plans, prices, strict=True):
         comparison = plan.comparison
@@ -1932,7 +1949,7 @@ def _compare_all(
     sides = _Sides(moved={f: False for f in cfg.also_facts})
     for comparison in comparisons:
         sides.merge(slices[comparison.id])
-    return sides
+    return sides, [t for t in dims if t in changed]
 
 
 def _diff_cells(sides: _Sides, formula: set[Cell]) -> list[dict]:

@@ -441,11 +441,12 @@ def _dispatch(args: argparse.Namespace) -> int:
 
     if args.command == "run":
         cube = _cube(args)
+        wh = _warehouse(args)
         # Tableau, for the workbook check before any query.
         with tableau_session() as tbl:
             pipeline.run(
                 cfg,
-                wh=_warehouse(args),
+                wh=wh,
                 cube=cube,
                 now=utcnow(),
                 requested=args.moment,
