@@ -99,14 +99,14 @@ refuses when the view's only run read another fact.
 1. List the measures. Ask the analyst which measures and which view; a file
    needs `time_dimension` whenever it has `rows`.
 2. `find-field <file> --measure <name>` ranks workbook fields: calculated fields
-   and aggregated raw fields (`SUM(Membership)`). Pass
+   and aggregated raw fields (`SUM(<column>)`). Pass
    `--caption "<name the dashboard shows>"` to rank that field first, and
    `--all` (or `--limit N`) to see past the top 5. A formula that uses a code
    group prints its codes. Each listed sheet's shape follows: shelves, long or
    wide export, displayed decimals, and filters. A filter on any field outside
    the reference columns prints "chosen values hidden": decide with the analyst
    whether the sheet query needs it, and never look up or copy its values. A
-   filter on a code group (a bin such as Discipline) is listed the same way; the
+   filter on a code group (a bin over a code column) is listed the same way; the
    sheet query applies it, or `shelves: {clear_filters: [...]}` clears it. Show
    the analyst the candidates. A name-alike field can mean something else, so no
    comparison is written until the analyst confirms it. With the workbook
@@ -149,23 +149,24 @@ refuses when the view's only run read another fact.
      value; otherwise a column header. Required when the export has more than
      one value column.
    - `split_rows: sum`: adds export rows that share every mapped dim, for a
-     sheet split by a field Cube lacks (a homeroom, a teacher). Use it only for
-     a field that adds up (a sum or a count), never an average or a rate.
+     sheet split by a field Cube lacks. Use it only for a field that adds up (a
+     sum or a count), never an average or a rate.
    - `dashboard_filters`: a sheet filter Cube has no member for, applied to the
-     dashboard side only (`{dashboard: enroll_status, values: [0]}`). The result
-     names it, since rows it drops read as Cube-only. Use it instead of writing
-     the filter into `sheet_query_sql`.
+     dashboard side only (`{dashboard: <status column>, values: [<value>]}`).
+     The result names it, since rows it drops read as Cube-only. Use it instead
+     of writing the filter into `sheet_query_sql`.
    - `rows.dashboard_scope`: the dashboard's half of a `scope`, for the row
-     reconcile only (`[{dashboard: iep_status, values: [No IEP]}]` beside
-     `scope` on `is_iep`). Without it, every row of the other status reads
-     dashboard-only. Not a `dashboard_filters` entry: that one filters the sheet
-     query too, which loses every cell with no rows in scope while the sheet
-     still shows it blank.
+     reconcile only (`[{dashboard: <status column>, values: [<value>]}]` beside
+     a `scope` on the Cube member it matches). Without it, every row of the
+     other status reads dashboard-only. Not a `dashboard_filters` entry: that
+     one filters the sheet query too, which loses every cell with no rows in
+     scope while the sheet still shows it blank.
    - `rows.reduce: {rule: latest, by: <date column>}`: for a dashboard that
      stores one row per key per day where Cube stores one per period. Before the
      reconcile it keeps, within each cut, each grain key's row with the latest
      value of `by`; the key is the `rows` grain. Rows tied on the latest value
-     all stay and show as duplicates.
+     all stay and show as duplicates. With `dashboard_filters`, a row every
+     filter keeps outranks one a filter drops, then the latest `by` wins.
    - `scope`, `dashboard_filters` and `rows.dashboard_scope` take `equals` (the
      default), `not_equals`, `gt`, `gte`, `lt` and `lte` (exactly 1 number), or
      `set` (not null). A dashboard filter compares a date to the coming Sunday
@@ -174,7 +175,7 @@ refuses when the view's only run read another fact.
      `values`; it runs at the run's moment (see _Gotchas_ for the
      Saturday-evening window).
    - `parameters: {<caption>: <member>}`: a field the sheet shows only behind a
-     parameter value (Chronic Absenteeism under "Attendance Metric"). The
+     parameter value (one of several measures a parameter picks between). The
      `TEMP-CB` copy carries that value, so the REST export shows the field. Put
      the parameter here, never in `cuts`: a cut takes only `filters:` captions.
    - `shelves: {drop: [<caption>], add: {rows: [<caption>]}}`: the sheet's rows
@@ -189,7 +190,7 @@ refuses when the view's only run read another fact.
      that now recompute along the new rows or columns; a compared field among
      them needs the analyst's call. `clear_filters: [<caption>]` resets that
      sheet's filter on each caption to every member (the analyst's call to
-     validate past it, such as all subjects, not ELA).
+     validate past it, such as every member instead of one).
    - `definitions: {dashboard: ..., cube: ...}`: what each side counts, in a
      sentence or a code list. The review issue shows both for a comparison with
      a domain-owner question, a formula difference included. It goes to GitHub:
@@ -229,14 +230,17 @@ refuses when the view's only run read another fact.
    - It skips a comparison with a problem, printing `Skipping <id>: <why>.`, and
      compares the rest: a missing `dashboard_view` or `decimals`, no rebuild
      check, a sheet query changed since its rebuild check, a member Cube's model
-     lacks, a workbook changed since its rebuild check, or SQL that cannot be
-     built today. A republished workbook whose sheet formulas and filters and
+     lacks, a workbook changed since its rebuild check or one Tableau errs on,
+     SQL that cannot be built today or at the run's moment, or a dry run that
+     fails. A republished workbook whose sheet formulas and filters and
      datasource connection and filters are unchanged is kept, and said so. After
      the price, it also skips a comparison whose Cube SQL reads an `also_facts`
-     table, or whose 2 sides' rows read a table, that changed during the build.
-     A skipped comparison keeps its previous result. Fix what each reason names
-     (most say to run `rebuild-sheet` again). `compare` refuses only when every
-     comparison is skipped.
+     table, or whose 2 sides' rows read a table, that changed during the build,
+     and one whose query fails in BigQuery (its spend stays counted). A BigQuery
+     reason names the job id and reason code, never BigQuery's message: look the
+     job up for the message. A skipped comparison keeps its previous result. Fix
+     what each reason names (most say to run `rebuild-sheet` again). Only a cap
+     stops the run; `compare` refuses when every comparison is skipped.
    - It names each comparison it will compare and why: `never compared`,
      `its entry or rebuild check changed`, `Cube's SQL changed` or
      `the dashboard SQL changed` (the sheet query or the dbt models it reads). A
@@ -247,11 +251,12 @@ refuses when the view's only run read another fact.
      comparison's latest result is current" and compares nothing; that is not a
      failure.
    - It dry-runs every query and fingerprint scan it will send and prints one
-     total, `Compare: N queries, $X (dry run)`, refusing past `--max-usd` or
-     what is left of the daily cap, `--max-usd-per-day` (UTC day, shared by
-     every run on this machine). View versions found in BigQuery's job history
-     are cached in the local cache, so a repeat run does not pay to look them up
-     again.
+     total, `Compare: N queries, $X (dry run)`, plus the save script's reads of
+     its temp table, which the dry run cannot price and BigQuery caps per query.
+     It refuses past `--max-usd` or what is left of the daily cap,
+     `--max-usd-per-day` (UTC day, shared by every run on this machine). View
+     versions found in BigQuery's job history are cached in the local cache, so
+     a repeat run does not pay to look them up again.
    - It prints "Comparison <id>: its cells cannot be covered (<why>)" for a
      comparison without `rows` or whose dims sit in the row grain.
 
@@ -335,11 +340,12 @@ refuses when the view's only run read another fact.
    `dbt compile` command to run from the repository root. At 5 models deep, a
    live `sort` can refuse until models 4 and 5 levels below the side's table
    have compiled SQL: run the printed command, in a checkout whose dbt code
-   built the tables, once for every view you sort. The trace refuses when a
-   comparison's SQL changed since the run: `compare` it again. `sort` prints a
-   progress line after each explanation and each trace level. Counts are exact
-   in the terminal and `triage.json`; `ask-owner` quotes the masked copy
-   (`evidence_posted`).
+   built the tables, once for every view you sort. A comparison whose SQL
+   changed since the run, or cannot be built today, waits: `sort` names it
+   (above) and leaves its row groups out of the trace; `compare` it, then sort
+   again. `sort` prints a progress line after each explanation and each trace
+   level. Counts are exact in the terminal and `triage.json`; `ask-owner` quotes
+   the masked copy (`evidence_posted`).
 
    Explain causes with the analyst, in short turns, not alone:
    1. Show the analyst the clusters before any SQL: the summary's buckets

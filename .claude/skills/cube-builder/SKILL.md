@@ -11,10 +11,10 @@ description:
 # cube-builder
 
 The builder inventories what a dashboard needs from Cube, plans the missing
-pieces in tiers, and builds them as pull requests, each proven against the
-dashboard before it merges. One GitHub issue per dashboard, titled "Build
-<dashboard> in Cube", is the hub: it holds the inventory, the disagreements and
-the plan, and every builder PR refs it.
+pieces in tiers, and builds them as pull requests, each checked against the
+dashboard (a rebuild check, then `compare`) before it merges. One GitHub issue
+per dashboard, titled "Build <dashboard> in Cube", is the hub: it holds the
+inventory, the disagreements and the plan, and every builder PR refs it.
 
 The commands live in `scripts/cube_validation/`. `members`, `rebuild-sheet` and
 `compare` need credentials: run them through the `cube-validation` skill's
@@ -114,9 +114,10 @@ _Build_ step 4.
    | 4    | A new cube over an existing mart                        |
    | 5    | A new fact table: a new dbt mart, then everything above |
 
-   A column the catalog marks `mart-missing`, such as `nj_student_tier`, is tier
-   3: a dbt PR adds the column, a Cube PR adds the dimension, and a comparison
-   slices an existing measure by it.
+   A column the catalog marks `mart-missing`, such as a student flag the
+   dashboard slices by that no mart has, is tier 3: a dbt PR adds the column, a
+   Cube PR adds the dimension, and a comparison slices an existing measure by
+   it.
 
 2. Search open issues for "Build <dashboard> in Cube"; reuse one that exists.
    Otherwise draft it: the `inventory` table, each disagreement with the
@@ -165,10 +166,10 @@ runner's `PKG` is the `scripts/cube_validation` of that branch's checkout.
    another name: confirm in `members.json`, drop the new one and reuse
    `<other>`. Restore the copy, or rerun `members` against Cube Cloud, before
    any later `inventory`.
-5. On the validation branch, add the comparison that proves the piece by the
-   `cube-validation` runbook steps 2 and 3. A new dimension is proven by slicing
-   an existing measure by it (the new dimension mapped under `dims`). Give the
-   comparison a `rows:` block whose grain leaves out the new dimension:
+5. On the validation branch, add the comparison that checks the piece by the
+   `cube-validation` runbook steps 2 and 3. A new dimension is checked by
+   slicing an existing measure by it (the new dimension mapped under `dims`).
+   Give the comparison a `rows:` block whose grain leaves out the new dimension:
    otherwise a differing cell can never be covered and stays open. Slicing an
    existing measure brings back that measure's known causes; read them in the
    view's validation file before calling a difference a bug in the new piece.
