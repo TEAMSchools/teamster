@@ -278,7 +278,7 @@ def _filtered():
         measure="count_tardy_days",
         sheet="Roster",
         dashboard_view="kipptaf_tableau.rpt_d",
-        probe="sum(is_tardy)",
+        sheet_query="sum(is_tardy)",
         dashboard_filters=[ENROLLED],
         dims=[
             ColumnPair(dashboard="student_number", cube="lea_student_identifier"),
@@ -316,13 +316,13 @@ def test_dashboard_rows_take_the_rows_scope_and_the_probe_does_not():
     where = pipeline.dashboard_rows_sql(_cfg(), scoped).split("WHERE", 1)[1]
 
     assert "(CAST(iep_status AS STRING) IN ('No IEP'))" in where
-    assert "iep_status" not in pipeline.probe_sql(_cfg(), scoped, {})
+    assert "iep_status" not in pipeline.sheet_query(_cfg(), scoped, {})
 
 
 def test_unfiltered_probe_drops_only_the_dashboard_filters():
     comparison = _filtered()
-    assert "enroll_status IN (0)" in pipeline.probe_sql(_cfg(), comparison, {})
-    unfiltered = pipeline.probe_sql(_cfg(), comparison, {}, with_filters=False)
+    assert "enroll_status IN (0)" in pipeline.sheet_query(_cfg(), comparison, {})
+    unfiltered = pipeline.sheet_query(_cfg(), comparison, {}, with_filters=False)
     assert "enroll_status" not in unfiltered
 
 
@@ -363,7 +363,7 @@ def test_candidate_causes_name_patterns_clusters_and_definitions():
     comparison = Comparison(
         id="c",
         measure="count_tardy_days",
-        probe="sum(is_tardy)",
+        sheet_query="sum(is_tardy)",
         dims=[
             ColumnPair(dashboard="student_number", cube="lea_student_identifier"),
             ColumnPair(dashboard="grade_level", cube="grade_level"),
@@ -389,8 +389,8 @@ def test_candidate_causes_name_patterns_clusters_and_definitions():
     assert f"3 of 4 in cut {miami}" in causes
     assert "3 of 4 have grade_level = 9" in causes
     assert (
-        "Cube computes `count_tardy_days` as sum(`t`.is_tardy); the probe is sum(is_tardy)"
-        in causes
+        "Cube computes `count_tardy_days` as sum(`t`.is_tardy); the sheet query "
+        "is sum(is_tardy)" in causes
     )
     assert "Recorded definitions: dashboard codes ET, T; Cube codes T%" in causes
     # A grain dim never shows: its values are students.
@@ -505,7 +505,7 @@ def test_sheet_shape_and_gaps_list_a_filter_on_a_code_group():
     shape = sheet_shape(DKI_TWB, "Mastery Grid")
     assert (
         "Discipline: chosen values hidden (narrows the sheet); decide whether "
-        "the probe needs it"
+        "the sheet query needs it"
     ) in shape.filters
     assert not any("ELA" in f for f in shape.filters)
 

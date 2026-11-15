@@ -2,14 +2,14 @@
 
 An open item is a row group, a comparison's cell differences, or a missing cut
 or filter. A pile never applies a call: the analyst reads it and decides. An
-item in `investigate` takes no decision until it reaches a proven cause, while
-the view's other items are decided; `review` lists it as still with the
+item in `investigate` takes no decision until it reaches an explained cause, while
+the view's other items are decided; `ask-owner` lists it as still with the
 analyst. The trace (`trace.py`) only leads: a row group reaches `cause`
-when `triage confirm` (`explain.py`) checks a classification query that names
+when `explain` (`explain.py`) checks a classification query that names
 each of its unmatched rows' cause. A missing cut or filter the sheet carries,
-and rows the sheet's own dashboard-only filter drops, are their own proof.
+and rows the sheet's own dashboard-only filter drops, are their own explanation.
 Item ids and labels carry no value the review issue would hide. `suggest` is
-pure; `value_check` and `run_triage` read the warehouse and Cube.
+pure; `value_check` and `sort_run` read the warehouse and Cube.
 """
 
 from __future__ import annotations
@@ -28,7 +28,7 @@ from pathlib import Path
 
 from . import decisions, latest, pipeline, trace
 from .bq import CostCapError, Warehouse
-from .config import Comparison, Decision, Proof, ViewConfig, mask_digits
+from .config import Comparison, Decision, RebuildCheck, ViewConfig, mask_digits
 from .cube_client import Cube, MemberDoc, member_docs, network_schools
 from .find_field import _tokens
 from .moment import Build
@@ -49,16 +49,16 @@ from .report import (
 from .timetravel import PROJECT
 
 # The piles, in the order the analyst's batch shows them. Only a `cause` item
-# carries a proven cause; an `investigate` item has none yet.
+# carries an explained cause; an `investigate` item has none yet.
 SUGGESTIONS = ("map_filters", "filters_nothing", "cause", "investigate")
 # What a `cause` rests on: a stored classification query (`explain.py`), the
 # run's own reconcile (rows the sheet's dashboard-only filter drops), the
-# workbook XML (a missing cut or filter), proven groups (a cell set), or the
+# workbook XML (a missing cut or filter), explained groups (a cell set), or the
 # run's matched rows (a formula difference).
 PROOF_KINDS = ("query", "reconcile", "workbook", "cells", "formula")
 # A formula difference's cause: every row in its cells matched on both sides.
 FORMULA_LABEL = "differing cells hold no unmatched row"
-# How `sort` and `review` name a comparison the latest run skipped.
+# How `sort` and `ask-owner` name a comparison the latest run skipped.
 NOT_COMPARED = "not compared"
 
 
@@ -91,8 +91,8 @@ class Suggestion:
     a lead never picks the pile. `candidates` are the Cube members a
     missing filter or cut may map to. `cause` is, for a `cause` item, its
     causes, each `{side, step, label, n_rows}`; it is None until one is
-    proven. `proof` is what the cause rests on, typed by `kind`
-    (`PROOF_KINDS`); a stored proof's also names its file. `evidence`
+    explained. `proof` is what the cause rests on, typed by `kind`
+    (`PROOF_KINDS`); a stored explanation's also names its file. `evidence`
     shows exact counts; `posted` is the same lines masked for the review
     issue (`report.shown_counts`), or None when it equals `evidence`. A
     sheet filter's first evidence line says whether Cube offers it; names
@@ -150,7 +150,7 @@ def _group_item(g: Group, item_id: str, open_groups: list[Group]) -> Item:
     label = _group_label(g)
     stub: dict = {"comparison": g.comparison_id}
     # A dashboard-filtered group is decided on its cause (the sheet filter),
-    # never by a column value that would close later groups no one proved.
+    # never by a column value that would close later groups no one explained.
     if g.bucket != "dashboard_filtered":
         column, value = _stub_dim(g, open_groups)
         stub["group"] = {"column": column, "values": [value]}
@@ -307,20 +307,20 @@ def proven_triage(
     base: Path | None = None,
 ) -> dict:
     """Read the triage of the view's latest run, refusing one that is stale or
-    whose proven items do not hold.
+    whose explained items do not hold.
 
-    The gate is per view file: it reads only the triage beside that view's
+    The gate is per validation file: it reads only the triage beside that view's
     latest `run.json`. Decisions written since triage may close items; an
     item open in the run but absent from the triage refuses. Items still in
     `investigate` do not refuse: they come back under `unsettled`, so
-    `review` lists them, and `add-decisions` decides the rest.
+    `ask-owner` lists them, and `decide` decides the rest.
 
     Args:
         run: The view's latest run (see `pipeline.latest_run`).
         run_json: The `run.json` it came from.
-        recorded: The view's decisions. When given, each proven row group is
+        recorded: The view's decisions. When given, each explained row group is
             marked by the cause decisions that decide it (`mark_decided`).
-        base: The validation file's directory, which stored proof paths are
+        base: The validation file's directory, which stored explanation paths are
             relative to.
 
     Raises:
@@ -329,18 +329,19 @@ def proven_triage(
             an item sits in a pile this validator does not sort into (a triage
             from an older validator), a `cause` item has no cause, a decision
             closes an item in `investigate`, a row group or cell set in
-            `cause` rests on no proof, a proof an item rests on changed since,
-            or a cause decision and a `group` decision disagree on one group.
+            `cause` rests on no explanation, an explanation an item rests on
+            changed since, or a cause decision and a `group` decision disagree on
+            one group.
 
     Returns:
         The triage as `triage.json` holds it, with `unsettled`: its items
         still in `investigate`.
     """
     view, found = run.view, run_json.parent / "triage.json"
-    again = f"run `triage` for {run.moment.start:%Y-%m-%d %H:%M} UTC"
+    again = f"run `sort` for {run.moment.start:%Y-%m-%d %H:%M} UTC"
     if not found.exists():
-        raise pipeline.Refusal(f"{view}: no triage of the latest run; {again}")
-    unreadable = pipeline.Refusal(f"{view}: triage.json is unreadable; re-run triage")
+        raise pipeline.Refusal(f"{view}: no sort of the latest run; {again}")
+    unreadable = pipeline.Refusal(f"{view}: triage.json is unreadable; re-run `sort`")
     try:
         loaded = json.loads(found.read_text())
     except json.JSONDecodeError as exc:
@@ -360,16 +361,16 @@ def proven_triage(
     if other := sorted(str(p) for p in set(piles) - set(SUGGESTIONS)):
         raise pipeline.Refusal(
             f"{view}: {found} has items in piles this validator does not sort "
-            f"into ({', '.join(other)}); re-run triage"
+            f"into ({', '.join(other)}); re-run `sort`"
         )
     if bare := sum(
         1 for i in items if i["suggestion"] == "cause" and not i.get("cause")
     ):
         raise pipeline.Refusal(
             f"{view}: {bare} `cause` item{'' if bare == 1 else 's'} "
-            f"{'has' if bare == 1 else 'have'} no cause; re-run triage"
+            f"{'has' if bare == 1 else 'have'} no cause; re-run `sort`"
         )
-    # A decision written by hand must not close what no one proved.
+    # A decision written by hand must not close what no one explained.
     closed = {
         _open_key(src): d for d, src in [*run.applied.quiet, *run.applied.quiet_cells]
     }
@@ -378,10 +379,10 @@ def proven_triage(
         if d is not None and i["suggestion"] == "investigate":
             raise pipeline.Refusal(
                 f"{view}: decision {d.id!r} closes item {i['id']!r}, which the "
-                "triage holds in `investigate`; delete the decision and prove "
-                "the item (cube-validation skill, step 8)"
+                "sort holds in `investigate`; delete the decision and run `explain` "
+                "on the item (cube-validation skill, step 8)"
             )
-    # Every cause rests on a typed proof (`PROOF_KINDS`).
+    # Every cause rests on a typed explanation (`PROOF_KINDS`).
     if bare := sum(
         1
         for i in items
@@ -390,15 +391,14 @@ def proven_triage(
     ):
         raise pipeline.Refusal(
             f"{view}: {bare} `cause` item{'' if bare == 1 else 's'} "
-            f"rest{'s' if bare == 1 else ''} on no proof; prove "
-            f"{'it' if bare == 1 else 'them'} with `triage confirm`, then re-run "
-            "`triage`"
+            f"rest{'s' if bare == 1 else ''} on no explanation; run `explain` "
+            f"on {'it' if bare == 1 else 'them'}, then re-run `sort`"
         )
     if moved := sum(1 for i in items if _proof_changed(i.get("proof"), base)):
         raise pipeline.Refusal(
             f"{view}: {moved} item{'' if moved == 1 else 's'} in `cause` "
-            f"rest{'s' if moved == 1 else ''} on a proof file changed since "
-            "triage; re-run `triage`"
+            f"rest{'s' if moved == 1 else ''} on an explanation file changed "
+            "since the sort; re-run `sort`"
         )
     if recorded is not None:
         try:
@@ -411,7 +411,7 @@ def proven_triage(
 
 
 def unsettled(run: RunResult, loaded: dict) -> list[Unsettled]:
-    """The triage's items still in `investigate`, as `review` lists them.
+    """The triage's items still in `investigate`, as `ask-owner` lists them.
 
     Each is matched to the run's open item by its `_open_key` for its bucket
     and counts; one the run no longer holds keeps its kind and no count. Read
@@ -455,7 +455,7 @@ def _closed(loaded: dict) -> list[dict]:
 
 def check_closed(run: RunResult, run_json: Path, recorded: list[Decision]) -> None:
     """Refuse a cause decision that disagrees with the `group` decision closing a
-    group its proof covers.
+    group its explanation covers.
 
     Triage lists no closed group, so `mark_decided` on its items never sees
     one; the triage's `closed` list (`closed_groups`) says which causes each
@@ -475,8 +475,8 @@ def check_closed(run: RunResult, run_json: Path, recorded: list[Decision]) -> No
         mark_decided(run, _closed(loaded), recorded, refuse=True)
         return
     print(
-        "closed-group check skipped: no triage of this run; "
-        "run `triage --no-trace` to check decisions against closed groups",
+        "closed-group check skipped: no sort of this run; "
+        "run `sort --no-trace` to check decisions against closed groups",
         file=sys.stderr,
     )
 
@@ -484,16 +484,16 @@ def check_closed(run: RunResult, run_json: Path, recorded: list[Decision]) -> No
 # Why a cause decision no longer decides an item it names.
 _STALE = {
     "sql": "the SQL changed since the decision; re-approve",
-    "proof": "proof changed since the decision; re-approve",
+    "proof": "the explanation changed since the decision; re-approve",
 }
 
 
-# The proofs of a row group that cause decisions decide.
+# The explanations of a row group that cause decisions decide.
 DECIDABLE_PROOFS = ("query", "reconcile")
 
 
 def decidable(item: dict) -> bool:
-    """A proven row group: cause decisions decide it, never a column value."""
+    """An explained row group: cause decisions decide it, never a column value."""
     proof = item.get("proof") or {}
     return (
         item.get("kind") == "group"
@@ -545,15 +545,15 @@ def mark_decided(
     refuse: bool = False,
     note: bool = False,
 ) -> None:
-    """Mark each proven row group by the cause decisions that decide it.
+    """Mark each explained row group by the cause decisions that decide it.
 
     A decidable item gets `decisions`, `{cause_key: decision id or None}`, and
     `decided`, true only when every one of its causes has a decision that
-    holds: the comparison's SQL and the item's proof file are the ones it was
+    holds: the comparison's SQL and the item's explanation file are the ones it was
     made on. A decision that no longer holds counts as none.
 
     A cell set in `cause` on its covering groups (`proof.kind` `cells`) gets
-    `decided`, true when every item its proof names (`proof.groups`) is
+    `decided`, true when every item its explanation names (`proof.groups`) is
     decided; the groups a `group` decision closed (`proof.closed`) are
     decided by it.
 
@@ -646,12 +646,12 @@ def cause_asks(
     leads: dict[str, str] | None = None,
     owner: bool = True,
 ) -> list[CauseAsk]:
-    """What `review` asks the owner: each unanswered owner cause and its groups.
+    """What `ask-owner` asks the owner: each unanswered owner cause and its groups.
 
     Reads items `mark_decided` marked. A cause's rows are only those its
-    proof attributes to it, so a group split across causes counts in each
+    explanation attributes to it, so a group split across causes counts in each
     question only by its own share. With `owner` False, the cause decisions
-    the analyst made with any other call instead, which `review` only reports.
+    the analyst made with any other call instead, which `ask-owner` only reports.
     """
     groups = _groups_by_key(run)
     out = []
@@ -684,7 +684,7 @@ def cause_asks(
 
 
 def _proof_changed(proof: dict | None, base: Path | None = None) -> bool:
-    """A stored proof's file is gone, or no longer the proof triage ran.
+    """A stored explanation's file is gone, or no longer the explanation triage ran.
 
     The recorded path is relative to the validation file's directory, `base`.
     Compared by `explain.fingerprint`, so a formatting-only edit is no change.
@@ -763,7 +763,7 @@ def doc_leads(cfg: ViewConfig, docs_dir: Path = DOCS_DIR) -> dict[str, str]:
     return out
 
 
-NOT_TRACED = "not traced (`triage --no-trace`)"
+NOT_TRACED = "not traced (`sort --no-trace`)"
 NO_FILTER = "no `dashboard_filters` entry names the filter that drops these rows"
 
 
@@ -776,7 +776,7 @@ def _filter_cause(
     `dashboard_filters` entry off and absent with it on.
 
     Returns:
-        The cause, its evidence, the posted copy and the proof; None when no
+        The cause, its evidence, the posted copy and the explanation; None when no
         entry names the group's filter.
     """
     column = g.value_of("dashboard_filter") or ""
@@ -790,11 +790,13 @@ def _filter_cause(
     )
     if comparison is None or entry is None:
         return None
-    # The sheet filter's caption, when the proof maps it to this column.
+    # The sheet filter's caption, when the rebuild check maps it to this column.
     captions = {
         c: caption
         for caption, c in (
-            (comparison.proof.missing_columns or {}) if comparison.proof else {}
+            (comparison.rebuild_check.missing_columns or {})
+            if comparison.rebuild_check
+            else {}
         ).items()
     }
     label = f"sheet filter {captions.get(column, column)}"
@@ -816,7 +818,7 @@ def _filter_cause(
 
 
 def reconcile_proof(entry: dict) -> dict:
-    """The proof of a dashboard-filtered group: the filter the reconcile ran.
+    """The explanation of a dashboard-filtered group: the filter the reconcile ran.
 
     Its fingerprint is the `dashboard_filters` entry's, so editing the filter
     re-opens the decisions made on it.
@@ -837,21 +839,21 @@ _FORMULA_CAUSE = {
 
 
 def _formula_proof(run: RunResult, comparison: str) -> dict:
-    """A formula difference's proof: the comparison's SQL fingerprints in the
+    """A formula difference's explanation: the comparison's SQL fingerprints in the
     run, whose reconcile matched every row in its cells."""
     text = json.dumps(run.fingerprints.get(comparison) or {}, sort_keys=True)
     return {"kind": "formula", "fingerprint": hashlib.sha256(text.encode()).hexdigest()}
 
 
 NO_ROWS = (
-    "values differ on rows both sides have: no trace; prove them with "
-    "`triage confirm --bucket value_differs`"
+    "values differ on rows both sides have: no trace; explain them with "
+    "`explain --bucket value_differs`"
 )
 NO_GRAIN = "not traced: the comparison has no `rows` grain"
 MOVED_ROWS = (
     "rows both sides hold sit in different cells, by a column or by a cut "
-    "(Cube's columns, then the dashboard's as `d:`): no trace; prove them with "
-    "`triage confirm --bucket dims_differ`"
+    "(Cube's columns, then the dashboard's as `d:`): no trace; explain them with "
+    "`explain --bucket dims_differ`"
 )
 
 
@@ -862,7 +864,7 @@ def _filter_label(
 
     A candidate member wins, even for a workbook calc: a name match is a
     lead, so the label says to check before mapping. Without one, the
-    `missing_columns` of the gap's own comparisons' proofs tell a
+    `missing_columns` of the gap's own comparisons' rebuild checks tell a
     workbook-only field from a gap in Cube.
     """
     if candidates:
@@ -889,7 +891,7 @@ def suggest(
 
     Args:
         cfg: The view's config, for each comparison's measure, group-by
-            columns and proof.
+            columns and rebuild check.
         run: One view's validation run.
         docs: The view's members by bare name, from `member_docs`, for a
             missing filter's candidate members.
@@ -901,7 +903,7 @@ def suggest(
 
     Returns:
         One suggestion per open item, ordered by `SUGGESTIONS`. A missing
-        filter the proof shows filters nothing, or whose values match a Cube
+        filter the rebuild check shows filters nothing, or whose values match a Cube
         member's, takes `filters_nothing` or `map_filters`; any other missing
         cut or filter is `cause`, a sheet step on the dashboard side, and so
         is a group the sheet's dashboard-only filter drops, and a formula
@@ -930,16 +932,18 @@ def suggest(
             gap = source
             caption = gap.field
             candidates = _candidates(caption, docs)
-            # Only the sheets the gap sits on speak for it; a proof that
+            # Only the sheets the gap sits on speak for it; a rebuild check that
             # predates `restricting_filters` leaves the answer unknown.
-            proofs: list[Proof] = [
-                p for c in gap.comparisons if c in by_id and (p := by_id[c].proof)
+            checks: list[RebuildCheck] = [
+                p
+                for c in gap.comparisons
+                if c in by_id and (p := by_id[c].rebuild_check)
             ]
-            notes = {k: v for p in proofs for k, v in (p.filter_notes or {}).items()}
-            all_known = bool(proofs) and all(
-                p.restricting_filters is not None for p in proofs
+            notes = {k: v for p in checks for k, v in (p.filter_notes or {}).items()}
+            all_known = bool(checks) and all(
+                p.restricting_filters is not None for p in checks
             )
-            restricting = {f for p in proofs for f in p.restricting_filters or []}
+            restricting = {f for p in checks for f in p.restricting_filters or []}
             if gap.kind == "filter" and caption in notes:
                 call, evidence = "filters_nothing", (notes[caption],)
             elif gap.kind == "filter" and all_known and caption not in restricting:
@@ -953,8 +957,8 @@ def suggest(
                 if any(v.startswith("same values") for _, v in verdicts):
                     call, evidence = "map_filters", verdict_lines
                 else:
-                    # The workbook carries it: that is the proof. Whether
-                    # Cube needs it is the owner's call on a proven step.
+                    # The workbook carries it: that is the explanation. Whether
+                    # Cube needs it is the owner's call on an explained step.
                     step = f"sheet {gap.kind} {caption}"
                     call, proof = "cause", {"kind": "workbook"}
                     cause = [
@@ -974,7 +978,7 @@ def suggest(
             if isinstance(source, Group):
                 traced = (traces or {}).get(trace.item_key(source))
                 if source.bucket == "dashboard_filtered":
-                    # The run's reconcile proved each row: the sheet's own
+                    # The run's reconcile explained each row: the sheet's own
                     # dashboard-only filter drops it. No trace is needed.
                     filtered = _filter_cause(comparison, source)
                     if filtered:
@@ -983,8 +987,8 @@ def suggest(
                     else:
                         found = (NO_FILTER,)
                 elif traced is not None:
-                    # The trace is a lead: a person proves the cause with
-                    # `triage confirm`.
+                    # The trace is a lead: a person explains the cause with
+                    # `explain`.
                     found, posted_found = traced.leads(), traced.leads(posted=True)
                 elif traces is None:
                     found = (NOT_TRACED,)
@@ -996,7 +1000,7 @@ def suggest(
                     found = (NO_GRAIN,)
             elif source.kind == "formula":
                 # The run's own reconcile matched every row in these cells,
-                # so the 2 formulas differ: no proof file is needed.
+                # so the 2 formulas differ: no explanation file is needed.
                 call, cause = "cause", [dict(_FORMULA_CAUSE)]
                 proof = _formula_proof(run, source.comparison_id)
                 n = sum(source.counts.values())
@@ -1048,7 +1052,7 @@ def _counts(counter: Counter, order: tuple[str, ...] = ()) -> str:
 
 
 def batch_lines(run: RunResult, found: list[Suggestion]) -> list[str]:
-    """The lines `triage` prints: a summary, a blank line, then the items.
+    """The lines `sort` prints: a summary, a blank line, then the items.
 
     The summary counts each comparison's items by suggestion and by kind, and
     its row groups by bucket. Each suggestion then lists its first
@@ -1153,7 +1157,10 @@ def pii_members(meta: dict, view: str) -> set[str]:
 def _dashboard_view(cfg: ViewConfig, column: str) -> str:
     """The dashboard table behind `column`: the comparison that names it, else the first."""
     for c in cfg.comparisons:
-        if c.proof and column in (c.proof.missing_columns or {}).values():
+        if (
+            c.rebuild_check
+            and column in (c.rebuild_check.missing_columns or {}).values()
+        ):
             return c.dashboard_view or ""
     return next((c.dashboard_view for c in cfg.comparisons if c.dashboard_view), "")
 
@@ -1234,23 +1241,24 @@ def value_check(
 def _missing_column(
     cfg: ViewConfig, caption: str, comparisons: Iterable[str] | None = None
 ) -> str:
-    """The datasource column behind a missing field, or empty when no proof names it.
+    """The datasource column behind a missing field, or empty when no rebuild
+    check names it.
 
-    With `comparisons`, only their proofs are read.
+    With `comparisons`, only their explanations are read.
     """
     wanted = None if comparisons is None else set(comparisons)
     for c in cfg.comparisons:
         if wanted is not None and c.id not in wanted:
             continue
-        if c.proof and caption in (c.proof.missing_columns or {}):
-            return (c.proof.missing_columns or {})[caption]
+        if c.rebuild_check and caption in (c.rebuild_check.missing_columns or {}):
+            return (c.rebuild_check.missing_columns or {})[caption]
     return ""
 
 
 def with_closed(run: RunResult) -> RunResult:
-    """The run with its closed groups listed as open, for the stored proofs.
+    """The run with its closed groups listed as open, for the stored explanations.
 
-    A proof reads every unmatched row of its bucket already, so classifying
+    An explanation reads every unmatched row of its bucket already, so classifying
     the closed groups too only adds their keys; `closed_groups` splits the
     result back.
     """
@@ -1262,7 +1270,7 @@ def with_closed(run: RunResult) -> RunResult:
 
 
 def closed_groups(run: RunResult, ran: list, cfg: ViewConfig) -> tuple[list, list]:
-    """Split the proofs' runs over `with_closed(run)` into open and closed groups.
+    """Split the explanations' runs over `with_closed(run)` into open and closed groups.
 
     Args:
         run: The run as triage lists it.
@@ -1272,7 +1280,7 @@ def closed_groups(run: RunResult, ran: list, cfg: ViewConfig) -> tuple[list, lis
     Returns:
         The runs over the open groups only, under their own item ids, as
         `explain.apply_runs` reads them (a run over closed groups alone is
-        dropped), and the closed groups a proof fully explains, or a
+        dropped), and the closed groups an explanation fully explains, or a
         `dashboard_filters` entry drops, each as an item `mark_decided`
         reads, marked `closed` and named by its `_open_key`.
     """
@@ -1306,7 +1314,8 @@ def closed_groups(run: RunResult, ran: list, cfg: ViewConfig) -> tuple[list, lis
             cause, _, _, proof = filtered
             closed.append({**_closed_item(g), "suggestion": "cause", "cause": cause,
                            "proof": proof})  # fmt: skip
-    # 2 proofs, or a proof and a sheet filter, can explain one closed group.
+    # 2 explanations, or an explanation and a sheet filter, can explain one
+    # closed group.
     closed = list({json.dumps([e["key"], e["proof"]]): e for e in closed}.values())
     return kept, [
         {k: e[k] for k in ("id", "key", "kind", "comparison", "closed", "suggestion",
@@ -1322,7 +1331,7 @@ def _closed_item(g: Group) -> dict:
             "evidence_posted": [], "cause": None, "proof": None}  # fmt: skip
 
 
-def run_triage(
+def sort_run(
     cfg: ViewConfig,
     *,
     wh: Warehouse,
@@ -1332,23 +1341,23 @@ def run_triage(
     trace_rows: bool = True,
     manifest: Path | None = None,
     trace_max_minutes: float | None = None,
-    proofs: Path | None = None,
+    explanations: Path | None = None,
     comparisons: list[str] | None = None,
     now: datetime | None = None,
     ticker: Ticker | None = None,
 ) -> list[Suggestion]:
     """Sort each open item of the view's latest run into a pile and print them.
 
-    Re-runs every stored proof in `proofs` on the run's rows first
-    (`explain.run_stored`; None skips them): only a proof moves a row group
-    to `cause`. Then traces the row groups no proof explains
+    Re-runs every stored explanation in `explanations` on the run's rows first
+    (`explain.run_stored`; None skips them): only an explanation moves a row group
+    to `cause`. Then traces the row groups no explanation explains
     (`trace.trace_run`) unless `trace_rows` is False, for leads. Both count
     against `max_usd` and the daily cap with the value checks. A cap or
     `trace_max_minutes` hit partway stops the trace; what it found is kept
-    and the batch is still written, as it is when a proof cannot run. Prints
+    and the batch is still written, as it is when an explanation cannot run. Prints
     `batch_lines`. Writes every item to `triage.json`
     beside that run's `run.json`, with the run's moment, decisions
-    fingerprint and open items (see `proven_triage`), each proven row group
+    fingerprint and open items (see `proven_triage`), each explained row group
     marked by the cause decisions that decide it (`mark_decided`): it stays in the local
     cache, and its stubs and causes carry real values and exact counts.
 
@@ -1359,13 +1368,13 @@ def run_triage(
     `comparisons_waiting` can name it. A skipped comparison's row groups are
     neither checked for the trace nor traced.
 
-    Each proof's outcome is kept beside `run.json` as it finishes
-    (`progress`), so a stopped triage skips the proofs it finished. With
-    `comparisons`, only their proofs run and only their row groups are traced
+    Each explanation's outcome is kept beside `run.json` as it finishes
+    (`explain_progress`), so a stopped sort skips the explanations it finished. With
+    `comparisons`, only their explanations run and only their row groups are traced
     or printed; `triage.json` still holds every item, the others' from their
-    kept proof outcomes.
+    kept explanation outcomes.
 
-    `ticker` (a new one by default) prints a progress line after each proof
+    `ticker` (a new one by default) prints a progress line after each explanation
     runs and after each level of the trace.
 
     Raises:
@@ -1373,7 +1382,7 @@ def run_triage(
             `pipeline.latest_run`), its SQL changed since the run, the
             manifest lacks compiled SQL the trace needs, or a comparison asked
             for is not in the view.
-        CostCapError: The value checks, the proofs together, or the trace
+        CostCapError: The value checks, the explanations together, or the trace
             would pass a cap.
     """
     wanted = set(comparisons) if comparisons else None
@@ -1415,12 +1424,12 @@ def run_triage(
             schools=prepared.schools,
             now=now or datetime.now(timezone.utc),
         )
-        # A comparison `run` skipped keeps its older result: say why.
+        # A comparison `compare` skipped keeps its older result: say why.
         stale |= {cid: f"{NOT_COMPARED}: {why}" for cid, why in skipped.items()}
         for cid, why in stale.items():
             print(f"{cfg.view}: comparison {cid} {why}; compare it, then sort.")
         if trace_rows:
-            # A trace refusal after the proofs ran would throw their spend away.
+            # A trace refusal after the explanations ran would throw their spend away.
             trace.check_ready(
                 cfg,
                 run,
@@ -1430,10 +1439,10 @@ def run_triage(
                 prepared=prepared,
                 skip=_groups_of(run, set(skipped)),
             )
-        # Proofs first: they are the only path to `cause`, so a trace that
-        # hits a cap never un-proves an item, and nothing they explain is
+        # Explanations first: they are the only path to `cause`, so a trace that
+        # hits a cap never un-explains an item, and nothing they explain is
         # traced.
-        # Closed groups go through the proofs too, so a cause decision that
+        # Closed groups go through the explanations too, so a cause decision that
         # disagrees with the `group` decision closing one refuses when it is
         # written (`check_closed`).
         ran, closed = closed_groups(
@@ -1441,7 +1450,7 @@ def run_triage(
             explain.run_stored(
                 cfg,
                 with_closed(run),
-                proofs,
+                explanations,
                 wh=wh,
                 cube=cube,
                 prepared=prepared,
@@ -1449,7 +1458,7 @@ def run_triage(
                 comparisons=wanted,
                 ticker=ticker,
             )
-            if proofs is not None
+            if explanations is not None
             else [],
             cfg,
         )
@@ -1475,7 +1484,7 @@ def run_triage(
         )
         items = [_as_json(s) for s in found]
         kept: dict = {}
-        if proofs is not None:
+        if explanations is not None:
             explain.apply_runs(run, items, ran, cfg, kept)
             items.sort(key=lambda i: SUGGESTIONS.index(i["suggestion"]))
         mark_decided(run, items, cfg.decisions, note=True)
@@ -1490,11 +1499,11 @@ def run_triage(
                 "decisions_fingerprint": run.decisions_fingerprint,
                 "open": open_keys(run),
                 "items": items,
-                # Groups a `group` decision closes, with the causes a proof
+                # Groups a `group` decision closes, with the causes an explanation
                 # gives them (`closed_groups`), for `check_closed`.
                 "closed": closed,
-                # Per comparison, each proven cause's students per cell and
-                # cut, from the proofs' counting queries (`review` examples).
+                # Per comparison, each explained cause's students per cell and
+                # cut, from the explanations' counting queries (`ask-owner` examples).
                 "cause_students": kept.get("cause_students", {}),
                 # Each comparison whose latest result is missing or stale.
                 "stale": stale,

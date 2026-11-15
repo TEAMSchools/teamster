@@ -717,7 +717,7 @@ def test_a_formula_decision_covers_only_its_comparison_s_formula_item():
 
 def test_a_missing_filter_in_cause_is_decided_across_the_view():
     # As triage writes it: a comparison it was found on, and the sheet filter
-    # as its proven cause.
+    # as its explained cause.
     item = {
         "id": "filter:Exclude Future", "kind": "gap", "suggestion": "cause",
         "comparison": "ada", "stub": {"missing_filter": "Exclude Future"},
@@ -786,7 +786,7 @@ from cube_validation import sort as sort_mod  # noqa: E402
 NO_SECTION = "score has no section on the anchor date"
 LATE = "score dated after week 20250701"
 CAUSE_FPS = {"enrollment": {"cube": "c1", "dashboard": "d1"}}
-PROOF = {"kind": "query", "path": "proofs/v/enrollment__dashboard_only.sql",
+PROOF = {"kind": "query", "path": "explanations/v/enrollment__dashboard_only.sql",
          "fingerprint": "p1"}  # fmt: skip
 
 
@@ -918,7 +918,11 @@ def test_a_split_group_is_decided_only_once_every_cause_is():
     "existing, entry, match",
     [
         (_existing(call="fix_cube", task="#1"), {}, "decided fix_cube"),
-        (_existing(proof="old", answer="fix_cube"), {}, "answered.*proof changed"),
+        (
+            _existing(proof="old", answer="fix_cube"),
+            {},
+            "answered.*explanation changed",
+        ),
         (_existing(cube="old", answer="deliberate"), {}, "answered.*SQL changed"),
         (_existing(id="taken", label="other"), {"id": "taken"}, "already has"),
     ],
@@ -935,7 +939,8 @@ def test_cause_approvals_refuse_bad_batches():
     one = _cause_item("k1", _cause_entry(NO_SECTION))
     two = _cause_item("k2", _cause_entry(NO_SECTION))
     other_proof = _cause_item("k3", _cause_entry(NO_SECTION),
-                              proof={**PROOF, "path": "proofs/v/x.sql", "fingerprint": "p9"})  # fmt: skip
+                              proof={**PROOF, "path": "explanations/v/x.sql",
+                                     "fingerprint": "p9"})  # fmt: skip
     blank = _cause_item("k4", _cause_entry(""))
     split = _cause_item("k5", _cause_entry(NO_SECTION), _cause_entry(LATE))
     unproven = {**_cause_item("k6", _cause_entry(NO_SECTION)), "proof": None}
@@ -946,11 +951,11 @@ def test_cause_approvals_refuse_bad_batches():
         ([_ok("a", "k1"), _ok("b", "k2", call="deliberate")], [one, two], "domain_owner"),
         ([_ok("a", "k1"), _ok("b", "k1")], [one], "twice"),
         ([_ok("a", "k1"), _ok("b", "k1", cause=NO_SECTION)], [one], "twice"),
-        ([_ok("a", "k1")], [one, other_proof], "2 proof"),
+        ([_ok("a", "k1")], [one, other_proof], "2 explanation"),
         ([_ok("a", "k4")], [blank], "no words"),
         ([_ok("a", "k5")], [split], "2 causes; approve each"),
         ([_ok("a", "k5", cause="nothing like it")], [split], "has no cause"),
-        ([_ok("a", "k6")], [unproven], "no proof decides"),
+        ([_ok("a", "k6")], [unproven], "no explanation decides"),
         ([_ok("a", "k7")], [waiting], "still in `investigate`"),
     ]:  # fmt: skip
         with pytest.raises(AnswerError, match=match):
@@ -976,7 +981,7 @@ def _review(groups, items, decisions, runs_extra=()):
 
 
 def _ddi():
-    """3 schools x 2 proven causes: each school has a group of each cause."""
+    """3 schools x 2 explained causes: each school has a group of each cause."""
     groups = [
         Group("enrollment", (("region", s), ("grade_level", grade)),
               "dashboard_only", 30, 12)
@@ -1047,8 +1052,8 @@ def test_a_long_body_moves_the_reproduce_blocks_to_comments(monkeypatch):
     for q in questions:
         q["reproduce"] = {
             "queries": [{"bucket": "C1", "sql": "SELECT 1 AS n_rows" + " " * 400}],
-            "proofs": [], "cube": [], "expires": "2026-11-06",
-            "after": ["run v.yml", "triage v.yml"],
+            "explanations": [], "cube": [], "expires": "2026-11-06",
+            "after": ["compare v.yml", "sort v.yml"],
         }  # fmt: skip
     inline = render_review_issue("Registrar", [run], DEFS, questions, causes, [])
     # Every block fits 1 comment, but not the body and a block together.
@@ -1256,13 +1261,13 @@ def _ask(proofs):
 
 
 def _stored_proof(tmp_path, reproduce):
-    directory = tmp_path / "proofs" / "enrollment"
+    directory = tmp_path / "explanations" / "enrollment"
     directory.mkdir(parents=True)
     path = explain_mod.proof_path(directory, "enrollment", "cube_only")
     path.write_text(
         explain_mod.compose({"C1": ("dashboard", "drops WPP")}, PROOF_SQL, reproduce)
     )
-    return "proofs/enrollment/enrollment__cube_only.sql"
+    return "explanations/enrollment/enrollment__cube_only.sql"
 
 
 def test_a_cause_reproduces_through_cube_a_count_query_and_the_proof(tmp_path):
@@ -1278,22 +1283,21 @@ def test_a_cause_reproduces_through_cube_a_count_query_and_the_proof(tmp_path):
     assert query["measures"] == ["enrollment.student_count"]
     assert {"member": "enrollment.grade_level", "operator": "equals",
             "values": ["7"]} in query["filters"]  # fmt: skip
-    (proof,) = part["proofs"]
+    (proof,) = part["explanations"]
     assert proof["reproduce"] == LIVE
-    assert proof["confirm"] == (
-        "triage confirm src/cube/validation/e.yml --comparison enrollment "
-        "--bucket cube_only"
+    assert proof["explain"] == (
+        "explain src/cube/validation/e.yml --comparison enrollment --bucket cube_only"
     )
     assert proof["after"] == [
-        "run src/cube/validation/e.yml",
-        "triage src/cube/validation/e.yml",
+        "compare src/cube/validation/e.yml",
+        "sort src/cube/validation/e.yml",
     ]
     assert proof["url"] == f"https://x/blob/b/dir/{path}"
 
     block = merged_reproduce([part])
     assert block["queries"] == [{"bucket": "C1", "sql": LIVE}]
-    assert block["proofs"] == [
-        {"bucket": "C1", "query": 0, "path": path, "confirm": [proof["confirm"]]},
+    assert block["explanations"] == [
+        {"bucket": "C1", "query": 0, "path": path, "explain": [proof["explain"]]},
     ]  # fmt: skip
     assert block["blob"] == "https://x/blob/b/dir"
     text = "\n".join(_reproduce_lines("Q1", block))
@@ -1309,7 +1313,7 @@ def test_a_cause_reproduces_through_cube_a_count_query_and_the_proof(tmp_path):
 
 
 def test_a_reproduce_block_edited_after_confirm_is_checked_before_it_posts(tmp_path):
-    # Comment lines never stale a proof, so `review` checks the block again.
+    # Comment lines never stale an explanation, so `ask-owner` checks the block again.
     path = _stored_proof(tmp_path, {"C1": "SELECT * FROM d.t"})
     source = ProofSource("v.yml", tmp_path)
 
@@ -1317,7 +1321,7 @@ def test_a_reproduce_block_edited_after_confirm_is_checked_before_it_posts(tmp_p
         "enrollment", _ask(((path, "C1"),)), _run([]), _cause_cfg(), source, START
     )
 
-    assert part["proofs"][0]["reproduce"] is None
+    assert part["explanations"][0]["reproduce"] is None
 
 
 def test_a_cause_with_no_reproduce_block_says_so(tmp_path):
@@ -1328,7 +1332,7 @@ def test_a_cause_with_no_reproduce_block_says_so(tmp_path):
         "enrollment", _ask(((path, "C1"),)), _run([]), _cause_cfg(), source, START
     )
 
-    assert part["cube"] is None and part["proofs"][0]["reproduce"] is None
+    assert part["cube"] is None and part["explanations"][0]["reproduce"] is None
     block = merged_reproduce([part])
     assert block["queries"] == [] and block["cube"] == []
     text = "\n".join(_reproduce_lines("Q2", block))

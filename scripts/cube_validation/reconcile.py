@@ -16,7 +16,7 @@ from typing import Any, Literal
 from .config import ColumnPair, Comparison, RowSpec
 
 BUCKETS = ("match", "value_differs", "dims_differ", "dashboard_only", "cube_only")
-# The buckets of rows the 2 sides do not agree on: what a run saves for proofs.
+# The buckets of rows the 2 sides do not agree on: what a run saves for explanations.
 UNMATCHED = BUCKETS[1:]
 _RN = "__rn"
 _IN = "__in"
@@ -58,7 +58,7 @@ class Group:
 
 @dataclass(frozen=True)
 class Gap:
-    """A sheet field with no Cube member, across the view's proven sheets.
+    """A sheet field with no Cube member, across the view's rebuilt sheets.
 
     `kind` is `cut` (on a shelf) or `filter`. `restricting` marks a filter set
     to chosen values rather than All on at least one sheet.

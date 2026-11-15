@@ -1,4 +1,4 @@
-"""A run's progress in its run folder, so a stopped `run` can resume.
+"""A run's progress in its run folder, so a stopped `compare` can resume.
 
 `run-state.json` says which moment the folder's run reads, whether it finished,
 and what each process spent. `checkpoints/` holds one file per comparison it
@@ -22,7 +22,8 @@ from .moment import Build
 
 STATE = "run-state.json"
 DIR = "checkpoints"
-# A triage's finished proofs (`explain_progress.FILE`); cleared with the run it read.
+# A sort's finished explanations (`explain_progress.FILE`); cleared with the run
+# it read.
 TRIAGE_PROGRESS = "triage-progress.json"
 
 
@@ -79,7 +80,7 @@ def start(folder: Path, moment: Build, process: str, fact: str = "") -> None:
 
 
 def finish(folder: Path) -> None:
-    """Mark the folder's run finished: a later `run` does not resume it."""
+    """Mark the folder's run finished: a later `compare` does not resume it."""
     state = _read_state(folder) or {}
     _write_json(folder / STATE, {**state, "finished": True})
 

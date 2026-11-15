@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from cube_validation import latest
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation.config import Comparison, Proof
+from cube_validation.config import Comparison, RebuildCheck
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.moment import Build
@@ -58,12 +58,14 @@ def test_a_result_missing_a_key_is_skipped(tmp_path, capsys):
 
 
 def test_the_entry_fingerprint_changes_with_the_rebuild_check():
-    proof = Proof(fingerprint="abc", cells=2, proven_at="2026-10-26T12:00:00+00:00")
-    comparison = Comparison(id="c", measure="m", proof=proof)
+    proof = RebuildCheck(
+        fingerprint="abc", cells=2, matched_at="2026-10-26T12:00:00+00:00"
+    )
+    comparison = Comparison(id="c", measure="m", rebuild_check=proof)
 
     same = latest.entry_fingerprint(replace(comparison))
     rebuilt = latest.entry_fingerprint(
-        replace(comparison, proof=replace(proof, fingerprint="abd"))
+        replace(comparison, rebuild_check=replace(proof, fingerprint="abd"))
     )
     edited = latest.entry_fingerprint(replace(comparison, measure="n"))
 

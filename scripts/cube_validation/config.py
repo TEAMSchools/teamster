@@ -19,7 +19,7 @@ from typing import Any, NoReturn
 import yaml
 
 CALLS = ("deliberate", "fix_dashboard", "fix_cube", "fix_source", "domain_owner")
-# A domain-owner decision's task is the review issue, which `review` drafts
+# A domain-owner decision's task is the review issue, which `ask-owner` drafts
 # from the decisions, so its task is filled in after the issue posts. A
 # `fix_source` task is the issue opened for the source data's owner.
 CALLS_NEEDING_TASK = ("fix_dashboard", "fix_cube", "fix_source")
@@ -62,8 +62,9 @@ SCOPE_OPERATORS = ("equals", "not_equals", "gt", "gte", "lt", "lte", "set")
 COMPARE_OPERATORS = ("gt", "gte", "lt", "lte")
 # A dashboard filter's days past the coming Sunday, in place of `values`.
 WEEK_END_KEY = "days_from_week_end"
-# How `prove` treats export rows that share every mapped dim: `refuse` fails
-# the proof; `sum` adds them, which is right only for a field that adds up.
+# How `rebuild-sheet` treats export rows that share every mapped dim: `refuse`
+# fails the rebuild check; `sum` adds them, which is right only for a field
+# that adds up.
 SPLIT_ROWS = ("refuse", "sum")
 # How `rows.reduce` cuts the dashboard rows to one per grain key: `latest`
 # keeps the row with the latest value of the `by` column.
@@ -95,7 +96,7 @@ class RowSpec:
     values: list[ColumnPair]
     # Dashboard-side row filters (`dashboard_filters` entries) for the
     # reconcile's dashboard rows only, mirroring a `scope` Cube applies: the
-    # probe and the cells keep every row, so a cell with no rows in scope
+    # sheet query and the cells keep every row, so a cell with no rows in scope
     # still shows (blank) on both.
     dashboard_scope: list[dict[str, Any]] = field(default_factory=list)
     # `{rule, by}`: one dashboard row per grain key before the reconcile, for a
@@ -104,31 +105,31 @@ class RowSpec:
 
 
 @dataclass(frozen=True)
-class Proof:
+class RebuildCheck:
     fingerprint: str
     cells: Any
-    proven_at: str
+    matched_at: str
     workbook_updated_at: str = ""
-    probe_fingerprint: str = ""
-    # `tableau.source_fingerprint` of the sheet; "" when the proof predates it.
+    sheet_query_fingerprint: str = ""
+    # `tableau.source_fingerprint` of the sheet; "" when the check predates it.
     source_fingerprint: str = ""
-    # The cut labels the REST export proved; None when the proof predates them.
+    # The cut labels the REST export matched; None when the check predates them.
     cuts: list[str] | None = None
-    # Total rows the export showed and the proof skipped; None when the proof
+    # Total rows the export showed and the check skipped; None when the check
     # predates the count.
     totals_skipped: int | None = None
     # Sheet fields with no Cube member, by caption: cuts on the sheet's shelves,
-    # filters, and the filters that narrow the sheet now. None when the proof
+    # filters, and the filters that narrow the sheet now. None when the check
     # predates them.
     missing_cuts: list[str] | None = None
     missing_filters: list[str] | None = None
     restricting_filters: list[str] | None = None
     # Why a missing field needs no Cube member, by caption: `copy of <mapped
     # caption>` or `display switch on <parameter caption>`; and the datasource
-    # column behind a plain missing field. None when the proof predates them.
+    # column behind a plain missing field. None when the check predates them.
     filter_notes: dict[str, str] | None = None
     missing_columns: dict[str, str] | None = None
-    # The reshape the proof's copy carried; the probe fingerprint covers it.
+    # The reshape the rebuild copy carried; the sheet query fingerprint covers it.
     shelves: dict[str, Any] | None = None
 
 
@@ -140,8 +141,8 @@ class Comparison:
     workbook: str | None = None
     sheet: str | None = None
     dashboard_view: str | None = None
-    probe: str | None = None
-    probe_sql: str | None = None
+    sheet_query: str | None = None
+    sheet_query_sql: str | None = None
     decimals: int | None = None
     dims: list[ColumnPair] = field(default_factory=list)
     filters: dict[str, ColumnPair] = field(default_factory=dict)
@@ -149,7 +150,7 @@ class Comparison:
     cuts: list[dict[str, Any]] = field(default_factory=list)
     scope: list[dict[str, Any]] = field(default_factory=list)
     rows: RowSpec | None = None
-    proof: Proof | None = None
+    rebuild_check: RebuildCheck | None = None
     # The sheet field to compare, by its exported caption: a column header, or
     # a `Measure Names` value in a long export.
     sheet_field: str | None = None
@@ -160,12 +161,12 @@ class Comparison:
     # What each side counts, in a sentence or code list, for a domain owner to
     # compare in the review issue: `{dashboard: ..., cube: ...}`.
     definitions: dict[str, str] = field(default_factory=dict)
-    # Workbook parameters set on the proof copy, `{caption: member}`, for a
+    # Workbook parameters set on the rebuild copy, `{caption: member}`, for a
     # field the sheet shows only behind a parameter value.
     parameters: dict[str, str] = field(default_factory=dict)
-    # A reshape of the proof copy's rows and columns, for a sheet field Cube has
+    # A reshape of the rebuild copy's rows and columns, for a sheet field Cube has
     # no member for: `{drop: [caption], add: {rows: [caption], cols: [caption]}}`.
-    # Tableau recomputes the measure at the new grain, so the proof covers that
+    # Tableau recomputes the measure at the new grain, so the check covers that
     # grain, not the sheet's own.
     shelves: dict[str, Any] = field(default_factory=dict)
     # Columns computed over `dashboard_view`, `{name: SQL expression}`, for a
@@ -193,9 +194,10 @@ def row_population(comparison: Comparison) -> str | None:
     """A key shared by the comparisons that reconcile the same rows, or None.
 
     Comparisons with the same key usually hold the same unmatched rows,
-    grouped by their own `dims`, so one proof can classify them all. A dim
-    from another cube adds a join that can drop or repeat rows; a proof run
-    on each comparison's own rows refuses then, as for any proof.
+    grouped by their own `dims`, so one explanation can classify them all. A
+    dim from another cube adds a join that can drop or repeat rows; an
+    explanation run on each comparison's own rows refuses then, as for any
+    explanation.
     """
     if comparison.rows is None:
         return None
@@ -217,16 +219,16 @@ class Decision:
     missing_cut: str = ""
     missing_filter: str = ""
     # Covers the row groups whose triage cause names this `{side, label}`, in
-    # place of `group`: `label` is the words of a stored proof's bucket, with
+    # place of `group`: `label` is the words of a stored explanation's bucket, with
     # each number of 5 or more digits written `<n>`. Which groups it covers is
     # read from the latest triage, never stored here; `fingerprints.proof` is
-    # the proof file's.
+    # the explanation file's.
     cause: dict[str, Any] = field(default_factory=dict)
     # Covers the comparison's formula difference, in place of `group`: its
     # differing cells that hold no unmatched row, whichever they are in a run.
     formula: bool = False
     # The call the owner answered a cause decision with; set by
-    # `record-answers`, so `review` asks it no more.
+    # `record-answers`, so `ask-owner` asks it no more.
     answer: str = ""
 
 
@@ -240,7 +242,7 @@ class ViewConfig:
     decisions: list[Decision] = field(default_factory=list)
     tasks: dict[str, str] = field(default_factory=dict)
     # Facts other than `fact` that the view's members read. Cube reads them at
-    # the build end like `fact`; `run` refuses one that changed during the build.
+    # the build end like `fact`; `compare` refuses one that changed during the build.
     also_facts: list[str] = field(default_factory=list)
 
 
@@ -362,11 +364,24 @@ def _reduce(reader: _Reader) -> dict[str, str]:
     return {"rule": rule, "by": by}
 
 
+# Comparison keys renamed to plain words; an old key is refused, never read.
+RENAMED_KEYS = {
+    "probe": "sheet_query",
+    "probe_sql": "sheet_query_sql",
+    "proof": "rebuild_check",
+}
+
+
 def _comparison(reader: _Reader) -> Comparison:
-    probe = reader.get("probe", str)
-    probe_sql = reader.get("probe_sql", str)
-    if probe and probe_sql:
-        reader.fail("probe", "set either probe or probe_sql, not both")
+    for old, new in RENAMED_KEYS.items():
+        if old in reader.data:
+            reader.fail(old, f"renamed; write it as {new}")
+    sheet_query = reader.get("sheet_query", str)
+    sheet_query_sql = reader.get("sheet_query_sql", str)
+    if sheet_query and sheet_query_sql:
+        reader.fail(
+            "sheet_query", "set either sheet_query or sheet_query_sql, not both"
+        )
 
     filters = {}
     for caption, spec in reader.get("filters", dict, default={}).items():
@@ -387,28 +402,30 @@ def _comparison(reader: _Reader) -> Comparison:
             reduce=_reduce(rows_reader),
         )
 
-    proof = None
-    if reader.data.get("proof") is not None:
-        proof_reader = reader.child("proof", reader.data["proof"])
-        cuts = proof_reader.get("cuts", list)
-        totals_skipped = proof_reader.get("totals_skipped", int)
+    rebuild_check = None
+    if reader.data.get("rebuild_check") is not None:
+        check_reader = reader.child("rebuild_check", reader.data["rebuild_check"])
+        cuts = check_reader.get("cuts", list)
+        totals_skipped = check_reader.get("totals_skipped", int)
         if totals_skipped is not None and totals_skipped < 0:
-            proof_reader.fail("totals_skipped", "must be 0 or more")
-        proof = Proof(
+            check_reader.fail("totals_skipped", "must be 0 or more")
+        rebuild_check = RebuildCheck(
             cuts=None if cuts is None else [str(c) for c in cuts],
-            fingerprint=proof_reader.get("fingerprint", str, required=True),
-            cells=proof_reader.data.get("cells"),
-            proven_at=str(proof_reader.data.get("proven_at", "")),
-            workbook_updated_at=str(proof_reader.data.get("workbook_updated_at", "")),
-            probe_fingerprint=str(proof_reader.data.get("probe_fingerprint", "")),
-            source_fingerprint=str(proof_reader.data.get("source_fingerprint", "")),
+            fingerprint=check_reader.get("fingerprint", str, required=True),
+            cells=check_reader.data.get("cells"),
+            matched_at=str(check_reader.data.get("matched_at", "")),
+            workbook_updated_at=str(check_reader.data.get("workbook_updated_at", "")),
+            sheet_query_fingerprint=str(
+                check_reader.data.get("sheet_query_fingerprint", "")
+            ),
+            source_fingerprint=str(check_reader.data.get("source_fingerprint", "")),
             totals_skipped=totals_skipped,
-            missing_cuts=_captions(proof_reader, "missing_cuts"),
-            missing_filters=_captions(proof_reader, "missing_filters"),
-            restricting_filters=_captions(proof_reader, "restricting_filters"),
-            filter_notes=_caption_map(proof_reader, "filter_notes"),
-            missing_columns=_caption_map(proof_reader, "missing_columns"),
-            shelves=proof_reader.get("shelves", dict),
+            missing_cuts=_captions(check_reader, "missing_cuts"),
+            missing_filters=_captions(check_reader, "missing_filters"),
+            restricting_filters=_captions(check_reader, "restricting_filters"),
+            filter_notes=_caption_map(check_reader, "filter_notes"),
+            missing_columns=_caption_map(check_reader, "missing_columns"),
+            shelves=check_reader.get("shelves", dict),
         )
 
     dims = _pairs(reader, "dims")
@@ -425,8 +442,8 @@ def _comparison(reader: _Reader) -> Comparison:
         workbook=reader.get("workbook", str),
         sheet=reader.get("sheet", str),
         dashboard_view=_table_ref(reader, "dashboard_view"),
-        probe=probe,
-        probe_sql=probe_sql,
+        sheet_query=sheet_query,
+        sheet_query_sql=sheet_query_sql,
         decimals=reader.get("decimals", int),
         dims=dims,
         filters=filters,
@@ -434,7 +451,7 @@ def _comparison(reader: _Reader) -> Comparison:
         cuts=reader.get("cuts", list, default=[]),
         scope=[_scope_entry(r) for r in _list_of(reader, "scope")],
         rows=rows,
-        proof=proof,
+        rebuild_check=rebuild_check,
         sheet_field=reader.get("sheet_field", str),
         split_rows=split_rows,
         dashboard_filters=[
@@ -479,8 +496,8 @@ def _shelves(
 ) -> dict[str, Any]:
     """Read `shelves`; each added caption must name a dim.
 
-    `clear_filters` names sheet filters the proof copy resets to keep every
-    member, so the proof covers values the sheet filters out.
+    `clear_filters` names sheet filters the rebuild copy resets to keep
+    every member, so the check covers values the sheet filters out.
 
     A caption names a dim when a `filters:` caption maps it to the dim's
     dashboard column, or when it is that column's name, as is or in Tableau's
@@ -796,16 +813,17 @@ def load_view_config(path: Path) -> ViewConfig:
     )
 
 
-def write_proof(path: Path, comparison_id: str, proof: dict[str, Any]) -> None:
-    """Rewrite one comparison's `proof:` key, leaving the rest of the file as is.
+def write_rebuild_check(path: Path, comparison_id: str, check: dict[str, Any]) -> None:
+    """Rewrite one comparison's `rebuild_check:` key, leaving the rest of the
+    file as is.
 
     The edit is line-based so comments and layout elsewhere survive.
 
     Args:
         path: The validation file.
         comparison_id: The `id` of the comparison to update.
-        proof: The new proof (`fingerprint`, `cells`, `proven_at`,
-            `workbook_updated_at`, `probe_fingerprint`, `cuts`,
+        check: The new rebuild check (`fingerprint`, `cells`, `matched_at`,
+            `workbook_updated_at`, `sheet_query_fingerprint`, `cuts`,
             `totals_skipped`, `missing_cuts`, `missing_filters`,
             `restricting_filters`).
 
@@ -841,35 +859,35 @@ def write_proof(path: Path, comparison_id: str, proof: dict[str, Any]) -> None:
             end = i
             break
 
-    proof_at = next(
+    check_at = next(
         (
             i
             for i in range(start + 1, end)
-            if re.match(rf"\s{{{key_indent}}}proof:", lines[i])
+            if re.match(rf"\s{{{key_indent}}}rebuild_check:", lines[i])
         ),
         None,
     )
-    block = yaml.safe_dump(proof, default_flow_style=False, sort_keys=False)
-    new = [" " * key_indent + "proof:"] + [
+    block = yaml.safe_dump(check, default_flow_style=False, sort_keys=False)
+    new = [" " * key_indent + "rebuild_check:"] + [
         " " * (key_indent + 2) + line for line in block.splitlines()
     ]
 
-    if proof_at is None:
+    if check_at is None:
         # Insert after the last non-blank line of the comparison.
         insert = end
         while insert > start + 1 and not lines[insert - 1].strip():
             insert -= 1
         lines[insert:insert] = new
     else:
-        proof_end = proof_at + 1
-        while proof_end < end and (
-            not lines[proof_end].strip()
-            or len(lines[proof_end]) - len(lines[proof_end].lstrip()) > key_indent
+        check_end = check_at + 1
+        while check_end < end and (
+            not lines[check_end].strip()
+            or len(lines[check_end]) - len(lines[check_end].lstrip()) > key_indent
         ):
-            proof_end += 1
-        while not lines[proof_end - 1].strip():
-            proof_end -= 1
-        lines[proof_at:proof_end] = new
+            check_end += 1
+        while not lines[check_end - 1].strip():
+            check_end -= 1
+        lines[check_at:check_end] = new
 
     path.write_text("\n".join(lines) + "\n")
 
@@ -947,7 +965,7 @@ def _holds(d: Decision, asked: dict[str, Any]) -> bool:
 def write_decision(path: Path, decision: dict[str, Any]) -> None:
     """Replace the `decisions:` item with `decision`'s id, or append it.
 
-    The edit is line-based like `write_proof`, so comments and layout outside
+    The edit is line-based like `write_rebuild_check`, so comments and layout outside
     that item survive. Values YAML would rewrite (`9.50`, `010`, `no`) are
     written quoted.
 

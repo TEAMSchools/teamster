@@ -1,10 +1,10 @@
-"""Prove row groups with stored classification queries: `triage confirm`.
+"""Explain row groups with stored classification queries: `explain`.
 
-The trace only leads. A person proves causes with ONE classification query per
+The trace only leads. A person explains causes with ONE classification query per
 comparison and bucket: a `CASE` in lineage order that names each unmatched
 row's first failing model predicate, with an `UNEXPLAINED` else-bucket. It is
 stored as SQL only, with no data, at
-`<validation dir>/proofs/<view>/<comparison>__<bucket>.sql`, under a leading
+`<validation dir>/explanations/<view>/<comparison>__<bucket>.sql`, under a leading
 comment block that maps each bucket to its side and plain words:
 
     -- cause C1 = dashboard: WPP assessments are left off the dashboard
@@ -14,11 +14,11 @@ the placeholder `{unmatched}`, which the tool fills from the run's reconcile:
 `__row` (a row id), `item_key`, `side`, the group-by columns, the grain under
 its Cube names, and `__rn` (the row's duplicate number on its grain). It
 returns exactly `__row, cause`, one row per unmatched row. The tool counts:
-its own outer query joins the proof back to `{unmatched}` and returns only
-item keys, cause literals and counts, refusing a row the proof drops or
-repeats and a cause that is no string literal of the proof. Every `triage`
-re-runs every stored proof on the current run's rows; an item whose rows a
-proof fully explains (no `UNEXPLAINED` row) goes to `cause`. A cell set goes
+its own outer query joins the explanation back to `{unmatched}` and returns only
+item keys, cause literals and counts, refusing a row the explanation drops or
+repeats and a cause that is no string literal of the explanation. Every `sort`
+re-runs every stored explanation on the current run's rows; an item whose rows an
+explanation fully explains (no `UNEXPLAINED` row) goes to `cause`. A cell set goes
 to `cause` when every group with a row in each differing cell is in `cause` or
 closed by a decision (`coverage`).
 """
@@ -58,7 +58,7 @@ from .report import RunResult, Ticker, mask, shown_counts
 from .timetravel import PROJECT, utc_literal
 from .trace import TIMEOUT_S, TRACED, _failure
 
-# The buckets a stored proof classifies: the one-sided rows the trace leads on,
+# The buckets a stored explanation classifies: the one-sided rows the trace leads on,
 # and rows both sides hold whose values differ.
 PROVABLE = (*TRACED, "value_differs", "dims_differ")
 # The buckets of rows both sides hold, which each side may file in its own cell.
@@ -73,9 +73,9 @@ _NOT_AN_ID = re.compile(
 UNEXPLAINED = "UNEXPLAINED"
 COLUMNS = ("__row", "cause")
 SIDES = ("cube", "dashboard")
-# Trunk lints and formats every committed `.sql` file; a proof is not dbt SQL,
+# Trunk lints and formats every committed `.sql` file; an explanation is not dbt SQL,
 # and a reformat would only churn it. The sql-banned-syntax opt-out is written
-# only when the proof uses what it bans: an unused one trips
+# only when the explanation uses what it bans: an unused one trips
 # `trunk/ignore-does-nothing`.
 HEADER = (
     "-- trunk-ignore-all(sqlfluff)",
@@ -95,9 +95,21 @@ _STRINGS = (
 )
 
 
-def proofs_dir(view_file: Path, view: str) -> Path:
-    """Where a view's proofs live: beside its validation file."""
-    return view_file.parent / "proofs" / view
+def explanations_dir(view_file: Path, view: str) -> Path:
+    """Where a view's explanations live: beside its validation file.
+
+    Raises:
+        pipeline.Refusal: The view's explanations are still in the old
+            `proofs/<view>` folder and `explanations/<view>` does not exist;
+            reading neither would silently skip them.
+    """
+    found = view_file.parent / "explanations" / view
+    old = view_file.parent / "proofs" / view
+    if old.exists() and not found.exists():
+        raise pipeline.Refusal(
+            f"rename {old} to {found} (git mv); stored explanations moved"
+        )
+    return found
 
 
 def proof_path(directory: Path, comparison: str, bucket: str) -> Path:
@@ -105,8 +117,8 @@ def proof_path(directory: Path, comparison: str, bucket: str) -> Path:
 
 
 @dataclass(frozen=True)
-class Proof:
-    """One stored proof: its bucket map and its SQL."""
+class Explanation:
+    """One stored explanation: its bucket map and its SQL."""
 
     path: Path
     comparison: str
@@ -114,7 +126,7 @@ class Proof:
     causes: dict[str, tuple[str, str]]
     body: str
     # Per cause bucket, an aggregate query on today's tables an owner can run
-    # (`-- reproduce <bucket>:`); not part of what the proof proves.
+    # (`-- reproduce <bucket>:`); not part of what the explanation explains.
     reproduce: dict[str, str] = field(default_factory=dict)
 
     @property
@@ -132,7 +144,7 @@ class Proof:
 
 
 def fingerprint(causes: dict[str, tuple[str, str]], body: str) -> str:
-    """The proof's bucket map and its SQL, blind to comments, case and spacing."""
+    """The explanation's bucket map and its SQL, blind to comments, case and spacing."""
     text = json.dumps(
         [
             sorted((b, list(v)) for b, v in causes.items()),
@@ -143,7 +155,8 @@ def fingerprint(causes: dict[str, tuple[str, str]], body: str) -> str:
 
 
 def file_fingerprint(path: Path) -> str | None:
-    """A stored proof file's fingerprint, or None when it is gone or unreadable."""
+    """A stored explanation file's fingerprint, or None when it is gone or
+    unreadable."""
     try:
         return read_proof(path).fingerprint
     except (OSError, pipeline.Refusal):
@@ -155,7 +168,7 @@ def compose(
     body: str,
     reproduce: dict[str, str] | None = None,
 ) -> str:
-    """The proof file: the lint opt-outs, its bucket map, each cause's
+    """The explanation file: the lint opt-outs, its bucket map, each cause's
     reproduce query as comment lines, then the SQL."""
     block = [f"-- cause {b} = {side}: {words}" for b, (side, words) in causes.items()]
     for b, sql in (reproduce or {}).items():
@@ -167,7 +180,7 @@ def compose(
 
 
 def split_block(text: str) -> tuple[dict[str, tuple[str, str]], str]:
-    """A proof's leading `-- cause` block and the SQL after it.
+    """An explanation's leading `-- cause` block and the SQL after it.
 
     The lint opt-outs, blank lines and `-- reproduce` blocks above or inside
     the block are skipped (`split_proof` reads those too).
@@ -182,7 +195,7 @@ def split_block(text: str) -> tuple[dict[str, tuple[str, str]], str]:
 def split_proof(
     text: str,
 ) -> tuple[dict[str, tuple[str, str]], dict[str, str], str]:
-    """A proof's `-- cause` block, its `-- reproduce <bucket>:` queries, its SQL.
+    """An explanation's `-- cause` block, its `-- reproduce <bucket>:` queries, its SQL.
 
     A reproduce query is the comment lines after its header, each without
     its `--` and up to 2 spaces, up to the next header or SQL line.
@@ -264,7 +277,7 @@ def _checked(bucket: str, side: str, words: str) -> tuple[str, str, str]:
     if id_like(words) or _spaced_id(words):
         raise pipeline.Refusal(
             f"bucket {bucket}: the words hold an email or an ID-like number; "
-            "a proof is committed, so name no student or staff member"
+            "an explanation is committed, so name no student or staff member"
         )
     return bucket, side, words
 
@@ -278,15 +291,15 @@ def parse_cause_flag(flag: str) -> tuple[str, str, str]:
     return _checked(bucket.strip(), side.strip(), words)
 
 
-def read_proof(path: Path) -> Proof:
-    """A stored proof, named `<comparison>__<bucket>.sql`."""
+def read_proof(path: Path) -> Explanation:
+    """A stored explanation, named `<comparison>__<bucket>.sql`."""
     comparison, sep, bucket = path.stem.rpartition("__")
     if not sep or bucket not in PROVABLE:
         raise pipeline.Refusal(
-            f"{path.name}: name a proof <comparison>__<{'|'.join(PROVABLE)}>.sql"
+            f"{path.name}: name an explanation <comparison>__<{'|'.join(PROVABLE)}>.sql"
         )
     causes, reproduce, body = split_proof(path.read_text())
-    return Proof(path, comparison, bucket, causes, body, reproduce)
+    return Explanation(path, comparison, bucket, causes, body, reproduce)
 
 
 # --- the checks -------------------------------------------------------------------
@@ -345,7 +358,7 @@ def _identifies(column: str, student: set[str]) -> bool:
     id, key or identifier of a student or staff member, or any `_number`
     column that does not number a category (`_CATEGORIES`, such as
     `module_number` or a band number). Another id (`assessment_id`) names no
-    one, so a proof may compare it with a literal.
+    one, so an explanation may compare it with a literal.
     """
     name = column.lower()
     person = any(word in name for word in _PEOPLE)
@@ -415,7 +428,7 @@ def _scan_text(body: str) -> None:
         tokens = sqlglot.Dialect.get_or_raise("bigquery").tokenize(body)
     except SqlglotError as exc:
         raise pipeline.Refusal(
-            f"the proof does not parse as BigQuery SQL: {type(exc).__name__}"
+            f"the explanation does not parse as BigQuery SQL: {type(exc).__name__}"
         ) from exc
     for token in tokens:
         texts = list(token.comments)
@@ -423,23 +436,24 @@ def _scan_text(body: str) -> None:
             texts.append(token.text)
         if any(id_like(t) for t in texts):
             raise pipeline.Refusal(
-                "the proof holds an email or an ID-like number in a comment or "
-                "a string; a proof is committed, so name no student or staff member"
+                "the explanation holds an email or an ID-like number in a comment "
+                "or a string; an explanation is committed, so name no student or "
+                "staff member"
             )
 
 
 def check_sql(body: str, grain: set[str], student: set[str] = frozenset()) -> set[str]:
-    """Refuse a proof that could return or name a row, before it runs.
+    """Refuse an explanation that could return or name a row, before it runs.
 
     Args:
-        body: The proof's SQL, without its `-- cause` block.
+        body: The explanation's SQL, without its `-- cause` block.
         grain: Every grain column name, lowercased.
         student: The student column's names, lowercased. No literal may be
             compared with them, nor with a column `_identifies` names a
             person by; `cause` may select no identifier column at all.
 
     Returns:
-        The proof's string literals: the only values a `cause` may take.
+        The explanation's string literals: the only values a `cause` may take.
 
     Raises:
         pipeline.Refusal: No `{unmatched}`; SQL that does not parse; an
@@ -449,18 +463,18 @@ def check_sql(body: str, grain: set[str], student: set[str] = frozenset()) -> se
             string; or a literal compared with an identifying column.
     """
     if PLACEHOLDER not in body:
-        raise pipeline.Refusal(f"the proof never reads {PLACEHOLDER}")
+        raise pipeline.Refusal(f"the explanation never reads {PLACEHOLDER}")
     _scan_text(body)
     try:
         tree = sqlglot.parse_one(body.replace(PLACEHOLDER, "__u"), read="bigquery")
     except SqlglotError as exc:
         raise pipeline.Refusal(
-            f"the proof does not parse as BigQuery SQL: {type(exc).__name__}"
+            f"the explanation does not parse as BigQuery SQL: {type(exc).__name__}"
         ) from exc
     selects = list(_outer_selects(tree))
     causes: list[exp.Expression] = []
     if not selects:
-        raise pipeline.Refusal("the proof is not a SELECT")
+        raise pipeline.Refusal("the explanation is not a SELECT")
     for select in selects:
         names = []
         for projection in select.expressions:
@@ -468,7 +482,9 @@ def check_sql(body: str, grain: set[str], student: set[str] = frozenset()) -> se
                 isinstance(projection, exp.Column)
                 and isinstance(projection.this, exp.Star)
             ):
-                raise pipeline.Refusal("the proof selects *; return only __row, cause")
+                raise pipeline.Refusal(
+                    "the explanation selects *; return only __row, cause"
+                )
             name = projection.alias_or_name.lower()
             names.append(name)
             value = projection.unalias()
@@ -476,7 +492,7 @@ def check_sql(body: str, grain: set[str], student: set[str] = frozenset()) -> se
                 isinstance(value, exp.Column) and value.name.lower() == "__row"
             ):
                 raise pipeline.Refusal(
-                    f"the proof's __row must be {PLACEHOLDER}'s own __row"
+                    f"the explanation's __row must be {PLACEHOLDER}'s own __row"
                 )
             if name == "cause":
                 causes.append(value)
@@ -484,12 +500,12 @@ def check_sql(body: str, grain: set[str], student: set[str] = frozenset()) -> se
                 c in grain or _id_like(c, student) for c in _selected(value)
             ):
                 raise pipeline.Refusal(
-                    "the proof's cause selects a grain or identifying column; "
+                    "the explanation's cause selects a grain or identifying column; "
                     "name each cause with a string literal"
                 )
         if sorted(names) != sorted(COLUMNS):
             raise pipeline.Refusal(
-                f"the proof returns {len(names)} column(s) other than __row and "
+                f"the explanation returns {len(names)} column(s) other than __row and "
                 "cause; return exactly __row, cause"
             )
     for node in tree.find_all(exp.Predicate):
@@ -500,20 +516,20 @@ def check_sql(body: str, grain: set[str], student: set[str] = frozenset()) -> se
             isinstance(c, exp.Column) and _identifies(c.name, student) for c in leaves
         ) and any(isinstance(c, exp.Literal) for c in leaves):
             raise pipeline.Refusal(
-                "the proof compares an identifying column with a literal: never "
+                "the explanation compares an identifying column with a literal: never "
                 "name a row by its value"
             )
     literals = {lit.this for lit in tree.find_all(exp.Literal) if lit.is_string}
     if not literals:
         raise pipeline.Refusal(
-            "the proof has no string literal; name each cause with one"
+            "the explanation has no string literal; name each cause with one"
         )
     for value in causes:
         _check_default(value)
     for table in _unpinned(tree):
         print(
-            f"warning: the proof reads {table} with no project and dataset, so it "
-            "reads the table as it is now, not as of the run; write it "
+            f"warning: the explanation reads {table} with no project and dataset, "
+            "so it reads the table as it is now, not as of the run; write it "
             "`teamster-332318`.`<dataset>`.`<table>`"
         )
     return literals
@@ -640,23 +656,23 @@ def _check_default(value: exp.Expression) -> None:
 
     if not isinstance(value, exp.Case) or value.this is not None:
         raise pipeline.Refusal(
-            f"the proof's cause must be one CASE WHEN ... THEN '<cause>' ... "
+            f"the explanation's cause must be one CASE WHEN ... THEN '<cause>' ... "
             f"ELSE '{UNEXPLAINED}' END"
         )
     if not all(_is_text(branch.args.get("true")) for branch in value.args["ifs"]):
         raise pipeline.Refusal(
-            "every THEN of the proof's cause must be a quoted cause name: a "
+            "every THEN of the explanation's cause must be a quoted cause name: a "
             "function, nested CASE or column there can hide a catch-all"
         )
     if not _is_text(value.args.get("default"), UNEXPLAINED):
         raise pipeline.Refusal(
-            f"the proof's cause must end in ELSE '{UNEXPLAINED}', so a row of a "
+            f"the explanation's cause must end in ELSE '{UNEXPLAINED}', so a row of a "
             "new cause is never filed under an old one"
         )
 
 
 def _unpinned(tree: exp.Expression) -> list[str]:
-    """Tables the proof names without a project and dataset, CTEs aside."""
+    """Tables the explanation names without a project and dataset, CTEs aside."""
     ctes = {c.alias_or_name.lower() for c in tree.find_all(exp.CTE)}
     out = []
     for t in tree.find_all(exp.Table):
@@ -692,7 +708,7 @@ def unmatched_sql(
         side reads `both`.
     """
     if comparison.rows is None:
-        raise pipeline.Refusal(f"comparison {comparison.id!r} has no rows to prove")
+        raise pipeline.Refusal(f"comparison {comparison.id!r} has no rows to explain")
     dims = pipeline.group_dims(comparison)
     grain = comparison.rows.grain
     whens = []
@@ -726,7 +742,7 @@ def unmatched_sql(
 
 
 def bucket_rows_sql(comparison: Comparison, bucket: str, source: str) -> str:
-    """The bucket's saved rows with every column a proof or item reads.
+    """The bucket's saved rows with every column an explanation or item reads.
 
     `source` holds `reconcile.reconcile_script`'s saved rows. Returns
     `unmatched_sql`'s columns but `item_key`, plus, with group-by columns,
@@ -739,7 +755,7 @@ def bucket_rows_sql(comparison: Comparison, bucket: str, source: str) -> str:
     side may file it under another cut.
     """
     if comparison.rows is None:
-        raise pipeline.Refusal(f"comparison {comparison.id!r} has no rows to prove")
+        raise pipeline.Refusal(f"comparison {comparison.id!r} has no rows to explain")
     if bucket not in reconcile.UNMATCHED:
         raise pipeline.Refusal(f"{bucket!r} is no bucket a run saves")
     side = "d" if bucket == "dashboard_only" else "c"
@@ -795,15 +811,15 @@ def proof_query(
     literals: set[str],
     students: StudentCount | None = None,
 ) -> str:
-    """The proof inside the tool's own counting query.
+    """The explanation inside the tool's own counting query.
 
     Only item keys, cause literals and counts come back: per item and cause,
-    the rows, the rows the proof dropped (`missed`) or repeated (`doubled`),
-    the rows whose cause is no string literal of the proof (`bad`), and the
-    proof's rows with a `__row` `{unmatched}` lacks (`stray`). With
+    the rows, the rows the explanation dropped (`missed`) or repeated (`doubled`),
+    the rows whose cause is no string literal of the explanation (`bad`), and the
+    explanation's rows with a `__row` `{unmatched}` lacks (`stray`). With
     `students`, every row carries `__kind` `count`, and rows of `__kind`
     `students` add per cause, cut (`__cut`, its index) and cell (`__cell`,
-    its dims as JSON) the distinct students the proof gives that cause
+    its dims as JSON) the distinct students the explanation gives that cause
     (`n_students`): counted in BigQuery, never listed.
     """
     allowed = ", ".join(pipeline._lit(v) for v in sorted(literals))
@@ -812,7 +828,7 @@ def proof_query(
     if students is not None:
         return _with_students(head, select, proof, allowed, students)
     return (
-        # trunk-ignore(bandit/B608): the proof is the analyst's read-only SQL, vetted by check_sql; cause literals are quoted by pipeline._lit
+        # trunk-ignore(bandit/B608): the explanation is the analyst's read-only SQL, vetted by check_sql; cause literals are quoted by pipeline._lit
         f"{head}__u AS (\n{select}\n),\n__p AS (\n{proof}\n),\n"
         "__per AS (\n  SELECT __row, COUNT(*) AS __times, "
         f"MIN(IF(cause IN ({allowed}), cause, NULL)) AS cause, "
@@ -864,7 +880,7 @@ def _with_students(
         for j in range(s.cuts)
     ]
     return (
-        # trunk-ignore(bandit/B608): the proof is the analyst's read-only SQL, vetted by check_sql; identifiers come from validated config
+        # trunk-ignore(bandit/B608): the explanation is the analyst's read-only SQL, vetted by check_sql; identifiers come from validated config
         f"{head}__u AS (\n{select}\n),\n__p AS (\n{proof}\n),\n"
         "__per AS (\n  SELECT __row, COUNT(*) AS __times, "
         f"MIN(IF(cause IN ({allowed}), cause, NULL)) AS cause, "
@@ -886,12 +902,12 @@ def _with_students(
 
 
 def cause_students(
-    rows: list[dict], proof: Proof, comparison: Comparison
+    rows: list[dict], proof: Explanation, comparison: Comparison
 ) -> list[dict]:
     """The `students` rows of `proof_query`, as triage keeps them: per cause
     (`sort.cause_key`), cut label and cell (`dims` as [column, value]
-    pairs), `n` distinct students, and the proof's `bucket`. Rows of causes
-    the proof does not map are left out (`outcomes` refuses those)."""
+    pairs), `n` distinct students, and the explanation's `bucket`. Rows of causes
+    the explanation does not map are left out (`outcomes` refuses those)."""
     labels = [label for label, _, _ in pipeline.cut_flags(comparison) or []]
     dims = [p.cube for p in pipeline.group_dims(comparison)]
     out = []
@@ -915,11 +931,11 @@ def cause_students(
 def keep_students(
     loaded: dict, comparison: str, bucket: str, found: list[dict]
 ) -> None:
-    """Put a proof's cause-student counts in a triage, per comparison.
+    """Put an explanation's cause-student counts in a triage, per comparison.
 
-    They replace the counts an earlier run of the same bucket's proof left,
-    and any count saved without its bucket: a revised proof's smaller count
-    must not lose to its old one. A count 2 buckets' proofs give the same
+    They replace the counts an earlier run of the same bucket's explanation left,
+    and any count saved without its bucket: a revised explanation's smaller count
+    must not lose to its old one. A count 2 buckets' explanations give the same
     cell keeps the larger (each is exact for its own bucket's rows).
     """
     by_comparison = loaded.setdefault("cause_students", {})
@@ -939,12 +955,12 @@ def keep_students(
             kept.append(at[key])
 
 
-# --- one proof's outcome -----------------------------------------------------------
+# --- one explanation's outcome ---------------------------------------------------
 
 
 @dataclass
 class Outcome:
-    """What one proof found for one item."""
+    """What one explanation found for one item."""
 
     n_rows: int
     counts: Counter
@@ -959,20 +975,23 @@ class Outcome:
         return self.n_rows > 0 and not self.unexplained and self.counted == self.n_rows
 
     def gap_line(self, name: str) -> str:
-        """Why the proof does not prove the item, with exact counts."""
+        """Why the explanation does not explain the item, with exact counts."""
         seen = self.counted + self.unexplained
         if seen != self.n_rows:
-            return f"proof {name} saw {seen} of the item's {self.n_rows} rows"
-        return f"proof {name} leaves {self.unexplained} rows unexplained"
+            return f"explanation {name} saw {seen} of the item's {self.n_rows} rows"
+        return f"explanation {name} leaves {self.unexplained} rows unexplained"
 
 
 def outcomes(
-    rows: list[dict], proof: Proof, items: list[tuple[str, Group]], literals: set[str]
+    rows: list[dict],
+    proof: Explanation,
+    items: list[tuple[str, Group]],
+    literals: set[str],
 ) -> dict[str, Outcome]:
     """Read the counting query's result per item.
 
     Raises:
-        pipeline.Refusal: The proof dropped or repeated a row, gave a row a
+        pipeline.Refusal: The explanation dropped or repeated a row, gave a row a
             cause that is no string literal of it, returned a `__row`
             `{unmatched}` lacks, or named a cause literal the bucket map
             lacks. Each refusal names counts and literals, never a value.
@@ -998,7 +1017,7 @@ def outcomes(
     reasons = {
         "missed": "unmatched rows have no row in its output",
         "doubled": "unmatched rows appear more than once in its output",
-        "bad": "rows got a cause that is no string literal of the proof",
+        "bad": "rows got a cause that is no string literal of the explanation",
         "stray": "output rows carry a __row that is not in {unmatched}",
     }
     if problems := [f"{totals[k]} {why}" for k, why in reasons.items() if totals[k]]:
@@ -1086,7 +1105,7 @@ def require_saved(
         )
     else:
         return saved.table_sql(table)
-    again = f"run --comparison {comparison.id}"
+    again = f"compare --comparison {comparison.id}"
     try:
         pick_moment([moment], _utcnow(), None)
         step = f"Run `{again} --moment '{moment.end.isoformat()}'` to save them again"
@@ -1103,7 +1122,7 @@ def proof_sql(
     cfg: ViewConfig,
     comparison: Comparison,
     sides: pipeline.RowSides,
-    proof: Proof,
+    proof: Explanation,
     items: list[tuple[str, Group]],
     build: Build,
     *,
@@ -1111,9 +1130,9 @@ def proof_sql(
     moved: dict[str, bool] | None = None,
     students: bool = False,
 ) -> tuple[str, set[str]]:
-    """Check and pin a proof, and build its counting query over the saved rows.
+    """Check and pin an explanation, and build its counting query over the saved rows.
 
-    The proof's own tables are read as of the build start, as the dashboard
+    The explanation's own tables are read as of the build start, as the dashboard
     side is (`timetravel.as_of`); a table only the Cube side reads is read at
     the build end, as the trace does, since BigQuery reads a table at 1 moment
     per query. The saved rows are read as they are: they were written after
@@ -1122,14 +1141,14 @@ def proof_sql(
     Args:
         table: The comparison's saved rows (`require_saved`).
         moved: The tables already checked for a change during the build, and
-            whether they changed; shared across the proofs of one triage.
+            whether they changed; shared across the explanations of one triage.
         students: Also count each cause's students per cell and cut.
 
     Returns:
-        The query and the proof's string literals.
+        The query and the explanation's string literals.
 
     Raises:
-        pipeline.Refusal: The proof fails a check (`check_sql`), cannot be read
+        pipeline.Refusal: The explanation fails a check (`check_sql`), cannot be read
             as of the moment, or reads a table that changed during the build at
             the build end.
     """
@@ -1153,7 +1172,7 @@ def run_proof(
     cfg: ViewConfig,
     comparison: Comparison,
     sides: pipeline.RowSides,
-    proof: Proof,
+    proof: Explanation,
     items: list[tuple[str, Group]],
     build: Build,
     moved: dict[str, bool] | None = None,
@@ -1161,12 +1180,12 @@ def run_proof(
     *,
     table: str,
 ) -> dict[str, Outcome]:
-    """Check, pin, price and run a proof on the run's saved rows. Call inside
+    """Check, pin, price and run an explanation on the run's saved rows. Call inside
     `wh.budget`.
 
     Args:
         moved: As `proof_sql` takes it.
-        students: Given, receives the proof's cause-student counts per cell
+        students: Given, receives the explanation's cause-student counts per cell
             and cut (`cause_students`), for `triage.json`.
         table: The comparison's saved rows (`require_saved`).
 
@@ -1190,7 +1209,7 @@ def run_proof(
     try:
         usd = wh.estimate(sql)
         wh.refuse_past_caps(usd)
-        print(f"Proof {proof.path.name}: ${usd:.2f} (dry run).")
+        print(f"Explanation {proof.path.name}: ${usd:.2f} (dry run).")
         rows = wh.rows(sql, timeout_s=TIMEOUT_S)
     except GoogleAPIError as exc:
         raise pipeline.Refusal(
@@ -1203,7 +1222,7 @@ def run_proof(
 
 
 def _student_count(comparison: Comparison, bucket: str) -> StudentCount | None:
-    """The `StudentCount` for a proof's rows, or None when the comparison's
+    """The `StudentCount` for an explanation's rows, or None when the comparison's
     cuts cannot be told apart (`pipeline.cut_flags`)."""
     flags = pipeline.cut_flags(comparison)
     if not flags or comparison.rows is None:
@@ -1216,21 +1235,23 @@ def _student_count(comparison: Comparison, bucket: str) -> StudentCount | None:
     )
 
 
-def _proof_lines(proof: Proof, outcome: Outcome, posted: bool) -> list[str]:
+def _proof_lines(proof: Explanation, outcome: Outcome, posted: bool) -> list[str]:
     ranked = outcome.counts.most_common()
     _, texts = shown_counts(outcome.n_rows, [n for _, n in ranked], posted)
     return [
-        f"proof {proof.path.name}: {proof.causes[b][1]}: {t} rows"
+        f"explanation {proof.path.name}: {proof.causes[b][1]}: {t} rows"
         for (b, _), t in zip(ranked, texts, strict=True)
     ]
 
 
 def _kept(lines: list[str]) -> list[str]:
-    """An item's evidence without any earlier proof's lines."""
-    return [line for line in lines if not line.startswith("proof ")]
+    """An item's evidence without any earlier explanation's lines."""
+    return [line for line in lines if not line.startswith("explanation ")]
 
 
-def apply_outcomes(items: list[dict], proof: Proof, found: dict[str, Outcome]) -> None:
+def apply_outcomes(
+    items: list[dict], proof: Explanation, found: dict[str, Outcome]
+) -> None:
     """Move each fully explained item to `cause`; note the rest in place."""
     for item in items:
         outcome = found.get(item["id"])
@@ -1259,17 +1280,17 @@ def apply_outcomes(items: list[dict], proof: Proof, found: dict[str, Outcome]) -
                 evidence_posted=_proof_lines(proof, outcome, True),
             )
             continue
-        # A bucket's groups reach `cause` only through its proof.
+        # A bucket's groups reach `cause` only through its explanation.
         item.update(suggestion="investigate", cause=None, proof=None)
         item["evidence"] = [outcome.gap_line(proof.path.name), *evidence]
         item["evidence_posted"] = [
-            f"proof {proof.path.name} does not explain every row",
+            f"explanation {proof.path.name} does not explain every row",
             *posted,
         ]
 
 
 def note(items: list[dict], ids: set[str], line: str, name: str) -> None:
-    """Add why proof `name` did not run to each listed item's evidence.
+    """Add why explanation `name` did not run to each listed item's evidence.
 
     The posted copy is a fixed line: a refusal's text stays local.
     """
@@ -1279,7 +1300,7 @@ def note(items: list[dict], ids: set[str], line: str, name: str) -> None:
             posted = item.get("evidence_posted") or evidence
             item["evidence"] = [line, *evidence]
             item["evidence_posted"] = [
-                f"proof {name} not run; see the terminal",
+                f"explanation {name} not run; see the terminal",
                 *posted,
             ]
 
@@ -1293,7 +1314,7 @@ def _bucket_items(run: RunResult, comparison: str, bucket: str):
 
 
 # `link_cells`' evidence lines, which the next link replaces.
-_COVERED = "every differing cell is covered by proven or decided groups"
+_COVERED = "every differing cell is covered by explained or decided groups"
 _UNCOVERED = "differing cells are not covered"
 _NO_CELLS = "the run lists no differing cells to link"
 
@@ -1327,7 +1348,7 @@ def link_cells(
 
     A cell is covered when the groups with a row in it (`coverage`) are each
     closed by a `group` decision (`run.applied.quiet`) or an open item in
-    `cause`. A cell `run` saved as `kind: formula` belongs to the
+    `cause`. A cell `compare` saved as `kind: formula` belongs to the
     comparison's formula difference, its own item, and is left out of the
     cell set. Any other cell with no group in it (a run saved before cells
     carried a kind), or one that cannot be placed, stays open. A `formula`
@@ -1435,7 +1456,7 @@ def link_cells(
             if target.get("suggestion") == "cause":
                 target.update(suggestion="investigate", cause=None, proof=None)
             if not cells:
-                line = posted = f"{_NO_CELLS}; `run` again"
+                line = posted = f"{_NO_CELLS}; `compare` again"
             else:
                 line = f"{len(left)} of {len(cells)} {_UNCOVERED}"
                 posted = f"{mask(len(left))} of {mask(len(cells))} {_UNCOVERED}"
@@ -1482,9 +1503,9 @@ def _unlinked(lines: list[str] | None) -> list[str]:
 
 @dataclass
 class Ran:
-    """One stored proof's run: its outcomes per item, or why it did not run."""
+    """One stored explanation's run: its outcomes per item, or why it did not run."""
 
-    proof: Proof
+    proof: Explanation
     items: list[tuple[str, Group]]
     found: dict[str, Outcome] | None = None
     why: str = ""
@@ -1503,12 +1524,13 @@ def siblings(cfg: ViewConfig, comparison: Comparison) -> list[Comparison]:
 
 
 def _shared(
-    cfg: ViewConfig, directory: Path, proof: Proof, comparison: Comparison
+    cfg: ViewConfig, directory: Path, proof: Explanation, comparison: Comparison
 ) -> list[Comparison]:
-    """The siblings a proof also classifies: those with no proof of their own.
+    """The siblings an explanation also classifies: those with no explanation
+    of their own.
 
-    A sibling's own proof wins even when it fails: its refusal shows, rather
-    than another proof standing in for it.
+    A sibling's own explanation wins even when it fails: its refusal shows, rather
+    than another explanation standing in for it.
     """
     return [
         c
@@ -1529,28 +1551,28 @@ def run_stored(
     comparisons: set[str] | None = None,
     ticker: Ticker | None = None,
 ) -> list[Ran]:
-    """Run every stored proof of the view on the run's saved rows. Call inside
+    """Run every stored explanation of the view on the run's saved rows. Call inside
     `wh.budget`.
 
-    A proof also runs on each comparison that reconciles the same rows and
-    has no proof of its own for the bucket (`siblings`). Each pair's outcome
-    is kept in `progress_dir` (`progress`) as it finishes, and a later triage
-    reuses one whose proof and open items still match, once the comparison's
+    An explanation also runs on each comparison that reconciles the same rows and
+    has no explanation of its own for the bucket (`siblings`). Each pair's outcome
+    is kept in `progress_dir` (`explain_progress`) as it finishes, and a later triage
+    reuses one whose explanation and open items still match, once the comparison's
     SQL still matches the run (`pipeline.row_sides`, compile only) and its
     saved rows still carry the run's labels (`require_saved`).
     The rest are priced together first, and a total over a cap refuses
-    before any runs; then they run one at a time. A proof that cannot run (a
+    before any runs; then they run one at a time. An explanation that cannot run (a
     failed check, its saved rows gone, a BigQuery or Cube error, its SQL no
     longer the run's) keeps why and moves nothing; the rest still run.
 
     Args:
         progress_dir: Where finished outcomes are kept; None keeps none.
-        comparisons: Run only these comparisons' proofs; another's outcome is
+        comparisons: Run only these comparisons' explanations; another's outcome is
             reused when kept, else it reads "not run: outside --comparison".
-        ticker: Prints a progress line after each proof runs.
+        ticker: Prints a progress line after each explanation runs.
 
     Raises:
-        CostCapError: The proofs to run, together, would pass the run's or the
+        CostCapError: The explanations to run, together, would pass the run's or the
             day's cap.
     """
     by_id = {c.id: c for c in cfg.comparisons}
@@ -1563,7 +1585,7 @@ def run_stored(
         try:
             proof = read_proof(path)
         except (OSError, pipeline.Refusal) as exc:
-            print(f"Proof {path.name} skipped: {exc}")
+            print(f"Explanation {path.name} skipped: {exc}")
             continue
         if (own := by_id.get(proof.comparison)) is None:
             continue
@@ -1588,17 +1610,17 @@ def run_stored(
                 sides = prepared.row_sides(cfg, comparison, run, wh, cube)
                 table = require_saved(wh, cfg, run, comparison)
             except _CANNOT_RUN as exc:
-                ran.why = f"proof {path.name} not run: {exc}"
+                ran.why = f"explanation {path.name} not run: {exc}"
                 continue
             except GoogleAPIError as exc:
-                ran.why = f"proof {path.name} not run ({bigquery_said(exc)})"
+                ran.why = f"explanation {path.name} not run ({bigquery_said(exc)})"
                 continue
             if done in kept:
                 _from_progress(ran, kept[done])
                 reused += 1
                 continue
             if comparisons is not None and comparison.id not in comparisons:
-                ran.why = f"proof {path.name} not run: {_OUTSIDE}"
+                ran.why = f"explanation {path.name} not run: {_OUTSIDE}"
                 continue
             try:
                 sql, literals = proof_sql(
@@ -1614,10 +1636,10 @@ def run_stored(
                     students=True,
                 )
             except _CANNOT_RUN as exc:
-                ran.why = f"proof {path.name} not run: {exc}"
+                ran.why = f"explanation {path.name} not run: {exc}"
                 continue
             except GoogleAPIError as exc:
-                ran.why = f"proof {path.name} not run ({bigquery_said(exc)})"
+                ran.why = f"explanation {path.name} not run ({bigquery_said(exc)})"
                 continue
             todo.append((ran, comparison, sql, literals, done))
 
@@ -1627,14 +1649,16 @@ def run_stored(
         if isinstance(price, GoogleAPIError):
             job[
                 0
-            ].why = f"proof {job[0].proof.path.name} not run ({bigquery_said(price)})"
+            ].why = (
+                f"explanation {job[0].proof.path.name} not run ({bigquery_said(price)})"
+            )
         else:
             total += price
             ready.append(job)
     if ready or reused:
         print(
-            f"Proofs: {len(ready)} to run, ${total:.2f} (dry run); {reused} reused "
-            f"from {explain_progress.FILE}."
+            f"Explanations: {len(ready)} to run, ${total:.2f} (dry run); {reused} "
+            f"reused from {explain_progress.FILE}."
         )
     wh.refuse_past_caps(total)
     for ran, comparison, sql, literals, done in ready:
@@ -1644,11 +1668,11 @@ def run_stored(
             ran.found = outcomes(rows, ran.proof, ran.items, literals)
             ran.students = cause_students(rows, ran.proof, comparison)
         except (pipeline.Refusal, CostCapError) as exc:
-            ran.why = f"proof {name} not run: {exc}"
+            ran.why = f"explanation {name} not run: {exc}"
         except GoogleAPIError as exc:
             # As `run_proof` words it, so the evidence reads the same.
             ran.why = (
-                f"proof {name} not run: {name}: BigQuery refused it "
+                f"explanation {name} not run: {name}: BigQuery refused it "
                 f"({bigquery_said(exc)})"
             )
         else:
@@ -1662,21 +1686,21 @@ def run_stored(
             print(ran.why)
     if outside:
         print(
-            f"{len(outside)} proof{'s' if len(outside) != 1 else ''} outside "
+            f"{len(outside)} explanation{'s' if len(outside) != 1 else ''} outside "
             "--comparison not run (no kept outcome)."
         )
     return out
 
 
-# Why a proof of a comparison `triage --comparison` left out did not run.
+# Why an explanation of a comparison `sort --comparison` left out did not run.
 _OUTSIDE = "outside --comparison"
-# What keeps one proof from running, besides a BigQuery error.
+# What keeps one explanation from running, besides a BigQuery error.
 _CANNOT_RUN = (pipeline.Refusal, CostCapError, ViewHistoryError, CubeError, CubeRefusal)
 
 
 def _to_progress(ran: Ran) -> dict:
-    """A finished proof's outcome as `progress` keeps it: by open key, counts
-    only."""
+    """A finished explanation's outcome as `explain_progress` keeps it: by open
+    key, counts only."""
     found = ran.found or {}
     return {
         "found": {
@@ -1711,7 +1735,7 @@ def _run_one(
     cfg: ViewConfig,
     run: RunResult,
     comparison: Comparison,
-    proof: Proof,
+    proof: Explanation,
     wh: Warehouse,
     cube: Cube,
     prepared: trace.Prepared,
@@ -1739,16 +1763,16 @@ def _run_one(
             table=table,
         )
     except _CANNOT_RUN as exc:
-        ran.why = f"proof {path.name} not run: {exc}"
+        ran.why = f"explanation {path.name} not run: {exc}"
     except GoogleAPIError as exc:
-        ran.why = f"proof {path.name} not run ({bigquery_said(exc)})"
+        ran.why = f"explanation {path.name} not run ({bigquery_said(exc)})"
     if ran.why:
         print(ran.why)
     return ran
 
 
 def explained(runs: list[Ran]) -> set[tuple]:
-    """The `trace.item_key` of every group a proof fully explains."""
+    """The `trace.item_key` of every group an explanation fully explains."""
     return {
         trace.item_key(g)
         for r in runs
@@ -1764,7 +1788,7 @@ def apply_runs(
     cfg: ViewConfig,
     loaded: dict | None = None,
 ) -> None:
-    """Sort the items by the proofs' runs, then link cell sets."""
+    """Sort the items by the explanations' runs, then link cell sets."""
     for r in runs:
         if r.found is not None and loaded is not None:
             keep_students(loaded, _comparison_of(r), r.proof.bucket, r.students)
@@ -1780,9 +1804,9 @@ def apply_runs(
 
 def _load_triage(run: RunResult, run_json: Path) -> tuple[Path, dict]:
     found = run_json.parent / "triage.json"
-    again = f"run `triage` for {run.moment.start:%Y-%m-%d %H:%M} UTC first"
+    again = f"run `sort` for {run.moment.start:%Y-%m-%d %H:%M} UTC first"
     if not found.exists():
-        raise pipeline.Refusal(f"{run.view}: no triage of the latest run; {again}")
+        raise pipeline.Refusal(f"{run.view}: no sort of the latest run; {again}")
     try:
         loaded = json.loads(found.read_text())
     except json.JSONDecodeError as exc:
@@ -1793,13 +1817,13 @@ def _load_triage(run: RunResult, run_json: Path) -> tuple[Path, dict]:
         raise pipeline.Refusal(f"{run.view}: triage.json is of another moment; {again}")
     if set(sort.open_keys(run)) - set(loaded.get("open") or []):
         raise pipeline.Refusal(
-            f"{run.view}: the latest run has open items its triage lacks; {again}"
+            f"{run.view}: the latest run has open items its sort lacks; {again}"
         )
     return found, loaded
 
 
 def _mark(run: RunResult, items: list[dict], cfg: ViewConfig) -> None:
-    """Refresh the decision marks after a re-sort, as `triage` writes them."""
+    """Refresh the decision marks after a re-sort, as `sort` writes them."""
     for item in items:
         item.pop("decisions", None)
         item.pop("decided", None)
@@ -1828,7 +1852,7 @@ def _report(items: list[dict], wanted: set[str] | None) -> None:
             print(f"    {line}")
 
 
-def run_confirm(
+def explain(
     cfg: ViewConfig,
     view_file: Path,
     *,
@@ -1842,25 +1866,25 @@ def run_confirm(
     causes: list[str] | None = None,
     items: list[str] | None = None,
 ) -> int:
-    """Run a new or edited proof once, save it, and re-sort the triage.
+    """Run a new or edited explanation once, save it, and re-sort the triage.
 
     The comparison's cell set is linked again (`link_cells`); each cell it
     leaves open prints with why, in the terminal only.
 
     Args:
         cfg: The view's config.
-        view_file: Its validation file; proofs are saved beside it.
+        view_file: Its validation file; explanations are saved beside it.
         wh: The warehouse.
         cube: Cube, to rebuild the run's row SQL.
         max_usd: The cap for this command.
         cache_root: The local cache holding the run and its triage.
-        comparison: The comparison the proof covers.
+        comparison: The comparison the explanation covers.
         bucket: One of `PROVABLE`.
-        sql: The proof's SQL; it may carry a `-- cause` block. Defaults to
-            the stored proof, to re-run it after an edit.
+        sql: The explanation's SQL; it may carry a `-- cause` block. Defaults to
+            the stored explanation, to re-run it after an edit.
         causes: `<bucket>=<side>:<plain words>` per bucket, added to (and
             replacing entries of) the SQL's own block.
-        items: Triage item ids to print; every item of the bucket is proven
+        items: Triage item ids to print; every item of the bucket is explained
             either way.
 
     Returns:
@@ -1868,8 +1892,8 @@ def run_confirm(
 
     Raises:
         pipeline.Refusal: No triage of the latest run; an unknown comparison
-            or bucket; or a proof that fails a check.
-        CostCapError: The proof would pass a cap.
+            or bucket; or an explanation that fails a check.
+        CostCapError: The explanation would pass a cap.
     """
     run, run_json = pipeline.latest_run(cfg, cache_root)
     path, loaded = _load_triage(run, run_json)
@@ -1881,19 +1905,19 @@ def run_confirm(
 
     if bucket not in PROVABLE:
         raise pipeline.Refusal(f"--bucket must be one of {', '.join(PROVABLE)}")
-    stored = proof_path(proofs_dir(view_file, cfg.view), comparison, bucket)
+    stored = proof_path(explanations_dir(view_file, cfg.view), comparison, bucket)
     source = sql or stored
     if not source.is_file():
-        raise pipeline.Refusal(f"{source}: no such proof; pass --sql <file>")
+        raise pipeline.Refusal(f"{source}: no such explanation; pass --sql <file>")
     block, reproduce, body = split_proof(source.read_text())
     for flag in causes or []:
         b, side, words = parse_cause_flag(flag)
         block[b] = (side, words)
-    proof = Proof(stored, comparison, bucket, block, body, reproduce)
+    proof = Explanation(stored, comparison, bucket, block, body, reproduce)
     for b, query in reproduce.items():
         if b not in block:
             raise pipeline.Refusal(
-                f"-- reproduce {b}: the proof has no cause {b}; name a bucket "
+                f"-- reproduce {b}: the explanation has no cause {b}; name a bucket "
                 "of its `-- cause` block"
             )
         try:
@@ -1902,7 +1926,7 @@ def run_confirm(
             raise pipeline.Refusal(f"-- reproduce {b}: {exc}") from exc
     bucket_items = _bucket_items(run, comparison, bucket)
     if not bucket_items:
-        raise pipeline.Refusal(f"{comparison} {bucket}: no open row group to prove")
+        raise pipeline.Refusal(f"{comparison} {bucket}: no open row group to explain")
     if wanted and (unknown := wanted - {i for i, _ in bucket_items}):
         raise pipeline.Refusal(
             f"--items: {len(unknown)} id(s) are no open item of {comparison} {bucket}"
@@ -1931,8 +1955,8 @@ def run_confirm(
             students,
             table=require_saved(wh, cfg, run, target),
         )
-        # The comparisons holding the same rows: the proof classifies theirs
-        # too, unless one has its own. A refusal there keeps this proof.
+        # The comparisons holding the same rows: the explanation classifies theirs
+        # too, unless one has its own. A refusal there keeps this explanation.
         shared = [
             r
             for c in _shared(cfg, stored.parent, proof, target)
@@ -1949,7 +1973,7 @@ def run_confirm(
     _mark(run, all_items, cfg)
     _save_triage(path, loaded, all_items)
     moved = sum(1 for o in found.values() if o.explained)
-    print(f"Saved {stored}: {moved} of {len(found)} items proven.")
+    print(f"Saved {stored}: {moved} of {len(found)} items explained.")
     reported = set(found)
     for r in shared:
         sibling = _comparison_of(r)
@@ -1957,7 +1981,7 @@ def run_confirm(
             print(f"Also {sibling}: not run; see above.")
             continue
         n = sum(1 for o in r.found.values() if o.explained)
-        print(f"Also {sibling} (same rows): {n} of {len(r.found)} items proven.")
+        print(f"Also {sibling} (same rows): {n} of {len(r.found)} items explained.")
         reported |= set(r.found)
     _report(all_items, wanted or reported)
     for item_id, open_cells in left.items():

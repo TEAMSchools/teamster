@@ -147,7 +147,7 @@ def test_local_result_section_order_and_triage():
         "## Sources read live",
         "## Dimensions that changed",
         "## Scopes",
-        "## Cuts to prove in the browser",
+        "## Cuts to check in the browser",
         "## Cost",
     ]
     positions = [text.index(h) for h in heads]
@@ -327,7 +327,7 @@ def _gap_decision(call="domain_owner"):
 
 def test_local_result_lists_missing_cuts_and_filters():
     run = _run(applied=Applied(open_gaps=[GAP_TEAM, GAP_ENROLL]))
-    run.gaps_unknown = ["ada: missing cuts and filters unknown; re-prove"]
+    run.gaps_unknown = ["ada: missing cuts and filters unknown; re-run `rebuild-sheet`"]
     text = render_local(run)
     section = text.split("## Missing cuts and filters", 1)[1].split("## ", 1)[0]
     assert (
@@ -337,7 +337,7 @@ def test_local_result_lists_missing_cuts_and_filters():
     assert (
         "`Enroll Status` (filter, set to chosen values, not All) on Roster" in section
     )
-    assert "ada: missing cuts and filters unknown; re-prove" in section
+    assert "ada: missing cuts and filters unknown; re-run `rebuild-sheet`" in section
 
 
 def test_measure_line_counts_open_missing_cuts():
@@ -428,10 +428,10 @@ def test_review_issue_skips_definitions_with_no_owner_question():
 
 def test_proof_dates_sit_apart_from_browser_cuts():
     text = render_local(_run(browser_cuts=[], proofs={"ada": "2026-10-27T19:00"}))
-    cuts = text.split("## Cuts to prove in the browser", 1)[1].split("## ", 1)[0]
+    cuts = text.split("## Cuts to check in the browser", 1)[1].split("## ", 1)[0]
     assert "ada" not in cuts and "None." in cuts
-    proofs = text.split("## Proofs", 1)[1].split("## ", 1)[0]
-    assert "ada: last proven 2026-10-27T19:00" in proofs
+    proofs = text.split("## Rebuild checks", 1)[1].split("## ", 1)[0]
+    assert "ada: last matched 2026-10-27T19:00" in proofs
 
 
 def test_local_result_lists_domain_owner_decisions_without_a_task():
@@ -997,7 +997,7 @@ from cube_validation import sort  # noqa: E402
 
 
 def _left_in_investigate(run, evidence):
-    """Each of `run`'s open row groups as a triage item still in `investigate`,
+    """Each of `compare`'s open row groups as a triage item still in `investigate`,
     its stub holding the group's real values as `triage.json` does."""
     return {
         "items": [
@@ -1048,7 +1048,7 @@ def test_unsettled_counts_under_10_are_masked():
     small = Group("enrollment", (("region", "Paterson"),), "cube_only", 7, 3)
     run = _run(applied=Applied(open=[small]))
 
-    still = _still(run, _left_in_investigate(run, "not traced (`triage --no-trace`)"))
+    still = _still(run, _left_in_investigate(run, "not traced (`sort --no-trace`)"))
 
     (line,) = still
     assert line == (
@@ -1085,12 +1085,20 @@ def test_unsettled_cells_and_reasons_are_posted_without_their_detail():
 
 def test_local_result_names_the_comparisons_skipped():
     text = render_local(
-        _run(skipped=[{"comparison": "seats", "why": "no proof; run `prove` first"}])
+        _run(
+            skipped=[
+                {
+                    "comparison": "seats",
+                    "why": "no rebuild check; run `rebuild-sheet` first",
+                }
+            ]
+        )
     )
 
     assert (
-        "Skipped this run, each keeping its latest result: seats (no proof; run "
-        "`prove` first)."
+        "Skipped this run, each keeping its latest result: seats (no rebuild "
+        "check; run "
+        "`rebuild-sheet` first)."
     ) in text
 
 

@@ -1,7 +1,7 @@
-"""A triage's finished proofs, so a stopped triage skips them when run again.
+"""A triage's finished explanations, so a stopped triage skips them when run again.
 
 `triage-progress.json` sits in the run folder beside `run.json`. Each finished
-proof's outcome is kept under a key of what it ran on: the proof, the
+explanation's outcome is kept under a key of what it ran on: the explanation, the
 comparison and bucket, both sides' SQL, and the open items it covered. Only
 counts are kept.
 """
@@ -27,9 +27,9 @@ def key(
     sql_fingerprints: dict[str, str],
     open_keys: Iterable[str],
 ) -> str:
-    """What a proof's outcome holds for. Any change runs the proof again: an
-    edited proof, other SQL, or another set of open items (`reapply` changes
-    which groups are open)."""
+    """What an explanation's outcome holds for. Any change runs the explanation
+    again: an edited explanation, other SQL, or another set of open items
+    (`reapply` changes which groups are open)."""
     return hashlib.sha256(
         json.dumps(
             [
@@ -53,7 +53,7 @@ def load(folder: Path) -> dict[str, dict]:
 
 
 def save(folder: Path, key: str, outcome: dict) -> None:
-    """Keep one proof's outcome, replacing the file whole so a stop mid-write
+    """Keep one explanation's outcome, replacing the file whole so a stop mid-write
     keeps the last whole file."""
     data = {**load(folder), key: outcome}
     folder.mkdir(parents=True, exist_ok=True)

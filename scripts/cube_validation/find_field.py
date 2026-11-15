@@ -3,7 +3,7 @@
 Reads the dbt Tableau exposures and each workbook's calculated fields and
 aggregated raw fields, then ranks them by how many name tokens they share with
 the measure and its SQL. It also reads a sheet's shape: shelves, export form,
-filters and displayed decimals. Nothing is written: `discover` prints the
+filters and displayed decimals. Nothing is written: `find-field` prints the
 candidates and the analyst confirms each one.
 """
 
@@ -72,7 +72,7 @@ _AGG_PREFIXES = {
     "sum": "SUM", "avg": "AVG", "cnt": "COUNT", "ctd": "COUNTD",
     "min": "MIN", "max": "MAX", "med": "MEDIAN",
 }  # fmt: skip
-# Filter fields whose chosen values `discover` prints. Any other field's values
+# Filter fields whose chosen values `find-field` prints. Any other field's values
 # stay hidden: they can name a person, and a printed value gets copied.
 SHOWN_FILTER_FIELDS = frozenset(
     {
@@ -417,7 +417,7 @@ def sheet_shape(twb_xml: str, sheet: str) -> SheetShape:
         else:
             filters.append(
                 f"{name}: chosen values hidden (narrows the sheet); "
-                "decide whether the probe needs it"
+                "decide whether the sheet query needs it"
             )
 
     return SheetShape(

@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from types import SimpleNamespace
 
 from cube_validation import explain, pipeline, trace
-from cube_validation.config import ColumnPair, Comparison, Proof, ViewConfig
+from cube_validation.config import ColumnPair, Comparison, RebuildCheck, ViewConfig
 from cube_validation.cube_client import MemberDoc
 from cube_validation.decisions import Applied
 from cube_validation.moment import Build
@@ -31,7 +31,7 @@ END = datetime(2026, 10, 27, 6, 5, tzinfo=timezone.utc)
 
 
 def _proof(**kw):
-    return Proof(fingerprint="f", cells=None, proven_at="2026-10-27", **kw)
+    return RebuildCheck(fingerprint="f", cells=None, matched_at="2026-10-27", **kw)
 
 
 def _cfg(**proof_kw):
@@ -39,7 +39,7 @@ def _cfg(**proof_kw):
         id="enrollment",
         measure="student_count",
         dims=[ColumnPair("Grade", "grade_level")],
-        proof=_proof(**proof_kw),
+        rebuild_check=_proof(**proof_kw),
     )
     return ViewConfig(view="enrollment", fact="d.t", comparisons=[cmp])
 
@@ -96,7 +96,7 @@ def test_caption_match_lists_candidates_without_value_check():
 
     [s] = suggest(cfg, _run(gaps=[_gap("Grade Level")]), docs)
 
-    # The sheet carries the filter: that proves it; the owner decides on it.
+    # The sheet carries the filter: that explains it; the owner decides on it.
     assert s.suggestion == "cause"
     assert s.candidates == ("grade_level",)
 
@@ -303,8 +303,10 @@ def test_no_group_by_stub_matches_a_row_with_no_group_by():
 
 
 def test_unknown_proof_on_the_gap_sheet_is_not_filters_nothing():
-    known = Comparison(id="other", measure="m", proof=_proof(restricting_filters=[]))
-    unknown = Comparison(id="enrollment", measure="m", proof=_proof())
+    known = Comparison(
+        id="other", measure="m", rebuild_check=_proof(restricting_filters=[])
+    )
+    unknown = Comparison(id="enrollment", measure="m", rebuild_check=_proof())
     cfg = ViewConfig(view="enrollment", fact="d.t", comparisons=[known, unknown])
 
     [s] = suggest(cfg, _run(gaps=[_gap()]), {})
@@ -316,14 +318,14 @@ def test_another_sheets_note_does_not_speak_for_the_gap():
     other = Comparison(
         id="other",
         measure="m",
-        proof=_proof(
+        rebuild_check=_proof(
             restricting_filters=[], filter_notes={"Enroll Status": "copy of X"}
         ),
     )
     mine = Comparison(
         id="enrollment",
         measure="m",
-        proof=_proof(restricting_filters=["Enroll Status"]),
+        rebuild_check=_proof(restricting_filters=["Enroll Status"]),
     )
     cfg = ViewConfig(view="enrollment", fact="d.t", comparisons=[other, mine])
 
@@ -407,7 +409,7 @@ def test_rows_the_sheet_s_own_filter_drops_are_a_cause_with_no_trace():
         9,
     )
 
-    # `--no-trace`: the reconcile alone proves it.
+    # `--no-trace`: the reconcile alone explains it.
     [s] = suggest(cfg, _run(groups=[group]), {}, traces=None)
 
     assert s.suggestion == "cause" and s.proof["kind"] == "reconcile"
@@ -841,7 +843,7 @@ def test_a_changed_proof_file_re_opens_the_decision(tmp_path):
         f"cube: {NO_SECTION}": None
     }
     assert item["evidence"][0] == (
-        "decision a: proof changed since the decision; re-approve"
+        "decision a: the explanation changed since the decision; re-approve"
     )
 
 
@@ -931,7 +933,9 @@ def test_the_gate_refuses_a_proven_group_or_cell_set_with_no_proof(tmp_path):
     (key,) = open_items(run)
     item = {**_item(key, None, ("cube", NO_SECTION, 30))}
 
-    with pytest.raises(pipeline.Refusal, match="1 `cause` item rests on no proof"):
+    with pytest.raises(
+        pipeline.Refusal, match="1 `cause` item rests on no explanation"
+    ):
         proven_triage(run, _write_run_triage(tmp_path, run, [item]))
 
     proof = _proof_file(tmp_path)
@@ -952,7 +956,9 @@ def test_the_gate_takes_a_reconcile_or_workbook_proof_and_no_bare_cause(tmp_path
     assert proven_triage(run, _write_run_triage(tmp_path, run, items))["items"]
 
     items[1]["proof"] = None
-    with pytest.raises(pipeline.Refusal, match="1 `cause` item rests on no proof"):
+    with pytest.raises(
+        pipeline.Refusal, match="1 `cause` item rests on no explanation"
+    ):
         proven_triage(run, _write_run_triage(tmp_path, run, items))
 
 
@@ -1078,7 +1084,7 @@ def test_sheet_filtered_groups_share_one_cause_decision_and_no_group_stub(tmp_pa
     entry = {"dashboard": "administered_at", "operator": "lte", "days_from_week_end": 0}
     proof = _proof(missing_columns={"Exclude Future Assessments": "administered_at"})
     cmp = Comparison(id="enrollment", measure="m", dims=[ColumnPair("Module", "module_code")],
-                     proof=proof, dashboard_filters=[entry])  # fmt: skip
+                     rebuild_check=proof, dashboard_filters=[entry])  # fmt: skip
     cfg = ViewConfig(view="enrollment", fact="d.t", comparisons=[cmp])
     groups = [
         Group("enrollment", (("dashboard_filter", "administered_at"),
@@ -1142,10 +1148,10 @@ from cube_validation.sort import (  # noqa: E402
 
 
 def _ran_over(run, cause="C1"):
-    """A stored proof's run over `with_closed(run)` explaining every group."""
-    proof = explain.Proof(Path("v") / "proofs" / "v" / "enrollment__dashboard_only.sql",
-                          "enrollment", "dashboard_only",
-                          {cause: ("cube", NO_SECTION)}, "SELECT 1")  # fmt: skip
+    """A stored explanation's run over `with_closed(run)` explaining every group."""
+    path = Path("v") / "explanations" / "v" / "enrollment__dashboard_only.sql"
+    proof = explain.Explanation(path, "enrollment", "dashboard_only",
+                                {cause: ("cube", NO_SECTION)}, "SELECT 1")  # fmt: skip
     items = [(i.id, g) for i, g in _entries(with_closed(run))]
     found = {i: explain.Outcome(g.n_rows, Counter({cause: g.n_rows})) for i, g in items}
     return proof, explain.Ran(proof, items, found)
@@ -1274,13 +1280,13 @@ def test_waiting_comparisons_name_a_skipped_one_by_why_it_was_skipped():
         missing=["c1"],
         entries={"c2": latest.entry_fingerprint(c2)},
         skipped=[
-            {"comparison": "c1", "why": "no proof; run `prove` first"},
+            {"comparison": "c1", "why": "no explanation; run `rebuild-sheet` first"},
             {"comparison": "c2", "why": "workbook changed since its proof"},
         ],
     )
 
     assert comparisons_waiting(cfg, run, {}) == {
-        "c1": "not compared: no proof; run `prove` first",
+        "c1": "not compared: no explanation; run `rebuild-sheet` first",
         "c2": "not compared: workbook changed since its proof",
     }
 
@@ -1410,13 +1416,13 @@ def test_another_comparisons_column_never_makes_a_gap_for_cube():
         id="enrollment",
         measure="student_count",
         dims=[ColumnPair("Grade", "grade_level")],
-        proof=_proof(restricting_filters=["Enroll Status"]),
+        rebuild_check=_proof(restricting_filters=["Enroll Status"]),
     )
     other = Comparison(
         id="attendance",
         measure="student_count",
         dims=[ColumnPair("Grade", "grade_level")],
-        proof=_proof(
+        rebuild_check=_proof(
             restricting_filters=["Enroll Status"],
             missing_columns={"Enroll Status": "enroll_status"},
         ),

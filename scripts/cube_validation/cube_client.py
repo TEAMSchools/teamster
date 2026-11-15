@@ -363,7 +363,7 @@ def refuse_unless_safe(
         view_fact: The fact the run's moment is a build of.
         network_schools: Every school abbreviation the network scope covers.
         also_facts: Other facts the view reads, listed in its validation file;
-            `run` checks each did not change during the build.
+            `compare` checks each did not change during the build.
 
     Raises:
         CubeRefusal: a pre-aggregation answered it, it reads a fact other than

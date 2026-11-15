@@ -21,7 +21,7 @@ row through Cube's (`sqlsteps` finds the steps). At each level:
 Every variant runs inside one query that rebuilds the unmatched rows the way
 the run's reconcile did (`reconcile.trace_sql`), so no row leaves BigQuery; each
 query returns group columns, a step id and a count. The counts are leads: a
-person proves a cause (`explain.py`).
+person explains a cause (`explain.py`).
 """
 
 from __future__ import annotations
@@ -234,7 +234,7 @@ class ItemTrace:
         """`evidence`, each cause worded as a lead to test, never as a cause.
 
         A step whose relaxing brings rows back is where to look first; the
-        session proves the cause (`triage confirm`).
+        session explains the cause (`explain`).
         """
         causes = self.steps.most_common()
         total, texts = shown_counts(self.n_rows, self._parts(), posted)
@@ -1181,7 +1181,7 @@ def _one_moment(
 
 @dataclass
 class Prepared:
-    """What planning a triage fetches once, for `check_ready`, the stored proofs
+    """What planning a triage fetches once, for `check_ready`, the stored explanations
     and `trace_run` to share: the network's schools, each comparison's row SQL,
     the dbt manifest, and per build, each table checked for a change during
     it. Each comparison's rows were read at its own moment
@@ -1300,11 +1300,11 @@ def check_ready(
     """Refuse now what `trace_run` would refuse, before anything is spent.
 
     Checks every open row group but those in `skip` (`item_key`s), so it may
-    ask for a model only a group a proof later explains would have needed.
+    ask for a model only a group an explanation later explains would have needed.
     Call inside `wh.budget`.
 
     Returns:
-        What the check fetched, for the stored proofs and `trace_run` to reuse.
+        What the check fetched, for the stored explanations and `trace_run` to reuse.
 
     Raises:
         pipeline.Refusal: sqlglot is older than the parser the as-of SQL
@@ -1379,7 +1379,7 @@ def trace_run(
         pipeline.Refusal: A comparison's SQL changed since the run, or the
             manifest or a model's compiled SQL is missing.
     """
-    # A group a stored proof explains needs no lead.
+    # A group a stored explanation explains needs no lead.
     open_groups = [g for g in run.applied.open if item_key(g) not in skip]
     out: dict[tuple, ItemTrace] = {}
     meter = _Meter(time.monotonic() + max_minutes * 60 if max_minutes else None)

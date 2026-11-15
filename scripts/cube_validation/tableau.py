@@ -1,9 +1,10 @@
-"""Prove a workbook formula once: Tableau copy, number formats, exports, proof.
+"""Rebuild a sheet once: Tableau copy, number formats, exports, rebuild check.
 
 Tableau is written to in one place only: a copy named `ZZ-VALIDATE <workbook>`
 in the `TEMP-CB` project, published with Overwrite. Nothing is deleted. The
 copy drops the compared measures' number formats so its CSV exports carry raw
-values, and unhides the compared sheet so it publishes as a view; `prove` compares those exports with the probe's values at the
+values, and unhides the compared sheet so it publishes as a view;
+`rebuild-sheet` compares those exports with the sheet query's values at the
 sheet's displayed decimals.
 
 XML edits are anchored text surgery, not an ElementTree round trip, so the
@@ -384,7 +385,7 @@ _COLUMN_BLOCK = re.compile(r"<column\b[^>]*?(?:/>|>.*?</column>)", re.DOTALL)
 def set_parameters(twb_xml: str, values: dict[str, str]) -> str:
     """Set workbook parameters' current values, so the sheet exports them.
 
-    The REST export cannot pass a parameter, so the proof copy carries it:
+    The REST export cannot pass a parameter, so the rebuild copy carries it:
     each parameter's `value` and its calculation's formula become the chosen
     member's stored text. Only the matched column's 2 attributes change.
 
@@ -1148,7 +1149,7 @@ def split_cuts(
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """Split cuts into those a REST export can take and those it cannot.
 
-    A cut that sets a workbook parameter is proven in the browser: the server
+    A cut that sets a workbook parameter is checked in the browser: the server
     rejects parameter values on export here.
 
     Args:
@@ -1165,36 +1166,37 @@ def split_cuts(
     return exportable, browser
 
 
-# --- the proof ---------------------------------------------------------------
+# --- the rebuild check -------------------------------------------------------
 
 
 @dataclass(frozen=True)
-class Proof:
-    """The outcome of proving one comparison's probe against the sheet.
+class RebuildResult:
+    """The outcome of matching one comparison's sheet query to the sheet.
 
     Attributes:
-        fingerprint: `formula_fingerprint` of the sheet the proof covers.
+        fingerprint: `formula_fingerprint` of the sheet the check covers.
         cells: Cells present on both sides and compared.
         failures: One line per cell that differs or is on one side only.
-        proven_at: When the comparison ran.
-        browser: Cuts that set a parameter, to prove in the browser.
+        matched_at: When the comparison ran.
+        browser: Cuts that set a parameter, to check in the browser.
     """
 
     fingerprint: str
     cells: int
     failures: list[str]
-    proven_at: datetime
+    matched_at: datetime
     browser: list[dict[str, Any]] = field(default_factory=list)
 
     @property
-    def proven(self) -> bool:
+    def matched(self) -> bool:
         """True when at least 1 cell was compared and none failed."""
         return self.cells > 0 and not self.failures
 
 
 def _key_text(value: Any) -> str:
     """Key text that treats 2026, 2026.0 and '2026' alike, and reads the
-    export's M/D/YYYY date (the server's en-US format) as the probe's ISO date.
+    export's M/D/YYYY date (the server's en-US format) as the sheet query's ISO
+    date.
     """
     if value is None:
         return ""
@@ -1274,15 +1276,15 @@ def _index(
     return values, labels
 
 
-def prove(
+def match_export(
     comparison: Comparison,
     exports: list[dict[str, Any]],
-    probe_values: list[dict[str, Any]],
+    query_values: list[dict[str, Any]],
     *,
     twb_xml: str,
     now: datetime | None = None,
-) -> Proof:
-    """Check that the probe reproduces every exported cell of the sheet.
+) -> RebuildResult:
+    """Check that the sheet query reproduces every exported cell of the sheet.
 
     Rows on each side are matched on every key except `value`: the
     comparison's dashboard dims, plus any key the caller adds to tell cuts
@@ -1294,14 +1296,14 @@ def prove(
         comparison: The comparison; needs `sheet` and `decimals`.
         exports: Export rows mapped to dashboard dim names plus `value`, from
             a copy with the measure's number format dropped.
-        probe_values: Probe rows in the same shape, from the dashboard view
+        query_values: Sheet query rows in the same shape, from the dashboard view
             rebuilt as of the refresh the exports read.
         twb_xml: The production workbook XML, for the fingerprint and the
             parameter cuts.
-        now: The proof time; defaults to the current UTC time.
+        now: The check time; defaults to the current UTC time.
 
     Returns:
-        The proof. It is proven only with at least 1 cell and no failures;
+        The result. It matched only with at least 1 cell and no failures;
         parameter cuts are listed in `browser`, not failed.
 
     Raises:
@@ -1321,31 +1323,32 @@ def prove(
     dims = [p.dashboard for p in comparison.dims]
     failures: list[str] = []
     dash, dash_labels = _index(exports, dims, "export", failures)
-    probe, probe_labels = _index(probe_values, dims, "probe", failures)
+    query, query_labels = _index(query_values, dims, "sheet query", failures)
 
     cells = 0
-    for key in sorted(dash.keys() | probe.keys()):
-        if key not in probe:
+    for key in sorted(dash.keys() | query.keys()):
+        if key not in query:
             failures.append(f"{dash_labels[key]}: in the export only")
             continue
         if key not in dash:
-            failures.append(f"{probe_labels[key]}: in the probe only")
+            failures.append(f"{query_labels[key]}: in the sheet query only")
             continue
         cells += 1
-        verdict = cell_verdict(dash[key], probe[key], comparison.decimals)
+        verdict = cell_verdict(dash[key], query[key], comparison.decimals)
         if verdict != "pass":
             failures.append(
-                f"{dash_labels[key]}: export {dash[key]!r}, probe {probe[key]!r} "
+                f"{dash_labels[key]}: export {dash[key]!r}, sheet query "
+                f"{query[key]!r} "
                 f"at {comparison.decimals} decimals ({verdict})"
             )
     if not exports:
         failures.append("the export has no rows")
 
-    return Proof(
+    return RebuildResult(
         fingerprint=formula_fingerprint(twb_xml, comparison.sheet),
         cells=cells,
         failures=failures,
-        proven_at=now or datetime.now(timezone.utc),
+        matched_at=now or datetime.now(timezone.utc),
         browser=split_cuts(comparison.cuts, twb_xml)[1],
     )
 
@@ -1406,7 +1409,7 @@ class Snapshot:
     """Exports taken with no extract refresh starting in between.
 
     Attributes:
-        refresh_started: Start of the refresh the exports read; the probe
+        refresh_started: Start of the refresh the exports read; the sheet query
             runs over the dashboard view rebuilt as of this moment.
         copy_luid: The `TEMP-CB` copy the exports came from.
         exports: One list of CSV rows per cut, in the order given.
@@ -1418,7 +1421,7 @@ class Snapshot:
 
 
 class Tableau:
-    """The Tableau reads and the 1 copy a proof needs.
+    """The Tableau reads and the 1 copy a rebuild needs.
 
     Args:
         server: A signed-in `tableauserverclient.Server` (see

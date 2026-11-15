@@ -25,7 +25,7 @@ from cube_validation.tableau import (
     drop_number_formats,
     expose_sheet,
     formula_fingerprint,
-    prove,
+    match_export,
     set_shelves,
     split_cuts,
 )
@@ -153,13 +153,13 @@ def test_prove_fails_on_one_mismatch():
     exports = _rows({"North": "0.9123", "South": "0.8504", "East": "0.7001"})
     probe = _rows({"North": 0.91249, "South": 0.85, "East": 0.7012})
 
-    proof = prove(_comparison(), exports, probe, twb_xml=_twb(), now=NOW)
+    proof = match_export(_comparison(), exports, probe, twb_xml=_twb(), now=NOW)
 
     assert proof.cells == 3
     assert len(proof.failures) == 1
     assert "region=East" in proof.failures[0]
-    assert not proof.proven
-    assert proof.proven_at == NOW
+    assert not proof.matched
+    assert proof.matched_at == NOW
     assert proof.fingerprint == formula_fingerprint(_twb(), "Rate by Region")
 
 
@@ -167,23 +167,23 @@ def test_prove_passes_when_all_cells_round_equal():
     exports = _rows({"North": "0.9123", "South": "0.8504"})
     probe = _rows({"North": 0.91249, "South": 0.85})
 
-    proof = prove(_comparison(), exports, probe, twb_xml=_twb(), now=NOW)
+    proof = match_export(_comparison(), exports, probe, twb_xml=_twb(), now=NOW)
 
     assert proof.failures == []
-    assert proof.proven
+    assert proof.matched
     assert proof.cells == 2
 
 
 def test_prove_one_sided_and_empty_exports_fail():
     exports = _rows({"North": "0.9", "South": "0.8"})
     probe = _rows({"North": 0.9, "West": 0.8})
-    proof = prove(_comparison(), exports, probe, twb_xml=_twb(), now=NOW)
+    proof = match_export(_comparison(), exports, probe, twb_xml=_twb(), now=NOW)
     assert proof.cells == 1
     assert any("region=South" in f and "export only" in f for f in proof.failures)
-    assert any("region=West" in f and "probe only" in f for f in proof.failures)
+    assert any("region=West" in f and "sheet query only" in f for f in proof.failures)
 
-    empty = prove(_comparison(), [], [], twb_xml=_twb(), now=NOW)
-    assert not empty.proven and empty.cells == 0
+    empty = match_export(_comparison(), [], [], twb_xml=_twb(), now=NOW)
+    assert not empty.matched and empty.cells == 0
 
 
 def test_prove_matches_numeric_dims_across_types_and_cut_keys():
@@ -196,13 +196,13 @@ def test_prove_matches_numeric_dims_across_types_and_cut_keys():
         {"cut": "1", "academic_year": 2026, "value": 0.6},
         {"cut": "0", "academic_year": 2026.0, "value": 0.5},
     ]
-    proof = prove(comparison, exports, probe, twb_xml=_twb(), now=NOW)
-    assert proof.proven and proof.cells == 2
+    proof = match_export(comparison, exports, probe, twb_xml=_twb(), now=NOW)
+    assert proof.matched and proof.cells == 2
 
 
 def test_prove_refuses_formatted_values_and_missing_decimals():
     with pytest.raises(ValueError, match="number format"):
-        prove(
+        match_export(
             _comparison(),
             _rows({"North": "$91.20"}),
             _rows({"North": 91.2}),
@@ -210,7 +210,7 @@ def test_prove_refuses_formatted_values_and_missing_decimals():
         )
     # A percent rounded to the comparison's decimals is a format left behind.
     with pytest.raises(ValueError, match="number format"):
-        prove(
+        match_export(
             _comparison(),
             _rows({"North": "91.2%", "South": "50%"}),
             _rows({"North": 0.912, "South": 0.5}),
@@ -218,14 +218,14 @@ def test_prove_refuses_formatted_values_and_missing_decimals():
         )
     # A percent-of-total calc keeps its % at full precision; an exact cell
     # beside it reads too.
-    assert prove(
+    assert match_export(
         _comparison(),
         _rows({"North": "91.234567891%", "South": "50%"}),
         _rows({"North": 0.91234567891, "South": 0.5}),
         twb_xml=_twb(),
-    ).proven
+    ).matched
     with pytest.raises(ValueError, match="decimals"):
-        prove(_comparison(decimals=None), [], [], twb_xml=_twb())
+        match_export(_comparison(decimals=None), [], [], twb_xml=_twb())
 
 
 def test_parameter_cuts_go_to_the_browser_list():
@@ -234,7 +234,7 @@ def test_parameter_cuts_go_to_the_browser_list():
     assert exportable == [{}, {"Region": "South"}]
     assert browser == [{"Basis": "Year end"}]
 
-    proof = prove(
+    proof = match_export(
         _comparison(cuts=cuts),
         _rows({"North": "0.9"}),
         _rows({"North": 0.9}),

@@ -52,7 +52,7 @@ def test_sheet_shape_hides_values_of_a_member_filter_on_a_person():
         "Enroll Status: 0 (narrows the sheet)",
         "Region: All",
         "Student Number: chosen values hidden (narrows the sheet); "
-        "decide whether the probe needs it",
+        "decide whether the sheet query needs it",
     ]
     assert "999999" not in " ".join(shape.filters)
 

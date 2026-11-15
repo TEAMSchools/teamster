@@ -1,6 +1,6 @@
 """Name each comparison's saved unmatched rows in the validator's scratch dataset.
 
-`run` saves every comparison's unmatched rows to one table, so `triage` reads
+`compare` saves every comparison's unmatched rows to one table, so `sort` reads
 them instead of rebuilding both sides. The rows are student-level: they stay in
 BigQuery, in a dataset only the Data Team can read, and expire on their own.
 """

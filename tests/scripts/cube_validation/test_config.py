@@ -10,7 +10,7 @@ from cube_validation.config import (
     mask_digits,
     with_fact_dataset,
     write_decision,
-    write_proof,
+    write_rebuild_check,
 )
 
 EXAMPLE = """\
@@ -24,7 +24,7 @@ comparisons:
     workbook: 87c13e78-a912-40a4-95dd-33248fc1cbd3
     sheet: Y1 ADA - Region
     dashboard_view: kipptaf_tableau.rpt_tableau__attendance_dashboard
-    probe: avg(is_present)
+    sheet_query: avg(is_present)
     decimals: 3
     dims:
       - { dashboard: region, cube: regions_region_name }
@@ -40,7 +40,7 @@ comparisons:
         - { dashboard: calendardate, cube: attendance_date }
       values:
         - { dashboard: is_present, cube: attendance_value }
-    proof: null
+    rebuild_check: null
   - id: second
     measure: other
 decisions:
@@ -70,7 +70,7 @@ def test_loads_example(tmp_path):
     assert first.filters["Region"].dashboard == "region"
     assert first.rows is not None and first.rows.grain[1].cube == "attendance_date"
     assert first.defaults["Region"] == ["Camden", "Newark", "Paterson"]
-    assert first.proof is None
+    assert first.rebuild_check is None
     assert cfg.decisions[0].call == "deliberate"
 
 
@@ -82,8 +82,8 @@ def test_email_is_optional_but_read_when_present(tmp_path):
 
 def test_dashboard_columns_names_must_be_identifiers(tmp_path):
     text = EXAMPLE.replace(
-        "    probe: avg(is_present)\n",
-        '    probe: avg(is_present)\n    dashboard_columns: {"bad name": "1"}\n',
+        "    sheet_query: avg(is_present)\n",
+        '    sheet_query: avg(is_present)\n    dashboard_columns: {"bad name": "1"}\n',
         1,
     )
 
@@ -98,9 +98,10 @@ def test_unknown_call_is_refused(tmp_path):
         load_view_config(path)
 
 
-def test_probe_and_probe_sql_are_exclusive(tmp_path):
+def test_sheet_query_and_sheet_query_sql_are_exclusive(tmp_path):
     text = EXAMPLE.replace(
-        "probe: avg(is_present)", "probe: avg(is_present)\n    probe_sql: select 1"
+        "sheet_query: avg(is_present)",
+        "sheet_query: avg(is_present)\n    sheet_query_sql: select 1",
     )
 
     with pytest.raises(ConfigError, match=r"comparisons\[0\]"):
@@ -206,40 +207,44 @@ def test_error_names_the_file(tmp_path):
         load_view_config(path)
 
 
-def test_write_proof_changes_only_that_comparison(tmp_path):
+def test_write_rebuild_check_changes_only_that_comparison(tmp_path):
     path = _write(tmp_path, EXAMPLE)
-    proof = {"fingerprint": "f00", "cells": 12, "proven_at": "2026-10-27"}
+    proof = {"fingerprint": "f00", "cells": 12, "matched_at": "2026-10-27"}
 
-    write_proof(path, "ada-y1-region", proof)
+    write_rebuild_check(path, "ada-y1-region", proof)
 
     text = path.read_text()
     assert text == EXAMPLE.replace(
-        "    proof: null\n",
-        "    proof:\n      fingerprint: f00\n      cells: 12\n"
-        "      proven_at: '2026-10-27'\n",
+        "    rebuild_check: null\n",
+        "    rebuild_check:\n      fingerprint: f00\n      cells: 12\n"
+        "      matched_at: '2026-10-27'\n",
     )
     cfg = load_view_config(path)
-    assert cfg.comparisons[0].proof is not None
-    assert cfg.comparisons[0].proof.fingerprint == "f00"
-    assert cfg.comparisons[1].proof is None
+    assert cfg.comparisons[0].rebuild_check is not None
+    assert cfg.comparisons[0].rebuild_check.fingerprint == "f00"
+    assert cfg.comparisons[1].rebuild_check is None
 
 
-def test_write_proof_adds_missing_key_and_replaces_existing(tmp_path):
+def test_write_rebuild_check_adds_missing_key_and_replaces_existing(tmp_path):
     path = _write(tmp_path, EXAMPLE)
 
-    write_proof(path, "second", {"fingerprint": "a", "cells": 1, "proven_at": "x"})
-    write_proof(path, "second", {"fingerprint": "b", "cells": 2, "proven_at": "y"})
+    write_rebuild_check(
+        path, "second", {"fingerprint": "a", "cells": 1, "matched_at": "x"}
+    )
+    write_rebuild_check(
+        path, "second", {"fingerprint": "b", "cells": 2, "matched_at": "y"}
+    )
 
     cfg = load_view_config(path)
-    assert cfg.comparisons[1].proof is not None
-    assert cfg.comparisons[1].proof.fingerprint == "b"
+    assert cfg.comparisons[1].rebuild_check is not None
+    assert cfg.comparisons[1].rebuild_check.fingerprint == "b"
 
 
-def test_write_proof_unknown_id(tmp_path):
+def test_write_rebuild_check_unknown_id(tmp_path):
     path = _write(tmp_path, EXAMPLE)
 
     with pytest.raises(ConfigError, match="nope"):
-        write_proof(path, "nope", {})
+        write_rebuild_check(path, "nope", {})
 
 
 def test_time_dimension_is_read(tmp_path):
@@ -266,7 +271,9 @@ def test_rows_need_a_time_dimension(tmp_path):
 def test_time_dimension_is_optional_without_rows(tmp_path):
     text = EXAMPLE.replace("time_dimension: attendance_date\n", "")
     head, tail = text.split("    rows:\n", 1)
-    text = head + "    proof: null" + tail.split("    proof: null", 1)[1]
+    text = (
+        head + "    rebuild_check: null" + tail.split("    rebuild_check: null", 1)[1]
+    )
 
     cfg = load_view_config(_write(tmp_path, text))
 
@@ -276,59 +283,59 @@ def test_time_dimension_is_optional_without_rows(tmp_path):
 
 def test_proof_keeps_workbook_updated_at(tmp_path):
     path = _write(tmp_path, EXAMPLE)
-    write_proof(
+    write_rebuild_check(
         path,
         "ada-y1-region",
         {
             "fingerprint": "f",
             "cells": 3,
-            "proven_at": "2026-10-27T10:00:00+00:00",
+            "matched_at": "2026-10-27T10:00:00+00:00",
             "workbook_updated_at": "2026-10-20T09:00:00+00:00",
-            "probe_fingerprint": "p00",
+            "sheet_query_fingerprint": "p00",
             "cuts": ["{}", '{"Region": "Miami"}'],
         },
     )
 
-    proof = load_view_config(path).comparisons[0].proof
+    proof = load_view_config(path).comparisons[0].rebuild_check
 
     assert proof is not None
     assert proof.workbook_updated_at == "2026-10-20T09:00:00+00:00"
-    assert proof.probe_fingerprint == "p00"
+    assert proof.sheet_query_fingerprint == "p00"
     assert proof.cuts == ["{}", '{"Region": "Miami"}']
 
 
 def test_proof_keeps_totals_skipped(tmp_path):
     path = _write(tmp_path, EXAMPLE)
-    write_proof(
+    write_rebuild_check(
         path,
         "ada-y1-region",
-        {"fingerprint": "f", "cells": 1, "proven_at": "x", "totals_skipped": 2},
+        {"fingerprint": "f", "cells": 1, "matched_at": "x", "totals_skipped": 2},
     )
 
-    proof = load_view_config(path).comparisons[0].proof
+    proof = load_view_config(path).comparisons[0].rebuild_check
 
     assert proof is not None and proof.totals_skipped == 2
 
 
 def test_negative_totals_skipped_is_refused(tmp_path):
     path = _write(tmp_path, EXAMPLE)
-    write_proof(
+    write_rebuild_check(
         path,
         "ada-y1-region",
-        {"fingerprint": "f", "cells": 1, "proven_at": "x", "totals_skipped": -1},
+        {"fingerprint": "f", "cells": 1, "matched_at": "x", "totals_skipped": -1},
     )
 
-    with pytest.raises(ConfigError, match=r"proof\.totals_skipped"):
+    with pytest.raises(ConfigError, match=r"rebuild_check\.totals_skipped"):
         load_view_config(path)
 
 
 def test_proof_without_cuts_reads_as_unknown(tmp_path):
     path = _write(tmp_path, EXAMPLE)
-    write_proof(
-        path, "ada-y1-region", {"fingerprint": "f", "cells": 1, "proven_at": "x"}
+    write_rebuild_check(
+        path, "ada-y1-region", {"fingerprint": "f", "cells": 1, "matched_at": "x"}
     )
 
-    proof = load_view_config(path).comparisons[0].proof
+    proof = load_view_config(path).comparisons[0].rebuild_check
 
     assert proof is not None and proof.cuts is None
     assert proof.totals_skipped is None
@@ -415,7 +422,7 @@ def test_scope_cube_that_is_not_plain_is_refused(tmp_path):
 
 # --- sheet shape and missing cuts ---------------------------------------------
 
-SHAPE = "    probe: avg(is_present)\n"
+SHAPE = "    sheet_query: avg(is_present)\n"
 GAP_DECISION = """\
   - id: no-team
     missing_cut: Team
@@ -510,10 +517,10 @@ def test_split_rows_takes_only_known_modes(tmp_path):
 
 def test_proof_reads_missing_cuts_and_filters(tmp_path):
     proof = """\
-    proof:
+    rebuild_check:
       fingerprint: f
       cells: 3
-      proven_at: '2026-10-27T00:00:00+00:00'
+      matched_at: '2026-10-27T00:00:00+00:00'
       missing_cuts: [Team]
       missing_filters: [Enroll Status, Term]
       restricting_filters: [Enroll Status]
@@ -522,8 +529,8 @@ def test_proof_reads_missing_cuts_and_filters(tmp_path):
       missing_columns:
         Enroll Status: enroll_status
 """
-    text = EXAMPLE.replace("    proof: null\n", proof)
-    p = load_view_config(_write(tmp_path, text)).comparisons[0].proof
+    text = EXAMPLE.replace("    rebuild_check: null\n", proof)
+    p = load_view_config(_write(tmp_path, text)).comparisons[0].rebuild_check
     assert p.filter_notes == {"Grade Copy": "copy of Grade"}
     assert p.missing_columns == {"Enroll Status": "enroll_status"}
     assert p.missing_cuts == ["Team"]
@@ -531,11 +538,12 @@ def test_proof_reads_missing_cuts_and_filters(tmp_path):
     assert p.restricting_filters == ["Enroll Status"]
 
 
-def test_old_proof_reads_missing_lists_as_unknown(tmp_path):
+def test_old_rebuild_check_reads_missing_lists_as_unknown(tmp_path):
     text = EXAMPLE.replace(
-        "    proof: null\n", "    proof:\n      fingerprint: f\n      cells: 1\n"
+        "    rebuild_check: null\n",
+        "    rebuild_check:\n      fingerprint: f\n      cells: 1\n",
     )
-    p = load_view_config(_write(tmp_path, text)).comparisons[0].proof
+    p = load_view_config(_write(tmp_path, text)).comparisons[0].rebuild_check
     assert p.missing_cuts is None and p.missing_filters is None
     assert p.filter_notes is None and p.missing_columns is None
 
@@ -685,13 +693,13 @@ comparisons:
     <<: *roster
     measure: count_tardy_days
     sheet_field: "# Tardy"
-    probe: sum(is_tardy)
-    proof: null
+    sheet_query: sum(is_tardy)
+    rebuild_check: null
   - id: absent
     <<: *roster
     measure: count_absent_days
     sheet_field: "# Absences"
-    probe: sum(is_absent)
+    sheet_query: sum(is_absent)
 """
 
 
@@ -704,14 +712,14 @@ def test_shared_blocks_load_like_repeated_keys(tmp_path):
     assert tardy.dims == absent.dims
 
 
-def test_write_proof_keeps_the_shared_block(tmp_path):
+def test_write_rebuild_check_keeps_the_shared_block(tmp_path):
     path = _write(tmp_path, SHARED)
-    write_proof(path, "absent", {"fingerprint": "f", "cells": 3})
+    write_rebuild_check(path, "absent", {"fingerprint": "f", "cells": 3})
     text = path.read_text()
     assert "roster: &roster" in text and text.count("<<: *roster") == 2
     cfg = load_view_config(path)
-    assert cfg.comparisons[1].proof.cells == 3
-    assert cfg.comparisons[0].proof is None
+    assert cfg.comparisons[1].rebuild_check.cells == 3
+    assert cfg.comparisons[0].rebuild_check is None
 
 
 def test_shared_must_be_a_mapping(tmp_path):
@@ -1147,3 +1155,20 @@ def test_write_decision_round_trips_a_cause_decision(tmp_path):
 )
 def test_mask_digits_masks_only_id_shaped_numbers(text, want):
     assert mask_digits(text) == want
+
+
+@pytest.mark.parametrize(
+    "old, new",
+    [("probe", "sheet_query"), ("probe_sql", "sheet_query_sql"),
+     ("proof", "rebuild_check")],
+)  # fmt: skip
+def test_an_old_key_is_refused_with_its_new_name(tmp_path, old, new):
+    measure = "    measure: avg_daily_attendance\n"
+    path = _write(tmp_path, EXAMPLE.replace(measure, measure + f"    {old}: x\n", 1))
+
+    with pytest.raises(ConfigError) as exc:
+        load_view_config(path)
+
+    assert str(exc.value) == (
+        f"{path}: comparisons[0].{old}: renamed; write it as {new}"
+    )

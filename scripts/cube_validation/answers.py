@@ -46,16 +46,16 @@ from .report import (
 TIME_TRAVEL_DAYS = 7
 
 NO_REPRODUCE = (
-    "no count query yet: the proof has no `-- reproduce {bucket}:` block for it"
+    "no count query yet: the explanation has no `-- reproduce {bucket}:` block for it"
 )
 
 
 @dataclass(frozen=True)
 class ProofSource:
-    """Where a view's stored proofs live, for an owner to reproduce a cause.
+    """Where a view's stored explanations live, for an owner to reproduce a cause.
 
     `view_file` is the validation file as a command names it (repo-relative
-    when known); `base` its directory, which proof paths are relative to;
+    when known); `base` its directory, which explanation paths are relative to;
     `blob` the branch URL of that directory, or None outside a GitHub clone.
     """
 
@@ -65,7 +65,7 @@ class ProofSource:
 
 
 # A hand check whose pinned SQL is longer on either side leaves it out: too
-# long to paste into the BigQuery console, or to keep in the review file.
+# long to paste into the BigQuery console, or to keep in the questions JSON.
 MAX_POSTED_SQL = 20_000
 NO_EXAMPLE = (
     "no group cell with 10+ students differs; find an example under your own access"
@@ -118,12 +118,12 @@ def cell_causes(
     how many students each has in it.
 
     `recorded` is the triage's `cause_students` for the comparison: the
-    proofs' own distinct-student counts per cause, cell and cut, used as
+    explanations' own distinct-student counts per cause, cell and cut, used as
     they are. A triage saved before them gives None, and the count is then
     the floor below.
 
     A cell's rows lie in the open groups with a row in it (`coverage.placed`,
-    as `triage` links cells; none when the cell cannot be placed); each group
+    as `sort` links cells; none when the cell cannot be placed); each group
     carries its triage item's causes (`sort.cause_key`), and a group with
     none carries `""`.
 
@@ -226,7 +226,7 @@ def example_cell(
             question's words cannot single one out; the most wins.
         cells: `cell_causes` for the comparison; without it, `cause` is
             not used.
-        kind: Only cells of this `kind` (`formula` or `cells`, as `run` saved
+        kind: Only cells of this `kind` (`formula` or `cells`, as `compare` saved
             it; a cell saved without one is `cells`), so a formula question's
             example is a cell where every row matched.
 
@@ -484,11 +484,11 @@ def reproduce_json(
 
     Returns:
         `comparison`, `cube` (the example cell as a `load` query and where to
-        read the dashboard's, or None without an example cell), and `proofs`:
-        per stored proof and cause bucket, its `reproduce` query on today's
-        tables (None without one), the `confirm` command that re-proves it
+        read the dashboard's, or None without an example cell), and `explanations`:
+        per stored explanation and cause bucket, its `reproduce` query on today's
+        tables (None without one), the `explain` command that re-explains it
         at the run's moment until `expires`, the `after` commands once that
-        has passed, and the proof file's `path` and branch `url`.
+        has passed, and the explanation file's `path` and branch `url`.
     """
     from . import explain
 
@@ -513,12 +513,12 @@ def reproduce_json(
             {
                 "bucket": bucket,
                 "reproduce": _checked_reproduce(cfg, proof, bucket),
-                "confirm": (
-                    f"triage confirm {file} --comparison "
+                "explain": (
+                    f"explain {file} --comparison "
                     f"{proof.comparison if proof else cid} --bucket "
                     f"{proof.bucket if proof else '<bucket>'}"
                 ),
-                "after": [f"run {file}", f"triage {file}"],
+                "after": [f"compare {file}", f"sort {file}"],
                 "expires": (
                     run.moment_of(cid).start + timedelta(days=TIME_TRAVEL_DAYS)
                 ).isoformat(),
@@ -526,15 +526,16 @@ def reproduce_json(
                 "url": f"{source.blob}/{path}" if source and source.blob else None,
             }
         )
-    return {"view": view, "comparison": cid, "cube": cube, "proofs": proofs}
+    return {"view": view, "comparison": cid, "cube": cube, "explanations": proofs}
 
 
 def _checked_reproduce(cfg: ViewConfig, proof, bucket: str) -> str | None:
-    """A proof's reproduce query for one bucket, checked again before it posts.
+    """An explanation's reproduce query for one bucket, checked again before it posts.
 
-    `triage confirm` checks it, but the block is comment lines, which a
-    proof's fingerprint ignores: an edit after confirm would post unchecked.
-    A query that fails the check is left out, as if the proof had none.
+    `explain` checks it, but the block is comment lines, which an
+    explanation's fingerprint ignores: an edit after `explain` would post
+    unchecked.
+    A query that fails the check is left out, as if the explanation had none.
     """
     from . import explain
 
@@ -573,12 +574,13 @@ def merged_reproduce(
     """A cause question's `reproduce_json` parts, each thing said once.
 
     Returns:
-        `queries`: each distinct count query, as `bucket` and `sql`. `proofs`:
-        per proof file and cause bucket, `bucket`, `query` (its index in
+        `queries`: each distinct count query, as `bucket` and `sql`.
+        `explanations`:
+        per explanation file and cause bucket, `bucket`, `query` (its index in
         `queries`, None without one), `path` (relative to the validation
-        file's directory) and `confirm` (the commands that re-prove it, which
+        file's directory) and `explain` (the commands that re-explain it, which
         the posted JSON leaves out). `blob`: the branch link `<blob>/<path>`
-        opens a proof file at, or None. `cube`: per
+        opens an explanation file at, or None. `cube`: per
         comparison with an example cell (only those in `examples`, as
         `(view, comparison)`, when given), its `view`, `comparison` and
         `query`; the question's hand check for that comparison says where to
@@ -598,7 +600,7 @@ def merged_reproduce(
                     "query": part["cube"]["query"],
                 }
             )
-        for p in part["proofs"]:
+        for p in part["explanations"]:
             query = None
             if p["reproduce"]:
                 entry = {"bucket": p["bucket"], "sql": p["reproduce"]}
@@ -613,16 +615,16 @@ def merged_reproduce(
                     "bucket": p["bucket"],
                     "query": query,
                     "path": p["path"],
-                    "confirm": [],
+                    "explain": [],
                 },
             )
-            if p["confirm"] not in merged["confirm"]:
-                merged["confirm"].append(p["confirm"])
+            if p["explain"] not in merged["explain"]:
+                merged["explain"].append(p["explain"])
             after += [a for a in p["after"] if a not in after]
             expires = min(expires or p["expires"], p["expires"])
     return {
         "queries": queries,
-        "proofs": list(proofs.values()),
+        "explanations": list(proofs.values()),
         "blob": blob,
         "cube": cube,
         "expires": expires,
@@ -655,7 +657,7 @@ def questions_json(
             `record-answers` never reads one as an answer.
         now: The current time, to say whether the pinned SQL still runs.
         causes: Per view, the owner's cause questions (`sort.cause_asks`).
-        sources: Per view, where its stored proofs live, for a cause
+        sources: Per view, where its stored explanations live, for a cause
             question's `reproduce` block.
 
     Returns:
@@ -1053,7 +1055,7 @@ _STUB_KEYS = ("comparison", "group", "formula", "missing_cut", "missing_filter")
 
 
 def _is_cause_item(item: dict) -> bool:
-    """A proven row group, which cause decisions decide (`sort.decidable`)."""
+    """An explained row group, which cause decisions decide (`sort.decidable`)."""
     proof = item.get("proof") or {}
     return (
         item.get("kind") == "group"
@@ -1082,7 +1084,7 @@ def _file_cause(d: Decision) -> dict:
 
 
 def _proofs_by_cause(items: list[dict]) -> dict[tuple, set[str]]:
-    """Each cause's proof files across the triage's proven row groups."""
+    """Each cause's explanation files across the triage's explained row groups."""
     out: dict[tuple, set[str]] = {}
     for item in items:
         if _is_cause_item(item):
@@ -1108,15 +1110,15 @@ def approved_decisions(
 ) -> list[dict]:
     """Turn an approved triage batch into decisions, in the file's key order.
 
-    A proven row group (a stored proof's, or the reconcile's for a sheet
+    An explained row group (a stored explanation's, or the reconcile's for a sheet
     filter) is decided on its causes, never on a column value: an entry
     decides one cause of one item, `{comparison, cause: {side, label}, call,
     reason, task, fingerprints}`, whose fingerprints are the comparison's and
-    the proof's. An item with several causes takes one entry per cause, each
+    the explanation's. An item with several causes takes one entry per cause, each
     naming it in `cause`, so each cause gets its own call; the item is
     decided once every cause is. A cause already decided keeps its decision,
     which must have the entry's call; entries on one cause merge into one
-    decision. One whose SQL or proof changed since is re-approved on the
+    decision. One whose SQL or explanation changed since is re-approved on the
     current ones, unless the owner has answered it. A label's ID-shaped
     numbers are written `<n>`. No order of the entries changes the result.
 
@@ -1142,11 +1144,11 @@ def approved_decisions(
         AnswerError: An entry is malformed, repeats an id or an (item,
             cause), takes an id the file has, has a reason that carries what
             `NOTE_REFUSALS` keeps out, names an item the triage does not list,
-            an item still in `investigate`, a cell set, a row group no proof
+            an item still in `investigate`, a cell set, a row group no explanation
             decides, or a cause the item lacks, leaves out `cause` on an item
             with several, names a comparison the run has no fingerprints for,
-            or has a cause with no words, words 2 proofs share, a decision
-            with another call, or an answered decision whose SQL or proof
+            or has a cause with no words, words 2 explanations share, a decision
+            with another call, or an answered decision whose SQL or explanation
             changed.
     """
     items = {item.get("id"): item for item in triage.get("items", [])}
@@ -1167,13 +1169,12 @@ def approved_decisions(
         ids.add(decision_id)
         item_id = _text(entry, "item", where)
         if item_id not in items:
-            raise AnswerError(f"{where}: triage lists no item {item_id!r}")
+            raise AnswerError(f"{where}: the sort lists no item {item_id!r}")
         item = items[item_id]
         if item.get("suggestion") == "investigate":
             raise AnswerError(
-                f"{where}: item {item_id!r} is still in `investigate`; prove it "
-                "with `triage confirm` (cube-validation skill, step 8), then "
-                "re-run `triage`"
+                f"{where}: item {item_id!r} is still in `investigate`; run `explain` "
+                "on it (cube-validation skill, step 8), then re-run `sort`"
             )
         named = _text(entry, "cause", where, required=False)
         stub = item.get("stub") or {}
@@ -1200,13 +1201,13 @@ def approved_decisions(
         if item.get("kind") == "cells" or stub.get("cells"):
             raise AnswerError(
                 f"{where}: item {item_id!r} is a cell set; a cell set takes no "
-                "decision, since triage closes it once every group in its cells "
+                "decision, since `sort` closes it once every group in its cells "
                 "is decided"
             )
         if item.get("kind") == "group" and not _is_cause_item(item):
             raise AnswerError(
-                f"{where}: item {item_id!r} is a row group no proof decides; a "
-                "row group is decided only on a proven cause"
+                f"{where}: item {item_id!r} is a row group no explanation decides; a "
+                "row group is decided only on an explained cause"
             )
         if not _is_cause_item(item):
             if (item_id, "") in seen:
@@ -1254,8 +1255,8 @@ def approved_decisions(
             key = (comparison, side, label)
             if len(proofs.get(key, ())) > 1:
                 raise AnswerError(
-                    f"{where}: {len(proofs[key])} proof files name the {side} cause "
-                    f"{label!r}; give each its own words"
+                    f"{where}: {len(proofs[key])} explanation files name the {side} "
+                    f"cause {label!r}; give each its own words"
                 )
             target = decided.get(key)
             if target is None:
@@ -1276,10 +1277,10 @@ def approved_decisions(
                         if found.answer:
                             raise AnswerError(
                                 f"{where}: the owner answered {found.id!r} before "
-                                f"its {'SQL' if state == 'sql' else 'proof'} "
+                                f"its {'SQL' if state == 'sql' else 'explanation'} "
                                 f"changed; delete it to ask again"
                             )
-                        # Re-approved on the current SQL and proof.
+                        # Re-approved on the current SQL and explanation.
                         target.update(call=call, reason=reason)
                         target.pop("task", None)
                         if task:
@@ -1311,6 +1312,6 @@ def approved_decisions(
             elif target["fingerprints"].get("proof") != proof:
                 raise AnswerError(
                     f"{where}: {target['id']!r} was approved on another version of "
-                    "the proof; re-run `triage`"
+                    "the explanation; re-run `sort`"
                 )
     return out

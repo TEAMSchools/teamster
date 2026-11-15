@@ -152,7 +152,10 @@ def test_sheet_lines_flag_relative_dates_code_groups_and_shared_filters():
         "or default the comparison to its members; shared through filter-group 94 "
         "with 1 other sheets (Other)"
     ) in text
-    assert "needs dashboard_filters with days_from_week_end or a probe filter" in text
+    assert (
+        "needs dashboard_filters with days_from_week_end or a sheet query filter"
+        in text
+    )
     assert "- School: regular; keeps all\n" in text
     # A filter's chosen values never print.
     assert "ELA" not in text and "2026" not in text
@@ -167,7 +170,7 @@ def test_restricting_filters_block_until_the_comparison_handles_them():
     ) in before
     assert (
         "Exclude Future Assessments: relative date; needs dashboard_filters with "
-        "days_from_week_end or a probe filter"
+        "days_from_week_end or a sheet query filter"
     ) in before
     assert not [b for b in before if b.startswith("Academic Year")]
 
@@ -233,7 +236,7 @@ def test_report_ends_each_comparison_with_before_prove():
 
     assert text.startswith("Grid (w.twb)\n")
     assert "\n  grid:\n" in text
-    assert "\n    Before prove:\n      - Grade/Subject: no Cube member" in text
+    assert "\n    Before rebuild-sheet:\n      - Grade/Subject: no Cube member" in text
     assert read_sheet.report(cfg, lambda wb: ("w.twb", TWB), MEMBERS, ["Nope"]) == (
         "Nope: not in w.twb"
     )
@@ -268,7 +271,7 @@ comparisons:
     workbook: wb-1
     sheet: Grid
     dashboard_view: kipptaf_tableau.rpt_d
-    probe: avg(is_mastery_int)
+    sheet_query: avg(is_mastery_int)
     sheet_field: Avg. Is Mastery Int
     decimals: 2
     dims:
@@ -277,7 +280,7 @@ comparisons:
       School: { dashboard: school, cube: abbreviation }
     defaults: {}
     cuts: [{}]
-    proof: null
+    rebuild_check: null
 """
 
 
@@ -303,12 +306,12 @@ def test_preflight_command_reads_a_local_workbook(tmp_path, capsys, monkeypatch)
     monkeypatch.setattr(cli, "tableau_session", no_tableau)
     view, twb = _files(tmp_path)
 
-    assert cli.main(["preflight", str(view), "--twb", str(twb)]) == 0
+    assert cli.main(["read-sheet", str(view), "--twb", str(twb)]) == 0
 
     out = capsys.readouterr().out
-    assert out.startswith("Grid (w.twb)\n") and "Before prove:" in out
+    assert out.startswith("Grid (w.twb)\n") and "Before rebuild-sheet:" in out
     assert (
-        cli.main(["preflight", str(view), "--twb", str(twb), "--sheet", "Other"]) == 0
+        cli.main(["read-sheet", str(view), "--twb", str(twb), "--sheet", "Other"]) == 0
     )
     assert "Other (w.twb)" in capsys.readouterr().out
 
@@ -316,11 +319,11 @@ def test_preflight_command_reads_a_local_workbook(tmp_path, capsys, monkeypatch)
 def test_preflight_command_refuses_without_members_or_a_workbook(tmp_path, capsys):
     view, twb = _files(tmp_path, members=False)
 
-    assert cli.main(["preflight", str(view), "--twb", str(twb)]) == 1
+    assert cli.main(["read-sheet", str(view), "--twb", str(twb)]) == 1
     assert "members.json: missing; run `members` first" in capsys.readouterr().err
 
     _save_members()
-    assert cli.main(["preflight", str(view), "--twb", str(tmp_path / "none")]) == 1
+    assert cli.main(["read-sheet", str(view), "--twb", str(tmp_path / "none")]) == 1
 
 
 def test_preflight_command_never_signs_in_to_tableau(tmp_path, capsys, monkeypatch):
@@ -330,7 +333,7 @@ def test_preflight_command_never_signs_in_to_tableau(tmp_path, capsys, monkeypat
     monkeypatch.setattr(cli, "tableau_session", no_tableau)
     view, _ = _files(tmp_path)
 
-    assert cli.main(["preflight", str(view)]) == 1
+    assert cli.main(["read-sheet", str(view)]) == 1
     assert "pass --twb <path>" in capsys.readouterr().err
 
 
@@ -414,10 +417,10 @@ def test_a_probe_handles_only_the_relative_dates_whose_column_it_names():
     xml = _with_relative()
 
     lines, before = read_sheet.check(
-        "v", xml, "Grid", _comparison(probe_sql=probe), MEMBERS
+        "v", xml, "Grid", _comparison(sheet_query_sql=probe), MEMBERS
     )
 
-    assert "- Exclude Future Assessments: in probe_sql" in "\n".join(lines)
+    assert "- Exclude Future Assessments: in sheet_query_sql" in "\n".join(lines)
     assert not [b for b in before if b.startswith("Exclude Future")]
     assert any(b.startswith("Week Start Monday: relative date") for b in before)
 
@@ -428,7 +431,7 @@ def test_a_probe_with_a_fixed_date_does_not_clear_a_relative_date():
         "AND administered_at >= '2025-07-01' GROUP BY {dims}"
     )
 
-    _, before = _check(_comparison(probe_sql=probe))
+    _, before = _check(_comparison(sheet_query_sql=probe))
 
     # The column is named, but no rolling date bounds it.
     assert any(

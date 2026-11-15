@@ -3,8 +3,8 @@
 A decision quiets the groups it names only while the SQL on both sides is the
 SQL it was made against. A `group` decision names its groups by one column's
 value. A `formula` decision names its comparison's formula difference: the
-differing cells no unmatched row lies in. A `cause` decision names a proven
-cause, never a group: the latest triage, which re-runs every stored proof,
+differing cells no unmatched row lies in. A `cause` decision names an explained
+cause, never a group: the latest triage, which re-runs every stored explanation,
 says which items it decides (`sort.mark_decided`), so `apply` only checks
 its SQL. Pure: no I/O.
 """
@@ -130,16 +130,17 @@ def decisions_fingerprint(decisions: list[Decision]) -> str:
 
 
 def cause_state(d: Decision, proof: str, current: dict[str, str]) -> str:
-    """Whether a cause decision still holds for an item proven by `proof`.
+    """Whether a cause decision still holds for an item explained by `proof`.
 
     Args:
         d: A cause decision.
-        proof: The fingerprint of the stored proof the item's cause rests on.
+        proof: The fingerprint of the stored explanation the item's cause
+            rests on.
         current: The comparison's current `{cube, dashboard}` fingerprints.
 
     Returns:
         `holds`, `sql` (either side's SQL changed since the decision) or
-        `proof` (the proof file changed since the decision).
+        `proof` (the explanation file changed since the decision).
     """
     if any(
         not d.fingerprints.get(side) or d.fingerprints[side] != current.get(side)
@@ -179,7 +180,7 @@ def apply(
         fingerprints: Current SQL fingerprints per comparison id, as
             `{"cube": ..., "dashboard": ...}`.
         gaps: Sheet fields with no Cube member. A decision naming one by kind
-            and field quiets it; it carries no fingerprints, because a re-prove
+            and field quiets it; it carries no fingerprints, because a re-explain
             rewrites the list it matches.
         cell_diffs: Each comparison's differing cells. A `formula` decision
             quiets its comparison's `formula` diff while both fingerprints
@@ -202,8 +203,8 @@ def apply(
 
     for decision in decisions:
         if decision.cause:
-            # Its own proof stands in for the item's: here only the SQL, and
-            # that it has a proof at all, can fail.
+            # Its own explanation stands in for the item's: here only the SQL, and
+            # that it has an explanation at all, can fail.
             state = cause_state(
                 decision,
                 decision.fingerprints.get("proof", ""),

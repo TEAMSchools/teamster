@@ -1,7 +1,7 @@
 """Each comparison's latest result, kept apart from any one run folder.
 
 A validation is the latest result of each confirmed comparison, each at its
-own moment. `run` copies a comparison's slice here as it finishes and composes
+own moment. `compare` copies a comparison's slice here as it finishes and composes
 `run.json` from every comparison's copy. Results are kept per fact dataset
 (`folder`), so a dev build's run (`--fact-dataset`) never replaces or joins
 production's. A copy, not a pointer to a run
@@ -51,7 +51,7 @@ def folder(view_dir: Path, fact: str) -> Path:
 
 
 def entry_fingerprint(comparison: Comparison) -> str:
-    """The comparison's config entry, its rebuild check (`proof`) included."""
+    """The comparison's config entry, its rebuild check (`rebuild_check`) included."""
     return hashlib.sha256(
         json.dumps(dataclasses.asdict(comparison), sort_keys=True, default=str).encode()
     ).hexdigest()

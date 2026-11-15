@@ -1,7 +1,7 @@
 """Place a comparison's row groups in its differing cells.
 
-A differing cell is covered when every group with a row in it is proven or
-decided. Placing must be exact, or a cell would close with no proven row in it:
+A differing cell is covered when every group with a row in it is explained or
+decided. Placing must be exact, or a cell would close with no explained row in it:
 a group is in a cell only when, under the cell's cut, a side holds its rows
 (`Group.cut_rows`) and that side files them under the cell's every dim. Pure:
 no I/O.

@@ -83,22 +83,23 @@ class RunResult:
     changed_dims: list[str] = field(default_factory=list)
     scopes: list[str] = field(default_factory=list)
     cost_usd: float = 0.0
+    # Comparison id to its rebuild check's `matched_at`.
     proofs: dict[str, str] = field(default_factory=dict)
     browser_cuts: list[str] = field(default_factory=list)
-    # Total rows the proofs' exports showed but no proof compared.
+    # Total rows the rebuild checks' exports showed but no check compared.
     totals: list[str] = field(default_factory=list)
-    # Comparison id to the reshape its proof's copy carried (`dropped ...;
-    # added ...`): that proof covers the reshaped grain, not the sheet's own.
+    # Comparison id to the reshape its rebuild copy carried (`dropped ...;
+    # added ...`): that check covers the reshaped grain, not the sheet's own.
     reshaped: dict[str, str] = field(default_factory=dict)
     clauses: dict[str, list[str]] = field(default_factory=dict)
     fingerprints: dict[str, dict[str, str]] = field(default_factory=dict)
-    # The `decisions:` block the run applied; `review` refuses a changed one.
+    # The `decisions:` block the run applied; `ask-owner` refuses a changed one.
     decisions_fingerprint: str = ""
-    # Comparisons whose proof predates missing cuts and filters.
+    # Comparisons whose rebuild check predates missing cuts and filters.
     gaps_unknown: list[str] = field(default_factory=list)
     # Each comparison's `dashboard_filters`, as the SQL the dashboard side ran.
     dashboard_filters: list[str] = field(default_factory=list)
-    # What the result was proven against: the Cube server's host and the
+    # What the result was compared against: the Cube server's host and the
     # `dataset.table` fact, so an analyst can say so in a PR description.
     cube_host: str = ""
     fact: str = ""
@@ -377,21 +378,21 @@ def render_local(run: RunResult) -> str:
             "",
         ]
     out += _bullets(run.scopes)
-    out += ["", "## Cuts to prove in the browser", ""]
+    out += ["", "## Cuts to check in the browser", ""]
     out += _bullets(run.browser_cuts)
-    out += ["", "## Proofs", ""]
+    out += ["", "## Rebuild checks", ""]
     out += _bullets(
         [
-            f"{comparison}: last proven {at}"
+            f"{comparison}: last matched {at}"
             + (
-                f"; proven on a reshaped copy: {run.reshaped[comparison]}"
+                f"; matched on a reshaped copy: {run.reshaped[comparison]}"
                 if comparison in run.reshaped
                 else ""
             )
             for comparison, at in sorted(run.proofs.items())
         ]
     )
-    out += ["", "## Totals not proven", ""]
+    out += ["", "## Totals not matched", ""]
     out += _bullets(run.totals)
     out += [
         "",
@@ -608,14 +609,14 @@ def _group_part(
 @dataclass(frozen=True)
 class CauseAsk:
     """One comparison's part of an owner question on a cause: the decision,
-    the groups it decides in the latest triage, the rows the proof attributes
+    the groups it decides in the latest triage, the rows the explanation attributes
     to it in them, and the comparison's model-doc lead (`sort.doc_leads`)."""
 
     decision: Decision
     groups: list[Group]
     rows: int
     lead: str = ""
-    # Each stored proof that proves the cause in these groups, as its path
+    # Each stored explanation that explains the cause in these groups, as its path
     # relative to the validation file's directory and the cause's bucket.
     proofs: tuple[tuple[str, str], ...] = ()
 
@@ -683,7 +684,7 @@ SQL_BROKEN = "its SQL cannot be built today"
 
 @dataclass(frozen=True)
 class Unsettled:
-    """One open item still in triage's `investigate` pile, as `review` lists it.
+    """One open item still in triage's `investigate` pile, as `ask-owner` lists it.
 
     `item` is its triage id, which masks values as the issue does. `what` is
     a row group's bucket, else the item's kind. `rows` and `cells` are exact
@@ -826,7 +827,7 @@ def _questions(
         for ask in (causes or {}).get(run.view, []):
             part, hidden = _cause_part(run.view, ask)
             d = ask.decision
-            # One rule proven on several comparisons is one question.
+            # One rule explained on several comparisons is one question.
             key = ("cause", d.cause.get("side"), d.cause.get("label"), d.task)
             add(run.view, "cause", [d], part, hidden, [d.comparison], key=key)
             questions[key].setdefault("asks", []).append((run.view, ask))
@@ -930,7 +931,7 @@ def also_decided(
 def question_reasons(q: dict) -> list[str]:
     """Every distinct reason behind a question, scrubbed, in decision order.
 
-    A cause proven on several comparisons is one question, and each
+    A cause explained on several comparisons is one question, and each
     comparison's decision may carry its own reason.
     """
     raw = q["reasons"] or [q["reason"]]
@@ -1014,7 +1015,7 @@ def _hand_check_lines(question_id: str, check: dict) -> list[str]:
         pass
     elif check["expired"]:
         line += (
-            f"The pinned SQL stopped working at {check['expires']}; re-run `run` "
+            f"The pinned SQL stopped working at {check['expires']}; re-run `compare` "
             "for a fresh moment."
         )
     else:
@@ -1060,7 +1061,7 @@ def _hand_check_lines(question_id: str, check: dict) -> list[str]:
 def _reproduce_lines(question_id: str, block: dict) -> list[str]:
     """A cause question's folded Reproduce block (`answers.merged_reproduce`):
     each example cell as a Cube query, each count query on today's tables
-    once, then each proof file with the commands that re-prove it."""
+    once, then each explanation file with the commands that re-explain it."""
     out = ["<details>", f"<summary>Reproduce {question_id}</summary>", ""]
     for cube in block["cube"]:
         out += [
@@ -1086,7 +1087,7 @@ def _reproduce_lines(question_id: str, block: dict) -> list[str]:
             "```",
             "",
         ]
-    for proof in block["proofs"]:
+    for proof in block["explanations"]:
         name = proof["path"].rsplit("/", 1)[-1]
         blob = block.get("blob")
         link = f"[`{name}`]({blob}/{proof['path']})" if blob else f"`{proof['path']}`"
@@ -1094,19 +1095,19 @@ def _reproduce_lines(question_id: str, block: dict) -> list[str]:
             count = " (no count query yet)"
         else:
             count = f" (count query {proof['query'] + 1})" if several else ""
-        commands = "; ".join(f"`{c}`" for c in proof["confirm"])
+        commands = "; ".join(f"`{c}`" for c in proof["explain"])
         out += [f"- Cause `{_clean(proof['bucket'])}` in {link}{count}: {commands}"]
     after = " then ".join(f"`{a}`" for a in block["after"])
     out += [
         "",
-        "Each command re-proves its cause at the run's moment, in Claude in VS "
+        "Each command re-explains its cause at the run's moment, in Claude in VS "
         f"Code in this repository, until {block['expires']}; after that, {after}.",
         "",
     ]
     return out + ["</details>", ""]
 
 
-# GitHub caps an issue body and a comment at 65,536 characters. `review` keeps
+# GitHub caps an issue body and a comment at 65,536 characters. `ask-owner` keeps
 # under it with room for small edits; the body is re-rendered, not hand-edited.
 GITHUB_CAP = 65_536
 BODY_WARN_CHARS = GITHUB_CAP - 2_000
@@ -1238,17 +1239,17 @@ def _ended(text: str) -> str:
 
 def posted_json(questions: list[dict]) -> list[dict]:
     """The questions as the owner's session reads them: a cause question's
-    reproduce without the analyst's commands (`confirm`, `after`), which only
+    reproduce without the analyst's commands (`explain`, `after`), which only
     the prose shows."""
     out = []
     for q in questions:
         if q.get("reproduce"):
             proofs = [
-                {k: v for k, v in p.items() if k != "confirm"}
-                for p in q["reproduce"]["proofs"]
+                {k: v for k, v in p.items() if k != "explain"}
+                for p in q["reproduce"]["explanations"]
             ]
             kept = {k: v for k, v in q["reproduce"].items() if k != "after"}
-            q = {**q, "reproduce": {**kept, "proofs": proofs}}
+            q = {**q, "reproduce": {**kept, "explanations": proofs}}
         out.append(q)
     return out
 
@@ -1318,7 +1319,7 @@ def _review_body(
 ) -> str:
     """The review body from its rendered parts; `moved` says the Reproduce
     blocks follow in comments (2: the hand checks too); `questions` is the
-    JSON to post, without the `confirm` commands, which are the analyst's."""
+    JSON to post, without the `explain` commands, which are the analyst's."""
     ids = sorted(set(asked_ids))
     n = len(question_lines)
     plural = "question" if n == 1 else "questions"

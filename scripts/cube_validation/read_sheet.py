@@ -1,11 +1,11 @@
-"""Read a sheet's workbook XML before proving it, offline.
+"""Read a sheet's workbook XML before rebuilding it, offline.
 
-For each sheet a validation file names, `preflight` lists what the proof will
-meet: the shelf fields and the Cube member each maps to, table calculations,
+For each sheet a validation file names, `read-sheet` lists what the rebuild
+will meet: the shelf fields and the Cube member each maps to, table calculations,
 filters (context, code group, relative date, parameter-driven), the parameters
 the sheet reads, and whether `sheet_field` is on the sheet. It ends with the
-items to settle before `prove`. It reads a local `.twb` and the `members`
-cache, and prints no filter or parameter value.
+items to settle before `rebuild-sheet`. It reads a local `.twb` and the
+`members` cache, and prints no filter or parameter value.
 """
 
 from __future__ import annotations
@@ -69,7 +69,7 @@ class SheetFilter:
 @dataclass(frozen=True)
 class Parameter:
     """A parameter the sheet reads. Its current value is a member value, so
-    preflight never reads it."""
+    `read-sheet` never reads it."""
 
     name: str
     caption: str
@@ -77,7 +77,7 @@ class Parameter:
 
 @dataclass(frozen=True)
 class Sheet:
-    """What `preflight` reads from one worksheet."""
+    """What `read-sheet` reads from one worksheet."""
 
     shelf_fields: list[ShelfField]
     table_calcs: list[tableau.TableCalc]
@@ -386,14 +386,14 @@ def _filter_lines(out: _Checklist, comparison: Comparison | None, facts: Sheet) 
     # The columns a week-end dashboard filter compares; one handles only a
     # relative-date filter that reads its column.
     week_end = {str(e.get("dashboard")) for e in entries if "days_from_week_end" in e}
-    probe_sql = (comparison.probe_sql or "") if comparison else ""
+    sheet_query_sql = (comparison.sheet_query_sql or "") if comparison else ""
     set_here = set(comparison.parameters) if comparison else set()
 
-    def in_probe(columns: tuple[str, ...]) -> bool:
-        # The probe must name the column and a rolling date; a fixed bound on
+    def in_sheet_query(columns: tuple[str, ...]) -> bool:
+        # The sheet query must name the column and a rolling date; a fixed bound on
         # the column is not the sheet's window.
-        return "CURRENT_DATE" in probe_sql.upper() and any(
-            re.search(rf"\b{re.escape(c)}\b", probe_sql) for c in columns
+        return "CURRENT_DATE" in sheet_query_sql.upper() and any(
+            re.search(rf"\b{re.escape(c)}\b", sheet_query_sql) for c in columns
         )
 
     # A code group's source column, defaulted through its `filters:` caption.
@@ -417,12 +417,12 @@ def _filter_lines(out: _Checklist, comparison: Comparison | None, facts: Sheet) 
         elif "relative date" in f.kinds:
             if week_end & set(f.columns):
                 lines.append((f"{f.caption}: dashboard_filters days_from_week_end", ""))
-            elif in_probe(f.columns):
-                lines.append((f"{f.caption}: in probe_sql", ""))
+            elif in_sheet_query(f.columns):
+                lines.append((f"{f.caption}: in sheet_query_sql", ""))
             else:
                 need = (
                     f"{f.caption}: relative date; needs dashboard_filters with "
-                    "days_from_week_end or a probe filter"
+                    "days_from_week_end or a sheet query filter"
                 )
                 lines.append((need, need))
         elif "code group" in f.kinds:
@@ -497,7 +497,8 @@ def _sheet_lines(label: str, sheet: str, facts: Sheet) -> list[str]:
         line = f"    - {f.caption}: {kinds}; {state}"
         if "relative date" in f.kinds:
             line += (
-                "; needs dashboard_filters with days_from_week_end or a probe filter"
+                "; needs dashboard_filters with days_from_week_end or a sheet query "
+                "filter"
             )
         if "code group" in f.kinds:
             line += (
@@ -577,7 +578,7 @@ def report(
     members: list[Member],
     sheets: list[str] | None = None,
 ) -> str:
-    """The preflight checklist for each sheet the file's comparisons name, or
+    """The `read-sheet` checklist for each sheet the file's comparisons name, or
     for `sheets`.
 
     `workbook` returns a comparison workbook's label and XML; it is called
@@ -600,10 +601,10 @@ def report(
             checklist, before = check(cfg.view, xml, sheet, comparison, members)
             lines += checklist
             if before:
-                lines.append("    Before prove:")
+                lines.append("    Before rebuild-sheet:")
                 lines += [f"      - {b}" for b in dict.fromkeys(before)]
             else:
-                lines.append("    Before prove: nothing blocks")
+                lines.append("    Before rebuild-sheet: nothing blocks")
             if comparison and (why := coverage.unplaceable(comparison)):
                 lines.append(f"    Cells cannot be covered: {why}")
         blocks.append("\n".join(lines))

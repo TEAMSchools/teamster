@@ -40,7 +40,7 @@ from .config import (
     Comparison,
     Decision,
     ViewConfig,
-    write_proof,
+    write_rebuild_check,
 )
 from .cube_client import (
     Compiled,
@@ -67,7 +67,8 @@ from .reconcile import CellDiff, Gap, Group
 from .report import MeasureResult, RunResult
 from .timetravel import PROJECT, AsOf, as_of, repin, utc_literal
 
-# A proof's probe is time-travelled to the refresh; keep a margin inside 7 days.
+# A rebuild's sheet query is time-travelled to the refresh; keep a margin inside
+# 7 days.
 PROOF_WINDOW = WINDOW - timedelta(hours=1)
 
 
@@ -77,7 +78,7 @@ class Refusal(RuntimeError):
 
 @dataclasses.dataclass(frozen=True)
 class Skip:
-    """A comparison `run` leaves out, and why; it keeps its latest result."""
+    """A comparison `compare` leaves out, and why; it keeps its latest result."""
 
     comparison: str
     why: str
@@ -346,7 +347,7 @@ def _dashboard_ref(comparison: Comparison) -> str:
     computed = ", ".join(
         f"{sql} AS {column}" for column, sql in comparison.dashboard_columns.items()
     )
-    # trunk-ignore(bandit/B608): column names are validated in config.py; the expressions are the analyst's own SQL, like probe_sql
+    # trunk-ignore(bandit/B608): column names are validated in config.py; the expressions are the analyst's own SQL, like sheet_query_sql
     return f"(SELECT *, {computed} FROM {table})"
 
 
@@ -415,7 +416,7 @@ def _students_sql(cfg: ViewConfig, comparison: Comparison, student: str) -> str:
 
     Each branch reads exactly the rows its cut's cells come from: the cut's
     predicate with the `dashboard_filters`, grouped by the dims as
-    `probe_sql` groups them. `__cut` is the cut's index in `_cuts`.
+    `sheet_query_sql` groups them. `__cut` is the cut's index in `_cuts`.
     """
     # trunk-ignore(bandit/B608): identifiers are validated in config.py and values are bound or literal-escaped
     rows = f"SELECT * FROM {_dashboard_ref(comparison)}"
@@ -451,15 +452,16 @@ def group_dims(comparison: Comparison) -> list[ColumnPair]:
     return [d for d in comparison.dims if d.cube not in grain]
 
 
-def probe_sql(
+def sheet_query(
     cfg: ViewConfig,
     comparison: Comparison,
     cut: dict[str, Any],
     with_filters: bool = True,
 ) -> str:
-    """Return the probe over the dashboard rows under one cut, before time travel.
+    """Return the sheet query over the dashboard rows under one cut, before time
+    travel.
 
-    `probe` is an aggregate over the rows; `probe_sql` is a template whose
+    `sheet_query` is an aggregate over the rows; `sheet_query_sql` is a template whose
     `{rows}`, `{where}` and `{dims}` are filled here. `with_filters` False
     leaves out the `dashboard_filters`, to name the cells they drop.
     """
@@ -467,12 +469,14 @@ def probe_sql(
     rows = f"SELECT * FROM {_dashboard_ref(comparison)}"
     where = dashboard_predicate(comparison, cut, with_filters)
     names = [d.dashboard for d in comparison.dims]
-    if comparison.probe_sql:
-        return comparison.probe_sql.format(
+    if comparison.sheet_query_sql:
+        return comparison.sheet_query_sql.format(
             rows=rows, where=where, dims=", ".join(names)
         )
-    if not comparison.probe:
-        raise Refusal(f"comparison {comparison.id!r} has no probe or probe_sql")
+    if not comparison.sheet_query:
+        raise Refusal(
+            f"comparison {comparison.id!r} has no sheet_query or sheet_query_sql"
+        )
     dates = _date_cubes(cfg)
     select = [
         f"DATE({d.dashboard}) AS {d.dashboard}" if d.cube in dates else d.dashboard
@@ -485,7 +489,7 @@ def probe_sql(
     )
     return (
         # trunk-ignore(bandit/B608): identifiers are validated in config.py and values are bound or literal-escaped
-        f"SELECT {', '.join([*select, f'{comparison.probe} AS value'])} "
+        f"SELECT {', '.join([*select, f'{comparison.sheet_query} AS value'])} "
         f"FROM ({rows}) WHERE {where}{group}"
     )
 
@@ -512,7 +516,7 @@ def _key(value: Any) -> str:
     """Cell key text: dates by day, numbers by value, else the text.
 
     Tableau's export writes a date as M/D/YYYY (the server's en-US format),
-    the probe and Cube as ISO, so both read as the same day.
+    the sheet query and Cube as ISO, so both read as the same day.
     """
     if isinstance(value, str) and re.match(r"\d{4}-\d{2}-\d{2}", value):
         try:
@@ -577,7 +581,7 @@ def _cells(
     decimals: int,
     unfiltered_rows: list[dict] | None = None,
 ) -> list[Cell]:
-    """Compare a cut's cells. A Cube-only cell that the probe without the
+    """Compare a cut's cells. A Cube-only cell that the sheet query without the
     `dashboard_filters` reproduces reads `dashboard_filtered`: the sheet's
     dashboard-only filter drops it, so it is explained, not a difference.
     """
@@ -681,9 +685,12 @@ def candidate_causes(
         value, k = values.most_common(1)[0]
         if value is not None and 2 * k >= n:
             out.append(f"{k} of {n} have {dim.cube} = {value}")
-    probe = comparison.probe or " ".join((comparison.probe_sql or "").split())
+    query = comparison.sheet_query or " ".join(
+        (comparison.sheet_query_sql or "").split()
+    )
     out.append(
-        f"Cube computes `{comparison.measure}` as {cube_expr}; the probe is {probe}"
+        f"Cube computes `{comparison.measure}` as {cube_expr}; the sheet query is "
+        f"{query}"
     )
     if comparison.definitions:
         out.append(
@@ -780,7 +787,7 @@ def _coverage_cell(c: Cell) -> dict:
     return {"cut": c.cut, "dims": [list(d) for d in c.dims]}
 
 
-# --- run ---------------------------------------------------------------------
+# --- compare -----------------------------------------------------------------
 
 
 def _require(comparison: Comparison, *keys: str) -> None:
@@ -789,15 +796,15 @@ def _require(comparison: Comparison, *keys: str) -> None:
         raise Refusal(f"comparison {comparison.id!r} has no {', '.join(missing)}")
 
 
-def probe_fingerprint(cfg: ViewConfig, comparison: Comparison) -> str:
-    """Fingerprint the probe a proof covers: the default cut's probe SQL.
+def sheet_query_fingerprint(cfg: ViewConfig, comparison: Comparison) -> str:
+    """Fingerprint the sheet query a rebuild check covers: the default cut's SQL.
 
-    It covers the probe text, dims, defaults and dashboard view; `run` refuses
-    a proof whose probe has changed since.
+    It covers the sheet query text, dims, defaults and dashboard view; `compare`
+    refuses a rebuild check whose sheet query has changed since.
     """
-    base = decisions.sql_fingerprint(probe_sql(cfg, comparison, {}))
-    # How the export is read is part of what a proof covers. Unset keys add
-    # nothing, so a proof written before them keeps its fingerprint.
+    base = decisions.sql_fingerprint(sheet_query(cfg, comparison, {}))
+    # How the export is read is part of what a rebuild check covers. Unset keys
+    # add nothing, so a check written before them keeps its fingerprint.
     extras = [f"sheet_field={comparison.sheet_field}"] if comparison.sheet_field else []
     if comparison.split_rows != "refuse":
         extras.append(f"split_rows={comparison.split_rows}")
@@ -827,7 +834,7 @@ def _masked(at: AsOf, ts: datetime) -> str:
 class _Sides:
     """What a run collects across comparisons, or one comparison's slice of it.
 
-    Each comparison returns its own slice (`_execute`); `run` merges them
+    Each comparison returns its own slice (`_execute`); `compare` merges them
     in config order and keeps each as a checkpoint (`to_json`).
     """
 
@@ -949,7 +956,7 @@ def _fingerprints(
         )
     ]
     dash_parts = [
-        _masked(ex.at(probe_sql(cfg, comparison, {}), build.start), build.start)
+        _masked(ex.at(sheet_query(cfg, comparison, {}), build.start), build.start)
     ]
     if comparison.rows is not None:
         cube_parts.append(
@@ -980,7 +987,7 @@ def side_fingerprints(
     build: Build,
     schools: set[str],
 ) -> dict[str, str]:
-    """The `cube` and `dashboard` fingerprints `run` records for a comparison,
+    """The `cube` and `dashboard` fingerprints `compare` records for a comparison,
     from compiled and expanded SQL only: no query runs."""
     return _fingerprints(cfg, comparison, _Expand(cfg, cube, schools, wh), build)
 
@@ -1003,7 +1010,7 @@ SQL_BROKEN = report.SQL_BROKEN
 
 
 def composed_results(cfg: ViewConfig, run: RunResult) -> dict[str, latest.Latest]:
-    """The results `run` was composed from, as `stale_comparisons` reads them.
+    """The results `compare` was composed from, as `stale_comparisons` reads them.
 
     Built from the run itself, not from `latest/`: a run stopped after
     keeping a newer result, before composing, still holds the older one.
@@ -1160,7 +1167,7 @@ class _CutPlan:
 @dataclasses.dataclass
 class _Plan:
     """Everything comparing one comparison will run, built before any of it
-    bills (`_plan_one`), so `run` can price the whole run first.
+    bills (`_plan_one`), so `compare` can price the whole run first.
 
     `shared` lists the tables both sides' rows read. `moved` holds whether
     each changed during the build; it is empty until `_compare_all` has
@@ -1226,14 +1233,14 @@ def _plan_one(
     cuts: list[_CutPlan] = []
     for cut in _cuts(comparison):
         cube_at = at(cube_sql(cell_query(cfg.view, comparison, cut)), build.end)
-        dash_at = at(probe_sql(cfg, comparison, cut), build.start)
+        dash_at = at(sheet_query(cfg, comparison, cut), build.start)
         cube_tables |= cube_at.tables
         live |= cube_at.live | dash_at.live
         unfiltered = None
         if comparison.dashboard_filters:
-            # The probe again without them, to name the cells they drop.
+            # The sheet query again without them, to name the cells they drop.
             unfiltered = at(
-                probe_sql(cfg, comparison, cut, with_filters=False), build.start
+                sheet_query(cfg, comparison, cut, with_filters=False), build.start
             ).sql
         cuts.append(
             _CutPlan(
@@ -1392,7 +1399,7 @@ class RowSides:
     """The row SQL a run reconciled for one comparison, rebuilt for a trace.
 
     `cube_rows_sql` is Cube's rows read as of the build end, with the tables
-    both sides read moved to the build start, as `run` reconciled them;
+    both sides read moved to the build start, as `compare` reconciled them;
     `columns` are the Cube members `wrap_cube` names.
     """
 
@@ -1438,7 +1445,7 @@ def row_sides(
     if changed:
         raise Refusal(
             f"comparison {comparison.id!r}: the {' and '.join(changed)} SQL is not "
-            "the SQL the run reconciled; `run` again, then trace"
+            "the SQL the run reconciled; run `compare` again, then `sort`"
         )
     shared = sorted(cube_at.tables & dash_at.tables)
     return RowSides(
@@ -1561,21 +1568,23 @@ def _extra_sections(cells: list[Cell]) -> str:
 
 
 def _browser_cuts(comparisons: list[Comparison]) -> list[str]:
-    """Cuts no proof's REST export covered: parameter cuts, and cuts added since.
+    """Cuts no rebuild check's REST export covered: parameter cuts, and cuts
+    added since.
 
-    A proof written before proofs recorded their cuts cannot say which it
-    covered, so the comparison is listed for a re-prove.
+    A rebuild check written before checks recorded their cuts cannot say which
+    it covered, so the comparison is listed to rebuild again.
     """
     out = []
     for comparison in comparisons:
-        recorded = comparison.proof.cuts if comparison.proof else None
+        recorded = comparison.rebuild_check.cuts if comparison.rebuild_check else None
         if recorded is None:
             out.append(
-                f"{comparison.id}: cuts unknown (the proof records none); re-prove"
+                f"{comparison.id}: cuts unknown (the rebuild check records none); "
+                "re-run `rebuild-sheet`"
             )
             continue
         out += [
-            f"{comparison.id}: {cut_label(cut)} (no export proved it)"
+            f"{comparison.id}: {cut_label(cut)} (no export matched it)"
             for cut in _cuts(comparison)
             if cut_label(cut) not in recorded
         ]
@@ -1583,17 +1592,22 @@ def _browser_cuts(comparisons: list[Comparison]) -> list[str]:
 
 
 def _unproven_totals(comparisons: list[Comparison]) -> list[str]:
-    """Comparisons whose proof skipped the export's total rows, or cannot say."""
+    """Comparisons whose rebuild check skipped the export's total rows, or
+    cannot say."""
     out = []
     for comparison in comparisons:
-        skipped = comparison.proof.totals_skipped if comparison.proof else None
+        skipped = (
+            comparison.rebuild_check.totals_skipped
+            if comparison.rebuild_check
+            else None
+        )
         if skipped is None:
             out.append(
-                f"{comparison.id}: totals not proven: unknown (the proof records "
-                "no count); re-prove"
+                f"{comparison.id}: totals not matched: unknown (the rebuild check "
+                "records no count); re-run `rebuild-sheet`"
             )
         elif skipped > 0:
-            out.append(f"{comparison.id}: totals not proven: {skipped} rows")
+            out.append(f"{comparison.id}: totals not matched: {skipped} rows")
     return out
 
 
@@ -1626,18 +1640,19 @@ def reshape_text(
 
 
 def _gaps(comparisons: list[Comparison]) -> tuple[list[Gap], list[str]]:
-    """Missing cuts and filters across the proofs, one per kind and field.
+    """Missing cuts and filters across the rebuild checks, one per kind and
+    field.
 
-    Also lists each comparison whose proof predates them.
+    Also lists each comparison whose rebuild check predates them.
     """
     found: dict[tuple[str, str], dict[str, Any]] = {}
     unknown = []
     for comparison in comparisons:
-        proof = comparison.proof
+        proof = comparison.rebuild_check
         if proof is None or proof.missing_cuts is None or proof.missing_filters is None:
             unknown.append(
-                f"{comparison.id}: missing cuts and filters unknown (the proof "
-                "predates them); re-prove"
+                f"{comparison.id}: missing cuts and filters unknown (the rebuild "
+                "check predates them); re-run `rebuild-sheet`"
             )
             continue
         restricting = set(proof.restricting_filters or [])
@@ -1677,9 +1692,9 @@ def _query_members(query: dict) -> Iterator[str]:
 def missing_members(
     cfg: ViewConfig, comparisons: Iterable[Comparison], meta: dict
 ) -> list[str]:
-    """The members `run` would query that Cube's `/meta` lacks, as `<id>: <member>`.
+    """The members `compare` would query that Cube's `/meta` lacks, as `<id>: <member>`.
 
-    Read from the queries `run` sends, so a mapping to a member the model
+    Read from the queries `compare` sends, so a mapping to a member the model
     dropped or renamed is caught before anything is priced. `/meta` lists what
     this viewer may query: Cube refuses a load of any member it hides.
     """
@@ -1729,19 +1744,19 @@ def _moved_fact_skips(
     return out
 
 
-# The keys a comparison needs before `run` can build its queries.
+# The keys a comparison needs before `compare` can build its queries.
 _NEEDED = ("dashboard_view", "decimals")
 
 
 def _proof_skips(
     cfg: ViewConfig, comparisons: list[Comparison], *, tbl: tableau.Tableau, cube: Cube
 ) -> list[Skip]:
-    """The comparisons `run` skips before any query, in the order found.
+    """The comparisons `compare` skips before any query, in the order found.
 
     A comparison is skipped when it lacks a key a run needs (`_NEEDED`), it
-    has no proof, its probe changed since the proof, it maps a member Cube's
-    `/meta` lacks (`missing_members`), or its workbook changed since the
-    proof (`workbook_check`). Each check reads only the comparisons no
+    has no rebuild check, its sheet query changed since the check, it maps a
+    member Cube's `/meta` lacks (`missing_members`), or its workbook changed
+    since the check (`workbook_check`). Each check reads only the comparisons no
     earlier check skipped.
     """
     skips: list[Skip] = []
@@ -1753,13 +1768,14 @@ def _proof_skips(
     for c in comparisons:
         if missing := [k for k in _NEEDED if getattr(c, k) in (None, "")]:
             skips.append(Skip(c.id, f"it has no {', '.join(missing)}"))
-        elif c.proof is None:
-            skips.append(Skip(c.id, "no proof; run `prove` first"))
-        elif c.proof.probe_fingerprint != probe_fingerprint(cfg, c):
+        elif c.rebuild_check is None:
+            skips.append(Skip(c.id, "no rebuild check; run `rebuild-sheet` first"))
+        elif c.rebuild_check.sheet_query_fingerprint != sheet_query_fingerprint(cfg, c):
             skips.append(
                 Skip(
                     c.id,
-                    "the probe is not the one its proof covers; run `prove` again",
+                    "the sheet query is not the one its rebuild check covers; run "
+                    "`rebuild-sheet` again",
                 )
             )
     meta = cube.meta()
@@ -1770,7 +1786,7 @@ def _proof_skips(
                 Skip(
                     c.id,
                     f"Cube's model has no member for {members}; fix the mapping, "
-                    "then `prove` it again",
+                    "then run `rebuild-sheet` again",
                 )
             )
     remaining = left()
@@ -1780,7 +1796,10 @@ def _proof_skips(
             s.removeprefix(f"{c.id}: ") for s in stale if s.startswith(f"{c.id}: ")
         ]:
             skips.append(
-                Skip(c.id, f"workbook changed since its proof: {'; '.join(lines)}")
+                Skip(
+                    c.id,
+                    f"workbook changed since its rebuild check: {'; '.join(lines)}",
+                )
             )
     return skips
 
@@ -1828,7 +1847,7 @@ def _run_folder(
     clock: Callable[[], datetime],
     selected: list[Comparison],
 ) -> tuple[Path, Build]:
-    """The run folder and moment for this `run`: an unfinished run's, or new.
+    """The run folder and moment for this `compare`: an unfinished run's, or new.
 
     With `requested`, the moment is the build it names; its folder's
     checkpoints are reused only when that run is unfinished. Otherwise an
@@ -1912,7 +1931,7 @@ OTHERS_CURRENT = (
 )
 
 
-def run(
+def compare(
     cfg: ViewConfig,
     *,
     wh: Warehouse,
@@ -1944,11 +1963,12 @@ def run(
     result there.
 
     `cube_host` is printed with `cfg.fact` so the result says what it was
-    proven against. A problem with one comparison skips it instead of
+    compared against. A problem with one comparison skips it instead of
     stopping the run: each skip prints `Skipping <id>: <why>.`, the rest are
     compared, and the skipped one keeps its latest result. Before any query,
     a confirmed comparison is skipped when it lacks a key it needs, has no
-    proof, its probe or workbook changed since the proof, or it maps a member
+    rebuild check, its sheet query or workbook changed since the check, or it
+    maps a member
     Cube lacks (`_proof_skips`); before the price, when its SQL cannot be
     built today (`_sql_skips`); after the price, when its Cube SQL reads a
     fact in `also_facts` that changed during the build, or both sides' rows
@@ -1991,8 +2011,11 @@ def run(
     _refuse_all_skipped(cfg, comparisons, skips)
     ready = [c for c in comparisons if c.id not in {s.comparison for s in skips}]
     for comparison in ready:
-        if comparison.proof:
-            print(f"Proof for {comparison.id}: proven {comparison.proof.proven_at}.")
+        if comparison.rebuild_check:
+            print(
+                f"Rebuild check for {comparison.id}: matched "
+                f"{comparison.rebuild_check.matched_at}."
+            )
 
     totals = _unproven_totals(ready)
     for line in totals:
@@ -2074,7 +2097,7 @@ def run(
             elif (last or {}).get("skipped", []) != [
                 dataclasses.asdict(s) for s in skips
             ]:
-                # So `review` lists what is skipped now.
+                # So `ask-owner` lists what is skipped now.
                 print(
                     "Composing run.json again to record the comparisons skipped. "
                     "Nothing is compared."
@@ -2246,7 +2269,9 @@ def _compose(
             for e in c.dashboard_filters
         ],
         cost_usd=cost,
-        proofs={c.id: c.proof.proven_at for c in comparisons if c.proof},
+        proofs={
+            c.id: c.rebuild_check.matched_at for c in comparisons if c.rebuild_check
+        },
         browser_cuts=_browser_cuts(comparisons),
         totals=totals,
         reshaped={c.id: reshape_text(c.shelves) for c in comparisons if c.shelves},
@@ -2577,31 +2602,32 @@ def _saved_run(cfg: ViewConfig, cache_root: Path) -> tuple[dict, Path]:
     if other:
         raise Refusal(
             f"{cfg.view}: no saved run of {cfg.fact}; the latest run read "
-            f"{other}, which this command does not use. `run` it, or pass "
+            f"{other}, which this command does not use. `compare` it, or pass "
             "--fact-dataset to read that build"
         )
-    raise Refusal(f"{cfg.view}: no saved run; `run` it first")
+    raise Refusal(f"{cfg.view}: no saved run; `compare` it first")
 
 
 def _older(cfg: ViewConfig, run_json: Path) -> Refusal:
     return Refusal(
         f"{cfg.view}: the saved run {run_json} was written by an older "
-        "validator; `run` it again"
+        "validator; `compare` it again"
     )
 
 
 def _require_nulls(data: dict) -> None:
     """Refuse a run saved before groups recorded which values were NULL.
 
-    Such a run reads a NULL group-by value as empty text, so a proof finds
-    none of that group's rows: the run, not the proof, is at fault.
+    Such a run reads a NULL group-by value as empty text, so an explanation
+    finds none of that group's rows: the run, not the explanation, is at fault.
     """
     applied = data.get("applied") or {}
     groups = [*applied.get("open", []), *(g for _, g in applied.get("quiet", []))]
     if any("nulls" not in g for g in groups):
         moment = (data.get("moment") or {}).get("start", "<moment>")
         raise Refusal(
-            f"this run predates NULL-aware groups; run again (`run --moment {moment}`)"
+            "this run predates NULL-aware groups; run again "
+            f"(`compare --moment {moment}`)"
         )
 
 
@@ -2637,13 +2663,13 @@ def check_claims(cfg: ViewConfig, cache_root: Path) -> None:
     """Refuse decisions that would claim one item twice in the saved run.
 
     Called before decisions are written, since a file whose decisions overlap
-    makes both `run` and `reapply` refuse. With no saved run this validator
+    makes both `compare` and `reapply` refuse. With no saved run this validator
     can re-apply to, there is nothing to check against and nothing refuses.
 
     Raises:
         Refusal: Two decisions claim the same group, gap or formula
             difference, or a cause decision disagrees with the `group`
-            decision closing a group its proof covers (`sort.check_closed`).
+            decision closing a group its explanation covers (`sort.check_closed`).
     """
     try:
         saved, run_json = _reapplicable(cfg, cache_root)
@@ -2665,17 +2691,17 @@ def reapply(cfg: ViewConfig, cache_root: Path) -> RunResult:
 
     Recording a decision changes no data, so the saved run's groups, gaps,
     cell differences and SQL fingerprints are re-sorted by the current
-    decisions as `run` would sort them; a decision whose fingerprints differ
+    decisions as `compare` would sort them; a decision whose fingerprints differ
     from the run's still lands in `reconfirm`. Rewrites `run.json` and
     `result.md` and runs no query. The verdict is read again from the cells
     and the open counts. Clauses stay as the run computed them, over the
     groups open then, so a group a deleted decision reopens may show no clause
-    until the next `run`.
+    until the next `compare`.
 
     Raises:
         Refusal: The view has no saved run, the run predates what re-applying
             needs, two decisions claim the same item, or a cause decision
-            disagrees with the `group` decision closing a group its proof
+            disagrees with the `group` decision closing a group its explanation
             covers (`sort.check_closed`). Nothing is rewritten.
     """
     saved, run_json = _reapplicable(cfg, cache_root)
@@ -2722,7 +2748,7 @@ def reapply(cfg: ViewConfig, cache_root: Path) -> RunResult:
     return result
 
 
-# --- review ------------------------------------------------------------------
+# --- ask-owner ---------------------------------------------------------------
 
 
 def latest_run(cfg: ViewConfig, cache_root: Path) -> tuple[RunResult, Path]:
@@ -2748,7 +2774,7 @@ def latest_run(cfg: ViewConfig, cache_root: Path) -> tuple[RunResult, Path]:
     ):
         raise Refusal(
             f"{cfg.view}: the decisions changed since the saved run "
-            f"{run_json}; `reapply` it, or `run` it again with --all"
+            f"{run_json}; `reapply` it, or `compare` it again with --all"
         )
     return run_result, run_json
 
@@ -2756,7 +2782,7 @@ def latest_run(cfg: ViewConfig, cache_root: Path) -> tuple[RunResult, Path]:
 BODY_WARN_CHARS = report.BODY_WARN_CHARS
 
 
-def review(
+def ask_owner(
     configs: list[ViewConfig],
     domain: str,
     cache_root: Path,
@@ -2769,7 +2795,7 @@ def review(
 
     Reads only the local cache: each run and its triage (see
     `sort.proven_triage`), matching triage items to decisions by their stubs,
-    and to cause decisions by the causes the triage proved. What is ready is
+    and to cause decisions by the causes the sort explained. What is ready is
     asked; what is not settled yet (items still in `investigate`, and
     comparisons missing, stale or skipped, `sort.comparisons_waiting`) is
     listed under "Still with the analyst" and never asked.
@@ -2782,7 +2808,7 @@ def review(
         cache_root: The run cache.
         now: The current time, to say whether a hand check's pinned SQL still
             runs; defaults to the clock.
-        view_files: Each config's validation file, in order: stored proof
+        view_files: Each config's validation file, in order: stored explanation
             paths are relative to its directory.
         comments: Given, receives the follow-up comments a long body's
             Reproduce blocks move to (`report.render_review_issue`).
@@ -2799,7 +2825,7 @@ def review(
     """
     saved = [latest_run(cfg, cache_root) for cfg in configs]
     runs = [run for run, _ in saved]
-    # Stored proof paths are relative to each validation file's directory.
+    # Stored explanation paths are relative to each validation file's directory.
     bases = [f.parent for f in view_files] if view_files else [None] * len(configs)
     proven = {
         run.view: sort.proven_triage(run, run_json, cfg.decisions, base)
@@ -2859,7 +2885,7 @@ def review(
         if not q["evidence"]:
             # stderr, so the note never lands in the issue body.
             print(
-                f"{q['id']}: no triage evidence; `triage` the view to add it",
+                f"{q['id']}: no triage evidence; `sort` the view to add it",
                 file=sys.stderr,
             )
     if waiting := report.untasked(d for cfg in configs for d in cfg.decisions):
@@ -2899,14 +2925,14 @@ def _review_file(path: Path, data: list[dict]) -> str:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(data, indent=2) + "\n")
         raise Refusal(
-            f"wrote {path}: commit and push it, then run `review` again; the "
+            f"wrote {path}: commit and push it, then run `ask-owner` again; the "
             "issue links it at that commit"
         )
     link = committed_link(path)
     if link is None:
         raise Refusal(
             f"{path} is not committed and pushed as it stands: commit and push "
-            "it, then run `review` again"
+            "it, then run `ask-owner` again"
         )
     return link
 
@@ -2950,7 +2976,7 @@ def _git(directory: Path, *args: str) -> str:
 
 
 def proof_source(view_file: Path) -> answers.ProofSource:
-    """Where a validation file's stored proofs live: its repo path and the
+    """Where a validation file's stored explanations live: its repo path and the
     branch URL of its directory, for an owner's Reproduce block.
 
     Outside a git checkout, a GitHub remote or a branch, the link is left out.
@@ -2975,7 +3001,7 @@ def proof_source(view_file: Path) -> answers.ProofSource:
     return answers.ProofSource(relative.as_posix(), base, blob)
 
 
-# --- prove -------------------------------------------------------------------
+# --- rebuild-sheet -----------------------------------------------------------
 
 
 def _sheet_columns(twb_xml: str, sheet: str) -> list[ET.Element]:
@@ -3221,11 +3247,11 @@ def _export_cells(
     columns: list[ET.Element],
     probe_rows: list[dict],
 ) -> tuple[list[dict], int, int]:
-    """Turn export rows into probe-shaped cells; count total and summed rows.
+    """Turn export rows into sheet-query-shaped cells; count total and summed rows.
 
     An export shows a dim's alias (grade 0 as `K`), so each value goes back
     through the sheet's aliases. A sheet with totals exports them as rows whose
-    dim reads `All`; those are dropped, unless the probe has a real `All`
+    dim reads `All`; those are dropped, unless the sheet query has a real `All`
     member for that dim. With `split_rows: sum`, rows that share every mapped
     dim (split by a sheet field Cube lacks) are added into one cell; blanks are
     skipped, and a cell of blanks stays blank.
@@ -3297,7 +3323,7 @@ def _capture(
     Returns:
         The workbook XML, the same with the sheet reshaped (`shelves`), the
         reshaped sheet's columns, the cuts a REST export takes, the cuts only
-        a browser can prove, and the snapshot.
+        a browser can check, and the snapshot.
     """
     _require(comparison, "workbook", "sheet")
     workbook, sheet = comparison.workbook or "", comparison.sheet or ""
@@ -3341,7 +3367,7 @@ def _capture(
     return twb, shaped, columns, exportable, browser, captures[key]
 
 
-def prove_headers(
+def rebuild_sheet_headers(
     cfg: ViewConfig,
     path: Path,
     comparison_id: str,
@@ -3375,7 +3401,7 @@ def prove_headers(
             print(f"  {MEASURE_NAMES}: {', '.join(names)}")
 
 
-def prove(
+def rebuild_sheet(
     cfg: ViewConfig,
     path: Path,
     comparison_id: str,
@@ -3386,8 +3412,9 @@ def prove(
     max_usd: float,
     captures: dict[tuple, tableau.Snapshot] | None = None,
     failures_dir: Path | None = None,
-) -> tableau.Proof:
-    """Prove a comparison's probe against the sheet and write `proof:`.
+) -> tableau.RebuildResult:
+    """Rebuild a comparison's sheet in SQL, match it to the sheet's export, and
+    write `rebuild_check:`.
 
     Failures and browser cuts print to the terminal only: a count per reason
     and a few samples, with the full list in `failures_dir` when given.
@@ -3396,7 +3423,7 @@ def prove(
 
     Raises:
         Refusal: The comparison is unknown or incomplete, an exportable cut
-            has no rows on a side, or the proof failed.
+            has no rows on a side, or the cells did not match.
     """
     comparison = _comparison_by_id(cfg, path, comparison_id)
     _require(comparison, "workbook", "sheet", "dashboard_view", "decimals")
@@ -3406,7 +3433,7 @@ def prove(
     if snap.refresh_started < now - PROOF_WINDOW:
         raise Refusal(
             f"the extract refreshed at {snap.refresh_started}, outside the 7 days "
-            "of warehouse history; prove after the next refresh"
+            "of warehouse history; rebuild after the next refresh"
         )
 
     exports: list[dict] = []
@@ -3416,10 +3443,10 @@ def prove(
         for cut, rows in zip(exportable, snap.exports, strict=True):
             label = cut_label(cut)
             probe_rows = wh.rows(
-                _as_of(probe_sql(cfg, comparison, cut), snap.refresh_started, wh).sql
+                _as_of(sheet_query(cfg, comparison, cut), snap.refresh_started, wh).sql
             )
             if not rows or not probe_rows:
-                side = "export" if not rows else "probe"
+                side = "export" if not rows else "sheet query"
                 raise Refusal(f"cut {label}: the {side} has no rows")
             rows = long_to_wide(rows, comparison.sheet_field)
             mapping, value = _export_columns(comparison, list(rows[0]), columns)
@@ -3442,15 +3469,17 @@ def prove(
             ]
 
     try:
-        proof = tableau.prove(comparison, exports, probes, twb_xml=twb, now=now)
+        proof = tableau.match_export(comparison, exports, probes, twb_xml=twb, now=now)
     except ValueError as exc:
         raise Refusal(f"comparison {comparison.id!r}: {exc}") from exc
     for cut in browser:
-        print(f"Prove in the browser: {cut_label(cut)}")
-    if not proof.proven:
-        print(f"Proof failed for {comparison.id} ({proof.cells} cells matched):")
+        print(f"Check in the browser: {cut_label(cut)}")
+    if not proof.matched:
+        print(
+            f"Rebuild check failed for {comparison.id} ({proof.cells} cells matched):"
+        )
         _print_failures(comparison.id, proof.failures, failures_dir)
-        raise Refusal(f"comparison {comparison.id!r} is not proven; nothing written")
+        raise Refusal(f"comparison {comparison.id!r} did not match; nothing written")
 
     # The copy's shelves: a dropped field is no longer a missing cut.
     gaps = sheet_gaps(shaped, comparison)
@@ -3458,25 +3487,25 @@ def prove(
         if names:
             print(f"Sheet {kind} with no Cube member: {', '.join(names)}")
 
-    write_proof(
+    write_rebuild_check(
         path,
         comparison.id,
         {
             "fingerprint": proof.fingerprint,
             "cells": proof.cells,
-            "proven_at": proof.proven_at.isoformat(),
+            "matched_at": proof.matched_at.isoformat(),
             "workbook_updated_at": tbl.workbook_updated(
                 comparison.workbook or ""
             ).isoformat(),
-            "probe_fingerprint": probe_fingerprint(cfg, comparison),
+            "sheet_query_fingerprint": sheet_query_fingerprint(cfg, comparison),
             # `workbook_check` reads a republish that changed neither this nor
             # `fingerprint` as no change to the sheet.
             "source_fingerprint": tableau.source_fingerprint(
                 twb, comparison.sheet or ""
             ),
-            # `run` lists every other cut as one to prove in the browser.
+            # `compare` lists every other cut as one to check in the browser.
             "cuts": [cut_label(cut) for cut in exportable],
-            # `run` lists these rows as totals no proof covered.
+            # `compare` lists these rows as totals no rebuild check covered.
             "totals_skipped": totals_skipped,
             # The parameter values the copy showed; the fingerprint covers them.
             **(
@@ -3484,20 +3513,22 @@ def prove(
                 if comparison.parameters
                 else {}
             ),
-            # The reshape the copy carried; `run` names it, since the proof
+            # The reshape the copy carried; `compare` names it, since the check
             # covers the reshaped grain, not the sheet's own.
             **({"shelves": comparison.shelves} if comparison.shelves else {}),
-            # `run` lists these as missing cuts and filters to triage.
+            # `compare` lists these as missing cuts and filters to sort.
             "missing_cuts": gaps.cuts,
             "missing_filters": gaps.filters,
             "restricting_filters": gaps.restricting,
-            # Triage reads these offline: a copy or display switch needs no
+            # `sort` reads these offline: a copy or display switch needs no
             # member; a plain column can be value-checked.
             "filter_notes": gaps.notes,
             "missing_columns": gaps.columns,
         },
     )
-    print(f"Proved {comparison.id}: {proof.cells} cells; wrote proof to {path}.")
+    print(
+        f"Matched {comparison.id}: {proof.cells} cells; wrote rebuild_check to {path}."
+    )
     return proof
 
 
@@ -3525,7 +3556,7 @@ def _print_failures(
         print(f"    {failure}")
     if failures_dir is not None:
         failures_dir.mkdir(parents=True, exist_ok=True)
-        path = failures_dir / f"prove-failures-{comparison_id}.txt"
+        path = failures_dir / f"rebuild-failures-{comparison_id}.txt"
         path.write_text("\n".join(failures) + "\n")
         print(f"  Full list: {path}")
 
@@ -3537,14 +3568,15 @@ def workbook_check(
     tbl: tableau.Tableau,
     cube: Cube,
 ) -> list[str]:
-    """List the comparisons whose sheet or Cube members changed since their proof.
+    """List the comparisons whose sheet or Cube members changed since their
+    rebuild check.
 
-    A workbook published after the proof is downloaded once and its sheet
-    compared by what the proof covers: `fingerprint` (the sheet's formulas
+    A workbook published after the check is downloaded once and its sheet
+    compared by what the check covers: `fingerprint` (the sheet's formulas
     and filters) and `source_fingerprint` (its datasources' connection and
     filters). A republish that changed neither is printed as such and not
-    listed. A proof without `source_fingerprint` cannot rule out a datasource
-    change, so it is stale after any republish. A proven comparison that maps a
+    listed. A rebuild check without `source_fingerprint` cannot rule out a datasource
+    change, so it is stale after any republish. A matched comparison that maps a
     member Cube's `/meta` no longer lists is stale too.
 
     Args:
@@ -3557,27 +3589,31 @@ def workbook_check(
         One line per problem, each starting with its comparison's id and
         ending in what to do.
     """
-    proven = [c for c in comparisons if c.proof is not None]
+    proven = [c for c in comparisons if c.rebuild_check is not None]
     stale = [
-        f"{line}, which Cube's model no longer has; fix the mapping and re-prove"
+        f"{line}, which Cube's model no longer has; fix the mapping and re-run "
+        "`rebuild-sheet`"
         for line in missing_members(cfg, proven, cube.meta())
     ]
     twbs: dict[str, str] = {}
     for comparison in comparisons:
         if not comparison.workbook:
             continue
-        proof = comparison.proof
+        proof = comparison.rebuild_check
         if proof is None:
-            stale.append(f"{comparison.id}: not proven")
+            stale.append(f"{comparison.id}: no rebuild check")
             continue
         updated = tbl.workbook_updated(comparison.workbook)
         if not proof.workbook_updated_at:
-            stale.append(f"{comparison.id}: proof has no workbook_updated_at; re-prove")
+            stale.append(
+                f"{comparison.id}: rebuild check has no workbook_updated_at; "
+                "re-run `rebuild-sheet`"
+            )
             continue
         if updated <= datetime.fromisoformat(proof.workbook_updated_at):
             continue
         published = (
-            f"workbook published {updated.isoformat()}, after the proof's "
+            f"workbook published {updated.isoformat()}, after the rebuild check's "
             f"{proof.workbook_updated_at}"
         )
         if comparison.workbook not in twbs:
@@ -3587,22 +3623,25 @@ def workbook_check(
             formulas = tableau.formula_fingerprint(twb, sheet)
             sources = tableau.source_fingerprint(twb, sheet)
         except ValueError as exc:
-            stale.append(f"{comparison.id}: {published}, and {exc}; re-prove")
+            stale.append(
+                f"{comparison.id}: {published}, and {exc}; re-run `rebuild-sheet`"
+            )
             continue
         if formulas != proof.fingerprint:
             stale.append(
                 f"{comparison.id}: {published}; the sheet's formulas or filters "
-                "changed; re-prove"
+                "changed; re-run `rebuild-sheet`"
             )
         elif not proof.source_fingerprint:
             stale.append(
                 f"{comparison.id}: {published}; the sheet's formulas are unchanged, "
-                "but the proof predates the datasource check; re-prove once"
+                "but the rebuild check predates the datasource check; re-run "
+                "`rebuild-sheet` once"
             )
         elif sources != proof.source_fingerprint:
             stale.append(
                 f"{comparison.id}: {published}; a datasource's connection or "
-                "filters changed; re-prove"
+                "filters changed; re-run `rebuild-sheet`"
             )
         else:
             print(
@@ -3611,7 +3650,7 @@ def workbook_check(
     return stale
 
 
-# --- discover ----------------------------------------------------------------
+# --- find-field --------------------------------------------------------------
 
 
 def _outer_from(sql: str) -> int:
@@ -3655,7 +3694,7 @@ def _measure_expression(sql: str, view: str, measure: str) -> str:
     return head.replace(f"`{view}__{measure}`", "").strip()
 
 
-def discover(
+def find_field(
     cfg: ViewConfig,
     measure: str,
     *,
@@ -3718,7 +3757,7 @@ def _exposure_workbooks(
 ) -> Iterator[tuple[str, str, str]]:
     """Download each Tableau exposure's workbook: luid, label and XML."""
     if tbl is None:
-        raise Refusal("discover needs a Tableau session or a local --twb")
+        raise Refusal("find-field needs a Tableau session or a local --twb")
     exposures = finder.tableau_exposures(exposures_path)
     if exposures.skipped:
         print(

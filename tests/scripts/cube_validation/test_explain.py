@@ -131,12 +131,12 @@ def _saved_wh(duck, run, cfg=CFG):
 
 
 def _save(duck, wh, run, cfg=CFG):
-    """What `run` leaves behind: each comparison's saved rows and labels."""
+    """What `compare` leaves behind: each comparison's saved rows and labels."""
     for c in cfg.comparisons:
         if c.rows is None:
             continue
         table = saved.table_id(cfg.view, run.moment_of(c.id), c.id)
-        try:  # the rows the test's `row_sides` rebuilds, as `run` reconciled them
+        try:  # the rows the test's `row_sides` rebuilds, as `compare` reconciled them
             sides = pipeline.row_sides(
                 cfg, c, wh=wh, cube=None, build=run.moment_of(c.id), schools=set(),
                 fingerprints={},
@@ -184,7 +184,7 @@ def _items(run):
 
 
 def _proof(tmp_path, body=PROOF, causes=None):
-    directory = tmp_path / "proofs" / "v"
+    directory = tmp_path / "explanations" / "v"
     directory.mkdir(parents=True, exist_ok=True)
     path = explain.proof_path(directory, "mastery", "cube_only")
     path.write_text(explain.compose(CAUSES if causes is None else causes, body))
@@ -202,7 +202,7 @@ def _by_id(items):
 
 
 def _stored(run, items, directory, wh, cfg=CFG):
-    """What every `triage` does: run the stored proofs, then sort by them."""
+    """What every `sort` does: run the stored explanations, then sort by them."""
     _save(wh.duck, wh, run, cfg)
     ran = explain.run_stored(cfg, run, directory, wh=wh, cube=None)
     explain.apply_runs(run, items, ran, cfg)
@@ -215,7 +215,7 @@ def _reprove(duck, tmp_path, run, body=PROOF, causes=None, wh=None):
     return items
 
 
-# --- a stored proof, re-run by every triage -----------------------------------------
+# --- a stored explanation, re-run by every sort -------------------------------
 
 
 def test_a_proof_reads_the_saved_rows_not_both_sides(duck, tmp_path, offline):
@@ -266,7 +266,7 @@ def test_a_missing_table_past_time_travel_says_to_start_a_new_run(
     monkeypatch.setattr(explain, "_utcnow", lambda: BUILD.end + timedelta(days=9))
 
     with pytest.raises(
-        pipeline.Refusal, match="Run `run --comparison mastery` at a new moment"
+        pipeline.Refusal, match="Run `compare --comparison mastery` at a new moment"
     ):
         explain.require_saved(Wh(duck), CFG, _run([_group(3)]), COMPARISON)
 
@@ -278,7 +278,7 @@ def test_a_missing_table_within_time_travel_says_to_save_it_again(
 
     with pytest.raises(
         pipeline.Refusal,
-        match=r"Run `run --comparison mastery --moment '[^']+'` to save them again",
+        match=r"Run `compare --comparison mastery --moment '[^']+'` to save them again",
     ):
         explain.require_saved(Wh(duck), CFG, _run([_group(3)]), COMPARISON)
 
@@ -310,36 +310,37 @@ def test_a_stored_proof_proves_every_row_of_an_item(duck, tmp_path, offline):
         {"side": "dashboard", "step": "C1", "label": CAUSES["C1"][1], "n_rows": 2},
         {"side": "dashboard", "step": "C2", "label": CAUSES["C2"][1], "n_rows": 1},
     ]
-    path = tmp_path / "proofs" / "v" / "mastery__cube_only.sql"
+    path = tmp_path / "explanations" / "v" / "mastery__cube_only.sql"
     # Recorded relative to the validation file's directory.
-    assert item["proof"]["path"] == "proofs/v/mastery__cube_only.sql"
+    assert item["proof"]["path"] == "explanations/v/mastery__cube_only.sql"
     assert item["proof"]["kind"] == "query"
     assert item["proof"]["fingerprint"] == explain.file_fingerprint(path)
-    # The proof reads its own tables as of the run, under the trace's limit.
+    # The explanation reads its own tables as of the run, under the trace's limit.
     ((sql, timeout),) = wh.ran
     assert "`teamster-332318.d.fact` AS f FOR SYSTEM_TIME AS OF" in sql
     assert timeout == trace.TIMEOUT_S
 
 
 def test_new_rows_the_proof_does_not_cover_reopen_the_item(duck, tmp_path, offline):
-    # A new run: row (4, d) has no fact row, so the proof calls it UNEXPLAINED.
+    # A new run: row (4, d) has no fact row, so the explanation calls it UNEXPLAINED.
     _tables(duck, [(1, "a", "X"), (2, "b", "X"), (4, "d", "X")], FACT_ROWS[:2])
 
     (item,) = _reprove(duck, tmp_path, _run([_group(3)]))
 
     assert item["suggestion"] == "investigate" and item["cause"] is None
     assert (
-        item["evidence"][0] == "proof mastery__cube_only.sql leaves 1 rows unexplained"
+        item["evidence"][0]
+        == "explanation mastery__cube_only.sql leaves 1 rows unexplained"
     )
     assert item["evidence_posted"][0] == (
-        "proof mastery__cube_only.sql does not explain every row"
+        "explanation mastery__cube_only.sql does not explain every row"
     )
 
 
 def test_a_partly_explained_item_stays_while_a_full_one_moves(
     duck, tmp_path, offline, monkeypatch
 ):
-    # (3, c) passes both filters on the fact, so the proof leaves it UNEXPLAINED.
+    # (3, c) passes both filters on the fact, so the explanation leaves it UNEXPLAINED.
     _tables(
         duck,
         [(1, "a", "X"), (2, "b", "Y"), (3, "c", "Y")],
@@ -361,7 +362,7 @@ def test_a_partly_explained_item_stays_while_a_full_one_moves(
     partly = by_id["mastery:abbreviation=<redacted>#2"]
     assert partly["suggestion"] == "investigate"
     assert partly["evidence"][0] == (
-        "proof mastery__cube_only.sql leaves 1 rows unexplained"
+        "explanation mastery__cube_only.sql leaves 1 rows unexplained"
     )
 
 
@@ -375,10 +376,10 @@ def test_a_proof_that_cannot_run_notes_why_and_moves_nothing(duck, tmp_path, off
     (item,) = _reprove(duck, tmp_path, _run([_group(3)]), wh=Failing(duck))
 
     assert item["suggestion"] == "investigate"
-    assert item["evidence"][0].startswith("proof mastery__cube_only.sql not run:")
+    assert item["evidence"][0].startswith("explanation mastery__cube_only.sql not run:")
     assert "invalidQuery" in item["evidence"][0] and "12345" not in item["evidence"][0]
     assert item["evidence_posted"][0] == (
-        "proof mastery__cube_only.sql not run; see the terminal"
+        "explanation mastery__cube_only.sql not run; see the terminal"
     )
 
 
@@ -402,11 +403,11 @@ def test_a_refused_proof_keeps_bigquerys_message_locally(duck, tmp_path, offline
         "'teamster-332318.m.t': 2026-10-28 21:34:52.982 UTC vs." in item["evidence"][0]
     )
     assert item["evidence_posted"][0] == (
-        "proof mastery__cube_only.sql not run; see the terminal"
+        "explanation mastery__cube_only.sql not run; see the terminal"
     )
 
 
-# A proof reading the table only the Cube side reads.
+# An explanation reading the table only the Cube side reads.
 CUBE_TABLE_PROOF = PROOF.replace(
     "AND f.item = u.aid",
     "AND f.item = u.aid\nLEFT JOIN `teamster-332318`.`m`.`cube_t` AS c ON c.lea = u.lea",
@@ -477,7 +478,7 @@ def test_a_cube_error_notes_the_items_and_a_comparison_is_rebuilt_once(
 
     assert {i["suggestion"] for i in items} == {"investigate"}
     assert all("not run: Cube answered 502" in i["evidence"][0] for i in items)
-    # A failed rebuild is not cached, so each proof tries once.
+    # A failed rebuild is not cached, so each explanation tries once.
     assert len(calls) == 2
 
 
@@ -518,7 +519,7 @@ def test_confirm_refreshes_the_decision_marks(duck, tmp_path, monkeypatch, offli
     draft = tmp_path / "draft.sql"
     draft.write_text(PROOF)
 
-    explain.run_confirm(
+    explain.explain(
         cfg,
         tmp_path / "validation" / "v.yml",
         wh=_saved_wh(duck, run, cfg),
@@ -589,7 +590,7 @@ def test_a_cause_literal_without_a_cause_flag_refuses_by_name(duck, tmp_path, of
     assert "no --cause for C9" in item["evidence"][0]
 
 
-# --- the checks before a proof runs --------------------------------------------------
+# --- the checks before an explanation runs -----------------------------------
 
 
 GRAIN = {"lea", "aid", "student", "item", "response_type"}
@@ -767,7 +768,7 @@ def test_a_cause_flag_allows_a_grade_list_and_a_school_year(words):
     assert explain.parse_cause_flag(f"C1=cube:{words}")[2] == words
 
 
-# --- the proof file ------------------------------------------------------------------
+# --- the explanation file ----------------------------------------------------
 
 
 def test_a_proof_file_opts_out_of_trunk_and_keeps_its_bucket_map():
@@ -820,7 +821,7 @@ def _confirm(duck, tmp_path, causes, **kw):
     draft.write_text(PROOF)
     wh = Wh(duck)
     _save(duck, wh, pipeline.latest_run(CFG, tmp_path)[0])
-    explain.run_confirm(
+    explain.explain(
         CFG,
         tmp_path / "validation" / "v.yml",
         wh=wh,
@@ -847,7 +848,7 @@ def test_confirm_saves_the_proof_and_re_sorts_the_triage(
         [f"{b}={side}:{words}" for b, (side, words) in CAUSES.items()],
     )
 
-    stored = tmp_path / "validation" / "proofs" / "v" / "mastery__cube_only.sql"
+    stored = tmp_path / "validation" / "explanations" / "v" / "mastery__cube_only.sql"
     assert stored.read_text().startswith("-- trunk-ignore-all(sqlfluff)\n")
     assert explain.read_proof(stored).causes == CAUSES
     (item,) = json.loads(triage_json.read_text())["items"]
@@ -932,7 +933,7 @@ def test_cells_link_only_to_groups_under_their_cut():
         filters={"School": ColumnPair("school", "abbreviation")},
     )
     cfg = ViewConfig(view="v", fact="m.fct", comparisons=[by_school])
-    # The cell sits under the cut School = Y; the only proven group has rows
+    # The cell sits under the cut School = Y; the only explained group has rows
     # under School = X alone.
     x, y = '{"School": "X"}', '{"School": "Y"}'
     proven = replace(_group(3), cut_rows=((x, 3, 0), (y, 0, 0)))
@@ -951,7 +952,7 @@ def test_cells_link_only_to_groups_under_their_cut():
 
 
 def test_a_cell_the_formula_item_holds_leaves_the_cell_set():
-    # Cell X lies in a proven group. Cell Y holds no unmatched row, so the
+    # Cell X lies in an explained group. Cell Y holds no unmatched row, so the
     # run filed it in the comparison's formula item, not in the cell set.
     cell = {**CELLS_RUN["diff_cells"][0], "kind": "cells"}
     y = {**cell, "key": "abbreviation=Y", "dims": [["abbreviation", "Y"]],
@@ -1019,7 +1020,7 @@ def test_a_cell_covered_only_by_decided_groups_still_has_a_cause():
 
 
 def test_a_cell_with_one_unproven_group_stays_in_investigate():
-    # Cell X holds a proven group and an unproven one; cell Y a proven one.
+    # Cell X holds an explained group and an unexplained one; cell Y an explained one.
     cell = CELLS_RUN["diff_cells"][0]
     run = _run(
         [_placed(3), _placed(2, bucket="dashboard_only"), _placed(5, "Y")],
@@ -1027,7 +1028,7 @@ def test_a_cell_with_one_unproven_group_stays_in_investigate():
         diff_cells=[cell, {**cell, "key": "abbreviation=Y",
                            "dims": [["abbreviation", "Y"]]}],
     )  # fmt: skip
-    # The unproven group is cell X's dashboard_only one, the 2nd of its id.
+    # The unexplained group is cell X's dashboard_only one, the 2nd of its id.
     proven = [i for i in _group_ids(run) if not i.endswith("#2")]
     left: dict = {}
 
@@ -1110,7 +1111,9 @@ def test_the_gate_accepts_proven_items_until_their_proof_changes(
     )
     assert sort.proven_triage(run, path.parent / "run.json", base=tmp_path)["items"]
     proof.write_text(proof.read_text().replace("NOT f.ok2", "f.ok2"))
-    with pytest.raises(pipeline.Refusal, match="proof file changed since triage"):
+    with pytest.raises(
+        pipeline.Refusal, match="explanation file changed since the sort"
+    ):
         sort.proven_triage(run, path.parent / "run.json", base=tmp_path)
 
 
@@ -1132,7 +1135,7 @@ def test_the_gate_accepts_proven_items_until_their_proof_changes(
     ],
 )
 def test_check_sql_refuses_a_cause_that_can_file_a_new_row_under_an_old_cause(cause):
-    with pytest.raises(pipeline.Refusal, match="the proof's cause"):
+    with pytest.raises(pipeline.Refusal, match="the explanation's cause"):
         explain.check_sql(
             f"SELECT u.__row, {cause} AS cause FROM {{unmatched}} AS u", GRAIN, STUDENT
         )
@@ -1171,7 +1174,7 @@ def test_a_proof_counts_each_cause_s_students_per_cell_and_cut(duck, tmp_path, o
     wh = Wh(duck)
     run = _run([_group(3)])
     _save(duck, wh, run)
-    proof = explain.Proof(
+    proof = explain.Explanation(
         tmp_path / "mastery__cube_only.sql", "mastery", "cube_only",
         CAUSES, PROOF, {},
     )  # fmt: skip
@@ -1200,7 +1203,7 @@ BY_GRADE = replace(
 
 
 def _prove_saved(duck, bucket, rows, items):
-    """Run a proof that gives every row C1 over hand-made saved rows of
+    """Run an explanation that gives every row C1 over hand-made saved rows of
     BY_GRADE: (row, student, Cube's school, the dashboard's or None, moved,
     Cube's and the dashboard's flags for Grade 5 and Grade 6)."""
     duck.table(
@@ -1212,7 +1215,7 @@ def _prove_saved(duck, bucket, rows, items):
         [(bucket, row, school, moved, dash, student, "a", student, "a", 1, *flags)
          for row, student, school, dash, moved, flags in rows],
     )  # fmt: skip
-    proof = explain.Proof(
+    proof = explain.Explanation(
         Path("p.sql"), "mastery", bucket,
         {"C1": ("dashboard", "the dashboard files it elsewhere")},
         "SELECT u.__row, 'C1' AS cause FROM {unmatched} AS u", {},
@@ -1288,7 +1291,7 @@ def test_a_re_run_proof_replaces_its_bucket_s_old_counts_even_when_smaller():
         kept,
     ]}}  # fmt: skip
 
-    # The revised proof splits the cause: 4 students keep its words.
+    # The revised explanation splits the cause: 4 students keep its words.
     explain.keep_students(
         loaded, "m", "cube_only", [{**entry, "n": 4, "bucket": "cube_only"}]
     )
@@ -1319,7 +1322,7 @@ def test_a_proof_classifies_value_differing_rows(duck, tmp_path, offline, monkey
     group = Group("mastery", (), "value_differs", 3, 3)
     run = _run([group])
     items = [sort._as_json(s) for s in sort.suggest(cfg, run, {}, traces={})]
-    directory = tmp_path / "proofs" / "v"
+    directory = tmp_path / "explanations" / "v"
     directory.mkdir(parents=True)
     path = explain.proof_path(directory, "mastery", "value_differs")
     path.write_text(explain.compose({"C1": ("dashboard", "the sheet reads another school")},
@@ -1344,7 +1347,7 @@ def test_compose_opts_out_of_banned_syntax_only_when_the_proof_uses_it():
     assert explain.split_block(picked)[0] == causes
 
 
-# --- one proof per row population -------------------------------------------------
+# --- one explanation per row population --------------------------------------
 
 # Same rows as COMPARISON, another measure: its groups are the same rows.
 SIBLING = Comparison(
@@ -1420,7 +1423,7 @@ def test_confirm_also_proves_the_comparisons_with_the_same_rows(
     draft = tmp_path / "draft.sql"
     draft.write_text(PROOF)
 
-    explain.run_confirm(
+    explain.explain(
         CFG2,
         tmp_path / "validation" / "v.yml",
         wh=_saved_wh(duck, run, CFG2),
@@ -1435,8 +1438,10 @@ def test_confirm_also_proves_the_comparisons_with_the_same_rows(
 
     items = json.loads(path.read_text())["items"]
     assert {i["suggestion"] for i in items} == {"cause"}
-    assert "Also mastery-b (same rows): 1 of 1 items proven." in capsys.readouterr().out
-    proofs = tmp_path / "validation" / "proofs" / "v"
+    assert (
+        "Also mastery-b (same rows): 1 of 1 items explained." in capsys.readouterr().out
+    )
+    proofs = tmp_path / "validation" / "explanations" / "v"
     assert [p.name for p in proofs.iterdir()] == ["mastery__cube_only.sql"]
 
 
@@ -1453,7 +1458,7 @@ def test_a_sibling_s_own_failing_proof_shows_its_refusal(duck, tmp_path, offline
     assert by["mastery"]["suggestion"] == "cause"
     assert by["mastery-b"]["suggestion"] == "investigate"
     assert by["mastery-b"]["evidence"][0].startswith(
-        "proof mastery-b__cube_only.sql not run"
+        "explanation mastery-b__cube_only.sql not run"
     )
 
 
@@ -1522,7 +1527,7 @@ def _draft(tmp_path, text):
 def _confirm_text(duck, tmp_path, text, wh=None):
     wh = wh or Wh(duck)
     _save(duck, wh, pipeline.latest_run(CFG, tmp_path)[0])
-    explain.run_confirm(
+    explain.explain(
         CFG,
         tmp_path / "validation" / "v.yml",
         wh=wh,
@@ -1543,7 +1548,7 @@ def test_confirm_keeps_a_checked_reproduce_query_with_the_proof(
 
     _confirm_text(duck, tmp_path, explain.compose(CAUSES, PROOF, {"C1": REPRODUCE}))
 
-    stored = tmp_path / "validation" / "proofs" / "v" / "mastery__cube_only.sql"
+    stored = tmp_path / "validation" / "explanations" / "v" / "mastery__cube_only.sql"
     assert explain.read_proof(stored).reproduce == {"C1": REPRODUCE}
     assert "Reproduce C1: dry run OK" in capsys.readouterr().out
 
@@ -1599,7 +1604,7 @@ def test_confirm_refuses_a_reproduce_query_bigquery_refuses(
 
 
 def test_open_cell_lines_name_each_open_cell_and_why():
-    # Cell Y holds no unmatched row; cell X's proven group covers it.
+    # Cell Y holds no unmatched row; cell X's explained group covers it.
     cell = CELLS_RUN["diff_cells"][0]
     run = _run(
         [_placed(3)],
@@ -1656,7 +1661,7 @@ def test_a_proof_classifies_rows_that_sit_in_another_cell(duck, tmp_path, offlin
     )
     run = _run([moved])
     items = _items(run)
-    directory = tmp_path / "proofs" / "v"
+    directory = tmp_path / "explanations" / "v"
     directory.mkdir(parents=True)
     explain.proof_path(directory, "mastery", "dims_differ").write_text(
         explain.compose(
@@ -1740,7 +1745,7 @@ def test_check_reproduce_tests_each_comparison_inside_exists_on_its_own():
         )
 
 
-# --- a triage keeps its finished proofs and prices them first -----------------------
+# --- a sort keeps its finished explanations and prices them first ------------
 
 
 def test_a_second_triage_reuses_a_finished_proof_and_runs_no_query(
@@ -1820,7 +1825,7 @@ def test_a_triage_stopped_partway_keeps_the_proofs_it_finished(duck, tmp_path, o
     _save(duck, wh, run, cfg=CFG2)
     explain.run_stored(CFG2, run, directory, wh=wh, cube=None, progress_dir=tmp_path)
 
-    assert len(wh.ran) == 1  # only the proof the first triage did not finish
+    assert len(wh.ran) == 1  # only the explanation the first triage did not finish
 
 
 def test_triage_of_one_comparison_reuses_the_others_and_runs_only_its_own(
@@ -1849,7 +1854,7 @@ def test_triage_of_one_comparison_reuses_the_others_and_runs_only_its_own(
     assert len(wh.ran) == 1
     by = {explain._comparison_of(r): r for r in alone}
     assert by["mastery"].why == (
-        "proof mastery__cube_only.sql not run: outside --comparison"
+        "explanation mastery__cube_only.sql not run: outside --comparison"
     )
     assert by["mastery-b"].found is not None
 
@@ -1907,7 +1912,7 @@ def test_proofs_outside_the_comparisons_are_counted_in_one_line(
 
     out = capsys.readouterr().out
     assert "not run: outside --comparison" not in out
-    assert "1 proof outside --comparison not run (no kept outcome)." in out
+    assert "1 explanation outside --comparison not run (no kept outcome)." in out
 
 
 def test_each_explanation_run_prints_a_progress_line(duck, tmp_path, offline):
@@ -1925,3 +1930,26 @@ def test_each_explanation_run_prints_a_progress_line(duck, tmp_path, offline):
     explain.run_stored(CFG, run, directory, wh=wh, cube=None, ticker=Ticks())
 
     assert said == [("sort explain", path.name, 0.25)]
+
+
+def test_an_old_proofs_folder_is_refused_with_its_new_name(tmp_path):
+    view_file = tmp_path / "v.yml"
+    (tmp_path / "proofs" / "v").mkdir(parents=True)
+
+    with pytest.raises(pipeline.Refusal) as caught:
+        explain.explanations_dir(view_file, "v")
+
+    old, new = tmp_path / "proofs" / "v", tmp_path / "explanations" / "v"
+    assert str(caught.value) == (
+        f"rename {old} to {new} (git mv); stored explanations moved"
+    )
+
+
+def test_the_explanations_folder_sits_beside_the_validation_file(tmp_path):
+    view_file = tmp_path / "v.yml"
+    (tmp_path / "proofs" / "v").mkdir(parents=True)
+    (tmp_path / "explanations" / "v").mkdir(parents=True)
+
+    found = explain.explanations_dir(view_file, "v")
+
+    assert found == tmp_path / "explanations" / "v"
