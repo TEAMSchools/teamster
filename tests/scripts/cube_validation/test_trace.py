@@ -1204,7 +1204,7 @@ def test_the_trace_descends_up_to_5_levels(duck, tmp_path):
     assert list(found.labels.values()) == ["m5/main: keep"]
 
 
-def test_a_cap_still_stops_the_whole_bucket(duck, tmp_path):
+def test_a_cap_still_stops_the_whole_bucket(duck, tmp_path, capsys):
     from cube_validation.bq import CostCapError
 
     manifest = _two_models(duck, tmp_path)
@@ -1216,7 +1216,9 @@ def test_a_cap_still_stops_the_whole_bucket(duck, tmp_path):
             raise CostCapError("these queries would pass the $1.00 cap")
 
     wh.refuse_past_caps = refuse
+    wh.spent = 0.0
     bucket = _bucket(duck, TWO, [_group(2)], levels=1, manifest=manifest, wh=wh)
+    bucket.ticker = ticks = _Ticks()
 
     with pytest.raises(trace.Stopped) as caught:
         bucket.run()
@@ -1224,6 +1226,13 @@ def test_a_cap_still_stops_the_whole_bucket(duck, tmp_path):
     assert "cap" in caught.value.reason
     assert "int_a" not in bucket.blocked
     assert caught.value.found[trace.item_key(_group(2))].stopped
+    out = capsys.readouterr().out
+    assert (
+        "Trace mastery cube_only chain: the dashboard SQL > int_a: "
+        "these queries would pass the $1.00 cap"
+    ) in out
+    # Level 0, then the stop at level 1: a watcher sees the stop.
+    assert len(ticks.said) == 2
 
 
 class _Ticks:
@@ -1250,3 +1259,79 @@ def test_each_trace_level_prints_a_progress_line(duck, tmp_path, monkeypatch):
     trace.trace_run(CFG, run, wh=wh, cube=None, levels=0, ticker=ticks)
 
     assert ticks.said == [("sort trace", "mastery cube_only", 0.5)]
+
+
+def test_a_skipped_model_is_named_not_read_as_unrecoverable(duck, tmp_path):
+    manifest = _two_models(duck, tmp_path)
+    wh = DuckWarehouse(duck)
+
+    def estimate(sql):
+        if _holds_a(sql):
+            raise BadRequest("x", errors=[{"reason": "invalidQuery"}])
+        return 0.0
+
+    wh.estimate = estimate
+    bucket = _bucket(duck, TWO, [_group(2)], levels=1, manifest=manifest, wh=wh)
+
+    found = bucket.run()[trace.item_key(_group(2))]
+
+    posted = " ".join(found.leads(posted=True))
+    assert "not traced: int_a skipped (invalidQuery)" in posted
+    assert "recovered by no step" not in posted
+    assert found.below == () and found.consistent
+    assert any("invalidQuery" in f for f in found.failed)
+
+
+def test_a_lone_skipped_model_reads_as_one_with_a_sibling_does(duck, tmp_path):
+    _cube_rows(duck, [(1, "a", "X")])
+    duck.table("raw_a", KEPT, [(1, "a", "X", False)])
+    duck.table("int_a", "student BIGINT, item VARCHAR, school VARCHAR", [])
+    manifest = _manifest(
+        tmp_path,
+        {
+            "int_a": (
+                "select student, item, school "
+                "from `teamster-332318`.`d`.`raw_a` where keep",
+                [],
+            )
+        },
+    )
+    dash = "SELECT a.student, a.item, a.school FROM `teamster-332318.d.int_a` AS a"
+    wh = DuckWarehouse(duck)
+
+    def rows(sql, timeout_s=None):
+        if _holds_a(sql):
+            raise BadRequest("Bad", errors=[{"reason": "resourcesExceeded"}])
+        return duck.rows(sql)
+
+    wh.rows = rows
+    bucket = _bucket(duck, dash, [_group(1)], levels=1, manifest=manifest, wh=wh)
+
+    found = bucket.run()[trace.item_key(_group(1))]
+
+    posted = " ".join(found.leads(posted=True))
+    assert "not traced: int_a skipped (resourcesExceeded)" in posted
+    assert "a trace query failed or stopped" not in posted
+    assert not found.unknown and found.consistent
+
+
+def test_a_bucket_stopped_at_level_0_still_ticks(monkeypatch):
+    side = _side(FLAT)
+    monkeypatch.setattr(trace, "network_schools", lambda wh: set())
+    monkeypatch.setattr(pipeline, "row_sides", lambda *a, **k: side.sides)
+    run = RunResult(
+        view="v", moment=BUILD, measures=[], applied=Applied(open=[_group(5)])
+    )
+
+    class Failing(FakeWarehouse):
+        spent = 0.0
+
+        def estimate(self, sql):
+            raise _refused()
+
+    ticks = _Ticks()
+
+    trace.trace_run(CFG, run, wh=Failing(lambda sql: []), cube=None, levels=0,
+                    ticker=ticks)  # fmt: skip
+
+    assert ticks.said == [("sort trace", "mastery cube_only", 0.0)]
