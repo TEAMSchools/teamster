@@ -55,7 +55,7 @@ SUGGESTIONS = ("map_filters", "filters_nothing", "cause", "investigate")
 # run's own reconcile (rows the sheet's dashboard-only filter drops), the
 # workbook XML (a missing cut or filter), explained groups (a cell set), or the
 # run's matched rows (a formula difference).
-PROOF_KINDS = ("query", "reconcile", "workbook", "cells", "formula")
+EXPLANATION_KINDS = ("query", "reconcile", "workbook", "cells", "formula")
 # A formula difference's cause: every row in its cells matched on both sides.
 FORMULA_LABEL = "differing cells hold no unmatched row"
 # How `sort` and `ask-owner` name a comparison the latest run skipped.
@@ -92,7 +92,7 @@ class Suggestion:
     missing filter or cut may map to. `cause` is, for a `cause` item, its
     causes, each `{side, step, label, n_rows}`; it is None until one is
     explained. `proof` is what the cause rests on, typed by `kind`
-    (`PROOF_KINDS`); a stored explanation's also names its file. `evidence`
+    (`EXPLANATION_KINDS`); a stored explanation's also names its file. `evidence`
     shows exact counts; `posted` is the same lines masked for the review
     issue (`report.shown_counts`), or None when it equals `evidence`. A
     sheet filter's first evidence line says whether Cube offers it; names
@@ -300,7 +300,7 @@ def comparisons_waiting(
     return out
 
 
-def proven_triage(
+def checked_sort(
     run: RunResult,
     run_json: Path,
     recorded: list[Decision] | None = None,
@@ -382,19 +382,19 @@ def proven_triage(
                 "sort holds in `investigate`; delete the decision and run `explain` "
                 "on the item (see `explain` in the cube-validation skill)"
             )
-    # Every cause rests on a typed explanation (`PROOF_KINDS`).
+    # Every cause rests on a typed explanation (`EXPLANATION_KINDS`).
     if bare := sum(
         1
         for i in items
         if i["suggestion"] == "cause"
-        and (i.get("proof") or {}).get("kind") not in PROOF_KINDS
+        and (i.get("proof") or {}).get("kind") not in EXPLANATION_KINDS
     ):
         raise pipeline.Refusal(
             f"{view}: {bare} `cause` item{'' if bare == 1 else 's'} "
             f"rest{'s' if bare == 1 else ''} on no explanation; run `explain` "
             f"on {'it' if bare == 1 else 'them'}, then re-run `sort`"
         )
-    if moved := sum(1 for i in items if _proof_changed(i.get("proof"), base)):
+    if moved := sum(1 for i in items if _explanation_changed(i.get("proof"), base)):
         raise pipeline.Refusal(
             f"{view}: {moved} item{'' if moved == 1 else 's'} in `cause` "
             f"rest{'s' if moved == 1 else ''} on an explanation file changed "
@@ -415,7 +415,7 @@ def unsettled(run: RunResult, loaded: dict) -> list[Unsettled]:
 
     Each is matched to the run's open item by its `_open_key` for its bucket
     and counts; one the run no longer holds keeps its kind and no count. Read
-    `loaded` through `posted_triage`, so a lead's counts are masked.
+    `loaded` through `posted_sort`, so a lead's counts are masked.
     """
     sources = {_open_key(src): src for _, src in _entries(run)}
     out = []
@@ -489,7 +489,7 @@ _STALE = {
 
 
 # The explanations of a row group that cause decisions decide.
-DECIDABLE_PROOFS = ("query", "reconcile")
+DECIDABLE_EXPLANATIONS = ("query", "reconcile")
 
 
 def decidable(item: dict) -> bool:
@@ -499,7 +499,7 @@ def decidable(item: dict) -> bool:
         item.get("kind") == "group"
         and item.get("suggestion") == "cause"
         and bool(item.get("cause"))
-        and proof.get("kind") in DECIDABLE_PROOFS
+        and proof.get("kind") in DECIDABLE_EXPLANATIONS
         and bool(proof.get("fingerprint"))
     )
 
@@ -683,7 +683,7 @@ def cause_asks(
     return out
 
 
-def _proof_changed(proof: dict | None, base: Path | None = None) -> bool:
+def _explanation_changed(proof: dict | None, base: Path | None = None) -> bool:
     """A stored explanation's file is gone, or no longer the explanation triage ran.
 
     The recorded path is relative to the validation file's directory, `base`.
@@ -699,7 +699,7 @@ def _proof_changed(proof: dict | None, base: Path | None = None) -> bool:
     return explain.file_fingerprint(path) != proof.get("fingerprint")
 
 
-def posted_triage(loaded: dict) -> dict:
+def posted_sort(loaded: dict) -> dict:
     """A triage as the review issue may quote it: each item's masked evidence.
 
     `evidence` in `triage.json` shows exact counts for the analyst;
@@ -814,11 +814,11 @@ def _filter_cause(
         cause,
         (f"the run's reconcile: {label} ({sql}) drops all {g.n_rows} rows",),
         (f"the run's reconcile: {label} ({sql}) drops every row",),
-        reconcile_proof(entry),
+        reconcile_explanation(entry),
     )
 
 
-def reconcile_proof(entry: dict) -> dict:
+def reconcile_explanation(entry: dict) -> dict:
     """The explanation of a dashboard-filtered group: the filter the reconcile ran.
 
     Its fingerprint is the `dashboard_filters` entry's, so editing the filter
@@ -839,7 +839,7 @@ _FORMULA_CAUSE = {
 }
 
 
-def _formula_proof(run: RunResult, comparison: str) -> dict:
+def _formula_explanation(run: RunResult, comparison: str) -> dict:
     """A formula difference's explanation: the comparison's SQL fingerprints in the
     run, whose reconcile matched every row in its cells."""
     text = json.dumps(run.fingerprints.get(comparison) or {}, sort_keys=True)
@@ -1004,7 +1004,7 @@ def suggest(
                 # The run's own reconcile matched every row in these cells,
                 # so the 2 formulas differ: no explanation file is needed.
                 call, cause = "cause", [dict(_FORMULA_CAUSE)]
-                proof = _formula_proof(run, source.comparison_id)
+                proof = _formula_explanation(run, source.comparison_id)
                 n = sum(source.counts.values())
                 tail = f"{FORMULA_LABEL}: every row in them matched on both sides"
                 evidence, posted = (f"{n} {tail}",), (f"{mask(n)} {tail}",)
@@ -1360,7 +1360,7 @@ def sort_run(
     the batch is still written, as it is when an explanation cannot run.
     Prints `batch_lines`. Writes every item to `triage.json` beside that run's
     `run.json`, with the run's moment, decisions fingerprint and open items
-    (see `proven_triage`), each explained row group marked by the cause
+    (see `checked_sort`), each explained row group marked by the cause
     decisions that decide it (`mark_decided`): it stays in the local cache,
     and its stubs and causes carry real values and exact counts.
 

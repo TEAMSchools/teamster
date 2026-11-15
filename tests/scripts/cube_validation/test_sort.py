@@ -30,7 +30,7 @@ START = datetime(2026, 10, 27, 6, 0, tzinfo=timezone.utc)
 END = datetime(2026, 10, 27, 6, 5, tzinfo=timezone.utc)
 
 
-def _proof(**kw):
+def _explanation(**kw):
     return RebuildCheck(fingerprint="f", cells=None, matched_at="2026-10-27", **kw)
 
 
@@ -39,7 +39,7 @@ def _cfg(**proof_kw):
         id="enrollment",
         measure="student_count",
         dims=[ColumnPair("Grade", "grade_level")],
-        rebuild_check=_proof(**proof_kw),
+        rebuild_check=_explanation(**proof_kw),
     )
     return ViewConfig(view="enrollment", fact="d.t", comparisons=[cmp])
 
@@ -304,9 +304,9 @@ def test_no_group_by_stub_matches_a_row_with_no_group_by():
 
 def test_unknown_proof_on_the_gap_sheet_is_not_filters_nothing():
     known = Comparison(
-        id="other", measure="m", rebuild_check=_proof(restricting_filters=[])
+        id="other", measure="m", rebuild_check=_explanation(restricting_filters=[])
     )
-    unknown = Comparison(id="enrollment", measure="m", rebuild_check=_proof())
+    unknown = Comparison(id="enrollment", measure="m", rebuild_check=_explanation())
     cfg = ViewConfig(view="enrollment", fact="d.t", comparisons=[known, unknown])
 
     [s] = suggest(cfg, _run(gaps=[_gap()]), {})
@@ -318,14 +318,14 @@ def test_another_sheets_note_does_not_speak_for_the_gap():
     other = Comparison(
         id="other",
         measure="m",
-        rebuild_check=_proof(
+        rebuild_check=_explanation(
             restricting_filters=[], filter_notes={"Enroll Status": "copy of X"}
         ),
     )
     mine = Comparison(
         id="enrollment",
         measure="m",
-        rebuild_check=_proof(restricting_filters=["Enroll Status"]),
+        rebuild_check=_explanation(restricting_filters=["Enroll Status"]),
     )
     cfg = ViewConfig(view="enrollment", fact="d.t", comparisons=[other, mine])
 
@@ -487,7 +487,7 @@ def test_a_formula_difference_is_its_own_item():
 def test_a_formula_difference_is_in_cause_on_the_run_s_own_evidence():
     import hashlib
 
-    from cube_validation.sort import PROOF_KINDS
+    from cube_validation.sort import EXPLANATION_KINDS
 
     found = {s.item.id: s for s in suggest(_cfg(), _formula_run(), {}, traces={})}
 
@@ -501,7 +501,7 @@ def test_a_formula_difference_is_in_cause_on_the_run_s_own_evidence():
         "kind": "formula",
         "fingerprint": hashlib.sha256(fp.encode()).hexdigest(),
     }
-    assert "formula" in PROOF_KINDS
+    assert "formula" in EXPLANATION_KINDS
     words = (
         "differing cells hold no unmatched row: every row in them matched on both sides"
     )
@@ -735,9 +735,9 @@ from cube_validation.config import Decision  # noqa: E402
 from cube_validation.sort import (  # noqa: E402
     _moment,
     cause_asks,
+    checked_sort,
     mark_decided,
     open_keys,
-    proven_triage,
 )
 
 FPS = {"cube": "c1", "dashboard": "d1"}
@@ -758,7 +758,7 @@ def _fp_run(groups):
     return run
 
 
-def _proof_file(tmp_path, text="SELECT 1"):
+def _explanation_file(tmp_path, text="SELECT 1"):
     path = tmp_path / "enrollment__dashboard_only.sql"
     path.write_text(text)
     return {"kind": "query", "path": str(path),
@@ -786,7 +786,7 @@ def _cause_decision(id, label, side="cube", call="domain_owner", proof=None, **k
 def test_a_split_group_stays_undecided_until_both_causes_are_decided(tmp_path):
     run = _fp_run(_groups("Newark"))
     (key,) = open_items(run)
-    proof = _proof_file(tmp_path)
+    proof = _explanation_file(tmp_path)
     item = _item(key, proof, ("cube", NO_SECTION, 20), ("dashboard", LATE, 10))
     a = _cause_decision("a", NO_SECTION, proof=proof["fingerprint"])
     b = _cause_decision("b", LATE, side="dashboard", proof=proof["fingerprint"])
@@ -803,7 +803,7 @@ def test_a_split_group_stays_undecided_until_both_causes_are_decided(tmp_path):
 def test_a_cells_item_is_decided_once_every_covering_group_is(tmp_path):
     run = _fp_run(_groups("Newark", "Miami"))
     newark, miami = open_items(run)
-    proof = _proof_file(tmp_path)
+    proof = _explanation_file(tmp_path)
     groups = [_item(newark, proof, ("cube", NO_SECTION, 30)),
               _item(miami, proof, ("dashboard", LATE, 30))]  # fmt: skip
     cells = {"id": "enrollment:cells", "kind": "cells", "comparison": "enrollment",
@@ -832,8 +832,8 @@ def test_a_cells_item_is_decided_once_every_covering_group_is(tmp_path):
 def test_a_changed_proof_file_re_opens_the_decision(tmp_path):
     run = _fp_run(_groups("Newark"))
     (key,) = open_items(run)
-    old = _proof_file(tmp_path, "SELECT 1")
-    new = _proof_file(tmp_path, "SELECT 2")
+    old = _explanation_file(tmp_path, "SELECT 1")
+    new = _explanation_file(tmp_path, "SELECT 2")
     decision = _cause_decision("a", NO_SECTION, proof=old["fingerprint"])
     item = _item(key, new, ("cube", NO_SECTION, 30))
 
@@ -850,7 +850,7 @@ def test_a_changed_proof_file_re_opens_the_decision(tmp_path):
 def test_a_cause_decision_on_other_sql_does_not_decide(tmp_path):
     run = _fp_run(_groups("Newark"))
     (key,) = open_items(run)
-    proof = _proof_file(tmp_path)
+    proof = _explanation_file(tmp_path)
     stale = _cause_decision("a", NO_SECTION, proof=proof["fingerprint"],
                             fps={"cube": "old"})  # fmt: skip
     item = _item(key, proof, ("cube", NO_SECTION, 30))
@@ -870,7 +870,7 @@ def _group_decision(call, fps=FPS):
 def test_a_cause_decision_agreeing_with_a_group_decision_is_redundant(tmp_path):
     run = _fp_run(_groups("Newark"))
     (key,) = open_items(run)
-    proof = _proof_file(tmp_path)
+    proof = _explanation_file(tmp_path)
     item = _item(key, proof, ("cube", NO_SECTION, 30))
     cause = _cause_decision(
         "a", NO_SECTION, call="fix_cube", proof=proof["fingerprint"]
@@ -885,7 +885,7 @@ def test_a_cause_decision_agreeing_with_a_group_decision_is_redundant(tmp_path):
 def test_a_cause_decision_disagreeing_with_a_group_decision_refuses(tmp_path, fps):
     run = _fp_run(_groups("Newark"))
     (key,) = open_items(run)
-    proof = _proof_file(tmp_path)
+    proof = _explanation_file(tmp_path)
     item = _item(key, proof, ("cube", NO_SECTION, 30))
     cause = _cause_decision("a", NO_SECTION, proof=proof["fingerprint"])
 
@@ -901,7 +901,7 @@ def test_a_cause_decision_disagreeing_with_a_group_decision_refuses(tmp_path, fp
 def test_cause_asks_count_only_each_causes_own_rows(tmp_path):
     run = _fp_run(_groups("Newark", "Camden"))
     newark, camden = open_items(run)
-    proof = _proof_file(tmp_path)
+    proof = _explanation_file(tmp_path)
     fp = proof["fingerprint"]
     items = [
         _item(newark, proof, ("cube", NO_SECTION, 27), ("cube", LATE, 3)),
@@ -920,7 +920,7 @@ def test_cause_asks_count_only_each_causes_own_rows(tmp_path):
     assert (b.decision.id, len(b.groups), b.rows) == ("b", 1, 3)
 
 
-def _write_run_triage(tmp_path, run, items):
+def _write_run_sorted(tmp_path, run, items):
     run_json = tmp_path / "run.json"
     run_json.write_text("{}")
     (tmp_path / "triage.json").write_text(json.dumps(
@@ -936,10 +936,10 @@ def test_the_gate_refuses_a_proven_group_or_cell_set_with_no_proof(tmp_path):
     with pytest.raises(
         pipeline.Refusal, match="1 `cause` item rests on no explanation"
     ):
-        proven_triage(run, _write_run_triage(tmp_path, run, [item]))
+        checked_sort(run, _write_run_sorted(tmp_path, run, [item]))
 
-    proof = _proof_file(tmp_path)
-    proven_triage(run, _write_run_triage(tmp_path, run, [{**item, "proof": proof}]))
+    proof = _explanation_file(tmp_path)
+    checked_sort(run, _write_run_sorted(tmp_path, run, [{**item, "proof": proof}]))
 
 
 def test_the_gate_takes_a_reconcile_or_workbook_proof_and_no_bare_cause(tmp_path):
@@ -953,13 +953,13 @@ def test_the_gate_takes_a_reconcile_or_workbook_proof_and_no_bare_cause(tmp_path
          "proof": {"kind": "workbook"}},
     ]  # fmt: skip
 
-    assert proven_triage(run, _write_run_triage(tmp_path, run, items))["items"]
+    assert checked_sort(run, _write_run_sorted(tmp_path, run, items))["items"]
 
     items[1]["proof"] = None
     with pytest.raises(
         pipeline.Refusal, match="1 `cause` item rests on no explanation"
     ):
-        proven_triage(run, _write_run_triage(tmp_path, run, items))
+        checked_sort(run, _write_run_sorted(tmp_path, run, items))
 
 
 # --- T20: model docs as leads ------------------------------------------------
@@ -1030,7 +1030,7 @@ def test_closing_a_masked_sibling_moves_no_other_items_counts(tmp_path):
     q = Group("enrollment", (("region", "Camden"),), "dashboard_only", 20, 4)
     run = _fp_run([p, q])
     by_dims = {g.dims: it for it, g in zip(open_items(run), [p, q], strict=True)}
-    proof = _proof_file(tmp_path)
+    proof = _explanation_file(tmp_path)
     fp = proof["fingerprint"]
     item = _item(by_dims[p.dims], proof, ("cube", NO_SECTION, 30))
     recorded = [_cause_decision("a", NO_SECTION, proof=fp)]
@@ -1053,15 +1053,15 @@ def test_a_quieted_dashboard_filtered_group_passes_the_proof_gate(tmp_path):
     item = _item(it, {"kind": "reconcile"}, ("dashboard", "dashboard filter", 30))
     # A `group` decision closed it after triage: it is no longer open.
     run.applied.open = []
-    run_json = _write_run_triage(tmp_path, run, [item])
+    run_json = _write_run_sorted(tmp_path, run, [item])
 
-    assert proven_triage(run, run_json)["items"] == [item]
+    assert checked_sort(run, run_json)["items"] == [item]
 
 
 def test_decided_marks_round_trip_through_triage_json(tmp_path):
     run = _fp_run(_groups("Newark"))
     (it,) = open_items(run)
-    proof = _proof_file(tmp_path)
+    proof = _explanation_file(tmp_path)
     item = _item(it, proof, ("cube", NO_SECTION, 30))
     item.update(evidence=["proof line"], evidence_posted=["proof line"])
     mark_decided(
@@ -1082,7 +1082,9 @@ from cube_validation.answers import approved_decisions  # noqa: E402
 def test_sheet_filtered_groups_share_one_cause_decision_and_no_group_stub(tmp_path):
     # DDI's C6: 6 groups the sheet's own filter drops, on 6 different modules.
     entry = {"dashboard": "administered_at", "operator": "lte", "days_from_week_end": 0}
-    proof = _proof(missing_columns={"Exclude Future Assessments": "administered_at"})
+    proof = _explanation(
+        missing_columns={"Exclude Future Assessments": "administered_at"}
+    )
     cmp = Comparison(id="enrollment", measure="m", dims=[ColumnPair("Module", "module_code")],
                      rebuild_check=proof, dashboard_filters=[entry])  # fmt: skip
     cfg = ViewConfig(view="enrollment", fact="d.t", comparisons=[cmp])
@@ -1124,14 +1126,14 @@ def test_a_decision_closing_an_item_triage_holds_in_investigate_refuses(tmp_path
                     fingerprints=dict(FPS))  # fmt: skip
     # Written by hand after triage, then re-applied: the group is now quiet.
     run.applied = Applied(quiet=[(hand, group)])
-    run_json = _write_run_triage(tmp_path, run, [item])
+    run_json = _write_run_sorted(tmp_path, run, [item])
 
     with pytest.raises(
         pipeline.Refusal,
         match=r"decision 'hand' closes item .* `investigate`.*see `explain` in the "
         "cube-validation skill",
     ):
-        proven_triage(run, run_json)
+        checked_sort(run, run_json)
 
 
 # --- closed groups: what a cause decision covers past triage's items ---------
@@ -1210,7 +1212,7 @@ def test_check_closed_compares_a_cause_with_the_group_decision_closing_it(
     run.applied.quiet = [(group_decision, q)]
     proof, ran = _ran_over(run)
     _, closed = closed_groups(run, [ran], _cfg())
-    run_json = _write_run_triage(tmp_path, run, [])
+    run_json = _write_run_sorted(tmp_path, run, [])
     loaded = json.loads((tmp_path / "triage.json").read_text())
     (tmp_path / "triage.json").write_text(json.dumps({**loaded, "closed": closed}))
     cause = _cause_decision("a", NO_SECTION, call=call, proof=proof.fingerprint)
@@ -1226,7 +1228,7 @@ def test_check_closed_compares_a_cause_with_the_group_decision_closing_it(
     )
     # The review gate reads the same list.
     with pytest.raises(pipeline.Refusal, match="closes by 'region'"):
-        proven_triage(run, run_json, [group_decision, cause])
+        checked_sort(run, run_json, [group_decision, cause])
 
 
 # --- each comparison's latest result --------------------------------------------
@@ -1242,13 +1244,13 @@ def test_a_recomposed_run_needs_a_new_triage(tmp_path):
     # is unchanged, but its triage was of the earlier composition.
     run = _fp_run(_groups("Newark"))
     run.moments = {"enrollment": run.moment}
-    run_json = _write_run_triage(tmp_path, run, [])
+    run_json = _write_run_sorted(tmp_path, run, [])
     later = Build(START.replace(day=28), END.replace(day=28), "j2")
 
     recomposed = replace(run, moments={**run.moments, "other": later})
 
     with pytest.raises(pipeline.Refusal, match="triage.json is of another moment"):
-        proven_triage(recomposed, run_json)
+        checked_sort(recomposed, run_json)
 
 
 def test_waiting_comparisons_name_the_missing_the_stale_and_the_edited():
@@ -1296,10 +1298,10 @@ def test_waiting_comparisons_name_a_skipped_one_by_why_it_was_skipped():
 def test_the_gate_returns_items_in_investigate_as_unsettled(tmp_path):
     run = _fp_run(_groups("Newark", "Camden"))
     newark, camden = open_items(run)
-    proven = _item(newark, _proof_file(tmp_path), ("cube", NO_SECTION, 30))
+    proven = _item(newark, _explanation_file(tmp_path), ("cube", NO_SECTION, 30))
     left = {**_item(camden, None), "suggestion": "investigate", "cause": None}
 
-    loaded = proven_triage(run, _write_run_triage(tmp_path, run, [proven, left]))
+    loaded = checked_sort(run, _write_run_sorted(tmp_path, run, [proven, left]))
 
     assert [i["id"] for i in loaded["unsettled"]] == [camden.id]
     assert [i["id"] for i in loaded["items"]] == [newark.id, camden.id]
@@ -1418,13 +1420,13 @@ def test_another_comparisons_column_never_makes_a_gap_for_cube():
         id="enrollment",
         measure="student_count",
         dims=[ColumnPair("Grade", "grade_level")],
-        rebuild_check=_proof(restricting_filters=["Enroll Status"]),
+        rebuild_check=_explanation(restricting_filters=["Enroll Status"]),
     )
     other = Comparison(
         id="attendance",
         measure="student_count",
         dims=[ColumnPair("Grade", "grade_level")],
-        rebuild_check=_proof(
+        rebuild_check=_explanation(
             restricting_filters=["Enroll Status"],
             missing_columns={"Enroll Status": "enroll_status"},
         ),

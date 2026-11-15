@@ -358,7 +358,7 @@ def _owner_run(diff_cells, measure_cells=3):
 FORMULA_EVIDENCE = (
     "<10 differing cells hold no unmatched row: every row in them matched on both sides"
 )
-TRIAGE = {
+SORTED = {
     "enrollment": {
         "view": "enrollment",
         "items": [
@@ -411,12 +411,12 @@ TRIAGE = {
 DEFS = {"enrollment": {"enrollment": {"dashboard": "codes ET, T", "cube": "codes T%"}}}
 
 
-def _questions(run, cfg=None, triage=TRIAGE):
+def _questions(run, cfg=None, triage=SORTED):
     return questions_json([run], [cfg or _cfg()], DEFS, triage, START)
 
 
-# `TRIAGE` is bound again further down, for the decisions-in tests.
-OWNER_TRIAGE = TRIAGE
+# `SORTED` is bound again further down, for the decisions-in tests.
+OWNER_SORTED = SORTED
 
 
 def test_unsettled_items_are_not_in_the_questions_json():
@@ -435,8 +435,8 @@ def test_unsettled_items_are_not_in_the_questions_json():
         "evidence": ["lead: relaxing UNSETTLED brings back 3 of 5 rows"],
         "candidates": [],
     }
-    items = [*OWNER_TRIAGE["enrollment"]["items"], left]
-    triage = {"enrollment": {**OWNER_TRIAGE["enrollment"], "items": items}}
+    items = [*OWNER_SORTED["enrollment"]["items"], left]
+    triage = {"enrollment": {**OWNER_SORTED["enrollment"], "items": items}}
 
     questions = _questions(run, triage=triage)
 
@@ -676,7 +676,7 @@ def test_note_refusal_lets_dates_and_small_numbers_through(note):
     assert note_refusal(note) is None
 
 
-TRIAGE = {
+SORTED = {
     "items": [
         {"id": "ada:region=Miami", "stub": {"comparison": "ada",
          "group": {"column": "regions_region_name", "values": ["Miami"]}}},
@@ -700,7 +700,7 @@ def test_approved_decisions_take_the_stub_and_the_run_fingerprints():
          "item": "ada:formula"},
     ]  # fmt: skip
 
-    miami, team, formula = approved_decisions(approved, TRIAGE, FPS)
+    miami, team, formula = approved_decisions(approved, SORTED, FPS)
 
     assert miami == {
         "id": "miami",
@@ -722,7 +722,7 @@ def test_a_cell_set_takes_no_decision():
     entry = {"id": "x", "call": "deliberate", "reason": "r", "item": "ada:cells"}
 
     with pytest.raises(AnswerError, match="a cell set takes no decision"):
-        approved_decisions([entry], TRIAGE, FPS)
+        approved_decisions([entry], SORTED, FPS)
 
 
 def test_a_formula_decision_covers_only_its_comparison_s_formula_item():
@@ -764,14 +764,14 @@ def test_a_missing_filter_in_cause_is_decided_across_the_view():
 )
 def test_approved_decisions_refuse(entry, match):
     with pytest.raises(AnswerError, match=match):
-        approved_decisions([entry], TRIAGE, FPS)
+        approved_decisions([entry], SORTED, FPS)
 
 
 def test_approved_decisions_refuse_a_comparison_the_run_has_no_fingerprints_for():
     entry = {"id": "x", "call": "deliberate", "reason": "r", "item": "ada:formula"}
 
     with pytest.raises(AnswerError, match="fingerprints"):
-        approved_decisions([entry], TRIAGE, {})
+        approved_decisions([entry], SORTED, {})
 
 
 def test_parse_answers_reads_a_crlf_comment():
@@ -795,7 +795,7 @@ def test_approved_decisions_refuse_a_reason_a_note_could_not_carry():
              "item": "cut:Team"}  # fmt: skip
 
     with pytest.raises(AnswerError, match="email"):
-        approved_decisions([entry], TRIAGE, FPS)
+        approved_decisions([entry], SORTED, FPS)
 
 
 # --- cause decisions (T17) ---------------------------------------------------
@@ -806,7 +806,7 @@ from cube_validation import sort as sort_mod  # noqa: E402
 NO_SECTION = "score has no section on the anchor date"
 LATE = "score dated after week 20250701"
 CAUSE_FPS = {"enrollment": {"cube": "c1", "dashboard": "d1"}}
-PROOF = {"kind": "query", "path": "explanations/v/enrollment__dashboard_only.sql",
+EXPLANATION = {"kind": "query", "path": "explanations/v/enrollment__dashboard_only.sql",
          "fingerprint": "p1"}  # fmt: skip
 
 
@@ -814,7 +814,7 @@ def _cause_entry(label, side="cube", n_rows=20):
     return {"side": side, "step": "b", "label": label, "n_rows": n_rows}
 
 
-def _cause_item(item_id, *causes, proof=PROOF, key=""):
+def _cause_item(item_id, *causes, proof=EXPLANATION, key=""):
     return {"id": item_id, "key": key, "kind": "group", "comparison": "enrollment",
             "label": "l", "stub": {"comparison": "enrollment"},
             "suggestion": "cause", "evidence": ["proof line"], "candidates": [],
@@ -963,7 +963,7 @@ def test_cause_approvals_refuse_bad_batches():
     one = _cause_item("k1", _cause_entry(NO_SECTION))
     two = _cause_item("k2", _cause_entry(NO_SECTION))
     other_proof = _cause_item("k3", _cause_entry(NO_SECTION),
-                              proof={**PROOF, "path": "explanations/v/x.sql",
+                              proof={**EXPLANATION, "path": "explanations/v/x.sql",
                                      "fingerprint": "p9"})  # fmt: skip
     blank = _cause_item("k4", _cause_entry(""))
     split = _cause_item("k5", _cause_entry(NO_SECTION), _cause_entry(LATE))
@@ -1249,13 +1249,13 @@ from dataclasses import replace as _replace  # noqa: E402
 from cube_validation import explain as explain_mod  # noqa: E402
 from cube_validation import pipeline as pipeline_mod  # noqa: E402
 from cube_validation.answers import (  # noqa: E402
-    ProofSource,
+    ExplanationSource,
     merged_reproduce,
     reproduce_json,
 )
 from cube_validation.report import CauseAsk, _reproduce_lines  # noqa: E402
 
-PROOF_SQL = (
+EXPLANATION_SQL = (
     "SELECT u.__row, CASE WHEN TRUE THEN 'C1' ELSE 'UNEXPLAINED' END AS cause "
     "FROM {unmatched} AS u"
 )
@@ -1284,19 +1284,23 @@ def _ask(proofs):
     return CauseAsk(decision, [], 30, "", proofs)
 
 
-def _stored_proof(tmp_path, reproduce):
+def _stored_explanation(tmp_path, reproduce):
     directory = tmp_path / "explanations" / "enrollment"
     directory.mkdir(parents=True)
-    path = explain_mod.proof_path(directory, "enrollment", "cube_only")
+    path = explain_mod.explanation_path(directory, "enrollment", "cube_only")
     path.write_text(
-        explain_mod.compose({"C1": ("dashboard", "drops WPP")}, PROOF_SQL, reproduce)
+        explain_mod.compose(
+            {"C1": ("dashboard", "drops WPP")}, EXPLANATION_SQL, reproduce
+        )
     )
     return "explanations/enrollment/enrollment__cube_only.sql"
 
 
 def test_a_cause_reproduces_through_cube_a_count_query_and_the_proof(tmp_path):
-    path = _stored_proof(tmp_path, {"C1": LIVE})
-    source = ProofSource("src/cube/validation/e.yml", tmp_path, "https://x/blob/b/dir")
+    path = _stored_explanation(tmp_path, {"C1": LIVE})
+    source = ExplanationSource(
+        "src/cube/validation/e.yml", tmp_path, "https://x/blob/b/dir"
+    )
     run = _run([_cell("b", 10, 20)])
 
     part = reproduce_json(
@@ -1338,8 +1342,8 @@ def test_a_cause_reproduces_through_cube_a_count_query_and_the_proof(tmp_path):
 
 def test_a_reproduce_block_edited_after_confirm_is_checked_before_it_posts(tmp_path):
     # Comment lines never stale an explanation, so `ask-owner` checks the block again.
-    path = _stored_proof(tmp_path, {"C1": "SELECT * FROM d.t"})
-    source = ProofSource("v.yml", tmp_path)
+    path = _stored_explanation(tmp_path, {"C1": "SELECT * FROM d.t"})
+    source = ExplanationSource("v.yml", tmp_path)
 
     part = reproduce_json(
         "enrollment", _ask(((path, "C1"),)), _run([]), _cause_cfg(), source, START
@@ -1349,8 +1353,8 @@ def test_a_reproduce_block_edited_after_confirm_is_checked_before_it_posts(tmp_p
 
 
 def test_a_cause_with_no_reproduce_block_says_so(tmp_path):
-    path = _stored_proof(tmp_path, None)
-    source = ProofSource("v.yml", tmp_path)
+    path = _stored_explanation(tmp_path, None)
+    source = ExplanationSource("v.yml", tmp_path)
 
     part = reproduce_json(
         "enrollment", _ask(((path, "C1"),)), _run([]), _cause_cfg(), source, START
@@ -1377,7 +1381,7 @@ def test_a_proof_source_links_the_branch_and_never_the_remote_s_credentials(tmp_
     view.parent.mkdir(parents=True)
     view.write_text("")
 
-    source = pipeline_mod.proof_source(view)
+    source = pipeline_mod.explanation_source(view)
 
     assert source.view_file == "src/cube/validation/v.yml"
     assert source.blob == "https://github.com/org/repo/blob/feat/x/src/cube/validation"
@@ -1388,7 +1392,7 @@ def test_a_proof_source_outside_git_has_no_link(tmp_path):
     view = tmp_path / "v.yml"
     view.write_text("")
 
-    source = pipeline_mod.proof_source(view)
+    source = pipeline_mod.explanation_source(view)
 
     assert source.blob is None and source.base == tmp_path
 

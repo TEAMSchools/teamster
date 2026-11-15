@@ -21,7 +21,7 @@ FILE = TRIAGE_PROGRESS
 
 
 def key(
-    proof_fingerprint: str,
+    explanation_fingerprint: str,
     comparison_id: str,
     bucket: str,
     sql_fingerprints: dict[str, str],
@@ -33,7 +33,7 @@ def key(
     return hashlib.sha256(
         json.dumps(
             [
-                proof_fingerprint,
+                explanation_fingerprint,
                 comparison_id,
                 bucket,
                 sql_fingerprints,

@@ -49,7 +49,7 @@ END = START + timedelta(minutes=14)
 NOW = END + timedelta(days=1)
 TIB = 2**40
 
-PROOF = """\
+REBUILD_CHECK = """\
     rebuild_check:
       fingerprint: abc
       cells: 2
@@ -87,7 +87,7 @@ comparisons:
       values:
         - { dashboard: is_present, cube: attendance_value }
 """
-    + PROOF
+    + REBUILD_CHECK
 )
 
 RECONCILE_ROWS = [
@@ -718,8 +718,8 @@ def _two(tmp_path, c2=lambda entry: entry, text=YML):
     return _file(tmp_path, head + f"  - id: c1\n{rest}" + c2(f"  - id: c2\n{rest}"))
 
 
-def _unproven(entry):
-    return entry.replace(PROOF, "    rebuild_check: null\n")
+def _no_rebuild_check(entry):
+    return entry.replace(REBUILD_CHECK, "    rebuild_check: null\n")
 
 
 def _reads_membership(entry):
@@ -858,7 +858,7 @@ def test_a_run_json_with_no_fact_is_older_than_any_fact_s_run(fakes, tmp_path):
 def test_a_comparison_without_a_proof_is_skipped_and_the_rest_run(
     fakes, tmp_path, capsys
 ):
-    assert cli.main(["compare", str(_two(tmp_path, _unproven))]) == 0
+    assert cli.main(["compare", str(_two(tmp_path, _no_rebuild_check))]) == 0
 
     out = capsys.readouterr().out
     assert "Skipping c2: no rebuild check; run `rebuild-sheet` first." in out
@@ -936,7 +936,7 @@ def test_a_changed_second_fact_skips_only_the_comparisons_that_read_it(
 def test_a_plain_run_with_only_a_skipped_comparison_left_compares_nothing(
     fakes, tmp_path, capsys
 ):
-    path = _two(tmp_path, _unproven)
+    path = _two(tmp_path, _no_rebuild_check)
     assert cli.main(["compare", str(path)]) == 0
     fakes.bq.ran.clear()
     capsys.readouterr()
@@ -965,7 +965,7 @@ def test_a_comparison_missing_a_key_it_needs_is_skipped(fakes, tmp_path, capsys)
 
 
 def test_run_refuses_when_every_comparison_is_skipped(fakes, tmp_path, capsys):
-    path = _two(tmp_path, text=YML.replace(PROOF, "    rebuild_check: null\n"))
+    path = _two(tmp_path, text=YML.replace(REBUILD_CHECK, "    rebuild_check: null\n"))
 
     assert cli.main(["compare", str(path)]) == 1
 
@@ -976,7 +976,7 @@ def test_run_refuses_when_every_comparison_is_skipped(fakes, tmp_path, capsys):
     assert fakes.bq.ran == [] and fakes.cube.compiled_queries == []
 
 
-def _drop_proof(path, comparison):
+def _drop_rebuild_check(path, comparison):
     """Clear one comparison's proof in a written validation file."""
     head, entry = path.read_text().split(f"  - id: {comparison}\n", 1)
     entry = re.sub(
@@ -993,7 +993,7 @@ def test_a_skipped_comparison_keeps_its_previous_result(fakes, tmp_path, capsys)
     assert cli.main(["compare", str(path)]) == 0
     results = latest.folder(tmp_path / "cache" / "v", "kipptaf_marts.fct_f")
     before = latest._file(results, "c2").read_text()
-    _drop_proof(path, "c2")
+    _drop_rebuild_check(path, "c2")
     fakes.bq.build = LATER
     fakes.bq.ran.clear()
 
@@ -1377,7 +1377,7 @@ def test_triage_names_a_member_cube_dropped_since_the_run(fakes, tmp_path):
     assert cli.main(["compare", str(path)]) == 0
     fakes.cube.dropped = {"v.membership_value"}
 
-    stale = _triaged_stale(path, tmp_path)
+    stale = _sorted_stale(path, tmp_path)
 
     assert stale["c2"].startswith("its SQL cannot be built today: ")
     assert "v.membership_value" in stale["c2"] and "c1" not in stale
@@ -1483,10 +1483,10 @@ def test_review_posts_the_masked_lead_of_an_item_with_the_analyst(
     assert cli.main(["compare", str(path)]) == 0
     lead = "lead: relaxing main: region = 'Miami' brings back {} of 30 rows"
     item = {
-        **_triage_item(lead.format(3), "investigate", "j"),
+        **_sorted_item(lead.format(3), "investigate", "j"),
         "evidence_posted": [lead.format("<10")],
     }
-    _triage_everything(tmp_path, [_triage_item("e"), item])
+    _write_sorted_everywhere(tmp_path, [_sorted_item("e"), item])
     capsys.readouterr()
 
     assert cli.main(["ask-owner", str(path), "--domain", "Registrar"]) == 0
@@ -1501,7 +1501,7 @@ def test_review_posts_the_masked_lead_of_an_item_with_the_analyst(
 
 
 def test_triage_and_review_name_a_skipped_comparison(fakes, tmp_path, capsys):
-    path = _two(tmp_path, _unproven)
+    path = _two(tmp_path, _no_rebuild_check)
     assert cli.main(["compare", str(path)]) == 0
     capsys.readouterr()
 
@@ -1625,7 +1625,7 @@ VIEW_E = VIEW_D.replace("int_d", "int_e")
 DEV = "zz_cbaldor_kipptaf_marts"
 
 
-def _triaged_stale(path, tmp_path):
+def _sorted_stale(path, tmp_path):
     """Triage the view's latest run and return the stale list it wrote."""
     assert cli.main(["sort", str(path), "--no-trace", "--no-explanations"]) == 0
     saved = max(
@@ -1644,7 +1644,7 @@ def test_triage_judges_staleness_from_the_composed_run(fakes, tmp_path):
     # c1's new result is kept, but the run stops before it composes run.json.
     assert cli.main(["compare", str(path)]) == 1
 
-    assert _triaged_stale(path, tmp_path) == {
+    assert _sorted_stale(path, tmp_path) == {
         "c1": "the dashboard SQL changed",
         "c2": "the dashboard SQL changed",
     }
@@ -1706,7 +1706,7 @@ def test_a_dev_build_keeps_its_results_apart_from_production(fakes, tmp_path, ca
     # dev run's is newer: a plain triage reads production's.
     prod_folder = report.run_dir(tmp_path / "cache", "v", report.Build(START, END, "j"))
     dev_folder = report.run_dir(tmp_path / "cache", "v", report.Build(*LATER, "j"))
-    assert _triaged_stale(path, tmp_path) == {}
+    assert _sorted_stale(path, tmp_path) == {}
     assert (prod_folder / "triage.json").exists()
     assert not (dev_folder / "triage.json").exists()
     fakes.cube.dataset = DEV
@@ -1739,7 +1739,7 @@ def test_a_comparison_whose_sql_no_longer_builds_waits_and_triage_goes_on(
     # Cube now reads a second fact the file does not list: its SQL refuses.
     fakes.cube.joins = SECOND_FACT_JOIN
 
-    stale = _triaged_stale(path, tmp_path)
+    stale = _sorted_stale(path, tmp_path)
 
     assert set(stale) == {"c1", "c2"}
     assert stale["c1"].startswith("its SQL cannot be built today: ")
@@ -1752,10 +1752,10 @@ def test_triage_names_which_side_s_sql_changed(fakes, tmp_path):
     assert cli.main(["compare", str(path)]) == 0
     fakes.cube.exprs = {"regions_region_name": "UPPER(`t`.regions_region_name)"}
 
-    assert _triaged_stale(path, tmp_path)["c1"] == "Cube's SQL changed"
+    assert _sorted_stale(path, tmp_path)["c1"] == "Cube's SQL changed"
 
     fakes.bq.views = {"rpt_d": VIEW_E}
-    assert _triaged_stale(path, tmp_path)["c1"] == (
+    assert _sorted_stale(path, tmp_path)["c1"] == (
         "Cube's SQL changed and the dashboard SQL changed"
     )
 
@@ -1884,7 +1884,7 @@ def test_run_refuses_a_cube_still_reading_prod_when_a_dev_build_is_named(
 
 
 def test_run_skips_comparison_without_proof(fakes, tmp_path, capsys):
-    path = _file(tmp_path, YML.replace(PROOF, "    rebuild_check: null\n"))
+    path = _file(tmp_path, YML.replace(REBUILD_CHECK, "    rebuild_check: null\n"))
 
     assert cli.main(["compare", str(path)]) == 1
 
@@ -2199,7 +2199,7 @@ def test_run_reports_cells_and_proofs(fakes, tmp_path, capsys):
 
 
 def test_run_names_a_comparison_whose_cells_cannot_be_covered(fakes, tmp_path, capsys):
-    rows = YML[YML.index("    rows:\n") : YML.index(PROOF)]
+    rows = YML[YML.index("    rows:\n") : YML.index(REBUILD_CHECK)]
     assert cli.main(["compare", str(_file(tmp_path, YML.replace(rows, "")))]) == 0
 
     out = capsys.readouterr().out
@@ -2232,7 +2232,7 @@ def test_run_lists_a_proof_without_cuts_for_a_re_prove(fakes, tmp_path, capsys):
 
 def test_run_lists_cuts_no_export_proved(fakes, tmp_path, capsys):
     # The Miami cut sets a parameter, say, so the export proved only `{}`.
-    text = YML.replace(PROOF, PROOF + "      cuts: ['{}']\n")
+    text = YML.replace(REBUILD_CHECK, REBUILD_CHECK + "      cuts: ['{}']\n")
 
     assert cli.main(["compare", str(_file(tmp_path, text))]) == 0
 
@@ -2242,7 +2242,9 @@ def test_run_lists_cuts_no_export_proved(fakes, tmp_path, capsys):
 
 
 def test_run_lists_no_cut_when_every_cut_was_exported(fakes, tmp_path, capsys):
-    text = YML.replace(PROOF, PROOF + """      cuts: ['{}', '{"Region": "Miami"}']\n""")
+    text = YML.replace(
+        REBUILD_CHECK, REBUILD_CHECK + """      cuts: ['{}', '{"Region": "Miami"}']\n"""
+    )
 
     assert cli.main(["compare", str(_file(tmp_path, text))]) == 0
 
@@ -2255,7 +2257,7 @@ def _totals_section(out):
 
 
 def test_run_lists_totals_a_proof_skipped(fakes, tmp_path, capsys):
-    text = YML.replace(PROOF, PROOF + "      totals_skipped: 2\n")
+    text = YML.replace(REBUILD_CHECK, REBUILD_CHECK + "      totals_skipped: 2\n")
 
     assert cli.main(["compare", str(_file(tmp_path, text))]) == 0
 
@@ -2265,7 +2267,7 @@ def test_run_lists_totals_a_proof_skipped(fakes, tmp_path, capsys):
 
 
 def test_run_lists_no_totals_when_none_were_skipped(fakes, tmp_path, capsys):
-    text = YML.replace(PROOF, PROOF + "      totals_skipped: 0\n")
+    text = YML.replace(REBUILD_CHECK, REBUILD_CHECK + "      totals_skipped: 0\n")
 
     assert cli.main(["compare", str(_file(tmp_path, text))]) == 0
 
@@ -2576,7 +2578,7 @@ def test_review_never_posts(fakes, tmp_path, monkeypatch, capsys):
     assert cli.main(["compare", str(_file(tmp_path))]) == 0
     path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
     assert cli.main(["compare", str(path), "--all"]) == 0
-    _triage_everything(tmp_path)
+    _write_sorted_everywhere(tmp_path)
     capsys.readouterr()
 
     def no_network(*args, **kwargs):
@@ -2608,8 +2610,8 @@ def test_review_carries_triage_evidence_in_its_json(fakes, tmp_path, capsys):
     }
     item = {"id": "i", "kind": "group", "comparison": "ada-region", "label": "l",
             "stub": stub, "suggestion": "cause", "evidence": ["the fact drops them"],
-            "candidates": [], "cause": [STEP], "proof": dict(STORED_PROOF)}  # fmt: skip
-    _write_triage(run_json, [item])
+            "candidates": [], "cause": [STEP], "proof": dict(STORED_EXPLANATION)}  # fmt: skip
+    _write_sorted(run_json, [item])
     capsys.readouterr()
 
     assert cli.main(["ask-owner", str(path), "--domain", "Registrar"]) == 0
@@ -2632,10 +2634,10 @@ def test_review_quotes_the_masked_copy_of_exact_triage_evidence(
     assert cli.main(["compare", str(path), "--all"]) == 0
     run_json = next((tmp_path / "cache" / "v").glob("*/run.json"))
     item = {
-        **_triage_item("lead: relaxing x brings back 3 of 40 rows"),
+        **_sorted_item("lead: relaxing x brings back 3 of 40 rows"),
         "evidence_posted": ["lead: relaxing x brings back <10 of 40 rows"],
     }
-    _write_triage(run_json, [item])
+    _write_sorted(run_json, [item])
     capsys.readouterr()
 
     assert cli.main(["ask-owner", str(path), "--domain", "Registrar"]) == 0
@@ -2653,19 +2655,19 @@ STEP = {"side": "dashboard", "step": "dashboard:main:1", "label": "x", "n_rows":
 MIAMI = "ada-region:regions_region_name=Miami"
 
 
-PROOF_TEXT = "-- cause x = dashboard: x\nSELECT item_key, 'x' AS cause, 1 AS n FROM {unmatched}\n"
+EXPLANATION_TEXT = "-- cause x = dashboard: x\nSELECT item_key, 'x' AS cause, 1 AS n FROM {unmatched}\n"
 
 
 @pytest.fixture(autouse=True)
-def _proof_file(monkeypatch, tmp_path):
+def _explanation_file(monkeypatch, tmp_path):
     """Give every proven fixture item a stored proof file, as `explain` does."""
     path = tmp_path / "explanations" / "ada-region__dashboard_only.sql"
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(PROOF_TEXT)
-    monkeypatch.setitem(globals(), "STORED_PROOF", _proof_of(path))
+    path.write_text(EXPLANATION_TEXT)
+    monkeypatch.setitem(globals(), "STORED_EXPLANATION", _explanation_of(path))
 
 
-def _proof_of(path):
+def _explanation_of(path):
     return {
         "kind": "query",
         "path": str(path),
@@ -2673,10 +2675,10 @@ def _proof_of(path):
     }
 
 
-STORED_PROOF: dict = {}
+STORED_EXPLANATION: dict = {}
 
 
-def _triage_item(evidence, suggestion="cause", item_id=MIAMI):
+def _sorted_item(evidence, suggestion="cause", item_id=MIAMI):
     stub = {
         "comparison": "ada-region",
         "group": {"column": "regions_region_name", "values": ["Miami"]},
@@ -2685,10 +2687,10 @@ def _triage_item(evidence, suggestion="cause", item_id=MIAMI):
     return {"id": item_id, "kind": "group", "comparison": "ada-region",
             "label": "l", "stub": stub, "suggestion": suggestion,
             "evidence": [evidence], "candidates": [], "cause": cause,
-            "proof": dict(STORED_PROOF) if cause else None}  # fmt: skip
+            "proof": dict(STORED_EXPLANATION) if cause else None}  # fmt: skip
 
 
-def _write_triage(run_json, items=(), open_keys=None):
+def _write_sorted(run_json, items=(), open_keys=None):
     """Write the triage `sort` would write beside `run_json`, holding `items`.
 
     `open_keys` defaults to every open item of that run.
@@ -2710,10 +2712,10 @@ def _write_triage(run_json, items=(), open_keys=None):
     )
 
 
-def _triage_everything(tmp_path, items=()):
+def _write_sorted_everywhere(tmp_path, items=()):
     """Write a triage holding `items` beside every saved run of view `v`."""
     for run_json in (tmp_path / "cache" / "v").glob("*/run.json"):
-        _write_triage(run_json, items)
+        _write_sorted(run_json, items)
 
 
 def test_review_refuses_a_triage_missing_an_open_item_of_the_run(
@@ -2723,7 +2725,7 @@ def test_review_refuses_a_triage_missing_an_open_item_of_the_run(
     path = _file(tmp_path)
     assert cli.main(["compare", str(path)]) == 0
     (run_json,) = (tmp_path / "cache" / "v").glob("*/run.json")
-    _write_triage(run_json, [_triage_item("e")], open_keys=[])
+    _write_sorted(run_json, [_sorted_item("e")], open_keys=[])
     capsys.readouterr()
 
     assert cli.main(["ask-owner", str(path), "--domain", "Registrar"]) == 1
@@ -2738,7 +2740,7 @@ def test_add_decisions_refuses_a_cause_item_with_no_cause(fakes, tmp_path, capsy
     assert cli.main(["compare", str(path)]) == 0
     (run_json,) = (tmp_path / "cache" / "v").glob("*/run.json")
     for empty in (None, []):
-        _write_triage(run_json, [{**_triage_item("e"), "cause": empty}])
+        _write_sorted(run_json, [{**_sorted_item("e"), "cause": empty}])
         approved = _approved(
             tmp_path, [{"id": "a", "call": "deliberate", "reason": "r", "item": "i"}]
         )
@@ -2770,12 +2772,12 @@ def test_review_lists_items_in_investigate_still_with_the_analyst(
     assert cli.main(["compare", str(_file(tmp_path))]) == 0
     path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
     assert cli.main(["compare", str(path), "--all"]) == 0
-    _triage_everything(
+    _write_sorted_everywhere(
         tmp_path,
         [
-            _triage_item("e"),
-            _triage_item("x", "investigate", "j"),
-            _triage_item("y", "investigate", "k"),
+            _sorted_item("e"),
+            _sorted_item("x", "investigate", "j"),
+            _sorted_item("y", "investigate", "k"),
         ],  # fmt: skip
     )
     capsys.readouterr()
@@ -2795,7 +2797,7 @@ def test_review_refuses_a_triage_from_before_the_investigate_pile(
     assert cli.main(["compare", str(_file(tmp_path))]) == 0
     path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
     assert cli.main(["compare", str(path), "--all"]) == 0
-    _triage_everything(tmp_path, [_triage_item("e", "owner")])
+    _write_sorted_everywhere(tmp_path, [_sorted_item("e", "owner")])
     capsys.readouterr()
 
     assert cli.main(["ask-owner", str(path), "--domain", "Registrar"]) == 1
@@ -2807,7 +2809,7 @@ def test_review_refuses_a_triage_from_an_older_moment(fakes, tmp_path, capsys):
     # Triage ran on the earlier build; the latest run lands on a later one.
     assert cli.main(["compare", str(_file(tmp_path))]) == 0
     (earlier,) = (tmp_path / "cache" / "v").glob("*/run.json")
-    _write_triage(earlier, [_triage_item("from the earlier build")])
+    _write_sorted(earlier, [_sorted_item("from the earlier build")])
     path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
     fakes.bq.build = (START + timedelta(hours=3), END + timedelta(hours=3))
     assert cli.main(["compare", str(path), "--all"]) == 0
@@ -2826,7 +2828,7 @@ def test_review_refuses_a_triage_whose_moment_is_not_the_runs(fakes, tmp_path, c
     path = _file(tmp_path)
     assert cli.main(["compare", str(path)]) == 0
     (run_json,) = (tmp_path / "cache" / "v").glob("*/run.json")
-    _write_triage(run_json, [_triage_item("e")])
+    _write_sorted(run_json, [_sorted_item("e")])
     saved = json.loads((run_json.parent / "triage.json").read_text())
     saved["moment"]["job_id"] = "another-build"
     (run_json.parent / "triage.json").write_text(json.dumps(saved))
@@ -2842,7 +2844,7 @@ def test_review_names_questions_left_without_evidence(fakes, tmp_path, capsys):
     assert cli.main(["compare", str(_file(tmp_path))]) == 0
     path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
     assert cli.main(["compare", str(path), "--all"]) == 0
-    _triage_everything(tmp_path)
+    _write_sorted_everywhere(tmp_path)
     capsys.readouterr()
 
     assert cli.main(["ask-owner", str(path), "--domain", "Registrar"]) == 0
@@ -2889,7 +2891,7 @@ def test_review_says_expired_by_the_command_lines_clock(
     assert cli.main(["compare", str(_file(tmp_path))]) == 0
     path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
     assert cli.main(["compare", str(path), "--all"]) == 0
-    _triage_everything(tmp_path)
+    _write_sorted_everywhere(tmp_path)
 
     monkeypatch.setattr(cli, "utcnow", lambda: START + timedelta(days=1))
     assert _review_json(path, capsys)[0]["expired"] is False
@@ -2903,7 +2905,7 @@ def test_review_warns_when_the_body_nears_githubs_cap(
     assert cli.main(["compare", str(_file(tmp_path))]) == 0
     path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
     assert cli.main(["compare", str(path), "--all"]) == 0
-    _triage_everything(tmp_path)
+    _write_sorted_everywhere(tmp_path)
     capsys.readouterr()
 
     assert cli.main(["ask-owner", str(path), "--domain", "Registrar"]) == 0
@@ -2924,7 +2926,7 @@ def test_review_reads_the_run_written_last(fakes, tmp_path, capsys):
     path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
     fakes.bq.build = (START, END)
     assert cli.main(["compare", str(path), "--all"]) == 0
-    _triage_everything(tmp_path)
+    _write_sorted_everywhere(tmp_path)
     later, earlier = sorted((tmp_path / "cache" / "v").glob("*/run.json"), reverse=True)
     os.utime(later, (1_000_000, 1_000_000))
     os.utime(earlier, (2_000_000, 2_000_000))
@@ -2985,7 +2987,7 @@ def test_review_refuses_a_view_never_run(fakes, tmp_path, capsys):
 
 
 def test_prove_writes_the_proof(fakes, tmp_path, capsys):
-    path = _file(tmp_path, YML.replace(PROOF, "    rebuild_check: null\n"))
+    path = _file(tmp_path, YML.replace(REBUILD_CHECK, "    rebuild_check: null\n"))
     argv = ["rebuild-sheet", str(path), "--comparison", "ada-region"]
 
     assert cli.main(argv) == 0, capsys.readouterr().err
@@ -3014,7 +3016,7 @@ def test_prove_unhides_a_dashboard_only_sheet_on_the_copy(fakes, tmp_path, capsy
         "<window class='worksheet' name='Rate by Region'>",
         "<window class='worksheet' hidden='true' name='Rate by Region'>",
     )
-    path = _file(tmp_path, YML.replace(PROOF, "    rebuild_check: null\n"))
+    path = _file(tmp_path, YML.replace(REBUILD_CHECK, "    rebuild_check: null\n"))
     argv = ["rebuild-sheet", str(path), "--comparison", "ada-region"]
 
     assert cli.main(argv) == 0, capsys.readouterr().err
@@ -3037,7 +3039,7 @@ def test_prove_reads_aliases_back_and_skips_total_rows(fakes, tmp_path, capsys):
         ]
         for _ in range(2)
     ]
-    path = _file(tmp_path, YML.replace(PROOF, "    rebuild_check: null\n"))
+    path = _file(tmp_path, YML.replace(REBUILD_CHECK, "    rebuild_check: null\n"))
     argv = ["rebuild-sheet", str(path), "--comparison", "ada-region"]
 
     assert cli.main(argv) == 0, capsys.readouterr().err
@@ -3141,7 +3143,7 @@ def test_cell_keys_read_tableau_export_dates_as_the_same_day():
 def test_prove_keeps_a_real_all_member(fakes, tmp_path, capsys):
     fakes.bq.sheet_query = [{"region": "All", "value": 0.9001}]
     fakes.tbl.exports = [[{"Region": "All", "Rate": "0.9001"}] for _ in range(2)]
-    path = _file(tmp_path, YML.replace(PROOF, "    rebuild_check: null\n"))
+    path = _file(tmp_path, YML.replace(REBUILD_CHECK, "    rebuild_check: null\n"))
     argv = ["rebuild-sheet", str(path), "--comparison", "ada-region"]
 
     assert cli.main(argv) == 0, capsys.readouterr().err
@@ -3170,7 +3172,7 @@ def test_prove_refuses_a_cut_with_no_rows(fakes, tmp_path, capsys):
 
 
 def test_prove_does_not_write_a_failed_proof(fakes, tmp_path, capsys):
-    path = _file(tmp_path, YML.replace(PROOF, "    rebuild_check: null\n"))
+    path = _file(tmp_path, YML.replace(REBUILD_CHECK, "    rebuild_check: null\n"))
     fakes.bq.sheet_query = [{"region": "Newark", "value": 0.5}]
     argv = ["rebuild-sheet", str(path), "--comparison", "ada-region"]
 
@@ -3238,7 +3240,7 @@ def _republished(fakes, tmp_path, source=True):
     from cube_validation.tableau import source_fingerprint
 
     twb = fakes.tbl.twb
-    proof = PROOF.replace(
+    proof = REBUILD_CHECK.replace(
         "fingerprint: abc", f"fingerprint: {formula_fingerprint(twb, 'Rate by Region')}"
     )
     if source:
@@ -3246,7 +3248,7 @@ def _republished(fakes, tmp_path, source=True):
             f"      source_fingerprint: {source_fingerprint(twb, 'Rate by Region')}\n"
         )
     fakes.tbl.updated = datetime(2026, 10, 25, tzinfo=timezone.utc)
-    return _file(tmp_path, YML.replace(PROOF, proof))
+    return _file(tmp_path, YML.replace(REBUILD_CHECK, proof))
 
 
 def test_workbook_check_keeps_a_proof_when_a_republish_left_the_sheet_alone(
@@ -3349,7 +3351,7 @@ def test_two_rows_on_one_cell_refuse():
 
 # --- prove: sheet shape --------------------------------------------------------
 
-UNPROVEN = YML.replace(PROOF, "    rebuild_check: null\n")
+NO_REBUILD_CHECK = YML.replace(REBUILD_CHECK, "    rebuild_check: null\n")
 TEAM_SHELF = (
     "<rows>([federated.0sample].[none:region:nk] / "
     "[federated.0sample].[none:team:nk])</rows>"
@@ -3372,7 +3374,7 @@ def _with_team(twb):
 
 def test_prove_records_missing_cuts_and_filters(fakes, tmp_path, capsys):
     fakes.tbl.twb = _with_team(fakes.tbl.twb)
-    path = _file(tmp_path, UNPROVEN)
+    path = _file(tmp_path, NO_REBUILD_CHECK)
 
     assert cli.main(["rebuild-sheet", str(path), "--comparison", "ada-region"]) == 0
 
@@ -3393,7 +3395,7 @@ def test_prove_sums_split_rows_of_a_long_export(fakes, tmp_path, capsys):
         ]
         for _ in range(2)
     ]  # fmt: skip
-    text = UNPROVEN.replace(
+    text = NO_REBUILD_CHECK.replace(
         "    sheet_field: Rate\n", "    sheet_field: Rate\n    split_rows: sum\n"
     )
     path = _file(tmp_path, text)
@@ -3415,7 +3417,7 @@ def test_prove_refuses_split_rows_unless_asked(fakes, tmp_path, capsys):
         ]
         for _ in range(2)
     ]
-    path = _file(tmp_path, UNPROVEN)
+    path = _file(tmp_path, NO_REBUILD_CHECK)
 
     assert cli.main(["rebuild-sheet", str(path), "--comparison", "ada-region"]) == 1
 
@@ -3431,7 +3433,7 @@ def test_prove_failure_output_is_summarized(fakes, tmp_path, capsys):
         [{"Region": f"R{i}", "Rate": "0.9", "Count": "1"} for i in range(20)]
         for _ in range(2)
     ]
-    path = _file(tmp_path, UNPROVEN)
+    path = _file(tmp_path, NO_REBUILD_CHECK)
 
     assert cli.main(["rebuild-sheet", str(path), "--comparison", "ada-region"]) == 1
 
@@ -3442,8 +3444,8 @@ def test_prove_failure_output_is_summarized(fakes, tmp_path, capsys):
 
 
 def test_prove_several_comparisons_share_one_capture(fakes, tmp_path, capsys):
-    block = UNPROVEN.split("comparisons:\n", 1)[1]
-    text = UNPROVEN + block.replace("id: ada-region", "id: ada-twin")
+    block = NO_REBUILD_CHECK.split("comparisons:\n", 1)[1]
+    text = NO_REBUILD_CHECK + block.replace("id: ada-region", "id: ada-twin")
     path = _file(tmp_path, text)
     argv = [
         "rebuild-sheet",
@@ -3461,7 +3463,7 @@ def test_prove_several_comparisons_share_one_capture(fakes, tmp_path, capsys):
 
 
 def test_prove_keeps_going_after_one_refusal(fakes, tmp_path, capsys):
-    argv = ["rebuild-sheet", str(_file(tmp_path, UNPROVEN)), "--comparison", "nope",
+    argv = ["rebuild-sheet", str(_file(tmp_path, NO_REBUILD_CHECK)), "--comparison", "nope",
             "--comparison", "ada-region"]  # fmt: skip
 
     assert cli.main(argv) == 1
@@ -3524,8 +3526,8 @@ def test_dashboard_columns_change_the_row_population(tmp_path):
 
 # --- run: missing cuts and filters ----------------------------------------------
 
-GAP_PROOF = (
-    PROOF
+GAP_REBUILD_CHECK = (
+    REBUILD_CHECK
     + """\
       missing_cuts: [Team]
       missing_filters: [Enroll Status]
@@ -3535,7 +3537,7 @@ GAP_PROOF = (
 
 
 def test_run_lists_missing_cuts_from_the_proof(fakes, tmp_path, capsys):
-    path = _file(tmp_path, YML.replace(PROOF, GAP_PROOF))
+    path = _file(tmp_path, YML.replace(REBUILD_CHECK, GAP_REBUILD_CHECK))
 
     assert cli.main(["compare", str(path)]) == 0, capsys.readouterr().err
 
@@ -3553,7 +3555,7 @@ def test_run_says_when_a_proof_predates_missing_cuts(fakes, tmp_path, capsys):
 
 def test_gap_decision_quiets_a_missing_cut(fakes, tmp_path, capsys):
     text = (
-        YML.replace(PROOF, GAP_PROOF)
+        YML.replace(REBUILD_CHECK, GAP_REBUILD_CHECK)
         + """\
 decisions:
   - id: no-team
@@ -3571,7 +3573,7 @@ decisions:
 
 def test_review_carries_a_domain_owner_missing_cut(fakes, tmp_path, capsys):
     text = (
-        YML.replace(PROOF, GAP_PROOF)
+        YML.replace(REBUILD_CHECK, GAP_REBUILD_CHECK)
         + """\
 decisions:
   - id: team-cut
@@ -3583,7 +3585,7 @@ decisions:
     )
     path = _file(tmp_path, text)
     assert cli.main(["compare", str(path)]) == 0
-    _triage_everything(tmp_path)
+    _write_sorted_everywhere(tmp_path)
     capsys.readouterr()
 
     assert cli.main(["ask-owner", str(path), "--domain", "Registrar"]) == 0
@@ -3684,7 +3686,7 @@ def test_prove_headers_prints_the_export_without_probing(fakes, tmp_path, capsys
          {"Region": "Newark", "Measure Names": "# Present", "Measure Values": "90"}]
         for _ in range(2)
     ]  # fmt: skip
-    path = _file(tmp_path, UNPROVEN)
+    path = _file(tmp_path, NO_REBUILD_CHECK)
     before = path.read_text()
 
     assert (
@@ -3702,7 +3704,7 @@ def test_prove_headers_prints_the_export_without_probing(fakes, tmp_path, capsys
 
 # --- Tableau sessions ------------------------------------------------------------
 
-TWIN = UNPROVEN + UNPROVEN.split("comparisons:\n", 1)[1].replace(
+TWIN = NO_REBUILD_CHECK + NO_REBUILD_CHECK.split("comparisons:\n", 1)[1].replace(
     "id: ada-region", "id: ada-twin"
 )
 TWO = ["--comparison", "ada-region", "--comparison", "ada-twin"]
@@ -3785,7 +3787,7 @@ def test_reconnect_signs_in_again_and_signs_the_old_session_out(monkeypatch):
 
 def test_review_says_which_tasks_to_fill_in(fakes, tmp_path, capsys):
     text = (
-        YML.replace(PROOF, GAP_PROOF)
+        YML.replace(REBUILD_CHECK, GAP_REBUILD_CHECK)
         + """\
 decisions:
   - id: team-cut
@@ -3796,7 +3798,7 @@ decisions:
     )
     path = _file(tmp_path, text)
     assert cli.main(["compare", str(path)]) == 0
-    _triage_everything(tmp_path)
+    _write_sorted_everywhere(tmp_path)
     capsys.readouterr()
 
     assert cli.main(["ask-owner", str(path), "--domain", "Registrar"]) == 0
@@ -3849,7 +3851,7 @@ def _latest_run(tmp_path):
     return saved[-1]
 
 
-def _triage_items(path, tmp_path):
+def _sorted_items(path, tmp_path):
     assert cli.main(["sort", str(path), "--no-trace"]) == 0
     loaded = json.loads((_latest_run(tmp_path).parent / "triage.json").read_text())
     return {i["id"]: i for i in loaded["items"]}
@@ -3871,7 +3873,7 @@ def test_a_cell_whose_rows_all_match_is_a_formula_difference(fakes, tmp_path):
         "Recorded definitions: dashboard present days over days; Cube sum over count"
     )
 
-    items = _triage_items(path, tmp_path)
+    items = _sorted_items(path, tmp_path)
     item = items["ada-region:formula"]
     assert (item["kind"], item["suggestion"]) == ("formula", "cause")
     assert item["proof"]["kind"] == "formula"
@@ -3888,7 +3890,7 @@ def test_a_cell_that_gains_a_row_leaves_the_formula_claim(fakes, tmp_path, capsy
     fakes.bq.reconcile = NEWARK_MATCHES
     path = _file(tmp_path, DEFINED)
     assert cli.main(["compare", str(path)]) == 0
-    assert set(_triage_items(path, tmp_path)) == {"ada-region:formula"}
+    assert set(_sorted_items(path, tmp_path)) == {"ada-region:formula"}
     approved = _approved(tmp_path, [{"id": "which-rate", "call": "domain_owner",
                                      "reason": "Which rate is right?",
                                      "item": "ada-region:formula"}])  # fmt: skip
@@ -3920,7 +3922,7 @@ def test_a_cell_that_gains_a_row_leaves_the_formula_claim(fakes, tmp_path, capsy
     assert d["id"] == "which-rate"
     # Camden under both cuts, Newark under the Miami cut, where it has no row.
     assert (quiet["kind"], quiet["counts"]) == ("formula", {"differs": 3})
-    items = _triage_items(path, tmp_path)
+    items = _sorted_items(path, tmp_path)
     assert items["ada-region:cells"]["suggestion"] == "investigate"
     assert "ada-region:formula" not in items
 
@@ -3949,7 +3951,9 @@ def test_a_run_saved_before_formula_differences_reads_its_cells_as_cell_sets(
 
 def test_an_unplaceable_cell_is_never_a_formula_difference(fakes, tmp_path):
     fakes.bq.cells = [{"regions_region_name": "Newark", "value": 0.95}]
-    text = YML.split("    rows:\n", 1)[0] + PROOF + YML.split(PROOF, 1)[1]
+    text = (
+        YML.split("    rows:\n", 1)[0] + REBUILD_CHECK + YML.split(REBUILD_CHECK, 1)[1]
+    )
     path = _file(tmp_path, text)
     assert cli.main(["compare", str(path)]) == 0
 
@@ -4043,7 +4047,9 @@ def test_run_saves_each_sides_dry_run_price_outside_the_cap(fakes, tmp_path):
 
 def test_run_without_rows_leaves_n_students_none(fakes, tmp_path):
     fakes.bq.cells = [{"regions_region_name": "Miami", "value": 0.95}]
-    text = YML.split("    rows:\n", 1)[0] + PROOF + YML.split(PROOF, 1)[1]
+    text = (
+        YML.split("    rows:\n", 1)[0] + REBUILD_CHECK + YML.split(REBUILD_CHECK, 1)[1]
+    )
     assert cli.main(["compare", str(_file(tmp_path, text))]) == 0
 
     saved = _saved_run(tmp_path)
@@ -4140,7 +4146,7 @@ def test_run_json_round_trips_the_hand_check_fields(fakes, tmp_path):
 
 
 def test_prove_sets_a_parameter_on_the_copy(fakes, tmp_path, capsys):
-    text = UNPROVEN.replace(
+    text = NO_REBUILD_CHECK.replace(
         "    sheet_field: Rate\n",
         "    sheet_field: Rate\n    parameters: { Basis: Year end }\n",
     )
@@ -4185,7 +4191,7 @@ def _reshaped(text):
 
 def test_prove_reshapes_the_copy_and_records_it(fakes, tmp_path, capsys):
     fakes.tbl.twb = _with_team(fakes.tbl.twb)
-    path = _file(tmp_path, _reshaped(UNPROVEN))
+    path = _file(tmp_path, _reshaped(NO_REBUILD_CHECK))
 
     assert cli.main(["rebuild-sheet", str(path), "--comparison", "ada-region"]) == 0, (
         capsys.readouterr().err
@@ -4204,7 +4210,7 @@ def test_prove_reshapes_the_copy_and_records_it(fakes, tmp_path, capsys):
 
 def test_prove_headers_shows_the_reshaped_sheet(fakes, tmp_path, capsys):
     fakes.tbl.twb = _with_team(fakes.tbl.twb)
-    path = _file(tmp_path, _reshaped(UNPROVEN))
+    path = _file(tmp_path, _reshaped(NO_REBUILD_CHECK))
 
     argv = ["rebuild-sheet", str(path), "--comparison", "ada-region", "--headers"]
     assert cli.main(argv) == 0, capsys.readouterr().err
@@ -4215,7 +4221,7 @@ def test_prove_headers_shows_the_reshaped_sheet(fakes, tmp_path, capsys):
 def test_prove_headers_names_the_table_calcs_a_reshape_changes(fakes, tmp_path, capsys):
     fakes.tbl.twb = (FIXTURES / "dki_grid.twb").read_text()
     text = (
-        UNPROVEN.replace("sheet: Rate by Region", "sheet: Mastery Grid")
+        NO_REBUILD_CHECK.replace("sheet: Rate by Region", "sheet: Mastery Grid")
         .replace(
             "    sheet_field: Rate\n",
             "    sheet_field: Rate\n    shelves: { drop: [Week Start Monday], "
@@ -4241,7 +4247,7 @@ def test_prove_headers_names_the_table_calcs_a_reshape_changes(fakes, tmp_path, 
 
 
 def test_prove_refuses_a_drop_off_the_sheet(fakes, tmp_path, capsys):
-    path = _file(tmp_path, _reshaped(UNPROVEN))
+    path = _file(tmp_path, _reshaped(NO_REBUILD_CHECK))
 
     assert cli.main(["rebuild-sheet", str(path), "--comparison", "ada-region"]) == 1
 
@@ -4525,13 +4531,13 @@ def test_triage_takes_fact_dataset_and_refuses_a_bad_one(fakes, tmp_path, capsys
 
 
 def test_triage_runs_a_value_check_and_records_the_verdict(fakes, tmp_path, capsys):
-    proof = PROOF + (
+    proof = REBUILD_CHECK + (
         "      missing_cuts: []\n"
         "      missing_filters: [School Level]\n"
         "      restricting_filters: [School Level]\n"
         "      missing_columns: { School Level: school_level }\n"
     )
-    path = _file(tmp_path, YML.replace(PROOF, proof))
+    path = _file(tmp_path, YML.replace(REBUILD_CHECK, proof))
     assert cli.main(["compare", str(path)]) == 0, capsys.readouterr().err
     (saved,) = (tmp_path / "cache" / "v").glob("*/run.json")
     fakes.cube.meta = lambda: {
@@ -4675,13 +4681,13 @@ def test_a_value_check_past_the_cap_still_writes_the_batch(
     fakes, tmp_path, capsys, monkeypatch
 ):
     # N10: a cap hit in the value checks leaves the trace's work in place.
-    proof = PROOF + (
+    proof = REBUILD_CHECK + (
         "      missing_cuts: []\n"
         "      missing_filters: [School Level]\n"
         "      restricting_filters: [School Level]\n"
         "      missing_columns: { School Level: school_level }\n"
     )
-    path = _file(tmp_path, YML.replace(PROOF, proof))
+    path = _file(tmp_path, YML.replace(REBUILD_CHECK, proof))
     assert cli.main(["compare", str(path)]) == 0, capsys.readouterr().err
     (saved,) = (tmp_path / "cache" / "v").glob("*/run.json")
     fakes.cube.meta = lambda: {
@@ -4708,7 +4714,7 @@ def test_a_value_check_past_the_cap_still_writes_the_batch(
 # --- add-decisions and record-answers ----------------------------------------
 
 
-def _gap_triage_item():
+def _gap_sorted_item():
     return {"id": "cut:Team", "kind": "gap", "comparison": "", "label": "l",
             "stub": {"missing_cut": "Team"}, "suggestion": "filters_nothing",
             "evidence": [], "candidates": []}  # fmt: skip
@@ -4726,7 +4732,7 @@ def test_add_decisions_takes_stub_from_triage_and_fingerprints_from_run(
     path = _file(tmp_path)
     assert cli.main(["compare", str(path)]) == 0
     (run_json,) = (tmp_path / "cache" / "v").glob("*/run.json")
-    _write_triage(run_json, [_triage_item("e"), _gap_triage_item()])
+    _write_sorted(run_json, [_sorted_item("e"), _gap_sorted_item()])
     approved = _approved(
         tmp_path,
         [
@@ -4762,7 +4768,7 @@ def test_add_decisions_takes_stub_from_triage_and_fingerprints_from_run(
     assert miami.cause == {"side": "dashboard", "label": "x"}
     assert miami.fingerprints == {
         **_saved_fingerprints(tmp_path),
-        "explanation": STORED_PROOF["fingerprint"],
+        "explanation": STORED_EXPLANATION["fingerprint"],
     }
     assert (team.missing_cut, team.comparison, team.fingerprints) == ("Team", "", {})
     assert cfg.comparisons[0].rebuild_check is not None
@@ -4781,7 +4787,7 @@ def test_add_decisions_re_applies_to_the_saved_run_offline(
     path = _file(tmp_path)
     assert cli.main(["compare", str(path)]) == 0
     (run_json,) = (tmp_path / "cache" / "v").glob("*/run.json")
-    _write_triage(run_json, [_triage_item("e")])
+    _write_sorted(run_json, [_sorted_item("e")])
     approved = _approved(
         tmp_path,
         [{"id": "miami-scope", "call": "deliberate", "reason": "r", "item": MIAMI}],
@@ -4802,13 +4808,13 @@ def test_add_decisions_re_applies_to_the_saved_run_offline(
     assert cli.main(["ask-owner", str(path), "--domain", "Registrar"]) == 0
 
 
-def _triaged_run(path, tmp_path):
+def _sorted_run(path, tmp_path):
     """Run the file and give its run a triage listing the Miami group as `i`."""
     assert cli.main(["compare", str(path), "--all"]) == 0
     saved = sorted(
         (tmp_path / "cache" / "v").glob("*/run.json"), key=lambda p: p.stat().st_mtime
     )
-    _write_triage(saved[-1], [_triage_item("e")])
+    _write_sorted(saved[-1], [_sorted_item("e")])
 
 
 def test_add_decisions_refuses_a_decision_overlapping_one_in_the_file(
@@ -4818,7 +4824,7 @@ def test_add_decisions_refuses_a_decision_overlapping_one_in_the_file(
     # Stale, so the group stays open and triage proves its cause; the cause
     # decision's other call still refuses.
     path = _with_decision({"cube": "stale", "dashboard": "stale"}, tmp_path)
-    _triaged_run(path, tmp_path)
+    _sorted_run(path, tmp_path)
     approved = _approved(
         tmp_path,
         [{"id": "miami-again", "call": "deliberate", "reason": "r", "item": MIAMI}],
@@ -4837,7 +4843,7 @@ def test_add_decisions_refuses_two_in_one_batch_claiming_one_group(
     fakes, tmp_path, capsys
 ):
     path = _file(tmp_path)
-    _triaged_run(path, tmp_path)
+    _sorted_run(path, tmp_path)
     approved = _approved(
         tmp_path,
         [
@@ -4858,7 +4864,7 @@ def test_add_decisions_without_a_usable_run_still_writes(
     fakes, tmp_path, monkeypatch, capsys
 ):
     path = _file(tmp_path)
-    _triaged_run(path, tmp_path)
+    _sorted_run(path, tmp_path)
     approved = _approved(
         tmp_path, [{"id": "a", "call": "deliberate", "reason": "r", "item": MIAMI}]
     )
@@ -4883,7 +4889,7 @@ def test_add_decisions_refuses_an_unknown_item_and_writes_nothing(
     path = _file(tmp_path)
     assert cli.main(["compare", str(path)]) == 0
     (run_json,) = (tmp_path / "cache" / "v").glob("*/run.json")
-    _write_triage(run_json, [_triage_item("e")])
+    _write_sorted(run_json, [_sorted_item("e")])
     approved = _approved(
         tmp_path,
         [
@@ -4904,8 +4910,8 @@ def test_add_decisions_writes_what_is_ready_while_an_item_waits_in_investigate(
 ):
     path = _file(tmp_path)
     assert cli.main(["compare", str(path)]) == 0
-    _triage_everything(
-        tmp_path, [_triage_item("e"), _triage_item("x", "investigate", "j")]
+    _write_sorted_everywhere(
+        tmp_path, [_sorted_item("e"), _sorted_item("x", "investigate", "j")]
     )
     waiting = _approved(
         tmp_path, [{"id": "b", "call": "deliberate", "reason": "r", "item": "j"}]
@@ -4941,14 +4947,14 @@ def _closed_by_a_group_decision(tmp_path):
     (run_json,) = (tmp_path / "cache" / "v").glob("*/run.json")
     run = pipeline._run_from_json(json.loads(run_json.read_text()))
     ((_, miami),) = run.applied.quiet
-    _write_triage(run_json, [_triage_item("e", item_id="other")])
+    _write_sorted(run_json, [_sorted_item("e", item_id="other")])
     found = run_json.parent / "triage.json"
     loaded = json.loads(found.read_text())
     key = sort._open_key(miami)
     loaded["closed"] = [
         {"id": key, "key": key, "kind": "group", "comparison": "ada-region",
          "closed": True, "suggestion": "cause", "cause": [STEP],
-         "proof": dict(STORED_PROOF)}
+         "proof": dict(STORED_EXPLANATION)}
     ]  # fmt: skip
     found.write_text(json.dumps(loaded))
     return path
@@ -5081,7 +5087,7 @@ def test_reapply_quiets_a_newly_decided_group_and_review_accepts_it(
     assert "## Cells" in text
     assert _client_calls(fakes) == calls
 
-    _triage_everything(tmp_path)
+    _write_sorted_everywhere(tmp_path)
     assert cli.main(["ask-owner", str(path), "--domain", "Registrar"]) == 0
 
 
@@ -5401,7 +5407,7 @@ def test_record_answers_re_applies_to_the_saved_run_offline(
 
     assert "Re-applied decisions to the saved run of" in capsys.readouterr().out
     assert _client_calls(fakes) == calls
-    _triage_everything(tmp_path)
+    _write_sorted_everywhere(tmp_path)
     assert cli.main(["ask-owner", str(path), "--domain", "Registrar"]) == 0
 
 
@@ -5458,10 +5464,10 @@ def test_a_changed_proof_re_opens_a_cause_decision_for_re_approval(
     fakes, tmp_path, capsys
 ):
     path = _file(tmp_path)
-    _triaged_run(path, tmp_path)
+    _sorted_run(path, tmp_path)
     first = {"id": "a", "call": "domain_owner", "reason": "r", "item": MIAMI}
     assert _approve(path, tmp_path, first) == 0
-    _triaged_run(path, tmp_path)
+    _sorted_run(path, tmp_path)
     # Approving a decided item again writes nothing; another call refuses.
     before = path.read_text()
     assert _approve(path, tmp_path, {**first, "id": "b"}) == 0
@@ -5470,10 +5476,10 @@ def test_a_changed_proof_re_opens_a_cause_decision_for_re_approval(
     assert "is decided domain_owner in 'a'" in capsys.readouterr().err
 
     # The proof file changes; the next triage carries its new fingerprint.
-    proof = Path(STORED_PROOF["path"])
-    proof.write_text(PROOF_TEXT.replace("1 AS n", "2 AS n"))
-    STORED_PROOF.update(_proof_of(proof))
-    _triaged_run(path, tmp_path)
+    proof = Path(STORED_EXPLANATION["path"])
+    proof.write_text(EXPLANATION_TEXT.replace("1 AS n", "2 AS n"))
+    STORED_EXPLANATION.update(_explanation_of(proof))
+    _sorted_run(path, tmp_path)
     capsys.readouterr()
     again = {"id": "b", "call": "fix_cube", "reason": "r2", "task": "#1", "item": MIAMI}
 
@@ -5481,7 +5487,7 @@ def test_a_changed_proof_re_opens_a_cause_decision_for_re_approval(
 
     (d,) = load_view_config(path).decisions
     assert (d.id, d.call, d.reason) == ("a", "fix_cube", "r2")
-    assert d.fingerprints["explanation"] == STORED_PROOF["fingerprint"]
+    assert d.fingerprints["explanation"] == STORED_EXPLANATION["fingerprint"]
     assert "re-approved a" in capsys.readouterr().out
 
 
@@ -5489,15 +5495,15 @@ def test_an_answered_cause_decision_is_never_re_approved_on_a_changed_proof(
     fakes, tmp_path, capsys
 ):
     path = _file(tmp_path)
-    _triaged_run(path, tmp_path)
+    _sorted_run(path, tmp_path)
     assert _approve(path, tmp_path, {"id": "a", "call": "domain_owner",
                                      "reason": "r", "item": MIAMI}) == 0  # fmt: skip
     path.write_text(path.read_text().replace("    call: domain_owner\n",
                                              "    call: domain_owner\n    answer: domain_owner\n"))  # fmt: skip
-    proof = Path(STORED_PROOF["path"])
-    proof.write_text(PROOF_TEXT.replace("1 AS n", "2 AS n"))
-    STORED_PROOF.update(_proof_of(proof))
-    _triaged_run(path, tmp_path)
+    proof = Path(STORED_EXPLANATION["path"])
+    proof.write_text(EXPLANATION_TEXT.replace("1 AS n", "2 AS n"))
+    STORED_EXPLANATION.update(_explanation_of(proof))
+    _sorted_run(path, tmp_path)
     before = path.read_text()
     capsys.readouterr()
 

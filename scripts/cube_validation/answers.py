@@ -51,7 +51,7 @@ NO_REPRODUCE = (
 
 
 @dataclass(frozen=True)
-class ProofSource:
+class ExplanationSource:
     """Where a view's stored explanations live, for an owner to reproduce a cause.
 
     `view_file` is the validation file as a command names it (repo-relative
@@ -473,7 +473,7 @@ def reproduce_json(
     ask: CauseAsk,
     run: RunResult,
     cfg: ViewConfig,
-    source: ProofSource | None,
+    source: ExplanationSource | None,
     now: datetime,
     cells: list | None = None,
 ) -> dict:
@@ -503,10 +503,10 @@ def reproduce_json(
         cube = {"query": _cube_query(cfg, check), "dashboard": where}
     file = source.view_file if source else f"<{view} validation file>"
     proofs = []
-    for path, bucket in ask.proofs:
+    for path, bucket in ask.explanations:
         stored = (source.base / path) if source else None
         try:
-            proof = explain.read_proof(stored) if stored else None
+            proof = explain.read_explanation(stored) if stored else None
         except (OSError, explain.pipeline.Refusal):
             proof = None
         proofs.append(
@@ -639,7 +639,7 @@ def questions_json(
     triage: dict[str, dict],
     now: datetime,
     causes: dict[str, list[CauseAsk]] | None = None,
-    sources: dict[str, ProofSource] | None = None,
+    sources: dict[str, ExplanationSource] | None = None,
 ) -> list[dict]:
     """List the review issue's questions for the owner's Claude session.
 
@@ -1086,7 +1086,7 @@ def _file_cause(d: Decision) -> dict:
     return out
 
 
-def _proofs_by_cause(items: list[dict]) -> dict[tuple, set[str]]:
+def _explanations_by_cause(items: list[dict]) -> dict[tuple, set[str]]:
     """Each cause's explanation files across the triage's explained row groups."""
     out: dict[tuple, set[str]] = {}
     for item in items:
@@ -1155,7 +1155,7 @@ def approved_decisions(
             changed.
     """
     items = {item.get("id"): item for item in triage.get("items", [])}
-    proofs = _proofs_by_cause(list(items.values()))
+    proofs = _explanations_by_cause(list(items.values()))
     taken = {d.id for d in existing}
     out: list[dict] = []
     # Each cause's decision as this batch leaves it, by (comparison, side, words).

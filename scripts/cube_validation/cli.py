@@ -337,7 +337,7 @@ def _parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--bucket",
         required=True,
-        choices=explain.PROVABLE,
+        choices=explain.EXPLAINABLE,
         help="the unmatched rows it classifies",
     )
     p.add_argument(
@@ -675,13 +675,13 @@ def _decide(cfg: ViewConfig, path: Path, approved_path: Path) -> int:
     fingerprints from that run; a cause already decided keeps its decision
     (see `answers.approved_decisions`). Items still in `investigate` wait;
     the batch may not decide one. Refuses while that sort is stale
-    (`sort.proven_triage`), on an approved item still in `investigate`, or
+    (`sort.checked_sort`), on an approved item still in `investigate`, or
     when a cause decision would disagree with a `group` decision on one
     group. The whole batch is written or none of it.
     """
     approved = _read_json(approved_path, "approved")
     run, run_json = pipeline.latest_run(cfg, cache_root())
-    saved = sort.proven_triage(run, run_json, cfg.decisions, path.parent)
+    saved = sort.checked_sort(run, run_json, cfg.decisions, path.parent)
 
     decisions = answers.approved_decisions(
         approved, saved, run.fingerprints, existing=cfg.decisions

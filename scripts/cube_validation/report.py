@@ -618,7 +618,7 @@ class CauseAsk:
     lead: str = ""
     # Each stored explanation that explains the cause in these groups, as its path
     # relative to the validation file's directory and the cause's bucket.
-    proofs: tuple[tuple[str, str], ...] = ()
+    explanations: tuple[tuple[str, str], ...] = ()
 
 
 def _cause_head(ask: CauseAsk) -> str:

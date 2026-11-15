@@ -70,7 +70,7 @@ from .timetravel import PROJECT, AsOf, as_of, repin, utc_literal
 
 # A rebuild's sheet query is time-travelled to the refresh; keep a margin inside
 # 7 days.
-PROOF_WINDOW = WINDOW - timedelta(hours=1)
+REBUILD_WINDOW = WINDOW - timedelta(hours=1)
 
 
 class Refusal(RuntimeError):
@@ -1613,7 +1613,7 @@ def _browser_cuts(comparisons: list[Comparison]) -> list[str]:
     return out
 
 
-def _unproven_totals(comparisons: list[Comparison]) -> list[str]:
+def _unmatched_totals(comparisons: list[Comparison]) -> list[str]:
     """Comparisons whose rebuild check skipped the export's total rows, or
     cannot say."""
     out = []
@@ -1639,11 +1639,11 @@ def _say_caveats(ready: list[Comparison], skips: list[Skip]) -> list[str]:
 
     Called once every skip is known, so a skipped comparison, whose latest
     result this run does not touch, has neither a totals line
-    (`_unproven_totals`) nor an uncoverable-cells line.
+    (`_unmatched_totals`) nor an uncoverable-cells line.
     """
     gone = {s.comparison for s in skips}
     kept = [c for c in ready if c.id not in gone]
-    totals = _unproven_totals(kept)
+    totals = _unmatched_totals(kept)
     for line in totals:
         print(f"{line}.")
     for comparison in kept:
@@ -1795,7 +1795,7 @@ TABLEAU_ANSWERED = "Tableau answered"
 _NEEDED = ("dashboard_view", "decimals")
 
 
-def _proof_skips(
+def _early_skips(
     cfg: ViewConfig, comparisons: list[Comparison], *, tbl: tableau.Tableau, cube: Cube
 ) -> list[Skip]:
     """The comparisons `compare` skips before any query, in the order found.
@@ -2038,7 +2038,7 @@ def compare(
     a confirmed comparison is skipped when it lacks a key it needs, has no
     rebuild check, its sheet query or workbook changed since the check, or it
     maps a member Cube lacks, or Tableau errs on its workbook
-    (`_proof_skips`); before the price, when its SQL cannot be built today
+    (`_early_skips`); before the price, when its SQL cannot be built today
     (`_sql_skips`) or at the run's moment, or a dry run it needs fails; after
     the price, when its Cube SQL reads a fact in `also_facts` that changed
     during the build, both sides' rows read a table that did, or one of its
@@ -2078,7 +2078,7 @@ def compare(
         )
     # Every confirmed comparison, before the run folder or any query; a member
     # the model dropped would refuse only after every query ran.
-    skips = _proof_skips(cfg, comparisons, tbl=tbl, cube=cube)
+    skips = _early_skips(cfg, comparisons, tbl=tbl, cube=cube)
     _say_skips(skips)
     _refuse_all_skipped(cfg, comparisons, skips)
     ready = [c for c in comparisons if c.id not in {s.comparison for s in skips}]
@@ -2942,7 +2942,7 @@ def ask_owner(
     """Return the review-issue body from each view's latest saved run.
 
     Reads only the local cache: each run and its triage (see
-    `sort.proven_triage`), matching triage items to decisions by their stubs,
+    `sort.checked_sort`), matching triage items to decisions by their stubs,
     and to cause decisions by the causes the sort explained. What is ready is
     asked; what is not settled yet (items still in `investigate`, and
     comparisons missing, stale or skipped, `sort.comparisons_waiting`) is
@@ -2967,7 +2967,7 @@ def ask_owner(
     Raises:
         Refusal: A view has no usable saved run (see `latest_run`), or its
             triage is missing, stale, unreadable, or has a cause decision and
-            a `group` decision disagreeing (see `sort.proven_triage`). With
+            a `group` decision disagreeing (see `sort.checked_sort`). With
             `json_file`: the file is new or changed, or its commit is not
             pushed (it is written; commit and push it, then review again).
     """
@@ -2976,10 +2976,10 @@ def ask_owner(
     # Stored explanation paths are relative to each validation file's directory.
     bases = [f.parent for f in view_files] if view_files else [None] * len(configs)
     proven = {
-        run.view: sort.proven_triage(run, run_json, cfg.decisions, base)
+        run.view: sort.checked_sort(run, run_json, cfg.decisions, base)
         for (run, run_json), cfg, base in zip(saved, configs, bases, strict=True)
     }
-    found = {view: sort.posted_triage(loaded) for view, loaded in proven.items()}
+    found = {view: sort.posted_sort(loaded) for view, loaded in proven.items()}
     still = report.still_with_analyst(
         [u for run in runs for u in sort.unsettled(run, found[run.view])],
         {
@@ -2999,7 +2999,7 @@ def ask_owner(
         for cfg in configs
     }
     sources = {
-        cfg.view: proof_source(f)
+        cfg.view: explanation_source(f)
         for cfg, f in zip(configs, view_files or [], strict=False)
     }
     questions = answers.questions_json(
@@ -3123,7 +3123,7 @@ def _git(directory: Path, *args: str) -> str:
     return done.stdout.strip()
 
 
-def proof_source(view_file: Path) -> answers.ProofSource:
+def explanation_source(view_file: Path) -> answers.ExplanationSource:
     """Where a validation file's stored explanations live: its repo path and the
     branch URL of its directory, for an owner's Reproduce block.
 
@@ -3138,7 +3138,7 @@ def proof_source(view_file: Path) -> answers.ProofSource:
         remote = _git(base, "remote", "get-url", "origin")
         relative = view_file.resolve().relative_to(top.resolve())
     except (OSError, ValueError, subprocess.CalledProcessError):
-        return answers.ProofSource(str(view_file), base)
+        return answers.ExplanationSource(str(view_file), base)
     found = _GITHUB.search(remote)
     blob = None
     if found and branch:
@@ -3146,7 +3146,7 @@ def proof_source(view_file: Path) -> answers.ProofSource:
             f"https://github.com/{found['repo']}/blob/{branch}/"
             f"{relative.parent.as_posix()}"
         )
-    return answers.ProofSource(relative.as_posix(), base, blob)
+    return answers.ExplanationSource(relative.as_posix(), base, blob)
 
 
 # --- rebuild-sheet -----------------------------------------------------------
@@ -3578,7 +3578,7 @@ def rebuild_sheet(
     twb, shaped, columns, exportable, browser, snap = _capture(
         comparison, tbl, captures
     )
-    if snap.refresh_started < now - PROOF_WINDOW:
+    if snap.refresh_started < now - REBUILD_WINDOW:
         raise Refusal(
             f"the extract refreshed at {snap.refresh_started}, outside the 7 days "
             "of warehouse history; rebuild after the next refresh"
