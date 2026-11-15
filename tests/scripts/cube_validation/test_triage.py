@@ -1206,3 +1206,48 @@ def test_check_closed_compares_a_cause_with_the_group_decision_closing_it(
     # The review gate reads the same list.
     with pytest.raises(pipeline.Refusal, match="closes by 'region'"):
         proven_triage(run, run_json, [group_decision, cause])
+
+
+# --- each comparison's latest result --------------------------------------------
+
+from dataclasses import replace  # noqa: E402
+
+from cube_validation import latest  # noqa: E402
+from cube_validation.triage import comparisons_waiting  # noqa: E402
+
+
+def test_a_recomposed_run_needs_a_new_triage(tmp_path):
+    # Another comparison's result moved to a newer moment: the run's own moment
+    # is unchanged, but its triage was of the earlier composition.
+    run = _fp_run(_groups("Newark"))
+    run.moments = {"enrollment": run.moment}
+    run_json = _write_run_triage(tmp_path, run, [])
+    later = Build(START.replace(day=28), END.replace(day=28), "j2")
+
+    recomposed = replace(run, moments={**run.moments, "other": later})
+
+    with pytest.raises(pipeline.Refusal, match="triage.json is of another moment"):
+        proven_triage(recomposed, run_json)
+
+
+def test_waiting_comparisons_name_the_missing_the_stale_and_the_edited():
+    c1, c2, c3, c4 = (
+        Comparison(id=f"c{i}", measure="m", confirmed=True) for i in range(1, 5)
+    )
+    cfg = ViewConfig(view="v", fact="d.t", comparisons=[c1, c2, c3, c4])
+    run = replace(
+        _run(),
+        missing=["c1"],
+        entries={
+            "c2": latest.entry_fingerprint(c2),
+            "c3": "an older entry",
+            "c4": latest.entry_fingerprint(c4),
+        },
+    )
+    loaded = {"stale": {"c2": "Cube's SQL changed"}}
+
+    assert comparisons_waiting(cfg, run, loaded) == {
+        "c1": "never compared",
+        "c2": "Cube's SQL changed",
+        "c3": "its entry or rebuild check changed",
+    }

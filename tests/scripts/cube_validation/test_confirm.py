@@ -127,10 +127,10 @@ def _save(duck, wh, run, cfg=CFG):
     for c in cfg.comparisons:
         if c.rows is None:
             continue
-        table = saved.table_id(cfg.view, run.moment, c.id)
+        table = saved.table_id(cfg.view, run.moment_of(c.id), c.id)
         try:  # the rows the test's `row_sides` rebuilds, as `run` reconciled them
             sides = pipeline.row_sides(
-                cfg, c, wh=wh, cube=None, build=run.moment, schools=set(),
+                cfg, c, wh=wh, cube=None, build=run.moment_of(c.id), schools=set(),
                 fingerprints={},
             )  # fmt: skip
         except confirm.CubeError:  # a test whose rebuild fails: the default rows
@@ -142,7 +142,7 @@ def _save(duck, wh, run, cfg=CFG):
             duck.rows(statement)
         wh.labels[table] = saved.labels(
             cfg.view,
-            run.moment,
+            run.moment_of(c.id),
             c.id,
             pipeline.checkpoint_fingerprint(c, run.fingerprints.get(c.id, {})),
         )
@@ -257,7 +257,9 @@ def test_a_missing_table_past_time_travel_says_to_start_a_new_run(
 ):
     monkeypatch.setattr(confirm, "_utcnow", lambda: BUILD.end + timedelta(days=9))
 
-    with pytest.raises(pipeline.Refusal, match="Start a new `run`"):
+    with pytest.raises(
+        pipeline.Refusal, match="Run `run --comparison mastery` at a new moment"
+    ):
         confirm.require_saved(Wh(duck), CFG, _run([_group(3)]), COMPARISON)
 
 
@@ -266,8 +268,27 @@ def test_a_missing_table_within_time_travel_says_to_save_it_again(
 ):
     monkeypatch.setattr(confirm, "_utcnow", lambda: BUILD.end + timedelta(hours=2))
 
-    with pytest.raises(pipeline.Refusal, match="--restart` to save them again"):
+    with pytest.raises(
+        pipeline.Refusal,
+        match=r"Run `run --comparison mastery --moment '[^']+'` to save them again",
+    ):
         confirm.require_saved(Wh(duck), CFG, _run([_group(3)]), COMPARISON)
+
+
+def test_an_explanation_reads_its_own_comparison_s_moment(duck, tmp_path, offline):
+    # The run composed this comparison's result from an earlier compare.
+    _tables(duck)
+    later = Build(BUILD.start + timedelta(days=2), BUILD.end + timedelta(days=2), "j2")
+    run = replace(_run([_group(3)]), moment=later, moments={"mastery": BUILD})
+    wh = Wh(duck)
+
+    (item,) = _reprove(duck, tmp_path, run, wh=wh)
+
+    ((sql, _),) = wh.ran
+    assert item["suggestion"] == "cause"
+    assert saved.table_id("v", BUILD, "mastery").rsplit(".", 1)[1] in sql
+    assert saved.table_id("v", later, "mastery").rsplit(".", 1)[1] not in sql
+    assert utc_literal(BUILD.start) in sql and utc_literal(later.start) not in sql
 
 
 def test_a_stored_proof_proves_every_row_of_an_item(duck, tmp_path, offline):

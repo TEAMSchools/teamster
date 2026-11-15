@@ -22,13 +22,14 @@ import sys
 from collections import Counter
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 
-from . import decisions, pipeline, trace
+from . import decisions, latest, pipeline, trace
 from .bq import CostCapError, Warehouse
 from .compare import CellDiff, Gap, Group
 from .config import Comparison, Decision, Proof, ViewConfig, mask_digits
-from .cube_client import Cube, MemberDoc, member_docs
+from .cube_client import Cube, MemberDoc, member_docs, network_schools
 from .discover import _tokens
 from .moment import Build
 from .report import (
@@ -40,6 +41,7 @@ from .report import (
     _shown_value,
     _where,
     mask,
+    run_stamp,
 )
 from .timetravel import PROJECT
 
@@ -250,11 +252,38 @@ def open_keys(run: RunResult) -> list[str]:
 
 
 def _moment(run: RunResult) -> dict:
+    """The run a triage sorted: its moment, and each composed comparison's,
+    so a run composed again from a newer result needs a new triage."""
     return {
         "start": run.moment.start.isoformat(),
         "end": run.moment.end.isoformat(),
         "job_id": run.moment.job_id,
+        "moments": {cid: run_stamp(m) for cid, m in run.moments.items()},
     }
+
+
+def comparisons_waiting(
+    cfg: ViewConfig, run: RunResult, loaded: dict
+) -> dict[str, str]:
+    """Each confirmed comparison still with the analyst, and why, in config order.
+
+    A comparison is waiting when the run holds no result of it, its result
+    was stale when the triage ran (`loaded["stale"]`), or its entry changed
+    since the result (`latest.entry_fingerprint` against `run.entries`,
+    offline). Nothing refuses over them: the rest of the view goes on.
+    """
+    stale = loaded.get("stale") or {}
+    out: dict[str, str] = {}
+    for c in cfg.comparisons:
+        if not c.confirmed:
+            continue
+        if c.id in run.missing:
+            out[c.id] = pipeline.NEVER_COMPARED
+        elif c.id in stale:
+            out[c.id] = stale[c.id]
+        elif c.id in run.entries and latest.entry_fingerprint(c) != run.entries[c.id]:
+            out[c.id] = pipeline.ENTRY_CHANGED
+    return out
 
 
 def proven_triage(
@@ -1204,6 +1233,7 @@ def run_triage(
     trace_max_minutes: float | None = None,
     proofs: Path | None = None,
     comparisons: list[str] | None = None,
+    now: datetime | None = None,
 ) -> list[Suggestion]:
     """Sort each open item of the view's latest run into a pile and print them.
 
@@ -1219,6 +1249,10 @@ def run_triage(
     fingerprint and open items (see `proven_triage`), each proven row group
     marked by the cause decisions that decide it (`mark_decided`): it stays in the local
     cache, and its stubs and causes carry real values and exact counts.
+
+    Each confirmed comparison whose latest result is missing or stale at
+    `now` (`pipeline.stale_comparisons`) is printed and written to
+    `triage.json` under `stale`, so `comparisons_waiting` can name it.
 
     Each proof's outcome is kept beside `run.json` as it finishes
     (`progress`), so a stopped triage skips the proofs it finished. With
@@ -1258,6 +1292,18 @@ def run_triage(
 
     prepared = trace.Prepared()
     with wh.budget(max_usd):
+        prepared.schools = network_schools(wh)
+        stale = pipeline.stale_comparisons(
+            cfg,
+            cfg.comparisons,
+            latest.read_all(cache_root / cfg.view),
+            wh=wh,
+            cube=cube,
+            schools=prepared.schools,
+            now=now or datetime.now(timezone.utc),
+        )
+        for cid, why in stale.items():
+            print(f"{cfg.view}: comparison {cid} {why}; compare it, then sort.")
         if trace_rows:
             # A trace refusal after the proofs ran would throw their spend away.
             trace.check_ready(
@@ -1330,6 +1376,8 @@ def run_triage(
                 # Per comparison, each proven cause's students per cell and
                 # cut, from the proofs' counting queries (`review` examples).
                 "cause_students": kept.get("cause_students", {}),
+                # Each comparison whose latest result is missing or stale.
+                "stale": stale,
             },
             indent=1,
         )

@@ -1,3 +1,4 @@
+import dataclasses
 import itertools
 import json
 import re
@@ -1405,3 +1406,17 @@ def test_a_hand_check_never_posts_2_counts_whose_difference_is_under_10(
     )
     posted = _check_json("v", check)
     assert (posted["dashboard"], posted["cube"]) == shown
+
+
+def test_a_question_reads_its_comparison_s_own_moment():
+    earlier = Build(START - timedelta(days=3), END - timedelta(days=3), "j0")
+    run = dataclasses.replace(
+        _owner_run([_cell(cube=25.0)]), moments={"enrollment": earlier}
+    )
+
+    questions = _questions(run)
+    check = hand_check(run, _cfg(), "enrollment", START)
+
+    assert questions[0]["moment"]["job_id"] == "j0"
+    assert questions[0]["expires"] == (earlier.start + timedelta(days=7)).isoformat()
+    assert check.expires == earlier.start + timedelta(days=7)

@@ -257,6 +257,20 @@ def _parser() -> argparse.ArgumentParser:
         action="store_true",
         help="drop an unfinished run's saved comparisons and start a new run",
     )
+    which = p.add_mutually_exclusive_group()
+    which.add_argument(
+        "--comparison",
+        dest="only",
+        action="append",
+        help="comparison id to compare; repeat it for several (default: the "
+        "stale and the never-compared ones)",
+    )
+    which.add_argument(
+        "--all",
+        dest="every",
+        action="store_true",
+        help="compare every confirmed comparison, current or not",
+    )
     email(p)
     max_usd(p)
 
@@ -458,6 +472,8 @@ def _dispatch(args: argparse.Namespace) -> int:
                 restart=args.restart,
                 clock=utcnow,
                 ticker=report.Ticker(utcnow, utcnow()),
+                only=args.only,
+                every=args.every,
             )
         return 0
 
@@ -473,6 +489,7 @@ def _dispatch(args: argparse.Namespace) -> int:
             trace_max_minutes=args.trace_max_minutes,
             proofs=None if args.no_proofs else confirm.proofs_dir(args.view, cfg.view),
             comparisons=args.comparison,
+            now=utcnow(),
         )
         return 0
 
@@ -555,8 +572,8 @@ def _dispatch(args: argparse.Namespace) -> int:
 
 
 RUN_AGAIN = (
-    "Run `run` again only when the data, the Cube model or the dashboard "
-    "changed, or for new comparisons."
+    "Run `run` again only when the Cube model or the dashboard changed, or for "
+    "new comparisons; `run --all` when only the data changed."
 )
 
 

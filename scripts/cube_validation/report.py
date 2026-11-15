@@ -110,6 +110,19 @@ class RunResult:
     diff_cells: list[dict] = field(default_factory=list)
     cell_sql: dict[str, dict[str, list[str]]] = field(default_factory=dict)
     cell_sql_usd: dict[str, dict[str, list[float]]] = field(default_factory=dict)
+    # Each comparison's latest result is kept at its own moment (`latest`):
+    # per composed comparison, the moment its rows were read and its
+    # `latest.entry_fingerprint` then. `moment` stays this compare process's
+    # build, which names its folder and its cost. `missing` lists the
+    # confirmed comparisons with no result yet.
+    moments: dict[str, Build] = field(default_factory=dict)
+    entries: dict[str, str] = field(default_factory=dict)
+    missing: list[str] = field(default_factory=list)
+
+    def moment_of(self, comparison_id: str) -> Build:
+        """The moment the comparison's rows were read: its own, or the run's
+        for a run saved before each comparison kept one."""
+        return self.moments.get(comparison_id, self.moment)
 
 
 def mask(n: int) -> str:
@@ -230,10 +243,14 @@ def render_local(run: RunResult) -> str:
         and values are not masked.
     """
     out = [f"# Validation result: {run.view}", ""]
-    out.append(
-        f"Moment: {run.moment.start:%Y-%m-%d %H:%M} to "
-        f"{run.moment.end:%Y-%m-%d %H:%M} UTC, job `{run.moment.job_id}`."
-    )
+    moments = set(run.moments.values()) or {run.moment}
+    if len(moments) == 1:
+        (one,) = moments
+        out.append(f"Moment: {_span(one)}, job `{one.job_id}`.")
+    else:
+        out += _moment_lines(run.moments)
+    if run.missing:
+        out += ["", f"Not compared yet: {', '.join(run.missing)}."]
     out += ["", f"Cube: {run.cube_host}", "", f"Fact: {run.fact}"]
 
     out += ["", "## Measures", ""]
@@ -379,6 +396,15 @@ def render_local(run: RunResult) -> str:
         "",
     ]
     return "\n".join(out)
+
+
+def _span(moment: Build) -> str:
+    return f"{moment.start:%Y-%m-%d %H:%M} to {moment.end:%Y-%m-%d %H:%M} UTC"
+
+
+def _moment_lines(moments: dict[str, Build]) -> list[str]:
+    """One line per comparison and the moment its rows were read."""
+    return ["Moments:", ""] + [f"- {cid}: {_span(m)}" for cid, m in moments.items()]
 
 
 def run_stamp(moment: Build) -> str:
@@ -1046,6 +1072,7 @@ def render_review_issue(
         for n, q in enumerate(asked, start=1)
     ]
     also = also_decided(runs, decided)
+    moment_lines = _review_moments(runs)
 
     def render(shown: list[dict] | None, moved: int) -> tuple[str, list[str]]:
         """The body from `shown` questions, and the comments it moved out:
@@ -1071,7 +1098,7 @@ def render_review_issue(
         body = _review_body(
             domain, question_lines, definition_lines, check_lines,
             asked_ids, kinds, shown, also, moved=moved if blocks else 0,
-            json_link=json_link,
+            json_link=json_link, moment_lines=moment_lines,
         )  # fmt: skip
         return body, _comment_chunks(blocks, moved) if moved and blocks else []
 
@@ -1088,6 +1115,21 @@ def render_review_issue(
             break
     comments += extra
     return body
+
+
+def _review_moments(runs: list[RunResult]) -> list[str]:
+    """When each comparison's rows were read: 1 line when they share a
+    moment, else 1 per comparison, named with its view when there are
+    several."""
+    by: dict[str, Build] = {}
+    for run in runs:
+        if not run.moments:  # saved before each comparison kept its own
+            by[run.view] = run.moment
+        for cid, m in run.moments.items():
+            by[cid if len(runs) == 1 else f"{cid} in {run.view}"] = m
+    if len(set(by.values())) == 1:
+        return [f"Moment: {_span(next(iter(by.values())))}."]
+    return _moment_lines(by)
 
 
 def _ended(text: str) -> str:
@@ -1172,6 +1214,7 @@ def _review_body(
     also: list[str],
     moved: int,
     json_link: str | None = None,
+    moment_lines: list[str] | None = None,
 ) -> str:
     """The review body from its rendered parts; `moved` says the Reproduce
     blocks follow in comments (2: the hand checks too); `questions` is the
@@ -1197,6 +1240,8 @@ def _review_body(
         ] + _bullets(also)
     if definition_lines:
         out += ["", "Definitions side by side:", ""] + _bullets(definition_lines)
+    if moment_lines:
+        out += [""] + moment_lines
     if check_lines:
         out += [
             "",

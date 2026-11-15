@@ -18,6 +18,7 @@ from cube_validation import (
     checkpoints,
     cli,
     confirm,
+    latest,
     pipeline,
     report,
     tableau,
@@ -465,6 +466,14 @@ def _outer(bq):
     return [s for s in bq.ran if "-- outer" in s]
 
 
+def _run_folder(tmp_path):
+    """The view's one run folder: every folder but its latest results."""
+    (folder,) = [
+        f for f in (tmp_path / "cache" / "v").iterdir() if f.name != latest.DIR
+    ]
+    return folder
+
+
 def test_a_stopped_run_resumes_to_the_same_result(fakes, tmp_path, monkeypatch):
     path = _four(tmp_path)
     # Baseline: an uninterrupted run in its own cache.
@@ -475,7 +484,7 @@ def test_a_stopped_run_resumes_to_the_same_result(fakes, tmp_path, monkeypatch):
     monkeypatch.setattr(cli, "cache_root", lambda: tmp_path / "cache")
     fakes.bq.fail_once = "ada_region_3"
     assert cli.main(["run", str(path)]) == 1
-    folder = next((tmp_path / "cache" / "v").iterdir())
+    folder = _run_folder(tmp_path)
     # Comparisons run in config order: 1 and 2 finished, 3 failed, 4 never began.
     assert sorted(checkpoints.read_all(folder)) == ["ada-region-1", "ada-region-2"]
     assert not (folder / "run.json").exists()
@@ -502,7 +511,8 @@ def test_a_resumed_run_says_so(fakes, tmp_path, capsys):
 
     out = capsys.readouterr().out
     assert "Resuming the unfinished run of" in out
-    assert "2 of 4 comparisons saved" in out
+    # It compares only the 2 never compared; the 2 saved kept their results.
+    assert "0 of 2 comparisons saved" in out
 
 
 def test_the_resume_count_names_only_checkpoints_of_confirmed_comparisons(
@@ -511,12 +521,12 @@ def test_the_resume_count_names_only_checkpoints_of_confirmed_comparisons(
     path = _four(tmp_path)
     fakes.bq.fail_once = "ada_region_3"
     assert cli.main(["run", str(path)]) == 1
-    folder = next((tmp_path / "cache" / "v").iterdir())
+    folder = _run_folder(tmp_path)
     # A comparison since removed from the file left its checkpoint behind.
     checkpoints.write(folder, "gone", "f", {}, NOW)
     capsys.readouterr()
 
-    assert cli.main(["run", str(path)]) == 0
+    assert cli.main(["run", str(path), "--all"]) == 0
 
     assert "2 of 4 comparisons saved" in capsys.readouterr().out
 
@@ -546,7 +556,7 @@ def test_a_resume_past_time_travel_refuses_before_any_query(
     # The checkpoints are an hour old, but the build began 7 days ago, past
     # time travel less its margin.
     monkeypatch.setattr(cli, "utcnow", Clock(START + timedelta(days=7)))
-    folder = next((tmp_path / "cache" / "v").iterdir())
+    folder = _run_folder(tmp_path)
     for f in (folder / checkpoints.DIR).glob("*.json"):
         data = json.loads(f.read_text())
         data["at"] = (START + timedelta(days=7, hours=-1)).isoformat()
@@ -580,7 +590,7 @@ def test_a_moment_with_an_unfinished_run_resumes_it_whatever_its_age(
     path = _four(tmp_path)
     fakes.bq.fail_once = "ada_region_3"
     assert cli.main(["run", str(path)]) == 1
-    folder = next((tmp_path / "cache" / "v").iterdir())
+    folder = _run_folder(tmp_path)
     # A newer unfinished run of another moment holds the latest checkpoint.
     other = tmp_path / "cache" / "v" / "2026-10-21T000000Z"
     other_build = report.Build(START - timedelta(days=1), START, "j0")
@@ -602,7 +612,7 @@ def test_a_run_stopped_before_its_first_checkpoint_keeps_its_spend(fakes, tmp_pa
     fakes.bq.cost = lambda sql: 0.01
     fakes.bq.fail_once = "ada_region_1"
     assert cli.main(["run", str(path)]) == 1
-    folder = next((tmp_path / "cache" / "v").iterdir())
+    folder = _run_folder(tmp_path)
     first = checkpoints.total_spend(folder)
     assert first > 0
 
@@ -637,8 +647,9 @@ def test_restart_clears_the_unfinished_run(fakes, tmp_path):
     assert cli.main(["run", str(path)]) == 1
     fakes.bq.ran.clear()
 
-    assert cli.main(["run", str(path), "--restart"]) == 0
+    assert cli.main(["run", str(path), "--restart", "--all"]) == 0
 
+    # Without the restart, `--all` would resume and keep 1 and 2.
     assert len(_outer(fakes.bq)) == 4
 
 
@@ -676,6 +687,143 @@ def test_a_comparison_edited_since_its_checkpoint_is_compared_again(
     )
     # ada-region-1 again (edited), then 3 and 4 (never finished); 2 is kept.
     assert len(_outer(fakes.bq)) == 3
+
+
+# --- each comparison's latest result -----------------------------------------
+
+LATER = (START + timedelta(hours=2), END + timedelta(hours=2))
+
+
+def _two(tmp_path):
+    """The view file with its comparison repeated as `c1` and `c2`."""
+    head, rest = YML.split("  - id: ada-region\n", 1)
+    return _file(
+        tmp_path, head + "".join(f"  - id: {c}\n" + rest for c in ("c1", "c2"))
+    )
+
+
+def _scripts_for(bq):
+    """The comparison each reconcile saved rows for, in run order."""
+    return [_first(r"__(c\d)_[0-9a-f]{8}`", s) for s in _outer(bq)]
+
+
+def test_run_comparison_runs_only_that_one_and_keeps_the_others(fakes, tmp_path):
+    path = _two(tmp_path)
+    assert cli.main(["run", str(path)]) == 0
+    fakes.bq.build = LATER
+    fakes.bq.ran.clear()
+
+    assert cli.main(["run", str(path), "--comparison", "c2"]) == 0
+
+    assert _scripts_for(fakes.bq) == ["c2"]
+    # 2 cuts of 2 sides, the reconcile and the student count: c2's alone.
+    assert len(_compared(fakes.bq)) == 6
+    later = report.run_dir(tmp_path / "cache", "v", report.Build(*LATER, "job-1"))
+    saved = json.loads((later / "run.json").read_text())
+    assert saved["moments"]["c1"]["end"] == END.isoformat()
+    assert saved["moments"]["c2"]["end"] == LATER[1].isoformat()
+    assert saved["missing"] == []
+    assert set(saved["fingerprints"]) == {"c1", "c2"}
+    assert {c["comparison"] for c in saved["diff_cells"]} <= {"c1", "c2"}
+
+
+def test_run_refuses_a_comparison_it_does_not_hold(fakes, tmp_path, capsys):
+    assert cli.main(["run", str(_two(tmp_path)), "--comparison", "nope"]) == 1
+
+    assert "--comparison: nope is no confirmed comparison of v" in (
+        capsys.readouterr().err
+    )
+    assert fakes.bq.ran == []
+
+
+def test_a_plain_run_runs_only_stale_and_never_run_comparisons(fakes, tmp_path, capsys):
+    path = _two(tmp_path)
+    assert cli.main(["run", str(path), "--comparison", "c1"]) == 0
+    first = json.loads(next((tmp_path / "cache").glob("v/*/run.json")).read_text())
+    fakes.bq.ran.clear()
+    capsys.readouterr()
+
+    assert cli.main(["run", str(path)]) == 0
+
+    out = capsys.readouterr().out
+    assert first["missing"] == ["c2"]
+    assert "Comparison c2: never compared." in out
+    assert "Comparison c1:" not in out
+    assert out.index("Comparison c2: never compared.") < out.index("(dry run)")
+    assert _scripts_for(fakes.bq) == ["c2"]
+
+
+def test_run_all_runs_every_comparison(fakes, tmp_path, capsys):
+    path = _two(tmp_path)
+    assert cli.main(["run", str(path)]) == 0
+    fakes.bq.ran.clear()
+
+    assert cli.main(["run", str(path), "--all"]) == 0
+
+    assert _scripts_for(fakes.bq) == ["c1", "c2"]
+    assert cli.main(["run", str(path), "--all", "--comparison", "c1"]) == 2
+
+
+def test_a_new_build_alone_is_not_stale(fakes, tmp_path, capsys):
+    path = _two(tmp_path)
+    assert cli.main(["run", str(path)]) == 0
+    fakes.bq.build = LATER
+    fakes.bq.ran.clear()
+    capsys.readouterr()
+
+    assert cli.main(["run", str(path)]) == 0
+
+    out = capsys.readouterr().out
+    assert (
+        "Every comparison's latest result is current; pass --all to compare every "
+        "one again." in out
+    )
+    assert not _outer(fakes.bq)
+    assert len(list((tmp_path / "cache").glob("v/*/run.json"))) == 1
+
+
+def test_a_changed_view_definition_is_stale(fakes, tmp_path, capsys):
+    fakes.bq.views = {"rpt_d": "select * from `teamster-332318`.`kipptaf_int`.`int_d`"}
+    path = _two(tmp_path)
+    assert cli.main(["run", str(path)]) == 0
+    fakes.bq.views = {"rpt_d": "select * from `teamster-332318`.`kipptaf_int`.`int_e`"}
+    fakes.bq.ran.clear()
+    capsys.readouterr()
+
+    assert cli.main(["run", str(path)]) == 0
+
+    out = capsys.readouterr().out
+    assert "Comparison c1: the dashboard SQL changed." in out
+    assert "Comparison c2: the dashboard SQL changed." in out
+    assert _scripts_for(fakes.bq) == ["c1", "c2"]
+
+
+def test_an_edited_entry_is_stale(fakes, tmp_path, capsys):
+    path = _two(tmp_path)
+    assert cli.main(["run", str(path)]) == 0
+    # `workbook` is outside the probe's fingerprint, so `run` does not refuse it.
+    path.write_text(path.read_text().replace("workbook: wb-1", "workbook: wb-9", 1))
+    fakes.bq.ran.clear()
+    capsys.readouterr()
+
+    assert cli.main(["run", str(path)]) == 0
+
+    assert "Comparison c1: its entry or rebuild check changed." in (
+        capsys.readouterr().out
+    )
+    assert _scripts_for(fakes.bq) == ["c1"]
+
+
+def test_triage_records_and_prints_the_stale_comparisons(fakes, tmp_path, capsys):
+    path = _two(tmp_path)
+    assert cli.main(["run", str(path), "--comparison", "c1"]) == 0
+    capsys.readouterr()
+
+    assert cli.main(["triage", str(path), "--no-trace", "--no-proofs"]) == 0
+
+    assert "v: comparison c2 never compared" in capsys.readouterr().out
+    (saved,) = (tmp_path / "cache" / "v").glob("*/triage.json")
+    assert json.loads(saved.read_text())["stale"] == {"c2": "never compared"}
 
 
 def test_run_cube_rows_are_ungrouped_and_unlimited(fakes, tmp_path):
@@ -1178,7 +1326,7 @@ def test_decision_fingerprints_ignore_the_moment(fakes, tmp_path, capsys):
     fakes.bq.build = (START + timedelta(hours=3), END + timedelta(hours=3))
     capsys.readouterr()
 
-    assert cli.main(["run", str(path)]) == 0
+    assert cli.main(["run", str(path), "--all"]) == 0
 
     out = capsys.readouterr().out
     assert "miami-scope" in _section(out, "Applied:", "To re-confirm")
@@ -1193,7 +1341,7 @@ def test_dashboard_view_edit_asks_to_reconfirm(fakes, tmp_path, capsys):
     path = _with_decision(_saved_fingerprints(tmp_path), tmp_path, call="deliberate")
     capsys.readouterr()
 
-    assert cli.main(["run", str(path)]) == 0
+    assert cli.main(["run", str(path), "--all"]) == 0
     assert "miami-scope" in _section(
         capsys.readouterr().out, "Applied:", "To re-confirm"
     )
@@ -1213,7 +1361,7 @@ def test_reordered_school_list_keeps_decisions(fakes, tmp_path, capsys):
     fakes.cube.schools = ["B", "A"]
     capsys.readouterr()
 
-    assert cli.main(["run", str(path)]) == 0
+    assert cli.main(["run", str(path), "--all"]) == 0
 
     out = capsys.readouterr().out
     assert "miami-scope" in _section(out, "Applied:", "To re-confirm")
@@ -1226,7 +1374,7 @@ def test_cube_row_dimension_edit_asks_to_reconfirm(fakes, tmp_path, capsys):
     fakes.cube.exprs["attendance_value"] = "coalesce(`t`.attendance_value, 0)"
     capsys.readouterr()
 
-    assert cli.main(["run", str(path)]) == 0
+    assert cli.main(["run", str(path), "--all"]) == 0
 
     out = capsys.readouterr().out
     assert "miami-scope" in _section(out, "To re-confirm", "No longer needed")
@@ -1358,7 +1506,7 @@ def test_tableau_sign_in_names_the_missing_variables(monkeypatch):
 def test_review_never_posts(fakes, tmp_path, monkeypatch, capsys):
     assert cli.main(["run", str(_file(tmp_path))]) == 0
     path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
-    assert cli.main(["run", str(path)]) == 0
+    assert cli.main(["run", str(path), "--all"]) == 0
     _triage_everything(tmp_path)
     capsys.readouterr()
 
@@ -1383,7 +1531,7 @@ def test_review_never_posts(fakes, tmp_path, monkeypatch, capsys):
 def test_review_carries_triage_evidence_in_its_json(fakes, tmp_path, capsys):
     assert cli.main(["run", str(_file(tmp_path))]) == 0
     path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
-    assert cli.main(["run", str(path)]) == 0
+    assert cli.main(["run", str(path), "--all"]) == 0
     run_json = next((tmp_path / "cache" / "v").glob("*/run.json"))
     stub = {
         "comparison": "ada-region",
@@ -1412,7 +1560,7 @@ def test_review_quotes_the_masked_copy_of_exact_triage_evidence(
     # triage.json shows exact counts; the review issue is GitHub-bound.
     assert cli.main(["run", str(_file(tmp_path))]) == 0
     path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
-    assert cli.main(["run", str(path)]) == 0
+    assert cli.main(["run", str(path), "--all"]) == 0
     run_json = next((tmp_path / "cache" / "v").glob("*/run.json"))
     item = {
         **_triage_item("lead: relaxing x brings back 3 of 40 rows"),
@@ -1484,11 +1632,7 @@ def _write_triage(run_json, items=(), open_keys=None):
         json.dumps(
             {
                 "view": run.view,
-                "moment": {
-                    "start": run.moment.start.isoformat(),
-                    "end": run.moment.end.isoformat(),
-                    "job_id": run.moment.job_id,
-                },
+                "moment": triage._moment(run),
                 "decisions_fingerprint": run.decisions_fingerprint,
                 "open": triage.open_keys(run) if open_keys is None else open_keys,
                 "items": list(items),
@@ -1540,7 +1684,7 @@ def test_add_decisions_refuses_a_cause_item_with_no_cause(fakes, tmp_path, capsy
 def test_review_refuses_a_view_never_triaged(fakes, tmp_path, capsys):
     assert cli.main(["run", str(_file(tmp_path))]) == 0
     path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
-    assert cli.main(["run", str(path)]) == 0
+    assert cli.main(["run", str(path), "--all"]) == 0
     capsys.readouterr()
 
     assert cli.main(["review", str(path), "--domain", "Registrar"]) == 1
@@ -1554,7 +1698,7 @@ def test_review_refuses_a_view_never_triaged(fakes, tmp_path, capsys):
 def test_review_refuses_while_an_item_is_in_investigate(fakes, tmp_path, capsys):
     assert cli.main(["run", str(_file(tmp_path))]) == 0
     path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
-    assert cli.main(["run", str(path)]) == 0
+    assert cli.main(["run", str(path), "--all"]) == 0
     _triage_everything(
         tmp_path,
         [
@@ -1578,7 +1722,7 @@ def test_review_refuses_a_triage_from_before_the_investigate_pile(
 ):
     assert cli.main(["run", str(_file(tmp_path))]) == 0
     path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
-    assert cli.main(["run", str(path)]) == 0
+    assert cli.main(["run", str(path), "--all"]) == 0
     _triage_everything(tmp_path, [_triage_item("e", "owner")])
     capsys.readouterr()
 
@@ -1594,7 +1738,7 @@ def test_review_refuses_a_triage_from_an_older_moment(fakes, tmp_path, capsys):
     _write_triage(earlier, [_triage_item("from the earlier build")])
     path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
     fakes.bq.build = (START + timedelta(hours=3), END + timedelta(hours=3))
-    assert cli.main(["run", str(path)]) == 0
+    assert cli.main(["run", str(path), "--all"]) == 0
     assert len(list((tmp_path / "cache" / "v").glob("*/run.json"))) == 2
     capsys.readouterr()
 
@@ -1625,7 +1769,7 @@ def test_review_refuses_a_triage_whose_moment_is_not_the_runs(fakes, tmp_path, c
 def test_review_names_questions_left_without_evidence(fakes, tmp_path, capsys):
     assert cli.main(["run", str(_file(tmp_path))]) == 0
     path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
-    assert cli.main(["run", str(path)]) == 0
+    assert cli.main(["run", str(path), "--all"]) == 0
     _triage_everything(tmp_path)
     capsys.readouterr()
 
@@ -1637,7 +1781,7 @@ def test_review_names_questions_left_without_evidence(fakes, tmp_path, capsys):
 def test_review_refuses_an_unreadable_triage_file(fakes, tmp_path, capsys):
     assert cli.main(["run", str(_file(tmp_path))]) == 0
     path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
-    assert cli.main(["run", str(path)]) == 0
+    assert cli.main(["run", str(path), "--all"]) == 0
     run_json = next((tmp_path / "cache" / "v").glob("*/run.json"))
     (run_json.parent / "triage.json").write_text("{not json")
     capsys.readouterr()
@@ -1650,7 +1794,7 @@ def test_review_refuses_an_unreadable_triage_file(fakes, tmp_path, capsys):
 def test_review_refuses_a_triage_file_that_is_not_an_object(fakes, tmp_path, capsys):
     assert cli.main(["run", str(_file(tmp_path))]) == 0
     path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
-    assert cli.main(["run", str(path)]) == 0
+    assert cli.main(["run", str(path), "--all"]) == 0
     run_json = next((tmp_path / "cache" / "v").glob("*/run.json"))
     (run_json.parent / "triage.json").write_text("[]")
     capsys.readouterr()
@@ -1672,7 +1816,7 @@ def test_review_says_expired_by_the_command_lines_clock(
 ):
     assert cli.main(["run", str(_file(tmp_path))]) == 0
     path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
-    assert cli.main(["run", str(path)]) == 0
+    assert cli.main(["run", str(path), "--all"]) == 0
     _triage_everything(tmp_path)
 
     monkeypatch.setattr(cli, "utcnow", lambda: START + timedelta(days=1))
@@ -1686,7 +1830,7 @@ def test_review_warns_when_the_body_nears_githubs_cap(
 ):
     assert cli.main(["run", str(_file(tmp_path))]) == 0
     path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
-    assert cli.main(["run", str(path)]) == 0
+    assert cli.main(["run", str(path), "--all"]) == 0
     _triage_everything(tmp_path)
     capsys.readouterr()
 
@@ -1707,7 +1851,7 @@ def test_review_reads_the_run_written_last(fakes, tmp_path, capsys):
     assert cli.main(["run", str(_file(tmp_path))]) == 0
     path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
     fakes.bq.build = (START, END)
-    assert cli.main(["run", str(path)]) == 0
+    assert cli.main(["run", str(path), "--all"]) == 0
     _triage_everything(tmp_path)
     later, earlier = sorted((tmp_path / "cache" / "v").glob("*/run.json"), reverse=True)
     os.utime(later, (1_000_000, 1_000_000))
@@ -1722,7 +1866,7 @@ def test_review_reads_the_run_written_last(fakes, tmp_path, capsys):
 def test_review_refuses_when_decisions_changed_since_the_run(fakes, tmp_path, capsys):
     assert cli.main(["run", str(_file(tmp_path))]) == 0
     path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
-    assert cli.main(["run", str(path)]) == 0
+    assert cli.main(["run", str(path), "--all"]) == 0
     path.write_text(path.read_text().replace("keeps Miami rows", "keeps Miami"))
     capsys.readouterr()
 
@@ -2679,7 +2823,8 @@ def test_a_cell_that_gains_a_row_leaves_the_formula_claim(fakes, tmp_path, capsy
          "n_students": 5, "__s_k0_c_rows": 5, "__s_k0_d_rows": 0,
          "__s_k1_c_rows": 0, "__s_k1_d_rows": 0},
     ]  # fmt: skip
-    assert cli.main(["run", str(path)]) == 0
+    # Changed data alone leaves the result current: compare it again on purpose.
+    assert cli.main(["run", str(path), "--all"]) == 0
 
     saved = json.loads(_latest_run(tmp_path).read_text())
     applied = saved["applied"]
@@ -3260,7 +3405,8 @@ def test_triage_command_writes_triage_json_beside_latest_run(fakes, tmp_path, ca
         written["decisions_fingerprint"]
         == json.loads(saved.read_text())["decisions_fingerprint"]
     )
-    assert set(written["moment"]) == {"start", "end", "job_id"}
+    assert set(written["moment"]) == {"start", "end", "job_id", "moments"}
+    assert written["moment"]["moments"] == {"ada-region": "2026-10-22T204400Z"}
     run = pipeline._run_from_json(json.loads(saved.read_text()))
     assert written["open"] == triage.open_keys(run) and written["open"]
     item = written["items"][0]
@@ -3540,7 +3686,7 @@ def test_add_decisions_takes_stub_from_triage_and_fingerprints_from_run(
     assert "`run`" in out.rstrip().splitlines()[-1]
 
     # The next run lists it; the triage, not the run, says what it decides.
-    assert cli.main(["run", str(path)]) == 0
+    assert cli.main(["run", str(path), "--all"]) == 0
     assert "miami-scope" in _section(capsys.readouterr().out, "Applied:", "To re-")
 
 
@@ -3573,7 +3719,7 @@ def test_add_decisions_re_applies_to_the_saved_run_offline(
 
 def _triaged_run(path, tmp_path):
     """Run the file and give its run a triage listing the Miami group as `i`."""
-    assert cli.main(["run", str(path)]) == 0
+    assert cli.main(["run", str(path), "--all"]) == 0
     saved = sorted(
         (tmp_path / "cache" / "v").glob("*/run.json"), key=lambda p: p.stat().st_mtime
     )

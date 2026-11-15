@@ -31,7 +31,7 @@ import tableauserverclient as TSC
 
 from . import answers, checkpoints, compare, coverage, decisions
 from . import discover as finder
-from . import report, saved, tableau, triage
+from . import latest, report, saved, tableau, triage
 from .bq import Warehouse
 from .compare import CellDiff, Gap, Group
 from .config import (
@@ -934,6 +934,58 @@ def checkpoint_fingerprint(comparison: Comparison, fingerprints: dict[str, str])
     ).hexdigest()
 
 
+NEVER_COMPARED = "never compared"
+ENTRY_CHANGED = "its entry or rebuild check changed"
+
+
+def stale_comparisons(
+    cfg: ViewConfig,
+    comparisons: list[Comparison],
+    results: dict[str, latest.Latest],
+    *,
+    wh: Warehouse,
+    cube: Cube,
+    schools: set[str],
+    now: datetime,
+) -> dict[str, str]:
+    """Each confirmed comparison whose latest result is missing or stale, and why.
+
+    A result is stale when its `checkpoint_fingerprint` differs from today's:
+    its entry or rebuild check changed, or either side's SQL did (Cube's
+    compiled query, or the dashboard's sheet query and the views it reads).
+    The fingerprints mask the moment, so a new build alone, or changed data,
+    is not stale. Compiles and expands only; no query bills.
+    """
+    build = Build(now, now, "now")
+    out: dict[str, str] = {}
+    for c in comparisons:
+        if not c.confirmed:
+            continue
+        held = results.get(c.id)
+        if held is None:
+            out[c.id] = NEVER_COMPARED
+            continue
+        if latest.entry_fingerprint(c) != held.entry:
+            out[c.id] = ENTRY_CHANGED
+            continue
+        today = side_fingerprints(
+            cfg, c, wh=wh, cube=cube, build=build, schools=schools
+        )
+        if checkpoint_fingerprint(c, today) == held.fingerprint:
+            continue
+        was = held.data.get("fingerprints", {}).get(c.id, {})
+        why = [
+            text
+            for side, text in (
+                ("cube", "Cube's SQL changed"),
+                ("dashboard", "the dashboard SQL changed"),
+            )
+            if was.get(side) != today[side]
+        ]
+        out[c.id] = " and ".join(why) or ENTRY_CHANGED
+    return out
+
+
 def _reconcile_args(
     cfg: ViewConfig, comparison: Comparison, sides: RowSides
 ) -> tuple[tuple, dict]:
@@ -1588,6 +1640,7 @@ def _run_folder(
     restart: bool,
     cache_root: Path,
     clock: Callable[[], datetime],
+    selected: list[Comparison],
 ) -> tuple[Path, Build]:
     """The run folder and moment for this `run`: an unfinished run's, or new.
 
@@ -1604,11 +1657,12 @@ def _run_folder(
     """
 
     def resuming(u: checkpoints.Unfinished, build: Build) -> None:
-        confirmed = {c.id for c in cfg.comparisons if c.confirmed}
-        saved_ids = set(checkpoints.read_all(u.folder)) & confirmed
+        # Only the comparisons this run compares: the others keep their result.
+        ids = {c.id for c in selected}
+        saved_ids = set(checkpoints.read_all(u.folder)) & ids
         print(
             f"Resuming the unfinished run of {utc_literal(build.start)} to "
-            f"{utc_literal(build.end)}: {len(saved_ids)} of {len(confirmed)} "
+            f"{utc_literal(build.end)}: {len(saved_ids)} of {len(ids)} "
             f"comparisons saved, the last at {utc_literal(u.last_at)}."
         )
 
@@ -1662,6 +1716,12 @@ def _run_folder(
     return folder, build
 
 
+ALL_CURRENT = (
+    "Every comparison's latest result is current; pass --all to compare every one "
+    "again."
+)
+
+
 def run(
     cfg: ViewConfig,
     *,
@@ -1677,8 +1737,18 @@ def run(
     restart: bool = False,
     clock: Callable[[], datetime] = _utcnow,
     ticker: report.Ticker | None = None,
-) -> RunResult:
-    """Validate one view at one fact build and print the result.
+    only: list[str] | None = None,
+    every: bool = False,
+) -> RunResult | None:
+    """Compare a view's comparisons at one fact build and print the validation.
+
+    A validation is each confirmed comparison's latest result, each at its own
+    moment (`latest`). `only` compares those comparisons; `every` compares
+    every confirmed one; with neither, only those `stale_comparisons` names,
+    each printed with its why first, and with none it says so and returns None
+    without writing. Each comparison compared replaces its latest result as it
+    finishes; `run.json` in this run's folder is then composed from every
+    confirmed comparison's latest result.
 
     `cube_host` is printed with `cfg.fact` so the result says what it was
     proven against. Before any query, each confirmed comparison's workbook is
@@ -1688,14 +1758,15 @@ def run(
     checkpointed in the run folder; a stopped run started again skips them
     (`_run_folder` says when it resumes). A checkpoint whose comparison entry
     or SQL changed is compared again. `cost_usd` adds what every process spent
-    on the run.
+    on this run's folder.
 
     Raises:
-        Refusal: A confirmed comparison has no proof, its probe changed
-            since the proof, its workbook changed since the proof, or it lacks
-            a key it needs; a fact in `also_facts` changed during the build;
-            both sides' rows read a table that changed during the build; or an
-            unfinished run needs `--resume` or `--restart` (`_run_folder`).
+        Refusal: `only` names no confirmed comparison; a confirmed
+            comparison has no proof, its probe changed since the proof, its
+            workbook changed since the proof, or it lacks a key it needs; a
+            fact in `also_facts` changed during the build; both sides' rows
+            read a table that changed during the build; or an unfinished run
+            needs `--resume` or `--restart` (`_run_folder`).
         CostCapError: The priced queries would pass `max_usd` or the day's
             cap.
         MomentError: No usable build in the 7-day window.
@@ -1703,11 +1774,18 @@ def run(
     """
     if resume and requested is not None:
         raise Refusal("`--moment` picks the moment itself; drop `--resume`")
+    if only and every:
+        raise Refusal("`--comparison` and `--all` pick the comparisons; pass one")
     comparisons = [c for c in cfg.comparisons if c.confirmed]
     for skipped in (c for c in cfg.comparisons if not c.confirmed):
         print(f"Skipping comparison {skipped.id!r}: not confirmed.")
     if not comparisons:
         raise Refusal(f"{cfg.view}: no confirmed comparison to run")
+    if only and (unknown := sorted(set(only) - {c.id for c in comparisons})):
+        raise Refusal(
+            f"--comparison: {', '.join(unknown)} is no confirmed comparison of "
+            f"{cfg.view}"
+        )
     unproven = [c.id for c in comparisons if c.proof is None]
     if unproven:
         raise Refusal(
@@ -1756,7 +1834,29 @@ def run(
                 "its differing cells stay open."
             )
 
+    view_dir = cache_root / cfg.view
     with wh.budget(max_usd):
+        schools = network_schools(wh)
+        if only:
+            selected = [c for c in comparisons if c.id in only]
+        elif every:
+            selected = comparisons
+        else:
+            whys = stale_comparisons(
+                cfg,
+                comparisons,
+                latest.read_all(view_dir),
+                wh=wh,
+                cube=cube,
+                schools=schools,
+                now=now,
+            )
+            for cid, why in whys.items():
+                print(f"Comparison {cid}: {why}.")
+            selected = [c for c in comparisons if c.id in whys]
+            if not selected:
+                print(ALL_CURRENT)
+                return None
         folder, build = _run_folder(
             cfg,
             wh,
@@ -1766,24 +1866,38 @@ def run(
             restart=restart,
             cache_root=cache_root,
             clock=clock,
+            selected=selected,
         )
         process = f"{clock().isoformat()}-{uuid.uuid4().hex[:8]}"
         checkpoints.start(folder, build, process, cfg.fact)
         try:
-            sides, changed = _compare_all(
+            _compare_all(
                 cfg,
-                comparisons,
+                selected,
                 wh=wh,
                 cube=cube,
                 build=build,
                 folder=folder,
                 process=process,
                 clock=clock,
+                schools=schools,
+                view_dir=view_dir,
                 ticker=ticker,
             )
         finally:
             checkpoints.record_spend(folder, process, wh.spent)
         cost = checkpoints.total_spend(folder)
+
+    # Every confirmed comparison's latest result, in config order.
+    results = latest.read_all(view_dir)
+    composed = [c for c in comparisons if c.id in results]
+    left_out = [c.id for c in comparisons if c.id not in results]
+    sides = _Sides(moved={f: False for f in cfg.also_facts})
+    for c in composed:
+        sides.merge(_Sides.from_json(results[c.id].data))
+    changed = sorted(
+        {t for c in composed for t in results[c.id].data.get("changed_dims", [])}
+    )
 
     gaps, gaps_unknown = _gaps(comparisons)
     cell_diffs, formula_cells = _cell_diffs(cfg, comparisons, sides, cube)
@@ -1804,12 +1918,16 @@ def run(
         moment=build,
         cube_host=cube_host,
         fact=cfg.fact,
-        measures=_measures(
+        measures=_unvalidated(
+            _measures(
+                comparisons,
+                sides.cells,
+                applied.open,
+                applied.open_gaps,
+                applied.open_cells,
+            ),
             comparisons,
-            sides.cells,
-            applied.open,
-            applied.open_gaps,
-            applied.open_cells,
+            left_out,
         ),
         applied=applied,
         live_sources=sorted(sides.live),
@@ -1841,6 +1959,9 @@ def run(
         diff_cells=_diff_cells(sides, formula_cells),
         cell_sql=sides.cell_sql,
         cell_sql_usd=sides.cell_sql_usd,
+        moments={c.id: results[c.id].moment for c in composed},
+        entries={c.id: results[c.id].entry for c in composed},
+        missing=left_out,
     )
     text = report.render_local(result) + "\n" + _extra_sections(sides.cells)
     print(text)
@@ -1853,6 +1974,18 @@ def run(
     return result
 
 
+def _unvalidated(
+    measures: list[MeasureResult], comparisons: list[Comparison], missing: list[str]
+) -> list[MeasureResult]:
+    """`measures` with any measure of a comparison not compared yet read as
+    `differs`: its cells are unknown, so it cannot be validated."""
+    short = {c.measure for c in comparisons if c.id in missing}
+    return [
+        dataclasses.replace(m, verdict="differs") if m.measure in short else m
+        for m in measures
+    ]
+
+
 def _compare_all(
     cfg: ViewConfig,
     comparisons: list[Comparison],
@@ -1863,10 +1996,12 @@ def _compare_all(
     folder: Path,
     process: str,
     clock: Callable[[], datetime],
+    schools: set[str],
+    view_dir: Path,
     ticker: report.Ticker | None = None,
-) -> tuple[_Sides, list[str]]:
-    """Every comparison's slice, merged in config order, and the dimension
-    tables Cube read that changed during the build. Call inside `wh.budget`.
+) -> None:
+    """Compare each of `comparisons` at `build` and keep each one's result as
+    its latest (`latest.write`). Call inside `wh.budget`.
 
     A comparison with a checkpoint whose fingerprint still holds is taken from
     it; the rest are planned (`_plan_one`). Before anything that bills, every
@@ -1876,16 +2011,16 @@ def _compare_all(
     fingerprints then run, and their refusals come before any comparison
     query. The comparisons are compared one at a time, each checkpointed (with
     the spend so far) as it finishes, so a stop loses at most the one in
-    progress.
+    progress. Each result keeps the dimension tables it read that changed
+    during the build (`changed_dims`).
 
     Raises:
         CostCapError: The priced total would pass the run's or the day's cap.
         Refusal: A second fact, or a table both sides' rows read, changed
             during the build.
     """
-    schools = network_schools(wh)
     kept = checkpoints.read_all(folder)
-    slices: dict[str, _Sides] = {}
+    slices: dict[str, tuple[str, _Sides]] = {}
     plans: list[_Plan] = []
     for comparison in comparisons:
         if comparison.id in kept:
@@ -1897,7 +2032,7 @@ def _compare_all(
                 ),
             )
             if now == fingerprint:
-                slices[comparison.id] = _Sides.from_json(data)
+                slices[comparison.id] = (fingerprint, _Sides.from_json(data))
                 continue
             print(
                 f"Comparison {comparison.id}: its config or SQL changed since its "
@@ -1910,10 +2045,10 @@ def _compare_all(
     # The second facts have their own check below, and a held checkpoint
     # already answered its shared tables, so neither joins `shared`.
     known = {f: False for f in cfg.also_facts}
-    for held in slices.values():
+    for _, held in slices.values():
         known |= held.moved
     cube_tables = set().union(
-        *(p.cube_tables for p in plans), *(h.cube_tables for h in slices.values())
+        *(p.cube_tables for p in plans), *(h.cube_tables for _, h in slices.values())
     )
     dims = sorted(cube_tables - {cfg.fact, *cfg.also_facts})
     shared = sorted({t for p in plans for t in p.shared if t not in known})
@@ -1932,24 +2067,34 @@ def _compare_all(
     for plan in plans:
         _settle_moved(plan, known, changed)
 
+    def keep(comparison: Comparison, fingerprint: str, one: _Sides) -> None:
+        latest.write(
+            view_dir,
+            comparison.id,
+            latest.Latest(
+                moment=build,
+                fingerprint=fingerprint,
+                entry=latest.entry_fingerprint(comparison),
+                ran_at=clock().isoformat(),
+                data={
+                    **one.to_json(),
+                    "changed_dims": [t for t in dims if t in changed & one.cube_tables],
+                },
+            ),
+        )
+
+    by_id = {c.id: c for c in comparisons}
+    for cid, (fingerprint, held) in slices.items():
+        keep(by_id[cid], fingerprint, held)
     for plan, priced in zip(plans, prices, strict=True):
         comparison = plan.comparison
         one = _execute(cfg, plan, wh=wh, build=build, prices=priced)
-        slices[comparison.id] = one
-        checkpoints.write(
-            folder,
-            comparison.id,
-            checkpoint_fingerprint(comparison, plan.fingerprints),
-            one.to_json(),
-            clock(),
-        )
+        fingerprint = checkpoint_fingerprint(comparison, plan.fingerprints)
+        checkpoints.write(folder, comparison.id, fingerprint, one.to_json(), clock())
+        keep(comparison, fingerprint, one)
         checkpoints.record_spend(folder, process, wh.spent)
         if ticker is not None:
             ticker.say("compare", comparison.id, wh.spent)
-    sides = _Sides(moved={f: False for f in cfg.also_facts})
-    for comparison in comparisons:
-        sides.merge(slices[comparison.id])
-    return sides, [t for t in dims if t in changed]
 
 
 def _diff_cells(sides: _Sides, formula: set[Cell]) -> list[dict]:
@@ -2011,16 +2156,19 @@ def _cell_diff(data: dict) -> CellDiff:
     )
 
 
+def _build(data: dict) -> Build:
+    return Build(
+        datetime.fromisoformat(data["start"]),
+        datetime.fromisoformat(data["end"]),
+        data["job_id"],
+    )
+
+
 def _run_from_json(data: dict) -> RunResult:
-    moment = data["moment"]
     applied = data["applied"]
     return RunResult(
         view=data["view"],
-        moment=Build(
-            datetime.fromisoformat(moment["start"]),
-            datetime.fromisoformat(moment["end"]),
-            moment["job_id"],
-        ),
+        moment=_build(data["moment"]),
         measures=[MeasureResult(**m) for m in data["measures"]],
         applied=Applied(
             open=[_group(g) for g in applied["open"]],
@@ -2059,6 +2207,9 @@ def _run_from_json(data: dict) -> RunResult:
         cell_sql_usd=data.get("cell_sql_usd", {}),
         cube_host=data.get("cube_host", ""),
         fact=data.get("fact", ""),
+        moments={k: _build(v) for k, v in data.get("moments", {}).items()},
+        entries=data.get("entries", {}),
+        missing=data.get("missing", []),
     )
 
 
@@ -2192,21 +2343,25 @@ def reapply(cfg: ViewConfig, cache_root: Path) -> RunResult:
     result = dataclasses.replace(
         saved,
         applied=applied,
-        measures=[
-            dataclasses.replace(
-                m,
-                verdict=verdict(
-                    m.cells,
-                    groups.get(m.measure, 0),
-                    gaps.get(m.measure, 0),
-                    cells.get(m.measure, 0),
-                ),
-                open_groups=groups.get(m.measure, 0),
-                open_gaps=gaps.get(m.measure, 0),
-                open_cells=cells.get(m.measure, 0),
-            )
-            for m in saved.measures
-        ],
+        measures=_unvalidated(
+            [
+                dataclasses.replace(
+                    m,
+                    verdict=verdict(
+                        m.cells,
+                        groups.get(m.measure, 0),
+                        gaps.get(m.measure, 0),
+                        cells.get(m.measure, 0),
+                    ),
+                    open_groups=groups.get(m.measure, 0),
+                    open_gaps=gaps.get(m.measure, 0),
+                    open_cells=cells.get(m.measure, 0),
+                )
+                for m in saved.measures
+            ],
+            cfg.comparisons,
+            saved.missing,
+        ),
         decisions_fingerprint=decisions.decisions_fingerprint(cfg.decisions),
     )
     # The cells section needs every cell the run held; decisions
@@ -2247,7 +2402,7 @@ def latest_run(cfg: ViewConfig, cache_root: Path) -> tuple[RunResult, Path]:
     ):
         raise Refusal(
             f"{cfg.view}: the decisions changed since the saved run "
-            f"{run_json}; `reapply` it, or `run` it again"
+            f"{run_json}; `reapply` it, or `run` it again with --all"
         )
     return run_result, run_json
 
@@ -2303,6 +2458,13 @@ def review(
         for (run, run_json), cfg, base in zip(saved, configs, bases, strict=True)
     }
     found = {view: triage.posted_triage(loaded) for view, loaded in proven.items()}
+    for run, cfg in zip(runs, configs, strict=True):
+        for cid, why in triage.comparisons_waiting(cfg, run, proven[run.view]).items():
+            # stderr, so the note never lands in the issue body.
+            print(
+                f"{run.view}: comparison {cid} {why}; compare it, then sort",
+                file=sys.stderr,
+            )
     # One question per unanswered owner cause, over the groups it decides.
     causes = {
         run.view: triage.cause_asks(

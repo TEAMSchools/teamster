@@ -934,3 +934,57 @@ def test_a_ticker_under_an_hour_shows_minutes_and_seconds():
     assert t.say("compare", "c1", 12.345) == (
         "[13:09:07 UTC +7m07s] compare c1: $12.35 spent"
     )
+
+
+EARLIER = Build(
+    datetime(2026, 10, 24, 6, 0, tzinfo=timezone.utc),
+    datetime(2026, 10, 24, 6, 5, tzinfo=timezone.utc),
+    "job-0",
+)
+
+
+def test_local_result_names_one_moment_when_every_comparison_shares_it():
+    run = _run(moments={"enrollment": Build(START, END, "job-1")})
+
+    text = render_local(run)
+
+    assert "Moment: 2026-10-27 06:00 to 2026-10-27 06:05 UTC, job `job-1`." in text
+    assert "Moments:" not in text
+
+
+def test_local_result_lists_each_comparison_s_moment_when_they_differ():
+    run = _run(moments={"enrollment": EARLIER, "withdrawn": Build(START, END, "job-1")})
+
+    text = render_local(run)
+
+    assert "Moment: " not in text
+    assert (
+        "Moments:\n\n"
+        "- enrollment: 2026-10-24 06:00 to 2026-10-24 06:05 UTC\n"
+        "- withdrawn: 2026-10-27 06:00 to 2026-10-27 06:05 UTC\n"
+    ) in text
+    assert run.moment_of("enrollment") == EARLIER
+    assert run.moment_of("never-composed") == run.moment
+
+
+def test_local_result_names_comparisons_with_no_result():
+    text = render_local(_run(missing=["seats-check"]))
+
+    assert "Not compared yet: seats-check." in text
+
+
+def test_review_issue_lists_each_comparison_s_moment():
+    shared = render_review_issue(
+        "Registrar", [_run(moments={"enrollment": Build(START, END, "job-1")})]
+    )
+    differ = render_review_issue(
+        "Registrar",
+        [_run(moments={"enrollment": EARLIER, "withdrawn": Build(START, END, "j")})],
+    )
+
+    assert "Moment: 2026-10-27 06:00 to 2026-10-27 06:05 UTC." in shared
+    assert (
+        "Moments:\n\n"
+        "- enrollment: 2026-10-24 06:00 to 2026-10-24 06:05 UTC\n"
+        "- withdrawn: 2026-10-27 06:00 to 2026-10-27 06:05 UTC"
+    ) in differ

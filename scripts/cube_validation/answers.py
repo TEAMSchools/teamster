@@ -345,7 +345,7 @@ def hand_check(
         return None
     cube_pairs = [(member, value) for member, value in cell["dims"]]
     dash_pairs = [(names[member], value) for member, value in cell["dims"]]
-    expires = run.moment.start + timedelta(days=TIME_TRAVEL_DAYS)
+    expires = run.moment_of(comparison).start + timedelta(days=TIME_TRAVEL_DAYS)
     # The cut is `pipeline.cut_label` JSON; the round trip writes a YAML date
     # default as the text the issue's JSON block can carry.
     filters = json.loads(
@@ -520,7 +520,7 @@ def reproduce_json(
                 ),
                 "after": [f"run {file}", f"triage {file}"],
                 "expires": (
-                    run.moment.start + timedelta(days=TIME_TRAVEL_DAYS)
+                    run.moment_of(cid).start + timedelta(days=TIME_TRAVEL_DAYS)
                 ).isoformat(),
                 "path": path,
                 "url": f"{source.blob}/{path}" if source and source.blob else None,
@@ -666,7 +666,7 @@ def questions_json(
         the `comparisons` without one, to find an example locally; a cause
         question, one rule, has 1 example across its comparisons, or the
         `none` entries), and the
-        earliest `moment` among its views with when its pinned SQL `expires`
+        earliest `moment` among its comparisons with when its pinned SQL `expires`
         and whether it has `expired`; a cause question also has `reproduce`
         (`merged_reproduce` over the comparisons it covers).
     """
@@ -759,7 +759,13 @@ def questions_json(
             for view, cids in none.items()
         ]
 
-        moment = min((by_run[v].moment for v in views), key=lambda m: m.start)
+        # Each comparison's rows were read at its own moment; a question with
+        # no comparison (a missing cut or filter) reads its views'.
+        moment = min(
+            [by_run[v].moment_of(cid) for v, cid, _ in q["comparisons"] if v in by_run]
+            or [by_run[v].moment for v in views],
+            key=lambda m: m.start,
+        )
         expires = moment.start + timedelta(days=TIME_TRAVEL_DAYS)
         extra = {}
         if "asks" in q:

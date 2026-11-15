@@ -974,12 +974,19 @@ def _one_moment(
 class Prepared:
     """What planning a triage fetches once, for `check_ready`, the stored proofs
     and `trace_run` to share: the network's schools, each comparison's row SQL,
-    the dbt manifest, and each table checked for a change during the build."""
+    the dbt manifest, and per build, each table checked for a change during
+    it. Each comparison's rows were read at its own moment
+    (`RunResult.moment_of`), so a change check holds for 1 build only."""
 
     schools: set[str] | None = None
     sides: dict[str, pipeline.RowSides] = field(default_factory=dict)
     manifest: Manifest | None = None
-    moved: dict[str, bool] = field(default_factory=dict)
+    moved: dict[Build, dict[str, bool]] = field(default_factory=dict)
+
+    def moved_at(self, build: Build) -> dict[str, bool]:
+        """The tables checked for a change during `build`, and whether each
+        changed; the caller adds to it."""
+        return self.moved.setdefault(build, {})
 
     def row_sides(
         self, cfg: ViewConfig, comparison: Comparison, run: RunResult, wh, cube
@@ -993,7 +1000,7 @@ class Prepared:
                 comparison,
                 wh=wh,
                 cube=cube,
-                build=run.moment,
+                build=run.moment_of(comparison.id),
                 schools=self.schools,
                 fingerprints=run.fingerprints.get(comparison.id, {}),
             )
@@ -1039,7 +1046,11 @@ def _plan(
             ]
             if groups:
                 plans.append(
-                    (_Side(cfg, comparison, sides, run.moment, bucket), groups, shared)
+                    (
+                        _Side(cfg, comparison, sides, run.moment_of(cid), bucket),
+                        groups,
+                        shared,
+                    )
                 )
 
     buckets = [
@@ -1050,7 +1061,7 @@ def _plan(
             manifest=None,
             levels=levels,
             end_tables=set(side.sides.cube.tables - shared),
-            moved=prepared.moved,
+            moved=prepared.moved_at(side.build),
             meter=meter,
         )
         for side, groups, shared in plans

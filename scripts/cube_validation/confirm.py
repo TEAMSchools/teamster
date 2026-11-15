@@ -1044,19 +1044,21 @@ def require_saved(
 ) -> str:
     """The comparison's saved rows for this run, as SQL names the table.
 
-    The table must exist and carry the labels this run and its SQL give it
+    The rows were saved at the comparison's own moment (`run.moment_of`). The
+    table must exist and carry the labels that moment and its SQL give it
     (`saved.labels`): a table of another run, or of SQL that changed since, is
     never read.
 
     Raises:
         pipeline.Refusal: The table is gone, or its labels differ; the message
-            says what to run, by whether the run's moment is still within time
-            travel.
+            says what to run, by whether the comparison's moment is still
+            within time travel.
     """
-    table = saved.table_id(cfg.view, run.moment, comparison.id)
+    moment = run.moment_of(comparison.id)
+    table = saved.table_id(cfg.view, moment, comparison.id)
     want = saved.labels(
         cfg.view,
-        run.moment,
+        moment,
         comparison.id,
         pipeline.checkpoint_fingerprint(
             comparison, run.fingerprints.get(comparison.id, {})
@@ -1066,7 +1068,7 @@ def require_saved(
     if have is None:
         why = (
             f"comparison {comparison.id!r}: no saved rows for the run of "
-            f"{utc_literal(run.moment.end)}; they expired or were never saved."
+            f"{utc_literal(moment.end)}; they expired or were never saved."
         )
     elif differ := sorted(k for k in want if have.get(k) != want[k]):
         why = (
@@ -1075,14 +1077,15 @@ def require_saved(
         )
     else:
         return saved.table_sql(table)
+    again = f"run --comparison {comparison.id}"
     try:
-        pick_moment([run.moment], _utcnow(), None)
-        step = (
-            f"Run `run --moment '{run.moment.end.isoformat()}' --restart` to save "
-            "them again"
-        )
+        pick_moment([moment], _utcnow(), None)
+        step = f"Run `{again} --moment '{moment.end.isoformat()}'` to save them again"
     except MomentError:
-        step = "Start a new `run`: this moment is past BigQuery's 7 days of time travel"
+        step = (
+            f"Run `{again}` at a new moment: this moment is past BigQuery's 7 days "
+            "of time travel"
+        )
     raise pipeline.Refusal(f"{why} {step}")
 
 
@@ -1594,9 +1597,9 @@ def run_stored(
                     sides,
                     proof,
                     items,
-                    run.moment,
+                    run.moment_of(comparison.id),
                     table=table,
-                    moved=prepared.moved,
+                    moved=prepared.moved_at(run.moment_of(comparison.id)),
                     students=True,
                 )
             except _CANNOT_RUN as exc:
@@ -1717,8 +1720,8 @@ def _run_one(
             prepared.row_sides(cfg, comparison, run, wh, cube),
             proof,
             bucket_items,
-            run.moment,
-            prepared.moved,
+            run.moment_of(comparison.id),
+            prepared.moved_at(run.moment_of(comparison.id)),
             ran.students,
             table=table,
         )
@@ -1910,8 +1913,8 @@ def run_confirm(
             prepared.row_sides(cfg, target, run, wh, cube),
             proof,
             bucket_items,
-            run.moment,
-            prepared.moved,
+            run.moment_of(target.id),
+            prepared.moved_at(run.moment_of(target.id)),
             students,
             table=require_saved(wh, cfg, run, target),
         )
