@@ -806,6 +806,21 @@ def test_set_shelves_refuses_a_shelf_that_mixes_nest_and_cross():
         )
 
 
+def test_set_shelves_refuses_a_shelf_that_joins_fields_with_plus():
+    # A `+` group of fields that are not all measures: nesting it under the
+    # added field would change what the sheet shows.
+    ds = "[federated.0ddi (copy)]"
+    school, module = f"{ds}.[none:school:nk]", f"{ds}.[none:module_code:nk]"
+    src = _cross_sheet(f"({school} + {module})")
+
+    with pytest.raises(ValueError, match="mixes \\+"):
+        set_shelves(
+            src,
+            "Mastery Grid",
+            {"drop": ["Week Start Monday"], "add": {"rows": ["Grade Level"]}},
+        )
+
+
 def test_export_date_reads_m_d_yyyy_only():
     from datetime import date
 

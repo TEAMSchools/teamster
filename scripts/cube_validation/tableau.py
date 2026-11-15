@@ -577,12 +577,21 @@ def _nested_under(node: _Group | str | None, ref: str) -> _Group | str:
     Measures stay last: in a group of crossed fields the added field nests
     into the last field that is not measures (`A * (B / C) * (M1 + M2)`), and
     a shelf of measures alone gets it crossed in front, as Tableau writes a
-    dimension against a dual axis. A group that mixes `/` and `*` is refused.
+    dimension against a dual axis. A group that mixes `/` and `*`, or joins a
+    field that is not a measure with `+`, is refused.
+
+    Raises:
+        ValueError: A group the added field cannot nest into as Tableau would.
     """
     if node is None:
         return ref
     if _is_measures(node):
         return _Group([ref, node], ["*"])
+    if isinstance(node, _Group) and "+" in node.ops:
+        raise ValueError(
+            f"cannot add {ref} to a shelf that mixes + with a field that is not a "
+            "measure; reshape the sheet by hand"
+        )
     if isinstance(node, _Group) and set(node.ops) == {"*"}:
         for i in range(len(node.items) - 1, -1, -1):
             if not _is_measures(node.items[i]):
