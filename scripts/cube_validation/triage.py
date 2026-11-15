@@ -2,8 +2,9 @@
 
 An open item is a row group, a comparison's cell differences, or a missing cut
 or filter. A pile never applies a call: the analyst reads it and decides. An
-item in `investigate` blocks `add-decisions` on the view until it reaches a
-proven cause; `review` lists it as still with the analyst. The trace (`trace.py`) only leads: a row group reaches `cause`
+item in `investigate` takes no decision until it reaches a proven cause, while
+the view's other items are decided; `review` lists it as still with the
+analyst. The trace (`trace.py`) only leads: a row group reaches `cause`
 when `triage confirm` (`confirm.py`) checks a classification query that names
 each of its unmatched rows' cause. A missing cut or filter the sheet carries,
 and rows the sheet's own dashboard-only filter drops, are their own proof.
@@ -306,7 +307,7 @@ def proven_triage(
     latest `run.json`. Decisions written since triage may close items; an
     item open in the run but absent from the triage refuses. Items still in
     `investigate` do not refuse: they come back under `unsettled`, so
-    `review` lists them and `add-decisions` refuses on them.
+    `review` lists them, and `add-decisions` decides the rest.
 
     Args:
         run: The view's latest run (see `pipeline.latest_run`).
@@ -401,20 +402,6 @@ def proven_triage(
             raise pipeline.Refusal(f"{view}: {exc}") from exc
     loaded["unsettled"] = [i for i in items if i["suggestion"] == "investigate"]
     return loaded
-
-
-def refuse_unsettled(view: str, loaded: dict) -> None:
-    """Refuse while a `proven_triage` holds an item in `investigate`.
-
-    Raises:
-        pipeline.Refusal: Any item is unsettled.
-    """
-    if n := len(loaded.get("unsettled") or []):
-        raise pipeline.Refusal(
-            f"{view}: {n} triage item{'' if n == 1 else 's'} in `investigate`; "
-            "prove each with `triage confirm` (cube-validation skill, step 8), "
-            "then re-run `triage`"
-        )
 
 
 def unsettled(run: RunResult, loaded: dict) -> list[Unsettled]:

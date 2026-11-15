@@ -1142,7 +1142,7 @@ def approved_decisions(
         AnswerError: An entry is malformed, repeats an id or an (item,
             cause), takes an id the file has, has a reason that carries what
             `NOTE_REFUSALS` keeps out, names an item the triage does not list,
-            a cell set, a row group no proof decides, or a cause the item
+            an item still in `investigate`, a cell set, a row group no proof decides, or a cause the item
             lacks, leaves out `cause` on an item with several, names a
             comparison the run has no fingerprints for, or has a cause with no
             words, words 2 proofs share, a decision with another call, or an
@@ -1168,6 +1168,12 @@ def approved_decisions(
         if item_id not in items:
             raise AnswerError(f"{where}: triage lists no item {item_id!r}")
         item = items[item_id]
+        if item.get("suggestion") == "investigate":
+            raise AnswerError(
+                f"{where}: item {item_id!r} is still in `investigate`; prove it "
+                "with `triage confirm` (cube-validation skill, step 8), then "
+                "re-run `triage`"
+            )
         named = _text(entry, "cause", where, required=False)
         stub = item.get("stub") or {}
         call = _text(entry, "call", where)

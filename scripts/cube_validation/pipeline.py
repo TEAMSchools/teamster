@@ -1229,7 +1229,7 @@ def _plan_one(
         cube_tables |= cube_at.tables
         live |= cube_at.live | dash_at.live
         shared = sorted(cube_at.tables & dash_at.tables)
-        # Unchanged between start and end (`_settle_moved` refuses otherwise),
+        # Unchanged between start and end (`_settle_moved` skips otherwise),
         # so the Cube side reads its shared tables at the start: BigQuery
         # refuses 1 table at 2 moments.
         rows = RowSides(
@@ -1264,21 +1264,25 @@ def _plan_one(
     )
 
 
-def _settle_moved(plan: _Plan, known: dict[str, bool], changed: set[str]) -> None:
+def _settle_moved(
+    plan: _Plan, known: dict[str, bool], changed: set[str]
+) -> Skip | None:
     """Fill `plan.moved` for every table both sides read, from `known` (a held
     checkpoint's answer, or a second fact) else `changed`.
 
-    Raises:
-        Refusal: Such a table changed during the build.
+    Returns:
+        A skip when such a table changed during the build: BigQuery reads a
+        table at 1 moment per query, so the rows cannot be reconciled.
     """
     plan.moved = {t: known.get(t, t in changed) for t in plan.shared}
     if both_moved := [t for t in plan.shared if plan.moved[t]]:
-        raise Refusal(
-            f"comparison {plan.comparison.id!r}: both sides read "
-            f"{', '.join(both_moved)}, which changed during the build; BigQuery "
-            "reads a table at 1 moment per query, so the rows cannot be "
-            "reconciled at this build"
+        return Skip(
+            plan.comparison.id,
+            f"both sides read {', '.join(both_moved)}, which changed during the "
+            "build; BigQuery reads a table at 1 moment per query, so the rows "
+            "cannot be reconciled at this build",
         )
+    return None
 
 
 def _execute(
@@ -1701,13 +1705,17 @@ def _moved_fact_skips(
     return out
 
 
+# The keys a comparison needs before `run` can build its queries.
+_NEEDED = ("dashboard_view", "decimals")
+
+
 def _proof_skips(
     cfg: ViewConfig, comparisons: list[Comparison], *, tbl: tableau.Tableau, cube: Cube
 ) -> list[Skip]:
     """The comparisons `run` skips before any query, in the order found.
 
-    A comparison is skipped when it has no proof, its probe changed since the
-    proof, it maps a member Cube's `/meta` lacks (`missing_members`), or its
+    A comparison is skipped when it lacks a key a run needs (`_NEEDED`), it
+    has no proof, its probe changed since the proof, it maps a member Cube's `/meta` lacks (`missing_members`), or its
     workbook changed since the proof (`workbook_check`). Each check reads
     only the comparisons no earlier check skipped.
     """
@@ -1718,7 +1726,9 @@ def _proof_skips(
         return [c for c in comparisons if c.id not in gone]
 
     for c in comparisons:
-        if c.proof is None:
+        if missing := [k for k in _NEEDED if getattr(c, k) in (None, "")]:
+            skips.append(Skip(c.id, f"it has no {', '.join(missing)}"))
+        elif c.proof is None:
             skips.append(Skip(c.id, "no proof; run `prove` first"))
         elif c.proof.probe_fingerprint != probe_fingerprint(cfg, c):
             skips.append(
@@ -1912,11 +1922,12 @@ def run(
     proven against. A problem with one comparison skips it instead of
     stopping the run: each skip prints `Skipping <id>: <why>.`, the rest are
     compared, and the skipped one keeps its latest result. Before any query,
-    a confirmed comparison is skipped when it has no proof, its probe or
-    workbook changed since the proof, or it maps a member Cube lacks
-    (`_proof_skips`); before the price, when its SQL cannot be built today
-    (`_sql_skips`); after the price, when its Cube SQL reads a fact in
-    `also_facts` that changed during the build (`_compare_all`). The skips
+    a confirmed comparison is skipped when it lacks a key it needs, has no
+    proof, its probe or workbook changed since the proof, or it maps a member
+    Cube lacks (`_proof_skips`); before the price, when its SQL cannot be
+    built today (`_sql_skips`); after the price, when its Cube SQL reads a
+    fact in `also_facts` that changed during the build, or both sides' rows
+    read a table that did (`_compare_all`). The skips
     are kept in `run.json` as `skipped`. Every query a comparison bills is
     priced before the first one runs (`_compare_all`), and `ticker` prints a
     line as each comparison finishes. Each comparison it finishes is
@@ -1927,10 +1938,8 @@ def run(
 
     Raises:
         Refusal: `only` names no confirmed comparison; every confirmed
-            comparison, or every one `only` names, is skipped; a confirmed
-            comparison lacks a key it needs; both sides' rows read a table
-            that changed during the build; or an unfinished run needs
-            `--resume` or `--restart` (`_run_folder`).
+            comparison, or every one `only` names, is skipped; or an
+            unfinished run needs `--resume` or `--restart` (`_run_folder`).
         CostCapError: The priced queries would pass `max_usd` or the day's
             cap.
         MomentError: No usable build in the 7-day window.
@@ -1950,8 +1959,6 @@ def run(
             f"--comparison: {', '.join(unknown)} is no confirmed comparison of "
             f"{cfg.view}"
         )
-    for comparison in comparisons:
-        _require(comparison, "dashboard_view", "decimals")
     # Every confirmed comparison, before the run folder or any query; a member
     # the model dropped would refuse only after every query ran.
     skips = _proof_skips(cfg, comparisons, tbl=tbl, cube=cube)
@@ -2265,9 +2272,10 @@ def _compare_all(
     rows read, Cube's dimension tables) and every planned query is dry-run one
     at a time, and the total is refused when it would pass a cap. The
     fingerprints then run before any comparison query: a comparison whose
-    Cube SQL reads a second fact that changed during the build is skipped,
-    its priced queries left unrun and its latest result kept
-    (`_moved_fact_skips`). The comparisons are compared one at a time, each checkpointed (with
+    Cube SQL reads a second fact that changed during the build
+    (`_moved_fact_skips`), or whose 2 sides' rows both read a table that did
+    (`_settle_moved`), is skipped, its priced queries left unrun and its
+    latest result kept. The comparisons are compared one at a time, each checkpointed (with
     the spend so far) as it finishes, so a stop loses at most the one in
     progress. Each result keeps the dimension tables it read that changed
     during the build (`changed_dims`). A held checkpoint is kept as the
@@ -2275,7 +2283,6 @@ def _compare_all(
 
     Raises:
         CostCapError: The priced total would pass the run's or the day's cap.
-        Refusal: A table both sides' rows read changed during the build.
     """
     kept = checkpoints.read_all(folder)
     slices: dict[str, tuple[str, _Sides]] = {}
@@ -2328,16 +2335,17 @@ def _compare_all(
         {p.comparison.id: p.cube_tables for p in plans}
         | {cid: held.cube_tables for cid, (_, held) in slices.items()},
     )
-    _say_skips(skips)
     gone = {s.comparison for s in skips}
-    kept_plans = [
-        (plan, priced)
-        for plan, priced in zip(plans, prices, strict=True)
-        if plan.comparison.id not in gone
-    ]
     slices = {cid: v for cid, v in slices.items() if cid not in gone}
-    for plan, _ in kept_plans:
-        _settle_moved(plan, known, changed)
+    kept_plans = []
+    for plan, priced in zip(plans, prices, strict=True):
+        if plan.comparison.id in gone:
+            continue
+        if skip := _settle_moved(plan, known, changed):
+            skips.append(skip)
+        else:
+            kept_plans.append((plan, priced))
+    _say_skips(skips)
 
     def keep(comparison: Comparison, fingerprint: str, one: _Sides) -> None:
         latest.write(

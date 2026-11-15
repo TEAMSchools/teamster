@@ -348,13 +348,21 @@ def fakes(monkeypatch, tmp_path):
 
 
 def _file(tmp_path, text=YML):
-    """Write a validation file, filling in the probe's real fingerprint."""
+    """Write a validation file, filling in each comparison's real probe
+    fingerprint."""
     path = tmp_path / "v.yml"
     path.write_text(text)
     if "PROBE_FP" in text:
         cfg = load_view_config(path)
-        fp = pipeline.probe_fingerprint(cfg, cfg.comparisons[0])
-        path.write_text(text.replace("PROBE_FP", fp))
+        fps = {c.id: pipeline.probe_fingerprint(cfg, c) for c in cfg.comparisons}
+        head, *entries = text.split("\n  - id: ")
+        entries = [
+            e.replace("PROBE_FP", fps[e.split("\n", 1)[0].strip()])
+            if "PROBE_FP" in e
+            else e
+            for e in entries
+        ]
+        path.write_text("\n  - id: ".join([head, *entries]))
     return path
 
 
@@ -838,6 +846,17 @@ def test_a_plain_run_with_only_a_skipped_comparison_left_compares_nothing(
     ) in out
     assert "Composing run.json again" not in out
     assert not _compared(fakes.bq)
+
+
+def test_a_comparison_missing_a_key_it_needs_is_skipped(fakes, tmp_path, capsys):
+    path = _two(tmp_path, lambda e: e.replace("    decimals: 3\n", ""))
+
+    assert cli.main(["run", str(path)]) == 0
+
+    out = capsys.readouterr().out
+    assert "Skipping c2: it has no decimals." in out
+    assert out.index("Skipping c2") < out.index("(dry run)")
+    assert _scripts_for(fakes.bq) == ["c1"]
 
 
 def test_run_refuses_when_every_comparison_is_skipped(fakes, tmp_path, capsys):
@@ -1802,15 +1821,42 @@ def test_run_reads_a_table_both_sides_share_at_1_moment(fakes, tmp_path):
     assert {_literal_after(s, "dim_locations") for s in cells} == {utc_literal(END)}
 
 
-def test_run_refuses_a_shared_table_that_changed_during_the_build(
+def test_run_skips_a_shared_table_that_changed_during_the_build(
     fakes, tmp_path, capsys
 ):
     fakes.bq.views = {"rpt_d": SHARED_VIEW}
     fakes.bq.changed = ("dim_locations",)
 
     assert cli.main(["run", str(_file(tmp_path))]) == 1
-    err = capsys.readouterr().err
-    assert "kipptaf_marts.dim_locations" in err and "changed during the build" in err
+    captured = capsys.readouterr()
+    assert (
+        "Skipping ada-region: both sides read kipptaf_marts.dim_locations, which "
+        "changed during the build" in captured.out
+    )
+    assert "v: every comparison was skipped; see the reasons above" in captured.err
+
+
+def test_a_changed_shared_table_skips_only_the_comparisons_that_read_it(
+    fakes, tmp_path, capsys
+):
+    # Only c2's dashboard view reads the dimension Cube reads too.
+    fakes.bq.views = {"rpt_e": SHARED_VIEW}
+    fakes.bq.changed = ("dim_locations",)
+    path = _two(
+        tmp_path,
+        lambda e: e.replace(
+            "dashboard_view: kipptaf_tableau.rpt_d",
+            "dashboard_view: kipptaf_tableau.rpt_e",
+        ),
+    )
+
+    assert cli.main(["run", str(path)]) == 0
+
+    out = capsys.readouterr().out
+    assert "Skipping c2: both sides read kipptaf_marts.dim_locations" in out
+    assert out.index("(dry run)") < out.index("Skipping c2")
+    assert _scripts_for(fakes.bq) == ["c1"]
+    assert len(_compared(fakes.bq)) == 6
 
 
 SECOND_FACT_JOIN = "LEFT JOIN  kipptaf_marts.fct_g  AS `g` ON `g`.k = `t`.k\n"
@@ -4217,27 +4263,32 @@ def test_add_decisions_refuses_an_unknown_item_and_writes_nothing(
     assert path.read_text() == before
 
 
-def test_add_decisions_refuses_while_an_item_is_in_investigate(fakes, tmp_path, capsys):
+def test_add_decisions_writes_what_is_ready_while_an_item_waits_in_investigate(
+    fakes, tmp_path, capsys
+):
     path = _file(tmp_path)
     assert cli.main(["run", str(path)]) == 0
     _triage_everything(
         tmp_path, [_triage_item("e"), _triage_item("x", "investigate", "j")]
     )
-    approved = _approved(
-        tmp_path, [{"id": "a", "call": "deliberate", "reason": "r", "item": MIAMI}]
+    waiting = _approved(
+        tmp_path, [{"id": "b", "call": "deliberate", "reason": "r", "item": "j"}]
     )
     before = path.read_text()
     capsys.readouterr()
 
-    assert cli.main(["add-decisions", str(path), str(approved)]) == 1
+    # The item still in `investigate` takes no decision.
+    assert cli.main(["add-decisions", str(path), str(waiting)]) == 1
 
     err = capsys.readouterr().err
-    assert "v: 1 triage item in `investigate`" in err and "step 8" in err
+    assert "item 'j' is still in `investigate`" in err and "step 8" in err
     assert path.read_text() == before
 
-    # Once the item carries a proven cause, the same batch writes.
-    _triage_everything(tmp_path, [_triage_item("e"), _triage_item("x", "cause", "j")])
-    assert cli.main(["add-decisions", str(path), str(approved)]) == 0
+    # The proven item writes; the other stays open.
+    ready = _approved(
+        tmp_path, [{"id": "a", "call": "deliberate", "reason": "r", "item": MIAMI}]
+    )
+    assert cli.main(["add-decisions", str(path), str(ready)]) == 0
     assert [d.id for d in load_view_config(path).decisions] == ["a"]
 
 

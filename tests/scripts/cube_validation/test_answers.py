@@ -939,6 +939,8 @@ def test_cause_approvals_refuse_bad_batches():
     blank = _cause_item("k4", _cause_entry(""))
     split = _cause_item("k5", _cause_entry(NO_SECTION), _cause_entry(LATE))
     unproven = {**_cause_item("k6", _cause_entry(NO_SECTION)), "proof": None}
+    waiting = {**_cause_item("k7"), "suggestion": "investigate", "cause": None,
+               "proof": None}  # fmt: skip
 
     for approved, items, match in [
         ([_ok("a", "k1"), _ok("b", "k2", call="deliberate")], [one, two], "domain_owner"),
@@ -949,6 +951,7 @@ def test_cause_approvals_refuse_bad_batches():
         ([_ok("a", "k5")], [split], "2 causes; approve each"),
         ([_ok("a", "k5", cause="nothing like it")], [split], "has no cause"),
         ([_ok("a", "k6")], [unproven], "no proof decides"),
+        ([_ok("a", "k7")], [waiting], "still in `investigate`"),
     ]:  # fmt: skip
         with pytest.raises(AnswerError, match=match):
             approved_decisions(approved, {"items": items}, CAUSE_FPS)
