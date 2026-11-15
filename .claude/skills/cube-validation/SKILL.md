@@ -241,8 +241,9 @@ refuses when the view's only run read another fact.
      job up for the message. A failed dry run has no job (`job ?`): run that dry
      run again by hand to see the message. A skipped comparison keeps its
      previous result. Fix what each reason names (most say to run
-     `rebuild-sheet` again). Of BigQuery's errors, only a cap stops the run;
-     `compare` refuses when every comparison is skipped.
+     `rebuild-sheet` again). Of BigQuery errors in a comparison's own dry run or
+     queries, only a cap stops the run; `compare` refuses when every comparison
+     is skipped.
    - It names each comparison it will compare and why: `never compared`,
      `its entry or rebuild check changed`, `Cube's SQL changed` or
      `the dashboard SQL changed` (the sheet query or the dbt views it reads). A
@@ -261,12 +262,14 @@ refuses when the view's only run read another fact.
      `--max-usd-per-day` (UTC day, shared by every run on this machine). View
      versions found in BigQuery's job history are cached in the local cache, so
      a repeat run does not pay to look them up again.
-   - It prints "Comparison <id>: its cells cannot be covered (<why>)" for a
-     comparison without `rows` or whose dims sit in the row grain.
 
    As each comparison finishes it prints a progress line,
    `[HH:MM:SS UTC +<elapsed>] compare <id>: $<spent> spent`, and keeps the
-   result as that comparison's latest. A validation is each comparison's latest
+   result as that comparison's latest. Then it prints "<id>: totals not matched"
+   for a comparison whose rebuild check skipped the export's total rows or
+   records no count, and "Comparison <id>: its cells cannot be covered (<why>)"
+   for one without `rows` or whose dims sit in the row grain; a skipped
+   comparison gets neither line. A validation is each comparison's latest
    result, each at its own moment; `run.json` is composed from them. To add a
    comparison, `rebuild-sheet` it, then `compare --comparison <id>`: the others
    keep their results. Decisions are re-applied offline, with no new `compare`.

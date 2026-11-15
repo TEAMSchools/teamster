@@ -491,6 +491,71 @@ def test_a_key_in_2_cuts_pairs_its_rows_within_each_cut(duck):
     assert by["value_differs"].cut_rows == ((NEWARK, 1, 1), (MIAMI, 1, 1))
 
 
+def test_the_trace_pairs_a_key_in_2_cuts_within_each_cut(duck):
+    # As above: each row pairs with its own region's row and differs in
+    # value, so neither side has a row the other lacks to trace.
+    duck.table(
+        "c_rows",
+        "lea BIGINT, aid VARCHAR, region VARCHAR, ok_c BOOLEAN",
+        [(1, "a", "Newark", True), (1, "a", "Miami", False)],
+    )
+    duck.table(
+        "d_rows",
+        "student BIGINT, item VARCHAR, region VARCHAR, ok_d BOOLEAN",
+        [(1, "a", "Newark", False), (1, "a", "Miami", True)],
+    )
+    for bucket, side in (("cube_only", "dashboard"), ("dashboard_only", "cube")):
+        variant = (
+            "SELECT * FROM d_rows" if side == "dashboard" else "SELECT * FROM c_rows"
+        )
+        sql = trace_sql(
+            "SELECT * FROM c_rows",
+            "SELECT * FROM d_rows",
+            REGION_ROWS,
+            [],
+            bucket=bucket,
+            side=side,
+            variants=[("s1", variant)],
+            cuts=[
+                ("c.region = 'Newark'", "d.region = 'Newark'"),
+                ("c.region = 'Miami'", "d.region = 'Miami'"),
+            ],
+        )
+
+        assert duck.rows(sql) == []
+
+
+def test_the_trace_leaves_over_the_row_the_reconcile_does(duck):
+    # The dashboard holds the key in both regions, Cube in Newark only. Paired
+    # cut by cut, Newark meets Newark and the Miami row is left over; paired
+    # by value alone, Cube's row would meet Miami's and leave Newark's.
+    duck.table(
+        "c_rows",
+        "lea BIGINT, aid VARCHAR, region VARCHAR, ok_c BOOLEAN",
+        [(1, "a", "Newark", True)],
+    )
+    duck.table(
+        "d_rows",
+        "student BIGINT, item VARCHAR, region VARCHAR, ok_d BOOLEAN",
+        [(1, "a", "Newark", True), (1, "a", "Miami", False)],
+    )
+    sql = trace_sql(
+        "SELECT * FROM c_rows",
+        "SELECT * FROM d_rows",
+        REGION_ROWS,
+        [ColumnPair("region", "region")],
+        bucket="dashboard_only",
+        side="cube",
+        variants=[("s1", "SELECT * FROM c_rows")],
+        cuts=[
+            ("c.region = 'Newark'", "d.region = 'Newark'"),
+            ("c.region = 'Miami'", "d.region = 'Miami'"),
+        ],
+    )
+
+    assert [r["region"] for r in duck.rows(sql)] == ["Miami"]
+
+
 def test_the_reconcile_returns_no_value_sums(duck):
     _save_tables(duck)
     row = duck.rows(reconcile_sql(*SAVE_ARGS, cuts=[("TRUE", "TRUE")]))[0]

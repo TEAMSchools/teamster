@@ -70,16 +70,20 @@ from .results import (
 )
 from .timetravel import repin, utc_literal
 
+# What varies between 2 runs skipped for the same reason: a BigQuery job id,
+# and a UTC time (`utc_literal`, or ISO).
+_JOB_ID = re.compile(r"\bjob [^\s,)]+")
+_UTC_TIME = re.compile(
+    r"\d{4}-\d\d-\d\d[ T]\d\d:\d\d:\d\d(?:\.\d+)?(?:[+-]\d\d:\d\d|Z)?"
+)
+
 
 def _skip_keys(skips: Iterable[Skip]) -> list[tuple[str, str]]:
-    """Each skip as its comparison and the stable head of its reason.
-
-    The head is the text before the first `:` or `(`, past which a reason
-    carries what varies between runs (an error's message, a job id, a
-    build's times), so the same skip twice keys alike.
-    """
+    """Each skip as its comparison and its reason with job ids and times masked,
+    so the same skip twice keys alike and a changed reason does not."""
     return [
-        (s.comparison, re.split(r"[:(]", s.why, maxsplit=1)[0].strip()) for s in skips
+        (s.comparison, _UTC_TIME.sub("<time>", _JOB_ID.sub("job ?", s.why)))
+        for s in skips
     ]
 
 

@@ -1348,23 +1348,35 @@ def test_sort_and_review_go_on_past_a_comparison_skipped_for_a_missing_member(
     )
 
 
-def test_a_skip_whose_message_varies_is_recorded_once(
-    fakes, tmp_path, monkeypatch, capsys
-):
-    path = _two(tmp_path)
-    assert cli.main(["compare", str(path)]) == 0
+def _view_history_breaks_c2(monkeypatch, message):
+    """c2's SQL cannot be built: each build raises `message(n)`, n counting
+    the calls from 1."""
     fingerprints = pipeline.side_fingerprints
     calls = []
 
     def broken(cfg, comparison, **kwargs):
         if comparison.id == "c2":
             calls.append(1)
-            # A message that differs on every call, like a job id.
-            raise pipeline.ViewHistoryError(f"no view job (attempt {len(calls)})")
+            raise pipeline.ViewHistoryError(message(len(calls)))
         return fingerprints(cfg, comparison, **kwargs)
 
     monkeypatch.setattr(results, "side_fingerprints", broken)
     monkeypatch.setattr(compare, "side_fingerprints", broken)
+
+
+def test_a_skip_whose_job_or_time_varies_is_recorded_once(
+    fakes, tmp_path, monkeypatch, capsys
+):
+    path = _two(tmp_path)
+    assert cli.main(["compare", str(path)]) == 0
+    # The moment the lookup reads, and a job id, differ on every call.
+    _view_history_breaks_c2(
+        monkeypatch,
+        lambda n: (
+            f"no CREATE_VIEW job for d.v before "
+            f"{utc_literal(START + timedelta(minutes=n))} (job j-{n})"
+        ),
+    )
     capsys.readouterr()
 
     assert cli.main(["compare", str(path)]) == 0
@@ -1378,6 +1390,28 @@ def test_a_skip_whose_message_varies_is_recorded_once(
     assert "Skipping c2: its SQL cannot be built today: " in out
     assert "Composing run.json again" not in out
     assert "Every comparison not skipped has a current latest result" in out
+
+
+def test_a_skip_whose_reason_changes_is_recorded_again(
+    fakes, tmp_path, monkeypatch, capsys
+):
+    path = _two(tmp_path)
+    assert cli.main(["compare", str(path)]) == 0
+    # The same head, its SQL cannot be built today, for another view.
+    _view_history_breaks_c2(
+        monkeypatch, lambda n: f"no CREATE_VIEW job for d.v{n} before then"
+    )
+    capsys.readouterr()
+    assert cli.main(["compare", str(path)]) == 0
+    capsys.readouterr()
+
+    assert cli.main(["compare", str(path)]) == 0
+
+    assert "Composing run.json again to record the comparisons skipped" in (
+        capsys.readouterr().out
+    )
+    saved = json.loads(_latest_run(tmp_path).read_text())
+    assert saved["skipped"][0]["why"].endswith("d.v2 before then")
 
 
 def test_triage_names_a_member_cube_dropped_since_the_run(fakes, tmp_path):
