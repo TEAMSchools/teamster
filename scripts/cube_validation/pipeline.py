@@ -366,7 +366,8 @@ def dashboard_rows_sql(cfg: ViewConfig, comparison: Comparison) -> str:
     count them apart from rows Cube alone has. Rows outside `rows.dashboard_scope`
     are left out.
 
-    With `rows.reduce`, the rows above are cut to the latest per grain key. The
+    With `rows.reduce`, the rows above are cut to the latest per grain key
+    within each cut (the captions that vary across cuts join the key). The
     cuts, `dashboard_scope` and `dashboard_filters` decide first which rows
     compete: a row every filter keeps outranks one a filter drops, so a key
     whose latest day a filter drops reads its latest kept day. A tie on the
@@ -396,7 +397,8 @@ def dashboard_rows_sql(cfg: ViewConfig, comparison: Comparison) -> str:
     sql = f"SELECT {', '.join(cols)} FROM {_dashboard_ref(comparison)} WHERE {where}"
     if not reduce:
         return sql
-    keys = ", ".join(p.dashboard for p in comparison.rows.grain)
+    split = [comparison.filters[c].dashboard for c in _varying_captions(comparison)]
+    keys = ", ".join(_unique([p.dashboard for p in comparison.rows.grain] + split))
     kept = [f"{flag} AND " for flag, _ in _filter_flags(comparison)]
     order = (
         f"({''.join(kept)}TRUE) DESC, __reduce_by DESC" if kept else "__reduce_by DESC"

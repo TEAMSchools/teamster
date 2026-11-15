@@ -356,7 +356,10 @@ def _reduce(reader: _Reader) -> dict[str, str]:
     rule = spec.get("rule", str, required=True)
     if rule not in REDUCE_RULES:
         spec.fail("rule", f"must be one of {', '.join(REDUCE_RULES)}; got {rule!r}")
-    return {"rule": rule, "by": _identifier(spec, "by", required=True)}
+    by = _identifier(spec, "by", required=True)
+    if by.startswith("__"):
+        spec.fail("by", "must not start with __; that prefix is the tool's own")
+    return {"rule": rule, "by": by}
 
 
 def _comparison(reader: _Reader) -> Comparison:

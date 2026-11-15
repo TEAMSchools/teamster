@@ -966,3 +966,84 @@ def test_the_reduce_runs_after_the_dashboard_filters(duck):
     kept = [r for r in duck.rows(sql) if r["__df0"]]
 
     assert [r["is_chronic"] for r in kept] == [1]
+
+
+def _reduced_rows(duck, dash_rows, **changes):
+    from dataclasses import replace
+
+    from cube_validation import pipeline
+    from cube_validation.config import ViewConfig
+
+    comparison = replace(
+        Comparison(
+            id="c",
+            measure="m",
+            dashboard_view="kipptaf_tableau.dash_t",
+            rows=RowSpec(
+                grain=[ColumnPair("student", "lea"), ColumnPair("period", "per")],
+                values=[ColumnPair("is_chronic", "chronic_c")],
+                reduce={"rule": "latest", "by": "calendardate"},
+            ),
+        ),
+        **changes,
+    )
+    cfg = ViewConfig(view="v", fact="kipptaf_marts.fct_f", comparisons=[comparison])
+    duck.table(
+        "dash_t",
+        "student BIGINT, period VARCHAR, region VARCHAR, calendardate DATE, "
+        "is_chronic INTEGER",
+        dash_rows,
+    )
+    return duck.rows(pipeline.dashboard_rows_sql(cfg, comparison))
+
+
+def test_the_reduce_keeps_each_keys_latest_row_within_each_cut(duck):
+    region = ColumnPair("region", "region_c")
+    dash = [
+        (1, "Q1", "A", date(2026, 9, 3), 1),
+        (1, "Q1", "A", date(2026, 9, 1), 0),
+        (1, "Q1", "B", date(2026, 9, 2), 0),
+        (1, "Q1", "B", date(2026, 9, 1), 1),
+    ]
+
+    rows = _reduced_rows(
+        duck,
+        dash,
+        filters={"Region": region},
+        cuts=[{"Region": "A"}, {"Region": "B"}],
+    )
+
+    assert sorted((r["region"], r["is_chronic"]) for r in rows) == [("A", 1), ("B", 0)]
+
+
+def test_a_key_every_filter_drops_keeps_its_latest_dropped_row(duck):
+    dash = [
+        (1, "Q1", "A", date(2026, 9, 1), 0),
+        (1, "Q1", "A", date(2026, 9, 3), 0),
+    ]
+    only_chronic = {"dashboard": "is_chronic", "operator": "equals", "values": [1]}
+
+    rows = _reduced_rows(duck, dash, dashboard_filters=[only_chronic])
+
+    assert [(r["__df0"], r["is_chronic"]) for r in rows] == [(False, 0)]
+
+
+def test_the_scope_applies_before_the_reduce(duck):
+    from dataclasses import replace
+
+    dash = [
+        (1, "Q1", "A", date(2026, 9, 1), 0),
+        (1, "Q1", "A", date(2026, 9, 2), 1),
+        (1, "Q1", "A", date(2026, 9, 3), 0),
+    ]
+    scope = {"dashboard": "calendardate", "operator": "lt", "values": ["2026-09-03"]}
+    base = RowSpec(
+        grain=[ColumnPair("student", "lea"), ColumnPair("period", "per")],
+        values=[ColumnPair("is_chronic", "chronic_c")],
+        reduce={"rule": "latest", "by": "calendardate"},
+        dashboard_scope=[scope],
+    )
+
+    rows = _reduced_rows(duck, dash, rows=base)
+
+    assert [r["is_chronic"] for r in rows] == [1]

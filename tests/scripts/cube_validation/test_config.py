@@ -480,6 +480,7 @@ def test_rows_reduce_defaults_to_none(tmp_path):
         ("{ rule: latest }", "by"),
         ('{ rule: latest, by: "d; drop" }', "identifier"),
         ("{ rule: latest, by: d, sql: x }", "sql"),
+        ("{ rule: latest, by: __reduce_by }", "__"),
     ],
 )
 def test_rows_reduce_refuses(tmp_path, reduce, why):
