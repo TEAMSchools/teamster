@@ -132,8 +132,9 @@ class ItemTrace:
     `unreproduced` already returned by the unrelaxed SQL, `duplicates` a
     grain the other side holds twice, `unknown` behind a query that failed or
     a stop, `skipped` still to trace when the trace skipped a model it could
-    not read (by the models skipped and why), and `none` missing below the
-    deepest level, under `below`.
+    not read (by the models skipped and why, and at the deepest level the
+    models below it too), and `none` missing below the deepest level, under
+    `below`.
     """
 
     side: str
@@ -1094,17 +1095,31 @@ class _Bucket:
                     for ref in f.query.tables():
                         if self.manifest.model(ref.dataset, ref.name):
                             self.blocked.setdefault(ref.name, "past MAX_LEVELS")
-                return self._end(in_play, "rows missing from the tables it reads")
+                return self._end(
+                    in_play, "rows missing from the tables it reads", past=True
+                )
             frames = self._descend(frames, exclude)
             if not frames:
                 return self._end(in_play, "no table it reads explains a row")
         return None
 
-    def _end(self, in_play: dict[tuple, int], why: str = "") -> None:
+    def _end(
+        self, in_play: dict[tuple, int], why: str = "", past: bool = False
+    ) -> None:
+        """Mark the rows still in play where the trace ended, with why.
+
+        With `past` (the deepest level, whose tables' models are `below`), a
+        row a skipped model may hold keeps both readings: not traced, or
+        missing below those models.
+        """
+        lost = self._lost()
+        below = sorted(set(self.blocked) - set(self.lost))
+        if lost and past and below:
+            lost += f", or missing below {', '.join(below)}"
         for key, n in in_play.items():
             if self.lost:
                 # A model the trace skipped may hold the row: not traced.
-                self.out[key].skipped[self._lost()] += n
+                self.out[key].skipped[lost] += n
             else:
                 self.out[key].none += n
         if in_play and why:

@@ -1140,6 +1140,51 @@ def test_a_model_whose_dry_run_fails_is_skipped_not_the_bucket(duck, tmp_path):
     assert not found.stopped
 
 
+def test_rows_past_the_depth_keep_their_below_names_beside_a_skipped_model(
+    duck, tmp_path
+):
+    # int_a's queries fail, so it is skipped. int_b descends: its `keep`
+    # drops row 2. Rows 1 and 3 are in no table int_b reads, at the deepest
+    # level with raw_b, a model, past it; int_a, skipped, may hold them too.
+    _cube_rows(duck, [(1, "a", "X"), (2, "b", "X"), (3, "c", "X")])
+    duck.table("raw_a", KEPT, [(1, "a", "X", False)])
+    duck.table("raw_b", KEPT, [(2, "b", "X", False)])
+    duck.table("int_a", "student BIGINT, item VARCHAR, school VARCHAR", [])
+    duck.table("int_b", "student BIGINT, item VARCHAR, school VARCHAR", [])
+    manifest = _manifest(
+        tmp_path,
+        {
+            **{
+                name: (
+                    "select student, item, school "
+                    f"from `teamster-332318`.`d`.`raw_{name[-1]}` where keep",
+                    [f"raw_{name[-1]}"],
+                )
+                for name in ("int_a", "int_b")
+            },
+            "raw_a": ("select 1", []),
+            "raw_b": ("select 1", []),
+        },
+    )
+    wh = DuckWarehouse(duck)
+
+    def rows(sql, timeout_s=None):
+        if _holds_a(sql):
+            raise BadRequest("x", errors=[{"reason": "resourcesExceeded"}])
+        return duck.rows(sql)
+
+    wh.rows = rows
+    bucket = _bucket(duck, TWO, [_group(3)], levels=1, manifest=manifest, wh=wh)
+
+    found = bucket.run()[trace.item_key(_group(3))]
+
+    assert found.steps == {"dashboard:int_b/main:1": 1}
+    assert bucket.lost == {"int_a": "resourcesExceeded"}
+    reading = "int_a skipped (resourcesExceeded), or missing below raw_b"
+    assert found.skipped == {reading: 2} and found.consistent
+    assert any(f"2 not traced: {reading}" in line for line in found.evidence())
+
+
 def test_a_stopped_bucket_prints_its_model_chain(duck, tmp_path, capsys):
     _cube_rows(duck, [(424242, "a", "X")])
     duck.table("raw_x", KEPT, [(424242, "a", "X", False)])
