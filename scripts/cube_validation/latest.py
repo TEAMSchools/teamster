@@ -2,7 +2,9 @@
 
 A validation is the latest result of each confirmed comparison, each at its
 own moment. `run` copies a comparison's slice here as it finishes and composes
-`run.json` from every comparison's copy. A copy, not a pointer to a run
+`run.json` from every comparison's copy. Results are kept per fact dataset
+(`folder`), so a dev build's run (`--fact-dataset`) never replaces or joins
+production's. A copy, not a pointer to a run
 folder: `checkpoints.clear` on a restart at the same moment would delete a
 slice a pointer still names. Only counts, SQL and fingerprints are written;
 student rows stay in BigQuery.
@@ -32,7 +34,7 @@ class Latest:
     `fingerprint` is its `pipeline.checkpoint_fingerprint` when it ran, and
     `entry` its `entry_fingerprint`. `data` is its `_Sides.to_json()` slice,
     with the dimension tables Cube read that changed during its build under
-    `changed_dims`.
+    `changed_dims`. `fact` is the `dataset.table` it read.
     """
 
     moment: Build
@@ -40,6 +42,12 @@ class Latest:
     entry: str
     ran_at: str
     data: dict
+    fact: str = ""
+
+
+def folder(view_dir: Path, fact: str) -> Path:
+    """Where the view's results of `fact`'s dataset are kept."""
+    return view_dir / DIR / fact.split(".", 1)[0]
 
 
 def entry_fingerprint(comparison: Comparison) -> str:
@@ -49,20 +57,21 @@ def entry_fingerprint(comparison: Comparison) -> str:
     ).hexdigest()
 
 
-def _file(view_dir: Path, comparison_id: str) -> Path:
+def _file(results: Path, comparison_id: str) -> Path:
     # A comparison id need not be a safe file name; the digest keeps 2 ids that
     # slug alike apart.
     slug = re.sub(r"[^A-Za-z0-9_-]", "_", comparison_id)
     digest = hashlib.sha256(comparison_id.encode()).hexdigest()[:8]
-    return view_dir / DIR / f"{slug}_{digest}.json"
+    return results / f"{slug}_{digest}.json"
 
 
-def write(view_dir: Path, comparison_id: str, result: Latest) -> None:
-    """Replace the comparison's latest result, whole."""
+def write(results: Path, comparison_id: str, result: Latest) -> None:
+    """Replace the comparison's latest result in `results` (`folder`), whole."""
     checkpoints._write_json(
-        _file(view_dir, comparison_id),
+        _file(results, comparison_id),
         {
             "comparison": comparison_id,
+            "fact": result.fact,
             "moment": checkpoints._moment_json(result.moment),
             "fingerprint": result.fingerprint,
             "entry": result.entry,
@@ -72,25 +81,29 @@ def write(view_dir: Path, comparison_id: str, result: Latest) -> None:
     )
 
 
-def read_all(view_dir: Path) -> dict[str, Latest]:
-    """Every comparison's latest result in the view's folder, by id."""
+def read_all(results: Path) -> dict[str, Latest]:
+    """Every comparison's latest result in `results` (`folder`), by id.
+
+    A file that cannot be read is skipped and named; its comparison then
+    reads as never compared.
+    """
     out: dict[str, Latest] = {}
-    for path in sorted((view_dir / DIR).glob("*.json")):
+    for path in sorted(results.glob("*.json")):
         try:
             e = json.loads(path.read_text())
-        except (OSError, ValueError):
+            m = e["moment"]
+            out[e["comparison"]] = Latest(
+                moment=Build(
+                    datetime.fromisoformat(m["start"]),
+                    datetime.fromisoformat(m["end"]),
+                    m["job_id"],
+                ),
+                fingerprint=e["fingerprint"],
+                entry=e["entry"],
+                ran_at=e["ran_at"],
+                data=e["data"],
+                fact=e.get("fact", ""),
+            )
+        except (OSError, ValueError, KeyError, TypeError):
             print(f"Latest result {path.name} skipped: it cannot be read.")
-            continue
-        m = e["moment"]
-        out[e["comparison"]] = Latest(
-            moment=Build(
-                datetime.fromisoformat(m["start"]),
-                datetime.fromisoformat(m["end"]),
-                m["job_id"],
-            ),
-            fingerprint=e["fingerprint"],
-            entry=e["entry"],
-            ran_at=e["ran_at"],
-            data=e["data"],
-        )
     return out

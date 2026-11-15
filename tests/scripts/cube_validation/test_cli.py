@@ -826,6 +826,161 @@ def test_triage_records_and_prints_the_stale_comparisons(fakes, tmp_path, capsys
     assert json.loads(saved.read_text())["stale"] == {"c2": "never compared"}
 
 
+VIEW_D = "select * from `teamster-332318`.`kipptaf_int`.`int_d`"
+VIEW_E = VIEW_D.replace("int_d", "int_e")
+DEV = "zz_cbaldor_kipptaf_marts"
+
+
+def _triaged_stale(path, tmp_path):
+    """Triage the view's latest run and return the stale list it wrote."""
+    assert cli.main(["triage", str(path), "--no-trace", "--no-proofs"]) == 0
+    saved = max(
+        (tmp_path / "cache" / "v").glob("*/triage.json"),
+        key=lambda p: p.stat().st_mtime,
+    )
+    return json.loads(saved.read_text())["stale"]
+
+
+def test_triage_judges_staleness_from_the_composed_run(fakes, tmp_path):
+    fakes.bq.views = {"rpt_d": VIEW_D}
+    path = _two(tmp_path)
+    assert cli.main(["run", str(path)]) == 0
+    fakes.bq.views = {"rpt_d": VIEW_E}
+    fakes.bq.fail_once = "__c2_"
+    # c1's new result is kept, but the run stops before it composes run.json.
+    assert cli.main(["run", str(path)]) == 1
+
+    assert _triaged_stale(path, tmp_path) == {
+        "c1": "the dashboard SQL changed",
+        "c2": "the dashboard SQL changed",
+    }
+
+
+def test_run_composes_again_when_its_results_are_newer_than_its_run(
+    fakes, tmp_path, monkeypatch, capsys
+):
+    fakes.bq.views = {"rpt_d": VIEW_D}
+    path = _two(tmp_path)
+    assert cli.main(["run", str(path)]) == 0
+    first = json.loads(_latest_run(tmp_path).read_text())
+    fakes.bq.views = {"rpt_d": VIEW_E}
+    apply = pipeline.decisions.apply
+
+    def refuse(*args, **kwargs):
+        raise ValueError("2 decisions claim one group")
+
+    # Both comparisons compare and keep their results; composing refuses.
+    monkeypatch.setattr(pipeline.decisions, "apply", refuse)
+    assert cli.main(["run", str(path)]) == 1
+    monkeypatch.setattr(pipeline.decisions, "apply", apply)
+    fakes.bq.ran.clear()
+    capsys.readouterr()
+
+    assert cli.main(["run", str(path)]) == 0
+
+    out = capsys.readouterr().out
+    assert "Composing run.json again from the latest results" in out
+    assert not _outer(fakes.bq)
+    again = json.loads(_latest_run(tmp_path).read_text())
+    assert again["fingerprints"] != first["fingerprints"]
+    assert checkpoints.find_unfinished(tmp_path / "cache", "v") is None
+    capsys.readouterr()
+    assert cli.main(["run", str(path)]) == 0
+    assert "Every comparison's latest result is current" in capsys.readouterr().out
+
+
+def test_a_dev_build_keeps_its_results_apart_from_production(fakes, tmp_path, capsys):
+    path = _two(tmp_path)
+    assert cli.main(["run", str(path)]) == 0
+    fakes.cube.dataset = DEV
+    fakes.bq.build = LATER
+
+    argv = ["run", str(path), "--comparison", "c2", "--fact-dataset", DEV]
+    assert cli.main(argv) == 0
+
+    dev = json.loads(_latest_run(tmp_path).read_text())
+    assert dev["fact"] == f"{DEV}.fct_f" and dev["missing"] == ["c1"]
+    fakes.cube.dataset = "kipptaf_marts"
+    fakes.bq.ran.clear()
+    capsys.readouterr()
+    # Production's results are untouched: a new build alone is not stale.
+    assert cli.main(["run", str(path)]) == 0
+    assert "Every comparison's latest result is current" in capsys.readouterr().out
+    assert not _outer(fakes.bq)
+
+
+def test_review_warns_when_the_latest_run_read_a_dev_build(fakes, tmp_path, capsys):
+    path = _file(tmp_path)
+    fakes.cube.dataset = DEV
+    assert cli.main(["run", str(path), "--fact-dataset", DEV]) == 0
+    capsys.readouterr()
+
+    cli.main(["review", str(path), "--domain", "Registrar"])
+
+    err = capsys.readouterr().err
+    assert (
+        f"warning: v: the latest run read {DEV}.fct_f, not kipptaf_marts.fct_f" in err
+    )
+
+
+def test_a_comparison_whose_sql_no_longer_builds_waits_and_triage_goes_on(
+    fakes, tmp_path
+):
+    path = _two(tmp_path)
+    assert cli.main(["run", str(path)]) == 0
+    # Cube now reads a second fact the file does not list: its SQL refuses.
+    fakes.cube.joins = SECOND_FACT_JOIN
+
+    stale = _triaged_stale(path, tmp_path)
+
+    assert set(stale) == {"c1", "c2"}
+    assert stale["c1"].startswith("its SQL cannot be built today: ")
+    assert "fct_g" in stale["c1"]
+
+
+def test_triage_names_which_side_s_sql_changed(fakes, tmp_path):
+    fakes.bq.views = {"rpt_d": VIEW_D}
+    path = _two(tmp_path)
+    assert cli.main(["run", str(path)]) == 0
+    fakes.cube.exprs = {"regions_region_name": "UPPER(`t`.regions_region_name)"}
+
+    assert _triaged_stale(path, tmp_path)["c1"] == "Cube's SQL changed"
+
+    fakes.bq.views = {"rpt_d": VIEW_E}
+    assert _triaged_stale(path, tmp_path)["c1"] == (
+        "Cube's SQL changed and the dashboard SQL changed"
+    )
+
+
+def test_a_measure_with_a_comparison_never_compared_says_so(fakes, tmp_path, capsys):
+    path = _two(tmp_path)
+
+    assert cli.main(["run", str(path), "--comparison", "c1"]) == 0
+
+    assert "- `avg_daily_attendance`: not compared yet" in capsys.readouterr().out
+    saved = json.loads(_latest_run(tmp_path).read_text())
+    assert saved["measures"][0]["verdict"] == "not compared yet"
+
+
+def test_a_resumed_older_moment_never_replaces_a_newer_result(fakes, tmp_path):
+    path = _two(tmp_path)
+    fakes.bq.fail_once = "__c2_"
+    assert cli.main(["run", str(path)]) == 1  # c1 kept at the first build
+    fakes.bq.build = LATER
+    argv = ["run", str(path), "--comparison", "c1", "--moment", LATER[1].isoformat()]
+    assert cli.main(argv) == 0
+    fakes.bq.build = (START, END)
+
+    # Resumes the first build's folder, which holds c1's older checkpoint.
+    assert cli.main(["run", str(path), "--all", "--moment", END.isoformat()]) == 0
+
+    kept = latest.read_all(
+        latest.folder(tmp_path / "cache" / "v", "kipptaf_marts.fct_f")
+    )
+    assert kept["c1"].moment.end == LATER[1]
+    assert kept["c2"].moment.end == END
+
+
 def test_run_cube_rows_are_ungrouped_and_unlimited(fakes, tmp_path):
     assert cli.main(["run", str(_file(tmp_path))]) == 0
 

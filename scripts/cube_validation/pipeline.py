@@ -10,6 +10,7 @@ inside BigQuery through `compare.reconcile_sql`.
 from __future__ import annotations
 
 import dataclasses
+import functools
 import hashlib
 import json
 import re
@@ -32,7 +33,7 @@ import tableauserverclient as TSC
 from . import answers, checkpoints, compare, coverage, decisions
 from . import discover as finder
 from . import latest, report, saved, tableau, triage
-from .bq import Warehouse
+from .bq import ViewHistoryError, Warehouse
 from .compare import CellDiff, Gap, Group
 from .config import (
     WEEK_END_KEY,
@@ -45,6 +46,7 @@ from .config import (
 from .cube_client import (
     Compiled,
     Cube,
+    CubeRefusal,
     bind,
     drop_limit,
     network_schools,
@@ -936,6 +938,30 @@ def checkpoint_fingerprint(comparison: Comparison, fingerprints: dict[str, str])
 
 NEVER_COMPARED = "never compared"
 ENTRY_CHANGED = "its entry or rebuild check changed"
+SQL_BROKEN = "its SQL cannot be built today"
+
+
+def composed_results(cfg: ViewConfig, run: RunResult) -> dict[str, latest.Latest]:
+    """The results `run` was composed from, as `stale_comparisons` reads them.
+
+    Built from the run itself, not from `latest/`: a run stopped after
+    keeping a newer result, before composing, still holds the older one.
+    A comparison the run lacks is left out, so it reads as never compared.
+    """
+    return {
+        c.id: latest.Latest(
+            moment=run.moment_of(c.id),
+            # The entry is checked first, so today's entry stands in for the
+            # one the run compared whenever this fingerprint is read.
+            fingerprint=checkpoint_fingerprint(c, run.fingerprints[c.id]),
+            entry=run.entries.get(c.id, ""),
+            ran_at="",
+            data={"fingerprints": {c.id: run.fingerprints[c.id]}},
+            fact=run.fact,
+        )
+        for c in cfg.comparisons
+        if c.id in run.fingerprints and c.id not in run.missing
+    }
 
 
 def stale_comparisons(
@@ -954,7 +980,9 @@ def stale_comparisons(
     its entry or rebuild check changed, or either side's SQL did (Cube's
     compiled query, or the dashboard's sheet query and the views it reads).
     The fingerprints mask the moment, so a new build alone, or changed data,
-    is not stale. Compiles and expands only; no query bills.
+    is not stale. A comparison whose SQL cannot be built today is named with
+    why, and the others are still checked. Compiles and expands only; no
+    query bills.
     """
     build = Build(now, now, "now")
     out: dict[str, str] = {}
@@ -968,9 +996,13 @@ def stale_comparisons(
         if latest.entry_fingerprint(c) != held.entry:
             out[c.id] = ENTRY_CHANGED
             continue
-        today = side_fingerprints(
-            cfg, c, wh=wh, cube=cube, build=build, schools=schools
-        )
+        try:
+            today = side_fingerprints(
+                cfg, c, wh=wh, cube=cube, build=build, schools=schools
+            )
+        except (Refusal, CubeRefusal, ViewHistoryError) as exc:
+            out[c.id] = f"{SQL_BROKEN}: {exc}"
+            continue
         if checkpoint_fingerprint(c, today) == held.fingerprint:
             continue
         was = held.data.get("fingerprints", {}).get(c.id, {})
@@ -1745,10 +1777,13 @@ def run(
     A validation is each confirmed comparison's latest result, each at its own
     moment (`latest`). `only` compares those comparisons; `every` compares
     every confirmed one; with neither, only those `stale_comparisons` names,
-    each printed with its why first, and with none it says so and returns None
-    without writing. Each comparison compared replaces its latest result as it
-    finishes; `run.json` in this run's folder is then composed from every
-    confirmed comparison's latest result.
+    each printed with its why first. With none, it says so and returns None
+    without writing, unless the last `run.json` of `cfg.fact` was composed
+    from other results (a run stopped after keeping them): that is composed
+    again, at no cost. Each comparison compared replaces its latest result of
+    `cfg.fact`'s dataset (`latest.folder`) as it finishes; `run.json` in this
+    run's folder is then composed from every confirmed comparison's latest
+    result there.
 
     `cube_host` is printed with `cfg.fact` so the result says what it was
     proven against. Before any query, each confirmed comparison's workbook is
@@ -1834,7 +1869,17 @@ def run(
                 "its differing cells stay open."
             )
 
-    view_dir = cache_root / cfg.view
+    results_dir = latest.folder(cache_root / cfg.view, cfg.fact)
+    compose = functools.partial(
+        _compose,
+        cfg,
+        comparisons,
+        results_dir,
+        cube=cube,
+        cube_host=cube_host,
+        totals=totals,
+        cache_root=cache_root,
+    )
     with wh.budget(max_usd):
         schools = network_schools(wh)
         if only:
@@ -1842,10 +1887,11 @@ def run(
         elif every:
             selected = comparisons
         else:
+            results = latest.read_all(results_dir)
             whys = stale_comparisons(
                 cfg,
                 comparisons,
-                latest.read_all(view_dir),
+                results,
                 wh=wh,
                 cube=cube,
                 schools=schools,
@@ -1854,9 +1900,20 @@ def run(
             for cid, why in whys.items():
                 print(f"Comparison {cid}: {why}.")
             selected = [c for c in comparisons if c.id in whys]
-            if not selected:
+            if not selected and _composed_from(cfg, cache_root, comparisons, results):
                 print(ALL_CURRENT)
                 return None
+            if not selected:
+                # A run stopped after keeping its results, before composing.
+                newest = max((r.moment for r in results.values()), key=lambda m: m.end)
+                folder = report.run_dir(cache_root, cfg.view, newest)
+                print(
+                    "Composing run.json again from the latest results: the last "
+                    "one predates them. Nothing is compared."
+                )
+                return compose(
+                    build=newest, folder=folder, cost=checkpoints.total_spend(folder)
+                )
         folder, build = _run_folder(
             cfg,
             wh,
@@ -1881,15 +1938,67 @@ def run(
                 process=process,
                 clock=clock,
                 schools=schools,
-                view_dir=view_dir,
+                results_dir=results_dir,
                 ticker=ticker,
             )
         finally:
             checkpoints.record_spend(folder, process, wh.spent)
         cost = checkpoints.total_spend(folder)
+    return compose(build=build, folder=folder, cost=cost)
 
-    # Every confirmed comparison's latest result, in config order.
-    results = latest.read_all(view_dir)
+
+def _composed_from(
+    cfg: ViewConfig,
+    cache_root: Path,
+    comparisons: list[Comparison],
+    results: dict[str, latest.Latest],
+) -> bool:
+    """Whether the view's last `run.json` of `cfg.fact` was composed from
+    exactly `results`: every comparison's moment, entry and SQL fingerprints."""
+    saved = [
+        (path.stat().st_mtime, path)
+        for path in (cache_root / cfg.view).glob("*/run.json")
+    ]
+    for _, path in sorted(saved, reverse=True):
+        try:
+            data = json.loads(path.read_text())
+        except (OSError, ValueError):
+            continue
+        if data.get("fact") != cfg.fact:
+            continue
+        return not data.get("missing") and all(
+            c.id in results
+            and (data.get("moments") or {}).get(c.id)
+            == checkpoints._moment_json(results[c.id].moment)
+            and (data.get("entries") or {}).get(c.id) == results[c.id].entry
+            and (data.get("fingerprints") or {}).get(c.id)
+            == results[c.id].data.get("fingerprints", {}).get(c.id)
+            for c in comparisons
+        )
+    return False
+
+
+def _compose(
+    cfg: ViewConfig,
+    comparisons: list[Comparison],
+    results_dir: Path,
+    *,
+    cube: Cube,
+    cube_host: str,
+    totals: list[str],
+    cache_root: Path,
+    build: Build,
+    folder: Path,
+    cost: float,
+) -> RunResult:
+    """Compose, print and save `run.json` in `folder` from every confirmed
+    comparison's latest result, in config order; `build` and `cost` are the
+    folder's. Compiles Cube's measure only; no query bills.
+
+    Raises:
+        Refusal: Two decisions claim one item (`decisions.apply`).
+    """
+    results = latest.read_all(results_dir)
     composed = [c for c in comparisons if c.id in results]
     left_out = [c.id for c in comparisons if c.id not in results]
     sides = _Sides(moved={f: False for f in cfg.also_facts})
@@ -1974,14 +2083,17 @@ def run(
     return result
 
 
+NOT_COMPARED = "not compared yet"
+
+
 def _unvalidated(
     measures: list[MeasureResult], comparisons: list[Comparison], missing: list[str]
 ) -> list[MeasureResult]:
     """`measures` with any measure of a comparison not compared yet read as
-    `differs`: its cells are unknown, so it cannot be validated."""
+    `NOT_COMPARED`: its cells are unknown, so it cannot be validated."""
     short = {c.measure for c in comparisons if c.id in missing}
     return [
-        dataclasses.replace(m, verdict="differs") if m.measure in short else m
+        dataclasses.replace(m, verdict=NOT_COMPARED) if m.measure in short else m
         for m in measures
     ]
 
@@ -1997,7 +2109,7 @@ def _compare_all(
     process: str,
     clock: Callable[[], datetime],
     schools: set[str],
-    view_dir: Path,
+    results_dir: Path,
     ticker: report.Ticker | None = None,
 ) -> None:
     """Compare each of `comparisons` at `build` and keep each one's result as
@@ -2012,7 +2124,8 @@ def _compare_all(
     query. The comparisons are compared one at a time, each checkpointed (with
     the spend so far) as it finishes, so a stop loses at most the one in
     progress. Each result keeps the dimension tables it read that changed
-    during the build (`changed_dims`).
+    during the build (`changed_dims`). A held checkpoint is kept as the
+    latest result only when no later moment's result has replaced it since.
 
     Raises:
         CostCapError: The priced total would pass the run's or the day's cap.
@@ -2069,7 +2182,7 @@ def _compare_all(
 
     def keep(comparison: Comparison, fingerprint: str, one: _Sides) -> None:
         latest.write(
-            view_dir,
+            results_dir,
             comparison.id,
             latest.Latest(
                 moment=build,
@@ -2080,12 +2193,15 @@ def _compare_all(
                     **one.to_json(),
                     "changed_dims": [t for t in dims if t in changed & one.cube_tables],
                 },
+                fact=cfg.fact,
             ),
         )
 
     by_id = {c.id: c for c in comparisons}
+    stored = latest.read_all(results_dir)
     for cid, (fingerprint, held) in slices.items():
-        keep(by_id[cid], fingerprint, held)
+        if cid not in stored or stored[cid].moment.end <= build.end:
+            keep(by_id[cid], fingerprint, held)
     for plan, priced in zip(plans, prices, strict=True):
         comparison = plan.comparison
         one = _execute(cfg, plan, wh=wh, build=build, prices=priced)
@@ -2451,6 +2567,14 @@ def review(
     """
     saved = [latest_run(cfg, cache_root) for cfg in configs]
     runs = [run for run, _ in saved]
+    for run, cfg in zip(runs, configs, strict=True):
+        if run.fact and run.fact != cfg.fact:
+            # stderr, so the warning never lands in the issue body.
+            print(
+                f"warning: {cfg.view}: the latest run read {run.fact}, not "
+                f"{cfg.fact}; this review is of a dev build, not the validation",
+                file=sys.stderr,
+            )
     # Stored proof paths are relative to each validation file's directory.
     bases = [f.parent for f in view_files] if view_files else [None] * len(configs)
     proven = {

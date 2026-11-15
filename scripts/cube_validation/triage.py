@@ -1250,9 +1250,10 @@ def run_triage(
     marked by the cause decisions that decide it (`mark_decided`): it stays in the local
     cache, and its stubs and causes carry real values and exact counts.
 
-    Each confirmed comparison whose latest result is missing or stale at
-    `now` (`pipeline.stale_comparisons`) is printed and written to
-    `triage.json` under `stale`, so `comparisons_waiting` can name it.
+    Each confirmed comparison whose result in the run is missing or stale at
+    `now` (`pipeline.stale_comparisons` over `pipeline.composed_results`), or
+    whose SQL cannot be built today, is printed and written to `triage.json`
+    under `stale`, so `comparisons_waiting` can name it.
 
     Each proof's outcome is kept beside `run.json` as it finishes
     (`progress`), so a stopped triage skips the proofs it finished. With
@@ -1293,10 +1294,12 @@ def run_triage(
     prepared = trace.Prepared()
     with wh.budget(max_usd):
         prepared.schools = network_schools(wh)
+        # Judged from what the run was composed from, which a stopped run
+        # can leave older than `latest/`.
         stale = pipeline.stale_comparisons(
             cfg,
             cfg.comparisons,
-            latest.read_all(cache_root / cfg.view),
+            pipeline.composed_results(cfg, run),
             wh=wh,
             cube=cube,
             schools=prepared.schools,
