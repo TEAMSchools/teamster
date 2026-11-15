@@ -508,7 +508,9 @@ def test_a_table_whose_compiled_sql_does_not_run_is_skipped_and_named(tmp_path):
         trace.item_key(_group(5))
     ]
 
-    assert found.below == ("fact",)
+    # Never tested, so not below it: its rows are not traced.
+    assert found.below == () and not found.none
+    assert found.skipped == {"fact skipped (BadRequest)": 5}
 
 
 def _answer_row(step_id, n):
@@ -999,7 +1001,7 @@ def test_a_child_whose_check_is_too_long_is_skipped_without_a_dry_run(
         wh=Wh(lambda sql: [_answer_row("", 5)]), levels=1, manifest=manifest
     ).run()[trace.item_key(_group(5))]
 
-    assert found.below == ("fact",)
+    assert found.below == () and found.skipped == {"fact skipped (SQL too long)": 5}
     assert max(seen) <= 50_000
 
 
@@ -1335,3 +1337,39 @@ def test_a_bucket_stopped_at_level_0_still_ticks(monkeypatch):
                     ticker=ticks)  # fmt: skip
 
     assert ticks.said == [("sort trace", "mastery cube_only", 0.0)]
+
+
+def test_a_model_whose_read_in_place_check_fails_is_skipped_not_gone_past(tmp_path):
+    class Stale(FakeWarehouse):
+        def estimate(self, sql):
+            if "raw" in sql and "'?'" not in sql and "!" not in sql:
+                raise BadRequest("Unrecognized name: 12345",
+                                 errors=[{"reason": "invalidQuery"}])  # fmt: skip
+            return 0.0
+
+    manifest = _manifest(
+        tmp_path, {"fact": ("select * from `teamster-332318`.`d`.`raw`", [])}
+    )
+
+    found = _canned(
+        wh=Stale(lambda sql: [_answer_row("", 5)]), levels=1, manifest=manifest
+    ).run()[trace.item_key(_group(5))]
+
+    posted = " ".join(found.leads(posted=True))
+    assert "not traced: fact skipped (invalidQuery)" in posted
+    assert "recovered by no step" not in posted and found.below == ()
+    assert "12345" not in posted
+
+
+def test_a_model_past_max_levels_still_reads_below(tmp_path):
+    manifest = _manifest(
+        tmp_path, {"fact": ("select * from `teamster-332318`.`d`.`raw`", [])}
+    )
+
+    found = _canned(
+        wh=FakeWarehouse(lambda sql: [_answer_row("", 5)]), levels=0, manifest=manifest
+    ).run()[trace.item_key(_group(5))]
+
+    posted = " ".join(found.leads(posted=True))
+    assert "recovered by no step (below fact)" in posted
+    assert "not traced" not in posted

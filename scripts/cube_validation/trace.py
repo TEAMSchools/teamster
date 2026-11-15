@@ -564,6 +564,7 @@ class _Runner:
         extra -= len(first[1])
         if base > MAX_QUERY_CHARS:
             note = f"the {self.side.side} SQL alone is too long to run"
+            print(f"Trace {self.label}: {note}")
             self.failures.append(note)
             raise ModelFailed(note, "SQL too long")
         batches: list[list[tuple[str, str]]] = [[]]
@@ -694,9 +695,9 @@ class _Bucket:
         # Each model the trace could not read or go below, and why: a reason
         # code, never BigQuery's message (it can quote values).
         self.blocked: dict[str, str] = {}
-        # Of those, each the trace skipped at its own level (its query or its
-        # screen failed): a row still to trace may be its, so it is named, not
-        # put `below`.
+        # Of those, each the trace left untested (its SQL did not read, run or
+        # fit): a row still to trace may be its, so it is named, not put
+        # `below`. Only a model past MAX_LEVELS or read as built is `below`.
         self.lost: dict[str, str] = {}
         # Whether the latest failed level skipped every frame it ran.
         self.lost_all = False
@@ -817,9 +818,12 @@ class _Bucket:
     # --- where the trace stopped ----------------------------------------------
 
     def _skip(self, name: str, why: str) -> None:
-        """Leave out a model the trace cannot read, keeping its first reason."""
+        """Leave out a model the trace cannot read, keeping its first reason;
+        its rows read as not traced, never as below it."""
         print(f"Trace cannot descend into {name}: {why}")
-        self.blocked.setdefault(name, why)
+        if name not in self.blocked:
+            self.blocked[name] = why
+            self.lost[name] = why
 
     def _ended(self, frames: list[_Frame], why: str) -> None:
         self.ends += [(f, why) for f in frames]
@@ -1127,14 +1131,12 @@ class _Bucket:
             screen = self.side.rows(c.full(self.subtree(c)))
             if len(screen) > MAX_QUERY_CHARS:
                 self._skip(c.name, "SQL too long")
-                self.lost.setdefault(c.name, "SQL too long")
                 continue
             got, why = self._try(
                 [("?", screen)], exclude, f"can {c.name} explain a row", c.level
             )
             if got is None:
                 self._skip(c.name, why)
-                self.lost.setdefault(c.name, why)
             elif any("?" in got[1].get(key, {}) for key in self.out):
                 nxt.append(c)
         return nxt
