@@ -15,7 +15,7 @@ import xml.etree.ElementTree as ET
 from collections import defaultdict
 from dataclasses import dataclass
 
-from . import discover as finder
+from . import find_field as finder
 from .cube_client import _FACT, Cube, CubeError, CubeRefusal, bind
 from .decisions import sql_fingerprint
 from .pipeline import _measure_expression

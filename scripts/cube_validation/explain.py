@@ -39,12 +39,21 @@ from sqlglot import exp
 from sqlglot.errors import SqlglotError
 from sqlglot.tokens import TokenType
 
-from . import compare, coverage, decisions, pipeline, progress, saved, trace, triage
+from . import (
+    coverage,
+    decisions,
+    explain_progress,
+    pipeline,
+    reconcile,
+    saved,
+    sort,
+    trace,
+)
 from .bq import CostCapError, ViewHistoryError, Warehouse
-from .compare import Group
 from .config import Comparison, ViewConfig, id_like, mask_digits, row_population
 from .cube_client import Cube, CubeError, CubeRefusal, network_schools
 from .moment import Build, MomentError, pick_moment
+from .reconcile import Group
 from .report import RunResult, Ticker, mask, shown_counts
 from .timetravel import PROJECT, utc_literal
 from .trace import TIMEOUT_S, TRACED, _failure
@@ -351,7 +360,7 @@ def _identifies(column: str, student: set[str]) -> bool:
 
 def _id_like(column: str, student: set[str]) -> bool:
     """A column a cause may not select: any identifier, not only a person's."""
-    return _identifies(column, student) or column.lower().endswith(triage._ID_SUFFIXES)
+    return _identifies(column, student) or column.lower().endswith(sort._ID_SUFFIXES)
 
 
 _STOP = (exp.Predicate, exp.Connector, exp.Not, exp.Subquery, exp.AggFunc, exp.Exists)
@@ -698,8 +707,8 @@ def unmatched_sql(
         if dims:
             # A row each side files in another cell belongs only to a group
             # with the dashboard's cell (`d:` dims), whatever its own dims.
-            moved = any(c.startswith(compare.DASH_PREFIX) for c, _ in g.dims)
-            tests.append(f"COALESCE({compare._MOVED}, FALSE) = {str(moved).upper()}")
+            moved = any(c.startswith(reconcile.DASH_PREFIX) for c, _ in g.dims)
+            tests.append(f"COALESCE({reconcile._MOVED}, FALSE) = {str(moved).upper()}")
         test = " AND ".join(tests)
         whens.append(f"WHEN {test or 'TRUE'} THEN {pipeline._lit(item_id)}")
     key = f"CASE {' '.join(whens)} END" if whens else "CAST(NULL AS STRING)"
@@ -719,7 +728,7 @@ def unmatched_sql(
 def bucket_rows_sql(comparison: Comparison, bucket: str, source: str) -> str:
     """The bucket's saved rows with every column a proof or item reads.
 
-    `source` holds `compare.reconcile_script`'s saved rows. Returns
+    `source` holds `reconcile.reconcile_script`'s saved rows. Returns
     `unmatched_sql`'s columns but `item_key`, plus, with group-by columns,
     `__moved` and `__d_<column>` per column (the dashboard's cell of a row
     each side files in another cell, which its group names as `d:` dims), and
@@ -731,7 +740,7 @@ def bucket_rows_sql(comparison: Comparison, bucket: str, source: str) -> str:
     """
     if comparison.rows is None:
         raise pipeline.Refusal(f"comparison {comparison.id!r} has no rows to prove")
-    if bucket not in compare.UNMATCHED:
+    if bucket not in reconcile.UNMATCHED:
         raise pipeline.Refusal(f"{bucket!r} is no bucket a run saves")
     side = "d" if bucket == "dashboard_only" else "c"
     held = {"cube_only": "cube", "dashboard_only": "dashboard"}.get(bucket, "both")
@@ -741,7 +750,7 @@ def bucket_rows_sql(comparison: Comparison, bucket: str, source: str) -> str:
         "__row",
         f"'{held}' AS side",
         *(p.cube for p in dims),
-        *([compare._MOVED] if dims else []),
+        *([reconcile._MOVED] if dims else []),
         *(f"__d_{p.cube}" for p in dims),
         *(f"__g{side}{i} AS {p.cube}" for i, p in enumerate(comparison.rows.grain)),
         "__rn",
@@ -757,8 +766,8 @@ def bucket_rows_sql(comparison: Comparison, bucket: str, source: str) -> str:
 
 def _joined_column(dim: str) -> str:
     """The `joined` column a group's dim reads: a `d:` dim is the dashboard's."""
-    if dim.startswith(compare.DASH_PREFIX):
-        return f"__d_{dim[len(compare.DASH_PREFIX) :]}"
+    if dim.startswith(reconcile.DASH_PREFIX):
+        return f"__d_{dim[len(reconcile.DASH_PREFIX) :]}"
     return dim
 
 
@@ -840,7 +849,7 @@ def _with_students(
     places = [placed(lambda d: d)]
     if s.moved:
         # A row in the same cell on both sides has no dashboard cell of its own.
-        moved = f" AND f.{compare._MOVED}" if s.dims else ""
+        moved = f" AND f.{reconcile._MOVED}" if s.dims else ""
         places.append(placed(lambda d: f"__d_{d}", "__dcut", moved))
     cell = "TO_JSON_STRING(STRUCT(" + ", ".join(s.dims) + "))" if s.dims else "'{}'"
     nulls = "CAST(NULL AS STRING) AS item_key, cause, " + ", ".join(
@@ -880,7 +889,7 @@ def cause_students(
     rows: list[dict], proof: Proof, comparison: Comparison
 ) -> list[dict]:
     """The `students` rows of `proof_query`, as triage keeps them: per cause
-    (`triage.cause_key`), cut label and cell (`dims` as [column, value]
+    (`sort.cause_key`), cut label and cell (`dims` as [column, value]
     pairs), `n` distinct students, and the proof's `bucket`. Rows of causes
     the proof does not map are left out (`outcomes` refuses those)."""
     labels = [label for label, _, _ in pipeline.cut_flags(comparison) or []]
@@ -893,7 +902,7 @@ def cause_students(
         cell = json.loads(r["__cell"] or "{}")
         out.append(
             {
-                "cause": triage.cause_key(side, words),
+                "cause": sort.cause_key(side, words),
                 "cut": labels[int(r["__cut"])],
                 "dims": [[d, cell.get(d)] for d in dims],
                 "n": int(r["n_students"]),
@@ -1278,7 +1287,7 @@ def note(items: list[dict], ids: set[str], line: str, name: str) -> None:
 def _bucket_items(run: RunResult, comparison: str, bucket: str):
     return [
         (item.id, g)
-        for item, g in triage._entries(run)
+        for item, g in sort._entries(run)
         if isinstance(g, Group) and g.comparison_id == comparison and g.bucket == bucket
     ]
 
@@ -1303,7 +1312,7 @@ def _covering(
     for d, g in run.applied.quiet:
         if g.comparison_id == comparison:
             groups.append((None, g))
-            closed[triage._open_key(g)] = (d, g)
+            closed[sort._open_key(g)] = (d, g)
     return groups, closed
 
 
@@ -1333,7 +1342,7 @@ def link_cells(
     Returns:
         Per cell-set item id: the differing cells left open, and all of them.
     """
-    entries = triage._entries(run)
+    entries = sort._entries(run)
     by_id = {i["id"]: i for i in items}
     by_cmp = {c.id: c for c in (cfg.comparisons if cfg else [])}
     out = {}
@@ -1375,7 +1384,7 @@ def link_cells(
             for g in inside:
                 gid = ids[id(g)]
                 if gid is None:
-                    said.append([triage._open_key(g), g.bucket, "closed by a decision"])
+                    said.append([sort._open_key(g), g.bucket, "closed by a decision"])
                     continue
                 state = by_id[gid]["suggestion"]
                 said.append([gid, g.bucket, state])
@@ -1391,7 +1400,7 @@ def link_cells(
                 continue
             for g in inside:
                 if (gid := ids[id(g)]) is None:
-                    shut[triage._open_key(g)] = None
+                    shut[sort._open_key(g)] = None
                 else:
                     used[gid] = None
         out[item.id] = (len(left), len(cells))
@@ -1546,7 +1555,7 @@ def run_stored(
     """
     by_id = {c.id: c for c in cfg.comparisons}
     prepared = prepared or trace.Prepared()
-    kept = progress.load(progress_dir) if progress_dir is not None else {}
+    kept = explain_progress.load(progress_dir) if progress_dir is not None else {}
     out: list[Ran] = []
     todo: list[tuple[Ran, Comparison, str, set[str], str]] = []
     reused = 0
@@ -1564,12 +1573,12 @@ def run_stored(
                 continue
             ran = Ran(proof, items)
             out.append(ran)
-            done = progress.key(
+            done = explain_progress.key(
                 proof.fingerprint,
                 comparison.id,
                 proof.bucket,
                 run.fingerprints.get(comparison.id, {}),
-                [triage._open_key(g) for _, g in items],
+                [sort._open_key(g) for _, g in items],
             )
             # A kept outcome holds only while the run's SQL and saved rows do:
             # check both, compile only, before reusing or running anything.
@@ -1625,7 +1634,7 @@ def run_stored(
     if ready or reused:
         print(
             f"Proofs: {len(ready)} to run, ${total:.2f} (dry run); {reused} reused "
-            f"from {progress.FILE}."
+            f"from {explain_progress.FILE}."
         )
     wh.refuse_past_caps(total)
     for ran, comparison, sql, literals, done in ready:
@@ -1644,7 +1653,7 @@ def run_stored(
             )
         else:
             if progress_dir is not None:
-                progress.save(progress_dir, done, _to_progress(ran))
+                explain_progress.save(progress_dir, done, _to_progress(ran))
         if ticker is not None:
             ticker.say("sort explain", name, wh.spent)
     outside = [r for r in out if r.why.endswith(_OUTSIDE)]
@@ -1671,7 +1680,7 @@ def _to_progress(ran: Ran) -> dict:
     found = ran.found or {}
     return {
         "found": {
-            triage._open_key(g): {
+            sort._open_key(g): {
                 "n_rows": found[item_id].n_rows,
                 "counts": dict(found[item_id].counts),
                 "unexplained": found[item_id].unexplained,
@@ -1693,7 +1702,7 @@ def _from_progress(ran: Ran, kept: dict) -> None:
             unexplained=o["unexplained"],
         )
         for item_id, g in ran.items
-        if (o := by_key.get(triage._open_key(g))) is not None
+        if (o := by_key.get(sort._open_key(g))) is not None
     }
     ran.students = kept["students"]
 
@@ -1780,9 +1789,9 @@ def _load_triage(run: RunResult, run_json: Path) -> tuple[Path, dict]:
         raise pipeline.Refusal(
             f"{run.view}: triage.json is unreadable; {again}"
         ) from exc
-    if not isinstance(loaded, dict) or loaded.get("moment") != triage._moment(run):
+    if not isinstance(loaded, dict) or loaded.get("moment") != sort._moment(run):
         raise pipeline.Refusal(f"{run.view}: triage.json is of another moment; {again}")
-    if set(triage.open_keys(run)) - set(loaded.get("open") or []):
+    if set(sort.open_keys(run)) - set(loaded.get("open") or []):
         raise pipeline.Refusal(
             f"{run.view}: the latest run has open items its triage lacks; {again}"
         )
@@ -1800,12 +1809,12 @@ def _mark(run: RunResult, items: list[dict], cfg: ViewConfig) -> None:
                 for line in item.get(key) or []
                 if not line.startswith(("decision ", "decisions "))
             ]
-    triage.mark_decided(run, items, cfg.decisions, note=True)
+    sort.mark_decided(run, items, cfg.decisions, note=True)
 
 
 def _save_triage(path: Path, loaded: dict, items: list[dict]) -> None:
     loaded["items"] = sorted(
-        items, key=lambda i: triage.SUGGESTIONS.index(i["suggestion"])
+        items, key=lambda i: sort.SUGGESTIONS.index(i["suggestion"])
     )
     path.write_text(json.dumps(loaded, indent=1))
 

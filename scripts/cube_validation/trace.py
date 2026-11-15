@@ -19,9 +19,9 @@ row through Cube's (`sqlsteps` finds the steps). At each level:
    whole subtree with every step neutralized can bring the row back.
 
 Every variant runs inside one query that rebuilds the unmatched rows the way
-the run's reconcile did (`compare.trace_sql`), so no row leaves BigQuery; each
+the run's reconcile did (`reconcile.trace_sql`), so no row leaves BigQuery; each
 query returns group columns, a step id and a count. The counts are leads: a
-person proves a cause (`confirm.py`).
+person proves a cause (`explain.py`).
 """
 
 from __future__ import annotations
@@ -39,9 +39,12 @@ import sqlglot
 from google.api_core.exceptions import GoogleAPIError
 from sqlglot.errors import SqlglotError
 
-from . import compare, pipeline
+from . import pipeline, reconcile
 from .bq import JOB_ID, CostCapError, Warehouse
-from .compare import (
+from .config import Comparison, ViewConfig
+from .cube_client import Cube, network_schools
+from .moment import Build, changed_between
+from .reconcile import (
     DUPLICATE,
     MANY,
     NONE,
@@ -50,9 +53,6 @@ from .compare import (
     Group,
     many_ids,
 )
-from .config import Comparison, ViewConfig
-from .cube_client import Cube, network_schools
-from .moment import Build, changed_between
 from .report import MASK_BELOW, SUPPRESSED, RunResult, Ticker, mask, shown_counts
 from .sqlsteps import Query, Step, TableRef
 from .timetravel import PROJECT, repin, strip_comments
@@ -409,7 +409,7 @@ class _Side:
     def query(self, variants, exclude, combine: bool, include=()) -> str:
         if self.comparison.rows is None:
             raise pipeline.Refusal(f"comparison {self.comparison.id!r} has no rows")
-        return compare.trace_sql(
+        return reconcile.trace_sql(
             pipeline.wrap_cube(
                 self.sides.cube_rows_sql,
                 self.cfg.view,

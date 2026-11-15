@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 # trunk-ignore(pyright/reportAttributeAccessIssue): conftest.py registers cube_validation
-from cube_validation import cli, preflight
+from cube_validation import cli, read_sheet
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.builder import Member
@@ -56,7 +56,7 @@ RESHAPE = {
 
 
 def _check(comparison=None, members=MEMBERS):
-    lines, before = preflight.check("v", TWB, "Grid", comparison, members)
+    lines, before = read_sheet.check("v", TWB, "Grid", comparison, members)
     return "\n".join(lines), before
 
 
@@ -103,7 +103,7 @@ def test_a_member_cube_has_but_dims_leaves_out_blocks():
 
 
 def test_table_calcs_list_their_ordering_and_the_reshape_removing_them():
-    facts = preflight.read_sheet(TWB, "Grid")
+    facts = read_sheet.read_sheet(TWB, "Grid")
     assert [c.label for c in facts.table_calcs] == [
         "Difference in Avg. Is Mastery Int (along Week Start Monday)",
         "Difference in Avg. Is Mastery Int (along Rows)",
@@ -126,7 +126,7 @@ def test_table_calcs_list_their_ordering_and_the_reshape_removing_them():
 
 
 def test_filters_name_their_kind_and_who_shares_them():
-    by = {f.caption: f for f in preflight.read_sheet(TWB, "Grid").filters}
+    by = {f.caption: f for f in read_sheet.read_sheet(TWB, "Grid").filters}
 
     assert by["Discipline"].kinds == ("code group",)
     assert by["Discipline"].source == "subject_area"
@@ -143,9 +143,9 @@ def test_filters_name_their_kind_and_who_shares_them():
 
 
 def test_sheet_lines_flag_relative_dates_code_groups_and_shared_filters():
-    facts = preflight.read_sheet(TWB, "Grid")
+    facts = read_sheet.read_sheet(TWB, "Grid")
 
-    text = "\n".join(preflight._sheet_lines("w.twb", "Grid", facts))
+    text = "\n".join(read_sheet._sheet_lines("w.twb", "Grid", facts))
 
     assert (
         "- Discipline: code group; restricting; clear with shelves.clear_filters, "
@@ -188,8 +188,8 @@ def test_restricting_filters_block_until_the_comparison_handles_them():
 
 
 def test_parameters_say_whether_the_comparison_sets_them():
-    facts = preflight.read_sheet(TWB, "Grid")
-    assert facts.parameters == [preflight.Parameter("Parameter 1", "Metric")]
+    facts = read_sheet.read_sheet(TWB, "Grid")
+    assert facts.parameters == [read_sheet.Parameter("Parameter 1", "Metric")]
 
     text, before = _check(_comparison())
     assert "Parameter Metric: not set" in text
@@ -203,7 +203,7 @@ def test_parameters_say_whether_the_comparison_sets_them():
 
 def test_no_parameter_value_prints():
     sheet = "\n".join(
-        preflight._sheet_lines("w.twb", "Grid", preflight.read_sheet(TWB, "Grid"))
+        read_sheet._sheet_lines("w.twb", "Grid", read_sheet.read_sheet(TWB, "Grid"))
     )
     text, _ = _check(_comparison(parameters={"Metric": "Mastery"}))
     lines = text.splitlines()
@@ -229,12 +229,12 @@ def test_measure_found_or_not():
 def test_report_ends_each_comparison_with_before_prove():
     cfg = type("Cfg", (), {"view": "v", "comparisons": [_comparison()]})()
 
-    text = preflight.report(cfg, lambda wb: ("w.twb", TWB), MEMBERS)
+    text = read_sheet.report(cfg, lambda wb: ("w.twb", TWB), MEMBERS)
 
     assert text.startswith("Grid (w.twb)\n")
     assert "\n  grid:\n" in text
     assert "\n    Before prove:\n      - Grade/Subject: no Cube member" in text
-    assert preflight.report(cfg, lambda wb: ("w.twb", TWB), MEMBERS, ["Nope"]) == (
+    assert read_sheet.report(cfg, lambda wb: ("w.twb", TWB), MEMBERS, ["Nope"]) == (
         "Nope: not in w.twb"
     )
 
@@ -247,7 +247,7 @@ def test_preflight_names_a_comparison_whose_cells_cannot_be_covered():
 
     def report(comparison):
         cfg = type("Cfg", (), {"view": "v", "comparisons": [comparison]})()
-        return preflight.report(cfg, lambda wb: ("w.twb", TWB), MEMBERS)
+        return read_sheet.report(cfg, lambda wb: ("w.twb", TWB), MEMBERS)
 
     text = report(_comparison())
     assert "\n    Cells cannot be covered: the comparison has no rows" in text
@@ -347,9 +347,9 @@ def test_preflight_reads_the_dki_grid_offline():
     xml = DDI_TWB.read_text(encoding="utf-8")
     members = [_member(n) for n in ("abbreviation", "module_code", "grade_level")]
 
-    lines, before = preflight.check("v", xml, sheet, comparison, members)
-    facts = preflight.read_sheet(xml, sheet)
-    sheet_text = "\n".join(preflight._sheet_lines("ddi_suite.twb", sheet, facts))
+    lines, before = read_sheet.check("v", xml, sheet, comparison, members)
+    facts = read_sheet.read_sheet(xml, sheet)
+    sheet_text = "\n".join(read_sheet._sheet_lines("ddi_suite.twb", sheet, facts))
 
     for field in ("Grade/Subject", "Week Start Monday"):
         assert any(b.startswith(f"{field}: no Cube member") for b in before), field
@@ -381,11 +381,11 @@ def _with_relative():
 
 def test_a_relative_date_filter_restricts_and_blocks():
     xml = _with_relative()
-    by = {f.caption: f for f in preflight.read_sheet(xml, "Grid").filters}
+    by = {f.caption: f for f in read_sheet.read_sheet(xml, "Grid").filters}
 
     assert by["Week Start Monday"].kinds == ("relative date",)
     assert by["Week Start Monday"].restricting
-    _, before = preflight.check("v", xml, "Grid", _comparison(), MEMBERS)
+    _, before = read_sheet.check("v", xml, "Grid", _comparison(), MEMBERS)
     assert any(b.startswith("Week Start Monday: relative date") for b in before)
 
 
@@ -397,7 +397,7 @@ def test_a_week_end_dashboard_filter_handles_only_the_column_it_names():
         ]
     )
 
-    lines, before = preflight.check("v", xml, "Grid", comparison, MEMBERS)
+    lines, before = read_sheet.check("v", xml, "Grid", comparison, MEMBERS)
 
     # Exclude Future Assessments reads administered_at; the week filter does not.
     assert "- Exclude Future Assessments: dashboard_filters days_from_week_end" in (
@@ -413,7 +413,7 @@ def test_a_probe_handles_only_the_relative_dates_whose_column_it_names():
     )
     xml = _with_relative()
 
-    lines, before = preflight.check(
+    lines, before = read_sheet.check(
         "v", xml, "Grid", _comparison(probe_sql=probe), MEMBERS
     )
 

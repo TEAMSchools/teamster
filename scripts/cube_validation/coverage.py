@@ -9,9 +9,9 @@ no I/O.
 
 from __future__ import annotations
 
-from . import compare, pipeline
-from .compare import Group
+from . import pipeline, reconcile
 from .config import Comparison
+from .reconcile import Group
 
 # Why a cell whose groups carry no rows per cut cannot be placed: a run saved
 # before they were kept. No count is not 0 rows.
@@ -39,8 +39,8 @@ def _dash(g: Group, column: str) -> str | None:
     """The column's value on the dashboard side: its `d:` column when the
     group has them (the 2 sides file its rows in different cells), else its
     own."""
-    if any(c.startswith(compare.DASH_PREFIX) for c, _ in g.dims):
-        return g.value_of(f"{compare.DASH_PREFIX}{column}")
+    if any(c.startswith(reconcile.DASH_PREFIX) for c, _ in g.dims):
+        return g.value_of(f"{reconcile.DASH_PREFIX}{column}")
     return g.value_of(column)
 
 

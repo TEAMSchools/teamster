@@ -10,14 +10,14 @@ from cube_validation import pipeline, report
 from cube_validation.answers import questions_json
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation.compare import CellDiff, Gap, Group
-
-# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.config import ColumnPair, Comparison, Decision, ViewConfig
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.decisions import Applied
 from cube_validation.moment import Build
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+from cube_validation.reconcile import CellDiff, Gap, Group
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.report import (
@@ -993,7 +993,7 @@ def test_review_issue_lists_each_comparison_s_moment():
 # --- still with the analyst --------------------------------------------------
 
 # trunk-ignore(pyright/reportAttributeAccessIssue): conftest.py registers cube_validation
-from cube_validation import triage  # noqa: E402
+from cube_validation import sort  # noqa: E402
 
 
 def _left_in_investigate(run, evidence):
@@ -1010,14 +1010,14 @@ def _left_in_investigate(run, evidence):
                 "cause": None,
                 "proof": None,
             }
-            for item in triage.open_items(run)
+            for item in sort.open_items(run)
             if item.kind == "group"
         ]
     }
 
 
 def _still(run, loaded, waiting=None):
-    return report.still_with_analyst(triage.unsettled(run, loaded), waiting or {})
+    return report.still_with_analyst(sort.unsettled(run, loaded), waiting or {})
 
 
 def test_review_posts_ready_questions_and_lists_unsettled_items():
@@ -1067,7 +1067,7 @@ def test_unsettled_cells_and_reasons_are_posted_without_their_detail():
                 "suggestion": "investigate",
                 "evidence": ["no description or ai_context answers it"],
             }
-            for item in triage.open_items(run)
+            for item in sort.open_items(run)
         ]
     }
     waiting = {

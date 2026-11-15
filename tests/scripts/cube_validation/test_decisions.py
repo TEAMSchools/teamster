@@ -1,9 +1,9 @@
 import pytest
-
-# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation.compare import CellDiff, Gap, Group
 from cube_validation.config import Decision
 from cube_validation.decisions import apply, sql_fingerprint
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+from cube_validation.reconcile import CellDiff, Gap, Group
 
 FP = {"cube": "c1", "dashboard": "d1"}
 

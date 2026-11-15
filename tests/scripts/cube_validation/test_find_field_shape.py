@@ -1,7 +1,7 @@
 from pathlib import Path
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation.discover import (
+from cube_validation.find_field import (
     Calc,
     aggregated_fields,
     bins,

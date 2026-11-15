@@ -11,7 +11,7 @@ import hashlib
 import re
 from typing import TYPE_CHECKING
 
-from .compare import UNMATCHED
+from .reconcile import UNMATCHED
 from .report import run_stamp
 from .timetravel import PROJECT
 

@@ -22,9 +22,6 @@ from cube_validation.answers import (
 )
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation.compare import CellDiff, Group
-
-# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.config import (
     ColumnPair,
     Comparison,
@@ -38,6 +35,9 @@ from cube_validation.decisions import Applied, apply
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.moment import Build
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+from cube_validation.reconcile import CellDiff, Group
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.report import RunResult, render_review_issue
@@ -169,7 +169,7 @@ def test_a_cause_s_students_in_a_cell_are_only_what_its_groups_prove():
         items = [
             {"key": it.key, "kind": "group",
              "cause": [{"side": "cube", "label": c} for c in causes]}
-            for it in triage_mod.open_items(run)
+            for it in sort_mod.open_items(run)
         ]  # fmt: skip
         ((_, held),) = cell_causes(run, _cfg(rows=FLOOR_ROWS), "enrollment", items)
         return held
@@ -781,7 +781,7 @@ def test_approved_decisions_refuse_a_reason_a_note_could_not_carry():
 # --- cause decisions (T17) ---------------------------------------------------
 
 # trunk-ignore(pyright/reportAttributeAccessIssue): conftest.py registers cube_validation
-from cube_validation import triage as triage_mod  # noqa: E402
+from cube_validation import sort as sort_mod  # noqa: E402
 
 NO_SECTION = "score has no section on the anchor date"
 LATE = "score dated after week 20250701"
@@ -899,18 +899,18 @@ def test_a_split_group_is_decided_only_once_every_cause_is():
     group = Group("enrollment", (("region", "Newark"),), "dashboard_only", 12, 12)
     run.applied = apply([], [group], CAUSE_FPS)
     run.fingerprints = CAUSE_FPS
-    (it,) = triage_mod.open_items(run)
+    (it,) = sort_mod.open_items(run)
     mixed = {**items[0], "id": it.id, "key": it.key}
 
     only_d2 = [Decision(**d) for d in approved_decisions(
         [entries[2] | {"item": "mixed"}], {"items": items}, CAUSE_FPS)]  # fmt: skip
-    triage_mod.mark_decided(run, [mixed], only_d2)
+    sort_mod.mark_decided(run, [mixed], only_d2)
     assert mixed["decided"] is False
 
     both = [
         Decision(**d) for d in approved_decisions(entries, {"items": items}, CAUSE_FPS)
     ]
-    triage_mod.mark_decided(run, [mixed], both)
+    sort_mod.mark_decided(run, [mixed], both)
     assert mixed["decided"] is True
 
 
@@ -964,12 +964,10 @@ def _review(groups, items, decisions, runs_extra=()):
     run = _run([])
     run.applied = apply(decisions, groups, CAUSE_FPS)
     run.fingerprints = CAUSE_FPS
-    triage_mod.mark_decided(run, items, decisions)
+    sort_mod.mark_decided(run, items, decisions)
     loaded = {"view": "enrollment", "items": items}
     causes = {
-        "enrollment": triage_mod.cause_asks(
-            run, loaded, decisions, {"enrollment": LEAD}
-        )
+        "enrollment": sort_mod.cause_asks(run, loaded, decisions, {"enrollment": LEAD})
     }
     questions = questions_json(
         [run], [_cfg()], DEFS, {"enrollment": loaded}, START, causes
@@ -986,7 +984,7 @@ def _ddi():
     ]  # fmt: skip
     run = _run([])
     run.applied = apply([], groups, CAUSE_FPS)
-    opened = triage_mod.open_items(run)
+    opened = sort_mod.open_items(run)
     items = [
         _cause_item(it.id, _cause_entry(NO_SECTION if g.value_of("grade_level") == "7"
                                         else LATE, n_rows=30), key=it.key)
@@ -1040,9 +1038,9 @@ def test_a_long_body_moves_the_reproduce_blocks_to_comments(monkeypatch):
     run = _run([])
     run.applied = apply(decisions, groups, CAUSE_FPS)
     run.fingerprints = CAUSE_FPS
-    triage_mod.mark_decided(run, items, decisions)
+    sort_mod.mark_decided(run, items, decisions)
     loaded = {"view": "enrollment", "items": items}
-    causes = {"enrollment": triage_mod.cause_asks(run, loaded, decisions)}
+    causes = {"enrollment": sort_mod.cause_asks(run, loaded, decisions)}
     questions = questions_json(
         [run], [_cfg()], DEFS, {"enrollment": loaded}, START, causes
     )
@@ -1085,10 +1083,10 @@ def test_other_calls_show_once_each_as_also_decided_never_as_questions():
     run = _run([])
     run.applied = apply(decisions, groups, CAUSE_FPS)
     run.fingerprints = CAUSE_FPS
-    triage_mod.mark_decided(run, items, decisions)
+    sort_mod.mark_decided(run, items, decisions)
     loaded = {"view": "enrollment", "items": items}
-    causes = {"enrollment": triage_mod.cause_asks(run, loaded, decisions)}
-    decided = {"enrollment": triage_mod.cause_asks(run, loaded, decisions, owner=False)}
+    causes = {"enrollment": sort_mod.cause_asks(run, loaded, decisions)}
+    decided = {"enrollment": sort_mod.cause_asks(run, loaded, decisions, owner=False)}
     questions = questions_json(
         [run], [_cfg()], DEFS, {"enrollment": loaded}, START, causes
     )
@@ -1135,7 +1133,7 @@ def test_pinned_sql_too_long_to_post_is_left_out_before_anything_else(monkeypatc
 def test_recorded_cause_students_are_used_as_counted():
     run = _floor_run([_floor_group("cube_only", 12)])
     items = [{"key": it.key, "kind": "group", "cause": [{"side": "cube", "label": "C1"}]}
-             for it in triage_mod.open_items(run)]  # fmt: skip
+             for it in sort_mod.open_items(run)]  # fmt: skip
     counted = [{"cause": "cube: C1", "cut": CUT, "dims": DIMS, "n": 14}]
 
     ((_, held),) = cell_causes(run, _cfg(rows=FLOOR_ROWS), "enrollment", items, counted)
@@ -1157,7 +1155,7 @@ def test_one_cause_on_several_comparisons_is_one_question():
     items = [
         {**_cause_item(it.id, _cause_entry(NO_SECTION, n_rows=30), key=it.key),
          "comparison": it.comparison, "stub": {"comparison": it.comparison}}
-        for it in triage_mod.open_items(run)
+        for it in sort_mod.open_items(run)
     ]  # fmt: skip
     decisions = [
         Decision(**d)
@@ -1165,9 +1163,9 @@ def test_one_cause_on_several_comparisons_is_one_question():
             [_ok("a", items[0]["id"]), _ok("b", items[1]["id"])], {"items": items}, fps
         )
     ]
-    triage_mod.mark_decided(run, items, decisions)
+    sort_mod.mark_decided(run, items, decisions)
     loaded = {"view": "enrollment", "items": items}
-    causes = {"enrollment": triage_mod.cause_asks(run, loaded, decisions)}
+    causes = {"enrollment": sort_mod.cause_asks(run, loaded, decisions)}
 
     (question,) = questions_json(
         [run], [_cfg()], DEFS, {"enrollment": loaded}, START, causes
@@ -1190,7 +1188,7 @@ def test_a_split_group_shows_only_each_causes_own_rows():
     ]
     run = _run([])
     run.applied = apply([], groups, CAUSE_FPS)
-    newark, camden = triage_mod.open_items(run)
+    newark, camden = sort_mod.open_items(run)
     items = [
         # Newark's 30 rows split 27 and 3 across the 2 causes.
         _cause_item(newark.id, _cause_entry(NO_SECTION, n_rows=27),
@@ -1219,7 +1217,7 @@ def test_a_split_group_shows_only_each_causes_own_rows():
 
 from dataclasses import replace as _replace  # noqa: E402
 
-from cube_validation import confirm as confirm_mod  # noqa: E402
+from cube_validation import explain as explain_mod  # noqa: E402
 from cube_validation import pipeline as pipeline_mod  # noqa: E402
 from cube_validation.answers import (  # noqa: E402
     ProofSource,
@@ -1260,9 +1258,9 @@ def _ask(proofs):
 def _stored_proof(tmp_path, reproduce):
     directory = tmp_path / "proofs" / "enrollment"
     directory.mkdir(parents=True)
-    path = confirm_mod.proof_path(directory, "enrollment", "cube_only")
+    path = explain_mod.proof_path(directory, "enrollment", "cube_only")
     path.write_text(
-        confirm_mod.compose({"C1": ("dashboard", "drops WPP")}, PROOF_SQL, reproduce)
+        explain_mod.compose({"C1": ("dashboard", "drops WPP")}, PROOF_SQL, reproduce)
     )
     return "proofs/enrollment/enrollment__cube_only.sql"
 

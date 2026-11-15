@@ -283,7 +283,7 @@ class Warehouse:
 
         The job is capped and billed as a whole, as `rows` caps and bills one
         query. Used to save a comparison's unmatched rows and count them in the
-        same job (`compare.reconcile_script`).
+        same job (`reconcile.reconcile_script`).
         """
         return self.rows(";\n".join(statements), timeout_s)
 

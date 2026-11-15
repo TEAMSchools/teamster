@@ -22,7 +22,7 @@ from .moment import Build
 
 STATE = "run-state.json"
 DIR = "checkpoints"
-# A triage's finished proofs (`progress.FILE`); cleared with the run it read.
+# A triage's finished proofs (`explain_progress.FILE`); cleared with the run it read.
 TRIAGE_PROGRESS = "triage-progress.json"
 
 

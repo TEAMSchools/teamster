@@ -18,10 +18,10 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 
-from .compare import Gap, Group
 from .config import SEPARATED_DIGITS, Decision
 from .decisions import Applied
 from .moment import Build
+from .reconcile import Gap, Group
 
 CACHE_ROOT = Path.home() / ".cache" / "cube-validation"
 MASK_BELOW = 10
@@ -609,7 +609,7 @@ def _group_part(
 class CauseAsk:
     """One comparison's part of an owner question on a cause: the decision,
     the groups it decides in the latest triage, the rows the proof attributes
-    to it in them, and the comparison's model-doc lead (`triage.doc_leads`)."""
+    to it in them, and the comparison's model-doc lead (`sort.doc_leads`)."""
 
     decision: Decision
     groups: list[Group]
@@ -739,7 +739,7 @@ def still_with_analyst(
     kind, masked row or cell count, and the trace's lead (its steps' scopes
     and counts, `_posted_lead`) or `no lead yet`.
     Then one line per comparison in `waiting` (per view, id to why: missing,
-    stale or skipped, `triage.comparisons_waiting`). No stub value and no SQL.
+    stale or skipped, `sort.comparisons_waiting`). No stub value and no SQL.
     """
     out = []
     for u in items:
@@ -773,7 +773,7 @@ def _questions(
 
     One question per reason and task, across decision kinds and files: each
     kind and view adds a part to its bullet, and the reason prints once. A
-    cause in `causes` (per view, `triage.cause_asks`) is its own question,
+    cause in `causes` (per view, `sort.cause_asks`) is its own question,
     whatever its reason: one per side, words and task, never one per school
     or comparison, with a part per comparison it covers.
 
@@ -871,7 +871,7 @@ def also_decided(
 
     Every call but `domain_owner`, masked like the questions: what it covers
     (a cause once across its comparisons, else the question's part), the call,
-    the reason and the task. `decided` is per view, `triage.cause_asks` for
+    the reason and the task. `decided` is per view, `sort.cause_asks` for
     those calls. Never part of the questions JSON, so `record-answers` cannot
     take one for an answer.
     """
@@ -1135,13 +1135,13 @@ def render_review_issue(
         questions: `answers.questions_json` for the same runs. When given, each
             question's hand checks follow the bullets, and the body ends with
             the list as a fenced JSON block for the owner's Claude session.
-        causes: Per view, the owner's cause questions (`triage.cause_asks`).
+        causes: Per view, the owner's cause questions (`sort.cause_asks`).
         comments: Given, and the body would pass `BODY_WARN_CHARS` with
             every cause question's Reproduce block, the blocks move out of
             the body into this list instead, as follow-up comments each under
             the cap, in question order; the body says they follow.
         decided: Per view, the cause decisions with any other call
-            (`triage.cause_asks` with `owner=False`), for `also_decided`.
+            (`sort.cause_asks` with `owner=False`), for `also_decided`.
         json_link: Where the questions JSON is committed (`posted_json` of
             `questions`); the body links it instead of carrying the block.
         still: What is not settled yet (`still_with_analyst`), listed after

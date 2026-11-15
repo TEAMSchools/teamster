@@ -2,7 +2,8 @@ import re
 from datetime import date
 
 import pytest
-from cube_validation.compare import (
+from cube_validation.config import ColumnPair, Comparison, RowSpec
+from cube_validation.reconcile import (
     Group,
     _label,
     cell_verdict,
@@ -14,7 +15,6 @@ from cube_validation.compare import (
     trace_sql,
     unmatched_rows_sql,
 )
-from cube_validation.config import ColumnPair, Comparison, RowSpec
 
 ROWS = RowSpec(
     grain=[

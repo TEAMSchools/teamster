@@ -32,14 +32,14 @@ import yaml
 from . import (
     answers,
     builder,
-    confirm,
     describe,
+    explain,
     pipeline,
-    preflight,
+    read_sheet,
     report,
+    sort,
     tableau,
     trace,
-    triage,
 )
 from .bq import CostCapError, ViewHistoryError, Warehouse
 from .config import (
@@ -320,7 +320,7 @@ def _parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--bucket",
         required=True,
-        choices=confirm.PROVABLE,
+        choices=explain.PROVABLE,
         help="the unmatched rows it classifies",
     )
     p.add_argument(
@@ -478,7 +478,7 @@ def _dispatch(args: argparse.Namespace) -> int:
         return 0
 
     if args.command == "triage":
-        triage.run_triage(
+        sort.run_triage(
             cfg,
             wh=_warehouse(args),
             cube=_cube(args),
@@ -487,14 +487,14 @@ def _dispatch(args: argparse.Namespace) -> int:
             trace_rows=not args.no_trace,
             manifest=args.manifest,
             trace_max_minutes=args.trace_max_minutes,
-            proofs=None if args.no_proofs else confirm.proofs_dir(args.view, cfg.view),
+            proofs=None if args.no_proofs else explain.proofs_dir(args.view, cfg.view),
             comparisons=args.comparison,
             now=utcnow(),
         )
         return 0
 
     if args.command == "triage-confirm":
-        return confirm.run_confirm(
+        return explain.run_confirm(
             cfg,
             args.view,
             wh=_warehouse(args),
@@ -654,14 +654,14 @@ def _add_decisions(cfg: ViewConfig, path: Path, approved_path: Path) -> int:
     fingerprints from that run; a cause already decided keeps its decision
     (see `answers.approved_decisions`). Items still in `investigate` wait;
     the batch may not decide one. Refuses while that triage is stale
-    (`triage.proven_triage`), on an approved item still in `investigate`, or
+    (`sort.proven_triage`), on an approved item still in `investigate`, or
     when a cause
     decision would disagree with a `group` decision on one group. The whole
     batch is written or none of it.
     """
     approved = _read_json(approved_path, "approved")
     run, run_json = pipeline.latest_run(cfg, cache_root())
-    saved = triage.proven_triage(run, run_json, cfg.decisions, path.parent)
+    saved = sort.proven_triage(run, run_json, cfg.decisions, path.parent)
 
     decisions = answers.approved_decisions(
         approved, saved, run.fingerprints, existing=cfg.decisions
@@ -670,7 +670,7 @@ def _add_decisions(cfg: ViewConfig, path: Path, approved_path: Path) -> int:
 
     def agree(rehearsed: ViewConfig) -> None:
         items = copy.deepcopy(saved.get("items", []))
-        triage.mark_decided(run, items, rehearsed.decisions, refuse=True)
+        sort.mark_decided(run, items, rehearsed.decisions, refuse=True)
 
     _check_claims(writes, agree)
     _write_all(writes)
@@ -794,7 +794,7 @@ def _preflight(cfg: ViewConfig, twb: Path | None, sheets: list[str]) -> int:
         raise pipeline.Refusal(f"{twb}: no such workbook file")
     members = _saved_members()
     text = twb.read_text(encoding="utf-8")
-    print(preflight.report(cfg, lambda _: (twb.name, text), members, sheets))
+    print(read_sheet.report(cfg, lambda _: (twb.name, text), members, sheets))
     return 0
 
 

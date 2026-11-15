@@ -18,7 +18,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from . import coverage
-from . import discover as finder
+from . import find_field as finder
 from . import tableau
 from .builder import Member
 from .config import Comparison, ViewConfig

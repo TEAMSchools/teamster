@@ -2,8 +2,8 @@ import json
 from dataclasses import replace
 
 from cube_validation import pipeline
-from cube_validation.compare import Group
 from cube_validation.config import Comparison
+from cube_validation.reconcile import Group
 
 
 def _slice() -> pipeline._Sides:

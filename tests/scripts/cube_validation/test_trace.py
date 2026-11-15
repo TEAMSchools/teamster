@@ -13,9 +13,6 @@ from cube_validation import pipeline, trace
 from cube_validation.bq import JOB_ID, Warehouse
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation.compare import Group
-
-# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.config import ColumnPair, Comparison, RowSpec, ViewConfig
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
@@ -23,6 +20,9 @@ from cube_validation.decisions import Applied
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.moment import Build
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+from cube_validation.reconcile import Group
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.report import RunResult
@@ -518,7 +518,7 @@ def _answer_row(step_id, n):
 
 
 @pytest.mark.parametrize(
-    "first", ["trace", "sqlsteps", "triage", "confirm", "pipeline", "cli"]
+    "first", ["trace", "sqlsteps", "sort", "explain", "pipeline", "cli"]
 )
 def test_each_module_imports_first(first):
     scripts = Path(trace.__file__).resolve().parents[1]

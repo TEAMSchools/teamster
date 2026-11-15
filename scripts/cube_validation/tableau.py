@@ -36,8 +36,8 @@ from typing import Any
 import tableauserverclient as TSC
 from tableauserverclient.server.endpoint.exceptions import FailedSignInError
 
-from .compare import cell_verdict
 from .config import Comparison
+from .reconcile import cell_verdict
 
 TEMP_PROJECT = "TEMP-CB"
 COPY_PREFIX = "ZZ-VALIDATE "

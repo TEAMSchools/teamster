@@ -124,7 +124,7 @@ def cell_causes(
 
     A cell's rows lie in the open groups with a row in it (`coverage.placed`,
     as `triage` links cells; none when the cell cannot be placed); each group
-    carries its triage item's causes (`triage.cause_key`), and a group with
+    carries its triage item's causes (`sort.cause_key`), and a group with
     none carries `""`.
 
     A cause's students in a cell are not recorded: a group's `n_students`
@@ -138,8 +138,8 @@ def cell_causes(
     Returns:
         `[(cell, {cause: students})]` in `run.diff_cells` order.
     """
-    from . import compare, coverage, pipeline
-    from . import triage as triage_mod
+    from . import coverage, pipeline, reconcile
+    from . import sort as sort_mod
 
     spec = next((c for c in cfg.comparisons if c.id == comparison), None)
 
@@ -148,7 +148,7 @@ def cell_causes(
         mine = {
             k: (None if k in g.nulls else v)
             for k, v in g.dims
-            if not k.startswith(compare.DASH_PREFIX) and k != "dashboard_filter"
+            if not k.startswith(reconcile.DASH_PREFIX) and k != "dashboard_filter"
         }
         for column, value in cell["dims"]:
             if column not in mine or pipeline._key(mine[column]) != pipeline._key(
@@ -163,7 +163,7 @@ def cell_causes(
 
     by_key = {
         item.get("key"): frozenset(
-            triage_mod.cause_key(c.get("side", ""), c.get("label") or "")
+            sort_mod.cause_key(c.get("side", ""), c.get("label") or "")
             for c in item.get("cause") or []
         )
         or frozenset({""})
@@ -172,7 +172,7 @@ def cell_causes(
     }
     groups = [
         (key, g)
-        for key, g in triage_mod._groups_by_key(run).items()
+        for key, g in sort_mod._groups_by_key(run).items()
         if g.comparison_id == comparison
     ]
     counted: dict[tuple, dict[str, int]] = {}
@@ -221,7 +221,7 @@ def example_cell(
     Args:
         run: The saved run.
         comparison: The comparison id.
-        cause: A cause question's cause (`triage.cause_key`): the cell must
+        cause: A cause question's cause (`sort.cause_key`): the cell must
             hold `MASK_BELOW` or more of its students (`cell_causes`), so the
             question's words cannot single one out; the most wins.
         cells: `cell_causes` for the comparison; without it, `cause` is
@@ -490,7 +490,7 @@ def reproduce_json(
         at the run's moment until `expires`, the `after` commands once that
         has passed, and the proof file's `path` and branch `url`.
     """
-    from . import confirm
+    from . import explain
 
     cid = ask.decision.comparison
     check = hand_check(run, cfg, cid, now, _ask_cause(ask), cells)
@@ -506,8 +506,8 @@ def reproduce_json(
     for path, bucket in ask.proofs:
         stored = (source.base / path) if source else None
         try:
-            proof = confirm.read_proof(stored) if stored else None
-        except (OSError, confirm.pipeline.Refusal):
+            proof = explain.read_proof(stored) if stored else None
+        except (OSError, explain.pipeline.Refusal):
             proof = None
         proofs.append(
             {
@@ -536,7 +536,7 @@ def _checked_reproduce(cfg: ViewConfig, proof, bucket: str) -> str | None:
     proof's fingerprint ignores: an edit after confirm would post unchecked.
     A query that fails the check is left out, as if the proof had none.
     """
-    from . import confirm
+    from . import explain
 
     sql = proof.reproduce.get(bucket) if proof else None
     comparison = next(
@@ -545,20 +545,20 @@ def _checked_reproduce(cfg: ViewConfig, proof, bucket: str) -> str | None:
     if sql is None or comparison is None:
         return None
     try:
-        confirm.check_reproduce(
-            sql, confirm.grain_names(comparison), confirm.identifying(comparison)
+        explain.check_reproduce(
+            sql, explain.grain_names(comparison), explain.identifying(comparison)
         )
-    except confirm.pipeline.Refusal:
+    except explain.pipeline.Refusal:
         return None
     return sql
 
 
 def _ask_cause(ask: CauseAsk) -> str:
     """A cause question's cause, as `cell_causes` names it."""
-    from . import triage as triage_mod
+    from . import sort as sort_mod
 
     cause = ask.decision.cause
-    return triage_mod.cause_key(cause.get("side", ""), cause.get("label") or "")
+    return sort_mod.cause_key(cause.get("side", ""), cause.get("label") or "")
 
 
 def _rank(check: HandCheck) -> tuple:
@@ -654,7 +654,7 @@ def questions_json(
             evidence. Items still in `investigate` are left out, so
             `record-answers` never reads one as an answer.
         now: The current time, to say whether the pinned SQL still runs.
-        causes: Per view, the owner's cause questions (`triage.cause_asks`).
+        causes: Per view, the owner's cause questions (`sort.cause_asks`).
         sources: Per view, where its stored proofs live, for a cause
             question's `reproduce` block.
 
@@ -1053,7 +1053,7 @@ _STUB_KEYS = ("comparison", "group", "formula", "missing_cut", "missing_filter")
 
 
 def _is_cause_item(item: dict) -> bool:
-    """A proven row group, which cause decisions decide (`triage.decidable`)."""
+    """A proven row group, which cause decisions decide (`sort.decidable`)."""
     proof = item.get("proof") or {}
     return (
         item.get("kind") == "group"
@@ -1130,7 +1130,7 @@ def approved_decisions(
         approved: `[{"id", "call", "reason", "task", "item", "cause"}]`;
             `item` is a triage item id, `task` may be empty, and `cause` (the
             cause's words) is needed only on an item with several causes.
-        triage: The view's `triage.json`, marked by `triage.mark_decided`.
+        triage: The view's `triage.json`, marked by `sort.mark_decided`.
         fingerprints: The latest run's fingerprints per comparison id.
         existing: The file's decisions.
 

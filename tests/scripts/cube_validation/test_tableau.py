@@ -11,7 +11,7 @@ import pytest
 from cube_validation.config import ColumnPair, Comparison
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation.discover import sheet_shape
+from cube_validation.find_field import sheet_shape
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.tableau import (

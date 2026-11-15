@@ -4,10 +4,10 @@ import dataclasses
 from cube_validation import coverage
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation.compare import Group, groups_from, reconcile_sql
+from cube_validation.config import ColumnPair, Comparison, RowSpec
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation.config import ColumnPair, Comparison, RowSpec
+from cube_validation.reconcile import Group, groups_from, reconcile_sql
 
 GRADE_5, GRADE_6 = '{"Grade": "5"}', '{"Grade": "6"}'
 SPEC = Comparison(

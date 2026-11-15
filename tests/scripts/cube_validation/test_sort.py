@@ -1,16 +1,16 @@
 from datetime import datetime, timezone
 from types import SimpleNamespace
 
-from cube_validation import confirm, pipeline, trace
-
-# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation.compare import CellDiff, Gap, Group
+from cube_validation import explain, pipeline, trace
 from cube_validation.config import ColumnPair, Comparison, Proof, ViewConfig
 from cube_validation.cube_client import MemberDoc
 from cube_validation.decisions import Applied
 from cube_validation.moment import Build
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+from cube_validation.reconcile import CellDiff, Gap, Group
 from cube_validation.report import RunResult
-from cube_validation.triage import (
+from cube_validation.sort import (
     BATCH_CAP,
     NO_GRAIN,
     NO_ROWS,
@@ -485,7 +485,7 @@ def test_a_formula_difference_is_its_own_item():
 def test_a_formula_difference_is_in_cause_on_the_run_s_own_evidence():
     import hashlib
 
-    from cube_validation.triage import PROOF_KINDS
+    from cube_validation.sort import PROOF_KINDS
 
     found = {s.item.id: s for s in suggest(_cfg(), _formula_run(), {}, traces={})}
 
@@ -702,7 +702,7 @@ def test_pii_members_reads_contains_pii_from_meta():
 
 
 def test_open_key_changes_when_a_group_or_cell_set_changes_its_counts():
-    from cube_validation.triage import _open_key
+    from cube_validation.sort import _open_key
 
     dims = (("grade_level", "9"),)
     base = Group("enrollment", dims, "cube_only", 40, 38)
@@ -730,7 +730,7 @@ import pytest  # noqa: E402
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.config import Decision  # noqa: E402
-from cube_validation.triage import (  # noqa: E402
+from cube_validation.sort import (  # noqa: E402
     _moment,
     cause_asks,
     mark_decided,
@@ -760,7 +760,7 @@ def _proof_file(tmp_path, text="SELECT 1"):
     path = tmp_path / "enrollment__dashboard_only.sql"
     path.write_text(text)
     return {"kind": "query", "path": str(path),
-            "fingerprint": confirm.file_fingerprint(path)}  # fmt: skip
+            "fingerprint": explain.file_fingerprint(path)}  # fmt: skip
 
 
 def _item(it, proof, *causes):
@@ -958,7 +958,7 @@ def test_the_gate_takes_a_reconcile_or_workbook_proof_and_no_bare_cause(tmp_path
 
 # --- T20: model docs as leads ------------------------------------------------
 
-from cube_validation.triage import (  # noqa: E402
+from cube_validation.sort import (  # noqa: E402
     _as_json,
     _from_json,
     doc_leads,
@@ -1132,7 +1132,7 @@ from collections import Counter  # noqa: E402
 from pathlib import Path  # noqa: E402
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation.triage import (  # noqa: E402
+from cube_validation.sort import (  # noqa: E402
     _entries,
     _open_key,
     check_closed,
@@ -1143,12 +1143,12 @@ from cube_validation.triage import (  # noqa: E402
 
 def _ran_over(run, cause="C1"):
     """A stored proof's run over `with_closed(run)` explaining every group."""
-    proof = confirm.Proof(Path("v") / "proofs" / "v" / "enrollment__dashboard_only.sql",
+    proof = explain.Proof(Path("v") / "proofs" / "v" / "enrollment__dashboard_only.sql",
                           "enrollment", "dashboard_only",
                           {cause: ("cube", NO_SECTION)}, "SELECT 1")  # fmt: skip
     items = [(i.id, g) for i, g in _entries(with_closed(run))]
-    found = {i: confirm.Outcome(g.n_rows, Counter({cause: g.n_rows})) for i, g in items}
-    return proof, confirm.Ran(proof, items, found)
+    found = {i: explain.Outcome(g.n_rows, Counter({cause: g.n_rows})) for i, g in items}
+    return proof, explain.Ran(proof, items, found)
 
 
 def test_closed_groups_keep_open_ids_and_classify_the_closed_one(tmp_path):
@@ -1226,7 +1226,7 @@ def test_check_closed_compares_a_cause_with_the_group_decision_closing_it(
 from dataclasses import replace  # noqa: E402
 
 from cube_validation import latest  # noqa: E402
-from cube_validation.triage import comparisons_waiting  # noqa: E402
+from cube_validation.sort import comparisons_waiting  # noqa: E402
 
 
 def test_a_recomposed_run_needs_a_new_triage(tmp_path):
@@ -1430,16 +1430,16 @@ def test_another_comparisons_column_never_makes_a_gap_for_cube():
 
 
 def test_a_filter_gap_looks_up_its_candidates_once(monkeypatch):
-    from cube_validation import triage
+    from cube_validation import sort
 
     calls = []
-    real = triage._candidates
+    real = sort._candidates
 
     def counted(caption, docs):
         calls.append(caption)
         return real(caption, docs)
 
-    monkeypatch.setattr(triage, "_candidates", counted)
+    monkeypatch.setattr(sort, "_candidates", counted)
     cfg = _cfg(restricting_filters=["Region"])
     docs = {"v_region": _doc("v_region", title="Region")}
 

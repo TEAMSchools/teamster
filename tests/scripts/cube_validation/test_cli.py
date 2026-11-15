@@ -17,13 +17,13 @@ import tableauserverclient as TSC
 from cube_validation import (
     checkpoints,
     cli,
-    confirm,
+    explain,
     latest,
     pipeline,
     report,
+    sort,
     tableau,
     trace,
-    triage,
 )
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
@@ -1046,7 +1046,7 @@ def test_triage_gives_the_proofs_and_the_trace_one_ticker(fakes, tmp_path, monke
         return trace.TraceResult({})
 
     monkeypatch.setattr(trace, "check_ready", lambda *a, **k: None)
-    monkeypatch.setattr(confirm, "run_stored", stored)
+    monkeypatch.setattr(explain, "run_stored", stored)
     monkeypatch.setattr(trace, "trace_run", traced)
 
     assert cli.main(["triage", str(path)]) == 0
@@ -2184,7 +2184,7 @@ def _proof_of(path):
     return {
         "kind": "query",
         "path": str(path),
-        "fingerprint": confirm.file_fingerprint(path),
+        "fingerprint": explain.file_fingerprint(path),
     }
 
 
@@ -2210,15 +2210,15 @@ def _write_triage(run_json, items=(), open_keys=None):
     """
     run = pipeline._run_from_json(json.loads(run_json.read_text()))
     # Each item of an open group carries its stable key, as `triage` writes.
-    keys = {i.id: i.key for i in triage.open_items(run)}
+    keys = {i.id: i.key for i in sort.open_items(run)}
     items = [{"key": keys.get(i["id"], ""), **i} for i in items]
     (run_json.parent / "triage.json").write_text(
         json.dumps(
             {
                 "view": run.view,
-                "moment": triage._moment(run),
+                "moment": sort._moment(run),
                 "decisions_fingerprint": run.decisions_fingerprint,
-                "open": triage.open_keys(run) if open_keys is None else open_keys,
+                "open": sort.open_keys(run) if open_keys is None else open_keys,
                 "items": list(items),
             }
         )
@@ -3814,7 +3814,7 @@ def test_triage_re_runs_the_stored_proofs_unless_told_not_to(
     assert cli.main(["run", str(path)]) == 0
     seen = []
     monkeypatch.setattr(
-        confirm, "run_stored", lambda cfg, run, d, **k: seen.append(d) or []
+        explain, "run_stored", lambda cfg, run, d, **k: seen.append(d) or []
     )
 
     assert cli.main(["triage", str(path), "--no-trace"]) == 0
@@ -3830,7 +3830,7 @@ def test_triage_of_one_comparison_prints_its_items_and_keeps_every_item(
     assert cli.main(["run", str(path)]) == 0
     seen = []
     monkeypatch.setattr(
-        confirm, "run_stored", lambda cfg, run, d, **k: seen.append(k) or []
+        explain, "run_stored", lambda cfg, run, d, **k: seen.append(k) or []
     )
     capsys.readouterr()
 
@@ -3866,7 +3866,7 @@ def test_triage_proves_first_and_traces_only_what_no_proof_explains(
     (saved,) = (tmp_path / "cache" / "v").glob("*/run.json")
     run = pipeline._run_from_json(json.loads(saved.read_text()))
     (group,) = run.applied.open
-    proof = confirm.Proof(
+    proof = explain.Proof(
         path.parent / "proofs" / "v" / f"ada-region__{group.bucket}.sql",
         "ada-region",
         group.bucket,
@@ -3877,10 +3877,10 @@ def test_triage_proves_first_and_traces_only_what_no_proof_explains(
 
     def stored(cfg, run_, d, **k):
         order.append("proofs")
-        items = confirm._bucket_items(run_, "ada-region", group.bucket)
-        found = {i: confirm.Outcome(g.n_rows, Counter({"C1": g.n_rows}))
+        items = explain._bucket_items(run_, "ada-region", group.bucket)
+        found = {i: explain.Outcome(g.n_rows, Counter({"C1": g.n_rows}))
                  for i, g in items}  # fmt: skip
-        return [confirm.Ran(proof, items, found)]
+        return [explain.Ran(proof, items, found)]
 
     def traced(cfg, run_, *, skip, **k):
         order.append("trace")
@@ -3888,7 +3888,7 @@ def test_triage_proves_first_and_traces_only_what_no_proof_explains(
         # A cap stops the trace: it never un-proves what a proof explained.
         return trace.TraceResult({})
 
-    monkeypatch.setattr(confirm, "run_stored", stored)
+    monkeypatch.setattr(explain, "run_stored", stored)
     monkeypatch.setattr(trace, "trace_run", traced)
     monkeypatch.setattr(trace, "check_ready", lambda *a, **k: order.append("ready"))
 
@@ -3912,7 +3912,7 @@ def test_triage_classifies_a_group_a_group_decision_closes(
     run = pipeline._run_from_json(json.loads(saved.read_text()))
     assert run.applied.open == []
     ((_, group),) = run.applied.quiet
-    proof = confirm.Proof(
+    proof = explain.Proof(
         path.parent / "proofs" / "v" / f"ada-region__{group.bucket}.sql",
         "ada-region",
         group.bucket,
@@ -3921,12 +3921,12 @@ def test_triage_classifies_a_group_a_group_decision_closes(
     )
 
     def stored(cfg, run_, d, **k):
-        items = confirm._bucket_items(run_, "ada-region", group.bucket)
-        found = {i: confirm.Outcome(g.n_rows, Counter({"C1": g.n_rows}))
+        items = explain._bucket_items(run_, "ada-region", group.bucket)
+        found = {i: explain.Outcome(g.n_rows, Counter({"C1": g.n_rows}))
                  for i, g in items}  # fmt: skip
-        return [confirm.Ran(proof, items, found)]
+        return [explain.Ran(proof, items, found)]
 
-    monkeypatch.setattr(confirm, "run_stored", stored)
+    monkeypatch.setattr(explain, "run_stored", stored)
     monkeypatch.setattr(trace, "trace_run", lambda *a, **k: trace.TraceResult({}))
     monkeypatch.setattr(trace, "check_ready", lambda *a, **k: None)
 
@@ -3936,7 +3936,7 @@ def test_triage_classifies_a_group_a_group_decision_closes(
     # Closed, so never an item; the proof still says which causes it holds.
     assert not [i for i in loaded["items"] if i["kind"] == "group"]
     (closed,) = loaded["closed"]
-    assert closed["key"] == triage._open_key(group)
+    assert closed["key"] == sort._open_key(group)
     assert closed["cause"] == [
         {"side": "dashboard", "step": "C1", "label": "the sheet drops them",
          "n_rows": group.n_rows}
@@ -3948,7 +3948,7 @@ def test_triage_confirm_reaches_its_command(fakes, tmp_path, monkeypatch):
     path = _file(tmp_path)
     seen = {}
     monkeypatch.setattr(
-        confirm, "run_confirm", lambda cfg, view_file, **k: seen.update(k) or 0
+        explain, "run_confirm", lambda cfg, view_file, **k: seen.update(k) or 0
     )
 
     assert (
@@ -3968,7 +3968,7 @@ def test_triage_confirm_reaches_its_command(fakes, tmp_path, monkeypatch):
 def test_triage_confirm_takes_no_cells_flag(fakes, tmp_path, monkeypatch):
     path = _file(tmp_path)
     monkeypatch.setattr(
-        confirm, "run_confirm", lambda *a, **k: pytest.fail("confirm ran")
+        explain, "run_confirm", lambda *a, **k: pytest.fail("confirm ran")
     )
 
     argv = ["triage", "confirm", str(path), "--comparison", "ada-region"]
@@ -3995,7 +3995,7 @@ def test_triage_command_writes_triage_json_beside_latest_run(fakes, tmp_path, ca
     assert set(written["moment"]) == {"start", "end", "job_id", "moments"}
     assert written["moment"]["moments"] == {"ada-region": "2026-10-22T204400Z"}
     run = pipeline._run_from_json(json.loads(saved.read_text()))
-    assert written["open"] == triage.open_keys(run) and written["open"]
+    assert written["open"] == sort.open_keys(run) and written["open"]
     item = written["items"][0]
     assert set(item) == {
         "id", "kind", "comparison", "label", "stub",
@@ -4070,7 +4070,7 @@ def test_triage_no_trace_skips_the_trace(fakes, tmp_path, capsys, monkeypatch):
     items = json.loads((saved.parent / "triage.json").read_text())["items"]
     (group,) = [i for i in items if i["kind"] == "group"]
     assert group["suggestion"] == "investigate"
-    assert group["evidence"][0] == triage.NOT_TRACED
+    assert group["evidence"][0] == sort.NOT_TRACED
 
 
 def test_triage_traces_the_rows_by_default(fakes, tmp_path, capsys, monkeypatch):
@@ -4200,7 +4200,7 @@ def test_a_value_check_past_the_cap_still_writes_the_batch(
     def capped(*a, **k):
         raise CostCapError("spent $5.00, over the $5.00 cap")
 
-    monkeypatch.setattr(triage, "value_check", capped)
+    monkeypatch.setattr(sort, "value_check", capped)
 
     assert cli.main(["triage", str(path), "--no-trace"]) == 0, capsys.readouterr().err
 
@@ -4447,7 +4447,7 @@ def _closed_by_a_group_decision(tmp_path):
     _write_triage(run_json, [_triage_item("e", item_id="other")])
     found = run_json.parent / "triage.json"
     loaded = json.loads(found.read_text())
-    key = triage._open_key(miami)
+    key = sort._open_key(miami)
     loaded["closed"] = [
         {"id": key, "key": key, "kind": "group", "comparison": "ada-region",
          "closed": True, "suggestion": "cause", "cause": [STEP],
@@ -5030,7 +5030,7 @@ def test_a_trace_refusal_comes_before_any_proof_runs(
 
     monkeypatch.setattr(trace, "check_ready", refuse)
     monkeypatch.setattr(
-        confirm, "run_stored", lambda *a, **k: pytest.fail("a proof ran first")
+        explain, "run_stored", lambda *a, **k: pytest.fail("a proof ran first")
     )
 
     assert cli.main(["triage", str(path)]) == 1

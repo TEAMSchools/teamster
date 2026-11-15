@@ -5,7 +5,7 @@ SQL it was made against. A `group` decision names its groups by one column's
 value. A `formula` decision names its comparison's formula difference: the
 differing cells no unmatched row lies in. A `cause` decision names a proven
 cause, never a group: the latest triage, which re-runs every stored proof,
-says which items it decides (`triage.mark_decided`), so `apply` only checks
+says which items it decides (`sort.mark_decided`), so `apply` only checks
 its SQL. Pure: no I/O.
 """
 
@@ -17,8 +17,8 @@ import json
 import re
 from dataclasses import dataclass, field
 
-from .compare import CellDiff, Gap, Group
 from .config import Decision
+from .reconcile import CellDiff, Gap, Group
 
 
 @dataclass

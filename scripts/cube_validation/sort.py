@@ -5,7 +5,7 @@ or filter. A pile never applies a call: the analyst reads it and decides. An
 item in `investigate` takes no decision until it reaches a proven cause, while
 the view's other items are decided; `review` lists it as still with the
 analyst. The trace (`trace.py`) only leads: a row group reaches `cause`
-when `triage confirm` (`confirm.py`) checks a classification query that names
+when `triage confirm` (`explain.py`) checks a classification query that names
 each of its unmatched rows' cause. A missing cut or filter the sheet carries,
 and rows the sheet's own dashboard-only filter drops, are their own proof.
 Item ids and labels carry no value the review issue would hide. `suggest` is
@@ -28,11 +28,11 @@ from pathlib import Path
 
 from . import decisions, latest, pipeline, trace
 from .bq import CostCapError, Warehouse
-from .compare import CellDiff, Gap, Group
 from .config import Comparison, Decision, Proof, ViewConfig, mask_digits
 from .cube_client import Cube, MemberDoc, member_docs, network_schools
-from .discover import _tokens
+from .find_field import _tokens
 from .moment import Build
+from .reconcile import CellDiff, Gap, Group
 from .report import (
     _CELL_WORDS,
     CauseAsk,
@@ -51,7 +51,7 @@ from .timetravel import PROJECT
 # The piles, in the order the analyst's batch shows them. Only a `cause` item
 # carries a proven cause; an `investigate` item has none yet.
 SUGGESTIONS = ("map_filters", "filters_nothing", "cause", "investigate")
-# What a `cause` rests on: a stored classification query (`confirm.py`), the
+# What a `cause` rests on: a stored classification query (`explain.py`), the
 # run's own reconcile (rows the sheet's dashboard-only filter drops), the
 # workbook XML (a missing cut or filter), proven groups (a cell set), or the
 # run's matched rows (a formula difference).
@@ -687,16 +687,16 @@ def _proof_changed(proof: dict | None, base: Path | None = None) -> bool:
     """A stored proof's file is gone, or no longer the proof triage ran.
 
     The recorded path is relative to the validation file's directory, `base`.
-    Compared by `confirm.fingerprint`, so a formatting-only edit is no change.
+    Compared by `explain.fingerprint`, so a formatting-only edit is no change.
     """
     if not proof or not proof.get("path"):
         return False
-    from . import confirm
+    from . import explain
 
     path = Path(proof["path"])
     if base is not None and not path.is_absolute():
         path = base / path
-    return confirm.file_fingerprint(path) != proof.get("fingerprint")
+    return explain.file_fingerprint(path) != proof.get("fingerprint")
 
 
 def posted_triage(loaded: dict) -> dict:
@@ -1266,17 +1266,17 @@ def closed_groups(run: RunResult, ran: list, cfg: ViewConfig) -> tuple[list, lis
 
     Args:
         run: The run as triage lists it.
-        ran: `confirm.run_stored`'s runs over `with_closed(run)`.
+        ran: `explain.run_stored`'s runs over `with_closed(run)`.
         cfg: The view's config, for a dashboard-filtered group's filter.
 
     Returns:
         The runs over the open groups only, under their own item ids, as
-        `confirm.apply_runs` reads them (a run over closed groups alone is
+        `explain.apply_runs` reads them (a run over closed groups alone is
         dropped), and the closed groups a proof fully explains, or a
         `dashboard_filters` entry drops, each as an item `mark_decided`
         reads, marked `closed` and named by its `_open_key`.
     """
-    from . import confirm
+    from . import explain
 
     open_ids = {i.key: i.id for i, g in _entries(run) if isinstance(g, Group)}
     quiet = _quiet_by_key(run)
@@ -1296,7 +1296,7 @@ def closed_groups(run: RunResult, ran: list, cfg: ViewConfig) -> tuple[list, lis
             continue
         shut = {_open_key(g): r.found[i] for i, g in r.items if _open_key(g) in quiet}
         entries = [_closed_item(quiet[k]) for k in shut]
-        confirm.apply_outcomes(entries, r.proof, shut)
+        explain.apply_outcomes(entries, r.proof, shut)
         closed += [e for e in entries if e["suggestion"] == "cause"]
     by_id = {c.id: c for c in cfg.comparisons}
     for g in quiet.values():
@@ -1340,7 +1340,7 @@ def run_triage(
     """Sort each open item of the view's latest run into a pile and print them.
 
     Re-runs every stored proof in `proofs` on the run's rows first
-    (`confirm.run_stored`; None skips them): only a proof moves a row group
+    (`explain.run_stored`; None skips them): only a proof moves a row group
     to `cause`. Then traces the row groups no proof explains
     (`trace.trace_run`) unless `trace_rows` is False, for leads. Both count
     against `max_usd` and the daily cap with the value checks. A cap or
@@ -1396,9 +1396,9 @@ def run_triage(
             # The trace's paid work is kept: the batch is still written.
             return f"not checked: {exc}"
 
-    from . import confirm
+    from . import explain
 
-    ticker = ticker or Ticker(confirm._utcnow, confirm._utcnow())
+    ticker = ticker or Ticker(explain._utcnow, explain._utcnow())
     prepared = trace.Prepared()
     with wh.budget(max_usd):
         prepared.schools = network_schools(wh)
@@ -1438,7 +1438,7 @@ def run_triage(
         # written (`check_closed`).
         ran, closed = closed_groups(
             run,
-            confirm.run_stored(
+            explain.run_stored(
                 cfg,
                 with_closed(run),
                 proofs,
@@ -1461,7 +1461,7 @@ def run_triage(
                 cube=cube,
                 manifest_path=manifest or trace.MANIFEST,
                 max_minutes=trace_max_minutes or trace.TRACE_MAX_MINUTES,
-                skip=confirm.explained(ran)
+                skip=explain.explained(ran)
                 | _outside(run, wanted)
                 | _groups_of(run, set(skipped)),
                 prepared=prepared,
@@ -1476,7 +1476,7 @@ def run_triage(
         items = [_as_json(s) for s in found]
         kept: dict = {}
         if proofs is not None:
-            confirm.apply_runs(run, items, ran, cfg, kept)
+            explain.apply_runs(run, items, ran, cfg, kept)
             items.sort(key=lambda i: SUGGESTIONS.index(i["suggestion"]))
         mark_decided(run, items, cfg.decisions, note=True)
         found = [_from_json(i) for i in items]

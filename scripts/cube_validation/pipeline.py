@@ -4,7 +4,7 @@
 clients as arguments so tests can pass fakes. The dashboard side is read as of
 a fact build's start and Cube as of its end. Every BigQuery query runs inside
 `Warehouse.budget`, and only aggregates come back: row-level comparisons run
-inside BigQuery through `compare.reconcile_sql`.
+inside BigQuery through `reconcile.reconcile_sql`.
 """
 
 from __future__ import annotations
@@ -30,11 +30,10 @@ from typing import Any
 
 import tableauserverclient as TSC
 
-from . import answers, checkpoints, compare, coverage, decisions
-from . import discover as finder
-from . import latest, report, saved, tableau, triage
+from . import answers, checkpoints, coverage, decisions
+from . import find_field as finder
+from . import latest, reconcile, report, saved, sort, tableau
 from .bq import ViewHistoryError, Warehouse
-from .compare import CellDiff, Gap, Group
 from .config import (
     WEEK_END_KEY,
     ColumnPair,
@@ -64,6 +63,7 @@ from .moment import (
     fingerprint_sql,
     pick_moment,
 )
+from .reconcile import CellDiff, Gap, Group
 from .report import MeasureResult, RunResult
 from .timetravel import PROJECT, AsOf, as_of, repin, utc_literal
 
@@ -154,7 +154,7 @@ def _cut_cube_filters(
 def _scope_cube_filters(view: str, comparison: Comparison) -> list[dict]:
     return [
         {**f, "member": _member(view, f["member"])}
-        for f in compare.scope_filters(comparison)
+        for f in reconcile.scope_filters(comparison)
     ]
 
 
@@ -609,11 +609,11 @@ def _cells(
         label = ", ".join(
             f"{d.cube}={v}" for d, v in zip(comparison.dims, key, strict=True)
         )
-        verdict = compare.cell_verdict(dash.get(key), cube.get(key), decimals)
+        verdict = reconcile.cell_verdict(dash.get(key), cube.get(key), decimals)
         if (
             verdict == "cube_only"
             and key in unfiltered
-            and compare.cell_verdict(unfiltered[key], cube[key], decimals) == "pass"
+            and reconcile.cell_verdict(unfiltered[key], cube[key], decimals) == "pass"
         ):
             verdict = "dashboard_filtered"
         cells.append(
@@ -660,8 +660,8 @@ def candidate_causes(
             ] += 1
         elif (
             abs(
-                compare._half_up(c.dashboard, decimals)
-                - compare._half_up(c.cube, decimals)
+                reconcile._half_up(c.dashboard, decimals)
+                - reconcile._half_up(c.cube, decimals)
             )
             == unit
         ):
@@ -1084,7 +1084,7 @@ def _reconcile_args(
     cfg: ViewConfig, comparison: Comparison, sides: RowSides
 ) -> tuple[tuple, dict]:
     """The positional and keyword arguments every row query of a comparison
-    takes (`compare.reconcile_script`, `unmatched_rows_sql`)."""
+    takes (`reconcile.reconcile_script`, `unmatched_rows_sql`)."""
     flags = cut_flags(comparison) or []
     args = (
         wrap_cube(sides.cube_rows_sql, cfg.view, sides.columns, _date_cubes(cfg), None),
@@ -1112,7 +1112,7 @@ def save_script(
     table.
     """
     args, kwargs = _reconcile_args(cfg, comparison, sides)
-    return compare.reconcile_script(
+    return reconcile.reconcile_script(
         *args,
         **kwargs,
         table=table,
@@ -1124,7 +1124,7 @@ def save_script(
 def inline_unmatched(cfg: ViewConfig, comparison: Comparison, sides: RowSides) -> str:
     """The rows `save_script` saves, as one query with no table, for a dry run."""
     args, kwargs = _reconcile_args(cfg, comparison, sides)
-    return compare.unmatched_rows_sql(*args, **kwargs)
+    return reconcile.unmatched_rows_sql(*args, **kwargs)
 
 
 def _cube_sql(
@@ -1369,7 +1369,7 @@ def _execute(
                 ),
             )
         )
-        sides.groups += compare.groups_from(
+        sides.groups += reconcile.groups_from(
             comparison.id, result, [label for label, _, _ in flags]
         )
         sides.sql[comparison.id] = (plan.rows.dashboard.sql, plan.rows.cube.sql)
@@ -1464,7 +1464,8 @@ def _clauses(comparison: Comparison, groups: list[Group], sides: _Sides) -> list
         return []
     dash_sql, cube_sql = sides.sql[comparison.id]
     return _unique(
-        compare.clauses_for(columns, dash_sql) + compare.clauses_for(columns, cube_sql)
+        reconcile.clauses_for(columns, dash_sql)
+        + reconcile.clauses_for(columns, cube_sql)
     )
 
 
@@ -2642,7 +2643,7 @@ def check_claims(cfg: ViewConfig, cache_root: Path) -> None:
     Raises:
         Refusal: Two decisions claim the same group, gap or formula
             difference, or a cause decision disagrees with the `group`
-            decision closing a group its proof covers (`triage.check_closed`).
+            decision closing a group its proof covers (`sort.check_closed`).
     """
     try:
         saved, run_json = _reapplicable(cfg, cache_root)
@@ -2654,7 +2655,7 @@ def check_claims(cfg: ViewConfig, cache_root: Path) -> None:
 
 def _check_closed(cfg: ViewConfig, run: RunResult, run_json: Path) -> None:
     try:
-        triage.check_closed(run, run_json, cfg.decisions)
+        sort.check_closed(run, run_json, cfg.decisions)
     except Refusal as exc:
         raise Refusal(f"{cfg.view}: {exc}") from exc
 
@@ -2675,7 +2676,7 @@ def reapply(cfg: ViewConfig, cache_root: Path) -> RunResult:
         Refusal: The view has no saved run, the run predates what re-applying
             needs, two decisions claim the same item, or a cause decision
             disagrees with the `group` decision closing a group its proof
-            covers (`triage.check_closed`). Nothing is rewritten.
+            covers (`sort.check_closed`). Nothing is rewritten.
     """
     saved, run_json = _reapplicable(cfg, cache_root)
     applied = _apply_saved(cfg, saved)
@@ -2767,10 +2768,10 @@ def review(
     """Return the review-issue body from each view's latest saved run.
 
     Reads only the local cache: each run and its triage (see
-    `triage.proven_triage`), matching triage items to decisions by their stubs,
+    `sort.proven_triage`), matching triage items to decisions by their stubs,
     and to cause decisions by the causes the triage proved. What is ready is
     asked; what is not settled yet (items still in `investigate`, and
-    comparisons missing, stale or skipped, `triage.comparisons_waiting`) is
+    comparisons missing, stale or skipped, `sort.comparisons_waiting`) is
     listed under "Still with the analyst" and never asked.
     Nothing is posted; a question with no triage evidence, and a body near
     GitHub's cap, are named on stderr.
@@ -2792,7 +2793,7 @@ def review(
     Raises:
         Refusal: A view has no usable saved run (see `latest_run`), or its
             triage is missing, stale, unreadable, or has a cause decision and
-            a `group` decision disagreeing (see `triage.proven_triage`). With
+            a `group` decision disagreeing (see `sort.proven_triage`). With
             `json_file`: the file is new or changed, or its commit is not
             pushed (it is written; commit and push it, then review again).
     """
@@ -2801,21 +2802,21 @@ def review(
     # Stored proof paths are relative to each validation file's directory.
     bases = [f.parent for f in view_files] if view_files else [None] * len(configs)
     proven = {
-        run.view: triage.proven_triage(run, run_json, cfg.decisions, base)
+        run.view: sort.proven_triage(run, run_json, cfg.decisions, base)
         for (run, run_json), cfg, base in zip(saved, configs, bases, strict=True)
     }
-    found = {view: triage.posted_triage(loaded) for view, loaded in proven.items()}
+    found = {view: sort.posted_triage(loaded) for view, loaded in proven.items()}
     still = report.still_with_analyst(
-        [u for run in runs for u in triage.unsettled(run, found[run.view])],
+        [u for run in runs for u in sort.unsettled(run, found[run.view])],
         {
-            run.view: triage.comparisons_waiting(cfg, run, proven[run.view])
+            run.view: sort.comparisons_waiting(cfg, run, proven[run.view])
             for run, cfg in zip(runs, configs, strict=True)
         },
     )
     # One question per unanswered owner cause, over the groups it decides.
     causes = {
-        run.view: triage.cause_asks(
-            run, proven[run.view], cfg.decisions, triage.doc_leads(cfg)
+        run.view: sort.cause_asks(
+            run, proven[run.view], cfg.decisions, sort.doc_leads(cfg)
         )
         for run, cfg in zip(runs, configs, strict=True)
     }
@@ -2838,7 +2839,7 @@ def review(
     )
     # The analyst's other calls, which the body reports without asking.
     decided = {
-        run.view: triage.cause_asks(run, proven[run.view], cfg.decisions, owner=False)
+        run.view: sort.cause_asks(run, proven[run.view], cfg.decisions, owner=False)
         for run, cfg in zip(runs, configs, strict=True)
     }
     link = None

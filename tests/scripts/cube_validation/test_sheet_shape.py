@@ -11,7 +11,7 @@ from cube_validation import pipeline
 from cube_validation.config import ColumnPair, Comparison, RowSpec
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation.discover import sheet_shape
+from cube_validation.find_field import sheet_shape
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.timetravel import pin_clock
