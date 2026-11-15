@@ -12,6 +12,7 @@ from cube_validation import (
     explain,
     explain_progress,
     pipeline,
+    reconcile,
     saved,
     sort,
     trace,
@@ -1266,6 +1267,58 @@ def test_a_value_differing_row_in_another_cell_is_its_own_group_and_counts_twice
     grade_5, _ = [label for label, _, _ in pipeline.cut_flags(BY_GRADE)]
     assert sorted((e["dims"][0][1], e["n"]) for e in found) == [("X", 2), ("Y", 1)]
     assert {e["cut"] for e in found} == {grade_5}
+
+
+def test_a_row_with_no_cube_value_keys_to_its_group_and_counts_in_each_side_s_cell(
+    duck,
+):
+    # Cube files student 1 under no school, the dashboard under Newark: the
+    # saved row keys to the reconcile's group, and its students count in
+    # Cube's own cell and the dashboard's.
+    duck.table(
+        "cube_t", "lea BIGINT, aid VARCHAR, abbreviation VARCHAR, grade VARCHAR",
+        [(1, "a", None, "5")],
+    )  # fmt: skip
+    duck.table(
+        "dash_t", "student BIGINT, item VARCHAR, school VARCHAR, grade VARCHAR",
+        [(1, "a", "Newark", "5")],
+    )  # fmt: skip
+    sides = (
+        "SELECT * FROM `teamster-332318.m.cube_t`",
+        "SELECT * FROM `teamster-332318.d.dash_t`",
+        BY_GRADE.rows,
+        pipeline.group_dims(BY_GRADE),
+    )
+    cuts = [("c.grade = '5'", "d.grade = '5'"), ("c.grade = '6'", "d.grade = '6'")]
+    labels = [label for label, _, _ in pipeline.cut_flags(BY_GRADE)]
+    (group,) = reconcile.groups_from(
+        "mastery", duck.rows(reconcile.reconcile_sql(*sides, cuts=cuts)), labels
+    )
+    duck.rows(
+        "CREATE TABLE saved_t AS " + reconcile.unmatched_rows_sql(*sides, cuts=cuts)
+    )
+    proof = explain.Explanation(
+        Path("p.sql"), "mastery", "dims_differ",
+        {"C1": ("dashboard", "the dashboard files it elsewhere")},
+        "SELECT u.__row, 'C1' AS cause FROM {unmatched} AS u", {},
+    )  # fmt: skip
+    ctes, select = explain.unmatched_sql(
+        BY_GRADE, "dims_differ", [("G1", group)], "saved_t"
+    )
+    rows = duck.rows(
+        explain.proof_query(
+            ctes, select, proof.body, {"C1"},
+            explain._student_count(BY_GRADE, "dims_differ"),
+        )
+    )  # fmt: skip
+
+    assert group.dims == (("abbreviation", ""), ("d:abbreviation", "Newark"))
+    assert {r["item_key"]: r["n"] for r in rows if r["__kind"] == "count"} == {"G1": 1}
+    found = explain.cause_students(rows, proof, BY_GRADE)
+    assert sorted((pipeline._key(e["dims"][0][1]), e["n"]) for e in found) == [
+        ("", 1),
+        ("Newark", 1),
+    ]
 
 
 def test_kept_counts_take_the_larger_of_2_buckets_proofs_on_one_cell():

@@ -281,7 +281,7 @@ def _predicate(column: str, key: str) -> str:
     """Match a column against the text `pipeline._key` made of its value.
 
     `_key` writes NULL as '', numbers as plain decimals and booleans as
-    True/False, so a bare `column = '7'` fails on a number and `= ''` misses a
+    true/false, so a bare `column = '7'` fails on a number and `= ''` misses a
     NULL. A date or text key compares as a string literal, which BigQuery
     coerces against a DATE or TIMESTAMP column.
     """

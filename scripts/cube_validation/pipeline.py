@@ -513,11 +513,17 @@ def wrap_cube(
 
 
 def _key(value: Any) -> str:
-    """Cell key text: dates by day, numbers by value, else the text.
+    """Cell key text: dates by day, booleans as `true`/`false`, numbers by
+    value, else the text.
 
     Tableau's export writes a date as M/D/YYYY (the server's en-US format),
-    the sheet query and Cube as ISO, so both read as the same day.
+    the sheet query and Cube as ISO, so both read as the same day. A boolean
+    reads as BigQuery casts it, whatever its case, so a group label
+    (`reconcile._label`) keys as its cell does; `reconcile._cell_key` is
+    this rule in SQL.
     """
+    if isinstance(value, bool):
+        return "true" if value else "false"
     if isinstance(value, str) and re.match(r"\d{4}-\d{2}-\d{2}", value):
         try:
             value = datetime.fromisoformat(value)
@@ -533,6 +539,8 @@ def _key(value: Any) -> str:
     if value is None:
         return ""
     text = str(value).strip()
+    if text.lower() in ("true", "false"):
+        return text.lower()
     try:
         number = Decimal(text)
     except InvalidOperation:

@@ -1,7 +1,7 @@
 import dataclasses
 
 # trunk-ignore(pyright/reportAttributeAccessIssue): conftest.py registers cube_validation
-from cube_validation import coverage
+from cube_validation import coverage, pipeline
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.config import ColumnPair, Comparison, RowSpec
@@ -271,3 +271,116 @@ def test_a_row_with_another_value_in_the_same_cell_keeps_its_dims(duck):
 
     (g,) = groups_from("c1", result, [GRADE_5])
     assert g.bucket == "value_differs" and g.dims == (("region", "Miami"),)
+
+
+def _placed_cells(duck, cube, dash, cube_type="VARCHAR", dash_type="VARCHAR"):
+    """Reconcile toy rows under Grade 5, build each side's cells (a count of
+    rows per region) as a run does, and place every differing cell.
+
+    Returns the groups and `{cell key: placed groups}` per differing cell.
+    """
+    duck.table(
+        "cube_t",
+        f"student_number BIGINT, grade VARCHAR, region {cube_type}, ok BOOLEAN",
+        cube,
+    )
+    duck.table(
+        "dash_t",
+        f"student BIGINT, grade_d VARCHAR, region_d {dash_type}, ok_d BOOLEAN",
+        dash,
+    )
+    spec = dataclasses.replace(SPEC, cuts=[{"Grade": "5"}])
+    result = duck.rows(
+        reconcile_sql(
+            "SELECT * FROM `teamster-332318.m.cube_t`",
+            "SELECT * FROM `teamster-332318.d.dash_t`",
+            spec.rows,
+            spec.dims,
+            cuts=[("c.grade = '5'", "d.grade_d = '5'")],
+        )
+    )
+    groups = groups_from("c1", result, [GRADE_5])
+    cube_rows = duck.rows(
+        "SELECT region, COUNT(*) AS value FROM cube_t GROUP BY region"
+    )
+    dash_rows = duck.rows(
+        "SELECT region_d, COUNT(*) AS value FROM dash_t GROUP BY region_d"
+    )
+    cells = pipeline._cells(spec, {"Grade": "5"}, dash_rows, cube_rows, 0)
+    return groups, {
+        c.key: coverage.placed(pipeline._coverage_cell(c), groups, spec)
+        for c in cells
+        if c.verdict in pipeline.DIFFERING
+    }
+
+
+def test_a_both_held_row_is_placed_by_each_side_s_own_value(duck):
+    # Cube files student 2 under no region, the dashboard under Newark.
+    groups, placed = _placed_cells(
+        duck, [(2, "5", None, True)], [(2, "5", "Newark", True)]
+    )
+
+    (g,) = groups
+    assert g.bucket == "dims_differ"
+    assert g.dims == (("region", ""), ("d:region", "Newark"))
+    assert placed == {"region=": [g], "region=Newark": [g]}
+
+
+def test_a_bool_dim_places_its_one_sided_groups(duck):
+    groups, placed = _placed_cells(
+        duck,
+        [(2, "5", True, True)],
+        [(3, "5", False, True)],
+        cube_type="BOOLEAN",
+        dash_type="BOOLEAN",
+    )
+
+    by_bucket = {g.bucket: g for g in groups}
+    assert set(by_bucket) == {"cube_only", "dashboard_only"}
+    assert placed == {
+        "region=true": [by_bucket["cube_only"]],
+        "region=false": [by_bucket["dashboard_only"]],
+    }
+
+
+def test_a_bool_dim_places_a_group_in_a_cell_both_sides_hold(duck):
+    # Student 3 is Cube's alone, in the cell both sides hold.
+    groups, placed = _placed_cells(
+        duck,
+        [(2, "5", True, True), (3, "5", True, True)],
+        [(2, "5", True, True)],
+        cube_type="BOOLEAN",
+        dash_type="BOOLEAN",
+    )
+
+    (g,) = groups
+    assert g.bucket == "cube_only"
+    assert placed == {"region=true": [g]}
+
+
+def test_a_row_in_another_case_sits_in_both_cells(duck):
+    # The cells key by case, so Miami and miami are 2 cells, whether or not
+    # the row's value matches.
+    for dash_ok in (True, False):
+        groups, placed = _placed_cells(
+            duck, [(2, "5", "Miami", True)], [(2, "5", "miami", dash_ok)]
+        )
+
+        (g,) = groups
+        assert g.dims == (("region", "Miami"), ("d:region", "miami"))
+        assert placed == {"region=Miami": [g], "region=miami": [g]}
+
+
+def test_a_row_true_on_one_side_and_1_on_the_other_sits_in_both_cells(duck):
+    groups, placed = _placed_cells(
+        duck,
+        [(2, "5", True, True)],
+        [(2, "5", 1, True)],
+        cube_type="BOOLEAN",
+        dash_type="BIGINT",
+    )
+
+    (g,) = groups
+    assert g.bucket == "dims_differ"
+    assert g.dims == (("region", "true"), ("d:region", "1"))
+    assert placed == {"region=true": [g], "region=1": [g]}

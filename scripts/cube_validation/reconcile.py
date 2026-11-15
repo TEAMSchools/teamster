@@ -124,10 +124,47 @@ def _day(col: str) -> str:
     )
 
 
+def _bool_word(col: str) -> str:
+    """`true` or `false` for a boolean, in any case; NULL for anything else."""
+    word = f"LOWER(TRIM(CAST({col} AS STRING)))"
+    return f"IF({word} IN ('true', 'false'), {word}, NULL)"
+
+
 def _label(col: str) -> str:
-    """A group label: the day a date or a midnight timestamp names, else the
-    text. One day then groups once, whichever side holds the row."""
-    return f"COALESCE(CAST({_day(col)} AS STRING), CAST({col} AS STRING))"
+    """A group label: the day a date or a midnight timestamp names, a boolean
+    as `true`/`false`, else the text. `pipeline._key` reads it as the cell key
+    of the value it labels, so a group is placed by the cell its side files
+    it under."""
+    return (
+        f"COALESCE(CAST({_day(col)} AS STRING), {_bool_word(col)}, "
+        f"CAST({col} AS STRING))"
+    )
+
+
+# A number as `pipeline._key` reads one (Decimal's finite forms).
+_NUMBER = "^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)([eE][+-]?[0-9]+)?$"
+
+
+def _cell_key(col: str) -> str:
+    """`pipeline._key` in SQL: 2 values key alike here when their cell keys
+    match. A day, a boolean word, a number by value, else the trimmed text;
+    NULL stays NULL."""
+    text = f"TRIM(CAST({col} AS STRING))"
+    return (
+        f"COALESCE(CAST({_day(col)} AS STRING), {_bool_word(col)}, "
+        f"IF(REGEXP_CONTAINS({text}, '{_NUMBER}'), "
+        f"COALESCE(CAST(SAFE_CAST({text} AS FLOAT64) AS STRING), {text}), {text}))"
+    )
+
+
+def _same_cell_value(c: str, d: str) -> str:
+    """Whether the 2 sides file a row under the same value of one cell dim:
+    their cell keys (`_cell_key`) match, or both are NULL. Unlike
+    `_pair_matches`, case counts and TRUE is not 1, as in the cells."""
+    return (
+        f"COALESCE(({c} IS NULL AND {d} IS NULL) "
+        f"OR {_cell_key(c)} = {_cell_key(d)}, FALSE)"
+    )
 
 
 def _pair_matches(d: str, c: str) -> str:
@@ -202,7 +239,10 @@ def reconcile_sql(
         dashboard_rows_sql: The same, under their `dashboard` names.
         rows: The grain and value column pairs.
         group_by: Columns to break counts out by; each is named by its `cube`
-            name in the result and read from whichever side has the row.
+            name in the result and read from Cube's side when Cube holds the
+            row, else the dashboard's (`_label`). The 2 sides file a row in
+            the same cell when their values key alike as the cells do
+            (`_cell_key`), so case counts and TRUE is not 1.
         filters: For each dashboard-only filter, the dashboard rows' boolean
             column that says it keeps a row, and the label to name it by. A row
             one drops that Cube has reads `dashboard_filtered`, with the label
@@ -454,18 +494,24 @@ def _joined(
     same = [_pair_matches(f"d.{p.dashboard}", f"c.{p.cube}") for p in rows.values]
     all_same = " AND ".join(same) or "TRUE"
     dims_same = (
-        " AND ".join(_pair_matches(f"d.{p.dashboard}", f"c.{p.cube}") for p in group_by)
+        " AND ".join(
+            _same_cell_value(f"c.{p.cube}", f"d.{p.dashboard}") for p in group_by
+        )
         or "TRUE"
     )
-    # The same cell on both sides: the group-by columns, then each cut's flag.
+    # The same cell on both sides, by the cells' own keys: the group-by
+    # columns, then each cut's flag.
     same_cell = " AND ".join(
         ([dims_same] if group_by else [])
         + [f"COALESCE({c}, FALSE) = COALESCE({d}, FALSE)" for c, d in cuts]
     )
     both = f"c.{_IN} IS NOT NULL AND d.{_IN} IS NOT NULL"
 
+    # Each row's own cell: Cube's for a row Cube holds, else the dashboard's.
+    # A row each side files in another cell adds the dashboard's below.
     group_cols = [
-        f"COALESCE({_label(f'c.{p.cube}')}, {_label(f'd.{p.dashboard}')}) AS {p.cube}"
+        f"IF(c.{_IN} IS NOT NULL, {_label(f'c.{p.cube}')}, "
+        f"{_label(f'd.{p.dashboard}')}) AS {p.cube}"
         for p in group_by
     ]
     group_names = [p.cube for p in group_by]
@@ -473,7 +519,7 @@ def _joined(
         # Values equal or not: each side's copy sits in its own cell.
         differ = f"{both} AND NOT ({same_cell})"
         group_cols += [f"IF({differ}, TRUE, NULL) AS {_MOVED}"] + [
-            f"IF({differ}, CAST(d.{p.dashboard} AS STRING), NULL) AS __d_{p.cube}"
+            f"IF({differ}, {_label(f'd.{p.dashboard}')}, NULL) AS __d_{p.cube}"
             for p in group_by
         ]
         group_names += [_MOVED, *(f"__d_{p.cube}" for p in group_by)]

@@ -89,12 +89,13 @@ def test_reconcile_sql_values_compare_null_safe_and_type_tolerant():
     assert "d.is_present IS NULL AND c.attendance_value IS NULL" in sql
 
 
-def test_reconcile_sql_group_by_coalesces_cube_then_dashboard():
+def test_reconcile_sql_group_by_reads_the_side_holding_the_row():
+    # Cube's value for a row Cube holds, never the dashboard's in its place.
     sql = _sql()
 
     assert (
-        f"COALESCE({_label('c.grade_level_cube')}, {_label('d.grade_level')}) "
-        "AS grade_level_cube"
+        f"IF(c.__in IS NOT NULL, {_label('c.grade_level_cube')}, "
+        f"{_label('d.grade_level')}) AS grade_level_cube"
     ) in sql
 
 
@@ -810,9 +811,16 @@ def test_a_group_label_that_is_not_a_day_keeps_its_text(duck):
 
 @pytest.mark.parametrize(
     ("cube_week", "dash_week", "bucket"),
-    [("Week A", "week a", "match"), ("Week A", "Week B", "dims_differ")],
+    [
+        ("Week A", "Week A", "match"),
+        # The cells key text by case, so the 2 sides file it in 2 cells.
+        ("Week A", "week a", "dims_differ"),
+        ("Week A", "Week B", "dims_differ"),
+    ],
 )
-def test_text_that_is_not_a_date_compares_as_before(duck, cube_week, dash_week, bucket):
+def test_text_that_is_not_a_date_compares_as_the_cells_do(
+    duck, cube_week, dash_week, bucket
+):
     assert _by_week(duck, "VARCHAR", cube_week, "VARCHAR", dash_week) == {bucket}
 
 
