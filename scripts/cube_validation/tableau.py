@@ -29,7 +29,7 @@ import xml.etree.ElementTree as ET
 import zipfile
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any
@@ -574,16 +574,26 @@ def _is_measures(node: _Group | str | None) -> bool:
 def _nested_under(node: _Group | str | None, ref: str) -> _Group | str:
     """The shelf with `ref` nested innermost, as Tableau writes `(A / (B / C))`.
 
-    Measures stay last: a dimension added to a shelf of measures crosses in
-    front of them (`(A / B) * (M1 + M2)`), as Tableau writes a dimension
-    against a dual axis.
+    Measures stay last: in a group of crossed fields the added field nests
+    into the last field that is not measures (`A * (B / C) * (M1 + M2)`), and
+    a shelf of measures alone gets it crossed in front, as Tableau writes a
+    dimension against a dual axis. A group that mixes `/` and `*` is refused.
     """
     if node is None:
         return ref
     if _is_measures(node):
         return _Group([ref, node], ["*"])
-    if isinstance(node, _Group) and node.ops == ["*"] and _is_measures(node.items[-1]):
-        return _Group([_nested_under(node.items[0], ref), node.items[-1]], ["*"])
+    if isinstance(node, _Group) and set(node.ops) == {"*"}:
+        for i in range(len(node.items) - 1, -1, -1):
+            if not _is_measures(node.items[i]):
+                items = list(node.items)
+                items[i] = _nested_under(items[i], ref)
+                return _Group(items, node.ops)
+        return _Group([ref, *node.items], ["*"] * len(node.items))
+    if isinstance(node, _Group) and {"/", "*"} <= set(node.ops):
+        raise ValueError(
+            f"cannot add {ref} to a shelf that mixes / and *; reshape the sheet by hand"
+        )
     if isinstance(node, _Group) and set(node.ops) == {"/"}:
         return _Group([*node.items[:-1], _nested_under(node.items[-1], ref)], node.ops)
     return _Group([node, ref], ["/"])
@@ -1193,6 +1203,18 @@ class RebuildResult:
         return self.cells > 0 and not self.failures
 
 
+def export_date(text: str) -> date | None:
+    """The date of an M/D/YYYY export value (the server's en-US format), or None
+    for any other text, an impossible date included.
+    """
+    if not re.fullmatch(r"\d{1,2}/\d{1,2}/\d{4}", text):
+        return None
+    try:
+        return datetime.strptime(text, "%m/%d/%Y").date()
+    except ValueError:
+        return None
+
+
 def _key_text(value: Any) -> str:
     """Key text that treats 2026, 2026.0 and '2026' alike, and reads the
     export's M/D/YYYY date (the server's en-US format) as the sheet query's ISO
@@ -1201,11 +1223,11 @@ def _key_text(value: Any) -> str:
     if value is None:
         return ""
     text = str(value).strip()
+    day = export_date(text)
+    if day is not None:
+        return day.isoformat()
     if re.fullmatch(r"\d{1,2}/\d{1,2}/\d{4}", text):
-        try:
-            return datetime.strptime(text, "%m/%d/%Y").date().isoformat()
-        except ValueError:
-            return text
+        return text
     if _THOUSANDS.fullmatch(text):
         text = text.replace(",", "")
     try:

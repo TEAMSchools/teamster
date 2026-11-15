@@ -760,6 +760,63 @@ def test_set_shelves_crosses_added_rows_in_front_of_a_dual_axis():
     ) in out
 
 
+def _cross_sheet(rows_expr: str) -> str:
+    ds = "[federated.0ddi (copy)]"
+    return SHELVES_TWB.replace(
+        f"<rows onTop='true'>({ds}.[none:Calculation_4901:nk] / "
+        f"{ds}.[none:week_start_monday:ok])</rows>",
+        f"<rows onTop='true'>{rows_expr}</rows>",
+    ).replace(
+        f"<cols onLeft='true'>({ds}.[none:module_code:nk] / "
+        f"{ds}.[none:school:nk])</cols>",
+        f"<cols onLeft='true'>{ds}.[none:week_start_monday:ok]</cols>",
+    )
+
+
+def test_set_shelves_nests_into_the_last_dimension_of_a_multi_cross():
+    ds = "[federated.0ddi (copy)]"
+    measures = f"({ds}.[avg:is_mastery_int:qk] + {ds}.[avg:is_mastery_int:qk])"
+    school, module = f"{ds}.[none:school:nk]", f"{ds}.[none:module_code:nk]"
+    src = _cross_sheet(f"({school} * {module} * {measures})")
+
+    out = set_shelves(
+        src,
+        "Mastery Grid",
+        {"drop": ["Week Start Monday"], "add": {"rows": ["Grade Level"]}},
+    ).xml
+
+    ET.fromstring(out)
+    assert (
+        f"<rows onTop='true'>({school} * ({module} / {ds}.[none:grade_level:ok]) "
+        f"* {measures})</rows>"
+    ) in out
+
+
+def test_set_shelves_refuses_a_shelf_that_mixes_nest_and_cross():
+    ds = "[federated.0ddi (copy)]"
+    measures = f"({ds}.[avg:is_mastery_int:qk] + {ds}.[avg:is_mastery_int:qk])"
+    school, module = f"{ds}.[none:school:nk]", f"{ds}.[none:module_code:nk]"
+    src = _cross_sheet(f"({school} / {module} * {measures})")
+
+    with pytest.raises(ValueError, match="mixes / and \\*"):
+        set_shelves(
+            src,
+            "Mastery Grid",
+            {"drop": ["Week Start Monday"], "add": {"rows": ["Grade Level"]}},
+        )
+
+
+def test_export_date_reads_m_d_yyyy_only():
+    from datetime import date
+
+    from cube_validation.tableau import export_date
+
+    assert export_date("9/21/2026") == date(2026, 9, 21)
+    assert export_date("13/45/2026") is None
+    assert export_date("2026-09-21") is None
+    assert export_date("9/21") is None
+
+
 def test_set_shelves_refuses_a_drop_off_the_shelves_and_an_unknown_add():
     with pytest.raises(ValueError, match="'Subject Area' is not on .*Grade/Subject"):
         set_shelves(SHELVES_TWB, "Mastery Grid", {"drop": ["Subject Area"]})

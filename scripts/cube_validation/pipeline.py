@@ -523,11 +523,8 @@ def _key(value: Any) -> str:
             value = datetime.fromisoformat(value)
         except ValueError:
             pass
-    elif isinstance(value, str) and re.fullmatch(r"\d{1,2}/\d{1,2}/\d{4}", value):
-        try:
-            value = datetime.strptime(value, "%m/%d/%Y")
-        except ValueError:
-            pass
+    elif isinstance(value, str) and (day := tableau.export_date(value)) is not None:
+        value = day
     if isinstance(value, datetime):
         stamp = value.replace(tzinfo=None)
         return stamp.date().isoformat() if stamp.time() == time() else stamp.isoformat()
