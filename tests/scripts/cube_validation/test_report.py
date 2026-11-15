@@ -104,8 +104,8 @@ def test_measure_line_names_open_row_groups():
         MeasureResult("clean", "validated", {"pass": 4}),
     ]
     text = render_local(_run(measures=measures))
-    assert ("- `enrolled`: validated (pass 135); 2 open row groups to triage") in text
-    assert "validated (pass 3); 1 open row group to triage" in text
+    assert ("- `enrolled`: validated (pass 135); 2 open row groups to sort") in text
+    assert "validated (pass 3); 1 open row group to sort" in text
     assert "- `clean`: validated (pass 4)\n" in text
 
 
@@ -343,7 +343,7 @@ def test_local_result_lists_missing_cuts_and_filters():
 def test_measure_line_counts_open_missing_cuts():
     run = _run()
     run.measures[0].open_gaps = 2
-    assert "2 missing cuts or filters to triage" in render_local(run)
+    assert "2 missing cuts or filters to sort" in render_local(run)
 
 
 def test_gap_decision_line_names_the_field():
@@ -458,7 +458,7 @@ def test_local_result_lists_cell_differences_with_candidate_causes():
     section = text.split("## Cell differences", 1)[1].split("## ", 1)[0]
     assert "enrollment: 58 differ, 3 dashboard only" in section
     assert "  - 58 cells: values differ beyond rounding" in section
-    assert "cell differences to triage in 1 comparison" in text
+    assert "cell differences to sort in 1 comparison" in text
 
 
 def _formula(id, comparison, reason, **kw):

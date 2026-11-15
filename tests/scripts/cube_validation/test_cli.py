@@ -1640,7 +1640,7 @@ def test_execute_refuses_prices_its_queries_do_not_use(fakes, tmp_path):
     )
     prices = [0.0] * (len(plan.queries()) + 1)
 
-    with pytest.raises(AssertionError, match="queries"):
+    with pytest.raises(RuntimeError, match="prices left over: .*queries"):
         pipeline._execute(cfg, plan, wh=wh, build=build, prices=prices)
 
 
@@ -1750,9 +1750,7 @@ def test_run_reports_cells_and_proofs(fakes, tmp_path, capsys):
 
     out = capsys.readouterr().out
     # The Miami group is still open, so the measure line says so.
-    assert (
-        "`avg_daily_attendance`: differs (pass 2); 1 open row group to triage"
-    ) in out
+    assert ("`avg_daily_attendance`: differs (pass 2); 1 open row group to sort") in out
     assert "ada-region: last matched 2026-10-26T12:00:00+00:00" in out
     assert "regions_region_name" in out and "Miami" in out
     assert list((tmp_path / "cache" / "v").glob("*/result.md"))
@@ -2289,7 +2287,7 @@ def test_review_refuses_a_triage_missing_an_open_item_of_the_run(
     assert cli.main(["ask-owner", str(path), "--domain", "Registrar"]) == 1
 
     err = capsys.readouterr().err
-    assert "v: 1 open item of the latest run is not in its triage" in err
+    assert "v: 1 open item of the latest run is not in its sort" in err
     assert "run `sort` for" in err
 
 
@@ -3102,7 +3100,7 @@ def test_run_lists_missing_cuts_from_the_proof(fakes, tmp_path, capsys):
     out = capsys.readouterr().out
     assert "`Team` (cut) on Rate by Region: Cube has no member; ada-region" in out
     assert "(filter, set to chosen values, not All)" in out
-    assert "2 missing cuts or filters to triage" in out
+    assert "2 missing cuts or filters to sort" in out
 
 
 def test_run_says_when_a_proof_predates_missing_cuts(fakes, tmp_path, capsys):
@@ -3125,7 +3123,7 @@ decisions:
     assert cli.main(["compare", str(_file(tmp_path, text))]) == 0
 
     out = capsys.readouterr().out
-    assert "1 missing cut or filter to triage" in out
+    assert "1 missing cut or filter to sort" in out
     assert "`no-team` (missing cut `Team`, deliberate)" in out
 
 

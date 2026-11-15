@@ -269,13 +269,13 @@ def render_local(run: RunResult) -> str:
         # kind is named with its count so the reader knows what to triage.
         if m.open_groups:
             plural = "group" if m.open_groups == 1 else "groups"
-            line += f"; {m.open_groups} open row {plural} to triage"
+            line += f"; {m.open_groups} open row {plural} to sort"
         if m.open_gaps:
             plural = "cut or filter" if m.open_gaps == 1 else "cuts or filters"
-            line += f"; {m.open_gaps} missing {plural} to triage"
+            line += f"; {m.open_gaps} missing {plural} to sort"
         if m.open_cells:
             plural = "comparison" if m.open_cells == 1 else "comparisons"
-            line += f"; cell differences to triage in {m.open_cells} {plural}"
+            line += f"; cell differences to sort in {m.open_cells} {plural}"
         out.append(line)
 
     out += ["", "## Triage", ""]

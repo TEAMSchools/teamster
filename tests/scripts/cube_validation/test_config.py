@@ -1174,6 +1174,22 @@ def test_an_old_key_is_refused_with_its_new_name(tmp_path, old, new):
     )
 
 
+@pytest.mark.parametrize(
+    "old, new",
+    [("proven_at", "matched_at"), ("probe_fingerprint", "sheet_query_fingerprint")],
+)
+def test_an_old_rebuild_check_key_is_refused_with_its_new_name(tmp_path, old, new):
+    block = f"    rebuild_check:\n      fingerprint: f00\n      {old}: x\n"
+    path = _write(tmp_path, EXAMPLE.replace("    rebuild_check: null\n", block, 1))
+
+    with pytest.raises(ConfigError) as exc:
+        load_view_config(path)
+
+    assert str(exc.value) == (
+        f"{path}: comparisons[0].rebuild_check.{old}: renamed; write it as {new}"
+    )
+
+
 def test_an_old_decision_proof_fingerprint_is_refused_with_its_new_name(tmp_path):
     old = CAUSE_DECISION.replace('explanation: "0f0f"', 'proof: "0f0f"')
     path = _write(tmp_path, EXAMPLE + old)

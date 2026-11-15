@@ -1387,7 +1387,8 @@ def _execute(
             ): r["n_students"]
             for r in wh.rows(plan.students_sql)
         }
-    assert next(price, None) is None, "prices left over: plan.queries() changed"
+    if next(price, None) is not None:
+        raise RuntimeError("prices left over: plan.queries() changed")
     return sides
 
 
@@ -1965,12 +1966,11 @@ def compare(
     compared, and the skipped one keeps its latest result. Before any query,
     a confirmed comparison is skipped when it lacks a key it needs, has no
     rebuild check, its sheet query or workbook changed since the check, or it
-    maps a member
-    Cube lacks (`_proof_skips`); before the price, when its SQL cannot be
-    built today (`_sql_skips`); after the price, when its Cube SQL reads a
-    fact in `also_facts` that changed during the build, or both sides' rows
-    read a table that did (`_compare_all`). The skips
-    are kept in `run.json` as `skipped`. Every query a comparison bills is
+    maps a member Cube lacks (`_proof_skips`); before the price, when its SQL
+    cannot be built today (`_sql_skips`); after the price, when its Cube SQL
+    reads a fact in `also_facts` that changed during the build, or both sides'
+    rows read a table that did (`_compare_all`). The skips are kept in
+    `run.json` as `skipped`. Every query a comparison bills is
     priced before the first one runs (`_compare_all`), and `ticker` prints a
     line as each comparison finishes. Each comparison it finishes is
     checkpointed in the run folder; a stopped run started again skips them

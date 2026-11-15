@@ -372,6 +372,13 @@ RENAMED_KEYS = {
 }
 
 
+# `rebuild_check:` keys renamed the same way.
+RENAMED_CHECK_KEYS = {
+    "proven_at": "matched_at",
+    "probe_fingerprint": "sheet_query_fingerprint",
+}
+
+
 def _comparison(reader: _Reader) -> Comparison:
     for old, new in RENAMED_KEYS.items():
         if old in reader.data:
@@ -405,6 +412,9 @@ def _comparison(reader: _Reader) -> Comparison:
     rebuild_check = None
     if reader.data.get("rebuild_check") is not None:
         check_reader = reader.child("rebuild_check", reader.data["rebuild_check"])
+        for old, new in RENAMED_CHECK_KEYS.items():
+            if old in check_reader.data:
+                check_reader.fail(old, f"renamed; write it as {new}")
         cuts = check_reader.get("cuts", list)
         totals_skipped = check_reader.get("totals_skipped", int)
         if totals_skipped is not None and totals_skipped < 0:
@@ -639,7 +649,7 @@ def _decision_values(group: _Reader, texts: list[str | None]) -> None:
                 f"values[{i}]",
                 f"YAML read {text if text is not None else value!r} as "
                 f"{type(value).__name__} {value!r}; quote it exactly as the "
-                "triage line shows it",
+                "sort line shows it",
             )
 
 

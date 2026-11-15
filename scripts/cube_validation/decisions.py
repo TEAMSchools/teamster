@@ -180,8 +180,8 @@ def apply(
         fingerprints: Current SQL fingerprints per comparison id, as
             `{"cube": ..., "dashboard": ...}`.
         gaps: Sheet fields with no Cube member. A decision naming one by kind
-            and field quiets it; it carries no fingerprints, because a re-explain
-            rewrites the list it matches.
+            and field quiets it; it carries no fingerprints, because a re-run of
+            `rebuild-sheet` rewrites the list it matches.
         cell_diffs: Each comparison's differing cells. A `formula` decision
             quiets its comparison's `formula` diff while both fingerprints
             hold; no decision quiets a `cells` diff, which coverage closes.

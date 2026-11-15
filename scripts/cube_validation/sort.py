@@ -354,7 +354,7 @@ def proven_triage(
         were = "is" if unseen == 1 else "are"
         raise pipeline.Refusal(
             f"{view}: {unseen} open item{'' if unseen == 1 else 's'} of the "
-            f"latest run {were} not in its triage; {again}"
+            f"latest run {were} not in its sort; {again}"
         )
     items = loaded.get("items", [])
     piles = Counter(item.get("suggestion") for item in items)
@@ -1244,7 +1244,7 @@ def _missing_column(
     """The datasource column behind a missing field, or empty when no rebuild
     check names it.
 
-    With `comparisons`, only their explanations are read.
+    With `comparisons`, only their rebuild checks are read.
     """
     wanted = None if comparisons is None else set(comparisons)
     for c in cfg.comparisons:
