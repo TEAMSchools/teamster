@@ -21,7 +21,7 @@ import json
 import re
 import sys
 from collections import Counter
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -855,13 +855,14 @@ MOVED_ROWS = (
 
 
 def _filter_label(
-    cfg: ViewConfig, caption: str, candidates: tuple[str, ...]
+    cfg: ViewConfig, gap: Gap, candidates: tuple[str, ...]
 ) -> tuple[str, str]:
     """A sheet filter's evidence label and default call, from names alone.
 
     A candidate member wins, even for a workbook calc: a name match is a
     lead, so the label says to check before mapping. Without one, the
-    proof's `missing_columns` tells a workbook-only field from a gap in Cube.
+    `missing_columns` of the gap's own comparisons' proofs tell a
+    workbook-only field from a gap in Cube.
     """
     if candidates:
         names = ", ".join(f"`{m}`" for m in candidates)
@@ -870,7 +871,7 @@ def _filter_label(
             "check before mapping it under `filters:`",
             "",
         )
-    if not _missing_column(cfg, caption):
+    if not _missing_column(cfg, gap.field, gap.comparisons):
         return "Workbook-only field: no datasource column behind it", "deliberate"
     return "Cube has no member: a gap", "fix_cube"
 
@@ -927,6 +928,7 @@ def suggest(
         if isinstance(source, Gap):
             gap = source
             caption = gap.field
+            candidates = _candidates(caption, docs)
             # Only the sheets the gap sits on speak for it; a proof that
             # predates `restricting_filters` leaves the answer unknown.
             proofs: list[Proof] = [
@@ -943,7 +945,6 @@ def suggest(
                 call = "filters_nothing"
                 evidence = (f"keeps every member on {', '.join(gap.sheets)}",)
             else:
-                candidates = _candidates(caption, docs)
                 verdicts = (
                     [(m, values(caption, m)) for m in candidates] if values else []
                 )
@@ -1013,10 +1014,7 @@ def suggest(
             posted = evidence
 
         if isinstance(source, Gap) and source.kind == "filter":
-            label, default_call = _filter_label(
-                cfg, source.field, _candidates(source.field, docs)
-            )
-            candidates = candidates or _candidates(source.field, docs)
+            label, default_call = _filter_label(cfg, source, candidates)
             evidence, posted = (label, *evidence), (label, *posted)
 
         out.append(
@@ -1232,9 +1230,17 @@ def value_check(
     return _CODING
 
 
-def _missing_column(cfg: ViewConfig, caption: str) -> str:
-    """The datasource column behind a missing field, or empty when no proof names it."""
+def _missing_column(
+    cfg: ViewConfig, caption: str, comparisons: Iterable[str] | None = None
+) -> str:
+    """The datasource column behind a missing field, or empty when no proof names it.
+
+    With `comparisons`, only their proofs are read.
+    """
+    wanted = None if comparisons is None else set(comparisons)
     for c in cfg.comparisons:
+        if wanted is not None and c.id not in wanted:
+            continue
         if c.proof and caption in (c.proof.missing_columns or {}):
             return (c.proof.missing_columns or {})[caption]
     return ""

@@ -1379,3 +1379,71 @@ def test_the_batch_prints_the_default_call():
     found = suggest(cfg, run, {})
 
     assert "    default call: deliberate" in batch_lines(run, found)
+
+
+def test_a_filter_that_filters_nothing_with_a_column_and_no_member_is_a_gap():
+    cfg = _cfg(
+        restricting_filters=["Grade"],
+        missing_columns={"Enroll Status": "enroll_status"},
+    )
+
+    [s] = suggest(cfg, _run(gaps=[_gap()]), {})
+
+    assert s.suggestion == "filters_nothing"
+    assert s.evidence[0] == "Cube has no member: a gap"
+    assert s.default_call == "fix_cube"
+
+
+def test_the_filter_label_is_also_the_first_posted_line():
+    cfg = _cfg(
+        restricting_filters=["Enroll Status"],
+        missing_columns={"Enroll Status": "enroll_status"},
+    )
+
+    [s] = suggest(cfg, _run(gaps=[_gap()]), {})
+
+    assert s.posted[0] == s.evidence[0] == "Cube has no member: a gap"
+
+
+def test_another_comparisons_column_never_makes_a_gap_for_cube():
+    mine = Comparison(
+        id="enrollment",
+        measure="student_count",
+        dims=[ColumnPair("Grade", "grade_level")],
+        proof=_proof(restricting_filters=["Enroll Status"]),
+    )
+    other = Comparison(
+        id="attendance",
+        measure="student_count",
+        dims=[ColumnPair("Grade", "grade_level")],
+        proof=_proof(
+            restricting_filters=["Enroll Status"],
+            missing_columns={"Enroll Status": "enroll_status"},
+        ),
+    )
+    cfg = ViewConfig(view="enrollment", fact="d.t", comparisons=[mine, other])
+
+    [s] = suggest(cfg, _run(gaps=[_gap()]), {})
+
+    assert s.evidence[0] == "Workbook-only field: no datasource column behind it"
+    assert s.default_call == "deliberate"
+
+
+def test_a_filter_gap_looks_up_its_candidates_once(monkeypatch):
+    from cube_validation import triage
+
+    calls = []
+    real = triage._candidates
+
+    def counted(caption, docs):
+        calls.append(caption)
+        return real(caption, docs)
+
+    monkeypatch.setattr(triage, "_candidates", counted)
+    cfg = _cfg(restricting_filters=["Region"])
+    docs = {"v_region": _doc("v_region", title="Region")}
+
+    [s] = suggest(cfg, _run(gaps=[_gap("Region")]), docs)
+
+    assert s.candidates == ("v_region",)
+    assert calls == ["Region"]
