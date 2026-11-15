@@ -1022,7 +1022,7 @@ def _still(run, loaded, waiting=None):
 
 def test_review_posts_ready_questions_and_lists_unsettled_items():
     run = _run()
-    lead = "lead: relaxing the school filter brings back 30 of 40 rows"
+    lead = "lead: relaxing main: school_id IN (1, 2) brings back 30 of 40 rows"
     still = _still(
         run, _left_in_investigate(run, lead), {run.view: {"seats": "never compared"}}
     )
@@ -1035,8 +1035,10 @@ def test_review_posts_ready_questions_and_lists_unsettled_items():
     assert "not explained yet" in section and "comment" in section
     assert (
         "- `enrollment` in `enrollment_view`: `enrollment:grade_level=9` "
-        f"(value_differs), 40 rows; {lead}"
+        "(value_differs), 40 rows; lead: relaxing a step in main brings back 30 "
+        "of 40 rows"
     ) in section
+    assert "school_id" not in body
     assert "- `seats` in `enrollment_view`: never compared" in section
     assert body.index("## Still with the analyst") < body.index("Also decided")
     assert "SELECT" not in section
@@ -1090,3 +1092,19 @@ def test_local_result_names_the_comparisons_skipped():
         "Skipped this run, each keeping its latest result: seats (no proof; run "
         "`prove` first)."
     ) in text
+
+
+def test_a_posted_lead_names_each_step_s_scope_never_its_sql():
+    run = _run()
+    lead = (
+        "lead: relaxing enrolled: x / 2 > 1 / kipptaf_int.int_e/main: INNER JOIN "
+        "t AS t ON a = b brings back <10 of 40 rows"
+    )
+
+    (line,) = _still(run, _left_in_investigate(run, lead))
+
+    assert line.endswith(
+        "; lead: relaxing a step in enrolled, kipptaf_int.int_e/main brings back "
+        "<10 of 40 rows"
+    )
+    assert "JOIN" not in line and "x / 2" not in line

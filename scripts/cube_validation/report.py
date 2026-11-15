@@ -701,6 +701,27 @@ class Unsettled:
     hidden: tuple[str, ...] = ()
 
 
+# A trace lead (`trace.ItemTrace.leads`): its step labels and counts. A label
+# is `<scope>: <SQL>`, several joined by ` / ` (`sqlsteps.Step`).
+_LEAD = re.compile(
+    r"^lead: relaxing (?P<label>.*) brings back (?P<n>\S+) of (?P<of>\S+) rows$"
+)
+_SCOPE = re.compile(r"(?:^| / )([^\s:/][^\s:]*): ")
+
+
+def _posted_lead(lead: str) -> str:
+    """A trace lead as the issue shows it: each step's scope and the counts,
+    never the step's SQL. The full lead stays in the local triage."""
+    found = _LEAD.match(lead)
+    if found is None:
+        return "a trace lead; ask the analyst"
+    scopes = list(dict.fromkeys(_SCOPE.findall(found["label"])))
+    where = f" in {', '.join(scopes)}" if scopes else ""
+    return (
+        f"lead: relaxing a step{where} brings back {found['n']} of {found['of']} rows"
+    )
+
+
 def _posted_why(why: str) -> str:
     """Why a comparison waits, as the issue shows it: no SQL, no long digits."""
     at = why.find(SQL_BROKEN)
@@ -715,7 +736,8 @@ def still_with_analyst(
     """The review's lines for what is not settled yet, never asked as questions.
 
     One line per item in `investigate`: its comparison, triage id, bucket or
-    kind, masked row or cell count, and the trace's lead or `no lead yet`.
+    kind, masked row or cell count, and the trace's lead (its steps' scopes
+    and counts, `_posted_lead`) or `no lead yet`.
     Then one line per comparison in `waiting` (per view, id to why: missing,
     stale or skipped, `triage.comparisons_waiting`). No stub value and no SQL.
     """
@@ -726,7 +748,11 @@ def still_with_analyst(
             for n, word in ((u.rows, "rows"), (u.cells, "cells"))
             if n is not None
         ]
-        lead = _safe_reason(u.lead, list(u.hidden)) if u.lead else "no lead yet"
+        lead = (
+            _safe_reason(_posted_lead(u.lead), list(u.hidden))
+            if u.lead
+            else "no lead yet"
+        )
         out.append(
             f"`{u.comparison}` in `{u.view}`: "
             + ", ".join([f"`{_clean(u.item)}` ({u.what})", *counts])

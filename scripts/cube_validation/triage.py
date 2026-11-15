@@ -1299,7 +1299,8 @@ def run_triage(
     `now` (`pipeline.stale_comparisons` over `pipeline.composed_results`),
     whose SQL cannot be built today, or which the run skipped (`not compared:
     <why>`), is printed and written to `triage.json` under `stale`, so
-    `comparisons_waiting` can name it.
+    `comparisons_waiting` can name it. A skipped comparison's row groups are
+    neither checked for the trace nor traced.
 
     Each proof's outcome is kept beside `run.json` as it finishes
     (`progress`), so a stopped triage skips the proofs it finished. With
@@ -1341,10 +1342,12 @@ def run_triage(
     with wh.budget(max_usd):
         prepared.schools = network_schools(wh)
         # Judged from what the run was composed from, which a stopped run
-        # can leave older than `latest/`.
+        # can leave older than `latest/`. A comparison the run skipped is
+        # named by why; its SQL may not build today.
+        skipped = {s["comparison"]: s["why"] for s in run.skipped}
         stale = pipeline.stale_comparisons(
             cfg,
-            cfg.comparisons,
+            [c for c in cfg.comparisons if c.id not in skipped],
             pipeline.composed_results(cfg, run),
             wh=wh,
             cube=cube,
@@ -1352,7 +1355,7 @@ def run_triage(
             now=now or datetime.now(timezone.utc),
         )
         # A comparison `run` skipped keeps its older result: say why.
-        stale |= {s["comparison"]: f"{NOT_COMPARED}: {s['why']}" for s in run.skipped}
+        stale |= {cid: f"{NOT_COMPARED}: {why}" for cid, why in skipped.items()}
         for cid, why in stale.items():
             print(f"{cfg.view}: comparison {cid} {why}; compare it, then sort.")
         if trace_rows:
@@ -1364,6 +1367,7 @@ def run_triage(
                 cube=cube,
                 manifest_path=manifest or trace.MANIFEST,
                 prepared=prepared,
+                skip=_groups_of(run, set(skipped)),
             )
         # Proofs first: they are the only path to `cause`, so a trace that
         # hits a cap never un-proves an item, and nothing they explain is
@@ -1395,7 +1399,9 @@ def run_triage(
                 cube=cube,
                 manifest_path=manifest or trace.MANIFEST,
                 max_minutes=trace_max_minutes or trace.TRACE_MAX_MINUTES,
-                skip=confirm.explained(ran) | _outside(run, wanted),
+                skip=confirm.explained(ran)
+                | _outside(run, wanted)
+                | _groups_of(run, set(skipped)),
                 prepared=prepared,
             )
             if trace_rows
@@ -1444,6 +1450,14 @@ def run_triage(
     print("\n".join(batch_lines(run, shown)))
     print(f"Saved {out}")
     return found
+
+
+def _groups_of(run: RunResult, comparisons: set[str]) -> set[tuple]:
+    """The `trace.item_key` of every open row group of `comparisons`: the
+    comparisons the run skipped, whose SQL the trace may not build today."""
+    return {
+        trace.item_key(g) for g in run.applied.open if g.comparison_id in comparisons
+    }
 
 
 def _outside(run: RunResult, wanted: set[str] | None) -> set[tuple]:

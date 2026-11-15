@@ -33,7 +33,7 @@ from cube_validation.bq import CostCapError, Warehouse
 from cube_validation.config import ColumnPair, Comparison, load_view_config
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation.cube_client import Compiled
+from cube_validation.cube_client import Compiled, CubeError
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.tableau import Snapshot, formula_fingerprint
@@ -210,6 +210,9 @@ class FakeCube:
 
     def compiled(self, query):
         self.compiled_queries.append(query)
+        # Cube refuses to compile a member its model no longer has.
+        if gone := sorted(set(pipeline._query_members(query)) & self.dropped):
+            raise CubeError(f"Cube GET /sql: {', '.join(gone)} not found")
         dims = [m.split(".", 1)[1] for m in query.get("dimensions", [])]
         measures = [m.split(".", 1)[1] for m in query.get("measures", [])]
         select = ", ".join(
@@ -766,6 +769,7 @@ def test_a_comparison_without_a_proof_is_skipped_and_the_rest_run(
     out = capsys.readouterr().out
     assert "Skipping c2: no proof; run `prove` first." in out
     assert out.index("Skipping c2") < out.index("(dry run)")
+    assert "c2: totals not proven" not in out
     assert _scripts_for(fakes.bq) == ["c1"]
     saved = json.loads(_latest_run(tmp_path).read_text())
     assert saved["skipped"] == [
@@ -813,9 +817,15 @@ def test_a_changed_second_fact_skips_only_the_comparisons_that_read_it(
 ):
     path = _two(tmp_path, _reads_membership, text=ALSO_FACTS_YML)
     _second_fact_for_membership(fakes)
-    fakes.bq.changed = ("fct_g",)
-
     assert cli.main(["run", str(path)]) == 0
+    results = latest.folder(tmp_path / "cache" / "v", "kipptaf_marts.fct_f")
+    before = latest._file(results, "c2").read_text()
+    fakes.bq.changed = ("fct_g",)
+    fakes.bq.build = LATER
+    fakes.bq.ran.clear()
+    capsys.readouterr()
+
+    assert cli.main(["run", str(path), "--all"]) == 0
 
     out = capsys.readouterr().out
     assert (
@@ -826,6 +836,7 @@ def test_a_changed_second_fact_skips_only_the_comparisons_that_read_it(
     assert out.index("(dry run)") < out.index("Skipping c2")
     assert _scripts_for(fakes.bq) == ["c1"]
     assert len(_compared(fakes.bq)) == 6
+    assert latest._file(results, "c2").read_text() == before
 
 
 def test_a_plain_run_with_only_a_skipped_comparison_left_compares_nothing(
@@ -939,6 +950,110 @@ def test_a_never_compared_comparison_whose_sql_cannot_be_built_is_skipped(
     assert "Skipping c2: its SQL cannot be built today: " in out
     assert "fct_g" in out and "also_facts" in out
     assert _scripts_for(fakes.bq) == ["c1"]
+
+
+def test_sort_and_review_go_on_past_a_comparison_skipped_for_a_missing_member(
+    fakes, tmp_path, capsys
+):
+    path = _two(tmp_path, _reads_membership)
+    assert cli.main(["run", str(path)]) == 0
+    fakes.cube.dropped = {"v.membership_value"}
+    fakes.bq.ran.clear()
+    capsys.readouterr()
+
+    # Nothing else to compare, but the skip is recorded for `review`.
+    assert cli.main(["run", str(path)]) == 0
+
+    out = capsys.readouterr().out
+    assert "Skipping c2: Cube's model has no member for v.membership_value" in out
+    assert "Composing run.json again to record the comparisons skipped" in out
+    assert not _compared(fakes.bq)
+    why = (
+        "Cube's model has no member for v.membership_value; fix the mapping, then "
+        "`prove` it again"
+    )
+    saved = json.loads(_latest_run(tmp_path).read_text())
+    assert saved["skipped"] == [{"comparison": "c2", "why": why}]
+
+    assert cli.main(["triage", str(path), "--no-trace", "--no-proofs"]) == 0
+    assert f"v: comparison c2 not compared: {why}" in capsys.readouterr().out
+    assert cli.main(["review", str(path), "--domain", "Registrar"]) == 0
+    section = capsys.readouterr().out.split("## Still with the analyst", 1)[1]
+    assert (
+        "- `c2` in `v`: not compared: Cube's model has no member for "
+        "v.membership_value; fix the mapping, then prove it again\n"
+    ) in section
+
+    # Recorded once: the next plain run compares and writes nothing.
+    assert cli.main(["run", str(path)]) == 0
+    assert "Every comparison not skipped has a current latest result" in (
+        capsys.readouterr().out
+    )
+
+
+def test_triage_names_a_member_cube_dropped_since_the_run(fakes, tmp_path):
+    path = _two(tmp_path, _reads_membership)
+    assert cli.main(["run", str(path)]) == 0
+    fakes.cube.dropped = {"v.membership_value"}
+
+    stale = _triaged_stale(path, tmp_path)
+
+    assert stale["c2"].startswith("its SQL cannot be built today: ")
+    assert "v.membership_value" in stale["c2"] and "c1" not in stale
+
+
+def test_triage_neither_checks_nor_traces_a_skipped_comparison_s_groups(
+    fakes, tmp_path, monkeypatch
+):
+    path = _two(tmp_path, _reads_membership)
+    assert cli.main(["run", str(path)]) == 0
+    fakes.cube.dropped = {"v.membership_value"}
+    assert cli.main(["run", str(path)]) == 0  # records c2's skip
+    run = pipeline._run_from_json(json.loads(_latest_run(tmp_path).read_text()))
+    seen = {}
+
+    def ready(*args, skip=frozenset(), **kwargs):
+        seen["ready"] = set(skip)
+
+    def traced(cfg, run_, *, skip, **kwargs):
+        seen["trace"] = set(skip)
+        return trace.TraceResult({})
+
+    monkeypatch.setattr(trace, "check_ready", ready)
+    monkeypatch.setattr(trace, "trace_run", traced)
+
+    assert cli.main(["triage", str(path), "--no-proofs"]) == 0
+
+    keys = {
+        cid: {trace.item_key(g) for g in run.applied.open if g.comparison_id == cid}
+        for cid in ("c1", "c2")
+    }
+    assert keys["c1"] and keys["c2"]
+    assert seen["ready"] == seen["trace"] == keys["c2"]
+
+
+def test_review_posts_the_masked_lead_of_an_item_with_the_analyst(
+    fakes, tmp_path, capsys
+):
+    path = _file(tmp_path)
+    assert cli.main(["run", str(path)]) == 0
+    lead = "lead: relaxing main: region = 'Miami' brings back {} of 30 rows"
+    item = {
+        **_triage_item(lead.format(3), "investigate", "j"),
+        "evidence_posted": [lead.format("<10")],
+    }
+    _triage_everything(tmp_path, [_triage_item("e"), item])
+    capsys.readouterr()
+
+    assert cli.main(["review", str(path), "--domain", "Registrar"]) == 0
+
+    body = capsys.readouterr().out
+    section = body.split("## Still with the analyst", 1)[1].split("## Proposed")[0]
+    assert "- `ada-region` in `v`: `j` (group); lead: relaxing a step in main " in (
+        section
+    )
+    assert "brings back <10 of 30 rows" in section
+    assert "3 of 30" not in body and "region = " not in section
 
 
 def test_triage_and_review_name_a_skipped_comparison(fakes, tmp_path, capsys):

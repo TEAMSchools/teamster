@@ -1086,11 +1086,13 @@ def check_ready(
     manifest_path: Path = MANIFEST,
     levels: int = MAX_LEVELS,
     prepared: Prepared | None = None,
+    skip: set[tuple] = frozenset(),
 ) -> Prepared:
     """Refuse now what `trace_run` would refuse, before anything is spent.
 
-    Checks every open row group, so it may ask for a model only a group a
-    proof later explains would have needed. Call inside `wh.budget`.
+    Checks every open row group but those in `skip` (`item_key`s), so it may
+    ask for a model only a group a proof later explains would have needed.
+    Call inside `wh.budget`.
 
     Returns:
         What the check fetched, for the stored proofs and `trace_run` to reuse.
@@ -1111,7 +1113,7 @@ def check_ready(
     _plan(
         cfg,
         run,
-        list(run.applied.open),
+        [g for g in run.applied.open if item_key(g) not in skip],
         wh=wh,
         cube=cube,
         manifest_path=manifest_path,

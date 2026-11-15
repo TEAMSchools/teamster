@@ -1142,11 +1142,12 @@ def approved_decisions(
         AnswerError: An entry is malformed, repeats an id or an (item,
             cause), takes an id the file has, has a reason that carries what
             `NOTE_REFUSALS` keeps out, names an item the triage does not list,
-            an item still in `investigate`, a cell set, a row group no proof decides, or a cause the item
-            lacks, leaves out `cause` on an item with several, names a
-            comparison the run has no fingerprints for, or has a cause with no
-            words, words 2 proofs share, a decision with another call, or an
-            answered decision whose SQL or proof changed.
+            an item still in `investigate`, a cell set, a row group no proof
+            decides, or a cause the item lacks, leaves out `cause` on an item
+            with several, names a comparison the run has no fingerprints for,
+            or has a cause with no words, words 2 proofs share, a decision
+            with another call, or an answered decision whose SQL or proof
+            changed.
     """
     items = {item.get("id"): item for item in triage.get("items", [])}
     proofs = _proofs_by_cause(list(items.values()))
