@@ -430,6 +430,7 @@ class _Side:
             exclude=exclude,
             include=include,
             combine=combine,
+            cuts=[(c, d) for _, c, d in pipeline.cut_flags(self.comparison) or []],
         )
 
 

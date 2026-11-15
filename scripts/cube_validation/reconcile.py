@@ -87,19 +87,31 @@ class CellDiff:
     kind: str = "cells"
 
 
-def _numbered(rows_sql: str, grain: list[str], values: list[str]) -> str:
+def _numbered(
+    rows_sql: str,
+    grain: list[str],
+    values: list[str],
+    alias: str,
+    cuts: Sequence[str] = (),
+) -> str:
     """Wrap a row source, numbering duplicates on the grain so the join cannot fan out.
 
     Partitions by the same keys the join compares (`_grain_keys`), so both
     sides number 1 and 1.0, or a NULL past the student column, as one value.
+    The row source is aliased `alias` (`c` or `d`), so `cuts`, each cut's
+    predicate over that alias, can order the numbering: a key's rows number
+    cut by cut first, then by value, so a key held in several cuts pairs
+    within each cut.
     """
-    order = ", ".join(values or grain)
+    order = ", ".join(
+        [f"COALESCE({cut}, FALSE) DESC" for cut in cuts] + (values or grain)
+    )
     partition = ", ".join(_grain_keys(grain))
     return (
         # trunk-ignore(bandit/B608): identifiers are validated in config.py; row SQL comes from Cube's compiled query
-        f"SELECT s.*, TRUE AS {_IN}, "
+        f"SELECT {alias}.*, TRUE AS {_IN}, "
         f"ROW_NUMBER() OVER (PARTITION BY {partition} ORDER BY {order}) "
-        f"AS {_RN}\n  FROM (\n{rows_sql}\n  ) AS s"
+        f"AS {_RN}\n  FROM (\n{rows_sql}\n  ) AS {alias}"
     )
 
 
@@ -575,10 +587,22 @@ def _joined(
     return (
         # trunk-ignore(bandit/B608): identifiers are validated in config.py; row SQL comes from Cube's compiled query
         "WITH c AS (\n  "
-        + _numbered(cube_rows_sql, cube_grain, [p.cube for p in rows.values])
+        + _numbered(
+            cube_rows_sql,
+            cube_grain,
+            [p.cube for p in rows.values],
+            "c",
+            [c for c, _ in cuts],
+        )
         # trunk-ignore(bandit/B608): identifiers are validated in config.py; row SQL comes from Cube's compiled query
         + "\n),\nd AS (\n  "
-        + _numbered(dashboard_rows_sql, dash_grain, [p.dashboard for p in rows.values])
+        + _numbered(
+            dashboard_rows_sql,
+            dash_grain,
+            [p.dashboard for p in rows.values],
+            "d",
+            [d for _, d in cuts],
+        )
         # trunk-ignore(bandit/B608): identifiers are validated in config.py; row SQL comes from Cube's compiled query
         + "\n),\njoined AS (\n  SELECT\n    "
         + joined_select
@@ -613,6 +637,7 @@ def trace_sql(
     exclude: Sequence[str] = (),
     include: Sequence[str] = (),
     combine: bool = True,
+    cuts: Sequence[tuple[str, str]] = (),
 ) -> str:
     """Build the query that counts which relaxed variants recover each unmatched row.
 
@@ -647,13 +672,21 @@ def trace_sql(
             recovers. False counts each step's rows separately, plus every
             row in play under `NONE`. Both count, under `DUPLICATE`, the rows
             left out for a duplicate grain.
+        cuts: The cut predicates, as `reconcile_sql` takes them, so a key's
+            rows pair cut by cut as the run's did.
 
     Returns:
         One query returning `bucket`, each group-by column, `step_id` and
         `n_rows`.
     """
     ctes, group_names = _joined(
-        cube_rows_sql, dashboard_rows_sql, rows, group_by, filters, keys=True
+        cube_rows_sql,
+        dashboard_rows_sql,
+        rows,
+        group_by,
+        filters,
+        keys=True,
+        cuts=cuts,
     )
     group_names = [g for g in group_names if g != "__filter"]
     grain = [p.cube if side == "cube" else p.dashboard for p in rows.grain]

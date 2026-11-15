@@ -459,6 +459,38 @@ def test_each_group_carries_its_rows_per_cut_on_each_side(duck):
     assert by_bucket["dashboard_filtered"].cut_rows[0] == (NEWARK, 1, 0)
 
 
+def test_a_key_in_2_cuts_pairs_its_rows_within_each_cut(duck):
+    # Student 1 has one row per region on each side, with the values swapped
+    # between the regions: paired by value alone, each row would meet the
+    # other region's row and read dims_differ.
+    duck.table(
+        "c_rows",
+        "lea BIGINT, aid VARCHAR, region VARCHAR, ok_c BOOLEAN",
+        [(1, "a", "Newark", True), (1, "a", "Miami", False)],
+    )
+    duck.table(
+        "d_rows",
+        "student BIGINT, item VARCHAR, region VARCHAR, ok_d BOOLEAN",
+        [(1, "a", "Newark", False), (1, "a", "Miami", True)],
+    )
+    result = duck.rows(
+        reconcile_sql(
+            "SELECT * FROM c_rows",
+            "SELECT * FROM d_rows",
+            REGION_ROWS,
+            [],
+            cuts=[
+                ("c.region = 'Newark'", "d.region = 'Newark'"),
+                ("c.region = 'Miami'", "d.region = 'Miami'"),
+            ],
+        )
+    )
+
+    by = {g.bucket: g for g in groups_from("c1", result, [NEWARK, MIAMI])}
+    assert set(by) == {"value_differs"}
+    assert by["value_differs"].cut_rows == ((NEWARK, 1, 1), (MIAMI, 1, 1))
+
+
 def test_the_reconcile_returns_no_value_sums(duck):
     _save_tables(duck)
     row = duck.rows(reconcile_sql(*SAVE_ARGS, cuts=[("TRUE", "TRUE")]))[0]
