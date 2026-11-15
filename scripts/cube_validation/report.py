@@ -784,7 +784,7 @@ def _questions(
         comparison, after its `head`), `kinds`, `hidden` (values
         the reason and any evidence must lose), `decisions` as (view,
         Decision) pairs and `comparisons` as (view, comparison id, kind)
-        triples, each listed once; a cause question also has `asks`, (view,
+        triples, each listed once per kind; a cause question also has `asks`, (view,
         `CauseAsk`) pairs.
     """
     questions: dict[tuple, dict] = {}
@@ -809,8 +809,10 @@ def _questions(
         q["hidden"] += hidden
         q["decisions"] += [(view, x) for x in decisions]
         q["reasons"] += [x.reason for x in decisions if x.reason not in q["reasons"]]
+        # Once per kind: a formula part keeps its own example (a formula
+        # cell) beside a group part's on the same comparison.
         for cid in comparisons:
-            if (view, cid) not in [(v, c) for v, c, _ in q["comparisons"]]:
+            if (view, cid, kind) not in q["comparisons"]:
                 q["comparisons"].append((view, cid, kind))
 
     for run in runs:

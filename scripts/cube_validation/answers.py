@@ -665,7 +665,7 @@ def questions_json(
         `reason`, `decisions` (ids), `views`, `definitions` (`dashboard` and
         `cube`, one `<comparison> in <view>: <text>` line each), `evidence`,
         `counts` (the masked parts of its bullet), `hand_checks` (one per
-        comparison with an example cell, and per view 1 `none` entry listing
+        comparison and kind with an example cell, and per view 1 `none` entry listing
         the `comparisons` without one, to find an example locally; a cause
         question, one rule, has 1 example across its comparisons, or the
         `none` entries), and the
@@ -743,9 +743,12 @@ def questions_json(
                 if cfg
                 else None
             )
+            # A comparison with a group part and a formula part gets 2
+            # examples, or one when both pick the same cell.
             if check:
-                found.append((view, check))
-            else:
+                if (view, check) not in found:
+                    found.append((view, check))
+            elif cid not in none.get(view, []):
                 none.setdefault(view, []).append(cid)
         if asked and found:
             # One rule asked once: one example, the cell holding the cause's

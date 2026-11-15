@@ -115,6 +115,26 @@ def test_a_formula_question_s_hand_check_names_a_formula_cell():
     assert example_cell(old, "enrollment", kind="cells")["key"] == "old"
 
 
+def test_a_formula_part_merged_with_a_group_part_keeps_a_formula_example():
+    # The formula decision shares the group decisions' reason, so one
+    # question holds a group part and a formula part on one comparison: the
+    # group part's example is the widest cell, the formula part's a formula
+    # cell.
+    wide = {**_cell("wide", 10, 90), "kind": "cells"}
+    narrow = {**_cell("narrow", 10, 25), "kind": "formula"}
+    run = _owner_run([wide, narrow])
+    (d, diff), = run.applied.quiet_cells  # fmt: skip
+    group_reason = run.applied.quiet[0][0].reason
+    run.applied.quiet_cells = [(dataclasses.replace(d, reason=group_reason), diff)]
+
+    (q,) = _questions(run)
+
+    assert sorted((c["dashboard"], c["cube"]) for c in q["hand_checks"]) == [
+        ("10", "25"),
+        ("10", "90"),
+    ]
+
+
 def test_example_cell_ties_go_to_the_lowest_key():
     run = _run([_cell("b", 10, 20), _cell("a", 10, 20)])
 
