@@ -1,45 +1,378 @@
 models:
   - name: rpt_powerschool__autocomm_students
+    description:
+      The shared PowerSchool student AutoComm layout, one row per student per
+      region for the current school year (graduates excluded). Each NJ district
+      has a wrapper that keeps its own rows and sends a headerless,
+      tab-separated file to its PowerSchool, which maps fields by column
+      position.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - code_location
+          config:
+            severity: error
     columns:
       - name: student_number
         data_type: int64
+        description: PowerSchool student number, the key AutoComm matches on.
+        config:
+          meta:
+            contains_pii: true
       - name: student_web_id
         data_type: string
+        description: Student portal username.
+        config:
+          meta:
+            contains_pii: true
       - name: team
         data_type: string
+        description: Advisory name, sent as the PowerSchool team.
+        config:
+          meta:
+            contains_pii: true
       - name: eligibility_name
         data_type: string
+        description: Lunch status, sent as PowerSchool LunchStatus.
+        config:
+          meta:
+            contains_pii: true
       - name: total_balance
         data_type: numeric
+        description: Lunch balance, sent as U_StudentsUserFields.lunch_balance.
+        config:
+          meta:
+            contains_pii: true
       - name: home_room
         data_type: string
+        description: Advisor name (last, first), sent as Home_Room.
+        config:
+          meta:
+            contains_pii: true
       - name: u_studentsuserfields__studentemail
         data_type: string
+        description: Student email address.
+        config:
+          meta:
+            contains_pii: true
       - name: code_location
         data_type: string
+        description:
+          District code location. Each district wrapper filters on it and does
+          not send it.
       - name: s_nj_stu_x__graduation_pathway_math
         data_type: string
+        description: Final NJ graduation pathway code for math.
+        config:
+          meta:
+            contains_pii: true
       - name: s_nj_stu_x__graduation_pathway_ela
         data_type: string
+        description: Final NJ graduation pathway code for ELA.
+        config:
+          meta:
+            contains_pii: true
       - name: web_id
         data_type: string
+        description: Family portal username, the student web id plus ".fam".
+        config:
+          meta:
+            contains_pii: true
       - name: graduation_year
         data_type: int64
+        description:
+          Expected graduation year, academic year plus 13 minus grade.
+        config:
+          meta:
+            contains_pii: true
       - name: district_entry_date
         data_type: string
+        description: District entry date as MM/DD/YYYY.
+        config:
+          meta:
+            contains_pii: true
       - name: school_entry_date
         data_type: string
+        description:
+          Sent as the school entry date. It carries the district entry date, as
+          MM/DD/YYYY.
+        config:
+          meta:
+            contains_pii: true
       - name: student_allowwebaccess
         data_type: int64
+        description: 1 when the student is currently enrolled, else 0.
+        config:
+          meta:
+            contains_pii: true
       - name: allowwebaccess
         data_type: int64
+        description: 1 when the student is currently enrolled, else 0.
+        config:
+          meta:
+            contains_pii: true
       - name: retained_tf
         data_type: int64
+        description: 1 when the student is retained this school year, else 0.
+        config:
+          meta:
+            contains_pii: true
       - name: student_web_password
         data_type: string
+        description:
+          Student portal password, null when PowerSchool already holds one so
+          the import never overwrites a set password.
+        config:
+          meta:
+            contains_pii: true
       - name: web_password
         data_type: string
+        description:
+          Family portal password, null when PowerSchool already holds one.
+        config:
+          meta:
+            contains_pii: true
       - name: track
         data_type: string
+        description: Track letter A through E, derived from grade level.
+        config:
+          meta:
+            contains_pii: true
       - name: s_stu_x__fafsa
         data_type: string
+        description:
+          FAFSA status for grade 12. N when PowerSchool already holds N, E when
+          the student opted out in Overgrad, C when the FAFSA is complete.
+        config:
+          meta:
+            contains_pii: true
+      - name: s_nj_stu_x__pid_504_tf
+        data_type: int64
+        description:
+          The NJ state 504 field, PID_504_TF, for Newark only, null elsewhere. A
+          currently enrolled student gets 1 with an active EdPlan 504 plan and 0
+          without one. A withdrawn student gets their current PowerSchool value
+          back, and so does every Newark student on a night EdPlan reports no
+          active plans, because a blank AutoComm cell clears the field.
+        config:
+          meta:
+            contains_pii: true
+
+unit_tests:
+  - name: test_pid_504_tf_mirrors_edplan
+    description:
+      Currently enrolled Newark students get 1 with an active EdPlan plan and 0
+      without one. Withdrawn Newark students get their current PowerSchool value
+      back, and 0 when PowerSchool has no state record. Other regions get null.
+      A plan for a student who is not in the file adds no row.
+    model: rpt_powerschool__autocomm_students
+    overrides:
+      vars:
+        current_academic_year: 2026
+    given:
+      - input: ref('int_extracts__student_enrollments')
+        rows:
+          - {
+              student_number: 2001,
+              studentid: 102001,
+              students_dcid: 102001,
+              _dbt_source_project: kippnewark,
+              academic_year: 2026,
+              rn_year: 1,
+              grade_level: 5,
+              enroll_status: 0,
+            }
+          - {
+              student_number: 2002,
+              studentid: 102002,
+              students_dcid: 102002,
+              _dbt_source_project: kippnewark,
+              academic_year: 2026,
+              rn_year: 1,
+              grade_level: 5,
+              enroll_status: 0,
+            }
+          - {
+              student_number: 2003,
+              studentid: 102003,
+              students_dcid: 102003,
+              _dbt_source_project: kippnewark,
+              academic_year: 2026,
+              rn_year: 1,
+              grade_level: 5,
+              enroll_status: 2,
+            }
+          - {
+              student_number: 2004,
+              studentid: 102004,
+              students_dcid: 102004,
+              _dbt_source_project: kippnewark,
+              academic_year: 2026,
+              rn_year: 1,
+              grade_level: 5,
+              enroll_status: 2,
+            }
+          - {
+              student_number: 2005,
+              studentid: 102005,
+              students_dcid: 102005,
+              _dbt_source_project: kippnewark,
+              academic_year: 2026,
+              rn_year: 1,
+              grade_level: 5,
+              enroll_status: 2,
+            }
+          - {
+              student_number: 3001,
+              studentid: 103001,
+              students_dcid: 103001,
+              _dbt_source_project: kippcamden,
+              academic_year: 2026,
+              rn_year: 1,
+              grade_level: 5,
+              enroll_status: 0,
+            }
+      - input: ref('int_edplan__section_504_active_plan_rollup')
+        format: sql
+        rows: |
+          select 2001 as student_number, 'kippnewark' as _dbt_source_project
+          union all select 2004, 'kippnewark'
+          union all select 9999, 'kippnewark'
+      - input: ref('stg_powerschool__s_nj_stu_x')
+        format: sql
+        rows: |
+          select
+            102001 as studentsdcid,
+            'kippnewark' as _dbt_source_project,
+            false as is_504
+          union all select 102002, 'kippnewark', true
+          union all select 102003, 'kippnewark', true
+          union all select 102004, 'kippnewark', false
+          union all select 103001, 'kippcamden', true
+      - input: ref('stg_powerschool__students')
+        rows: []
+      - input: ref('int_powerschool__district_entry_date')
+        rows: []
+      - input: ref('int_students__graduation_path_codes')
+        rows: []
+      - input: ref('stg_powerschool__s_stu_x')
+        rows: []
+    expect:
+      rows:
+        - {
+            student_number: 2001,
+            code_location: kippnewark,
+            s_nj_stu_x__pid_504_tf: 1,
+          }
+        - {
+            student_number: 2002,
+            code_location: kippnewark,
+            s_nj_stu_x__pid_504_tf: 0,
+          }
+        - {
+            student_number: 2003,
+            code_location: kippnewark,
+            s_nj_stu_x__pid_504_tf: 1,
+          }
+        - {
+            student_number: 2004,
+            code_location: kippnewark,
+            s_nj_stu_x__pid_504_tf: 0,
+          }
+        - {
+            student_number: 2005,
+            code_location: kippnewark,
+            s_nj_stu_x__pid_504_tf: 0,
+          }
+        - {
+            student_number: 3001,
+            code_location: kippcamden,
+            s_nj_stu_x__pid_504_tf: null,
+          }
+
+  - name: test_pid_504_tf_writes_back_when_no_active_plans
+    description:
+      When the EdPlan report has no active plans in Newark, every Newark row
+      gets its current PowerSchool value back instead of 0. Other regions stay
+      null.
+    model: rpt_powerschool__autocomm_students
+    overrides:
+      vars:
+        current_academic_year: 2026
+    given:
+      - input: ref('int_extracts__student_enrollments')
+        rows:
+          - {
+              student_number: 2001,
+              studentid: 102001,
+              students_dcid: 102001,
+              _dbt_source_project: kippnewark,
+              academic_year: 2026,
+              rn_year: 1,
+              grade_level: 5,
+              enroll_status: 0,
+            }
+          - {
+              student_number: 2002,
+              studentid: 102002,
+              students_dcid: 102002,
+              _dbt_source_project: kippnewark,
+              academic_year: 2026,
+              rn_year: 1,
+              grade_level: 5,
+              enroll_status: 0,
+            }
+          - {
+              student_number: 3001,
+              studentid: 103001,
+              students_dcid: 103001,
+              _dbt_source_project: kippcamden,
+              academic_year: 2026,
+              rn_year: 1,
+              grade_level: 5,
+              enroll_status: 0,
+            }
+      - input: ref('int_edplan__section_504_active_plan_rollup')
+        format: sql
+        rows: |
+          select
+            cast(null as int64) as student_number,
+            cast(null as string) as _dbt_source_project
+          from unnest([1])
+          where false
+      - input: ref('stg_powerschool__s_nj_stu_x')
+        format: sql
+        rows: |
+          select
+            102001 as studentsdcid,
+            'kippnewark' as _dbt_source_project,
+            false as is_504
+          union all select 102002, 'kippnewark', true
+          union all select 103001, 'kippcamden', true
+      - input: ref('stg_powerschool__students')
+        rows: []
+      - input: ref('int_powerschool__district_entry_date')
+        rows: []
+      - input: ref('int_students__graduation_path_codes')
+        rows: []
+      - input: ref('stg_powerschool__s_stu_x')
+        rows: []
+    expect:
+      rows:
+        - {
+            student_number: 2001,
+            code_location: kippnewark,
+            s_nj_stu_x__pid_504_tf: 0,
+          }
+        - {
+            student_number: 2002,
+            code_location: kippnewark,
+            s_nj_stu_x__pid_504_tf: 1,
+          }
+        - {
+            student_number: 3001,
+            code_location: kippcamden,
+            s_nj_stu_x__pid_504_tf: null,
+          }

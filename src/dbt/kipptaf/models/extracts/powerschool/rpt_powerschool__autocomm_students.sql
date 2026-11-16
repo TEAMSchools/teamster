@@ -17,6 +17,12 @@ with
                     'ELA' as `s_nj_stu_x__graduation_pathway_ela`
                 )
             )
+    ),
+
+    edplan_504_regions as (
+        select _dbt_source_project, count(*) as n_active_504_students,
+        from {{ ref("int_edplan__section_504_active_plan_rollup") }}
+        group by _dbt_source_project
     )
 
 select
@@ -72,6 +78,19 @@ select
         then 'C'
     end as s_stu_x__fafsa,
 
+    case
+        -- Newark is the only region with an EdPlan 504 report
+        when se._dbt_source_project != 'kippnewark'
+        then null
+        when er.n_active_504_students is null
+        then if(njs.is_504, 1, 0)
+        when se.enroll_status != 0
+        then if(njs.is_504, 1, 0)
+        when ap.student_number is not null
+        then 1
+        else 0
+    end as s_nj_stu_x__pid_504_tf,
+
 from {{ ref("int_extracts__student_enrollments") }} as se
 left join
     {{ ref("stg_powerschool__students") }} as s
@@ -90,6 +109,15 @@ left join
     {{ ref("stg_powerschool__s_stu_x") }} as pfs
     on se.students_dcid = pfs.studentsdcid
     and se._dbt_source_project = pfs._dbt_source_project
+left join
+    {{ ref("stg_powerschool__s_nj_stu_x") }} as njs
+    on se.students_dcid = njs.studentsdcid
+    and se._dbt_source_project = njs._dbt_source_project
+left join
+    {{ ref("int_edplan__section_504_active_plan_rollup") }} as ap
+    on se.student_number = ap.student_number
+    and se._dbt_source_project = ap._dbt_source_project
+left join edplan_504_regions as er on se._dbt_source_project = er._dbt_source_project
 where
     se.academic_year = {{ var("current_academic_year") }}
     and se.rn_year = 1
