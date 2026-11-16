@@ -1007,14 +1007,19 @@ comparisons:
         FROM fixed_out WHERE pct_completion >= 0.75)
       SELECT {dims}, AVG(pct_completion) AS value FROM fixed_groups GROUP BY
       {dims}
+    # The sheet keeps only normed assessments; the dashboard model sets
+    # is_normed_scope from is_internal_assessment.
+    filters:
+      Academic Year: { dashboard: academic_year, cube: academic_year }
+      Module Number Raw: { dashboard: module_number, cube: module_code }
+      Is Normed Scope:
+        { dashboard: is_normed_scope, cube: is_internal_assessment }
+    defaults:
+      Academic Year: 2026
+      Is Normed Scope: true
     shelves:
       clear_filters:
-        [
-          Subject Area (group),
-          Dashboard View Filter,
-          Is Normed Scope,
-          Response Type,
-        ]
+        [Subject Area (group), Dashboard View Filter, Response Type]
     definitions:
       dashboard: >-
         AVG(% Completion), the average across school, subject and replacement
@@ -1026,10 +1031,10 @@ comparisons:
         (count_assigned), Illuminate only.
     rebuild_check:
       fingerprint: 61f22060602a79ac904c20d0bdc1b9285b20664dae760a8684edb5e59c5c84bf
-      cells: 157
-      matched_at: "2026-11-15T23:35:16.816825+00:00"
-      workbook_updated_at: "2026-11-15T06:43:02+00:00"
-      sheet_query_fingerprint: 76dc0d3b854477e916c1e37dc9bf29cc3a130c2db65c73bdd0d424a6dd04eac9
+      cells: 148
+      matched_at: "2026-11-16T12:45:40.649485+00:00"
+      workbook_updated_at: "2026-11-16T06:40:53+00:00"
+      sheet_query_fingerprint: 847a006422c422390637ace2fc786b15a355b9aad45411b33799098e3ab79f8d
       source_fingerprint: 04be9335ed594489d483384947c2521c87f3d1b070ec97d8f4ea38c63f69f74a
       cuts:
         - "{}"
@@ -1038,7 +1043,6 @@ comparisons:
         clear_filters:
           - Subject Area (group)
           - Dashboard View Filter
-          - Is Normed Scope
           - Response Type
       missing_cuts: []
       missing_filters:
@@ -1046,7 +1050,6 @@ comparisons:
         - C 504 Status
         - Dashboard View Filter
         - Is Foundations
-        - Is Normed Scope
         - Is Replacement
         - Lep Status
         - NJ Tutoring
@@ -1069,23 +1072,22 @@ comparisons:
       filter_notes:
         Dashboard View Filter: display switch on Dashboard View
       missing_columns:
-        Response Type: response_type
-        Schoolid: schoolid
-        Team: team
-        Subject Area: subject_area
-        is_sipps: is_sipps
-        is_low_25_fl: is_low_25_fl
-        Is Foundations: is_foundations
-        Is Replacement: is_replacement
-        state_test_proficiency: state_test_proficiency
         Lep Status: lep_status
-        Is Normed Scope: is_normed_scope
-        Region: region
-        dibels_most_recent_composite: dibels_most_recent_composite
-        nj_student_tier: nj_student_tier
+        Is Foundations: is_foundations
         head_of_school: head_of_school
+        state_test_proficiency: state_test_proficiency
         Territory: territory
+        Schoolid: schoolid
         C 504 Status: c_504_status
+        is_low_25_fl: is_low_25_fl
+        nj_student_tier: nj_student_tier
+        Region: region
+        is_sipps: is_sipps
+        Team: team
+        Response Type: response_type
+        Subject Area: subject_area
+        Is Replacement: is_replacement
+        dibels_most_recent_composite: dibels_most_recent_composite
 
   - id: pct_students_at_level__dki_bars
     <<: *ddi
