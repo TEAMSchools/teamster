@@ -29,7 +29,10 @@ models:
         description:
           The NJ state field PID_504_TF on the student's current PowerSchool
           record, from stg_powerschool__s_nj_stu_x. Null when the student has no
-          S_NJ_STU_X record.
+          S_NJ_STU_X record. Not interchangeable with
+          int_students__student_enrollments.is_504, which prefers the
+          past-enrollment copy in S_NJ_REN_X; the AutoComm write-back needs the
+          value on the current record.
         config:
           meta:
             contains_pii: true

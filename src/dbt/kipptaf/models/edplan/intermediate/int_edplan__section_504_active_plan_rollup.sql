@@ -18,5 +18,5 @@ with
 
 select student_number, _dbt_source_project, count(*) as n_active_504_plans,
 from events
-where is_active_504_plan
+where is_active_504_plan and student_number is not null
 group by student_number, _dbt_source_project

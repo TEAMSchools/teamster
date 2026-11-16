@@ -18,9 +18,22 @@ models:
       - name: student_number
         data_type: int64
         description: PowerSchool student number, the key AutoComm matches on.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
         config:
           meta:
             contains_pii: true
+      - name: code_location
+        data_type: string
+        description:
+          District code location. Each district wrapper filters on it and does
+          not send it.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
       - name: student_web_id
         data_type: string
         description: Student portal username.
@@ -57,11 +70,6 @@ models:
         config:
           meta:
             contains_pii: true
-      - name: code_location
-        data_type: string
-        description:
-          District code location. Each district wrapper filters on it and does
-          not send it.
       - name: s_nj_stu_x__graduation_pathway_math
         data_type: string
         description: Final NJ graduation pathway code for math.
