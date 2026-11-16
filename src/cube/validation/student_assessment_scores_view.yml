@@ -316,10 +316,13 @@ comparisons:
       add: { rows: [Grade Level, Subject Area] }
       clear_filters: [Measure Names, Discipline, Exclude Future Assessments]
 
-  # The goal sheets show overall rows only.
+  # The goal sheets keep only rows with a mastery score: a non-null filter on
+  # Is Mastery Int - Custom, which is is_mastery_int on overall rows.
   - id: grade_goal_distance__grid_grade
     <<: *ddi
     measure: grade_goal_distance
+    dashboard_filters:
+      - { dashboard: is_mastery_int, operator: set }
     sheet: School - Mastery Grid Grade
     sheet_field: Goal Distance - Grade/Subject
     decimals: 2
@@ -420,9 +423,9 @@ comparisons:
     rebuild_check:
       fingerprint: 850efa37cd41ddb56e07256baa62dcfe687856c9134c32c66f61d3038f9463c0
       cells: 483
-      matched_at: "2026-11-15T23:28:46.839706+00:00"
-      workbook_updated_at: "2026-11-15T06:43:02+00:00"
-      sheet_query_fingerprint: 7f035cbc8130f7190124be648364e260f449ccc86c1c99b4022708406a2430de
+      matched_at: "2026-11-16T00:10:47.795513+00:00"
+      workbook_updated_at: "2026-11-15T23:42:43+00:00"
+      sheet_query_fingerprint: fdaa819181ecc489e04c9e873e999ff4e1842cd0eff9bbcd4e887d374b387ec0
       source_fingerprint: d9ff221cb778a49a9bbdfcf16e8dbfe368b7b1640fb68fa44caad7c655e18817
       cuts:
         - "{}"
@@ -465,21 +468,23 @@ comparisons:
         Select Chart Type: display switch on Chart Type
       missing_columns:
         Module Code: module_code
-        Module Type: module_type
-        Ml Status: ml_status
-        is_sipps: is_sipps
         is_low_25_fl: is_low_25_fl
+        IEP Status: iep_status
+        is_sipps: is_sipps
         Course Teacher Name: course_teacher_name
         state_test_proficiency: state_test_proficiency
-        Dibels Most Recent Composite: dibels_most_recent_composite
         Student Tier: nj_student_tier
-        School: school
+        Module Type: module_type
+        Dibels Most Recent Composite: dibels_most_recent_composite
+        Ml Status: ml_status
         Term: term
-        IEP Status: iep_status
+        School: school
 
   - id: school_goal_distance__lines_all
     <<: *ddi
     measure: school_goal_distance
+    dashboard_filters:
+      - { dashboard: is_mastery_int, operator: set }
     sheet: School - Mastery Lines All
     sheet_field: Goal Distance - School
     decimals: 2
@@ -574,10 +579,64 @@ comparisons:
       cube:
         The highest school_goal_differentiated (the dbt goal rules) minus
         pct_proficient.
+    rebuild_check:
+      fingerprint: 49bbceb9d81f6b5910909bf37a139844fad19d0b4e436beeae8e0fcede8725a7
+      cells: 230
+      matched_at: "2026-11-16T00:12:33.281511+00:00"
+      workbook_updated_at: "2026-11-15T23:42:43+00:00"
+      sheet_query_fingerprint: 71b8b569d1a3d52fc5b9be59b526ca279ef80f688b7cfe4bbc1a4de6404ddcb9
+      source_fingerprint: d9ff221cb778a49a9bbdfcf16e8dbfe368b7b1640fb68fa44caad7c655e18817
+      cuts:
+        - "{}"
+      totals_skipped: 0
+      shelves:
+        clear_filters:
+          - School
+          - Discipline
+          - Exclude Future Assessments
+          - Select Chart Type
+      missing_cuts: []
+      missing_filters:
+        - Course Teacher Name
+        - Dibels Most Recent Composite
+        - Discipline
+        - Exclude Future Assessments
+        - Grade Level
+        - IEP Status
+        - Is Mastery Int - Custom
+        - Ml Status
+        - Module Code
+        - Module Type
+        - Select Chart Type
+        - Standard
+        - Student Tier
+        - Term
+        - Week of
+        - is_low_25_fl
+        - is_sipps
+        - state_test_proficiency
+      restricting_filters: []
+      filter_notes:
+        Select Chart Type: display switch on Chart Type
+      missing_columns:
+        Module Code: module_code
+        is_low_25_fl: is_low_25_fl
+        IEP Status: iep_status
+        is_sipps: is_sipps
+        Course Teacher Name: course_teacher_name
+        state_test_proficiency: state_test_proficiency
+        Student Tier: nj_student_tier
+        Module Type: module_type
+        Dibels Most Recent Composite: dibels_most_recent_composite
+        Ml Status: ml_status
+        Term: term
+        Grade Level: grade_level
 
   - id: region_goal_distance__lines_all
     <<: *ddi
     measure: region_goal_distance
+    dashboard_filters:
+      - { dashboard: is_mastery_int, operator: set }
     sheet: Region - Mastery Lines All
     sheet_field: Goal Distance - Region
     decimals: 2
@@ -674,9 +733,9 @@ comparisons:
     rebuild_check:
       fingerprint: b5b6b8f4fa9282b4fc8dc804f82f58b818e44bb943b18bc275309b0429037bcb
       cells: 49
-      matched_at: "2026-11-15T23:31:22.352417+00:00"
-      workbook_updated_at: "2026-11-15T06:43:02+00:00"
-      sheet_query_fingerprint: d8a16b75cdb1e33bf475d2dbeeda10a102d009b3bcf9cf5e950b6eef37c536e5
+      matched_at: "2026-11-16T00:14:00.945780+00:00"
+      workbook_updated_at: "2026-11-15T23:42:43+00:00"
+      sheet_query_fingerprint: 8db177a08be10fd19fbfd73de84a502e638a5bdbdd5a91dbfd83b5a244006353
       source_fingerprint: d9ff221cb778a49a9bbdfcf16e8dbfe368b7b1640fb68fa44caad7c655e18817
       cuts:
         - "{}"
@@ -706,17 +765,17 @@ comparisons:
       restricting_filters: []
       filter_notes: {}
       missing_columns:
+        Head Of School: head_of_school
         Module Code: module_code
-        Module Type: module_type
         state_test_proficiency: state_test_proficiency
-        Ml Status: ml_status
+        is_low_25_fl: is_low_25_fl
+        School Level: school_level
+        Module Type: module_type
         Dibels Most Recent Composite: dibels_most_recent_composite
+        IEP Status: iep_status
+        Ml Status: ml_status
         Grade Level: grade_level
         is_sipps: is_sipps
-        Head Of School: head_of_school
-        is_low_25_fl: is_low_25_fl
-        IEP Status: iep_status
-        School Level: school_level
 
   # count_assessments and avg_percent_correct share one export.
   - id: count_assessments__standards_over_time
