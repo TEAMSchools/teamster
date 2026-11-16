@@ -163,7 +163,9 @@ models:
           currently enrolled student gets 1 with an active EdPlan 504 plan and 0
           without one. A withdrawn student gets their current PowerSchool value
           back, and so does every Newark student on a night EdPlan reports no
-          active plans, because a blank AutoComm cell clears the field.
+          active plans, because a blank AutoComm cell clears the field. A
+          partial EdPlan file that still holds some active plans is not caught;
+          enrolled students missing from it get 0 until the next full file.
         config:
           meta:
             contains_pii: true
