@@ -232,9 +232,9 @@ comparisons:
       - { dashboard: grade_level, cube: grade_level }
       - { dashboard: subject_area, cube: academic_subject }
     dashboard_columns:
-      grade_goal_tableau:
-        "CASE WHEN region IN ('Camden', 'Newark', 'Paterson') AND grade_level <
-        9 AND (CASE WHEN subject_area IN ('CCR 1', 'CCR 3', 'CCR 4') THEN 'CCR'
+      grade_goal_tableau: >-
+        CASE WHEN region IN ('Camden', 'Newark', 'Paterson') AND grade_level < 9
+        AND (CASE WHEN subject_area IN ('CCR 1', 'CCR 3', 'CCR 4') THEN 'CCR'
         WHEN subject_area IN ('AP Language', 'English 100', 'English 200',
         'English 300', 'English 400', 'Text Study') THEN 'ELA' WHEN subject_area
         IN ('Algebra I', 'Algebra I MS', 'Algebra II', 'AP Pre Calculus',
@@ -306,7 +306,7 @@ comparisons:
         'US History AfricanAmerican', 'World History') THEN 'Social Studies'
         WHEN subject_area IN ('Spanish') THEN 'World Language' ELSE 'Other' END)
         IN ('ELA', 'Math', 'Science') AND module_type = 'TP' THEN grade_goal +
-        0.1 ELSE grade_goal END"
+        0.1 ELSE grade_goal END
     sheet_query: >-
       CASE WHEN MAX(grade_goal_tableau) < AVG(is_mastery_int) THEN 'exceeded'
       WHEN MAX(grade_goal_tableau) = AVG(is_mastery_int) THEN 'met' WHEN
@@ -331,9 +331,9 @@ comparisons:
       - { dashboard: grade_level, cube: grade_level }
       - { dashboard: subject_area, cube: academic_subject }
     dashboard_columns:
-      grade_goal_tableau:
-        "CASE WHEN region IN ('Camden', 'Newark', 'Paterson') AND grade_level <
-        9 AND (CASE WHEN subject_area IN ('CCR 1', 'CCR 3', 'CCR 4') THEN 'CCR'
+      grade_goal_tableau: >-
+        CASE WHEN region IN ('Camden', 'Newark', 'Paterson') AND grade_level < 9
+        AND (CASE WHEN subject_area IN ('CCR 1', 'CCR 3', 'CCR 4') THEN 'CCR'
         WHEN subject_area IN ('AP Language', 'English 100', 'English 200',
         'English 300', 'English 400', 'Text Study') THEN 'ELA' WHEN subject_area
         IN ('Algebra I', 'Algebra I MS', 'Algebra II', 'AP Pre Calculus',
@@ -405,7 +405,7 @@ comparisons:
         'US History AfricanAmerican', 'World History') THEN 'Social Studies'
         WHEN subject_area IN ('Spanish') THEN 'World Language' ELSE 'Other' END)
         IN ('ELA', 'Math', 'Science') AND module_type = 'TP' THEN grade_goal +
-        0.1 ELSE grade_goal END"
+        0.1 ELSE grade_goal END
     sheet_query: MAX(grade_goal_tableau) - AVG(is_mastery_int)
     shelves:
       drop: [Grade/Subject, View By - School]
@@ -413,10 +413,10 @@ comparisons:
       clear_filters:
         [School, Discipline, Exclude Future Assessments, Select Chart Type]
     definitions:
-      dashboard:
-        "MAX of the workbook's Grade Goal (Differentiated) calc (the raw
+      dashboard: >-
+        MAX of the workbook's Grade Goal (Differentiated) calc (the raw
         grade_goal plus hard-coded ET, K-2 QA/CRQ, Math CRQ and TP rules) minus
-        AVG(is_mastery_int)."
+        AVG(is_mastery_int).
       cube:
         The highest grade_goal_differentiated (the dbt goal rules) minus
         pct_proficient.
@@ -492,9 +492,9 @@ comparisons:
       - { dashboard: week_start_monday, cube: school_week_start_date }
       - { dashboard: school, cube: abbreviation }
     dashboard_columns:
-      school_goal_tableau:
-        "CASE WHEN region IN ('Camden', 'Newark', 'Paterson') AND grade_level <
-        9 AND (CASE WHEN subject_area IN ('CCR 1', 'CCR 3', 'CCR 4') THEN 'CCR'
+      school_goal_tableau: >-
+        CASE WHEN region IN ('Camden', 'Newark', 'Paterson') AND grade_level < 9
+        AND (CASE WHEN subject_area IN ('CCR 1', 'CCR 3', 'CCR 4') THEN 'CCR'
         WHEN subject_area IN ('AP Language', 'English 100', 'English 200',
         'English 300', 'English 400', 'Text Study') THEN 'ELA' WHEN subject_area
         IN ('Algebra I', 'Algebra I MS', 'Algebra II', 'AP Pre Calculus',
@@ -566,16 +566,16 @@ comparisons:
         'US History AfricanAmerican', 'World History') THEN 'Social Studies'
         WHEN subject_area IN ('Spanish') THEN 'World Language' ELSE 'Other' END)
         IN ('ELA', 'Math', 'Science') AND module_type = 'TP' THEN school_goal +
-        0.1 ELSE school_goal END"
+        0.1 ELSE school_goal END
     sheet_query: MAX(school_goal_tableau) - AVG(is_mastery_int)
     shelves:
       clear_filters:
         [School, Discipline, Exclude Future Assessments, Select Chart Type]
     definitions:
-      dashboard:
-        "MAX of the workbook's School Goal (Differentiated) calc (the raw
+      dashboard: >-
+        MAX of the workbook's School Goal (Differentiated) calc (the raw
         school_goal plus hard-coded ET, K-2 QA/CRQ, Math CRQ and TP rules) minus
-        AVG(is_mastery_int)."
+        AVG(is_mastery_int).
       cube:
         The highest school_goal_differentiated (the dbt goal rules) minus
         pct_proficient.
@@ -644,9 +644,9 @@ comparisons:
       - { dashboard: week_start_monday, cube: school_week_start_date }
       - { dashboard: region, cube: region_name }
     dashboard_columns:
-      region_goal_tableau:
-        "CASE WHEN region IN ('Camden', 'Newark', 'Paterson') AND grade_level <
-        9 AND (CASE WHEN subject_area IN ('CCR 1', 'CCR 3', 'CCR 4') THEN 'CCR'
+      region_goal_tableau: >-
+        CASE WHEN region IN ('Camden', 'Newark', 'Paterson') AND grade_level < 9
+        AND (CASE WHEN subject_area IN ('CCR 1', 'CCR 3', 'CCR 4') THEN 'CCR'
         WHEN subject_area IN ('AP Language', 'English 100', 'English 200',
         'English 300', 'English 400', 'Text Study') THEN 'ELA' WHEN subject_area
         IN ('Algebra I', 'Algebra I MS', 'Algebra II', 'AP Pre Calculus',
@@ -718,15 +718,15 @@ comparisons:
         'US History AfricanAmerican', 'World History') THEN 'Social Studies'
         WHEN subject_area IN ('Spanish') THEN 'World Language' ELSE 'Other' END)
         IN ('ELA', 'Math', 'Science') AND module_type = 'TP' THEN region_goal +
-        0.1 ELSE region_goal END"
+        0.1 ELSE region_goal END
     sheet_query: MAX(region_goal_tableau) - AVG(is_mastery_int)
     shelves:
       clear_filters: [Region, Discipline, Exclude Future Assessments]
     definitions:
-      dashboard:
-        "MAX of the workbook's Region Goal (Differentiated) calc (the raw
+      dashboard: >-
+        MAX of the workbook's Region Goal (Differentiated) calc (the raw
         region_goal plus hard-coded ET, K-2 QA/CRQ, Math CRQ and TP rules) minus
-        AVG(is_mastery_int)."
+        AVG(is_mastery_int).
       cube:
         The highest region_goal_differentiated (the dbt goal rules) minus
         pct_proficient.
@@ -1097,15 +1097,15 @@ comparisons:
       - { dashboard: subject_area, cube: academic_subject }
       - { dashboard: Calculation_3457427549115576330, cube: mastery_level }
     dashboard_columns:
-      Calculation_3457427549115576330:
-        "COALESCE(CASE WHEN school_level = 'HS' THEN CASE WHEN
+      Calculation_3457427549115576330: >-
+        COALESCE(CASE WHEN school_level = 'HS' THEN CASE WHEN
         performance_band_label_number = 1 THEN 'Below' WHEN
         performance_band_label_number = 2 THEN 'Approaching' WHEN
         performance_band_label_number IN (3, 4, 5) THEN 'At/Above' END ELSE CASE
         WHEN performance_band_label_number IN (1, 2) THEN 'Below' WHEN
         performance_band_label_number = 3 THEN 'Approaching' WHEN
         performance_band_label_number IN (4, 5) THEN 'At/Above' END END,
-        CAST(performance_band_label_number AS STRING))"
+        CAST(performance_band_label_number AS STRING))
     # Tableau's percent of total on a distinct count divides by the distinct
     # students in the partition, not the sum of the marks.
     sheet_query_sql: >-
@@ -1201,15 +1201,15 @@ comparisons:
         }
       - { dashboard: Calculation_3457427549115576330, cube: mastery_level }
     dashboard_columns:
-      Calculation_3457427549115576330:
-        "COALESCE(CASE WHEN school_level = 'HS' THEN CASE WHEN
+      Calculation_3457427549115576330: >-
+        COALESCE(CASE WHEN school_level = 'HS' THEN CASE WHEN
         performance_band_label_number = 1 THEN 'Below' WHEN
         performance_band_label_number = 2 THEN 'Approaching' WHEN
         performance_band_label_number IN (3, 4, 5) THEN 'At/Above' END ELSE CASE
         WHEN performance_band_label_number IN (1, 2) THEN 'Below' WHEN
         performance_band_label_number = 3 THEN 'Approaching' WHEN
         performance_band_label_number IN (4, 5) THEN 'At/Above' END END,
-        CAST(performance_band_label_number AS STRING))"
+        CAST(performance_band_label_number AS STRING))
     sheet_query_sql: >-
       WITH base AS (SELECT *, COUNT(DISTINCT student_number) OVER (PARTITION BY
         school, module_code, response_type_description) AS n_cell
