@@ -49,6 +49,9 @@ shared:
         - { dashboard: student_number, cube: lea_student_identifier }
         - { dashboard: assessment_id, cube: source_assessment_id }
         - { dashboard: standard_code, cube: response_type_code }
+        # An assessment's overall and group rows can share a NULL code; the
+        # description tells them apart.
+        - { dashboard: standard_description, cube: response_type_description }
       values:
         - { dashboard: percent_correct, cube: percent_correct }
   sot: &sot
