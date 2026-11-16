@@ -138,11 +138,12 @@ proposals.
    `is_early_decision` must include restrictive early action, early action II,
    and early decision II.
 2. **Application flags**: `int_kippadb__application_quality_bar` (build, 1 row
-   per application). Reads `base_kippadb__application` and the roster. Adds the
-   student's band and 1 boolean per criterion: in the wishlist pool, in the
-   submitted pool, early decision, early action, NJ, URM at 55/60/68/78/80/85
-   percent, meets full need, strong out-of-state, community college, CTE,
-   military, 4-year, reach/target/likely bucket, on the not-recommended list.
+   per application). Reads `base_kippadb__application` and the roster. Carries
+   the student's `quality_bar_band` (defined below) and 1 boolean per criterion:
+   in the wishlist pool, in the submitted pool, early decision, early action,
+   NJ, URM at 55/60/68/78/80/85 percent, meets full need, strong out-of-state,
+   community college, CTE, military, 4-year, reach/target/likely bucket, on the
+   not-recommended list.
 3. **Criteria thresholds**: `stg_google_sheets__kippadb__quality_bar_criteria`
    (1 row per band, set, timing, and criterion).
 4. **Application × criterion**: `int_kippadb__application_quality_bar_unpivot`
@@ -157,8 +158,49 @@ proposals.
 6. **Tableau extract**: an `rpt_tableau__` view at application × criterion grain
    for the KIPP Forward dashboard, and the audit sheet rebuilt on step 4.
 
-Students with no band (no pathway, or no GPA on a 4-year pathway) get a band of
-`not assessed`, not a failing result.
+### Which quality bar applies: `quality_bar_band`
+
+A calculated column that names the 1 set of criteria a student is held to. It is
+the join key to the criteria thresholds sheet, and every model from step 2 on
+carries it, so a reader can always see which bar a result was scored against.
+
+Calculate it once, at 1 row per student, in `int_kippadb__roster`, which already
+holds `best_guess_pathway`, `contact_college_match_display_gpa`, and `is_ed_ea`.
+A student with no applications still gets a band, and still shows as not meeting
+the bar. Putting it on the roster instead of an application model also keeps 1
+definition (rule A4 in `.claude/rules/dbt-architecture.md`).
+
+GPA is `round(contact_college_match_display_gpa, 2)`, the same rounding the
+current formula uses. GPA ranges do not overlap, so each student lands in
+exactly 1 band.
+
+| `quality_bar_band`     | Pathway   | GPA        | Other condition    |
+| ---------------------- | --------- | ---------- | ------------------ |
+| `4yr_3.75plus`         | 4-year    | 3.75+      |                    |
+| `4yr_3.50to3.74`       | 4-year    | 3.50–3.74  |                    |
+| `4yr_3.00to3.49_ea`    | 4-year    | 3.00–3.49  | `is_ed_ea = 'Yes'` |
+| `4yr_3.00to3.49_no_ea` | 4-year    | 3.00–3.49  | otherwise          |
+| `4yr_2.50to2.99`       | 4-year    | 2.50–2.99  |                    |
+| `4yr_2.00to2.49`       | 4-year    | 2.00–2.49  |                    |
+| `4yr_under2.00`        | 4-year    | under 2.00 |                    |
+| `2yr`                  | 2-year    | any        |                    |
+| `cte`                  | CTE       | any        |                    |
+| `workforce`            | Workforce | any        |                    |
+| `military`             | Military  | any        |                    |
+| `not_assessed`         | none      | any        | or 4-year, no GPA  |
+
+- The keys follow the existing `wishlist_quality_bar_tier` column in
+  `rpt_gsheets__kippadb_quality_bar_audit`, so the audit sheet's readers see
+  familiar values. That column splits into `4yr_3.75plus` and `4yr_3.50to3.74`,
+  and `cte_workforce` splits into `cte` and `workforce`, because the exemplar
+  document gives each its own criteria. The new column replaces it.
+- `military` is new. Today no criteria exist for it, so these students always
+  fail.
+- `not_assessed` is shown as its own value, never as a failing result.
+- The band follows the student's current pathway and GPA. If either changes, the
+  band and the bar change with it on the next build.
+- Tests: `not_null` and `accepted_values` on the column, and every band except
+  `not_assessed` has at least 1 row in the criteria thresholds sheet.
 
 ## Data gaps
 
