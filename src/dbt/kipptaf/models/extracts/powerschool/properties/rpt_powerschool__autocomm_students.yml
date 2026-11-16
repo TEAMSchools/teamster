@@ -302,8 +302,9 @@ unit_tests:
   - name: test_pid_504_tf_writes_back_when_no_active_plans
     description:
       When the EdPlan report has no active plans in Newark, every Newark row
-      gets its current PowerSchool value back instead of 0. Other regions stay
-      null.
+      gets its current PowerSchool value back instead of 0, and 0 when
+      PowerSchool has no state record. An active plan in another region does not
+      count for Newark. Other regions stay null.
     model: rpt_powerschool__autocomm_students
     overrides:
       vars:
@@ -332,6 +333,16 @@ unit_tests:
               enroll_status: 0,
             }
           - {
+              student_number: 2006,
+              studentid: 102006,
+              students_dcid: 102006,
+              _dbt_source_project: kippnewark,
+              academic_year: 2026,
+              rn_year: 1,
+              grade_level: 5,
+              enroll_status: 0,
+            }
+          - {
               student_number: 3001,
               studentid: 103001,
               students_dcid: 103001,
@@ -350,7 +361,8 @@ unit_tests:
             false as is_504_state_field,
             false as has_active_edplan_504_plan
           union all select 2002, 'kippnewark', true, false
-          union all select 3001, 'kippcamden', true, false
+          union all select 2006, 'kippnewark', null, false
+          union all select 3001, 'kippcamden', true, true
       - input: ref('stg_powerschool__students')
         rows: []
       - input: ref('int_powerschool__district_entry_date')
@@ -370,6 +382,11 @@ unit_tests:
             student_number: 2002,
             code_location: kippnewark,
             s_nj_stu_x__pid_504_tf: 1,
+          }
+        - {
+            student_number: 2006,
+            code_location: kippnewark,
+            s_nj_stu_x__pid_504_tf: 0,
           }
         - {
             student_number: 3001,

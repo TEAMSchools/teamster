@@ -1,13 +1,13 @@
 models:
   - name: int_edplan__section_504_active_plan_rollup
-    description:
+    description: >-
       One row per student, per region, with at least one active EdPlan Section
-      504 plan. An active plan is a "Currently Valid - Section 504 Plan" event
-      whose end date is today or later, or blank. EdPlan keeps some plans
-      labeled Currently Valid after they end, so the end date decides. Rows
-      whose EdPlan Student ID is not a number are dropped, because they cannot
-      match a PowerSchool student. This model must stay a view, because the rule
-      reads the current date when it is queried.
+      504 plan. An active plan is an event with the selector "Currently Valid:
+      Section 504 Plan" whose end date is today or later, or blank. EdPlan keeps
+      some plans labeled Currently Valid after they end, so the end date
+      decides. Rows whose EdPlan Student ID is not a number are dropped, because
+      they cannot match a PowerSchool student. This model must stay a view,
+      because the rule reads the current date when it is queried.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
