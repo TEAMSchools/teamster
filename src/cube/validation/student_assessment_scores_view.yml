@@ -964,6 +964,11 @@ comparisons:
   - id: pct_taken__assessments_over_time
     <<: *asmt
     measure: pct_taken
+    # proficiency_rollup carries every member this comparison uses, and the
+    # validator compares only queries that read the fact. The primary key is
+    # never null and not in the rollup, so this scope keeps every row.
+    scope:
+      - { cube: assessment_score_key, operator: set }
     sheet: Module - Overall - Assessments Over Time
     sheet_field: Avg. % Completion
     decimals: 2
