@@ -234,23 +234,20 @@ unit_tests:
               grade_level: 5,
               enroll_status: 0,
             }
-      - input: ref('int_edplan__section_504_active_plan_rollup')
-        format: sql
-        rows: |
-          select 2001 as student_number, 'kippnewark' as _dbt_source_project
-          union all select 2004, 'kippnewark'
-          union all select 9999, 'kippnewark'
-      - input: ref('stg_powerschool__s_nj_stu_x')
+      - input: ref('int_students__section_504_status')
         format: sql
         rows: |
           select
-            102001 as studentsdcid,
+            2001 as student_number,
             'kippnewark' as _dbt_source_project,
-            false as is_504
-          union all select 102002, 'kippnewark', true
-          union all select 102003, 'kippnewark', true
-          union all select 102004, 'kippnewark', false
-          union all select 103001, 'kippcamden', true
+            false as is_504_state_field,
+            true as has_active_edplan_504_plan
+          union all select 2002, 'kippnewark', true, false
+          union all select 2003, 'kippnewark', true, false
+          union all select 2004, 'kippnewark', false, true
+          union all select 2005, 'kippnewark', null, false
+          union all select 3001, 'kippcamden', true, false
+          union all select 9999, 'kippnewark', null, true
       - input: ref('stg_powerschool__students')
         rows: []
       - input: ref('int_powerschool__district_entry_date')
@@ -334,23 +331,16 @@ unit_tests:
               grade_level: 5,
               enroll_status: 0,
             }
-      - input: ref('int_edplan__section_504_active_plan_rollup')
+      - input: ref('int_students__section_504_status')
         format: sql
         rows: |
           select
-            cast(null as int64) as student_number,
-            cast(null as string) as _dbt_source_project
-          from unnest([1])
-          where false
-      - input: ref('stg_powerschool__s_nj_stu_x')
-        format: sql
-        rows: |
-          select
-            102001 as studentsdcid,
+            2001 as student_number,
             'kippnewark' as _dbt_source_project,
-            false as is_504
-          union all select 102002, 'kippnewark', true
-          union all select 103001, 'kippcamden', true
+            false as is_504_state_field,
+            false as has_active_edplan_504_plan
+          union all select 2002, 'kippnewark', true, false
+          union all select 3001, 'kippcamden', true, false
       - input: ref('stg_powerschool__students')
         rows: []
       - input: ref('int_powerschool__district_entry_date')

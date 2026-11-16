@@ -1,0 +1,45 @@
+models:
+  - name: int_students__section_504_status
+    description:
+      One row per PowerSchool student per region, with the student's 504 status
+      from 2 sources side by side — the NJ state field PID_504_TF in
+      PowerSchool, and whether EdPlan holds an active 504 plan. This model must
+      stay a view, because the EdPlan rule reads the current date when it is
+      queried.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - _dbt_source_project
+          config:
+            severity: error
+    columns:
+      - name: student_number
+        data_type: int64
+        description: PowerSchool student number.
+        config:
+          meta:
+            contains_pii: true
+      - name: _dbt_source_project
+        data_type: string
+        description: District code location derived from _dbt_source_relation.
+      - name: is_504_state_field
+        data_type: boolean
+        description:
+          The NJ state field PID_504_TF on the student's current PowerSchool
+          record, from stg_powerschool__s_nj_stu_x. Null when the student has no
+          S_NJ_STU_X record.
+        config:
+          meta:
+            contains_pii: true
+      - name: has_active_edplan_504_plan
+        data_type: boolean
+        description:
+          True when int_edplan__section_504_active_plan_rollup has a row for the
+          student, meaning EdPlan holds a Currently Valid 504 plan ending today
+          or later, or with no end date. False otherwise, including regions with
+          no EdPlan 504 report.
+        config:
+          meta:
+            contains_pii: true
