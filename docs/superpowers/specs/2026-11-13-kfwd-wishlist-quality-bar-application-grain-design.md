@@ -174,33 +174,42 @@ GPA is `round(contact_college_match_display_gpa, 2)`, the same rounding the
 current formula uses. GPA ranges do not overlap, so each student lands in
 exactly 1 band.
 
-| `quality_bar_band`     | Pathway   | GPA        | Other condition    |
-| ---------------------- | --------- | ---------- | ------------------ |
-| `4yr_3.75plus`         | 4-year    | 3.75+      |                    |
-| `4yr_3.50to3.74`       | 4-year    | 3.50–3.74  |                    |
-| `4yr_3.00to3.49_ea`    | 4-year    | 3.00–3.49  | `is_ed_ea = 'Yes'` |
-| `4yr_3.00to3.49_no_ea` | 4-year    | 3.00–3.49  | otherwise          |
-| `4yr_2.50to2.99`       | 4-year    | 2.50–2.99  |                    |
-| `4yr_2.00to2.49`       | 4-year    | 2.00–2.49  |                    |
-| `4yr_under2.00`        | 4-year    | under 2.00 |                    |
-| `2yr`                  | 2-year    | any        |                    |
-| `cte`                  | CTE       | any        |                    |
-| `workforce`            | Workforce | any        |                    |
-| `military`             | Military  | any        |                    |
-| `not_assessed`         | none      | any        | or 4-year, no GPA  |
+The values are display strings that stakeholders read directly on the dashboard
+and the audit sheet, worded like the exemplar document's band names. A companion
+column, `quality_bar_band_sort`, orders them in that same order, because an
+alphabetical sort would put `2-Year` before every 4-year band.
 
-- The keys follow the existing `wishlist_quality_bar_tier` column in
-  `rpt_gsheets__kippadb_quality_bar_audit`, so the audit sheet's readers see
-  familiar values. That column splits into `4yr_3.75plus` and `4yr_3.50to3.74`,
-  and `cte_workforce` splits into `cte` and `workforce`, because the exemplar
-  document gives each its own criteria. The new column replaces it.
-- `military` is new. Today no criteria exist for it, so these students always
+| `quality_bar_band_sort` | `quality_bar_band`              | Pathway   | GPA        | Other condition    |
+| ----------------------- | ------------------------------- | --------- | ---------- | ------------------ |
+| 1                       | `4-Year: 3.75+ GPA`             | 4-year    | 3.75+      |                    |
+| 2                       | `4-Year: 3.50-3.74 GPA`         | 4-year    | 3.50–3.74  |                    |
+| 3                       | `4-Year: 3.00-3.49 GPA (ED/EA)` | 4-year    | 3.00–3.49  | `is_ed_ea = 'Yes'` |
+| 4                       | `4-Year: 3.00-3.49 GPA`         | 4-year    | 3.00–3.49  | otherwise          |
+| 5                       | `4-Year: 2.50-2.99 GPA`         | 4-year    | 2.50–2.99  |                    |
+| 6                       | `4-Year: 2.00-2.49 GPA`         | 4-year    | 2.00–2.49  |                    |
+| 7                       | `4-Year: Below 2.00 GPA`        | 4-year    | under 2.00 |                    |
+| 8                       | `2-Year`                        | 2-year    | any        |                    |
+| 9                       | `CTE`                           | CTE       | any        |                    |
+| 10                      | `Workforce`                     | Workforce | any        |                    |
+| 11                      | `Military`                      | Military  | any        |                    |
+| 12                      | `Not Assessed`                  | none      | any        | or 4-year, no GPA  |
+
+- The criteria thresholds sheet uses these same strings, so a value must match
+  exactly. The GPA ranges use a plain hyphen, not an en dash, because people
+  type the sheet values by hand. The `accepted_values` test and the sheet test
+  below catch a mistyped value.
+- The new column replaces `wishlist_quality_bar_tier` in
+  `rpt_gsheets__kippadb_quality_bar_audit`. That column's 3.50+ band splits in 2
+  and its CTE/Workforce band splits in 2, because the exemplar document gives
+  each its own criteria.
+- `Military` is new. Today no criteria exist for it, so these students always
   fail.
-- `not_assessed` is shown as its own value, never as a failing result.
+- `Not Assessed` is shown as its own value, never as a failing result.
 - The band follows the student's current pathway and GPA. If either changes, the
   band and the bar change with it on the next build.
-- Tests: `not_null` and `accepted_values` on the column, and every band except
-  `not_assessed` has at least 1 row in the criteria thresholds sheet.
+- Tests: `not_null` and `accepted_values` on `quality_bar_band`; every band
+  except `Not Assessed` has at least 1 row in the criteria thresholds sheet; and
+  every band in the sheet is 1 of the 12 values above.
 
 ## Data gaps
 
