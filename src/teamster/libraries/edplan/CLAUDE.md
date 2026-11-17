@@ -20,7 +20,9 @@ applies to `stg_edplan__njsmart_powerschool`. That model ignores missing
 `njsmart_powerschool` partitions, so this policy is what flags a day EdPlan
 skipped. Never launch a run for a missing past partition: EdPlan overwrites one
 file daily, so the run backdates today's file. Report a materialization for the
-gap instead, or leave it.
+gap instead, or leave it. When onboarding a district, land its first EdPlan file
+before the deploy: with no partitions, staging still runs on first load and
+fails until a file exists.
 
 ## Notes
 

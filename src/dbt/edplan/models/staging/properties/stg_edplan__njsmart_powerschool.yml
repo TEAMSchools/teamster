@@ -5,9 +5,9 @@ models:
         dagster:
           automation_condition:
             # Each daily file is a full snapshot, so a day EdPlan skips loses
-            # only that day's effective dates. With the missing-deps guard, one
-            # skipped day froze this model for good (#6413). The freshness
-            # policy in each code location's freshness.py alerts instead.
+            # only that day's effective dates, so a gap must not hold the build
+            # (#6413). The freshness policy in each code location's
+            # freshness.py flags the skipped day instead.
             allow_missing_deps: true
     columns:
       - name: student_number
