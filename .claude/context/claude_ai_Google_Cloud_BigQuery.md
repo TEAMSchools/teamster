@@ -8,7 +8,7 @@ Three identities reach BigQuery here, and they differ in what they can read:
   (`https://bigquery.googleapis.com/mcp`) through the claude.ai connector. It
   runs as the signed-in USER over OAuth with the `bigquery` scope only, so it
   reads everything that user can, PII included. Default for warehouse
-  inspection. Cannot read GOOGLE_SHEETS external tables.
+  inspection.
 - **ADC from Python** — does not expire. The client for shell contexts such as
   Monitor poll loops: a Monitor script cannot call an MCP tool, and a loop on
   `bq` dies when its creds expire. Put the query in a scratchpad script and run
@@ -25,7 +25,7 @@ Three identities reach BigQuery here, and they differ in what they can read:
   `permissions.deny`. The read-only tool is enforced by Google's server, not a
   local hook: a non-SELECT fails with
   `MCP execute_sql_readonly tool allows only SELECT statements.` before BigQuery
-  resolves any table. Warehouse DML/DDL still goes to the user's terminal.
+  resolves any table.
 - **Results are capped at 3,000 rows, silently.** A larger result returns
   exactly 3,000 rows with no `totalRows`, `pageToken`, or marker. Never read a
   3,000-row result as complete: page on with `get_query_results` passing the

@@ -47,12 +47,9 @@ Not visible in the yml: `cloud_storage_uri_base` redirects to
 
 A source-system package's staging models build in **every** district that
 imports it, but only carry data where that source's Dagster ingestion is wired
-per code location — e.g. while finalsite `contacts` ingestion was Miami-only,
-`stg_finalsite__contacts` still built in all four districts (all import the
-`finalsite` package) but carried rows only in `kippmiami`; the contacts asset is
-now wired in all four regions. Before promoting a district model to a shared
-source package, confirm the source ingestion exists in every consuming district,
-or the promoted model builds empty there (or fails on a missing external).
+per code location. Before promoting a district model to a shared source package,
+confirm the source ingestion exists in every consuming district, or the promoted
+model builds empty there (or fails on a missing external).
 
 **Partial-endpoint onboarding**: when a district ingests only a subset of a
 source package's endpoints, disable BOTH the unused `stg_*` models AND their
@@ -107,9 +104,7 @@ deployments. Developers use `<repo-root>/.dbt/profiles.yml` (not
   `max_runtime` (1800s). Without it, a killed dbt run leaves the in-flight BQ
   job orphaned — dbt does NOT cancel on termination (upstream limitation,
   dbt-core #5275/#9639) — and the zombie `create or replace` can overwrite a
-  successful auto-retry's output with staler data. Routine models run <=330s
-  network-wide (affected models' p99 <=78s), so 900s won't false-kill legit
-  work.
+  successful auto-retry's output with staler data.
 - A dbt **`409 Already Exists: Job <id>`** failure is a `job_retries` collision
   (the original submit succeeded server-side but the response was lost; the
   retry re-sends the same job_id). The job usually **succeeded** — confirm via

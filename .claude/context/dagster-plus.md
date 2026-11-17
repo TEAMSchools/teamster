@@ -19,18 +19,16 @@ superset. Gotchas for that one: `.claude/context/dagster.md`.
   document), Dagster+ Issues, asset browsing and definitions (`get_assets`,
   `get_asset`), deployment listing, code locations, run listing, run detail, run
   logs, run launches, re-execution, and run termination.
-- **`get_run` here returns 9 fields**, and every field the homebrew one had is
-  still reachable:
+- **`get_run` here returns fewer fields**, but every field the homebrew one had
+  is still reachable:
   - `parentRunId` / `rootRunId` / `repositoryOrigin` → already in this tool's
     own `tags`, as `dagster/parent_run_id`, `dagster/root_run_id` and
     `dagster/code_location`. `dagster/auto_retry_run_id` gives the forward link
     to the retry.
   - `assetSelection` / `stepKeysToExecute` → this server's own `get_run_logs`,
     whose `ASSET_MATERIALIZATION_PLANNED` events are on page 1, one per selected
-    asset, each carrying `step_key`. That page is the only route here:
-    `mcp__dagster__get_run_group` returned a populated `assetSelection` even for
-    automation-condition runs, and it is denied, so nothing on either server
-    hands you the selection without reading a log page.
+    asset, each carrying `step_key`. That page is the only route on either
+    server.
   - the whole re-execution chain → `list_runs` returns every run's `tags`,
     `status` and timestamps, so a chain whose members share one page costs no
     extra call. Otherwise walk `dagster/root_run_id`, then
@@ -54,16 +52,13 @@ superset. Gotchas for that one: `.claude/context/dagster.md`.
   - a backfill's progress → `mcp__dagster__get_asset_partition_statuses` on the
     backfilled asset.
 
-  It also **500s intermittently on broad filters** (`status: "SUCCESS"`,
-  `job_name: "__ASSET_JOB"` each failed then succeeded on retry) and is reliable
-  on narrow ones. Retry rather than concluding the filter is unsupported.
-  `job_name` does not discriminate much here anyway, because
-  automation-condition runs are all `__ASSET_JOB`.
+  It also **500s intermittently on broad filters** and is reliable on narrow
+  ones. Retry rather than concluding the filter is unsupported. `job_name` does
+  not discriminate much here anyway, because automation-condition runs are all
+  `__ASSET_JOB`.
 
-- **`get_run_logs` (event logs) is this server's; compute logs are the homebrew
-  server's.** `mcp__dagster__get_run_compute_logs` and
-  `mcp__dagster__get_captured_logs_metadata` take `run_id` plus an optional
-  `step_key` and resolve the compute-log key themselves.
+- **`get_run_logs` returns event logs only.** Compute logs:
+  `.claude/context/dagster.md`.
   - This tool caps `limit` at 100 (passing 1000 is a validation error), has no
     `filter_types`, and returns events oldest-first, so a step failure at the
     end of a long run is several pages in.
@@ -106,10 +101,6 @@ superset. Gotchas for that one: `.claude/context/dagster.md`.
     `numMaterialized` / `numPartitions` / `numFailed`. A HEALTHY partitioned
     asset can still be missing partitions.
   - `freshness_status` → `get_asset`'s own `latest_materialization_timestamp`.
-- **`list_deployments` with `deployment_type="branch"` returns the branch
-  deployments**, which the homebrew server's `list_deployments` does not. The
-  names are opaque hashes, so mapping a specific PR to its hash still goes
-  through that PR's `deploy` job log (see `.claude/context/dagster.md`).
 - `get_assets` / `get_asset` return the health rollup, partition definition, job
   names, downstream keys, and metadata entries in one call. They do NOT return
   staleness causes or automation-condition evaluations — those stay on the
@@ -126,5 +117,4 @@ superset. Gotchas for that one: `.claude/context/dagster.md`.
   `scripts/dagster-mcp-launch.sh --no-exec` and prints
   `{"Authorization": "Bearer …", "Dagster-Cloud-Organization": "kipptaf"}`. A
   401 from every tool means that helper failed — run it directly and check it
-  emits JSON on stdout and nothing on stderr. Claude Code kills it after 10s; it
-  takes about 0.7s.
+  emits JSON on stdout and nothing on stderr.

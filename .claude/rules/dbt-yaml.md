@@ -145,7 +145,7 @@ project macros** (dbt-labs/dbt-core#6056). Use standardized inline Jinja with
 `target.name` checks, not macro calls. Use single-line quoted strings — YAML
 multiline scalars (`|`, `>`) cause whitespace issues with `{%- -%}` tags.
 
-Two inline patterns (see spec for details):
+Two inline patterns:
 
 - **Source schema** (all sources except kipptaf cross-regional): prefixes for
   `defer` and `dev` targets
@@ -250,11 +250,6 @@ column) is picked up by rebuilding the `stg_` model into your dev schema
 — no `stage_external_sources` needed. Use this to verify an Ops sheet fix, then
 query the rebuilt `zz_<user>_*` table.
 
-Never judge CURRENT sheet content from the prod `stg_*` table — it is a table
-frozen at the last prod build, not a live read, so it reports pre-edit values
-indefinitely. Rebuild into dev, or read the sheet with the Google Sheets MCP,
-first.
-
 ### BigQuery type synonyms in contracts
 
 `numeric` and `float64` are NOT synonyms — they're distinct BigQuery types.
@@ -279,18 +274,14 @@ without it being real drift — normalize before comparing.
   column. Profile staging data via BigQuery MCP; infer downstream from parents.
   Describe calculated fields by logic. Content test:
   `.claude/rules/comments.md`.
-- Columns with **per-column** `data_tests:` must be sorted to the top of the
+- Single-column tests (`unique`, `not_null`, etc.) go on the column itself.
+  Columns with **per-column** `data_tests:` must be sorted to the top of the
   `columns:` list for visibility — including after a change that strips a
   column's last test. Reorder freely under `contract: enforced`: BigQuery
-  matches contract columns by name, not position (`fct_survey_responses` already
-  differs from its `select` order and builds clean). Model-level composite tests
+  matches contract columns by name, not position. Model-level composite tests
   (`dbt_utils.unique_combination_of_columns`, etc.) do not trigger this rule —
   they go in the model-level `data_tests:` block ABOVE `columns:`, and their
   referenced columns can stay in their natural / contract order.
-- Test placement by arity: single-column tests (`unique`, `not_null`, etc.) go
-  on the column itself. Multi-column tests
-  (`dbt_utils.unique_combination_of_columns`, etc.) go at model level in a
-  `data_tests:` block placed ABOVE the `columns:` block.
 - Column renames for semantic clarity (e.g., boolean prefixing with `is_`,
   reserved word aliases) belong in the staging model, not downstream.
 - Data and column semantics — code values, identifier formats, join keys, grain

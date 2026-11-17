@@ -25,47 +25,21 @@ LOCAL_TIMEZONE = ZoneInfo("America/New_York")
 
 ## PowerSchool via dlt
 
-Paterson ingests PowerSchool with **dlt**, syncing directly from its Oracle
-database through an in-process paramiko SSH tunnel (`ssh_powerschool` resource,
-`enable_legacy_rsa=True`) and landing to BigQuery via keyless ADC (issue #3807).
-`kippnewark` and `kippcamden` use the same dlt pattern; `kippmiami` has retired
-PowerSchool for Focus. ONE `@dlt_assets` multi-asset covers every configured
-table (`powerschool/sis/dlt/`); `cursor_column: null` tables always replace.
-Config in `powerschool/sis/dlt/config/assets.yaml` (per-table `cursor_column` +
-`intraday`/`nightly` membership booleans). Intraday selection is decided by
-`kipppaterson__powerschool__dlt__intraday_sensor` (probe + dlt-state baseline);
-the nightly schedule full-refreshes its targets unconditionally and
-re-baselines. Design:
+dlt wiring and schedule: `libraries/dlt/CLAUDE.md` → `powerschool/`. Pool limit:
+same file → _Pool limits_. Paterson's tunnel needs `enable_legacy_rsa=True` on
+`ssh_powerschool`. Design:
 `docs/superpowers/specs/2026-07-20-powerschool-dlt-intraday-sensor-design.md`.
 
-Consequences:
-
-- `dlt` (`DagsterDltResource`) wired in `definitions.py`; `ssh_powerschool`
-  (`SSHResource`) built by the shared `get_powerschool_ssh_resource()` factory
-  in `core/resources.py` and wired in `definitions.py`; PS Oracle + SSH creds
-  via `dagster-cloud.yaml` (`PS_DB_*`, `PS_SSH_*`)
+- PS Oracle + SSH creds via `dagster-cloud.yaml` (`PS_DB_*`, `PS_SSH_*`)
 - Ingestion writes to BigQuery `dagster_kipppaterson_dlt_powerschool`; the dbt
   `powerschool` package `staging/dlt` variant is enabled here
 - `couchdrop_sftp_sensor` carries no PowerSchool files; it watches Cambium
   `njsla` and Finalsite `status_report`
-- No `iready`, `overgrad`, or `renlearn`
-- The `dlt_powerschool_kipppaterson` pool stays at limit 1 (Dagster+ deployment
-  settings, UI) so an overrunning tick serializes with the next instead of
-  racing it
 
 ## Schedules
 
-Titan `person_data` and `stg_titan__person_data` carry a 1:00am
-`FreshnessPolicy.cron` (matching Newark and Camden). `stg_finalsite__contacts`
-carries the shared `CONTACTS_STAGING_FRESHNESS_POLICY` from the finalsite
-library, as in every district. PowerSchool dlt runs on an intraday
-change-detection sensor (`kipppaterson__powerschool__dlt__intraday_sensor`,
-15-min probe) plus one nightly cron schedule (unconditional full-refresh +
-re-baseline, matching kippnewark's cadence). DeansList, Finalsite `contacts`,
-and the PowerSchool autocomm `extracts` job add nightly schedules; Cambium and
-Finalsite `status_report` (`couchdrop_sftp_sensor`), Amplify
-(`build_amplify_mclass_sftp_sensor`), Titan (`build_titan_sftp_sensor`), EdPlan
-(`build_edplan_sftp_sensor`), and PowerSchool intraday are sensor-driven. The
+`stg_finalsite__contacts` carries the shared `CONTACTS_STAGING_FRESHNESS_POLICY`
+from the finalsite library, as in every district. The
 `AutomationConditionSensor` targets `AssetSelection.all()`, so it covers the
 `dbt` assets plus EdPlan `njsmart_powerschool`, the one Paterson SFTP asset that
 passes an `automation_condition` (`AutomationCondition.eager()`) — that asset

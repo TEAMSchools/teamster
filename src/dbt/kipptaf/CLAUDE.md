@@ -21,17 +21,12 @@ any tab change. Archive tabs must be converted to BQ-native sources.
 ### Cross-region joins (critical)
 
 Join unioned models on `_dbt_source_project` (A10 in
-`.claude/rules/dbt-architecture.md`). Union models also carry
-`_dbt_source_relation`, but its values differ across models (they include
-schema + table name). **Never join on
-`a._dbt_source_relation = b._dbt_source_relation`.**
+`.claude/rules/dbt-architecture.md`). Never join on `_dbt_source_relation`: its
+values include schema and table, so they differ across models.
 
-The `union_dataset_join_clause` macro that wrapped this comparison was deleted
-in [#3142](https://github.com/TEAMSchools/teamster/issues/3142). Five stale
-calls remain in the disabled pre-AY2627 gradebook-audit cluster
-(`int_tableau__gradebook_audit_assignments_teacher` / `_categories_teacher` /
-`_assignments_student`). Disabled models are never compiled, so the calls are
-inert — but re-enabling any of those models means swapping them first.
+The disabled `int_tableau__gradebook_audit_*` models still call the deleted
+`union_dataset_join_clause`. Replace those calls before you re-enable any of
+them.
 
 Produce `_dbt_source_project` on a union model with
 `select *, {{ extract_source_project() }} as _dbt_source_project`
@@ -67,7 +62,8 @@ its upstream producer — never re-derive it downstream.
   `_dbt_source_relation`: the snapshot doesn't carry `_dbt_source_project` (e.g.
   `snapshot_powerschool__gpa_term`, whose source is
   `int_powerschool__gpa_term_current`), and adding it to the snapshot's source
-  model leaves it ~99% NULL — the `check` strategy only backfills touched rows.
+  model leaves it mostly NULL — the `check` strategy only backfills touched
+  rows.
 - Adding the column to a (non-contracted) intermediate still needs a
   `properties.yml` column entry
   (`description: District code location derived from _dbt_source_relation.`) —
@@ -88,9 +84,8 @@ handled automatically by `dbt_union_relations_automation_condition()`.
 Pure `union_relations()` views over per-region district staging or source `int_`
 models (e.g. `stg_powerschool__u_studentsuserfields`,
 `int_powerschool__ps_adaadm_daily_ctod`) are functionally intermediates.
-Uniqueness tests and `materialized: table` belong on the per-region
-source-system models, not on the kipptaf-level view. Don't add either when
-creating a new one.
+`materialized: table` belongs on the per-region source-system models, not on the
+kipptaf-level view. Don't add it when creating a new one.
 
 Exception: make a union view a table when it hosts a `relationships` test
 against a kipptaf model, such as the location crosswalk. A test on a view runs
@@ -99,13 +94,6 @@ only when the view's code changes, not when new data loads. A package can't
 is the only place the check runs on every load. Find the current ones with
 `rg -l 'a test on a view runs only' models/`, and don't turn them back into
 views.
-
-Contract-enforcement here is per-model, NOT directory-wide: the `powerschool:`
-block in `dbt_project.yml` sets only `+schema:` (no `staging: +contract`), so
-powerschool `staging/` union views are contract-enforced only where a model sets
-it in its own `properties.yml` (e.g. `stg_powerschool__users`,
-`stg_powerschool__log`). Check the model's `properties.yml` before assuming a
-`select *` union view is or isn't contracted.
 
 ### Exposing a package/district model as a kipptaf source
 
@@ -154,10 +142,9 @@ projects, not kipptaf.
 This cross-project shape generalizes (e.g. finalsite→focus,
 `extracts/parentsquare/`): the heavy `rpt_*` view lives in kipptaf sourcing
 district data via `source()`, and each district has a thin wrapper sourcing
-`kipptaf_extracts`. The wrapper is contract-columns-only — NO data tests or
-descriptions (those live on the kipptaf view). A new kipptaf region source
-(`sources-kipp*.yml`) needs the `dev`/`staging` (`zz_stg_`)/prod schema branch,
-or single-PR cross-project CI can't read it.
+`kipptaf_extracts`. A new kipptaf region source (`sources-kipp*.yml`) needs the
+`dev`/`staging` (`zz_stg_`)/prod schema branch, or single-PR cross-project CI
+can't read it.
 
 **The wrapper's region filter is a `code_location` column** the kipptaf view
 exposes (`_dbt_source_project as code_location`, or the roster's
@@ -180,8 +167,8 @@ pass-throughs — they are the reconciliation layer (import-once / diff against
 current Focus via the `focus` package, which only kippmiami has). kipptaf
 `rpt_focus__*` are desired-state (all rows); the **kippmiami** output is the
 actual SFTP feed. Per feed: addresses/contacts/demographics import-once
-(presence anti-join, with a null/street-line gate #4320); enrollment diffs and
-additionally reads Focus in kipptaf via a BQ-native source (#4319). Spec:
+(presence anti-join, with a null/street-line gate); enrollment diffs and
+additionally reads Focus in kipptaf via a BQ-native source. Spec:
 `docs/superpowers/specs/2026-06-29-finalsite-focus-idempotent-imports-design.md`.
 
 ## Reuse existing entity identity
@@ -202,16 +189,10 @@ columns at parse time, so they cannot be declared. See
 `models/illuminate/CLAUDE.md` for that, the disabled repository list, and the
 `fivetran/`-is-dead warning.
 
-**`partition_by` on a Cube-read mart is a no-op on its own.** Cube compiles a
-date filter routed through the `dates` join into a predicate on `dim_dates`, and
-BigQuery cannot prune a fact's partitions from a predicate on a joined table.
-The partition only pays off paired with a fact-side time dimension the view's
-description sends date filters to — `fct_student_attendance_enrollment_daily`
-(`PARTITION BY DATE_TRUNC(date_key, MONTH)`) with
-`student_attendance_enrollment_daily.attendance_date` is the worked example.
-Pick monthly over daily for a multi-year daily-grain fact: 7,058 distinct dates
-already, so daily passes BigQuery's 4,000-partition cap inside a decade. See
-`.claude/rules/cube-authoring.md` for the Cube-side rule.
+`partition_by` on a Cube-read mart pays off only with a fact-side time dimension
+(`.claude/rules/cube-authoring.md`). Partition a multi-year daily fact by month,
+because daily partitioning passes BigQuery's 4,000-partition cap within a
+decade.
 
 ## Known Upstream Issues
 
@@ -234,23 +215,20 @@ date resolves for every school.
 
 **Each stint's day window is clamped to its school's academic year, and that
 clamp is load-bearing.** PowerSchool rolls NJ stints over on 1 July while Focus
-dates Miami stints to the real first day of school. An unclamped window would
-report Newark at roughly 20,000 students in mid-July against almost no Miami
-students, purely from a source-system date convention. Clamping to the school
-year makes any calendar date comparable across regions; mid-July correctly
-returns nobody anywhere.
+dates Miami stints to the real first day of school, so an unclamped window
+inflates NJ in July. Do not remove the clamp.
 
 **Miami is present across history on
 `fct_student_attendance_enrollment_daily`.** Its rows come from
 `int_extracts__student_enrollments` × `int_students__calendar_day`, and both
 retain Miami — the calendar keeps the frozen PowerSchool archive for the years
 Focus does not cover. Miami _attendance_ for those years comes from that same
-archive, re-keyed onto Focus enrollment stints (#5114), so pre-AY2026 figures
-are four regions. Every rate excludes null attendance from both numerator and
-denominator (#4744), so a day nobody measured sits outside every rate; a student
-with no measured day still counts in `count_students`. Paterson
-`attendance_value` is unreliable (upstream PS conversion-items gap, #4193) but
-`membership_value` is clean, so enrollment counts include Paterson correctly.
+archive, re-keyed onto Focus enrollment stints, so pre-AY2026 figures are four
+regions. Every rate excludes null attendance from both numerator and
+denominator, so a day nobody measured sits outside every rate; a student with no
+measured day still counts in `count_students`. Paterson `attendance_value` is
+unreliable (upstream PS conversion-items gap) but `membership_value` is clean,
+so enrollment counts include Paterson correctly.
 
 **School calendars diverge at year-end; never anchor a point-in-time count on a
 network-wide `max(date)`.** Mid-year months share a last in-session day across
@@ -290,11 +268,11 @@ stays here is what to do and what not to do.
 - **`dim_staff`** — do NOT filter
   `dim_work_assignment_status.status_name != 'Terminated'` to get "active". That
   field is misaligned with the roster's `worker_status_code` and over-drops
-  roughly 100 roster-active staff. The roster active-and-primary set (~1,526)
-  runs ~30 larger than the marts' current-primary set, from hire and termination
-  timing. On the `rpt_tableau__*` extracts, `entity` (KTAF vs Region) derives
-  from `business_unit_name` — `KIPP TEAM and Family Schools Inc.` is KTAF,
-  anything else is Region.
+  roster-active staff. The roster active-and-primary set runs slightly larger
+  than the marts' current-primary set, from hire and termination timing. On the
+  `rpt_tableau__*` extracts, `entity` (KTAF vs Region) derives from
+  `business_unit_name` — `KIPP TEAM and Family Schools Inc.` is KTAF, anything
+  else is Region.
 - **`stg_renlearn__star`** — `int_renlearn__star_rollup` is disabled
   (`config: enabled: false`); leave it. Edit and consume STAR at
   `stg_renlearn__star`.
@@ -316,12 +294,9 @@ Files grouped by tool: `tableau.yml`, `google-sheets.yml`, etc.
 Required fields: `name`, `label`, `type`, `owner.name: Data Team`, `depends_on`,
 `config.meta.dagster.kinds`.
 
-`url` is optional in dbt and is not the convention for every tool. Add it only
-where it is that tool's canonical locator and you have the real value. Google
-Sheets: yes — a Sheet has no other address (64 of 65 carry one). Tableau: no —
-the workbook is addressed by its LSID in `asset.metadata.id` (46 of 50 carry
-one; 3 have a `url` and 2 of those are `TBD`). Never synthesize one from the
-Tableau API to fill the field.
+Add `url` only where it is the tool's canonical locator and you have the real
+value: yes for Google Sheets; no for Tableau (use the LSID in
+`asset.metadata.id`). Never make up a Tableau `url`.
 
 **Tableau workbooks** — add `asset.metadata.id` (LSID) when known. Add
 `cron_schedule` only if Dagster owns the refresh:
@@ -410,14 +385,7 @@ A source id can also be reported inconsistently across loads (e.g. Pearson
 be load-bearing for other loads. Verify across the value domain — not one
 snapshot — before removing it.
 
-## Model Layer Distinctions
-
-- **`rpt_`** — analyst-built reporting views for external tools. Live in
-  `models/extracts/`.
-- **`dim_*` / `fct_*`** — dimensional marts for semantic layer. Live in
-  `models/marts/`. The column-naming rubric and strict-chain rules are in
-  `.claude/rules/dbt-marts.md`; hash-change discipline and mart operations are
-  in `src/dbt/kipptaf/models/marts/CLAUDE.md`.
+## Extract naming
 
 New KIPP Forward Google Sheets extracts take the `rpt_gsheets__kfwd_` prefix.
 Existing models use both `kfwd_` and `kippfwd_`; `kfwd_` is the going-forward

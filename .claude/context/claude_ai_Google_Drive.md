@@ -4,10 +4,8 @@
 into one text blob with **no tab names and no cell addresses**. You can quote a
 value but you cannot say where it came from.
 
-Consequence: a tab named `DO NOT USE THESE` is indistinguishable from an
-authoritative one. This already produced a false "the goals sheet contradicts
-itself" report — the conflicting numbers were on a deprecated tab that the flat
-output gave no way to identify.
+Consequence: a deprecated tab such as `DO NOT USE THESE` looks identical to an
+authoritative one.
 
 Rules that follow:
 
@@ -18,8 +16,7 @@ Rules that follow:
   tab holding two tables separated by empty rows renders as a single block, so
   block count does not equal tab count.
 - **Ask the user which tab, or ask them to paste it.** A paste carries
-  provenance for free because they choose the tab. This is the same
-  Excel-to-Notepad flow the CARAT scale-score work uses.
+  provenance for free because they choose the tab.
 
 `mcp__claude_ai_Google_Drive__*` runs as the **user's** identity. ADC
 (`codespaces@teamster-332318.iam.gserviceaccount.com`) is a different principal

@@ -80,12 +80,12 @@ See `src/dbt/kipptaf/CLAUDE.md` for the full exposure YAML reference.
 ## ADP WFN `workers` asset
 
 Pulls with `asOfDate=<partition_key>` — each partition reconstructs ADP's state
-as of that date from ADP's _current_ data (full snapshot, ~4.5–4.7k workers).
-The schedule re-materializes only a rolling ~45-partition window
-(`partition_keys[-45:]`, roughly −1 month / +2 weeks via `end_offset=14`), so an
-ADP hard-delete / merge / backdated edit to a record older than the window
-doesn't propagate until you manually rematerialize the affected partition span.
-Absence from a re-pulled partition therefore means the record is gone from ADP.
+as of that date from ADP's _current_ data (full snapshot). The schedule
+re-materializes only a rolling ~45-partition window (`partition_keys[-45:]`,
+roughly −1 month / +2 weeks via `end_offset=14`), so an ADP hard-delete / merge
+/ backdated edit to a record older than the window doesn't propagate until you
+manually rematerialize the affected partition span. Absence from a re-pulled
+partition therefore means the record is gone from ADP.
 
 The asset pulls the **list** endpoint (`GET hr/v2/workers?asOfDate=`), which
 OMITS a worker not yet effective as of that date (hire date after the partition
