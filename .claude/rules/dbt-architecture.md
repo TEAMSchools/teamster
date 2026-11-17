@@ -18,13 +18,13 @@ SQL style rules are in `.claude/rules/dbt-sql.md`.
 
 Data flows from source to consumer through these layers. Each layer has 1 job.
 
-| Layer         | Does                                                                                                           | Lives in (kipptaf)       |
-| ------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------ |
-| `stg_`        | 1 source table: rename, cast, filter soft-deletes, dedup source duplicates, unpivot a source that arrives wide | `<source>/staging/`      |
-| Source `int_` | Logic within 1 source system                                                                                   | `<source>/intermediate/` |
-| Domain `int_` | Cross-source business entities and identity resolution                                                         | Domain folders (A11)     |
-| Marts         | `dim_`, `fct_`, `bridge_`: the core every consumer reads                                                       | `marts/`                 |
-| `rpt_`        | Thin shaping of marts for 1 tool, including that tool's pivots                                                 | `extracts/<tool>/`       |
+| Layer         | Does                                                                                                                                                       | Lives in (kipptaf)       |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| `stg_`        | 1 source table: rename, cast, filter soft-deletes, dedup source duplicates, unpivot a source that arrives wide, decode or correct a value from its own row | `<source>/staging/`      |
+| Source `int_` | Logic within 1 source system                                                                                                                               | `<source>/intermediate/` |
+| Domain `int_` | Cross-source business entities and identity resolution                                                                                                     | Domain folders (A11)     |
+| Marts         | `dim_`, `fct_`, `bridge_`: the core every consumer reads                                                                                                   | `marts/`                 |
+| `rpt_`        | Thin shaping of marts for 1 tool, including that tool's pivots                                                                                             | `extracts/<tool>/`       |
 
 Source packages hold `stg_` and source `int_` only. District projects hold
 package config, district-only source models, and `rpt_` wrappers over kipptaf
