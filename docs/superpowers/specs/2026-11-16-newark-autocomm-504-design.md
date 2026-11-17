@@ -252,3 +252,204 @@ end as s_nj_stu_x__pid_504_tf
   `student_number` on 2026-11-16. Add whatever else proves the rollup has one
   row per student.
 - Column descriptions.
+
+## Revision 2026-11-17: 504 status dimension
+
+Decided by Charlie Bini in review of #6424. Replaces _Data path_ steps 3 and 4.
+Everything else above stands: the file shape, the write-back rule, the rollout,
+and the verification.
+
+### Why
+
+The first build read EdPlan through two new intermediates. That left 2 problems.
+`int_students__section_504_status` shared its grain with
+`int_students__students` (A4). And the `rpt_` read an intermediate because no
+mart carried 504 plans (A2, #6425). This revision adds the mart, so both go
+away, and #6425 closes with this PR.
+
+### Goals
+
+- A new mart, `dim_student_504_status`, holds each student's EdPlan 504 plans as
+  time windows, matched to enrollment stints. It follows _SCD2 status dims bound
+  to enrollments_ in `src/dbt/kipptaf/models/marts/CLAUDE.md`, as
+  `dim_student_iep_status` does.
+- `rpt_powerschool__autocomm_students` reads the dim for the EdPlan side and the
+  roster's existing `is_504` for PowerSchool's value. No new A1 edge and no new
+  A2 edge.
+- For every student in the file today, the new column's value is identical to
+  the first build's. The only planned difference is _Stint alignment_.
+
+### Non-goals
+
+- Changing what counts as an active plan. The rule in _Goals_ above stands.
+- A freshness policy on the EdPlan 504 asset. `libraries/edplan/freshness.py`
+  covers only `stg_edplan__njsmart_powerschool`. That is a separate Dagster
+  change.
+- Eligibility and non-eligibility determinations. Plans only.
+- Camden and Paterson. Their reports are not loaded, so the dim has no rows for
+  them.
+
+### Anti-goals
+
+- Today's date inside a mart. A mart may be stored as a table, which would
+  freeze "today" at its build time. The dim stores dates. Only the `rpt_` view
+  compares them to today.
+- A previous plan counting as active. EdPlan lists 3 previous plans with no
+  later plan and an end date still in the future (2026-11-17). Matching on dates
+  alone would turn those students on.
+- A row fan-out in the extract. At most 1 dim row may match each student in the
+  file.
+
+### Approaches
+
+1. **Domain intermediate, then the dim (chosen).** A students-folder
+   intermediate builds the plan windows from the kipptaf EdPlan union. The dim
+   reads it and the enrollment union. Both reads are allowed edges.
+2. **The dim reads the EdPlan source model directly.** That is a new A1
+   violation. `dim_student_iep_status` does this, but it sits in
+   `standard-baseline.tsv` as an existing violation, not a pattern to copy.
+3. **Plan logic in an `edplan/` source intermediate.** A mart cannot read a
+   source `int_`, so this needs a second pass-through model.
+
+Also decided: history covers both current and previous plans (option 1 of 2,
+over current plans only), so the dim is a real history and follows the
+enrollment-bound pattern.
+
+### Design
+
+#### Models
+
+| Model                                        | Change                   |
+| -------------------------------------------- | ------------------------ |
+| `stg_edplan__section_504_student_report`     | Keep (kipptaf union)     |
+| `int_edplan__section_504_active_plan_rollup` | Delete (never shipped)   |
+| `int_students__section_504_status`           | Delete (never shipped)   |
+| `int_students__section_504_plans`            | New, students folder     |
+| `dim_student_504_status`                     | New, `marts/dimensions/` |
+| `rpt_powerschool__autocomm_students`         | Read the dim instead     |
+
+#### `int_students__section_504_plans`
+
+One row per student, region, and plan start date. It reads the kipptaf
+`stg_edplan__section_504_student_report`.
+
+- Keep rows where `event_selector` is `Currently Valid: Section 504 Plan` or
+  `Previous: Section 504 Plan`, and `student_number` is not null.
+- `is_current_plan`: true for the Currently Valid selector.
+- `plan_start_date`: `begin_date`. `not_null` test at `error`. None are null on
+  2026-11-17, and a null would break the grain key. (Builder's call.)
+- `plan_end_date`: for a current plan, its `end_date`, or `9999-12-31` when
+  null, as the rule in _Goals_ counts a plan with no end date (builder's call;
+  none are null on 2026-11-17). For a previous plan, the earlier of its
+  `end_date` and the day before the student's next plan begins. The next plan is
+  the next row by `begin_date` for the same student and region. When a previous
+  and a current plan share a `begin_date`, the current plan sorts later.
+- Drop a previous plan whose `plan_end_date` falls before its `plan_start_date`.
+  That is a plan replaced on the day it began.
+- Never cut a current plan. One student on 2026-11-17 has a previous plan that
+  begins after their current plan. Cutting would change their result.
+- No `current_date`. Grain test at `error` on student number, region, and
+  `plan_start_date`.
+
+#### `dim_student_504_status`
+
+Copies the enrollment-matching part of `dim_student_iep_status` (its
+`enrollments` CTE and `nj_leg`). It does not need the island-grouping CTEs,
+because each plan is already one window.
+
+- Inner join plans to `int_students__student_enrollment_union` stints on student
+  number and region where the windows overlap. Start is the later of plan start
+  and stint entry. End is the earlier of plan end and the stint's last day.
+- Columns: `student_504_status_key` (PK: student number, region, window start,
+  as the IEP dim), `student_key` (`student_key` macro), `student_enrollment_key`
+  (`student_enrollment_key` macro), `_dbt_source_project`,
+  `effective_date_start_key`, `effective_date_end_key`, `is_current_plan`.
+- No `is_current` column. Every EdPlan plan has an end date, so the IEP dim's
+  `9999-12-31` test would never be true. `is_current_plan` carries EdPlan's own
+  status instead.
+- View, the marts default. FK edges and constraints per
+  `src/dbt/kipptaf/models/marts/CLAUDE.md`. Add the dim to
+  `cube_semantic_layer.depends_on` in `cube.yml`. No Cube view reads it yet.
+
+#### PowerSchool's value
+
+The write-back rule's `current_pid_504_tf` is `if(se.is_504, 1, 0)` from the
+roster, `int_extracts__student_enrollments`, which the `rpt_` already reads. No
+new column anywhere. Decided by Charlie Bini, over a column on `dim_students` or
+`int_students__students`.
+
+- The roster's `is_504` reads the past-enrollment record (`S_NJ_REN_X`) before
+  `S_NJ_STU_X`. On 2026-11-17 it equals `S_NJ_STU_X` for all 6,789 Newark rows
+  in the file, withdrawn included.
+- Accepted risk: PowerSchool copies a student's 504 value onto the
+  past-enrollment record at withdrawal. If staff change a withdrawn student's
+  504 box afterward, the file writes the old value back. The column description
+  says so.
+
+#### `rpt_powerschool__autocomm_students`
+
+- Build `student_enrollment_key` from the roster row with the macro, and left
+  join the dim on it, with `is_current_plan`,
+  `effective_date_start_key <= current_date(...)`, and
+  `effective_date_end_key >= current_date(...)` in the join.
+- `has_active_504_plan` is "a dim row matched". At most 1 row matches, because
+  each student has at most 1 current plan (2026-11-17), and the join is to 1
+  stint.
+- The region guard counts the dim rows that pass the same filter, per region.
+- `current_pid_504_tf` comes from the roster (_PowerSchool's value_).
+- The write-back `case` is unchanged.
+
+A current-year stint has an exit date (every Newark stint for 2026 exits
+2027-06-30 on 2026-11-17), so the window ends at the earlier of the plan's end
+and the stint's last day. That end is still today or later whenever the plan's
+own end is. The result matches the first build except for a plan that has not
+started yet; see _Stint alignment_.
+
+The known odd student (a previous plan beginning after the current plan) does
+not collide on the dim's key: neither plan is cut to the same stint entry date
+(checked 2026-11-17).
+
+### Verification
+
+- Unit tests:
+  - The plans intermediate: a previous plan cut by a later plan; a previous plan
+    dropped by a shared start date; a current plan left uncut; an eligibility
+    row dropped.
+  - The dim: a plan spanning 2 stints yields 2 windows; a plan outside every
+    stint yields none.
+  - The `rpt_`: the 4 write-back branches stay as they are; a previous plan
+    whose end date has not passed yields 0; a current plan that starts after
+    today yields 0.
+- Against prod, the new `rpt_` column equals the first build's for every Newark
+  row. Every `student_enrollment_key` from the roster that should match does.
+- `dbt-layer-check` passes, with no new baseline rows and no A4 warning from
+  this PR.
+
+### Stint alignment
+
+Decided by Charlie Bini. A plan counts from its start date to its end date, and
+only on days inside an enrollment stint. This replaces the rule in _Goals_ and
+_Edge cases in the active-plan rule_ above, which counted a plan before its
+`begin_date`. For a student's current stint, the file writes 1 when a current
+plan's window, cut to that stint, includes today.
+
+Examples for a stint entered 2026-09-01 with exit date 2027-06-30 (last day
+2027-06-29):
+
+| Plan                     | Counts in this stint     | Tonight (2026-11-17) |
+| ------------------------ | ------------------------ | -------------------- |
+| 2026-03-01 to 2027-03-01 | 2026-09-01 to 2027-03-01 | 1                    |
+| 2026-10-01 to 2027-10-01 | 2026-10-01 to 2027-06-29 | 1                    |
+| 2027-01-15 to 2028-01-15 | 2027-01-15 to 2027-06-29 | 0                    |
+| 2027-09-01 to 2028-09-01 | Never (next stint only)  | 0                    |
+| 2025-09-01 to 2026-10-31 | 2026-09-01 to 2026-10-31 | 0                    |
+
+A plan that crosses the summer applies to both stints, as 2 dim rows. No current
+plan starts after 2026-11-17, so the first night's file is unchanged.
+
+### Left to the builder
+
+- Unit-test fixtures and column descriptions. Mart descriptions say what a value
+  means, not where it comes from (`marts/CLAUDE.md`).
+- If the dim's grain test fails on prod data, stop and report. Do not add a
+  dedup.
