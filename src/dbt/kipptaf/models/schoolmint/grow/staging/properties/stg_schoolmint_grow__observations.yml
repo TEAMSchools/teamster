@@ -32,7 +32,7 @@ models:
         description:
           Observation type tag id, from Grow. Observations on the Teacher
           Reflection form always carry the Teacher Reflection type, because Grow
-          keeps the wrong type on submissions made before the form was
+          keeps a wrong or missing type on submissions made before the form was
           corrected.
       - name: private_notes_1
         data_type: string

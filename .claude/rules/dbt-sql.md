@@ -137,7 +137,9 @@ columns of the same source row. Never nest `cast()` inside another function.
 - Good: `cast(student_id as string) as student_id` and
   `round(gpa__c, 2) as gpa_rounded` in staging.
 - Bad: `date(cast(entry_ts as timestamp))` in a mart; a CTE in an intermediate
-  that only rounds a staging column so a join can match on it.
+  that only rounds a staging column so a join can match on it; a tier or
+  category label mapped from a score in staging (a reporting rule goes in an
+  `int_`).
 - Enforced by: review.
 
 #### S10. `where` and `on` hold only plain comparisons
