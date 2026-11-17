@@ -1870,6 +1870,52 @@ def test_table_held_while_dep_partition_failed():
     assert result.get_num_requested(AssetKey("guarded")) == 1
 
 
+def test_table_allow_missing_deps_builds_over_partition_gap():
+    """A table with allow_missing_deps rebuilds when a dep partition lands even
+    though an earlier dep partition was never materialized. The default table
+    stays blocked on the gap for good (#6413).
+    """
+    _PARTITIONS = StaticPartitionsDefinition(["2024-01-01", "2024-01-02", "2024-01-03"])
+
+    @asset(key="snapshot", partitions_def=_PARTITIONS, tags=_TABLE_TAG)
+    def snapshot():
+        return 1
+
+    @asset(
+        deps=[snapshot],
+        automation_condition=dbt_table_automation_condition(allow_missing_deps=True),
+        tags=_TABLE_TAG,
+    )
+    def gap_tolerant():
+        return 2
+
+    @asset(
+        deps=[snapshot],
+        automation_condition=dbt_table_automation_condition(),
+        tags=_TABLE_TAG,
+    )
+    def gap_blocked():
+        return 3
+
+    instance = DagsterInstance.ephemeral()
+    defs = Definitions(assets=[snapshot, gap_tolerant, gap_blocked])
+
+    # 2024-01-02 is never materialized
+    materialize(assets=[snapshot], instance=instance, partition_key="2024-01-01")
+    materialize(assets=[gap_tolerant, gap_blocked], instance=instance)
+
+    result = evaluate_automation_conditions(defs=defs, instance=instance)
+    assert result.total_requested == 0
+
+    materialize(assets=[snapshot], instance=instance, partition_key="2024-01-03")
+
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(AssetKey("gap_tolerant")) == 1
+    assert result.get_num_requested(AssetKey("gap_blocked")) == 0
+
+
 def test_intacct_extract_all_partitions_on_mapping_update():
     """Updating stg_google_sheets__finance__payroll_code_mapping (non-partitioned)
     fans out to ALL partitions of adp_payroll_date_group_code_csv.
@@ -2595,6 +2641,45 @@ def test_translator_meta_block_on_failed_deps():
     assert (
         translator.get_automation_condition(props("table", block_on_failed_deps=False))
         == dbt_table_automation_condition()
+    )
+
+
+def test_translator_meta_allow_missing_deps():
+    """meta.dagster.automation_condition.allow_missing_deps drops the
+    missing-deps guard from the table or cron condition; views ignore it."""
+    from teamster.libraries.dbt.dagster_dbt_translator import (
+        CustomDagsterDbtTranslator,
+    )
+
+    translator = CustomDagsterDbtTranslator(
+        code_location="kippcamden", local_timezone="America/New_York"
+    )
+
+    def props(materialized: str, **condition_meta) -> dict:
+        return {
+            "config": {
+                "materialized": materialized,
+                "meta": {"dagster": {"automation_condition": condition_meta}},
+            }
+        }
+
+    assert translator.get_automation_condition(
+        props("table", allow_missing_deps=True)
+    ) == dbt_table_automation_condition(allow_missing_deps=True)
+    assert (
+        dbt_table_automation_condition(allow_missing_deps=True)
+        != dbt_table_automation_condition()
+    )
+
+    assert translator.get_automation_condition(
+        props("table", allow_missing_deps=True, cron_schedule="0 0 * * *")
+    ) == dbt_cron_automation_condition(
+        "0 0 * * *", cron_timezone="America/New_York", allow_missing_deps=True
+    )
+
+    assert (
+        translator.get_automation_condition(props("view", allow_missing_deps=True))
+        == dbt_view_automation_condition()
     )
 
 

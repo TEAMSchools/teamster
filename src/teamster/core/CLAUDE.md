@@ -84,6 +84,13 @@ via `_build_dbt_condition()`:
   never succeed holds it for good: once the last good file for that date is
   acceptable, report a materialization for that partition in the Dagster UI to
   release it. A canceled run does not count as failed.
+- `allow_missing_deps` — a flag on the table and cron builders that drops the
+  `any_deps_missing` guard. Opted into per model via
+  `meta.dagster.automation_condition.allow_missing_deps: true` (tables only).
+  Without it, an unpartitioned model over a daily-partitioned dep freezes for
+  good on one never-materialized partition. Use it only where each partition is
+  a full snapshot, and pair it with a freshness policy so a skipped day still
+  alerts (`stg_edplan__njsmart_powerschool`).
 - `dbt_table_automation_condition()` — for TABLE models: also triggers on
   upstream data changes, including through intermediate views via
   `_build_any_ancestor_updated()` (recursive `any_deps_match` up to
