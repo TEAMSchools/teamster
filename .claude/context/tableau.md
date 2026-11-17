@@ -75,6 +75,13 @@ once, never probed.
   identity's rows for every user of the MCP. A render or query through it cannot
   distinguish an applied row-level-security gate from a broken one. The probe
   that can is in the skill's `references/build-workflow.md`.
+- **Every `webpageUrl` points at the internal host.** Verified: `get-workbook`
+  and `list-workbooks` return `http://SAC-RPT-02/#/site/...`, which nobody can
+  open. Before handing a link to anyone, replace the scheme and host with
+  `https://tableau.kipp.org`, keeping the `/#/site/KIPPNJ/...` path. A view link
+  is
+  `https://tableau.kipp.org/#/site/KIPPNJ/views/<workbook contentUrl>/<view viewUrlName>`.
+  `get-workbook`'s top-level `url` is already on the public host.
 - **`search-content` ranks, `list-*` enumerates.** Inferred (#5230).
   `search-content` returns one ranked page of top matches, not every match. When
   completeness matters, use `list-workbooks` with a filter.

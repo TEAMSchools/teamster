@@ -39,11 +39,10 @@ WORKBOOK_LUID = "REPLACE-ME"
 #: Ask the user which non-production project or subproject this build lands in
 #: and put that id here AND in the allowlist below.
 TEMP_PROJECT = "REPLACE-ME"
-#: Every id a build may publish to. GPA-monitor-temp is the fallback when the
-#: user names no project. Production is never added here.
-NON_PRODUCTION_PROJECTS = {
-    "c74d8e08-b856-4430-a759-ebacb061e376": "GPA-monitor-temp",
-}
+#: Every id a build may publish to: add the one the user named, mapped to its
+#: name. There is no default project, so an empty allowlist refuses every
+#: publish. Production is never added here.
+NON_PRODUCTION_PROJECTS: dict[str, str] = {}
 
 
 def _server() -> tuple[tsc.Server, tsc.PersonalAccessTokenAuth]:

@@ -38,7 +38,7 @@ a request. Do that when the phrasing might not match, for example a plain
 3. Run two checkers that catch what Tableau Desktop rejects and Tableau Server
    does not.
 4. Repack the `.twbx` and publish it to a non-production project. Claude asks
-   which project before the first publish and falls back to `GPA-monitor-temp`.
+   which project before the first publish and waits for your answer.
 5. Render the dashboard and look at the image, because valid XML has rendered
    `####`, blank lines, clipped captions and missing legend entries.
 6. Hand back the `.twbx` and a review copy, with a list of what was verified,
