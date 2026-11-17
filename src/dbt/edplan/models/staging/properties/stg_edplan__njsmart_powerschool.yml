@@ -1,5 +1,14 @@
 models:
   - name: stg_edplan__njsmart_powerschool
+    config:
+      meta:
+        dagster:
+          automation_condition:
+            # Each daily file is a full snapshot, so a day EdPlan skips loses
+            # only that day's effective dates. With the missing-deps guard, one
+            # skipped day froze this model for good (#6413). The freshness
+            # policy in each code location's freshness.py alerts instead.
+            allow_missing_deps: true
     columns:
       - name: student_number
         data_type: int64

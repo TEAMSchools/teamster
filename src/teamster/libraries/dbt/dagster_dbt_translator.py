@@ -67,6 +67,8 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
         #   the eager (rebuild-on-any-upstream-update) table condition
         # - block_on_failed_deps holds the table while any dep partition's
         #   latest attempt failed, so it never builds over an incomplete pull
+        # - allow_missing_deps drops the missing-deps guard, so a gap in a
+        #   snapshot feed's partitions does not freeze the table
         if materialized not in ("view", "ephemeral"):
             condition_meta = (
                 _get_dbt_meta(dbt_resource_props)
@@ -74,15 +76,19 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
                 .get("automation_condition", {})
             )
             cron_schedule = condition_meta.get("cron_schedule")
+            allow_missing_deps = bool(condition_meta.get("allow_missing_deps"))
 
             if cron_schedule:
                 condition = dbt_cron_automation_condition(
                     cron_schedule=cron_schedule,
                     cron_timezone=condition_meta.get("cron_timezone")
                     or self.local_timezone,
+                    allow_missing_deps=allow_missing_deps,
                 )
             else:
-                condition = dbt_table_automation_condition()
+                condition = dbt_table_automation_condition(
+                    allow_missing_deps=allow_missing_deps
+                )
 
             if condition_meta.get("block_on_failed_deps"):
                 return with_failed_deps_guard(condition)
