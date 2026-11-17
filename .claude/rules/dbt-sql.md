@@ -34,7 +34,7 @@ formatting. The rules below are where we add to or differ from that guide.
 ### Rules
 
 Common remedy for S3, S8, S9, and S10: derive the expression as a named column
-upstream, then reference the plain column. A value derived from 1 source column
+upstream, then reference the plain column. A value derived from 1 source row
 goes in the staging model that reads it (S9); anything else goes in an upstream
 CTE.
 
@@ -128,15 +128,18 @@ Aggregates passed as direct arguments do not count.
 
 #### S9. Cast and derive at the point of entry, once, with an alias
 
-Cast, round, trim, or parse a source column in the staging model that first
-reads it, as a named column. Never nest `cast()` inside another function.
+Cast, round, trim, parse, decode, or correct a source value in the staging model
+that first reads it, as a named column. This holds when the value reads several
+columns of the same source row. Never nest `cast()` inside another function.
 
 - Why: 1 typed or derived column downstream that every consumer joins and
   filters on; an unaliased `cast()` is named `f0_` by BigQuery.
 - Good: `cast(student_id as string) as student_id` and
   `round(gpa__c, 2) as gpa_rounded` in staging.
 - Bad: `date(cast(entry_ts as timestamp))` in a mart; a CTE in an intermediate
-  that only rounds a staging column so a join can match on it.
+  that only rounds a staging column so a join can match on it; a tier or
+  category label mapped from a score in staging (a reporting rule goes in an
+  `int_`).
 - Enforced by: review.
 
 #### S10. `where` and `on` hold only plain comparisons
@@ -313,6 +316,11 @@ validation/profiling goes through BigQuery MCP, not `dbt show`.
   precedent to extend. Carve-out: TODOs, tracking-issue refs, and migration
   plumbing stay inline at the derivation site — a defect belongs in the code,
   not the metadata.
+- S9: a fix for a value the source system stored wrong (a form submitted under
+  the wrong type, a known bad code) is source cleanup and goes in `stg_`, even
+  when it reads 2 columns of the row. A rule about what a value means for
+  reporting (a cut score, a tier, a category label) is business logic and goes
+  in an `int_`.
 - S9: the matching alias on a function-wrapped expression
   (`cast(col as type) as col`) is NOT an AL09 self-alias; it's the repo norm.
   Unaliased, a contracted / explicitly-projected `select` gets `f0_` and fails.
