@@ -160,12 +160,14 @@ models:
         data_type: int64
         description:
           The NJ state 504 field, PID_504_TF, for Newark only, null elsewhere. A
-          currently enrolled student gets 1 with an active EdPlan 504 plan and 0
-          without one. A withdrawn student gets their current PowerSchool value
-          back, and so does every Newark student on a night EdPlan reports no
-          active plans, because a blank AutoComm cell clears the field. A
-          partial EdPlan file that still holds some active plans is not caught;
-          enrolled students missing from it get 0 until the next full file.
+          currently enrolled student gets 1 when today falls inside a current
+          EdPlan 504 plan's span on their stint, and 0 otherwise. A withdrawn
+          student gets their PowerSchool value back, which can be the value
+          PowerSchool copied at withdrawal rather than the live one. So does
+          every Newark student on a night with no current plan in force, because
+          a blank AutoComm cell clears the field. A partial EdPlan file that
+          still holds some active plans is not caught; enrolled students missing
+          from it get 0 until the next full file.
         config:
           meta:
             contains_pii: true
@@ -173,10 +175,12 @@ models:
 unit_tests:
   - name: test_pid_504_tf_mirrors_edplan
     description:
-      Currently enrolled Newark students get 1 with an active EdPlan plan and 0
-      without one. Withdrawn Newark students get their current PowerSchool value
-      back, and 0 when PowerSchool has no state record. Other regions get null.
-      A plan for a student who is not in the file adds no row.
+      Currently enrolled Newark students get 1 when today falls inside a current
+      504 plan's span on their stint, and 0 otherwise, including when the only
+      span covering today is a previous plan or the current plan starts after
+      today. Withdrawn Newark students get their current PowerSchool value back,
+      and 0 when PowerSchool has none. Other regions get null. A span for a
+      student who is not in the file adds no row.
     model: rpt_powerschool__autocomm_students
     overrides:
       vars:
@@ -193,6 +197,8 @@ unit_tests:
               rn_year: 1,
               grade_level: 5,
               enroll_status: 0,
+              entrydate: 2026-09-01,
+              is_504: false,
             }
           - {
               student_number: 2002,
@@ -203,6 +209,8 @@ unit_tests:
               rn_year: 1,
               grade_level: 5,
               enroll_status: 0,
+              entrydate: 2026-09-01,
+              is_504: true,
             }
           - {
               student_number: 2003,
@@ -213,6 +221,8 @@ unit_tests:
               rn_year: 1,
               grade_level: 5,
               enroll_status: 2,
+              entrydate: 2026-09-01,
+              is_504: true,
             }
           - {
               student_number: 2004,
@@ -223,6 +233,8 @@ unit_tests:
               rn_year: 1,
               grade_level: 5,
               enroll_status: 2,
+              entrydate: 2026-09-01,
+              is_504: false,
             }
           - {
               student_number: 2005,
@@ -233,6 +245,32 @@ unit_tests:
               rn_year: 1,
               grade_level: 5,
               enroll_status: 2,
+              entrydate: 2026-09-01,
+              is_504: null,
+            }
+          - {
+              student_number: 2007,
+              studentid: 102007,
+              students_dcid: 102007,
+              _dbt_source_project: kippnewark,
+              academic_year: 2026,
+              rn_year: 1,
+              grade_level: 5,
+              enroll_status: 0,
+              entrydate: 2026-09-01,
+              is_504: true,
+            }
+          - {
+              student_number: 2008,
+              studentid: 102008,
+              students_dcid: 102008,
+              _dbt_source_project: kippnewark,
+              academic_year: 2026,
+              rn_year: 1,
+              grade_level: 5,
+              enroll_status: 0,
+              entrydate: 2026-09-01,
+              is_504: true,
             }
           - {
               student_number: 3001,
@@ -243,21 +281,30 @@ unit_tests:
               rn_year: 1,
               grade_level: 5,
               enroll_status: 0,
+              entrydate: 2026-09-01,
+              is_504: true,
             }
-      - input: ref('int_students__section_504_status')
+      - input: ref('dim_student_504_status')
         format: sql
         rows: |
           select
-            2001 as student_number,
+            to_hex(md5(concat('2001', '-', 'kippnewark', '-', '2026', '-', '2026-09-01'))) as student_enrollment_key,
             'kippnewark' as _dbt_source_project,
-            false as is_504_state_field,
-            true as has_active_edplan_504_plan
-          union all select 2002, 'kippnewark', true, false
-          union all select 2003, 'kippnewark', true, false
-          union all select 2004, 'kippnewark', false, true
-          union all select 2005, 'kippnewark', null, false
-          union all select 3001, 'kippcamden', true, false
-          union all select 9999, 'kippnewark', null, true
+            true as is_current_plan,
+            date_sub(current_date('America/New_York'), interval 30 day) as effective_date_start_key,
+            date_add(current_date('America/New_York'), interval 30 day) as effective_date_end_key
+          union all select
+            to_hex(md5(concat('2004', '-', 'kippnewark', '-', '2026', '-', '2026-09-01'))), 'kippnewark', true,
+            date_sub(current_date('America/New_York'), interval 30 day), date_add(current_date('America/New_York'), interval 30 day)
+          union all select
+            to_hex(md5(concat('2007', '-', 'kippnewark', '-', '2026', '-', '2026-09-01'))), 'kippnewark', false,
+            date_sub(current_date('America/New_York'), interval 30 day), date_add(current_date('America/New_York'), interval 30 day)
+          union all select
+            to_hex(md5(concat('2008', '-', 'kippnewark', '-', '2026', '-', '2026-09-01'))), 'kippnewark', true,
+            date_add(current_date('America/New_York'), interval 1 day), date_add(current_date('America/New_York'), interval 30 day)
+          union all select
+            to_hex(md5(concat('9999', '-', 'kippnewark', '-', '2026', '-', '2026-09-01'))), 'kippnewark', true,
+            date_sub(current_date('America/New_York'), interval 30 day), date_add(current_date('America/New_York'), interval 30 day)
       - input: ref('stg_powerschool__students')
         rows: []
       - input: ref('int_powerschool__district_entry_date')
@@ -294,6 +341,16 @@ unit_tests:
             s_nj_stu_x__pid_504_tf: 0,
           }
         - {
+            student_number: 2007,
+            code_location: kippnewark,
+            s_nj_stu_x__pid_504_tf: 0,
+          }
+        - {
+            student_number: 2008,
+            code_location: kippnewark,
+            s_nj_stu_x__pid_504_tf: 0,
+          }
+        - {
             student_number: 3001,
             code_location: kippcamden,
             s_nj_stu_x__pid_504_tf: null,
@@ -301,10 +358,11 @@ unit_tests:
 
   - name: test_pid_504_tf_writes_back_when_no_active_plans
     description:
-      When the EdPlan report has no active plans in Newark, every Newark row
+      When no current 504 plan span covers today in Newark, every Newark row
       gets its current PowerSchool value back instead of 0, and 0 when
-      PowerSchool has no state record. An active plan in another region does not
-      count for Newark. Other regions stay null.
+      PowerSchool has none. A current plan that ended yesterday does not count,
+      and neither does an active plan in another region. Other regions stay
+      null.
     model: rpt_powerschool__autocomm_students
     overrides:
       vars:
@@ -321,6 +379,8 @@ unit_tests:
               rn_year: 1,
               grade_level: 5,
               enroll_status: 0,
+              entrydate: 2026-09-01,
+              is_504: false,
             }
           - {
               student_number: 2002,
@@ -331,6 +391,8 @@ unit_tests:
               rn_year: 1,
               grade_level: 5,
               enroll_status: 0,
+              entrydate: 2026-09-01,
+              is_504: true,
             }
           - {
               student_number: 2006,
@@ -341,6 +403,8 @@ unit_tests:
               rn_year: 1,
               grade_level: 5,
               enroll_status: 0,
+              entrydate: 2026-09-01,
+              is_504: null,
             }
           - {
               student_number: 3001,
@@ -351,18 +415,21 @@ unit_tests:
               rn_year: 1,
               grade_level: 5,
               enroll_status: 0,
+              entrydate: 2026-09-01,
+              is_504: true,
             }
-      - input: ref('int_students__section_504_status')
+      - input: ref('dim_student_504_status')
         format: sql
         rows: |
           select
-            2001 as student_number,
+            to_hex(md5(concat('2001', '-', 'kippnewark', '-', '2026', '-', '2026-09-01'))) as student_enrollment_key,
             'kippnewark' as _dbt_source_project,
-            false as is_504_state_field,
-            false as has_active_edplan_504_plan
-          union all select 2002, 'kippnewark', true, false
-          union all select 2006, 'kippnewark', null, false
-          union all select 3001, 'kippcamden', true, true
+            true as is_current_plan,
+            date_sub(current_date('America/New_York'), interval 30 day) as effective_date_start_key,
+            date_sub(current_date('America/New_York'), interval 1 day) as effective_date_end_key
+          union all select
+            to_hex(md5(concat('3001', '-', 'kippcamden', '-', '2026', '-', '2026-09-01'))), 'kippcamden', true,
+            date_sub(current_date('America/New_York'), interval 30 day), date_add(current_date('America/New_York'), interval 30 day)
       - input: ref('stg_powerschool__students')
         rows: []
       - input: ref('int_powerschool__district_entry_date')
