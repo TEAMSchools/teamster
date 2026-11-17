@@ -1,0 +1,131 @@
+models:
+  - name: int_students__section_504_plans
+    description:
+      One row per EdPlan Section 504 plan, with the dates the plan is in force.
+      Keeps Currently Valid and Previous 504 plans only. A current plan runs
+      from its begin date to its end date, or with no end when EdPlan has none.
+      A previous plan ends at its own end date or the day before the student's
+      next plan begins, whichever is earlier, so a replaced plan stops counting
+      once its successor starts. When a previous and a current plan begin on the
+      same day, the current plan wins and the previous plan is dropped. Rows
+      with no student number are dropped. Only regions with an EdPlan 504 report
+      have rows.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - _dbt_source_project
+              - plan_start_date
+          config:
+            severity: error
+    columns:
+      - name: plan_start_date
+        data_type: date
+        description: The plan's begin date in EdPlan.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+        config:
+          meta:
+            contains_pii: true
+      - name: student_number
+        data_type: int64
+        description: PowerSchool student number.
+        config:
+          meta:
+            contains_pii: true
+      - name: _dbt_source_project
+        data_type: string
+        description: District code location derived from _dbt_source_relation.
+      - name: plan_end_date
+        data_type: date
+        description:
+          The last day the plan is in force. For a current plan, its EdPlan end
+          date, or 9999-12-31 when it has none. For a previous plan, the earlier
+          of its EdPlan end date and the day before the student's next plan
+          begins.
+        config:
+          meta:
+            contains_pii: true
+      - name: is_current_plan
+        data_type: boolean
+        description:
+          True for a Currently Valid 504 plan, false for a Previous 504 plan.
+        config:
+          meta:
+            contains_pii: true
+
+unit_tests:
+  - name: test_section_504_plan_windows
+    description:
+      A previous plan is cut to the day before the next plan begins. A previous
+      plan that begins the same day as a current plan is dropped. A previous
+      plan that begins after the current plan, with no later plan, keeps its own
+      end date. A current plan is never cut, and a missing end date becomes
+      9999-12-31. Other EdPlan events and rows with no student number add no
+      row.
+    model: int_students__section_504_plans
+    given:
+      - input: ref('stg_edplan__section_504_student_report')
+        format: sql
+        rows: |
+          select
+            1001 as student_number,
+            'kippnewark' as _dbt_source_project,
+            'Previous: Section 504 Plan' as event_selector,
+            date '2024-09-01' as begin_date,
+            date '2025-12-31' as end_date
+          union all select 1001, 'kippnewark', 'Currently Valid: Section 504 Plan', date '2025-09-15', date '2026-09-14'
+          union all select 1002, 'kippnewark', 'Previous: Section 504 Plan', date '2025-10-01', date '2026-10-01'
+          union all select 1002, 'kippnewark', 'Currently Valid: Section 504 Plan', date '2025-10-01', date '2026-09-30'
+          union all select 1003, 'kippnewark', 'Currently Valid: Section 504 Plan', date '2025-01-10', date '2026-01-09'
+          union all select 1003, 'kippnewark', 'Previous: Section 504 Plan', date '2025-06-01', date '2026-06-01'
+          union all select 1004, 'kippnewark', 'Currently Valid: Section 504 Eligibility Determination', date '2025-01-01', date '2026-01-01'
+          union all select null, 'kippnewark', 'Currently Valid: Section 504 Plan', date '2025-01-01', date '2026-01-01'
+          union all select 1005, 'kippnewark', 'Currently Valid: Section 504 Plan', date '2025-02-01', null
+    expect:
+      rows:
+        - {
+            student_number: 1001,
+            _dbt_source_project: kippnewark,
+            plan_start_date: 2024-09-01,
+            plan_end_date: 2025-09-14,
+            is_current_plan: false,
+          }
+        - {
+            student_number: 1001,
+            _dbt_source_project: kippnewark,
+            plan_start_date: 2025-09-15,
+            plan_end_date: 2026-09-14,
+            is_current_plan: true,
+          }
+        - {
+            student_number: 1002,
+            _dbt_source_project: kippnewark,
+            plan_start_date: 2025-10-01,
+            plan_end_date: 2026-09-30,
+            is_current_plan: true,
+          }
+        - {
+            student_number: 1003,
+            _dbt_source_project: kippnewark,
+            plan_start_date: 2025-01-10,
+            plan_end_date: 2026-01-09,
+            is_current_plan: true,
+          }
+        - {
+            student_number: 1003,
+            _dbt_source_project: kippnewark,
+            plan_start_date: 2025-06-01,
+            plan_end_date: 2026-06-01,
+            is_current_plan: false,
+          }
+        - {
+            student_number: 1005,
+            _dbt_source_project: kippnewark,
+            plan_start_date: 2025-02-01,
+            plan_end_date: 9999-12-31,
+            is_current_plan: true,
+          }
