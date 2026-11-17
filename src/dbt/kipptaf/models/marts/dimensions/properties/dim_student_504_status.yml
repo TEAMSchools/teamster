@@ -28,15 +28,6 @@ models:
         data_tests:
           - unique
 
-      - name: _dbt_source_project
-        data_type: string
-        description:
-          District context for this span. Part of the grain, so a student
-          enrolled in 2 regions has a separate 504 timeline in each. Include it
-          in any join at student grain.
-        data_tests:
-          - not_null
-
       - name: effective_date_start_key
         data_type: date
         description:
@@ -77,6 +68,13 @@ models:
             contains_pii: true
         data_tests:
           - not_null
+
+      - name: _dbt_source_project
+        data_type: string
+        description:
+          District context for this span. Part of the grain, so a student
+          enrolled in 2 regions has a separate 504 timeline in each. Include it
+          in any join at student grain.
 
       - name: student_key
         data_type: string

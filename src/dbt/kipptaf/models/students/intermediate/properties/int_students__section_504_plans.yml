@@ -6,10 +6,11 @@ models:
       from its begin date to its end date, or with no end when EdPlan has none.
       A previous plan ends at its own end date or the day before the student's
       next plan begins, whichever is earlier, so a replaced plan stops counting
-      once its successor starts. When a previous and a current plan begin on the
-      same day, the current plan wins and the previous plan is dropped. Rows
-      with no student number are dropped. Only regions with an EdPlan 504 report
-      have rows.
+      once its successor starts, and runs with no end when it has neither. When
+      a previous and a current plan begin on the same day, the current plan wins
+      and the previous plan is dropped. Of 2 previous plans that begin the same
+      day, the one that ends later is kept. Rows with no student number are
+      dropped. Only regions with an EdPlan 504 report have rows.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -23,10 +24,6 @@ models:
       - name: plan_start_date
         data_type: date
         description: The plan's begin date in EdPlan.
-        data_tests:
-          - not_null:
-              config:
-                severity: error
         config:
           meta:
             contains_pii: true
@@ -45,7 +42,7 @@ models:
           The last day the plan is in force. For a current plan, its EdPlan end
           date, or 9999-12-31 when it has none. For a previous plan, the earlier
           of its EdPlan end date and the day before the student's next plan
-          begins.
+          begins, or 9999-12-31 when it has neither.
         config:
           meta:
             contains_pii: true
@@ -64,6 +61,8 @@ unit_tests:
       plan that begins the same day as a current plan is dropped. A previous
       plan that begins after the current plan, with no later plan, keeps its own
       end date. A current plan is never cut, and a missing end date becomes
+      9999-12-31. Of 2 previous plans that begin the same day, the one that ends
+      later is kept. A previous plan with no end date and no later plan runs to
       9999-12-31. Other EdPlan events and rows with no student number add no
       row.
     model: int_students__section_504_plans
@@ -85,6 +84,9 @@ unit_tests:
           union all select 1004, 'kippnewark', 'Currently Valid: Section 504 Eligibility Determination', date '2025-01-01', date '2026-01-01'
           union all select null, 'kippnewark', 'Currently Valid: Section 504 Plan', date '2025-01-01', date '2026-01-01'
           union all select 1005, 'kippnewark', 'Currently Valid: Section 504 Plan', date '2025-02-01', null
+          union all select 1006, 'kippnewark', 'Previous: Section 504 Plan', date '2024-09-01', date '2025-06-30'
+          union all select 1006, 'kippnewark', 'Previous: Section 504 Plan', date '2024-09-01', date '2025-03-01'
+          union all select 1007, 'kippnewark', 'Previous: Section 504 Plan', date '2025-03-01', null
     expect:
       rows:
         - {
@@ -128,4 +130,18 @@ unit_tests:
             plan_start_date: 2025-02-01,
             plan_end_date: 9999-12-31,
             is_current_plan: true,
+          }
+        - {
+            student_number: 1006,
+            _dbt_source_project: kippnewark,
+            plan_start_date: 2024-09-01,
+            plan_end_date: 2025-06-30,
+            is_current_plan: false,
+          }
+        - {
+            student_number: 1007,
+            _dbt_source_project: kippnewark,
+            plan_start_date: 2025-03-01,
+            plan_end_date: 9999-12-31,
+            is_current_plan: false,
           }

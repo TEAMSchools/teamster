@@ -25,10 +25,11 @@ with
             is_current_plan,
 
             -- false sorts first, so a current plan follows a previous plan
-            -- that begins the same day
+            -- that begins the same day; end_date keeps the later-ending of 2
+            -- same-day previous plans
             lead(begin_date) over (
                 partition by student_number, _dbt_source_project
-                order by begin_date, is_current_plan
+                order by begin_date, is_current_plan, end_date
             ) as next_plan_start_date,
         from plans
     ),
@@ -55,10 +56,8 @@ with
             begin_date as plan_start_date,
 
             case
-                when is_current_plan
+                when is_current_plan or next_plan_start_date is null
                 then coalesce(end_date, cast('9999-12-31' as date))
-                when next_plan_start_date is null
-                then end_date
                 when end_date < day_before_next_plan
                 then end_date
                 else day_before_next_plan
