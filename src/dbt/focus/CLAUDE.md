@@ -57,8 +57,7 @@ on `lower(column_name)`, since filtering to `custom_*`-prefixed columns silently
 misses the semantic-named ones.
 
 **The `__pivot` models now decode every populated field that has select
-options** (all 92, per #4597 — previously 32, all `custom_*`-prefixed).
-Semantic-named fields are covered too. Two exclusions are deliberate:
+options**. Semantic-named fields are covered too. Two exclusions are deliberate:
 `users.custom_l790` and `users.custom_l1472` are option_query-backed, so the
 catalog holds zero `custom_field_select_options` rows and there is nothing to
 decode. When adding a field to a pivot, check that it has options first — a

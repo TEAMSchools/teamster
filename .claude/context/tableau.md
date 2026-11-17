@@ -22,9 +22,7 @@ once, never probed.
       "Granularity Options": "Reading Accuracy (ORF-Accu)"})
   ```
 
-  Verified: a full parameter grid can be swept from here, with no workbook edits
-  and nothing for the author to click. Render at 1000x640 or larger and the BAN
-  tiles and bar labels are legible enough to read every number off the PNG.
+  Render at 1000x640 or larger to read BAN and bar labels.
 
 - **Read the numbers off `get-view-image`, not `get-view-data`.** On a
   DASHBOARD, `get-view-data` returns only the first sheet (one BAN tile), so it
@@ -63,28 +61,20 @@ once, never probed.
   datasources, and even then returns field names, types and roles, not formulas.
   `query-datasource`'s inline `calculation` parameter is not a way round it.
 
-- **`get-workbook` gives the workbook-to-table mapping.** Inferred (#5230). Its
+- **`get-workbook` gives the workbook-to-table mapping.** Inferred. Its
   `upstreamDatasources` array returns each datasource's name, luid and type, and
   it worked for embedded extracts. That maps a workbook to its dbt model in one
-  call, and it surfaced a second, stale datasource left attached by an
-  incomplete repoint that is otherwise invisible without Desktop. Use it before
-  asking the user to read the Data pane.
+  call, and it also shows stale attached datasources. Use it before asking the
+  user to read the Data pane.
 - **The MCP cannot test a persona.** `scripts/tableau-mcp-launch.sh`
   authenticates with one fixed personal access token from 1Password, with no
   per-user credential, so `get-view-data` and `query-datasource` return that
   identity's rows for every user of the MCP. A render or query through it cannot
   distinguish an applied row-level-security gate from a broken one. The probe
   that can is in the skill's `references/build-workflow.md`.
-- **`search-content` ranks, `list-*` enumerates.** Inferred (#5230).
-  `search-content` returns one ranked page of top matches, not every match. When
-  completeness matters, use `list-workbooks` with a filter.
-- **`401002: Invalid authentication credentials` on a Tableau session.** The
-  cause is not established. #5230 saw it three times during scripted publishes
-  and read it as one-active-session-per-token; this repo's Dagster resource
-  (`src/teamster/libraries/tableau/CLAUDE.md`) attributes the same code to a
-  sign-in race and recovers with a fresh sign-in. Both agree on the recovery.
-  Two facts worth knowing before a scripted publish runs alongside MCP calls:
-  the MCP holds a session on its token for the life of the server process, and
-  the skill's publish template signs in through a `with` block that releases its
-  session on exit. Whether the two use the same token is unverified here; if
-  they do, an MCP call mid-publish is a plausible trigger.
+- **`search-content` ranks, `list-*` enumerates.** Inferred. `search-content`
+  returns one ranked page of top matches, not every match. When completeness
+  matters, use `list-workbooks` with a filter.
+- **`401002: Invalid authentication credentials` on a Tableau session.** Sign in
+  fresh and retry. The MCP holds a session on its token for its process life, so
+  avoid MCP calls during a scripted publish.

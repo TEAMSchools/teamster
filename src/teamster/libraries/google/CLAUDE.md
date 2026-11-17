@@ -1,6 +1,6 @@
 # CLAUDE.md — `teamster/libraries/google/`
 
-Google Workspace integrations. Four separate sub-libraries, each with distinct
+Google Workspace integrations. Five separate sub-libraries, each with distinct
 responsibilities:
 
 ## `bigquery/`
@@ -54,8 +54,7 @@ sub-requests scoped to the same org unit inside one batch race and one returns
 `_batch_by_distinct_org_unit` deals at most one item per org unit into each
 batch, and batches run sequentially, so two writes to one org unit are never in
 flight together. The batch count therefore equals the largest single org unit's
-row count, NOT `len(rows) / size` — a payload of 135 rows across 6 org units
-(largest 56) yields 56 batches, not 14.
+row count, NOT `len(rows) / size`.
 
 **Batch callback signature**: Google's batch executor calls
 `callback(id, response, exception)` with exactly one of `response`/`exception`
@@ -86,8 +85,7 @@ asset is revived.
 **Directory resolves a `groupKey` by alias and case-insensitively.** Validating
 a constructed address against a staged mirror instead (the `groupKey` guard in
 `rpt_google_directory__users_import`) narrows that, so the staging model
-lowercases `email`; an alias-only address still resolves to null. Verified once:
-camden/miami/newark are primary addresses with no aliases.
+lowercases `email`; an alias-only address still resolves to null.
 
 **`schema.py`**: Pydantic models (`User`, `OrgUnits`, `Role`, `RoleAssignment`,
 `Group`, `Member`) mirroring the Google Directory API response shapes. Code

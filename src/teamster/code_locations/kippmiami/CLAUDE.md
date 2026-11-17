@@ -48,35 +48,23 @@ offset minute.
 Constraints to preserve when touching any of these:
 
 - **The 13:15 delivery is a plain cron — nothing gates it on the upstreams.**
-  The gaps are a time budget, not a dependency. Measured need is 4-7 min from a
-  schedule firing to the dependent staging table being rebuilt, or ~11 min worst
-  case from a manual SFTP push (5 min sensor poll + 2m13s ingest + 3m34s dbt)
-  plus up to 9 min of top-of-hour pod-scheduling queue, against 75 min of
-  budget. That 5-minute poll is deliberate and Miami-only — see
-  `couchdrop/sensors.py`; at the 10 min the other locations use, the ~16 min
-  worst case leaves the 12:30 freshness check on #4736 unable to tell a stalled
-  chain from one still in flight. Spending this margin ships a delivery built on
-  incomplete inputs with no error raised anywhere.
+  The gap is a time budget, not a dependency. Keep Miami's 5-min couchdrop poll
+  (`couchdrop/sensors.py`) and do not shrink the 12:00-to-13:15 margin: a
+  delivery built on incomplete inputs raises no error.
 - **`rpt_focus__*` import-once is an anti-join against the dlt SNAPSHOT of
   Focus, not live Focus.** A snapshot older than the last hand-run Focus import
   makes the next delivery re-send those records and duplicate them. The
   `kippmiami__dlt__focus__intraday_sensor` probes every Focus table every 15
   minutes and loads only what changed, so that snapshot is refreshed within ~15
-  minutes of any change. **Keep the `0 4 * * *` runs**: they are the
-  unconditional overnight reload for only the count-only tables (tiering:
-  `libraries/dlt/focus/CLAUDE.md` → _Probe gating_). Losing them would delay
-  picking up an in-place edit to a count-only table by up to a day; FRESH's
-  Miami enrollment/attendance rows and the rest of Focus-sourced Miami data come
-  from `updated_at`-tracked tables and would not go stale. Those tables have NO
-  unconditional reload — if one is suspected of drifting (a stuck signature, a
-  bad cursor), fix it with a manual launch of the Focus asset job for that
-  table. The safe rule for ops is not a clock time: do not re-run the delivery
-  unless a Focus sync has run SINCE the last import.
+  minutes of any change. Tiering and the 04:00 count-only reload:
+  `libraries/dlt/focus/CLAUDE.md` → _Probe gating_. A suspected drifting
+  `updated_at` table (a stuck signature, a bad cursor) gets a manual launch of
+  the Focus asset job for that table. The safe rule for ops is not a clock time:
+  do not re-run the delivery unless a Focus sync has run SINCE the last import.
 - **First diagnostic when midday Focus data looks stale: check whether the
-  intraday sensor is running.** It ships with `defaultStatus` STOPPED and must
-  be enabled by hand after a one-off manual load of every table has seeded their
-  baselines (the 04:00 tier seeds only the count-only tables). A stopped sensor
-  silently freezes every `updated_at`-tracked table.
+  intraday sensor is running.** It ships with `defaultStatus` STOPPED (enable
+  order: focus _Probe gating_). A stopped sensor silently freezes every
+  `updated_at`-tracked table.
 - **The `contacts` API pull runs at 00:15, not 04:00.** That still lands before
   FRESH's 05:00 Tableau extract, so Miami's morning dashboard reads same-day
   data, and it puts `contacts` ahead of the NJ consumers of
@@ -87,16 +75,11 @@ A freshness alert on `stg_finalsite__contacts` (policy in `freshness.py`, shared
 with the other districts) usually means a missing `contacts` partition: backfill
 it in the Dagster UI and staging rebuilds on the next automation tick.
 
-`kippmiami__extracts__focus__asset_job_schedule` also has to be STARTED in the
-Dagster+ UI; its `defaultStatus` is STOPPED and it had never run in prod as of
-#4736.
+`kippmiami__extracts__focus__asset_job_schedule` has `defaultStatus` STOPPED and
+must be started in the Dagster+ UI.
 
-The `dlt_focus_kippmiami` pool must stay at limit 1 (Dagster+ deployment
-setting) — the 04:00 schedule is a plain cron with no in-flight guard of its own
-(only the intraday sensor calls `in_flight_run`), so the pool limit is the only
-thing preventing that schedule run and a sensor run from overlapping and racing
-on the shared `_dlt_pipeline_state` row. Confirm the limit before enabling the
-sensor.
+The `dlt_focus_kippmiami` pool stays at limit 1: `libraries/dlt/CLAUDE.md` →
+_Pool limits_.
 
 ## Florida-Specific
 
@@ -112,15 +95,12 @@ resources and their secrets stay wired so turning it on is the 2-line edit the
 comment there describes. Turn it on only to re-pull tables for an archive
 rebuild (dbt recipe: `src/dbt/kippmiami/CLAUDE.md`), then off again in the same
 PR. While on, the location also carries the dbt `kippmiami/powerschool/*`
-assets. The `dlt_powerschool_kippmiami` pool must stay at limit 1 (Dagster+
-deployment setting): runs are launched by hand with no in-flight guard, so the
-pool is the only thing keeping two launches from opening two tunnels and racing
-on the same pipeline state. kipptaf reads the archive as a BQ-native source. Do
-not drop either dataset or the GCS files under
+assets, and runs are launched by hand with no in-flight guard, so the
+`dlt_powerschool_kippmiami` pool limit of 1 (`libraries/dlt/CLAUDE.md`) is the
+only thing keeping two launches from racing. kipptaf reads the archive as a
+BQ-native source. Do not drop either dataset or the GCS files under
 `gs://teamster-kippmiami/dagster/kippmiami/powerschool/`.
 
-DeansList is retired the same way (#5110): Miami stopped using it, and this
-location has no `deanslist` assets or schedules. `kippmiami_deanslist` is a
-frozen dataset (last ingested 2026-07-21) that kipptaf still unions for history.
+`kippmiami_deanslist` is a frozen dataset that kipptaf still unions for history.
 Do not drop it or the GCS files under
 `gs://teamster-kippmiami/dagster/kippmiami/deanslist/`.

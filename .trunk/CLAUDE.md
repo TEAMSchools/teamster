@@ -42,8 +42,7 @@ _Linting_.
 
 ## Hooks
 
-Pre-commit runs `fmt` only; pre-push runs `check`. Never use `--no-verify` — fix
-reported issues instead.
+Pre-push runs `check`. Never use `--no-verify` — fix reported issues instead.
 
 ## Shell Style
 

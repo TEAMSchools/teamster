@@ -11,20 +11,19 @@ Extended SSH/SFTP resource used by every SFTP-based integration. Wraps
 - `listdir_attr_r_or_skip()` — connect + `listdir_attr_r` with failure triage;
   **the entry point every SFTP sensor should use**
 - `open_ssh_tunnel()` — in-process paramiko local port forward, used by the dlt
-  PowerSchool path (renamed from `open_ssh_tunnel_paramiko` in #4442; the
-  earlier `sshpass` + subprocess tunnel is retired)
+  PowerSchool path
 
 ## SFTP sensors: use `listdir_attr_r_or_skip`
 
 Do NOT hand-roll `try: ... except SSHException: return SkipReason(...)` in a new
-sensor. It has been got wrong twice (#4636): `except SSHException` misses
-`NoValidConnectionsError` / `TimeoutError` / `socket.gaierror` /
-`ConnectionResetError` (none are `SSHException` subclasses, and `reraise=True`
-re-raises the original type), so a downed host fails the tick; and catching the
-whole `TRANSIENT_CONNECT_EXCEPTIONS` net instead swallows
-`AuthenticationException` / `BadHostKeyException` / `IncompatiblePeer` /
-`ProxyCommandFailure`, so a rotated credential stops ingestion **silently and
-indefinitely** — indistinguishable from "no new files" in the UI.
+sensor. `except SSHException` misses `NoValidConnectionsError` / `TimeoutError`
+/ `socket.gaierror` / `ConnectionResetError` (none are `SSHException`
+subclasses, and `reraise=True` re-raises the original type), so a downed host
+fails the tick; and catching the whole `TRANSIENT_CONNECT_EXCEPTIONS` net
+instead swallows `AuthenticationException` / `BadHostKeyException` /
+`IncompatiblePeer` / `ProxyCommandFailure`, so a rotated credential stops
+ingestion **silently and indefinitely** — indistinguishable from "no new files"
+in the UI.
 
 `listdir_attr_r_or_skip(**listdir_kwargs)` encodes both halves: transient →
 `SkipReason`, deterministic → re-raised so the tick fails and alerts. Callers
@@ -49,9 +48,6 @@ if isinstance(files, SkipReason):
 
 - `SFTPAttributes.st_mtime` and `st_mode` are `int | None` in paramiko's type
   stubs — wrap in `check.not_none()` when comparing
-- The archived odbc library's `open_ssh_tunnel()` comments and docstrings
-  describe the removed sshpass semantics, not the current paramiko tunnel. That
-  code is dead.
 - The PowerSchool SSH password is passed via `EnvVar("PS_SSH_PASSWORD")` in
   `get_powerschool_ssh_resource()` (`core/resources.py`).
 - paramiko 5.0 disabled `ssh-rsa` at three independent layers, and ALL three

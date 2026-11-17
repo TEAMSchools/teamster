@@ -75,9 +75,9 @@ The root CLAUDE.md names the allowed `gh` subcommands; the mechanics live here.
   replies. Use
   `gh api -X POST repos/<owner>/<repo>/pulls/<pr>/comments/<id>/replies -f body='...'`.
 - `gh api repos/<owner>/<repo>/contents/<path>?ref=<sha> -H 'Accept: application/vnd.github.raw'`
-  — read a third-party file at a pinned SHA (for the verify-behavior-from-source
-  rule above). The `--jq .content | base64 -d` form is hook-blocked as an
-  encoding bypass.
+  — read a third-party file at a pinned SHA (for the root CLAUDE.md
+  _Verification_ rule). The `--jq .content | base64 -d` form is hook-blocked as
+  an encoding bypass.
 - `gh api -X POST repos/<owner>/<repo>/labels -f name=... -f color=... -f description=...`
   — no `mcp__github__*` label-create tool.
 - `gh api -X POST repos/<owner>/<repo>/issues/<n>/labels -f 'labels[]=<name>'` —

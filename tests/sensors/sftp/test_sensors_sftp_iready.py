@@ -1,5 +1,7 @@
+import importlib
 import json
 
+import pytest
 from dagster import SensorResult, build_sensor_context
 
 from teamster.core.resources import SSH_IREADY
@@ -20,6 +22,18 @@ def _test_sensor(sftp_sensor, cursor=None, **kwargs):
 
     for run_request in result.run_requests:
         context.log.info(run_request)
+
+
+@pytest.mark.parametrize("code_location", ["kippmiami", "kippnewark"])
+def test_iready_sftp_sensor_jobs_run_in_run_pod(code_location):
+    sftp_sensor = importlib.import_module(
+        f"teamster.code_locations.{code_location}.iready.sensors"
+    ).sftp_sensor
+
+    assert sftp_sensor.targets
+    for target in sftp_sensor.targets:
+        job = target.resolvable_to_job
+        assert job.executor_def.name == "in_process", job.name
 
 
 def test_iready_sftp_sensor_kippmiami():

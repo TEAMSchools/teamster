@@ -141,8 +141,7 @@ Work down the list; stop at the first match.
    regulation's "student number" is the number the school uses to identify the
    student, which here is `student_number`. A database key resolves to a person
    only through a table that is already PII, so a "reasonable person in the
-   school community" cannot identify the student from it. Repo precedent agrees:
-   no `studentid` or `studentsdcid` column carries a tag. The limits: a key is
+   school community" cannot identify the student from it. The limits: a key is
    still linkable, so it never leaves the warehouse in an outbound file next to
    content, and it is never a record code for a de-identified release.
 5. **Aggregates: do not tag.** Counts, rates, and averages over a group. Watch
