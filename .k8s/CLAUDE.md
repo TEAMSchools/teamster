@@ -32,14 +32,14 @@ skill.
   images, not Helm agent config.
 - `deploymentStartupTimeout` (Helm `workspace` key, chart default 300s) — time
   the agent waits for the code server Deployment to become ready, i.e. for the
-  pod to be SCHEDULED. Currently set to 900s. This is the timeout that fires
-  during a NAP `FailedScheduling` wait. Raising it also raises the agent's
-  worst-case first reconcile, so the `readinessProbe` `failureThreshold` and
-  `DAGSTER_CLOUD_CLEANUP_SERVER_GRACE_PERIOD_SECONDS` must move with it, along
-  with `install.sh`'s `rollout status --timeout`.
+  pod to be SCHEDULED (value in `values-override.yaml`). This is the timeout
+  that fires during a NAP `FailedScheduling` wait. Raising it also raises the
+  agent's worst-case first reconcile, so the `readinessProbe` `failureThreshold`
+  and `DAGSTER_CLOUD_CLEANUP_SERVER_GRACE_PERIOD_SECONDS` must move with it,
+  along with `install.sh`'s `rollout status --timeout`.
 - `serverProcessStartupTimeout` (Helm `workspace` key, default 180s) — time the
   agent waits for a code server gRPC ping after the Deployment exists. Fires on
-  slow definitions import, not on failed placement. Currently set to 300s in
+  slow definitions import, not on failed placement. Value in
   `values-override.yaml`.
 
 ## Scheduling
@@ -101,8 +101,7 @@ skill.
   (`DisruptionTarget` → `Ignore`) as a secondary guard for non-autoscaler
   disruptions; the agent does not. The code-server annotation depends on run
   pods and code servers sharing priority 0: reintroducing a priority gap turns
-  it back into the #4921 preemption storm. Asserted in
-  `tests/test_k8s_config.py`.
+  it back into a preemption storm. Asserted in `tests/test_k8s_config.py`.
 - **Spot + built-in Scale-Out + arch is supported under pod-priced billing** —
   set `cloud.google.com/gke-spot: "true"` alongside the compute-class + arch
   nodeSelector; Autopilot auto-injects the toleration. Mutually exclusive with
@@ -111,11 +110,10 @@ skill.
   analysis.
 - **Run/step pods and code servers both run at priority 0.** Do not add a
   `priorityClassName` to either. A run pod that fits nowhere therefore waits for
-  NAP instead of preempting. Run pods sat at 1000 (`dagster-run`) until
-  2026-09-08, when one preempted the kippcamden code server mid-upload and left
-  the location in a terminal `ERROR` for four days (#5187). Only the agent
-  carries a PriorityClass (`dagster-agent`, 1000), and it lives on amd64 nodes
-  where it competes with nothing. Asserted in `tests/test_k8s_config.py`.
+  NAP instead of preempting. A higher run-pod priority preempts code servers
+  mid-upload and leaves the location in terminal `ERROR`. Only the agent carries
+  a PriorityClass (`dagster-agent`, 1000), and it lives on amd64 nodes where it
+  competes with nothing. Asserted in `tests/test_k8s_config.py`.
 - **Code server topology spread** uses `ScheduleAnyway` across
   `topology.kubernetes.io/zone` via `serverK8sConfig.podSpecConfig` — prefers
   cross-zone but allows same-zone during capacity exhaustion (do not switch to
@@ -128,9 +126,8 @@ k8s Secret keys come from the 1Password field's internal name, not the UI label.
 Known re-mappings on SFTP items: `password` → `newPassword`, `host` → `url`.
 Verify before writing `secretKeyRef.key`:
 `kubectl -n dagster-cloud get secret <op-name> -o jsonpath='{.data}' | jq keys`.
-Custom (user-added) text fields sync under their label verbatim (verified:
-numeric DeansList school-id labels → keys `121`, `966`); the remaps above only
-hit built-in login/SFTP-template fields.
+Custom (user-added) text fields sync under their label verbatim; the remaps
+above only hit built-in login/SFTP-template fields.
 
 ## Security
 
@@ -149,7 +146,7 @@ hit built-in login/SFTP-template fields.
 `serverK8sConfig.containerConfig.env`) sets the gRPC thread pool size. Each
 sensor eval, schedule eval, and health check holds one thread for its duration.
 Unset default is `min(32, cpu_count + 4)` — ~5 on 0.5 vCPU pods, too low for
-locations with many sensors. Currently set to 20 globally.
+locations with many sensors. The global value is in `values-override.yaml`.
 
 Sizing: sensors + (peak concurrent schedules / 3) + 3 headroom. Idle threads
 cost ~1MB each, zero CPU (GIL). Changes require `helm upgrade` (see Helm
@@ -215,6 +212,6 @@ sensor/schedule timeouts (default 300s) ARE configurable.
 `NOT_STARTED` status — does NOT catch dispatch-to-pod-confirmed stalls (run is
 already `STARTED` at LAUNCH_RUN dispatch, before pod confirmation).
 
-`run_monitoring.max_runtime_seconds` (the run-level ceiling, currently
-**1800s**) is a deployment-wide default — NOT set per-job in `src/teamster`
-(grep finds nothing). Override one job via a `dagster/max_runtime` run tag.
+`run_monitoring.max_runtime_seconds` (the run-level ceiling) is a
+deployment-wide default — NOT set per-job in `src/teamster`. Override one job
+via a `dagster/max_runtime` run tag.

@@ -146,9 +146,9 @@ merged, else the validator's branch. The runner's `PKG` is the
 
 1. Type 3: invoke `dbt-local-dev`, then `uv run dbt build --select <model>+`
    builds the column into `zz_<user>_kipptaf_marts`.
-2. Start a local Cube over the PR's model, per the `CUBEJS_SCHEMA_PATH` copy in
-   `.claude/rules/cube-authoring.md`: the copy comes from the PR's worktree, and
-   the server runs from the main checkout's `src/cube`, since a worktree has no
+2. Start a local Cube over the PR's model, per _Testing a model variant locally_
+   in the `cube-ops` skill: the copy comes from the PR's worktree, and the
+   server runs from the main checkout's `src/cube`, since a worktree has no
    dotenv file. `cube-ops` covers starting it in the background. Use a Cube
    Cloud Dev Mode deployment only when the analyst asks for it.
    - Start the server with a throwaway `CUBEJS_API_SECRET=<local value>`.

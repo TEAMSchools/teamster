@@ -15,9 +15,6 @@ models/
     powerschool/ # PowerSchool autocomm extracts (teachers, students IEP)
 ```
 
-PowerSchool data source: **dlt** (`dlt.+enabled: true`; `odbc` and `sftp`
-disabled)
-
 ## Source Packages
 
 Camden does not use `iready` or `renlearn`.

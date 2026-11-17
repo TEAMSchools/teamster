@@ -43,7 +43,8 @@ extracts. Cross-region business logic lives only in kipptaf.
 
 `base_` models count as `int_` until
 [#2541](https://github.com/TEAMSchools/teamster/issues/2541) renames them;
-classify each as source or domain by what it reads, as for any `int_`.
+classify each as source or domain by what it reads, as for any `int_`. Do not
+create new `base_` models.
 
 ### Rules
 

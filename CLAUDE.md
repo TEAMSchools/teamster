@@ -70,9 +70,7 @@ specifics live there.
   after, per `.claude/rules/worktrees.md`.
 - Work: stay in the main checkout and reach the worktree by absolute path. Never
   call `EnterWorktree` (`path` or `name`), even when a skill asks for a native
-  worktree tool. It moves the session transcript into the worktree's project
-  folder, which drops it from the VS Code session list; a session that visits
-  several worktrees is filed under the last one only.
+  worktree tool (it hides the session from the VS Code session list).
 - Linking an existing remote branch to an issue: `mcp__github__create_branch`
   and GraphQL `createLinkedBranch` both no-op. Deleting the remote branch is
   classifier-blocked even with consent. Create the branch under a NEW name and
@@ -304,17 +302,11 @@ exploration that led nowhere (keep only the conclusion).
   cannot read sheet-backed externals, and the prod `stg_` table is frozen at its
   last build.
 - dbt MCP `show`: only when `ref()`/`source()` resolution is needed.
-- Dagster: two servers, one tool per job, and `dagster-plus` (Dagster's own
-  hosted server) wins any job it covers. `dagster` (homebrew) keeps what
-  `dagster-plus` cannot do, in 5 groups: automation (sensors, schedules, ticks,
-  condition evaluations), backfill listing and control, asset history (staleness
-  causes, partition counts, check executions, materializations), compute logs,
-  and infrastructure (agent and daemon health, code-location load history and
-  reload, concurrency slots). Nothing overlaps. Most `mcp__dagster__*` denials
-  in `settings.json` mean `dagster-plus` owns that job, but
-  `launch_multiple_runs` and `set_sensor_cursor` have no official counterpart,
-  so those 2 are off entirely rather than relocated. Details in
-  `.claude/context/dagster-plus.md`.
+- Dagster: `dagster-plus` first. Homebrew `dagster` only for automation
+  (sensors, schedules, ticks, condition evaluations), backfills, asset history,
+  compute logs, and infrastructure; a denied `mcp__dagster__*` tool means
+  `dagster-plus` owns that job. `launch_multiple_runs` and `set_sensor_cursor`
+  are off entirely. Details: `.claude/context/dagster-plus.md`.
 - GitHub: `mcp__github__*` first. The `gh`-via-Bash list below is an exhaustive
   allowlist; any other `gh` subcommand is forbidden via Bash.
   - `gh issue develop`

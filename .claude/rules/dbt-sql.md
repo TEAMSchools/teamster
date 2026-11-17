@@ -394,10 +394,8 @@ validation/profiling goes through BigQuery MCP, not `dbt show`.
 
 ## `select *` and UNION branches
 
-- No `select *` in the final `select` of `rpt_`, mart, or view models, union
-  wrappers excepted (A9). Staging and other table models may still end in a
-  star, so the `select *,` and `select * except` staging patterns below stand.
-  Get the authoritative column list via `INFORMATION_SCHEMA.COLUMNS`:
+- A9 bans a final `select *` in `rpt_`/mart/view models; staging may still end
+  in a star. Get the authoritative column list via `INFORMATION_SCHEMA.COLUMNS`:
 
   ```sql
   select column_name
@@ -407,13 +405,7 @@ validation/profiling goes through BigQuery MCP, not `dbt show`.
   ```
 
 - S17: `select *` inside UNION ALL CTEs also trips CV03 — sqlfluff requires a
-  trailing comma after the last column, but `select *` has nothing to trail. In
-  a VIEW model, enumerating is also what lets an upstream column add reach the
-  view at all: BigQuery fixes a view's column list when the view is created, and
-  Dagster rebuilds a view only on `code_version_changed`, which hashes the
-  model's raw SQL. A `select *` view never picks up a column an upstream adds,
-  because its own raw SQL never changes. Enumerating makes the column add an
-  edit to the view's own SQL, so it recompiles on deploy.
+  trailing comma after the last column, but `select *` has nothing to trail.
 - A standalone `select *` takes a trailing comma (`select *,`) to satisfy
   sqlfluff CV03 (e.g. `stg_overgrad__schools.sql`; a `source` CTE) — distinct
   from the UNION-ALL case above, which must enumerate columns.
@@ -518,9 +510,8 @@ partition key. That packs the whole row into a struct, inflates the input
 shuffle, and pushes the aggregate past BigQuery's single-round-shuffle threshold
 — so the plan gains `Repartition` stages that a window function never emits.
 
-Do not re-derive this: the ranked form was faster at every size measured, and
-the ~1M-row threshold below is interpolated, not a measured inflection point
-(evidence: #5252). Below it the saving doesn't repay the extra CTE.
+Do not re-derive this; the ~1M-row threshold below is approximate. Below it the
+saving doesn't repay the extra CTE.
 
 The default stays `dbt_utils.deduplicate()` — it is one call, and `qualify` is
 banned (S1), so the window form always costs an extra CTE plus an `rn` column.

@@ -119,6 +119,38 @@ semantic layer, and dbt downstream models. Overwriting a mart table corrupts
 prod for all consumers with no rollback path. Use the dev-schema redirect above
 instead.
 
+## Testing a model variant locally
+
+**To test a model VARIANT without touching the repo tree, point
+`CUBEJS_SCHEMA_PATH` at a copy** — `cp -r src/cube/model <scratch>/model-x`,
+`sed` the `sql_table` redirect there, then run `npx cubejs-server` with cwd
+`src/cube` (so the dotenv file still loads) and `CUBEJS_SCHEMA_PATH` set. No
+`zz_` redirect in the working tree means no accidental commit, and two variants
+can be compared by restarting against a different copy. Two traps:
+
+- **The path must be RELATIVE.** Cube's `FileRepository` does
+  `path.join(process.cwd(), schemaPath)`, and `path.join` does not reset on an
+  absolute second argument, so an absolute path silently resolves under the cwd.
+  Worse, `ensureDir` then CREATES the wrong directory and compiles an **empty
+  schema**, whose symptom is `Table or CTE with name '<view>' not found` — the
+  same string as an RLS denial. Count the `../` segments from `src/cube`.
+- Set `CUBEJS_REFRESH_WORKER=false` or the refresh worker starts building the
+  `student_assessment_scores` pre-agg, one BigQuery job per quarterly partition.
+
+**Cube caches a query result by its text, so a repeat run measures the cache.**
+To time anything, append a unique never-matching predicate per run
+(`AND academic_year <> <counter>`), seeded from the clock so a second PROCESS
+does not replay the first one's values — that defeats BigQuery's 24-hour results
+cache too. Confirm with `cache_hit = false` in `JOBS_BY_PROJECT`. Schema
+compilation is per-process and lands on the first query: pay it with a throwaway
+warmup query before timing.
+
+**`src/cube/node_modules` can lag the lockfile**, which silently invalidates any
+"on version X" claim from a local run. Check
+`node -e "console.log(require('./node_modules/@cubejs-backend/server/package.json').version)"`
+before attributing behaviour to a version; `npm ci` in `src/cube` closes the
+gap.
+
 ## Testing row-level security locally
 
 RLS lives in per-view `access_policy` driven by the `securityContext` that

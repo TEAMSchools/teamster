@@ -1,10 +1,7 @@
 # CLAUDE.md — `teamster/libraries/dlt/focus/`
 
-Loads tables from the **Focus SIS** PostgreSQL database directly to BigQuery by
-driving dlt's `table_rows` generator directly (not the `sql_database` source),
-with the PyArrow backend, probe-gated same as `powerschool/`. Factory signature
-and asset keys: see `../CLAUDE.md`. All tables come from the `public` schema
-(Focus default).
+Focus SIS Postgres to BigQuery, all from the `public` schema. Factory, asset
+keys, and run-config contract: `../CLAUDE.md`.
 
 ## Differences from Illuminate
 
@@ -52,13 +49,11 @@ arrives NULLABLE, which `replace` may add.
 **An all-NULL `interval` column loads fine and is silently dropped**, so absence
 from BigQuery does NOT mean the column is new. pyarrow infers arrow `null`,
 which dlt maps to no `data_type` and omits from the destination; the load breaks
-only when the FIRST non-null value lands. That is why #4676's asset succeeded at
-08:04 UTC and failed at 22:31 on the same commit — one assignment populated
-`time_limit` at 13:23. Two consequences: don't date a schema change from the
-BigQuery column set, and other Focus tables may hold unpopulated `interval`
-columns that break on first use, which you cannot enumerate from BigQuery. Hence
-the adapter keys off the reflected type for every table rather than naming
-columns.
+only when the FIRST non-null value lands. Two consequences: don't date a schema
+change from the BigQuery column set, and other Focus tables may hold unpopulated
+`interval` columns that break on first use, which you cannot enumerate from
+BigQuery. Hence the adapter keys off the reflected type for every table rather
+than naming columns.
 
 ## Numeric widening (source-wide)
 
@@ -99,7 +94,7 @@ Consequences to know:
   with run config `refresh: drop_resources`. Any table that predates that
   migration, or is created outside this path, needs the same treatment.
 - A table absent from `dagster_<district>_dlt_focus` now means a **config or
-  load problem**, not an empty source. That is the diagnostic this change buys.
+  load problem**, not an empty source.
 - A table that empties out AFTER loading is truncated, not dropped — see
   `replace` write-disposition in `../CLAUDE.md` (#4733).
 
@@ -132,15 +127,8 @@ wrote to dlt `resource_state`.
   the old baseline and the table re-selects next tick.
 - **A 0-row table** carries `{count: 0, max_cursor: null}` and gates out after
   its first load, so the empty-table materialization runs once, not every tick.
-  Verified: dlt does commit resource_state for a table that yields only
-  reflection hints plus the materialize marker — pinned by
-  `tests/libraries/test_dlt_focus_signature_state.py::test_empty_table_persists_its_signature`,
-  so a dlt upgrade that changes it fails CI. That test seeds a sqlite source
-  (Focus sits behind an IP allowlist unreachable from the codespace) and calls
-  only `pipeline.extract()` — it verifies dlt's state-commit mechanics, not the
-  real BigQuery `_dlt_loads` / `_dlt_pipeline_state` round-trip through a full
-  load. That end-to-end path is still an open branch-deployment validation item
-  (see the design spec's _Partially resolved risk_ section).
+  dlt commits `resource_state` for a table that yields only hints plus the
+  marker; `test_empty_table_persists_its_signature` pins this.
 - **Enable order matters.** The sensor selects any table with no stored
   signature, so enabling it before every table has a seeded baseline makes the
   first tick select every table at once. The 04:00 schedule seeds only the
