@@ -152,16 +152,11 @@ A fact driven from primary stints (`rn_year = 1`) filters out
 
 ## Table-materialized marts
 
-Marts default to `materialized: view`. Exception: `dim_assessments`,
-`dim_courses`, `dim_dates`, `dim_regions`, `dim_staff`, `dim_students`, the six
-assessment-star marts, `dim_assessment_goals`,
-`dim_assessment_module_goal_rules`, and the four assessment intermediates are
-`materialized: table`. All nine assessment marts share
-`int_assessments__response_rollup`'s cron tick — Cube is their only consumer,
-and its `proficiency_rollup` pre-aggregation follows the scores fact's rebuilds,
-so an eager view would buy no freshness
-([#4559](https://github.com/TEAMSchools/teamster/issues/4559),
-[#4821](https://github.com/TEAMSchools/teamster/issues/4821)).
+Marts default to `materialized: view`;
+`git grep -l 'materialized: table' marts/*/properties` lists the exceptions. The
+assessment marts share `int_assessments__response_rollup`'s cron tick — Cube is
+their only consumer, and its `proficiency_rollup` pre-aggregation follows the
+scores fact's rebuilds, so an eager view would buy no freshness.
 `fct_assessment_scores_enrollment_scoped` is partitioned by month on
 `assessment_date_key` so each of the rollup's quarterly partitions reads exactly
 three; keep the fact's grain no coarser than the rollup's.
@@ -229,21 +224,8 @@ Move the model's `foreign_key` constraints to `config.meta.foreign_key` first �
 see the FK-carrying prohibition above. That also removes any need to convert the
 FK closure: with no FK DDL rendered, the parents can stay views.
 
-- BigQuery FK DDL requires every referenced relation to be a TABLE with a PK
-  constraint. Convert the full FK closure (walk `to: ref(...)` edges) in one PR
-  — a table mart FK'ing a still-view mart fails the build.
-- Under `--defer` (local dev AND dbt Cloud CI), dbt resolves FK constraint refs
-  to the DEFERRED relation unconditionally — even for models rebuilt in the same
-  run (dbt-core `compilation.py`). CI fails against still-view `zz_stg` copies
-  no matter what the PR schema builds. Before pushing, pre-seed staging as
-  tables: `dbt run --select <closure> --target staging` (shared `zz_stg` — needs
-  direct user authorization). BQ table clones preserve PK constraints, so
-  `Clone - Staging` keeps CI healthy afterward. Verify the pre-seed took before
-  re-triggering CI — the `zz_stg` copy must be a `BASE TABLE` with a
-  `PRIMARY KEY` (`INFORMATION_SCHEMA.TABLE_CONSTRAINTS`), not a view (a pre-seed
-  run against `main` code rebuilds it as a view and CI fails again).
-- Code-complete closure ≠ safe prod deploy. The prod automation-condition sensor
-  materializes assets one-at-a-time OUT of FK order, and a config-only
+- A merged conversion is not a safe prod deploy. The prod automation-condition
+  sensor materializes assets one-at-a-time OUT of FK order, and a config-only
   `materialized: table` YAML change does NOT bump the dagster-dbt code version
   (SQL-checksum-derived) — so SQL-unchanged leaf dims (e.g. `dim_regions`,
   `dim_locations`) are never auto-selected and the migration wedges. Because
@@ -326,12 +308,12 @@ Validate the hash by checking the join row count reconciles before trusting it.
 
 ## Spec authoring context
 
-Cube and Tableau consume these marts directly — 11 cubes read `kipptaf_marts.*`
-tables (see `src/cube/CLAUDE.md` and `cube.yml`'s
-`cube_semantic_layer.depends_on`). Treat column renames, removals, restructures,
-and surrogate-key hash churn as breaking changes: grep `src/cube/model/` for the
-column (see "Exposures are the consumer contract" above) and ship the Cube
-update in the same change — don't assume hash churn is free.
+Cube and Tableau consume these marts directly — `cube.yml`'s
+`cube_semantic_layer.depends_on` lists the marts Cube reads. Treat column
+renames, removals, restructures, and surrogate-key hash churn as breaking
+changes: grep `src/cube/model/` for the column (see "Exposures are the consumer
+contract" above) and ship the Cube update in the same change — don't assume hash
+churn is free.
 
 Mart-focused PRs may edit upstream files (`staging/`, `intermediate/`, source
 packages) but those edits must be **additive only**. Wider upstream refactors

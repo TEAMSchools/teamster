@@ -171,4 +171,6 @@ That launcher holds the only copy of the `DAGSTER_CLOUD_API_TOKEN` 1Password
 reference, and both Dagster servers get their credentials from it. When
 something else needs the token, source it with `--no-exec` — which populates the
 variables and skips starting the server — instead of adding a second reference.
-`scripts/dagster-plus-mcp-headers.sh` is the working example.
+`scripts/dagster-plus-mcp-headers.sh` is the working example. This is for
+scripts and MCP configs only: the launcher calls `op read`, which the hooks
+block in Claude's Bash, so the GraphQL note above still holds for Claude.
