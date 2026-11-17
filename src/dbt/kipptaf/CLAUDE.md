@@ -211,7 +211,7 @@ description sends date filters to — `fct_student_attendance_enrollment_daily`
 `student_attendance_enrollment_daily.attendance_date` is the worked example.
 Pick monthly over daily for a multi-year daily-grain fact: 7,058 distinct dates
 already, so daily passes BigQuery's 4,000-partition cap inside a decade. See
-`src/cube/CLAUDE.md` for the measurements and the Cube-side rule.
+`.claude/rules/cube-authoring.md` for the Cube-side rule.
 
 ## Known Upstream Issues
 

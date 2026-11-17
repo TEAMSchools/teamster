@@ -2,8 +2,7 @@
 
 District-specific dbt project for **KIPP New Jersey - Newark** schools. Combines
 local PowerSchool staging with cross-project references to produce school-level
-extracts. This is the most complete NJ district project, including all available
-source integrations.
+extracts.
 
 ## Model Structure
 

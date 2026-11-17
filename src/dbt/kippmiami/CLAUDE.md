@@ -2,7 +2,7 @@
 
 District-specific dbt project for **KIPP Miami** schools (Florida). The only
 district project with Florida-specific state data (`fldoe`). Produces
-school-level PowerSchool staging and extracts.
+school-level extracts.
 
 ## Model Structure
 

@@ -52,14 +52,6 @@ Consequences:
 - The `dlt_powerschool_kipppaterson` pool stays at limit 1 (Dagster+ deployment
   settings, UI) so an overrunning tick serializes with the next instead of
   racing it
-- **Go-live cutover**: the `powerschool` pipeline is new (the migration's
-  per-table pipelines were `powerschool_<table>`), and its all-`NULLABLE` schema
-  cannot `replace`-load into the migration-era tables (their identity column is
-  `REQUIRED`). Before the first sensor/nightly load run against a dataset that
-  already holds migration-era tables, drop them so the pipeline recreates fresh:
-  `DROP SCHEMA IF EXISTS` the `dagster_kipppaterson_dlt_powerschool` dataset
-  `CASCADE`. The dataset name is not branch-isolated, so this applies to prod
-  go-live, not just branch testing.
 
 ## Schedules
 

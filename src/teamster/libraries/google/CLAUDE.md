@@ -1,6 +1,6 @@
 # CLAUDE.md — `teamster/libraries/google/`
 
-Google Workspace integrations. Four separate sub-libraries, each with distinct
+Google Workspace integrations. Five separate sub-libraries, each with distinct
 responsibilities:
 
 ## `bigquery/`

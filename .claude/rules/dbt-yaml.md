@@ -298,7 +298,8 @@ without it being real drift — normalize before comparing.
   CLAUDE.md. CLAUDE.md is for workflow conventions and tooling guidance only.
 - YAML `description:` is for what/why a column or model computes. Don't put
   TODOs, history, migration plumbing, or tracking-issue refs (`#3142`, etc.) in
-  descriptions — those go in inline SQL comments at the derivation site.
+  descriptions. TODOs and issue refs go in inline SQL comments at the derivation
+  site; history goes in the commit and PR (`.claude/rules/comments.md`).
 - The reverse (rationale belongs in `description:`, not an inline SQL comment):
   the inline-comment rule in `.claude/rules/dbt-sql.md`.
 

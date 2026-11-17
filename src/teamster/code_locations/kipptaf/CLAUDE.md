@@ -9,33 +9,28 @@ LOCAL_TIMEZONE = ZoneInfo("America/New_York")
 
 ## Active Integrations
 
-| Module                   | Assets                                                    | Schedules        | Sensors                 |
-| ------------------------ | --------------------------------------------------------- | ---------------- | ----------------------- |
-| `dbt`                    | 3 asset groups (see below)                                | —                | —                       |
-| `dlt`                    | Illuminate (active), Salesforce (WIP), Zendesk (disabled) | daily + hourly   | —                       |
-| `google`                 | Directory, Forms, AppSheet specs, Sheets specs            | directory, forms | bigquery, forms, sheets |
-| `adp`                    | payroll SFTP + WFN API (WFM disabled)                     | WFN schedule     | WFN + payroll sensors   |
-| `airbyte`                | asset specs                                               | schedule         | disabled                |
-| `branchingminds`         | SFTP export assets (fiscal-year partitions)               | —                | sensor                  |
-| `collegeboard`           | SFTP assets                                               | —                | —                       |
-| `coupa`                  | API assets                                                | schedule         | —                       |
-| `deanslist`              | API assets                                                | —                | sensor                  |
-| `extracts`               | BigQuery→SFTP                                             | schedule         | —                       |
-| `knowbe4`                | API assets                                                | schedule         | —                       |
-| `ldap`                   | LDAP assets                                               | schedule         | disabled                |
-| `level_data`             | Grow API assets                                           | schedule         | —                       |
-| `nsc`                    | SFTP assets                                               | —                | —                       |
-| `overgrad`               | API assets                                                | —                | —                       |
-| `performance_management` | SFTP assets                                               | —                | —                       |
-| `smartrecruiters`        | report assets                                             | schedule         | —                       |
-| `tableau`                | workbook refresh assets                                   | schedule         | —                       |
-| `zendesk`                | assets                                                    | schedule         | —                       |
-| `couchdrop`              | sensor only                                               | —                | sensor                  |
-
-**Coupa Dagster code is aliased `l`** — resource `lResource`, env vars `l_*`
-(`l_SFTP_*`, `l_API_*`), asset group `l`, and `libraries/l/` + `kipptaf/l/`
-modules that the `coupa` submodule wires from. Grep `l` as well as `coupa`. The
-dbt side is cleanly named `coupa`.
+| Module                   | Assets                                                         | Schedules        | Sensors                 |
+| ------------------------ | -------------------------------------------------------------- | ---------------- | ----------------------- |
+| `dbt`                    | 3 asset groups (see below)                                     | —                | —                       |
+| `dlt`                    | Illuminate (active), Salesforce (inactive), Zendesk (disabled) | daily + hourly   | —                       |
+| `google`                 | Directory, Forms, AppSheet specs, Sheets specs                 | directory, forms | bigquery, forms, sheets |
+| `adp`                    | payroll SFTP + WFN API (WFM disabled)                          | WFN schedule     | WFN + payroll sensors   |
+| `airbyte`                | asset specs                                                    | schedule         | disabled                |
+| `branchingminds`         | SFTP export assets (fiscal-year partitions)                    | —                | sensor                  |
+| `collegeboard`           | SFTP assets                                                    | —                | —                       |
+| `coupa`                  | API assets                                                     | schedule         | —                       |
+| `deanslist`              | API assets                                                     | —                | sensor                  |
+| `extracts`               | BigQuery→SFTP                                                  | schedule         | —                       |
+| `knowbe4`                | API assets                                                     | schedule         | —                       |
+| `ldap`                   | LDAP assets                                                    | schedule         | disabled                |
+| `level_data`             | Grow API assets                                                | schedule         | —                       |
+| `nsc`                    | SFTP assets                                                    | —                | —                       |
+| `overgrad`               | API assets                                                     | —                | —                       |
+| `performance_management` | SFTP assets                                                    | —                | —                       |
+| `smartrecruiters`        | report assets                                                  | schedule         | —                       |
+| `tableau`                | workbook refresh assets                                        | schedule         | —                       |
+| `zendesk`                | assets                                                         | schedule         | —                       |
+| `couchdrop`              | sensor only                                                    | —                | sensor                  |
 
 ## dbt Asset Groups (`dbt/assets.py`)
 
