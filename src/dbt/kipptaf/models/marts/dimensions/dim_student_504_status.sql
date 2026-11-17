@@ -19,6 +19,7 @@ with
         select
             p.student_number,
             p._dbt_source_project,
+            p.plan_start_date,
             p.is_current_plan,
 
             e.academic_year,
@@ -45,7 +46,12 @@ select
 
     {{
         dbt_utils.generate_surrogate_key(
-            ["student_number", "_dbt_source_project", "effective_date_start"]
+            [
+                "student_number",
+                "_dbt_source_project",
+                "plan_start_date",
+                "effective_date_start",
+            ]
         )
     }} as student_504_status_key,
 

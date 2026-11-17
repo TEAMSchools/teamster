@@ -2,13 +2,14 @@ models:
   - name: dim_student_504_status
     description:
       Section 504 plan spans per student per enrollment stint. One row per
-      student, region and span start. A span is the part of a 504 plan's
+      student, region, plan and span start. A span is the part of a 504 plan's
       in-force window that falls inside one enrollment stint, so a plan that
       crosses 2 stints gives 2 rows and a plan outside every stint gives none. A
-      student with no 504 plan has no row. Only regions with an EdPlan 504
-      report have rows. To find students with a plan in force on a date, filter
-      to rows whose start is on or before that date and whose end is on or after
-      it.
+      current plan and a later previous plan can overlap, so 2 spans can share a
+      start date. A student with no 504 plan has no row. Only regions with an
+      EdPlan 504 report have rows. To find students with a plan in force on a
+      date, filter to rows whose start is on or before that date and whose end
+      is on or after it.
     config:
       meta:
         dagster:
@@ -105,6 +106,8 @@ unit_tests:
       stint, with the stint's last day 1 day before its exit date. A plan
       outside every stint gives no row. An open stint (no exit date) does not
       cut the plan. A graduate placeholder row with no entry date adds nothing.
+      A current plan and an overlapping later plan that clip to the same entry
+      date give 2 rows with different keys.
     model: dim_student_504_status
     given:
       - input: ref('int_students__section_504_plans')
@@ -118,6 +121,8 @@ unit_tests:
             true as is_current_plan
           union all select 2002, 'kippnewark', date '2027-09-01', date '2028-09-01', true
           union all select 2003, 'kippnewark', date '2026-10-01', date '2027-10-01', true
+          union all select 2004, 'kippnewark', date '2025-01-10', date '2027-01-09', true
+          union all select 2004, 'kippnewark', date '2025-06-01', date '2026-06-01', false
       - input: ref('int_students__student_enrollment_union')
         format: sql
         rows: |
@@ -131,6 +136,7 @@ unit_tests:
           union all select 2001, 'kippnewark', 2027, cast(null as date), cast(null as date)
           union all select 2002, 'kippnewark', 2026, date '2026-09-01', date '2027-06-30'
           union all select 2003, 'kippnewark', 2026, date '2026-09-01', cast(null as date)
+          union all select 2004, 'kippnewark', 2025, date '2025-09-01', date '2026-06-30'
     expect:
       format: sql
       rows: |
@@ -139,14 +145,22 @@ unit_tests:
           date '2026-03-01' as effective_date_start_key,
           date '2026-06-29' as effective_date_end_key,
           true as is_current_plan,
-          to_hex(md5(concat('2001', '-', 'kippnewark', '-', '2026-03-01'))) as student_504_status_key,
+          to_hex(md5(concat('2001', '-', 'kippnewark', '-', '2026-03-01', '-', '2026-03-01'))) as student_504_status_key,
           to_hex(md5('2001')) as student_key,
           to_hex(md5(concat('2001', '-', 'kippnewark', '-', '2025', '-', '2025-09-01'))) as student_enrollment_key
         union all select 'kippnewark', date '2026-09-01', date '2027-03-01', true,
-          to_hex(md5(concat('2001', '-', 'kippnewark', '-', '2026-09-01'))),
+          to_hex(md5(concat('2001', '-', 'kippnewark', '-', '2026-03-01', '-', '2026-09-01'))),
           to_hex(md5('2001')),
           to_hex(md5(concat('2001', '-', 'kippnewark', '-', '2026', '-', '2026-09-01')))
         union all select 'kippnewark', date '2026-10-01', date '2027-10-01', true,
-          to_hex(md5(concat('2003', '-', 'kippnewark', '-', '2026-10-01'))),
+          to_hex(md5(concat('2003', '-', 'kippnewark', '-', '2026-10-01', '-', '2026-10-01'))),
           to_hex(md5('2003')),
           to_hex(md5(concat('2003', '-', 'kippnewark', '-', '2026', '-', '2026-09-01')))
+        union all select 'kippnewark', date '2025-09-01', date '2026-06-29', true,
+          to_hex(md5(concat('2004', '-', 'kippnewark', '-', '2025-01-10', '-', '2025-09-01'))),
+          to_hex(md5('2004')),
+          to_hex(md5(concat('2004', '-', 'kippnewark', '-', '2025', '-', '2025-09-01')))
+        union all select 'kippnewark', date '2025-09-01', date '2026-06-01', false,
+          to_hex(md5(concat('2004', '-', 'kippnewark', '-', '2025-06-01', '-', '2025-09-01'))),
+          to_hex(md5('2004')),
+          to_hex(md5(concat('2004', '-', 'kippnewark', '-', '2025', '-', '2025-09-01')))
