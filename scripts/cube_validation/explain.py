@@ -11,8 +11,11 @@ comment block that maps each bucket to its side and plain words:
 
 The query reads the run's unmatched rows of its comparison and bucket through
 the placeholder `{unmatched}`, which the tool fills from the run's reconcile:
-`__row` (a row id), `item_key`, `side`, the group-by columns, the grain under
-its Cube names, and `__rn` (the row's duplicate number on its grain). It
+`__row` (a row id), `item_key`, `side`, the group-by columns, with group-by
+columns `__moved` and `__d_<column>` (the dashboard's value of a column that
+differs between the sides, else NULL: read `COALESCE(u.__d_x, u.x)` for the
+dashboard's cell), the grain under its Cube names, and `__rn` (the row's
+duplicate number on its grain). It
 returns exactly `__row, cause`, one row per unmatched row. The tool counts:
 its own outer query joins the explanation back to `{unmatched}` and returns only
 item keys, cause literals and counts, refusing a row the explanation drops or
@@ -704,9 +707,12 @@ def unmatched_sql(
         SELECT that returns `__row` (a row id from the grain keys and the
         duplicate number), `item_key` (the triage item id of the row's group,
         NULL for a row no open group holds), `side` (the side holding the row),
-        the group-by columns as text, the grain under its Cube names (as the
-        side holding the row types it), and `__rn`. A `value_differs` row's
-        side reads `both`.
+        the group-by columns as text, with group-by columns `__moved` (the row
+        sits in another cell on each side) and `__d_<column>` per column (the
+        dashboard's value, NULL unless that column differs between the sides,
+        so an explanation reads `COALESCE(u.__d_x, u.x)` for the dashboard's
+        cell), the grain under its Cube names (as the side holding the row
+        types it), and `__rn`. A `value_differs` row's side reads `both`.
     """
     if comparison.rows is None:
         raise pipeline.Refusal(f"comparison {comparison.id!r} has no rows to explain")
@@ -735,6 +741,8 @@ def unmatched_sql(
         f"{key} AS item_key",
         "side",
         *(p.cube for p in dims),
+        *([reconcile._MOVED] if dims else []),
+        *(f"__d_{p.cube}" for p in dims),
         *(p.cube for p in grain),
         "__rn",
     ]

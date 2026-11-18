@@ -2016,3 +2016,17 @@ def test_the_explanations_folder_sits_beside_the_validation_file(tmp_path):
     found = explain.explanations_dir(view_file, "v")
 
     assert found == tmp_path / "explanations" / "v"
+
+
+def test_unmatched_carries_moved_and_the_dashboard_cell(duck, tmp_path, offline):
+    _tables(duck)
+    run = _run([_group(3, bucket="dims_differ")])
+    wh = _saved_wh(duck, run)
+    table = explain.require_saved(wh, CFG, run, COMPARISON)
+    ctes, select = explain.unmatched_sql(COMPARISON, "dims_differ", [], table)
+    assert "__moved" in select and "__d_abbreviation" in select
+    rows = duck.rows(
+        f"{ctes}\nSELECT COALESCE(u.__d_abbreviation, u.abbreviation) AS d "
+        f"FROM ({select}) AS u"
+    )
+    assert isinstance(rows, list)
