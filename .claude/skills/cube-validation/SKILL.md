@@ -257,14 +257,17 @@ refuses when the view's only run read another fact.
      whose sheet formulas and filters and datasource connection and filters are
      unchanged is kept, and said so. After the price, it also skips a comparison
      whose Cube SQL reads an `also_facts` table, or whose 2 sides' rows read a
-     table, that changed during the build, and one whose query fails in BigQuery
-     (its spend stays counted). A BigQuery reason names the job id and reason
-     code, never BigQuery's message: look the job up for the message. A failed
-     dry run has no job (`job ?`): run that dry run again by hand to see the
-     message. A skipped comparison keeps its previous result. Fix what each
-     reason names (most say to run `rebuild-sheet` again). Of BigQuery errors in
-     a comparison's own dry run or queries, only a cap stops the run; `compare`
-     refuses when every comparison is skipped.
+     table, that changed during the build; one that reads a table whose change
+     scan fails; one whose query fails in BigQuery (its spend stays counted);
+     and one whose dims put 2 rows in the same cell (fix the dims so each cell
+     is one row; the terminal names the cell, the skip reason does not). A
+     BigQuery reason names the job id and reason code, never BigQuery's message:
+     look the job up for the message. A failed dry run has no job (`job ?`): run
+     that dry run again by hand to see the message. A skipped comparison keeps
+     its previous result. Fix what each reason names (most say to run
+     `rebuild-sheet` again). Of BigQuery errors in a comparison's own dry run or
+     queries, only a cap stops the run; `compare` refuses when every comparison
+     is skipped.
    - It names each comparison it will compare and why: `never compared`,
      `its entry or rebuild check changed`, `Cube's SQL changed` or
      `the dashboard SQL changed` (the sheet query or the dbt views it reads). A
@@ -665,7 +668,10 @@ refuses when the view's only run read another fact.
    `investigate`, and comparisons never compared, stale or skipped, are listed
    under "Still with the analyst" with masked counts and the trace's lead (its
    count and scope only), so the owner can say if one looks familiar. They are
-   not questions, and `record-answers` never reads them. Each comparison's
+   not questions, and `record-answers` never reads them. A decision waiting to
+   be re-confirmed is no question either: `ask-owner` names those decisions on
+   stderr, with their count and ids, and points to `To re-confirm` in the view's
+   result; re-decide each as step 7 says, then render again. Each comparison's
    moment shows in the issue; a question's moment is the earliest of its
    comparisons'. It runs twice. The first run writes the JSON to
    `reviews/<view>.json` beside the validation file (`reviews/<domain>.json`
