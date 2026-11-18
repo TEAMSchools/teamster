@@ -5378,7 +5378,7 @@ def test_sort_files_a_decided_cell_whose_formulas_differ_as_formula(fakes, tmp_p
 
 
 def test_a_formula_decision_is_asked_again_once_the_check_files_more_cells(
-    fakes, tmp_path
+    fakes, tmp_path, capsys
 ):
     _miami_differs(fakes, tmp_path)
     path = _with_decision(_saved_fingerprints(tmp_path), tmp_path, call="fix_cube")
@@ -5414,6 +5414,13 @@ def test_a_formula_decision_is_asked_again_once_the_check_files_more_cells(
     assert [d["id"] for d in applied["reconfirm"]] == ["which-rate"]
     assert applied["quiet_cells"] == []
     assert [d["kind"] for d in applied["open_cells"]] == ["formula"]
+    # Out of the questions while it waits; ask-owner says so on stderr.
+    assert "ada-region:formula" in _sorted_items(path, tmp_path)
+    capsys.readouterr()
+    assert cli.main(["ask-owner", str(path), "--domain", "Registrar"]) == 0
+    out, err = capsys.readouterr()
+    assert ("v: 1 decision to re-confirm, left out of the questions: which-rate") in err
+    assert "re-confirm" not in out
 
     # As the runbook says: delete it and decide the item again under a new
     # id, so the owner's session does not skip it as answered.

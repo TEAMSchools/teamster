@@ -34,8 +34,9 @@ def ask_owner(
     asked; what is not settled yet (items still in `investigate`, and
     comparisons missing, stale or skipped, `sort.comparisons_waiting`) is
     listed under "Still with the analyst" and never asked.
-    Nothing is posted; a question with no triage evidence, and a body near
-    GitHub's cap, are named on stderr.
+    Nothing is posted; a question with no triage evidence, a decision waiting
+    to be re-confirmed (asked again only once decided again), and a body near
+    GitHub's cap are named on stderr.
 
     Args:
         configs: The views to review.
@@ -134,6 +135,17 @@ def ask_owner(
             # stderr, so the note never lands in the issue body.
             print(
                 f"{q['id']}: no triage evidence; `sort` the view to add it",
+                file=sys.stderr,
+            )
+    for run in runs:
+        if ids := [d.id for d in run.applied.reconfirm]:
+            # stderr, so the note never lands in the issue body. A decision
+            # waiting here asks nothing until it is decided again.
+            n = len(ids)
+            print(
+                f"{run.view}: {n} decision{'' if n == 1 else 's'} to re-confirm, "
+                f"left out of the questions: {', '.join(ids)}; see `To re-confirm` "
+                "in its result",
                 file=sys.stderr,
             )
     if waiting := report.untasked(d for cfg in configs for d in cfg.decisions):
