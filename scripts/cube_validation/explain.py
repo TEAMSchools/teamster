@@ -52,14 +52,14 @@ from . import (
     sort,
     trace,
 )
-from .bq import CostCapError, ViewHistoryError, Warehouse
+from .bq import CostCapError, ViewHistoryError, Warehouse, job_failure
 from .config import Comparison, ViewConfig, explanation_key, id_like, mask_digits
 from .cube_client import Cube, CubeError, CubeRefusal, network_schools
 from .moment import Build, MomentError, pick_moment, utcnow
 from .reconcile import Group
 from .report import RunResult, Ticker, mask, shown_counts
 from .timetravel import PROJECT, utc_literal
-from .trace import TIMEOUT_S, TRACED, _failure
+from .trace import TIMEOUT_S, TRACED
 
 # The buckets a stored explanation classifies: the one-sided rows the trace leads on,
 # and rows both sides hold whose values differ.
@@ -1056,7 +1056,7 @@ def bigquery_said(exc: GoogleAPIError) -> str:
     # Cut after masking, so a cut never leaves part of an ID unmasked.
     if len(masked) > MAX_MESSAGE:
         masked = masked[:MAX_MESSAGE] + "..."
-    return f"{_failure(exc)}: {masked}"
+    return f"{job_failure(exc)}: {masked}"
 
 
 def require_saved(

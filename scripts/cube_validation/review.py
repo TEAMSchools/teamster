@@ -14,8 +14,6 @@ from .config import ViewConfig
 from .pipeline import Refusal
 from .results import latest_run
 
-BODY_WARN_CHARS = report.BODY_WARN_CHARS
-
 
 def ask_owner(
     configs: list[ViewConfig],
@@ -122,7 +120,7 @@ def ask_owner(
         still,
         unpublished,
     )
-    if len(body) > BODY_WARN_CHARS:
+    if len(body) > report.BODY_WARN_CHARS:
         # stderr, so the warning never lands in the issue body.
         print(
             f"warning: the body is {len(body):,} characters; GitHub refuses an "

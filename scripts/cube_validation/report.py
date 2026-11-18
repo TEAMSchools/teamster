@@ -58,9 +58,6 @@ def _is_identifier(column: str) -> bool:
     return column not in _SHOWN_COLUMNS
 
 
-_SEPARATED_DIGITS = SEPARATED_DIGITS
-
-
 @dataclass
 class MeasureResult:
     measure: str
@@ -516,7 +513,7 @@ def _safe_reason(reason: str, values: list) -> str:
         text = re.sub(
             rf"(?<![\w.]){re.escape(_clean(value))}(?![\w.])", "<redacted>", text
         )
-    text = _SEPARATED_DIGITS.sub(
+    text = SEPARATED_DIGITS.sub(
         lambda m: (
             "<redacted>" if sum(c.isdigit() for c in m.group()) >= 5 else m.group()
         ),
@@ -528,7 +525,7 @@ def _safe_reason(reason: str, values: list) -> str:
 
 def _with_task(reason: str, task: str) -> str:
     """End a reason once, then add the task: no `?.` after a question."""
-    reason = reason if reason.endswith(("?", "!", ".")) else f"{reason}."
+    reason = _ended(reason)
     return f"{reason} Task: {task}" if task else reason
 
 
