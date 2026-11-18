@@ -9,6 +9,11 @@ benefits where the survey asked about them, or a place in graduate school. The
 KFwd team and the board read the results by cohort. Counselors use the same data
 one alum at a time, to see who has answered and who needs follow-up.
 
+Before an alum launches, counselors also score how ready they are. In each
+Career Conversation, a counselor rates the alum on 4 readiness indicators. The
+ratings and the alum's college GPA add up to a **launch score** and a **launch
+stage**.
+
 The data team owns the models, with Anthony Walters (Associate Director of Data)
 as owner. Casey Gibson (Systems Analyst) is taking them over. The KFwd Career
 Team owns the survey, the Strong Launch rule, and reconciliation.
@@ -21,9 +26,9 @@ The family has 2 consumers:
 
 - the Career Launch views in the KIPP Forward Data Suite Tableau workbook, which
   read `rpt_tableau__kfwd_career_launch_survey`;
-- the Career Conversation Tracker AppSheet app, which reads
-  `rpt_appsheet__kfwd_career_launch_survey` and writes counselors' checklist
-  entries back to BigQuery.
+- the KIPP Forward Career Launch AppSheet app, which reads its roster from
+  `rpt_appsheet__kfwd_career_launch_survey` and writes counselors' readiness
+  assessments back to BigQuery.
 
 ## How it fits together
 
@@ -38,18 +43,30 @@ flowchart LR
     forms --> rec[int_surveys__kfwd_career_launch_reconciliation]
     sf[(Salesforce)] --> roster[int_kippadb__roster]
     sf --> notes[int_kippadb__contact_note_rollup]
-    app[(AppSheet app)] --> cc[stg_google_appsheet__kfwd_career_conversations__output]
+    sf --> clc[int_surveys__kfwd_career_launch_contacts]
+    rub[(Scoring Rubric sheet)] --> clc
+    rub --> cla[int_surveys__kfwd_career_launch_assessments]
+    app[(AppSheet app)] --> asm[stg_google_appsheet__kfwd_career_conversations__assessments]
+    app --> cc[stg_google_appsheet__kfwd_career_conversations__output]
+    asm --> cla
+    clc --> cla
     resp --> tab[rpt_tableau__kfwd_career_launch_survey]
     rec --> tab
     roster --> tab
     notes --> tab
     cc --> tab
+    cla --> tab
     tab --> wb[(KIPP Forward Data Suite)]
     resp --> aps[rpt_appsheet__kfwd_career_launch_survey]
     rec --> aps
     roster --> aps
+    clc --> aps
+    cla --> aps
     aps --> app
 ```
+
+The Scoring Rubric sheet is the Career Launch Scoring Rubric Google Sheet. dbt
+reads 4 of its tabs, each through its own staging model; see _Inputs_.
 
 ## Terms
 
@@ -84,6 +101,16 @@ flowchart LR
 - **Career Conversation checklist** — 7 items a counselor checks off in the
   AppSheet app: résumé, LinkedIn, mock interview, references list, job search
   template, cover letter template, and work samples.
+- **Readiness assessment** — one Career Conversation's ratings, entered in the
+  AppSheet app. The counselor rates 4 **indicators** from level 1 to 4: Career
+  Ready, Active Search, Internship / Experience, and Network.
+- **Launch score** — an assessment's indicator points plus GPA points, out
+  of 100. See _Readiness scoring_.
+- **Launch stage** — the named score range the launch score falls in.
+- **ECC** — the adjusted 6-year minority graduation rate of the alum's college.
+  It sits next to GPA as context and adds no points.
+- **Career Launch active** — the alum belongs on the app roster. See _Who is on
+  the app roster_.
 
 ## Where the data comes from
 
@@ -94,7 +121,9 @@ flowchart LR
 | Manual Uploads                                      | Google Sheet, filled from a template                    | Counselors, then data team |
 | Reconcile or Exclude decisions                      | Reconciliation Google Form                              | KFwd Career Team           |
 | Alumni roster, enrollments, programs, contact notes | Salesforce (KIPPADB)                                    | KFwd counselors            |
-| Career Conversation checklist                       | Career Conversation Tracker AppSheet app                | Counselors                 |
+| Career Conversation checklist                       | KIPP Forward Career Launch AppSheet app                 | Counselors                 |
+| Readiness assessments                               | KIPP Forward Career Launch AppSheet app                 | Counselors                 |
+| Rubric points, stages, GPA bands, caseloads         | Career Launch Scoring Rubric Google Sheet               | KFwd team                  |
 
 Each survey version asked different questions. The Strong Launch rule depends on
 it:
@@ -164,8 +193,17 @@ no response; see _Known issues_.
   `last_ccr_date` is the latest CC1 to CC5 note date.
 - **Checklist:** the 7 checklist flags come from the AppSheet output.
   `is_career_conversation_complete` is true when all 7 are checked.
-- **Advisor:** an alum advised by KIPP NYC shows `Collab`; anyone else shows
-  their Salesforce contact owner.
+- **Readiness:** the alum's latest assessment (`is_latest_assessment`) supplies
+  the indicator levels and points, `launch_score`, `launch_stage`,
+  `has_all_levels`, `coaching_focus`, and `next_action`. They repeat on every
+  row for the alum. `launch_assessed_at` is the date of that assessment.
+- **ECC:** `ecc` is the graduation rate of the institution on that row's
+  graduated enrollment, so an alum with 2 degrees has 2 values. The app's `ecc`
+  picks 1 enrollment instead; see _Who is on the app roster_.
+- **Advisor:** an alum advised by KIPP NYC shows `Collab`; anyone else shows the
+  name of their Salesforce postsecondary advisor. The extract also carries
+  `contact_owner_name`, `college_counselor`, and `postsec_advisor`, the
+  advisor's Salesforce contact ID.
 
 ### Worth knowing
 
@@ -199,17 +237,42 @@ What the order means:
   A v2 respondent at $50,000 or more without benefits drops to the degree rules.
   An Alchemer or v1 respondent with the same job is a Strong Launch. The rule
   keys on the survey version of the current response, not the cohort.
-- For a Bachelor's graduate, Part-Quality means
-  $50,000 or more without benefits
-  on v2. A Bachelor's graduate under $50,000
-  is Not Strong Launch.
+- For a Bachelor's graduate, Part-Quality means $50,000 or more without benefits
+  on v2. A Bachelor's graduate under $50,000 is Not Strong Launch.
 - For Associate's and Certificate graduates, Part-Quality means pay between the
   degree's bar ($45,000 or $40,000) and $50,000, or $50,000 or more without
   benefits on v2.
 - An alum with no graduated postsecondary enrollment has no degree type, so they
   can be Strong Launch or Not Strong Launch, never Part-Quality.
 
-## Career Conversation Tracker app
+## Readiness scoring
+
+`int_surveys__kfwd_career_launch_assessments` scores each assessment, one row
+per Career Conversation:
+
+1. Each indicator level takes its points from the Rubric tab. The tab is keyed
+   on indicator and level, such as `career_ready_3`.
+2. GPA points come from the GPA Bands tab. The alum's current college GPA falls
+   in the band from its `min_gpa` up to, not including, the next band's.
+3. `launch_score` adds the 4 indicator points and the GPA points, out of 100.
+4. `launch_stage` comes from the Stages tab the same way: the stage whose
+   `min_score` is the highest one at or below the score.
+5. `is_latest_assessment` marks the alum's newest assessment by `assessed_at`. A
+   tie goes to the higher `assessment_id`.
+
+What that means for a reader:
+
+- A missing level, a level outside 1 to 4, or a key missing from the Rubric tab
+  scores 0 points. Check `has_all_levels` before reading a low score as a weak
+  alum.
+- An alum with no current college GPA scores 0 GPA points.
+- The score uses today's GPA, not the GPA at the time of the conversation, so a
+  past assessment's score changes when the GPA does. The app shows the same
+  score.
+- The rubric, bands, and stages are read live, so a change on the sheet rescores
+  every past assessment.
+
+## KIPP Forward Career Launch app
 
 ### What triggers it
 
@@ -219,28 +282,66 @@ A counselor opens the app while working with an alum.
 
 The app is the `kfwd_career_launch_app` exposure ("KIPP Forward Career Launch
 App") in dbt. `rpt_appsheet__kfwd_career_launch_survey` gives it one row per
-alum, with exceptions under _Known issues_: name, cohort, emails, phones,
-current school and GPA, the latest postsecondary enrollment's degree type and
+alum on the roster: name, cohort, emails, phones, current school, current
+college GPA and the Salesforce record behind it, GPA band and points, ECC,
+`is_career_launch_active`, the latest postsecondary enrollment's degree type and
 major, advisor, number of survey responses, and the latest survey date.
+
+The app also reads the Rubric tab of the Scoring Rubric sheet, so the app and
+the dashboard score assessments the same way.
+
+### Who is on the app roster
+
+`int_surveys__kfwd_career_launch_contacts` sets `is_career_launch_active` from
+Salesforce. An HSG or TAF alum is active when any of these holds and they have
+not opted out of national or regional contact:
+
+- their Salesforce contact owner or postsecondary advisor is listed on the
+  Caseloads tab, whatever their cohort;
+- their KIPP high school class is 4 to 6 years past graduation: the
+  `current_academic_year` variable minus 3, 4, or 5;
+- they are in the newest class, equal to `current_academic_year`, and their
+  advising provider is not KIPP NYC (the Collab).
+
+An alum who is no longer active but already has an assessment stays on the
+roster with `is_career_launch_active = false`, so their past assessments keep a
+name.
+
+Other columns the app reads:
+
+- **ECC** — from the college the alum graduated from: the enrollment
+  `int_kippadb__enrollment_pivot` picks as completed (Bachelor's, then
+  Associate's, then CTE), only when its status is `Graduated`. Empty for an alum
+  who has not graduated.
+- **Advisor** — `Collab` for an alum advised by KIPP NYC; anyone else shows
+  their Salesforce contact owner. This differs from the Tableau extract, which
+  shows the postsecondary advisor.
 
 ### Steps
 
-1. The counselor finds the alum in the app.
-2. The counselor checks off the checklist items the alum has finished and adds
-   notes.
-3. AppSheet writes the entry to the `src_kfwd_career_conversations__output`
-   table in BigQuery.
+1. The counselor picks the alum in the app.
+2. The counselor rates the 4 indicators and records the coaching focus, the next
+   action, and notes. The app shows the launch score and stage.
+3. AppSheet writes the assessment to the
+   `src_kfwd_career_conversations__assessments` table in BigQuery.
 
 ### Outputs
 
-`stg_google_appsheet__kfwd_career_conversations__output` stages the entries, one
-row per alum. The Tableau extract reads them as the checklist flags and notes.
+`stg_google_appsheet__kfwd_career_conversations__assessments` stages the
+assessments, one row per Career Conversation, and
+`int_surveys__kfwd_career_launch_assessments` scores them. The Tableau extract
+shows each alum's latest assessment.
+
+The Tableau extract also reads the checklist and notes from the older
+`src_kfwd_career_conversations__output` table, one row per alum, through
+`stg_google_appsheet__kfwd_career_conversations__output`.
 
 ### Who runs it and when
 
 Counselors, at any time. The roster the app reads is a view, so it reflects the
-Salesforce and survey tables as of their last build. The checklist reaches the
-Tableau extract after its staging table rebuilds.
+Salesforce and survey tables as of their last build. An assessment's
+`contact_id` comes from the app's link to the roster. An assessment with a blank
+or unmatched `contact_id` never reaches the dashboard.
 
 ## Manual Uploads
 
@@ -290,6 +391,16 @@ over.
   the reconciliation form.
 - `base_alchemer__survey_results` and `int_surveys__response_identifiers` —
   Alchemer answers and respondent IDs.
+- `int_surveys__kfwd_career_launch_contacts` — one row per Salesforce contact:
+  current college GPA, GPA band and points, ECC, and the roster flags. Reads
+  `base_kippadb__contact` and `int_kippadb__enrollment_pivot`.
+- `int_surveys__kfwd_career_launch_assessments` — one row per assessment, with
+  points, launch score, stage, and `is_latest_assessment`. Joined to the
+  extracts on `contact_id`.
+- `stg_google_appsheet__kfwd_career_conversations__assessments` — the app's
+  assessments, with a rubric key built for each indicator level.
+- `stg_google_sheets__kfwd__career_launch_rubric`, `__stages`, `__gpa_bands`,
+  and `__caseloads` — the 4 Scoring Rubric sheet tabs.
 
 ## Inputs
 
@@ -302,6 +413,13 @@ over.
 - **Reconciliation Google Form** — 3 questions: survey response ID, Salesforce
   contact ID, and Reconcile or Exclude. The latest submission for a response
   wins.
+- **Career Launch Scoring Rubric sheet** — 4 tabs:
+  - **Rubric:** points for each indicator and level, keyed like
+    `career_ready_3`. A misspelled key scores that level 0 points.
+  - **Stages:** each stage's name and lowest score.
+  - **GPA Bands:** each band's label, lowest GPA, and points.
+  - **Caseloads:** staff whose alumni are always on the app roster. Names must
+    match the Salesforce contact owner or postsecondary advisor field exactly.
 
 ## Decisions
 
@@ -316,6 +434,12 @@ over.
 - **Salary uses the bottom of each range.**
 - **KIPP NYC-advised alumni show `Collab` as advisor,** at the Career Team's
   request.
+- **The Tableau advisor is the Salesforce postsecondary advisor,** not the
+  contact owner, because counselor assignments changed and the contact owner no
+  longer shows who advises the alum.
+- **Launch scores use today's GPA,** so the app and the dashboard show the same
+  score.
+- **ECC is context, not points.**
 
 ## Known issues, need to fix
 
@@ -364,7 +488,9 @@ over.
 ## Yearly upkeep
 
 - The cohort window moves with the dbt `current_academic_year` variable each
-  July.
+  July. So do the app roster's 4-to-6-year window and newest class.
+- Keep the Caseloads tab current when KFwd staff join, leave, or change
+  caseloads.
 - A new survey version needs a new branch in
   `int_surveys__kfwd_career_launch_responses`, its questions mapped to the
   existing short names, and a check of the Strong Launch rule's `Survey Title`
