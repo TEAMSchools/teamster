@@ -1659,11 +1659,19 @@ def _formula_jobs(
             jobs.append(planned)
         elif planned is not None:
             checks[c.id] = planned
-    prices = trace._dry_runs(wh, [sql for j in jobs for sql in j.sql.values()])
     ready: list[formula.Job] = []
     usd = 0.0
     for job in jobs:
-        mine, prices = prices[: len(job.sql)], prices[len(job.sql) :]
+        # One job at a time, so an error outside BigQuery (expired
+        # credentials, say) stops only its own check.
+        try:
+            mine = trace._dry_runs(wh, list(job.sql.values()))
+        except Exception as exc:  # noqa: BLE001 - the check never stops `sort`
+            print(f"Formula check of {job.comparison} not priced: {exc!r}")
+            checks[job.comparison] = formula.not_compared(
+                job.comparison, job.fingerprint, job.cells, formula.RUN_FAILED
+            )
+            continue
         if failed := [p for p in mine if isinstance(p, GoogleAPIError)]:
             checks[job.comparison] = formula.not_compared(
                 job.comparison, job.fingerprint, job.cells,

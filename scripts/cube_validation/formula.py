@@ -43,7 +43,10 @@ NOT_COMPOSED = "the run is not composed from the latest results; compare it agai
 OUTSIDE = "not run: outside --comparison; sort it"
 CAPPED = "a cap stopped it; sort again with a higher --max-usd"
 # An error no reason above names, from code that builds the check's SQL.
-UNBUILT = "its SQL could not be built; see the terminal"
+UNBUILT = "its SQL could not be built (see the terminal); sort again"
+# An error no reason above names, from pricing or running the check's queries,
+# such as expired credentials.
+RUN_FAILED = "its queries failed (see the terminal); sort again"
 # The reasons a check that ran its queries can give; any other is a failure.
 _RAN = (REWRITE_DIFFERS, NO_ROWS)
 
@@ -729,8 +732,9 @@ def run_job(job: Job, comparison: Comparison, wh: Warehouse) -> Check:
 
     Call inside `wh.budget`, after its dry runs are priced. Never raises: a
     BigQuery error leaves every cell to coverage under its job and reason
-    code, a cap under `CAPPED`, and rows that do not carry the comparison's
-    dims under `REWRITE_DIFFERS`.
+    code, a cap under `CAPPED`, any other error (expired credentials, say)
+    under `RUN_FAILED` with the error printed, and rows that do not carry the
+    comparison's dims under `REWRITE_DIFFERS`.
     """
     try:
         got = {k: wh.rows(sql, timeout_s=trace.TIMEOUT_S) for k, sql in job.sql.items()}
@@ -739,6 +743,9 @@ def run_job(job: Job, comparison: Comparison, wh: Warehouse) -> Check:
                             bigquery_refused(exc))  # fmt: skip
     except CostCapError:
         return not_compared(job.comparison, job.fingerprint, job.cells, CAPPED)
+    except Exception as exc:  # noqa: BLE001 - the check never stops `sort`
+        print(f"Formula check of {job.comparison} not run: {exc!r}")
+        return not_compared(job.comparison, job.fingerprint, job.cells, RUN_FAILED)
     try:
         return verdicts(
             comparison, job.fingerprint, job.cells,

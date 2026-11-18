@@ -41,7 +41,7 @@ from cube_validation.config import ColumnPair, Comparison, load_view_config
 from cube_validation.cube_client import Compiled, CubeError
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation.formula import NOT_COMPARED, OUTSIDE
+from cube_validation.formula import NOT_COMPARED, OUTSIDE, RUN_FAILED
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.saved import SCRATCH_DATASET
@@ -52,6 +52,7 @@ from cube_validation.tableau import Snapshot, formula_fingerprint
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.timetravel import utc_literal
 from google.api_core.exceptions import BadRequest, NotFound
+from google.auth.exceptions import RefreshError
 
 FIXTURES = Path(__file__).parent / "fixtures"
 REAL_TABLEAU_SESSION = cli.tableau_session
@@ -5150,6 +5151,31 @@ def test_sort_comparison_checks_only_the_comparisons_named(fakes, tmp_path):
     )
     # Checked: the sides agree on matched rows, so coverage decides.
     assert not items["ada-region-2:cells"]["evidence"][0].startswith(NOT_COMPARED)
+
+
+def test_a_formula_dry_run_that_fails_outside_bigquery_leaves_sort_running(
+    fakes, tmp_path, capsys
+):
+    path = _miami_differs(fakes, tmp_path)
+    query = fakes.bq.query
+
+    def expired(sql, job_config=None):
+        if FORMULA_QUERY in sql and job_config is not None and job_config.dry_run:
+            raise RefreshError("Reauthentication is needed.")
+        return query(sql, job_config)
+
+    fakes.bq.query = expired
+
+    assert cli.main(["sort", str(path), "--no-trace"]) == 0
+
+    loaded = _triage(tmp_path)
+    assert loaded["formulas_not_compared"] == {"ada-region": {RUN_FAILED: 2}}
+    cells = {i["id"]: i for i in loaded["items"]}["ada-region:cells"]
+    assert cells["evidence_posted"][0] == (
+        f"formulas not compared: {RUN_FAILED} (<10 cells closed by coverage only)"
+    )
+    assert "Reauthentication is needed." in capsys.readouterr().out
+    assert _formula_runs(fakes.bq) == []
 
 
 def test_a_failed_check_neither_refuses_sort_nor_makes_the_comparison_stale(

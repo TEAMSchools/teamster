@@ -38,6 +38,7 @@ from cube_validation.timetravel import AsOf, TableInfo, as_of, utc_literal
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.trace import TIMEOUT_S, Prepared
 from google.api_core.exceptions import BadRequest
+from google.auth.exceptions import RefreshError
 
 from .test_explain import SIDES, Wh
 
@@ -1208,6 +1209,17 @@ def test_run_job_falls_back_on_a_bigquery_error_with_its_job_only():
     assert formula.run_job(_job(), DECIMALS, Capped()).not_compared == {
         "a cap stopped it; sort again with a higher --max-usd": [REF]
     }
+
+
+def test_run_job_falls_back_when_its_warehouse_fails_outside_bigquery(capsys):
+    class Expired:
+        def rows(self, sql, timeout_s=None):
+            raise RefreshError("Reauthentication is needed.")
+
+    check = formula.run_job(_job(), DECIMALS, Expired())
+
+    assert check.not_compared == {formula.RUN_FAILED: [REF]}
+    assert "Reauthentication is needed." in capsys.readouterr().out
 
 
 def test_label_discloses_unchecked_cells_masked():
