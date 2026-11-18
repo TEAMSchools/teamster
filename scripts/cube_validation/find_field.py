@@ -308,10 +308,20 @@ def filter_field(column: str, groups: set[str]) -> str | None:
     return name if name in groups else None
 
 
+def null_mode(filter_el: ET.Element) -> str | None:
+    """`non-null` or `null` for a quantitative filter set to one, else None."""
+    if filter_el.get("class") != "quantitative":
+        return None
+    mode = filter_el.get("included-values")
+    return mode if mode in ("non-null", "null") else None
+
+
 def restricts(filter_el: ET.Element) -> bool:
-    """True when a filter is set to chosen values or a range, not All."""
+    """True when a filter is set to chosen values, a range or a null mode, not All."""
     if filter_el.get("class") == "quantitative":
-        return any(c.tag in ("min", "max") for c in filter_el)
+        return null_mode(filter_el) is not None or any(
+            c.tag in ("min", "max") for c in filter_el
+        )
     top = filter_el.find("groupfilter")
     if top is None:
         return False
@@ -403,6 +413,8 @@ def sheet_shape(twb_xml: str, sheet: str) -> SheetShape:
         name = caption.get(field_name, field_name)
         if not restricts(filter_el):
             filters.append(f"{name}: All")
+        elif mode := null_mode(filter_el):
+            filters.append(f"{name}: {mode} values only (narrows the sheet)")
         elif filter_el.get("class") == "quantitative":
             filters.append(f"{name}: a range (narrows the sheet)")
         elif field_name in SHOWN_FILTER_FIELDS:

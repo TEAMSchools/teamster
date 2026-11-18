@@ -469,3 +469,30 @@ def test_a_rows_grain_field_on_the_shelves_is_mapped():
 
     assert "- Week Start Monday (columns): v.assessment_week (rows:)" in text
     assert not [b for b in before if b.startswith("Week Start Monday")]
+
+
+def test_export_name_reads_a_countd_caption():
+    assert (
+        read_sheet._export_name("Distinct count of Student Number") == "student number"
+    )
+
+
+def test_measure_line_finds_a_countd_sheet_field():
+    facts = read_sheet.Sheet(
+        [], [], [], [], {"COUNTD(Student Number)": {"student number"}}
+    )
+    out = read_sheet._Checklist([], [])
+    read_sheet._measure_line(
+        out, _comparison(sheet_field="Distinct count of Student Number"), facts
+    )
+    assert out.before == []
+
+
+def test_read_sheet_points_a_non_null_filter_at_dashboard_filters_set():
+    non_null = (
+        "<filter class='quantitative' column='[federated.0pf].[none:score:qk]' "
+        "included-values='non-null'/>\n          "
+    )
+    xml = TWB.replace(_ANCHOR, non_null + _ANCHOR)
+    _, before = read_sheet.check("v", xml, "Grid", _comparison(), MEMBERS)
+    assert any("non-null values only" in b and "operator: set" in b for b in before)

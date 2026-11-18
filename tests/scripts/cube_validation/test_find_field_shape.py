@@ -1,3 +1,4 @@
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
@@ -7,7 +8,9 @@ from cube_validation.find_field import (
     bins,
     calculated_fields,
     explain_bins,
+    null_mode,
     rank,
+    restricts,
     sheet_shape,
 )
 
@@ -92,3 +95,32 @@ def test_a_level_members_filter_keeps_everything_whatever_its_ui_attribute():
         "<groupfilter function='level-members' level='[none:region:nk]' />",
     )
     assert "Region: All" in sheet_shape(twb, "Roster").filters
+
+
+NON_NULL = (
+    "<filter class='quantitative' column='[ds].[none:score:qk]' "
+    "included-values='non-null'/>"
+)
+
+
+def _one_filter_twb(filter_xml):
+    return (
+        "<workbook><worksheets><worksheet name='S'><table><view>"
+        f"{filter_xml}</view><rows/><cols/></table></worksheet></worksheets></workbook>"
+    )
+
+
+def test_a_non_null_quantitative_filter_restricts():
+    assert restricts(ET.fromstring(NON_NULL))
+    assert null_mode(ET.fromstring(NON_NULL)) == "non-null"
+    assert not restricts(
+        ET.fromstring(
+            "<filter class='quantitative' column='[ds].[none:score:qk]' "
+            "included-values='all'/>"
+        )
+    )
+
+
+def test_sheet_shape_says_non_null_values_only():
+    shape = sheet_shape(_one_filter_twb(NON_NULL), "S")
+    assert shape.filters == ["score: non-null values only (narrows the sheet)"]

@@ -29,7 +29,7 @@ _PARAMETER = re.compile(r"\[Parameters\]\.\[([^\[\]]+)\]")
 # What a wide export or a Measure Names value puts before an aggregated
 # field's caption: `Avg. Is Mastery Int`, `SUM(Membership)`.
 _AGG_PREFIX = re.compile(
-    r"^(?:(?:avg|sum|count|countd|min|max|median|attr|agg)\.?(?:\s+of)?\s+)",
+    r"^(?:(?:avg|sum|distinct\s+count|count|countd|min|max|median|attr|agg)\.?(?:\s+of)?\s+)",
     re.IGNORECASE,
 )
 _AGG_CALL = re.compile(r"^\w+\((.*)\)$")
@@ -64,6 +64,7 @@ class SheetFilter:
     source: str
     columns: tuple[str, ...] = ()
     parameters: tuple[str, ...] = ()
+    null_mode: str | None = None
 
 
 @dataclass(frozen=True)
@@ -204,6 +205,7 @@ def read_sheet(twb_xml: str, sheet: str) -> Sheet:
                 # A relative-date filter has no members or range to read; it
                 # always narrows the sheet to a window.
                 restricting=finder.restricts(el) or el.get("class") == "relative-date",
+                null_mode=finder.null_mode(el),
                 formula=formula,
                 group=group,
                 shared_with=tuple(
@@ -438,6 +440,12 @@ def _filter_lines(out: _Checklist, comparison: Comparison | None, facts: Sheet) 
             lines.append((f"{f.caption}: dashboard_filters", ""))
         elif "parameter-driven" in f.kinds and set(f.parameters) <= set_here:
             lines.append((f"{f.caption}: its parameter is set under parameters:", ""))
+        elif f.null_mode:
+            need = (
+                f"{f.caption}: keeps {f.null_mode} values only; add "
+                "dashboard_filters with operator: set on its column"
+            )
+            lines.append((need, need))
         elif "parameter-driven" in f.kinds:
             need = (
                 f"{f.caption}: driven by a parameter; set it under parameters: or "
@@ -494,6 +502,8 @@ def _sheet_lines(label: str, sheet: str, facts: Sheet) -> list[str]:
         if f.formula:
             kinds += f" ({f.formula})"
         state = "restricting" if f.restricting else "keeps all"
+        if f.null_mode:
+            state = f"{f.null_mode} values only"
         line = f"    - {f.caption}: {kinds}; {state}"
         if "relative date" in f.kinds:
             line += (
