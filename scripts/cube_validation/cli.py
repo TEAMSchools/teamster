@@ -24,7 +24,7 @@ import urllib.parse
 # trunk-ignore(bandit/B405): only ParseError is used; the workbook is parsed in builder
 import xml.etree.ElementTree as ET
 from collections.abc import Iterator
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 
 import tableauserverclient as TSC
@@ -56,7 +56,7 @@ from .config import (
     write_decision,
 )
 from .cube_client import Cube, CubeError, CubeRefusal
-from .moment import MomentError
+from .moment import MomentError, utcnow
 
 EXPOSURES = (
     Path(__file__).resolve().parents[2] / "src/dbt/kipptaf/models/exposures/tableau.yml"
@@ -136,10 +136,6 @@ def tableau_session() -> Iterator[tableau.Tableau]:
     finally:
         if problem := tbl.sign_out():
             print(f"warning: Tableau sign-out failed: {problem}", file=sys.stderr)
-
-
-def utcnow() -> datetime:
-    return datetime.now(timezone.utc)
 
 
 def cache_root() -> Path:
