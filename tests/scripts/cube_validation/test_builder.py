@@ -168,7 +168,6 @@ def test_members_command_writes_json_and_prints_groups(monkeypatch, tmp_path, ca
         },
     )
     monkeypatch.setattr(cli, "make_cube", lambda url, secret, email: cube)
-    monkeypatch.setattr(cli, "cache_root", lambda: tmp_path / "cache")
     monkeypatch.setenv("CUBE_REST_URL", "http://cube.test/cubejs-api/v1")
     monkeypatch.setenv("CUBE_API_SECRET", "not-a-secret")
     monkeypatch.setenv("CUBE_VALIDATION_EMAIL", "analyst@example.org")
@@ -596,8 +595,7 @@ def test_inventory_attaches_an_asana_item_to_the_catalog_row_it_names():
     assert row.disagreement == ""
 
 
-def test_inventory_command_prints_a_table_then_json(monkeypatch, tmp_path, capsys):
-    monkeypatch.setattr(cli, "cache_root", lambda: tmp_path / "cache")
+def test_inventory_command_prints_a_table_then_json(tmp_path, capsys):
     catalog = tmp_path / "plan.md"
     catalog.write_text(_CATALOG, encoding="utf-8")
     review = tmp_path / "review.json"

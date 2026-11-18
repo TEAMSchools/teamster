@@ -618,11 +618,11 @@ def trace_sql(
     """Build the query that counts which relaxed variants recover each unmatched row.
 
     The unmatched rows are rebuilt inside the query exactly as
-    `reconcile_script` finds them, so no row leaves BigQuery: the result has the group columns,
-    a step id and a count, nothing else. A variant recovers a row when it
-    returns the row's grain (by the reconcile's keys and NULL rules). A row
-    whose grain the other side holds more than once (duplicate number past
-    1) is never traced: any step that fans out would "recover" it.
+    `reconcile_script` finds them, so no row leaves BigQuery: the result has the
+    group columns, a step id and a count, nothing else. A variant recovers a
+    row when it returns the row's grain (by the reconcile's keys and NULL
+    rules). A row whose grain the other side holds more than once (duplicate
+    number past 1) is never traced: any step that fans out would "recover" it.
 
     Args:
         cube_rows_sql: The Cube rows the run reconciled.

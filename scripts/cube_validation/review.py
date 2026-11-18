@@ -104,7 +104,7 @@ def ask_owner(
         run.view: sort.cause_asks(run, proven[run.view], cfg.decisions, owner=False)
         for run, cfg in zip(runs, configs, strict=True)
     }
-    link = _review_file(Path(json_file), report.posted_json(questions))
+    link = _review_file(json_file, report.posted_json(questions))
     unpublished = {
         cfg.view: {c.id for c in cfg.comparisons if c.unpublished} for cfg in configs
     }
