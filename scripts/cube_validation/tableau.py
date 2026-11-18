@@ -70,6 +70,7 @@ _DEFAULT_FORMAT = re.compile(r"""\s+default-format=(?:'[^']*'|"[^"]*")""")
 TEXT_MEASURE = (
     "text measures are not compared; compare the numeric measure it is built from"
 )
+NOT_PUBLISHED = "not on a published dashboard"
 _THOUSANDS = re.compile(r"[-+]?\d{1,3}(?:,\d{3})+(?:\.\d+)?")
 _PLAIN_NUMBER = re.compile(r"[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?")
 _INSTANCE_SUFFIXES = {"nk", "ok", "qk"}
@@ -220,6 +221,29 @@ def drop_number_formats(twb_xml: str, measures: list[str]) -> str:
     if _empty_rules(ET.fromstring(out)) > _empty_rules(root):
         raise ValueError("the edit left an empty style-rule")
     return out
+
+
+def published_sheets(twb_xml: str) -> set[str]:
+    """The worksheets a viewer of the published workbook can see.
+
+    A sheet is seen when a dashboard holds it in a zone (zones nest; every
+    level counts), or when its own window is not hidden. A hidden window
+    publishes no view, so a hidden sheet in no dashboard is a working sheet
+    no viewer sees.
+    """
+    # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
+    root = ET.fromstring(twb_xml)
+    zoned = {
+        zone.get("name") or ""
+        for dashboard in root.iter("dashboard")
+        for zone in dashboard.iter("zone")
+    }
+    shown = {
+        window.get("name") or ""
+        for window in root.iter("window")
+        if window.get("class") == "worksheet" and window.get("hidden") != "true"
+    }
+    return (zoned | shown) - {""}
 
 
 def expose_sheet(twb_xml: str, sheet: str) -> str:

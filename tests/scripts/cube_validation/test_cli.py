@@ -3092,11 +3092,63 @@ def test_rebuild_sheet_refuses_an_unwritable_comparison_before_any_export(
     assert not getattr(fakes.tbl, "captures", 0)
 
 
-def test_prove_unhides_a_dashboard_only_sheet_on_the_copy(fakes, tmp_path, capsys):
-    fakes.tbl.twb = fakes.tbl.twb.replace(
+def _hide_rate_by_region(tbl):
+    """Hide the fixture sheet's window; no dashboard holds it, so it publishes
+    no view."""
+    tbl.twb = tbl.twb.replace(
         "<window class='worksheet' name='Rate by Region'>",
         "<window class='worksheet' hidden='true' name='Rate by Region'>",
     )
+
+
+def test_rebuild_sheet_refuses_an_unpublished_sheet_before_any_export(
+    fakes, tmp_path, capsys
+):
+    _hide_rate_by_region(fakes.tbl)
+    path = _file(tmp_path, NO_REBUILD_CHECK)
+    argv = ["rebuild-sheet", str(path), "--comparison", "ada-region"]
+
+    assert cli.main(argv) == 1
+    assert (
+        "comparison 'ada-region': sheet 'Rate by Region' is not on a published "
+        "dashboard; set unpublished: true to compare it anyway"
+    ) in capsys.readouterr().err
+    assert not getattr(fakes.tbl, "captures", 0)
+    assert "published" not in path.read_text()
+
+
+def test_rebuild_sheet_records_published(fakes, tmp_path, capsys):
+    path = _file(tmp_path, NO_REBUILD_CHECK)
+    argv = ["rebuild-sheet", str(path), "--comparison", "ada-region"]
+
+    assert cli.main(argv) == 0, capsys.readouterr().err
+
+    proof = load_view_config(path).comparisons[0].rebuild_check
+    assert proof is not None and proof.published is True
+
+    # An opted-in unpublished sheet is compared, and the check says so.
+    _hide_rate_by_region(fakes.tbl)
+    path = _file(
+        tmp_path,
+        NO_REBUILD_CHECK.replace(
+            "    sheet_field: Rate\n", "    sheet_field: Rate\n    unpublished: true\n"
+        ),
+    )
+
+    assert cli.main(argv) == 0, capsys.readouterr().err
+
+    proof = load_view_config(path).comparisons[0].rebuild_check
+    assert proof is not None and proof.published is False
+
+
+def test_prove_unhides_a_dashboard_only_sheet_on_the_copy(fakes, tmp_path, capsys):
+    _hide_rate_by_region(fakes.tbl)
+    fakes.tbl.twb = fakes.tbl.twb.replace(
+        "  </worksheets>\n",
+        "  </worksheets>\n  <dashboards><dashboard name='Overview'><zones>"
+        "<zone id='1' name='Rate by Region' /></zones></dashboard></dashboards>\n",
+    )
+    assert "<dashboards>" in fakes.tbl.twb
     path = _file(tmp_path, YML.replace(REBUILD_CHECK, "    rebuild_check: null\n"))
     argv = ["rebuild-sheet", str(path), "--comparison", "ada-region"]
 
@@ -3768,6 +3820,32 @@ def test_discover_reads_a_local_workbook_without_tableau(
     assert "'# Tardy'" in out
     assert "Roster (roster.twb): rows Region, Student Number" in out
     assert fakes.cube.compiled_queries == [{"measures": ["v.avg_daily_attendance"]}]
+
+
+def test_find_field_marks_an_unpublished_sheet(fakes, tmp_path, capsys):
+    # The roster fixture has no dashboard and no window for its sheet.
+    twb = tmp_path / "roster.twb"
+    twb.write_text((FIXTURES / "roster.twb").read_text())
+    argv = ["find-field", str(_file(tmp_path)), "--measure", "avg_daily_attendance",
+            "--caption", "# Tardy", "--twb", str(twb)]  # fmt: skip
+
+    assert cli.main(argv) == 0, capsys.readouterr().err
+
+    sheets = capsys.readouterr().out.split("Sheets:", 1)[1].splitlines()
+    at = next(i for i, x in enumerate(sheets) if x.startswith("  Roster (roster.twb)"))
+    assert sheets[at + 1] == "    not on a published dashboard"
+
+    # Shown in its own window, the sheet publishes.
+    twb.write_text(
+        (FIXTURES / "roster.twb")
+        .read_text()
+        .replace(
+            "</workbook>",
+            "<windows><window class='worksheet' name='Roster' /></windows></workbook>",
+        )
+    )
+    assert cli.main(argv) == 0
+    assert "not on a published dashboard" not in capsys.readouterr().out
 
 
 def test_discover_keeps_the_top_5_by_default(fakes, tmp_path, monkeypatch, capsys):

@@ -517,3 +517,40 @@ def test_read_sheet_does_not_point_a_null_filter_at_the_not_null_operator():
     _, before = read_sheet.check("v", xml, "Grid", _comparison(), MEMBERS)
     line = next(b for b in before if "null values only" in b)
     assert "operator" not in line
+
+
+UNPUBLISHED = TWB.replace(
+    "<window class='worksheet' name='Grid'>",
+    "<window class='worksheet' hidden='true' name='Grid'>",
+)
+NOT_PUBLISHED_ITEM = (
+    "sheet: not on a published dashboard; set unpublished: true to compare it anyway"
+)
+
+
+def test_read_sheet_marks_and_blocks_an_unpublished_sheet():
+    assert UNPUBLISHED != TWB
+    assert read_sheet.read_sheet(TWB, "Grid").published is True
+    assert read_sheet.read_sheet(UNPUBLISHED, "Grid").published is False
+
+    _, before = read_sheet.check("v", UNPUBLISHED, "Grid", _comparison(), MEMBERS)
+    assert NOT_PUBLISHED_ITEM in before
+    _, published = read_sheet.check("v", TWB, "Grid", _comparison(), MEMBERS)
+    assert NOT_PUBLISHED_ITEM not in published
+
+    cfg = type("Cfg", (), {"view": "v", "comparisons": [_comparison()]})()
+    text = read_sheet.report(cfg, lambda wb: ("w.twb", UNPUBLISHED), MEMBERS)
+    assert text.startswith("Grid (w.twb); not on a published dashboard\n")
+    assert f"      - {NOT_PUBLISHED_ITEM}" in text
+
+
+def test_read_sheet_lets_an_opted_in_unpublished_sheet_through():
+    comparison = _comparison(unpublished=True)
+
+    _, before = read_sheet.check("v", UNPUBLISHED, "Grid", comparison, MEMBERS)
+
+    assert NOT_PUBLISHED_ITEM not in before
+    cfg = type("Cfg", (), {"view": "v", "comparisons": [comparison]})()
+    text = read_sheet.report(cfg, lambda wb: ("w.twb", UNPUBLISHED), MEMBERS)
+    # The header still says so: the comparison opted in, the sheet is unchanged.
+    assert text.startswith("Grid (w.twb); not on a published dashboard\n")

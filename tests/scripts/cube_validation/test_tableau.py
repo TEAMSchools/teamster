@@ -27,6 +27,7 @@ from cube_validation.tableau import (
     expose_sheet,
     formula_fingerprint,
     match_export,
+    published_sheets,
     set_shelves,
     split_cuts,
 )
@@ -118,6 +119,42 @@ def test_expose_sheet_refuses_a_duplicate_window():
     )
     with pytest.raises(ValueError, match="2 worksheet windows"):
         expose_sheet(src, "Rate by Region")
+
+
+PUBLISHED = """\
+<?xml version='1.0' encoding='utf-8' ?>
+<workbook>
+  <worksheets>
+    <worksheet name='A' />
+    <worksheet name='B' />
+    <worksheet name='C' />
+    <worksheet name='D' />
+  </worksheets>
+  <dashboards>
+    <dashboard name='Overview'>
+      <zones>
+        <zone id='1' type-v2='layout-basic'>
+          <zone id='2' type-v2='layout-flow'>
+            <zone id='3' name='A' />
+          </zone>
+        </zone>
+      </zones>
+    </dashboard>
+  </dashboards>
+  <windows>
+    <window class='dashboard' name='Overview' />
+    <window class='worksheet' hidden='true' name='A' />
+    <window class='worksheet' name='B' />
+    <window class='worksheet' hidden='true' name='C' />
+  </windows>
+</workbook>
+"""
+
+
+def test_published_sheets_reads_dashboard_zones_and_visible_windows():
+    # A: hidden, but in a (nested) dashboard zone. B: its own visible window.
+    # C: hidden and in no zone. D: no window at all.
+    assert published_sheets(PUBLISHED) == {"A", "B"}
 
 
 def test_displayed_decimals_cases():

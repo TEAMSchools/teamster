@@ -88,6 +88,8 @@ class Sheet:
     values: dict[str, set[str]]
     # Export names of the value fields that are text, not numbers.
     text_values: frozenset[str] = frozenset()
+    # Whether a dashboard viewer can see the sheet (`tableau.published_sheets`).
+    published: bool = True
 
 
 def _plain(text: str) -> str:
@@ -256,6 +258,7 @@ def read_sheet(twb_xml: str, sheet: str) -> Sheet:
         parameters,
         values,
         frozenset(finder.text_values(twb_xml, sheet)),
+        sheet in tableau.published_sheets(twb_xml),
     )
 
 
@@ -518,6 +521,8 @@ def _measure_line(out: _Checklist, comparison: Comparison | None, facts: Sheet) 
 
 def _sheet_lines(label: str, sheet: str, facts: Sheet) -> list[str]:
     lines = [f"{sheet} ({label})"]
+    if not facts.published:
+        lines[0] += f"; {tableau.NOT_PUBLISHED}"
     if facts.table_calcs:
         lines.append("  Table calculations:")
         lines += [f"    - {c.label}" for c in facts.table_calcs]
@@ -574,6 +579,11 @@ def check(
     """
     facts = read_sheet(twb_xml, sheet)
     out = _Checklist([f"  {comparison.id if comparison else 'No comparison'}:"], [])
+    if comparison and not facts.published and not comparison.unpublished:
+        out.before.append(
+            f"sheet: {tableau.NOT_PUBLISHED}; set unpublished: true to compare it "
+            "anyway"
+        )
     shaped: Sheet | None = None
     reshaped: tableau.Reshaped | None = None
     if comparison and comparison.shelves:

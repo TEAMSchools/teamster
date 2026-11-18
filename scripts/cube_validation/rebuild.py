@@ -511,6 +511,11 @@ def _capture(
     _require(comparison, "workbook", "sheet")
     workbook, sheet = comparison.workbook or "", comparison.sheet or ""
     twb = tbl.download_twb(workbook)
+    if not comparison.unpublished and sheet not in tableau.published_sheets(twb):
+        raise Refusal(
+            f"comparison {comparison.id!r}: sheet {sheet!r} is "
+            f"{tableau.NOT_PUBLISHED}; set unpublished: true to compare it anyway"
+        )
     parameters, shelves = comparison.parameters, comparison.shelves
     try:
         if parameters:
@@ -716,6 +721,9 @@ def rebuild_sheet(
             "source_fingerprint": tableau.source_fingerprint(
                 twb, comparison.sheet or ""
             ),
+            # False only for a comparison set `unpublished: true`; `_capture`
+            # refuses any other unpublished sheet.
+            "published": sheet in tableau.published_sheets(twb),
             # `compare` lists every other cut as one to check in the browser.
             "cuts": [cut_label(cut) for cut in exportable],
             # `compare` lists these rows as totals no rebuild check covered.

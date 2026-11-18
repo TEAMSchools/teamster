@@ -131,6 +131,9 @@ class RebuildCheck:
     missing_columns: dict[str, str] | None = None
     # The reshape the rebuild copy carried; the sheet query fingerprint covers it.
     shelves: dict[str, Any] | None = None
+    # Whether a dashboard viewer can see the sheet (`tableau.published_sheets`);
+    # None when the check predates it.
+    published: bool | None = None
 
 
 @dataclass(frozen=True)
@@ -174,6 +177,25 @@ class Comparison:
     # as plain columns. Name one after the calc (`Calculation_<id>`) and the
     # export header with the calc's caption maps to it.
     dashboard_columns: dict[str, str] = field(default_factory=dict)
+    # Compare a sheet no dashboard viewer sees (`tableau.published_sheets`);
+    # `rebuild-sheet` refuses one otherwise.
+    unpublished: bool = False
+
+
+def fingerprint_data(comparison: Comparison) -> dict:
+    """What a comparison's entry and checkpoint fingerprints hash.
+
+    Its `definitions` are left out: words for the owner change no result.
+    `unpublished` when False and `rebuild_check.published` when None are left
+    out too, so a file written before those keys keeps the fingerprints, and
+    every saved result, it already has.
+    """
+    data = asdict(replace(comparison, definitions={}))
+    if not comparison.unpublished:
+        del data["unpublished"]
+    if data["rebuild_check"] is not None and data["rebuild_check"]["published"] is None:
+        del data["rebuild_check"]["published"]
+    return data
 
 
 # The keys that decide which rows a comparison reconciles and which of them
@@ -436,6 +458,7 @@ def _comparison(reader: _Reader) -> Comparison:
             filter_notes=_caption_map(check_reader, "filter_notes"),
             missing_columns=_caption_map(check_reader, "missing_columns"),
             shelves=check_reader.get("shelves", dict),
+            published=check_reader.get("published", bool),
         )
 
     dims = _pairs(reader, "dims")
@@ -474,6 +497,7 @@ def _comparison(reader: _Reader) -> Comparison:
         },
         shelves=_shelves(reader, dims, filters),
         dashboard_columns=_dashboard_columns(reader),
+        unpublished=reader.get("unpublished", bool, default=False),
     )
 
 

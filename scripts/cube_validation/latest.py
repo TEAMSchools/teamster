@@ -12,7 +12,6 @@ student rows stay in BigQuery.
 
 from __future__ import annotations
 
-import dataclasses
 import hashlib
 import json
 import re
@@ -21,7 +20,7 @@ from datetime import datetime
 from pathlib import Path
 
 from . import checkpoints
-from .config import Comparison
+from .config import Comparison, fingerprint_data
 from .moment import Build
 
 DIR = "latest"
@@ -52,11 +51,10 @@ def folder(view_dir: Path, fact: str) -> Path:
 
 def entry_fingerprint(comparison: Comparison) -> str:
     """The comparison's config entry, its rebuild check (`rebuild_check`)
-    included and its `definitions` left out: words for the owner change no
-    result."""
+    included, as `config.fingerprint_data` reads it."""
     return hashlib.sha256(
         json.dumps(
-            dataclasses.asdict(dataclasses.replace(comparison, definitions={})),
+            fingerprint_data(comparison),
             sort_keys=True,
             default=str,
         ).encode()

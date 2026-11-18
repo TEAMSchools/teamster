@@ -30,7 +30,13 @@ from . import decisions
 from . import find_field as finder
 from . import reconcile, report, tableau
 from .bq import ViewHistoryError, Warehouse, job_failure
-from .config import WEEK_END_KEY, ColumnPair, Comparison, ViewConfig
+from .config import (
+    WEEK_END_KEY,
+    ColumnPair,
+    Comparison,
+    ViewConfig,
+    fingerprint_data,
+)
 from .cube_client import (
     Compiled,
     Cube,
@@ -690,13 +696,13 @@ def side_fingerprints(
 
 
 def checkpoint_fingerprint(comparison: Comparison, fingerprints: dict[str, str]) -> str:
-    """What a comparison's saved work holds for: its config entry and both
-    sides' SQL. Any edit to either makes the saved work stale, but its
-    `definitions`, which change no result."""
+    """What a comparison's saved work holds for: its config entry, as
+    `config.fingerprint_data` reads it, and both sides' SQL. Any edit to
+    either makes the saved work stale."""
     return hashlib.sha256(
         json.dumps(
             [
-                dataclasses.asdict(dataclasses.replace(comparison, definitions={})),
+                fingerprint_data(comparison),
                 fingerprints,
             ],
             sort_keys=True,
@@ -1009,12 +1015,15 @@ def _print_sheets(found: list[finder.Candidate], twbs: dict[str, str]) -> None:
     if not sheets:
         return
     print("\nSheets:")
+    published = {luid: tableau.published_sheets(twbs[luid]) for luid, _, _ in sheets}
     for luid, label, sheet in sheets:
         shape = finder.sheet_shape(twbs[luid], sheet)
         print(
             f"  {sheet} ({label}): rows {', '.join(shape.rows) or 'none'}; "
             f"columns {', '.join(shape.cols) or 'none'}"
         )
+        if sheet not in published[luid]:
+            print(f"    {tableau.NOT_PUBLISHED}")
         export = (
             "long (set sheet_field to a Measure Names value)"
             if shape.long_export

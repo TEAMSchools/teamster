@@ -1,7 +1,11 @@
+import dataclasses
 from pathlib import Path
 
 import pytest
 import yaml
+
+# trunk-ignore(pyright/reportAttributeAccessIssue): conftest.py registers cube_validation
+from cube_validation import latest, pipeline
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.config import (
@@ -1281,3 +1285,157 @@ def test_write_decision_replaces_a_decision_whose_id_is_not_its_first_key(tmp_pa
 
     (d,) = load_view_config(path).decisions
     assert (d.call, d.reason) == ("deliberate", "new")
+
+
+# Every field an existing validation file sets, the rebuild check included,
+# with placeholder values. The golden digests below were taken from the code
+# before `unpublished` and `rebuild_check.published` existed: a file without
+# them must keep every saved result and checkpoint it has.
+FINGERPRINT_FIXTURE = """\
+view: example_view
+fact: kipptaf_marts.fct_example
+time_dimension: week_start_date
+comparisons:
+  - id: example__sheet
+    measure: example_measure
+    confirmed: true
+    workbook: 00000000-0000-0000-0000-000000000000
+    sheet: Example Sheet
+    dashboard_view: kipptaf_tableau.rpt_tableau__example
+    sheet_query: MAX(goal_tableau) - AVG(is_mastery_int)
+    decimals: 2
+    sheet_field: Example Field
+    split_rows: sum
+    dims:
+      - { dashboard: week_start_monday, cube: week_start_date }
+      - { dashboard: grade_level, cube: grade_level }
+    filters:
+      Academic Year: { dashboard: academic_year, cube: academic_year }
+      Response Type: { dashboard: response_type, cube: response_type }
+    defaults:
+      Academic Year: 2026
+      Response Type: overall
+    cuts: [{}, { Response Type: standard }]
+    scope:
+      - { cube: is_enrolled, operator: equals, values: [true] }
+    dashboard_filters:
+      - { dashboard: is_mastery_int, operator: set }
+    rows:
+      grain:
+        - { dashboard: row_key_a, cube: row_key_a }
+        - { dashboard: row_key_b, cube: row_key_b }
+      values:
+        - { dashboard: is_mastery, cube: is_mastery }
+      dashboard_scope:
+        - { dashboard: source, operator: equals, values: [example] }
+      reduce: { rule: latest, by: loaded_at }
+    dashboard_columns:
+      goal_tableau: CASE WHEN grade_level < 9 THEN 0.8 ELSE goal END
+    parameters:
+      Example Parameter: Example Member
+    shelves:
+      drop: [Example Group]
+      add: { rows: [Grade Level] }
+      clear_filters: [Example Filter]
+    definitions:
+      dashboard: The dashboard's words.
+      cube: Cube's words.
+    rebuild_check:
+      fingerprint: aaaa
+      cells: 483
+      matched_at: "2026-11-16T00:10:47.795513+00:00"
+      workbook_updated_at: "2026-11-15T23:42:43+00:00"
+      sheet_query_fingerprint: bbbb
+      source_fingerprint: cccc
+      cuts:
+        - "{}"
+      totals_skipped: 0
+      shelves:
+        drop:
+          - Example Group
+        clear_filters:
+          - Example Filter
+        add:
+          rows:
+            - Grade Level
+      missing_cuts: []
+      missing_filters:
+        - Example Missing Filter
+      restricting_filters: []
+      filter_notes:
+        Example Switch: display switch on Example Parameter
+      missing_columns:
+        Example Missing Filter: example_column
+"""
+MINIMAL = """\
+view: v
+fact: kipptaf_marts.f
+comparisons:
+  - id: minimal
+    measure: m
+    rebuild_check: null
+"""
+
+
+@pytest.mark.parametrize(
+    "text, entry, checkpoint",
+    [
+        (
+            FINGERPRINT_FIXTURE,
+            "5a184bcc491098df1b50e0a6af9f1de9f41bce44920054038d976b21ccfb1072",
+            "6b3cf179e7cd4c959a72054a5a898285198046c9597758d83eae453c62e47024",
+        ),
+        (
+            MINIMAL,
+            "1e6d1d3e1cbe17e054a53083c55be46390cd0fca9ffeb4d1202e382505a078cb",
+            "971e691dcc902e25342ba3fb3865b2e20a96979fd785fd8812c7edada308e7d0",
+        ),
+    ],
+)
+def test_new_keys_left_unset_keep_every_fingerprint(tmp_path, text, entry, checkpoint):
+    (c,) = load_view_config(_write(tmp_path, text)).comparisons
+
+    assert latest.entry_fingerprint(c) == entry
+    assert (
+        pipeline.checkpoint_fingerprint(c, {"cube": "x", "dashboard": "y"})
+        == checkpoint
+    )
+
+
+def test_new_keys_set_change_the_fingerprints(tmp_path):
+    (c,) = load_view_config(_write(tmp_path, FINGERPRINT_FIXTURE)).comparisons
+    assert c.rebuild_check is not None
+    opted = dataclasses.replace(c, unpublished=True)
+    recorded = dataclasses.replace(
+        c, rebuild_check=dataclasses.replace(c.rebuild_check, published=True)
+    )
+
+    entries = {latest.entry_fingerprint(x) for x in (c, opted, recorded)}
+    assert len(entries) == 3
+
+
+def test_unpublished_and_published_load(tmp_path):
+    text = FINGERPRINT_FIXTURE.replace(
+        "    sheet_field: Example Field\n",
+        "    sheet_field: Example Field\n    unpublished: true\n",
+    ).replace("      cells: 483\n", "      cells: 483\n      published: false\n")
+
+    (c,) = load_view_config(_write(tmp_path, text)).comparisons
+
+    assert c.unpublished is True
+    assert c.rebuild_check is not None and c.rebuild_check.published is False
+    (unset,) = load_view_config(_write(tmp_path, FINGERPRINT_FIXTURE)).comparisons
+    assert unset.unpublished is False
+    assert unset.rebuild_check is not None and unset.rebuild_check.published is None
+
+
+@pytest.mark.parametrize(
+    "old, new, where",
+    [
+        ("    sheet_field: Example Field\n", "    sheet_field: Example Field\n    unpublished: yes please\n", "unpublished"),
+        ("      cells: 483\n", "      cells: 483\n      published: 1\n", "rebuild_check.published"),
+    ],
+)  # fmt: skip
+def test_unpublished_and_published_refuse_a_non_boolean(tmp_path, old, new, where):
+    with pytest.raises(ConfigError, match=rf"{where}: must be bool"):
+        load_view_config(_write(tmp_path, FINGERPRINT_FIXTURE.replace(old, new)))
