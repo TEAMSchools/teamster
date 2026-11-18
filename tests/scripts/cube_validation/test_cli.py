@@ -20,6 +20,7 @@ from cube_validation import (
     compare,
     coverage,
     explain,
+    formula,
     latest,
     pipeline,
     rebuild,
@@ -5326,26 +5327,120 @@ def test_sort_reuses_a_stored_check_without_spending(fakes, tmp_path):
     assert loaded["formulas_not_compared"] == {} and loaded["stale"] == {}
 
 
-def test_sort_runs_a_stored_check_with_uncompared_cells_again(fakes, tmp_path):
-    path = _miami_differs(fakes, tmp_path)
-    assert cli.main(["sort", str(path), "--no-trace"]) == 0
+def _stored_formula_check(tmp_path) -> dict:
     held = latest.folder(tmp_path / "cache" / "v", "kipptaf_marts.fct_f")
-    check = latest.read_all(held, "kipptaf_marts.fct_f")["ada-region"].data[
+    return latest.read_all(held, "kipptaf_marts.fct_f")["ada-region"].data[
         "formula_check"
     ]
-    # As a check that found no matched rows would be kept.
-    latest.add_formula_check(
-        held,
-        "ada-region",
-        {**check, "coverage": [], "not_compared": {NO_ROWS: check["coverage"]}},
-    )
+
+
+def _keep_formula_check(tmp_path, check: dict) -> None:
+    held = latest.folder(tmp_path / "cache" / "v", "kipptaf_marts.fct_f")
+    latest.add_formula_check(held, "ada-region", check)
+
+
+def _older(check: dict, version) -> dict:
+    """The check as an older validator kept it: `None` for one with no
+    version at all."""
+    older = {k: v for k, v in check.items() if k != "version"}
+    return older if version is None else {**older, "version": version}
+
+
+@pytest.mark.parametrize("version", [None, 0])
+def test_sort_runs_an_older_stored_check_with_uncompared_cells_again(
+    fakes, tmp_path, version
+):
+    path = _miami_differs(fakes, tmp_path)
+    assert cli.main(["sort", str(path), "--no-trace"]) == 0
+    check = _stored_formula_check(tmp_path)
+    # As a check that found no matched rows would be kept, by an older
+    # validator.
+    no_rows = {**check, "coverage": [], "not_compared": {NO_ROWS: check["coverage"]}}
+    _keep_formula_check(tmp_path, _older(no_rows, version))
     since = len(fakes.bq.log)
 
     assert cli.main(["sort", str(path), "--no-trace"]) == 0
 
-    # Its cause fixed, the check runs again and its label goes.
+    # The validator updated, the check runs again and its label goes.
     assert len(_formula_runs(fakes.bq, since)) == 4
     assert _triage(tmp_path)["formulas_not_compared"] == {}
+    assert _stored_formula_check(tmp_path)["version"] == formula.CHECK_VERSION
+
+
+def test_sort_reuses_a_stored_check_with_uncompared_cells_of_this_version(
+    fakes, tmp_path
+):
+    path = _miami_differs(fakes, tmp_path)
+    assert cli.main(["sort", str(path), "--no-trace"]) == 0
+    check = _stored_formula_check(tmp_path)
+    assert check["version"] == formula.CHECK_VERSION
+    no_rows = {**check, "coverage": [], "not_compared": {NO_ROWS: check["coverage"]}}
+    _keep_formula_check(tmp_path, no_rows)
+    since = len(fakes.bq.log)
+
+    assert cli.main(["sort", str(path), "--no-trace"]) == 0
+
+    # Nothing changed since it ran: neither priced nor run again.
+    assert not [sql for _, sql in fakes.bq.log[since:] if FORMULA_QUERY in sql]
+    loaded = _triage(tmp_path)
+    assert loaded["formulas_not_compared"] == {"ada-region": {NO_ROWS: 2}}
+    assert loaded["stale"] == {}
+    assert _stored_formula_check(tmp_path) == no_rows
+
+
+@pytest.mark.parametrize("falls", ["plan", "dry run", "run"])
+def test_a_re_run_that_falls_back_keeps_the_stored_check_s_verdicts(
+    fakes, tmp_path, monkeypatch, falls
+):
+    _miami_differs(fakes, tmp_path)
+    path = _with_decision(_saved_fingerprints(tmp_path), tmp_path, call="fix_cube")
+    assert cli.main(["reapply", str(path)]) == 0
+    fakes.bq.formula = {
+        "dashboard": [{"region": "Newark", "value": 0.9123},
+                      {"region": "Miami", "value": 0.6}],
+        "cube": [{"regions_region_name": "Newark", "value": 0.91234},
+                 {"regions_region_name": "Miami", "value": 0.95}],
+    }  # fmt: skip
+    assert cli.main(["sort", str(path), "--no-trace"]) == 0
+    check = _stored_formula_check(tmp_path)
+    filed, no_rows = check["formula"]
+    # An older validator's check: 1 cell filed as formula, 1 with no rows
+    # both sides hold. Composed again, the run files the first as formula.
+    older = _older(
+        {**check, "formula": [filed], "not_compared": {NO_ROWS: [no_rows]},
+         "lines": check["lines"][:1]},
+        None,
+    )  # fmt: skip
+    _keep_formula_check(tmp_path, older)
+    run_json = _latest_run(tmp_path)
+    results.recompose(
+        load_view_config(path),
+        tmp_path / "cache",
+        results._run_from_json(json.loads(run_json.read_text())),
+        run_json,
+        cube=fakes.cube,
+    )
+    # Re-planned for its version, the check cannot run this time.
+    if falls == "plan":
+        monkeypatch.setattr(
+            formula,
+            "plan",
+            lambda cfg, run, c, *, fingerprint, **k: formula.not_compared(
+                c.id, fingerprint, formula.checkable_cells(run, c), formula.SAVED_GONE
+            ),
+        )
+    else:
+        _bigquery_refuses(fakes, "__matched", dry=falls == "dry run")
+
+    assert cli.main(["sort", str(path), "--no-trace"]) == 0
+
+    loaded = _triage(tmp_path)
+    assert loaded["formulas_not_compared"] == {"ada-region": {NO_ROWS: 1}}
+    after = json.loads(_latest_run(tmp_path).read_text())
+    kinds = {(c["cut"], c["key"]): c["kind"] for c in after["diff_cells"]}
+    assert kinds == {tuple(filed): "formula", tuple(no_rows): "cells"}
+    # The fallback is not kept: the next sort tries again.
+    assert _stored_formula_check(tmp_path) == older
 
 
 @pytest.mark.parametrize(

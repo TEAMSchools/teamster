@@ -1091,6 +1091,15 @@ def _compose(cache, held):
     return run, report.run_dir(cache, "v", BUILD) / "run.json"
 
 
+def test_a_check_keeps_its_version_and_an_unversioned_one_reads_as_0():
+    data = _checked()
+
+    assert data["version"] == formula.CHECK_VERSION
+    assert formula.Check.from_json(data).version == formula.CHECK_VERSION
+    del data["version"]
+    assert formula.Check.from_json(data).version == 0
+
+
 def test_compose_files_checked_cells_as_formula(tmp_path):
     cache = tmp_path / "cache"
     run, run_json = _compose(cache, _keep_result(cache, _checked()))

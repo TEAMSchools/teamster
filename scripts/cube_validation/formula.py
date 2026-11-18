@@ -49,6 +49,11 @@ UNBUILT = "its SQL could not be built (see the terminal); sort again"
 RUN_FAILED = "its queries failed (see the terminal); sort again"
 # The reasons a check that ran its queries can give; any other is a failure.
 _RAN = (REWRITE_DIFFERS, NO_ROWS)
+# The check's code version, kept with each check. Bump it whenever the check's
+# SQL or its verdicts change: `sort` runs again a kept check of an older
+# version that left cells uncompared, and reuses one of this version, which
+# would leave them the same, until its comparison is compared again.
+CHECK_VERSION = 1
 
 
 def bigquery_refused(exc: GoogleAPIError) -> str:
@@ -73,7 +78,8 @@ class Check:
     never reads an older check. `formula` holds the cells that still differ
     on matched rows, `coverage` those that agree there, and `not_compared`
     the cells left to coverage per reason. `lines` name each formula cell's
-    cut, dims and both values: local only, never posted.
+    cut, dims and both values: local only, never posted. `version` is the
+    `CHECK_VERSION` of the code that made it.
     """
 
     comparison: str
@@ -82,12 +88,14 @@ class Check:
     coverage: list[CellRef] = field(default_factory=list)
     not_compared: dict[str, list[CellRef]] = field(default_factory=dict)
     lines: list[str] = field(default_factory=list)
+    version: int = CHECK_VERSION
 
     def to_json(self) -> dict:
         """The check as JSON data, cells as `[cut, key]` pairs."""
         return {
             "comparison": self.comparison,
             "fingerprint": self.fingerprint,
+            "version": self.version,
             "formula": [list(c) for c in self.formula],
             "coverage": [list(c) for c in self.coverage],
             "not_compared": {
@@ -99,7 +107,8 @@ class Check:
 
     @classmethod
     def from_json(cls, data: dict) -> Check:
-        """The check `to_json` wrote, its cells as tuples again."""
+        """The check `to_json` wrote, its cells as tuples again. A check kept
+        before checks carried a version reads as version 0."""
 
         def refs(cells: list) -> list[CellRef]:
             return [(cut, key) for cut, key in cells]
@@ -111,6 +120,7 @@ class Check:
             coverage=refs(data["coverage"]),
             not_compared={why: refs(c) for why, c in data["not_compared"].items()},
             lines=list(data["lines"]),
+            version=int(data.get("version", 0)),
         )
 
 
@@ -605,12 +615,15 @@ class Job:
 
     `sql` holds the 4 queries by name: `dashboard` and `cube` read matched
     rows only, `dashboard_self` and `cube_self` every row (the self-check).
+    `stored` is the kept check of the same result this one runs again, if
+    any: when this one cannot run, its verdicts stand.
     """
 
     comparison: str
     fingerprint: str
     cells: list[dict]
     sql: dict[str, str]
+    stored: Check | None = None
 
 
 def checkable_cells(run: RunResult, comparison: Comparison) -> list[dict]:

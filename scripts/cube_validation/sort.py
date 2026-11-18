@@ -1466,13 +1466,15 @@ def sort_run(
     are dry-run and priced with the explanations, so one cap refusal comes
     before either runs. A check is kept beside its comparison's latest result
     (`latest.add_formula_check`) and reused while that result stands, unless
-    it left cells uncompared: that one runs again; a cell still differing
-    there joins the comparison's formula item once the run is composed again
-    (`results.recompose`). Outside `comparisons`, a kept check is reused as
-    it is and a comparison with none is not checked. A check that cannot
-    run, for any reason, never refuses the sort or makes the comparison
-    stale: its cells stay with coverage, and the cell set's evidence says why
-    (`formula.label`), as does `triage.json` under `formulas_not_compared`.
+    it left cells uncompared and is of an older `formula.CHECK_VERSION`: that
+    one runs again, and if it then cannot run, its kept verdicts stand. A
+    cell still differing there joins the comparison's formula item once the
+    run is composed again (`results.recompose`). Outside `comparisons`, a
+    kept check is reused as it is and a comparison with none is not checked.
+    A check that cannot run, for any reason, never refuses the sort or makes
+    the comparison stale: its cells stay with coverage, and the cell set's
+    evidence says why (`formula.label`), as does `triage.json` under
+    `formulas_not_compared`.
 
     `ticker` (a new one by default) prints a progress line after each
     explanation runs and after each level of the trace.
@@ -1671,11 +1673,15 @@ def _formula_jobs(
 ) -> tuple[dict[str, Check], list[Job], float]:
     """Plan and price the formula check of each comparison that can take one.
 
+    A kept check of the latest result is reused when it left no cell
+    uncompared, when it is of this `formula.CHECK_VERSION`, or outside
+    `wanted`; any other is run again, and when that one falls back the kept
+    check's verdicts stand.
+
     Returns:
-        The checks already decided, by comparison (kept ones reused, unless
-        they left cells uncompared inside `wanted`, and every fallback); the
-        jobs to run, each dry-run without error; and their summed dry-run
-        price.
+        The checks already decided, by comparison (kept ones reused, and
+        every fallback); the jobs to run, each dry-run without error; and
+        their summed dry-run price.
     """
     from . import formula
 
@@ -1697,10 +1703,13 @@ def _formula_jobs(
             continue
         fingerprint = held[c.id].fingerprint
         outside = bool(wanted) and c.id not in wanted
-        # A kept check that left cells uncompared runs again, so a sort after
-        # its cause is fixed replaces the label; outside --comparison it stays.
+        # A kept check of this version would leave the same cells uncompared
+        # while its result stands, so only a validator update runs it again
+        # (a new result drops it); outside --comparison it stays as it is.
         if (kept := _stored_check(held[c.id])) is not None and (
-            outside or not any(kept.not_compared.values())
+            outside
+            or not any(kept.not_compared.values())
+            or kept.version == formula.CHECK_VERSION
         ):
             checks[c.id] = kept
             continue
@@ -1714,9 +1723,11 @@ def _formula_jobs(
             cfg, run, c, fingerprint=fingerprint, wh=wh, cube=cube, prepared=prepared
         )
         if isinstance(planned, formula.Job):
+            planned.stored = kept
             jobs.append(planned)
         elif planned is not None:
-            checks[c.id] = planned
+            # A fallback; a kept check run again keeps its verdicts instead.
+            checks[c.id] = planned if kept is None else kept
     ready: list[formula.Job] = []
     usd = 0.0
     for job in jobs:
@@ -1726,14 +1737,18 @@ def _formula_jobs(
             mine = trace._dry_runs(wh, list(job.sql.values()))
         except Exception as exc:  # noqa: BLE001 - the check never stops `sort`
             print(f"Formula check of {job.comparison} not priced: {exc!r}")
-            checks[job.comparison] = formula.not_compared(
-                job.comparison, job.fingerprint, job.cells, formula.RUN_FAILED
-            )
+            checks[job.comparison] = _fallen_back(
+                job, formula.not_compared(
+                    job.comparison, job.fingerprint, job.cells, formula.RUN_FAILED
+                ),
+            )  # fmt: skip
             continue
         if failed := [p for p in mine if isinstance(p, GoogleAPIError)]:
-            checks[job.comparison] = formula.not_compared(
-                job.comparison, job.fingerprint, job.cells,
-                formula.bigquery_refused(failed[0]),
+            checks[job.comparison] = _fallen_back(
+                job, formula.not_compared(
+                    job.comparison, job.fingerprint, job.cells,
+                    formula.bigquery_refused(failed[0]),
+                ),
             )  # fmt: skip
             continue
         usd += sum(p for p in mine if not isinstance(p, GoogleAPIError))
@@ -1742,6 +1757,13 @@ def _formula_jobs(
         n = sum(len(j.sql) for j in ready)
         print(f"Formula check: {n} queries, ${usd:.2f} (dry run).")
     return checks, ready, usd
+
+
+def _fallen_back(job: Job, check: Check) -> Check:
+    """`check`, a fallback of `job`, unless `job` runs a kept check again:
+    then the kept check's verdicts stand, so no cell it decided reads as not
+    compared. Neither is kept anew."""
+    return check if job.stored is None else job.stored
 
 
 def _run_formula_jobs(
@@ -1773,10 +1795,12 @@ def _run_formula_jobs(
     for job in jobs:
         check = formula.run_job(job, by_id[job.comparison], wh)
         ticker.say("sort formula", job.comparison, wh.spent)
-        checks[job.comparison] = check
         if formula.ran(check):
             latest.add_formula_check(results_dir, job.comparison, check.to_json())
             just_ran.add(job.comparison)
+        else:
+            check = _fallen_back(job, check)
+        checks[job.comparison] = check
     filed = {
         (c["comparison"], c["cut"], c["key"])
         for c in run.diff_cells

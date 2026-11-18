@@ -355,10 +355,16 @@ refuses when the view's only run read another fact.
    `Formula check: N queries, $X (dry run).`, under `--max-usd` and the daily
    cap. A cell it cannot check reads `formulas not compared: <why>`: the cell
    closes by coverage as before, the owner sees the comparison under "Still with
-   the analyst", and `sort` and `ask-owner` still run. Fix the cause the line
-   names, then `sort` again: a kept check with uncompared cells runs again (and
-   is priced again); one with none is reused. `decide` and `ask-owner` refuse a
-   triage written before the formula check existed; `sort` again.
+   the analyst", and `sort` and `ask-owner` still run. A check that ran is kept
+   and reused, unpriced, while its result stands, including one whose cells read
+   `no rows both sides hold` or
+   `the rewrite does not reproduce the run's cells`: it runs again (and is
+   priced again) only after the result changes (`compare` again) or after a
+   validator update, so a cause outside both clears on the next `compare`. If
+   that re-run cannot run, the kept verdicts stand. Any other reason (a cap, a
+   BigQuery or Cube error) is never kept: fix it and `sort` again. `decide` and
+   `ask-owner` refuse a triage written before the formula check existed; `sort`
+   again.
 
    The trace leads. `sort` relaxes each step of the other side's SQL (WHERE and
    HAVING conjuncts, INNER JOINs, required LEFT JOINs, down 5 dbt models) and
