@@ -129,11 +129,14 @@ def _cell_diffs(
     sides: "Sides",
     cube: Cube,
     older: frozenset[str] = frozenset(),
+    checks: dict[str, set[tuple[str, str]]] | None = None,
 ) -> tuple[list[CellDiff], set[Cell]]:
     """Each comparison's differing cells, with candidate causes.
 
     A cell `coverage.placed` finds no group in is a formula difference: every
-    row in it matched on both sides. Those cells make the comparison's
+    row in it matched on both sides. So is a cell holding groups whose
+    `(cut, key)` is in `checks` under its comparison: the formula check found
+    it still differs on matched rows alone. Those cells make the comparison's
     `formula` diff; the rest, holding groups or unplaceable, its `cells` diff.
     A cell that cannot be placed is never a formula difference. A comparison
     in `older` (not compared by this process) composes its older cells even
@@ -161,11 +164,15 @@ def _cell_diffs(
             expr = "a measure Cube cannot compile today"
         else:
             expr = measure_expression(compiled, cfg.view, comparison.measure)
+        checked = (checks or {}).get(comparison.id, set())
         formula: list[Cell] = []
         cells: list[Cell] = []
+        matched_only = 0
         for c in differing:
             inside = coverage.placed(_coverage_cell(c), sides.groups, comparison)
-            (formula if inside == [] else cells).append(c)
+            on_matched = bool(inside) and (c.cut, c.key) in checked
+            matched_only += on_matched
+            (formula if inside == [] or on_matched else cells).append(c)
         formula_cells.update(formula)
         if cells:
             causes = candidate_causes(comparison, cells, comparison.decimals or 0, expr)
@@ -180,8 +187,14 @@ def _cell_diffs(
                 )
             )
         if formula:
+            free = len(formula) - matched_only
             causes = [
-                f"{len(formula)} differing cells hold no unmatched row",
+                *([f"{free} differing cells hold no unmatched row"] if free else []),
+                *(
+                    [f"{matched_only} {sort.MATCHED_LABEL} only"]
+                    if matched_only
+                    else []
+                ),
                 *candidate_causes(comparison, formula, comparison.decimals or 0, expr),
             ]
             out.append(
@@ -190,6 +203,7 @@ def _cell_diffs(
                     dict(Counter(c.verdict for c in formula)),
                     tuple(causes),
                     kind="formula",
+                    matched_only=matched_only,
                 )
             )
     return out, formula_cells
@@ -478,6 +492,7 @@ def compose_run(
     cost: float,
     skipped: Iterable[Skip] = (),
     compared: Iterable[str] = (),
+    echo: bool = True,
 ) -> RunResult:
     """Compose, print and save `run.json` in `folder` from every confirmed
     comparison's latest result, in config order; `build` and `cost` are the
@@ -485,6 +500,9 @@ def compose_run(
     compose like the rest. Compiles Cube's measure only; no query bills. Only
     the comparisons in `compared` (this process compared them) refuse when
     Cube cannot compile their measure; the rest compose their older cells.
+    A result's formula check (`latest.add_formula_check`) files its cells
+    only when it checked that very result. `echo` False saves without
+    printing.
 
     Raises:
         Refusal: Two decisions claim one item (`decisions.apply`).
@@ -502,8 +520,19 @@ def compose_run(
     gaps, gaps_unknown = _gaps(comparisons)
     skipped = list(skipped)
     now = set(compared)
+    checks = {
+        cid: {(cut, key) for cut, key in check["formula"]}
+        for cid, held in results.items()
+        if (check := held.data.get("formula_check"))
+        and check.get("fingerprint") == held.fingerprint
+    }
     cell_diffs, formula_cells = _cell_diffs(
-        cfg, comparisons, sides, cube, frozenset(c.id for c in comparisons) - now
+        cfg,
+        comparisons,
+        sides,
+        cube,
+        frozenset(c.id for c in comparisons) - now,
+        checks,
     )
     try:
         applied = decisions.apply(
@@ -571,15 +600,53 @@ def compose_run(
         skipped=[dataclasses.asdict(s) for s in skipped],
     )
     text = report.render_local(result) + "\n" + _extra_sections(sides.cells)
-    print(text)
+    if echo:
+        print(text)
     saved = report.save_local(result, text, root=cache_root)
-    checkpoints._write_text(
-        saved.with_name("run.json"),
-        json.dumps(dataclasses.asdict(result), default=_json_default, indent=1),
-    )
+    checkpoints._write_text(saved.with_name("run.json"), _run_json(result))
     checkpoints.finish(folder)
-    print(f"Saved {saved}")
+    if echo:
+        print(f"Saved {saved}")
     return result
+
+
+def recompose(
+    cfg: ViewConfig, cache_root: Path, run: RunResult, run_json: Path, *, cube: Cube
+) -> RunResult:
+    """Compose the saved run again from the same latest results, quietly.
+
+    For a formula check just kept beside them: the run keeps its moment,
+    host, caveats, cost and skips, and compares nothing.
+
+    Raises:
+        Refusal: `run_json` is not composed from exactly the latest results,
+            so composing would replace the run with another; or two
+            decisions claim one item (`decisions.apply`).
+    """
+    confirmed = [c for c in cfg.comparisons if c.confirmed]
+    results_dir = latest.folder(cache_root / cfg.view, cfg.fact)
+    if not composed_from(
+        json.loads(run_json.read_text()),
+        confirmed,
+        latest.read_all(results_dir, cfg.fact),
+    ):
+        # Not `formula.NOT_COMPOSED`: `formula` imports this module.
+        raise Refusal("the run is not composed from the latest results")
+    return compose_run(
+        cfg,
+        confirmed,
+        results_dir,
+        cube=cube,
+        cube_host=run.cube_host,
+        totals=run.totals,
+        cache_root=cache_root,
+        build=run.moment,
+        folder=run_json.parent,
+        cost=run.cost_usd,
+        skipped=[Skip(**s) for s in run.skipped],
+        compared=(),
+        echo=False,
+    )
 
 
 NOT_COMPARED = "not compared yet"
@@ -619,6 +686,18 @@ def _diff_cells(sides: Sides, formula: set[Cell]) -> list[dict]:
         for c in sides.cells
         if c.verdict not in ("pass", "dashboard_filtered")
     ]
+
+
+def _run_json(result: RunResult) -> str:
+    """`run.json`'s text. A cell difference's `matched_only` is left out at 0,
+    so a run no formula check filed a cell in saves as it did before the
+    check; `_cell_diff` reads it back as 0."""
+    data = dataclasses.asdict(result)
+    applied = data["applied"]
+    for diff in [*applied["open_cells"], *(d for _, d in applied["quiet_cells"])]:
+        if not diff["matched_only"]:
+            del diff["matched_only"]
+    return json.dumps(data, default=_json_default, indent=1)
 
 
 def _json_default(value: Any) -> Any:
@@ -891,7 +970,7 @@ def reapply(cfg: ViewConfig, cache_root: Path) -> RunResult:
     tail = old_text[at + 1 :] if at != -1 else ""
     text = report.render_local(result) + ("\n" + tail if tail else "")
     report.save_local(result, text, root=cache_root).with_name("run.json").write_text(
-        json.dumps(dataclasses.asdict(result), default=_json_default, indent=1)
+        _run_json(result)
     )
     return result
 

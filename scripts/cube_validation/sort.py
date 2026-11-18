@@ -58,6 +58,9 @@ SUGGESTIONS = ("map_filters", "filters_nothing", "cause", "investigate")
 EXPLANATION_KINDS = ("query", "reconcile", "workbook", "cells", "formula")
 # A formula difference's cause: every row in its cells matched on both sides.
 FORMULA_LABEL = "differing cells hold no unmatched row"
+# Its cause when the formula check filed cells that hold unmatched rows too:
+# they still differ with those rows left out.
+MATCHED_LABEL = "differing cells differ on matched rows"
 # How `sort` and `ask-owner` name a comparison the latest run skipped.
 NOT_COMPARED = "not compared"
 
@@ -839,6 +842,38 @@ _FORMULA_CAUSE = {
 }
 
 
+def _formula_evidence(
+    run: RunResult, diff: CellDiff
+) -> tuple[list[dict], tuple[str, ...], tuple[str, ...]]:
+    """A formula difference's cause, local evidence and posted evidence.
+
+    One line per origin: cells no unmatched row lies in, and cells the formula
+    check filed (`matched_only`), each count masked when posted. With the
+    latter, the local evidence also names each formula cell's cut and dims
+    from `run.diff_cells`; the posted evidence never does.
+    """
+    matched = diff.matched_only
+    free = sum(diff.counts.values()) - matched
+    origins = [
+        (free, f"{FORMULA_LABEL}: every row in them matched on both sides"),
+        (
+            matched,
+            f"{MATCHED_LABEL}: with their unmatched rows left out, the 2 sides "
+            "still differ",
+        ),
+    ]
+    evidence = tuple(f"{n} {tail}" for n, tail in origins if n)
+    posted = tuple(f"{mask(n)} {tail}" for n, tail in origins if n)
+    if matched:
+        evidence += tuple(
+            f"cell {c['cut']} {c['key']}"
+            for c in run.diff_cells
+            if c["comparison"] == diff.comparison_id and c.get("kind") == "formula"
+        )
+    cause = {**_FORMULA_CAUSE, "label": MATCHED_LABEL if matched else FORMULA_LABEL}
+    return [cause], evidence, posted
+
+
 def _formula_explanation(run: RunResult, comparison: str) -> dict:
     """A formula difference's explanation: the comparison's SQL fingerprints in the
     run, whose reconcile matched every row in its cells."""
@@ -1001,13 +1036,11 @@ def suggest(
                 else:
                     found = (NO_GRAIN,)
             elif source.kind == "formula":
-                # The run's own reconcile matched every row in these cells,
-                # so the 2 formulas differ: no explanation file is needed.
-                call, cause = "cause", [dict(_FORMULA_CAUSE)]
-                proof = _formula_explanation(run, source.comparison_id)
-                n = sum(source.counts.values())
-                tail = f"{FORMULA_LABEL}: every row in them matched on both sides"
-                evidence, posted = (f"{n} {tail}",), (f"{mask(n)} {tail}",)
+                # The run's own reconcile matched every row in these cells, or
+                # the formula check recomputed them on matched rows alone, so
+                # the 2 formulas differ: no explanation file is needed.
+                call, proof = "cause", _formula_explanation(run, source.comparison_id)
+                cause, evidence, posted = _formula_evidence(run, source)
 
         if not call:
             call = "investigate"

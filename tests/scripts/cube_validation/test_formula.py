@@ -1,17 +1,21 @@
 import json
 from dataclasses import replace
 from datetime import date, datetime, timezone
+from types import SimpleNamespace
 
 import pytest
 
 # trunk-ignore(pyright/reportAttributeAccessIssue): conftest.py registers cube_validation
-from cube_validation import cli, compare, formula, pipeline, report
+from cube_validation import cli, compare, formula, latest, pipeline, report, results
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.config import ColumnPair, Comparison, RowSpec, ViewConfig
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.moment import Build
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+from cube_validation.reconcile import Group
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.timetravel import AsOf, TableInfo, as_of, utc_literal
@@ -720,3 +724,213 @@ def test_cube_side_keys_a_timestamp_grain_as_a_date(duck):
     kept, _ = _cube_cells(duck, DAILY, DAILY_CFG)
 
     assert kept == {("{}", "X"): 0.75}
+
+
+# --- verdicts -----------------------------------------------------------------
+
+MIAMI = '{"Region": "Miami"}'
+DECIMALS = replace(COMPARISON, decimals=2)
+
+
+def _cell(cut="{}", school="X", dashboard=0.6, cube=0.5):
+    """A differing cell as `run.diff_cells` holds it."""
+    return {
+        "comparison": "mastery",
+        "cut": cut,
+        "key": f"abbreviation={school}",
+        "dims": [["abbreviation", school]],
+        "dashboard": dashboard,
+        "cube": cube,
+        "n_students": None,
+        "kind": "cells",
+    }
+
+
+def _dash(cut, school, value):
+    return {"__cut": cut, "school": school, "value": value}
+
+
+def _cube(cut, school, value):
+    return {"__cut": cut, "abbreviation": school, "value": value}
+
+
+def _verdicts(cells, dash, cube, dash_self=None, cube_self=None):
+    """`verdicts` whose self-checks reproduce the run's cells unless given."""
+    whole_dash = [_dash(c["cut"], c["dims"][0][1], c["dashboard"]) for c in cells]
+    whole_cube = [_cube(c["cut"], c["dims"][0][1], c["cube"]) for c in cells]
+    return formula.verdicts(
+        DECIMALS,
+        "fp",
+        cells,
+        dash,
+        cube,
+        whole_dash if dash_self is None else dash_self,
+        whole_cube if cube_self is None else cube_self,
+    )
+
+
+def test_verdicts_file_a_cell_that_still_differs_as_formula():
+    check = _verdicts([_cell()], [_dash("{}", "X", 0.7)], [_cube("{}", "X", 0.4)])
+
+    assert check.comparison == "mastery" and check.fingerprint == "fp"
+    assert check.formula == [("{}", "abbreviation=X")]
+    assert check.coverage == [] and check.not_compared == {}
+    [line] = check.lines
+    assert "{}" in line and "abbreviation=X" in line
+    assert "0.7" in line and "0.4" in line
+    assert formula.Check.from_json(json.loads(json.dumps(check.to_json()))) == check
+
+
+def test_verdicts_leave_an_agreeing_cell_to_coverage():
+    check = _verdicts([_cell()], [_dash("{}", "X", 0.551)], [_cube("{}", "X", 0.549)])
+
+    assert check.coverage == [("{}", "abbreviation=X")]
+    assert check.formula == [] and check.not_compared == {} and check.lines == []
+
+
+def test_verdicts_match_cells_by_cut_and_dims():
+    cells = [_cell(), _cell(MIAMI)]
+    dash = [_dash("{}", "X", 0.7), _dash(MIAMI, "X", 0.3)]
+    cube = [_cube("{}", "X", 0.4), _cube(MIAMI, "X", 0.3)]
+
+    check = _verdicts(cells, dash, cube)
+
+    assert check.formula == [("{}", "abbreviation=X")]
+    assert check.coverage == [(MIAMI, "abbreviation=X")]
+
+
+def test_verdicts_say_the_rewrite_differs_when_a_self_check_misses():
+    check = _verdicts(
+        [_cell()],
+        [_dash("{}", "X", 0.7)],
+        [_cube("{}", "X", 0.4)],
+        dash_self=[_dash("{}", "X", 0.5)],
+    )
+
+    assert check.not_compared == {formula.REWRITE_DIFFERS: [("{}", "abbreviation=X")]}
+    assert check.formula == [] and check.coverage == []
+
+
+def test_verdicts_say_no_rows_when_both_sides_are_empty():
+    check = _verdicts([_cell()], [], [])
+
+    assert check.not_compared == {formula.NO_ROWS: [("{}", "abbreviation=X")]}
+    assert check.formula == [] and check.coverage == []
+
+
+# --- filing checked cells -------------------------------------------------------
+
+FILED = replace(COMPARISON, confirmed=True)
+FILED_CFG = replace(CFG, comparisons=[FILED])
+
+
+def _checked(fingerprint="fp1"):
+    """A formula check of the result `_keep_result` keeps, filing its cell."""
+    return formula.Check(
+        "mastery",
+        fingerprint,
+        formula=[("{}", "abbreviation=X")],
+        lines=["{} abbreviation=X: dashboard 0.7, Cube 0.4 on matched rows"],
+    ).to_json()
+
+
+class _MeasureCube:
+    """Compiles the measure `compose_run` names in its candidate causes."""
+
+    def compiled(self, query):
+        return SimpleNamespace(sql="SELECT AVG(score_c) `v__pct` FROM `m`.`cube_t`")
+
+
+def _keep_result(cache, check=None, *, moment=BUILD):
+    """One latest result: a differing cell holding an unmatched group."""
+    cell = pipeline.Cell(
+        "mastery", "{}", "abbreviation=X", 0.6, 0.5, "differs", (("abbreviation", "X"),)
+    )
+    group = Group(
+        "mastery", (("abbreviation", "X"),), "cube_only", 2, 1, cut_rows=(("{}", 2, 0),)
+    )
+    sides = pipeline.Sides(
+        cells=[cell],
+        groups=[group],
+        fingerprints={"mastery": {"cube": "c", "dashboard": "d"}},
+    )
+    data = sides.to_json()
+    if check is not None:
+        data["formula_check"] = check
+    held = latest.folder(cache / "v", CFG.fact)
+    latest.write(
+        held,
+        "mastery",
+        latest.Latest(
+            moment=moment,
+            fingerprint="fp1",
+            entry=latest.entry_fingerprint(FILED),
+            ran_at="",
+            data=data,
+            fact=CFG.fact,
+        ),
+    )
+    return held
+
+
+def _compose(cache, held):
+    run = results.compose_run(
+        FILED_CFG,
+        [FILED],
+        held,
+        cube=_MeasureCube(),
+        cube_host="h",
+        totals=[],
+        cache_root=cache,
+        build=BUILD,
+        folder=report.run_dir(cache, "v", BUILD),
+        cost=0.0,
+        echo=False,
+    )
+    return run, report.run_dir(cache, "v", BUILD) / "run.json"
+
+
+def test_compose_files_checked_cells_as_formula(tmp_path):
+    cache = tmp_path / "cache"
+    run, run_json = _compose(cache, _keep_result(cache, _checked()))
+
+    [diff] = run.applied.open_cells
+    assert diff.kind == "formula" and diff.matched_only == 1
+    assert diff.counts == {"differs": 1}
+    assert diff.causes[0] == "1 differing cells differ on matched rows only"
+    saved = json.loads(run_json.read_text())
+    assert saved["applied"]["open_cells"][0]["matched_only"] == 1
+    assert [c["kind"] for c in saved["diff_cells"]] == ["formula"]
+
+
+def test_compose_ignores_a_check_of_another_result(tmp_path):
+    other = _checked("fp0")
+    run, run_json = _compose(tmp_path / "b", _keep_result(tmp_path / "b", other))
+    _, plain_json = _compose(tmp_path / "a", _keep_result(tmp_path / "a"))
+
+    [diff] = run.applied.open_cells
+    assert diff.kind == "cells" and diff.matched_only == 0
+    # A run with no check that counts saves exactly as before the check.
+    assert run_json.read_text() == plain_json.read_text()
+    assert "matched_only" not in plain_json.read_text()
+
+
+def test_recompose_refuses_when_the_latest_results_moved_on(tmp_path):
+    cache = tmp_path / "cache"
+    held = _keep_result(cache)
+    run, run_json = _compose(cache, held)
+    latest.add_formula_check(held, "mastery", _checked())
+
+    again = results.recompose(FILED_CFG, cache, run, run_json, cube=_MeasureCube())
+
+    [diff] = again.applied.open_cells
+    assert diff.kind == "formula" and diff.matched_only == 1
+    saved = json.loads(run_json.read_text())
+    assert saved["applied"]["open_cells"][0]["kind"] == "formula"
+
+    later = Build(BUILD.start.replace(day=29), BUILD.end.replace(day=29), "j2")
+    _keep_result(cache, moment=later)
+    with pytest.raises(
+        pipeline.Refusal, match="the run is not composed from the latest results"
+    ):
+        results.recompose(FILED_CFG, cache, run, run_json, cube=_MeasureCube())

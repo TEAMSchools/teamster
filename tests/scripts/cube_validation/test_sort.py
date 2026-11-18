@@ -513,6 +513,59 @@ def test_a_formula_difference_is_in_cause_on_the_run_s_own_evidence():
     assert big["enrollment:formula"].posted == (f"12 {words}",)
 
 
+def _matched_run(n, matched_only):
+    """`_formula_run` whose formula difference holds `matched_only` cells the
+    formula check filed, each saved in `diff_cells`."""
+    from dataclasses import replace
+
+    run = _formula_run(n)
+    cells, formula = run.applied.open_cells
+    run.applied.open_cells = [cells, replace(formula, matched_only=matched_only)]
+    run.diff_cells = [
+        {"comparison": "enrollment", "cut": "{}", "key": f"Grade={g}",
+         "dims": [["Grade", str(g)]], "dashboard": 0.6, "cube": 0.5,
+         "n_students": None, "kind": "formula"}
+        for g in range(9, 9 + n)
+    ]  # fmt: skip
+    return run
+
+
+def test_formula_evidence_counts_matched_row_cells_masked():
+    # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+    from cube_validation.sort import FORMULA_LABEL, MATCHED_LABEL
+
+    def formula_item(run):
+        found = {s.item.id: s for s in suggest(_cfg(), run, {}, traces={})}
+        return found["enrollment:formula"]
+
+    s = formula_item(_matched_run(3, 3))
+
+    assert MATCHED_LABEL == "differing cells differ on matched rows"
+    assert s.suggestion == "cause"
+    assert [c["label"] for c in s.cause] == [MATCHED_LABEL]
+    assert s.evidence[0].startswith(f"3 {MATCHED_LABEL}: ")
+    assert s.posted == (f"<10 {s.evidence[0][2:]}",)
+    # A cell's dims are local evidence only.
+    local = " ".join(s.evidence)
+    assert all(f"Grade={g}" in local for g in (9, 10, 11))
+    assert "Grade=" not in " ".join(s.posted)
+
+    # One line per origin, each count masked when posted.
+    both = formula_item(_matched_run(12, 3))
+    assert both.evidence[0] == (
+        f"9 {FORMULA_LABEL}: every row in them matched on both sides"
+    )
+    assert both.evidence[1].startswith(f"3 {MATCHED_LABEL}: ")
+    assert [p.split(" ", 1)[0] for p in both.posted] == ["<10", "<10"]
+
+    # A run with no formula check sorts as before.
+    plain = formula_item(_formula_run())
+    assert [c["label"] for c in plain.cause] == [FORMULA_LABEL]
+    assert plain.evidence == (
+        f"3 {FORMULA_LABEL}: every row in them matched on both sides",
+    )
+
+
 # --- value_check -------------------------------------------------------------
 
 

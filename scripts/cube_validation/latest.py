@@ -85,6 +85,19 @@ def write(results: Path, comparison_id: str, result: Latest) -> None:
     )
 
 
+def add_formula_check(results: Path, comparison_id: str, check: dict) -> None:
+    """Keep a formula check (`formula.Check.to_json`) beside the comparison's
+    latest result in `results` (`folder`), replacing any earlier one.
+
+    The check names the result it checked by fingerprint, so a newer result
+    written over this file drops it, and one kept elsewhere never counts.
+    """
+    path = _file(results, comparison_id)
+    data = json.loads(path.read_text())
+    data["data"]["formula_check"] = check
+    checkpoints._write_json(path, data)
+
+
 def read_all(results: Path, fact: str) -> dict[str, Latest]:
     """Every comparison's latest result of `fact` in `results` (`folder`), by id.
 

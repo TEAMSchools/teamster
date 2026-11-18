@@ -78,13 +78,16 @@ class CellDiff:
     `counts` maps each differing verdict to its cells; `causes` are read from
     the cells, the row groups and the two definitions, never from a student.
     `kind` is `formula` for the cells no unmatched row lies in (every row in
-    them matched on both sides), else `cells`.
+    them matched on both sides), or that still differ on matched rows alone
+    (the formula check), else `cells`. `matched_only` counts the formula
+    cells the check filed, which hold unmatched rows too.
     """
 
     comparison_id: str
     counts: dict[str, int]
     causes: tuple[str, ...] = ()
     kind: str = "cells"
+    matched_only: int = 0
 
 
 def _numbered(

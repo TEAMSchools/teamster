@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Callable
+from dataclasses import dataclass, field
 from typing import Any
 
 import sqlglot
@@ -40,6 +41,128 @@ OUTSIDE = "not run: outside --comparison; sort it"
 
 class NotCompared(Exception):
     """The formula check cannot run; the text is one of this module's reasons."""
+
+
+# A cell as `run.diff_cells` names it: its cut label and its key.
+CellRef = tuple[str, str]
+
+
+@dataclass
+class Check:
+    """One comparison's formula check, kept beside the result it checked.
+
+    `fingerprint` is that result's `checkpoint_fingerprint`, so a newer result
+    never reads an older check. `formula` holds the cells that still differ
+    on matched rows, `coverage` those that agree there, and `not_compared`
+    the cells left to coverage per reason. `lines` name each formula cell's
+    cut, dims and both values: local only, never posted.
+    """
+
+    comparison: str
+    fingerprint: str
+    formula: list[CellRef] = field(default_factory=list)
+    coverage: list[CellRef] = field(default_factory=list)
+    not_compared: dict[str, list[CellRef]] = field(default_factory=dict)
+    lines: list[str] = field(default_factory=list)
+
+    def to_json(self) -> dict:
+        """The check as JSON data, cells as `[cut, key]` pairs."""
+        return {
+            "comparison": self.comparison,
+            "fingerprint": self.fingerprint,
+            "formula": [list(c) for c in self.formula],
+            "coverage": [list(c) for c in self.coverage],
+            "not_compared": {
+                why: [list(c) for c in cells]
+                for why, cells in self.not_compared.items()
+            },
+            "lines": list(self.lines),
+        }
+
+    @classmethod
+    def from_json(cls, data: dict) -> Check:
+        """The check `to_json` wrote, its cells as tuples again."""
+
+        def refs(cells: list) -> list[CellRef]:
+            return [(cut, key) for cut, key in cells]
+
+        return cls(
+            comparison=data["comparison"],
+            fingerprint=data["fingerprint"],
+            formula=refs(data["formula"]),
+            coverage=refs(data["coverage"]),
+            not_compared={why: refs(c) for why, c in data["not_compared"].items()},
+            lines=list(data["lines"]),
+        )
+
+
+def _values(rows: list[dict], names: list[str]) -> dict[tuple, float | None]:
+    """Each row's `value` by its cut and its dims under `names`, keyed as
+    `compare._cells` keys a cut's cells."""
+    return {
+        (r["__cut"], tuple(pipeline.value_key(r[n]) for n in names)): (
+            None if r["value"] is None else float(r["value"])
+        )
+        for r in rows
+    }
+
+
+def verdicts(
+    comparison: Comparison,
+    fingerprint: str,
+    cells: list[dict],
+    dash: list[dict],
+    cube: list[dict],
+    dash_self: list[dict],
+    cube_self: list[dict],
+) -> Check:
+    """Decide each differing cell from both sides' recomputed values.
+
+    In order: a self-check that does not reproduce the run's value for the
+    cell, on either side, is `REWRITE_DIFFERS`; no matched value on either
+    side is `NO_ROWS`; values that agree at the comparison's `decimals` leave
+    the cell to coverage; else the cell differs by its formula.
+
+    Args:
+        comparison: The comparison checked.
+        fingerprint: The checked result's `checkpoint_fingerprint`.
+        cells: Its differing cells, as `run.diff_cells` holds them.
+        dash: The dashboard side on matched rows (`dashboard_side_sql`).
+        cube: Cube's side on matched rows (`cube_side_sql`).
+        dash_self: The dashboard side with nothing removed.
+        cube_self: Cube's side with nothing removed.
+
+    Returns:
+        The check, each cell in exactly one of its piles.
+    """
+    decimals = comparison.decimals or 0
+    on_dash = [d.dashboard for d in comparison.dims]
+    on_cube = [d.cube for d in comparison.dims]
+    sides = {
+        "dashboard": (_values(dash, on_dash), _values(dash_self, on_dash)),
+        "cube": (_values(cube, on_cube), _values(cube_self, on_cube)),
+    }
+    check = Check(comparison.id, fingerprint)
+    for cell in cells:
+        ref = (cell["cut"], cell["key"])
+        at = (cell["cut"], tuple(pipeline.value_key(v) for _, v in cell["dims"]))
+        if any(
+            reconcile.cell_verdict(whole.get(at), cell[side], decimals) != "pass"
+            for side, (_, whole) in sides.items()
+        ):
+            check.not_compared.setdefault(REWRITE_DIFFERS, []).append(ref)
+            continue
+        d, c = sides["dashboard"][0].get(at), sides["cube"][0].get(at)
+        if d is None and c is None:
+            check.not_compared.setdefault(NO_ROWS, []).append(ref)
+        elif reconcile.cell_verdict(d, c, decimals) == "pass":
+            check.coverage.append(ref)
+        else:
+            check.formula.append(ref)
+            check.lines.append(
+                f"{cell['cut']} {cell['key']}: dashboard {d}, Cube {c} on matched rows"
+            )
+    return check
 
 
 def _rows(comparison: Comparison) -> RowSpec:
