@@ -5,8 +5,8 @@ select
     education_level,
     post_grad_plan,
     salary,
+    job_satisfaction,
     company,
-
-    cast(job_satisfaction as string) as job_satisfaction,
-    cast(benefits as string) as benefits,
+    benefits,
 from {{ source("google_sheets", "src_google_sheets__kippfwd__career_launch_bulk_add") }}
+where contact_id is not null

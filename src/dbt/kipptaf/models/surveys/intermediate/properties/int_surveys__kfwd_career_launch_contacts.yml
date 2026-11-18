@@ -19,6 +19,21 @@ models:
           - unique:
               config:
                 severity: error
+      - name: gpa_band
+        data_type: string
+        description: >-
+          GPA band label the current college GPA falls in. Null when the contact
+          has no current college GPA or it is below the lowest band's min_gpa;
+          the second case scores 0 GPA points, so keep the lowest band at 0 on
+          the GPA Bands tab.
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+                where: current_college_cumulative_gpa is not null
+        config:
+          meta:
+            contains_pii: true
       - name: current_college_cumulative_gpa
         data_type: numeric
         description: Current cumulative college GPA from the Salesforce contact.
@@ -37,8 +52,9 @@ models:
       - name: is_cohort_years_4_to_6
         data_type: boolean
         description: >-
-          True when the alum's KIPP high school class is 4, 5 or 6 years past
-          graduation: the current academic year minus 3, 4 or 5.
+          True when the alum is in their 4th, 5th or 6th school year after high
+          school: their KIPP high school class is the current academic year
+          minus 3, 4 or 5.
         config:
           meta:
             contains_pii: true
@@ -63,16 +79,8 @@ models:
         data_type: boolean
         description: >-
           True when the alum belongs on the Career Launch app roster: on a
-          listed caseload, 4 to 6 years past graduation, or in the newest class
-          outside the Collab, and not opted out of contact.
-        config:
-          meta:
-            contains_pii: true
-      - name: gpa_band
-        data_type: string
-        description: >-
-          GPA band label the current college GPA falls in. Null when the contact
-          has no current college GPA or it is below the lowest band's min_gpa.
+          listed caseload, in their 4th to 6th school year after high school, or
+          in the newest class outside the Collab, and not opted out of contact.
         config:
           meta:
             contains_pii: true

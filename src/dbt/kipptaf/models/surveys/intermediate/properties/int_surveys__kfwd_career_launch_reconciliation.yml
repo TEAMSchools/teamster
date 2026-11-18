@@ -16,7 +16,9 @@ models:
           response ID on the Career Launch survey.
         data_type: string
         data_tests:
-          - unique
+          - unique:
+              config:
+                severity: error
       - name: reconcile_or_exclude
         description: >-
           Disposition selected in the reconciliation form. Exclude removes the
