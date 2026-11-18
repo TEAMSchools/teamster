@@ -450,10 +450,13 @@ def _filter_lines(out: _Checklist, comparison: Comparison | None, facts: Sheet) 
         elif "parameter-driven" in f.kinds and set(f.parameters) <= set_here:
             lines.append((f"{f.caption}: its parameter is set under parameters:", ""))
         elif f.null_mode:
-            need = (
-                f"{f.caption}: keeps {f.null_mode} values only; add "
-                "dashboard_filters with operator: set on its column"
+            # `operator: set` means not null; no operator expresses null only.
+            how = (
+                "add dashboard_filters with operator: set on its column"
+                if f.null_mode == "non-null"
+                else "decide how to map it"
             )
+            need = f"{f.caption}: keeps {f.null_mode} values only; {how}"
             lines.append((need, need))
         elif "parameter-driven" in f.kinds:
             need = (

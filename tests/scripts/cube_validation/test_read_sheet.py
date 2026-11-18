@@ -506,3 +506,14 @@ def test_read_sheet_refuses_a_text_sheet_field():
         read_sheet.text_measure(facts, "Status")
         == f"sheet_field 'Status': {tableau.TEXT_MEASURE}"
     )
+
+
+def test_read_sheet_does_not_point_a_null_filter_at_the_not_null_operator():
+    null_only = (
+        "<filter class='quantitative' column='[federated.0pf].[none:score:qk]' "
+        "included-values='null'/>\n          "
+    )
+    xml = TWB.replace(_ANCHOR, null_only + _ANCHOR)
+    _, before = read_sheet.check("v", xml, "Grid", _comparison(), MEMBERS)
+    line = next(b for b in before if "null values only" in b)
+    assert "operator" not in line
