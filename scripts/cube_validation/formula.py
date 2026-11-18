@@ -208,17 +208,18 @@ def key_sql(columns: list[str], dates: list[bool]) -> str:
     them.
 
     Beyond the reconcile's keys, a date column is first cast to DATE here, so
-    a TIMESTAMP and the DATE of the same day key alike.
+    a TIMESTAMP and the DATE of the same day key alike. Each column is quoted,
+    so a column named by a reserved word, such as `order`, still reads.
 
     Args:
-        columns: The row's grain columns, the student first.
+        columns: The row's grain columns by plain name, the student first.
         dates: Per column, whether it is a date grain.
 
     Returns:
         A string expression; NULL when the first column's key is NULL.
     """
     read = [
-        f"CAST({c} AS DATE)" if is_date else c
+        f"CAST(`{c}` AS DATE)" if is_date else f"`{c}`"
         for c, is_date in zip(columns, dates, strict=True)
     ]
     return _keyed(reconcile._grain_keys(read))
@@ -393,33 +394,36 @@ def fact_grain(
         The `dataset.table` and, per member in order, its column there.
 
     Raises:
-        NotCompared: The SQL cannot be parsed, a member is not a plain column
-            of a table, or the members sit on more than one table.
+        NotCompared: The SQL cannot be parsed or is no single SELECT, or a
+            member is missing from it, is not a plain column of a table with a
+            dataset, or sits on another table than the rest.
     """
     try:
         tree = sqlglot.parse_one(compiled_rows_sql, read="bigquery")
     except SqlglotError as exc:
         raise NotCompared("Cube's SQL could not be parsed") from exc
-    sources: dict[str, exp.Expr] = {}
-    projections: dict[str, exp.Expr] = {}
-    if isinstance(tree, exp.Select):
-        start = tree.args.get("from_")
-        reads = [start.this] if start else []
-        reads += [j.this for j in tree.args.get("joins") or []]
-        sources = {s.alias_or_name: s for s in reads}
-        projections = {p.alias_or_name: p.unalias() for p in tree.expressions}
+    if not isinstance(tree, exp.Select):
+        raise NotCompared("Cube's row SQL is not a single SELECT")
+    start = tree.args.get("from_")
+    reads = [start.this] if start else []
+    reads += [j.this for j in tree.args.get("joins") or []]
+    sources = {s.alias_or_name: s for s in reads}
+    projections = {p.alias_or_name: p.unalias() for p in tree.expressions}
     tables: set[str] = set()
     columns: list[str] = []
     for m in grain:
         column = projections.get(f"{view}__{m}")
-        source = sources.get(column.table) if isinstance(column, exp.Column) else None
-        # A subquery, a table with no dataset or a missing member is no fact.
-        if (
-            not isinstance(column, exp.Column)
-            or not isinstance(source, exp.Table)
-            or not source.db
-        ):
+        if column is None:
+            raise NotCompared(f"grain member {m} is not in Cube's row SQL")
+        if not isinstance(column, exp.Column):
             raise NotCompared(f"grain column {m} is an expression, not a fact column")
+        source = sources.get(column.table)
+        if source is None:
+            raise NotCompared(f"grain column {m} names no table of the outer FROM")
+        if not isinstance(source, exp.Table):
+            raise NotCompared(f"grain column {m} is read from a subquery, not a fact")
+        if not source.db:
+            raise NotCompared(f"grain column {m} sits on a table with no dataset")
         tables.add(f"{source.db}.{source.name}")
         columns.append(column.name)
     if len(tables) > 1:
@@ -454,6 +458,14 @@ def filtered_tables(
     return kept
 
 
+# The close of `as_of`'s wrapper for a table read through a PIVOT, its alias
+# if any, and the PIVOT.
+_PIVOT_AFTER = re.compile(
+    r"\)(?:\s+AS\s+`?\w+`?|\s+(?!(?:un)?pivot\b)`?\w+`?)?\s*(?:un)?pivot\b",
+    re.IGNORECASE,
+)
+
+
 def rewrite_cube_sql(
     sql: str, tables: list[str], columns: list[str], dates: list[bool], *, keep: bool
 ) -> str:
@@ -475,11 +487,11 @@ def rewrite_cube_sql(
         The rewritten SQL.
 
     Raises:
-        NotCompared: A table is not read, is read with no alias, or is read in
-            a form the rewrite cannot place.
+        NotCompared: A table is not read, is read through a PIVOT or with no
+            alias, or is read in a form the rewrite cannot place.
     """
     predicate = (
-        # trunk-ignore(bandit/B608): the grain columns are Cube's own fact columns
+        # trunk-ignore(bandit/B608): the grain columns are Cube's own fact columns, quoted
         f"{key_sql(columns, dates)} IN (SELECT __key FROM __matched)"
         if keep
         else "TRUE"
@@ -487,9 +499,11 @@ def rewrite_cube_sql(
     for t in pipeline.unique(tables):
         ref = re.escape(f"`{PROJECT}.{t}`")
         # `as_of` keeps a dbt reference's alias as written, `AS` or not; a
-        # clause keyword such as FOR is never an alias.
+        # clause keyword such as FOR is never an alias. The table is matched
+        # ignoring case, as `cube_read_tables` finds it, but written back as
+        # Cube's SQL spells it: BigQuery's dataset and table names keep case.
         pattern = re.compile(
-            ref
+            f"(?P<ref>{ref})"
             + r"(?P<alias>\s+AS\s+`?\w+`?|\s+(?!(?:"
             + _NOT_ALIAS
             + r")\b)`?\w+`?)?\s+FOR SYSTEM_TIME AS OF TIMESTAMP '(?P<at>[^']+)'",
@@ -504,13 +518,16 @@ def rewrite_cube_sql(
             raise NotCompared(
                 f"Cube's SQL reads {t} in a form the rewrite does not know"
             )
+        if any(m["alias"] is None and _PIVOT_AFTER.match(sql, m.end()) for m in found):
+            # `as_of` wraps a table read through a PIVOT, leaving it no alias.
+            raise NotCompared(f"Cube's SQL reads {t} through a PIVOT")
         if any(m["alias"] is None for m in found):
             # Cube's columns name the table, which a subquery would hide.
             raise NotCompared(f"Cube's SQL reads {t} with no alias")
         sql = pattern.sub(
-            lambda m, t=t: (
-                # trunk-ignore(bandit/B608): the table is the config's own and the timestamp Cube's pinned literal
-                f"(SELECT * FROM `{PROJECT}.{t}` FOR SYSTEM_TIME AS OF TIMESTAMP "
+            lambda m: (
+                # trunk-ignore(bandit/B608): the table is Cube's own reference and the timestamp its pinned literal
+                f"(SELECT * FROM {m['ref']} FOR SYSTEM_TIME AS OF TIMESTAMP "
                 f"'{m['at']}' WHERE {predicate}){m['alias']}"
             ),
             sql,

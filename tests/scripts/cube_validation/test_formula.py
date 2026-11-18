@@ -559,9 +559,45 @@ def test_fact_grain_refuses_a_subquery_alias():
     )
 
     with pytest.raises(
-        formula.NotCompared, match="grain column student is an expression"
+        formula.NotCompared, match="grain column student is read from a subquery"
     ):
         formula.fact_grain(sql, "v", ["student", "item"])
+
+
+def test_fact_grain_refuses_a_member_missing_from_the_select():
+    sql = "SELECT `f`.item_id `v__item` FROM kipptaf_marts.fct_x AS `f`"
+
+    with pytest.raises(
+        formula.NotCompared, match="grain member student is not in Cube's row SQL"
+    ):
+        formula.fact_grain(sql, "v", ["student", "item"])
+
+
+def test_fact_grain_refuses_sql_that_is_no_single_select():
+    sql = "SELECT 1 `v__student` UNION ALL SELECT 2 `v__student`"
+
+    with pytest.raises(formula.NotCompared, match="is not a single SELECT"):
+        formula.fact_grain(sql, "v", ["student"])
+
+
+def test_fact_grain_refuses_a_table_with_no_dataset():
+    sql = "SELECT `f`.student_number `v__student` FROM fct_x AS `f`"
+
+    with pytest.raises(
+        formula.NotCompared,
+        match="grain column student sits on a table with no dataset",
+    ):
+        formula.fact_grain(sql, "v", ["student"])
+
+
+def test_fact_grain_refuses_a_column_of_no_table_it_reads():
+    sql = "SELECT student_number `v__student` FROM kipptaf_marts.fct_x AS `f`"
+
+    with pytest.raises(
+        formula.NotCompared,
+        match="grain column student names no table of the outer FROM",
+    ):
+        formula.fact_grain(sql, "v", ["student"])
 
 
 def test_fact_grain_refuses_grain_columns_on_two_tables():
@@ -687,6 +723,50 @@ def test_rewrite_refuses_a_reference_it_cannot_place():
         match="Cube's SQL reads m.fct in a form the rewrite does not know",
     ):
         formula.rewrite_cube_sql(unplaced, ["m.fct"], ["lea"], [False], keep=True)
+
+
+def test_rewrite_keeps_cube_s_spelling_of_the_table():
+    # BigQuery dataset and table names are case-sensitive.
+    upper = PINNED.replace("`teamster-332318.m.fct`", "`teamster-332318.M.Fct`")
+
+    sql = formula.rewrite_cube_sql(upper, ["m.fct"], ["lea"], [False], keep=False)
+
+    assert "`teamster-332318.m.fct`" not in sql
+    assert sql.count("(SELECT * FROM `teamster-332318.M.Fct` FOR SYSTEM_TIME") == 2
+
+
+def test_rewrite_quotes_a_grain_column_named_by_a_reserved_word(duck):
+    duck.table("fct", '"order" BIGINT, v BIGINT', [(1, 10), (2, 20)])
+    pinned = (
+        "SELECT SUM(`f`.v) AS v FROM `teamster-332318.m.fct` AS `f` "
+        f"FOR SYSTEM_TIME AS OF TIMESTAMP '{END}'"
+    )
+    matched = (
+        f"WITH __matched AS (SELECT {formula.key_sql(['o'], [False])} AS __key "
+        "FROM (SELECT 1 AS o))\n"
+    )
+
+    sql = formula.rewrite_cube_sql(pinned, ["m.fct"], ["order"], [False], keep=True)
+
+    # sqlglot reads a bare `order` where BigQuery refuses it, so the text
+    # carries the check and DuckDB only that the quoted key still matches.
+    assert "CAST(`order` AS STRING)" in sql and "CAST(order " not in sql
+    assert [int(r["v"]) for r in duck.rows(matched + sql)] == [10]
+
+
+@pytest.mark.parametrize("alias", [" AS `p`", ""])
+def test_rewrite_refuses_a_read_through_a_pivot_by_name(alias):
+    # `as_of` wraps a table read through a PIVOT, so the read has no alias.
+    sql = (
+        "SELECT * FROM (SELECT * FROM `teamster-332318.m.fct` "
+        f"FOR SYSTEM_TIME AS OF TIMESTAMP '{END}'){alias}\n"
+        "PIVOT(SUM(v) FOR k IN ('a'))"
+    )
+
+    with pytest.raises(
+        formula.NotCompared, match="Cube's SQL reads m.fct through a PIVOT"
+    ):
+        formula.rewrite_cube_sql(sql, ["m.fct"], ["lea"], [False], keep=True)
 
 
 class _Ex:
