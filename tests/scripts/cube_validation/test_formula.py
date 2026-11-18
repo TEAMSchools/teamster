@@ -482,6 +482,49 @@ def test_dashboard_self_check_reproduces_the_sheet_query(duck):
     assert rows(duck.rows(sql)) == rows(expected)
 
 
+THROUGH_ROWS = (
+    "SELECT school, AVG(score) AS value FROM ({rows}) WHERE {where} GROUP BY school"
+)
+
+
+@pytest.mark.parametrize(
+    "template",
+    [
+        # No `{rows}`: the view itself, every row.
+        "SELECT school, AVG(score) AS value "
+        "FROM `teamster-332318`.`d`.`dash_t` WHERE {where} GROUP BY school",
+        # `{rows}`, and the view read again beside it.
+        "SELECT school, AVG(score) AS value FROM ({rows}) WHERE {where} AND student "
+        "IN (SELECT student FROM `teamster-332318`.`d`.`dash_t`) GROUP BY school",
+    ],
+)
+def test_dashboard_side_refuses_a_template_that_reads_rows_outside_rows(template):
+    # Cube's side reads matched rows only, so a dashboard side that reads
+    # every row would file a row difference as a formula difference.
+    comparison = replace(SIDE, sheet_query=None, sheet_query_sql=template)
+
+    with pytest.raises(
+        formula.NotCompared,
+        match=r"its sheet_query_sql does not read every row through \{rows\}",
+    ):
+        formula.dashboard_side_sql(
+            replace(CFG, comparisons=[comparison]), comparison, [{}], BUILD,
+            _Catalog(), keep=True,
+        )  # fmt: skip
+
+
+def test_dashboard_side_reads_a_template_through_rows_on_matched_rows(duck):
+    comparison = replace(SIDE, sheet_query=None, sheet_query_sql=THROUGH_ROWS)
+    _side_tables(
+        duck,
+        [(1, "a", 0.5, "X", "N", True, D1), (2, "a", 1.0, "X", "N", True, D1),
+         (3, "a", 0.0, "X", "N", True, D1)],
+        [(1, "a", 0.5, "X", "N"), (2, "a", 1.0, "X", "N"), (4, "a", 0.0, "X", "N")],
+    )  # fmt: skip
+
+    assert _recomputed(duck, comparison) == {("{}", "X"): 0.75}
+
+
 # --- the Cube side ------------------------------------------------------------
 
 
@@ -1164,6 +1207,31 @@ def test_plan_falls_back_when_the_grain_is_an_expression(duck, offline):
 
     assert check.not_compared == {
         "grain column lea is an expression, not a fact column": [REF]
+    }
+
+
+def test_plan_falls_back_when_the_grain_sits_on_a_joined_table(
+    duck, offline, monkeypatch
+):
+    # The joined table's `lea` may mean something else than the fact's own
+    # `lea`, so filtering the fact by it would be a guess.
+    compiled = offline.cube_sql
+
+    def joined(query, rows=False):
+        if not rows:
+            return compiled(query)
+        return (
+            "SELECT `s`.lea `v__lea`, `s`.aid `v__aid` FROM m.cube_t AS `c` "
+            "LEFT JOIN m.dim_students AS `s` ON `s`.k = `c`.k"
+        )
+
+    monkeypatch.setattr(offline, "cube_sql", joined)
+
+    check, _ = _plan(duck, _plan_run())
+
+    assert check.not_compared == {
+        "the grain columns sit on m.dim_students, which Cube's filtered tables "
+        "do not include": [REF]
     }
 
 

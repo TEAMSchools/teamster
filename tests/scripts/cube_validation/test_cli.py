@@ -41,7 +41,13 @@ from cube_validation.config import ColumnPair, Comparison, load_view_config
 from cube_validation.cube_client import Compiled, CubeError
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation.formula import NOT_COMPARED, OUTSIDE, RUN_FAILED
+from cube_validation.formula import (
+    NO_ROWS,
+    NOT_COMPARED,
+    NOT_COMPOSED,
+    OUTSIDE,
+    RUN_FAILED,
+)
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.saved import SCRATCH_DATASET
@@ -1687,6 +1693,50 @@ def test_ask_owner_lists_formulas_not_compared_and_record_answers_ignores_them(
     assert _record([owner], comment) == 0
 
 
+def _predating_the_formula_check(tmp_path):
+    """Compare, then write a triage as a `sort` before the formula check did:
+    no `formulas_not_compared` at all."""
+    path = _file(tmp_path)
+    assert cli.main(["compare", str(path)]) == 0
+    (run_json,) = (tmp_path / "cache" / "v").glob("*/run.json")
+    _write_sorted(run_json, [_sorted_item("e"), _gap_sorted_item()])
+    triage = run_json.parent / "triage.json"
+    loaded = json.loads(triage.read_text())
+    del loaded["formulas_not_compared"]
+    triage.write_text(json.dumps(loaded))
+    return path
+
+
+def test_ask_owner_refuses_a_triage_that_predates_the_formula_check(
+    fakes, tmp_path, capsys
+):
+    # Its cells closed by coverage alone, with nothing to say so.
+    path = _predating_the_formula_check(tmp_path)
+    capsys.readouterr()
+
+    assert cli.main(["ask-owner", str(path), "--domain", "Registrar"]) == 1
+
+    err = capsys.readouterr().err
+    assert "v: the triage predates the formula check; run `sort` for" in err
+
+
+def test_decide_refuses_a_triage_that_predates_the_formula_check(
+    fakes, tmp_path, capsys
+):
+    path = _predating_the_formula_check(tmp_path)
+    approved = _approved(
+        tmp_path,
+        [{"id": "no-team", "call": "deliberate", "reason": "A label only.",
+          "task": "", "item": "cut:Team"}],
+    )  # fmt: skip
+    capsys.readouterr()
+
+    assert cli.main(["decide", str(path), str(approved)]) == 1
+
+    assert "the triage predates the formula check" in capsys.readouterr().err
+    assert load_view_config(path).decisions == []
+
+
 def test_triage_and_review_name_a_skipped_comparison(fakes, tmp_path, capsys):
     path = _two(tmp_path, _no_rebuild_check)
     assert cli.main(["compare", str(path)]) == 0
@@ -2894,6 +2944,7 @@ def _write_sorted(run_json, items=(), open_keys=None):
                 "decisions_fingerprint": run.decisions_fingerprint,
                 "open": sort.open_keys(run) if open_keys is None else open_keys,
                 "items": list(items),
+                "formulas_not_compared": {},
             }
         )
     )
@@ -5156,6 +5207,54 @@ def test_sort_reuses_a_stored_check_without_spending(fakes, tmp_path):
 
     assert not [sql for _, sql in fakes.bq.log[since:] if FORMULA_QUERY in sql]
     assert _triage(tmp_path)["formulas_not_compared"] == {}
+
+
+def test_sort_runs_a_stored_check_with_uncompared_cells_again(fakes, tmp_path):
+    path = _miami_differs(fakes, tmp_path)
+    assert cli.main(["sort", str(path), "--no-trace"]) == 0
+    held = latest.folder(tmp_path / "cache" / "v", "kipptaf_marts.fct_f")
+    check = latest.read_all(held, "kipptaf_marts.fct_f")["ada-region"].data[
+        "formula_check"
+    ]
+    # As a check that found no matched rows would be kept.
+    latest.add_formula_check(
+        held,
+        "ada-region",
+        {**check, "coverage": [], "not_compared": {NO_ROWS: check["coverage"]}},
+    )
+    since = len(fakes.bq.log)
+
+    assert cli.main(["sort", str(path), "--no-trace"]) == 0
+
+    # Its cause fixed, the check runs again and its label goes.
+    assert len(_formula_runs(fakes.bq, since)) == 4
+    assert _triage(tmp_path)["formulas_not_compared"] == {}
+
+
+def test_sort_keeps_its_checks_labelled_when_composing_again_crashes(
+    fakes, tmp_path, capsys, monkeypatch
+):
+    _miami_differs(fakes, tmp_path)
+    path = _with_decision(_saved_fingerprints(tmp_path), tmp_path, call="fix_cube")
+    assert cli.main(["reapply", str(path)]) == 0
+    fakes.bq.formula = {
+        "dashboard": [{"region": "Newark", "value": 0.9123},
+                      {"region": "Miami", "value": 0.6}],
+        "cube": [{"regions_region_name": "Newark", "value": 0.91234},
+                 {"regions_region_name": "Miami", "value": 0.95}],
+    }  # fmt: skip
+
+    def crashed(*a, **k):
+        raise RuntimeError("Cube timed out")
+
+    monkeypatch.setattr(results, "recompose", crashed)
+
+    assert cli.main(["sort", str(path), "--no-trace"]) == 0
+
+    assert "Cube timed out" in capsys.readouterr().out
+    assert _triage(tmp_path)["formulas_not_compared"] == {
+        "ada-region": {NOT_COMPOSED: 2}
+    }
 
 
 def test_sort_comparison_checks_only_the_comparisons_named(fakes, tmp_path):

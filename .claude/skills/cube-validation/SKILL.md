@@ -213,9 +213,10 @@ refuses when the view's only run read another fact.
    rebuild-sheet" list with the analyst; rebuild only when it reads "nothing
    blocks" or each item left is a decision the analyst made. `rebuild-sheet`
    refuses a text measure and an unpublished sheet the same way. It skips blank
-   cells, `*` total rows and dual-axis repeats, and prints each skipped count.
-   If a sheet keeps non-null values only and its rebuild check was written
-   before the `dashboard_filters` entry existed, run `rebuild-sheet` again.
+   cells, `*` total rows and dual-axis repeats; it prints how many total rows
+   and blank cells it skipped, but not how many repeats. If a sheet keeps
+   non-null values only and its rebuild check was written before the
+   `dashboard_filters` entry existed, run `rebuild-sheet` again.
    `rebuild-sheet <file> --comparison <id>` exports the sheet from a `TEMP-CB`
    copy and writes `rebuild_check` (with `matched_at` and
    `sheet_query_fingerprint`) when the sheet query reproduces every cell at
@@ -355,7 +356,9 @@ refuses when the view's only run read another fact.
    cap. A cell it cannot check reads `formulas not compared: <why>`: the cell
    closes by coverage as before, the owner sees the comparison under "Still with
    the analyst", and `sort` and `ask-owner` still run. Fix the cause the line
-   names, then `sort` again.
+   names, then `sort` again: a kept check with uncompared cells runs again (and
+   is priced again); one with none is reused. `decide` and `ask-owner` refuse a
+   triage written before the formula check existed; `sort` again.
 
    The trace leads. `sort` relaxes each step of the other side's SQL (WHERE and
    HAVING conjuncts, INNER JOINs, required LEFT JOINs, down 5 dbt models) and

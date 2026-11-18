@@ -193,6 +193,45 @@ def test_shown_values_hides_a_field_off_the_allowlist():
     assert shown_values(el, "student_number", {}) is None
 
 
+def test_shown_values_hides_a_member_of_another_level():
+    # A region filter whose groupfilter also holds a student's member.
+    mixed = _filter(
+        "none:region:nk",
+        "<groupfilter function='union'>"
+        "<groupfilter function='member' level='[none:region:nk]' member='&quot;Miami&quot;' />"
+        "<groupfilter function='member' level='[none:student_number:ok]' member='999999' />"
+        "</groupfilter>",
+    )
+    assert shown_values(mixed, "region", {}) is None
+    own = _filter(
+        "none:region:nk",
+        "<groupfilter function='member' level='[ds].[none:region:nk]' member='&quot;Miami&quot;' />",
+    )
+    assert shown_values(own, "region", {}) == "Miami"
+
+
+def test_a_calc_on_the_viewer_s_identity_hides_its_values():
+    formulas = {"Calculation_5": "USERNAME() = [region]"}
+    el = _filter(
+        "none:Calculation_5:nk",
+        "<groupfilter function='member' level='[Calculation_5]' member='true' />",
+    )
+
+    assert columns_read("Calculation_5", formulas) == ("region",)
+    assert shown_values(el, "Calculation_5", formulas) is None
+
+
+def test_a_calc_reading_a_name_with_an_escaped_bracket_hides_its_values():
+    # Tableau writes the column `region]x` as `[region]]x]`, not `[region]`.
+    formulas = {"Calculation_6": "[region]]x] = 'Newark'"}
+    el = _filter(
+        "none:Calculation_6:nk",
+        "<groupfilter function='member' level='[Calculation_6]' member='true' />",
+    )
+
+    assert shown_values(el, "Calculation_6", formulas) is None
+
+
 def test_a_calc_filter_shows_only_when_every_column_it_reads_is_allowlisted():
     formulas = {
         "Calculation_1": "[module_type] = 'WPP' AND [region] = 'Newark'",

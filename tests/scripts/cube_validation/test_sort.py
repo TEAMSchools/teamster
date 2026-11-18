@@ -977,7 +977,8 @@ def _write_run_sorted(tmp_path, run, items):
     run_json = tmp_path / "run.json"
     run_json.write_text("{}")
     (tmp_path / "triage.json").write_text(json.dumps(
-        {"moment": _moment(run), "open": open_keys(run), "items": items}))  # fmt: skip
+        {"moment": _moment(run), "open": open_keys(run), "items": items,
+         "formulas_not_compared": {}}))  # fmt: skip
     return run_json
 
 

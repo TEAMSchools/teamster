@@ -276,6 +276,31 @@ def matched_ctes(
     )
 
 
+ROWS_BYPASSED = "its sheet_query_sql does not read every row through {rows}"
+
+
+def _reads_only_rows(comparison: Comparison) -> None:
+    """Refuse a `sheet_query_sql` that reads a dashboard row other than
+    through `{rows}`.
+
+    The matched-rows side swaps `{rows}` for the matched rows only; a
+    template that skips `{rows}`, or names the dashboard view beside it,
+    would read every row there while Cube's side reads matched rows, and the
+    self-check would not see it.
+
+    Raises:
+        NotCompared: The template has no `{rows}`, or names the view.
+    """
+    template = comparison.sheet_query_sql
+    if not template:
+        return
+    marker = "__formula_rows__"
+    text = template.format(rows=marker, where="TRUE", dims="").replace("`", "")
+    view = re.escape(comparison.dashboard_view or "")
+    if marker not in text or (view and re.search(rf"\b{view}\b", text, re.IGNORECASE)):
+        raise NotCompared(ROWS_BYPASSED)
+
+
 def dashboard_side_sql(
     cfg: ViewConfig,
     comparison: Comparison,
@@ -304,6 +329,8 @@ def dashboard_side_sql(
     Raises:
         pipeline.Refusal: `keep` is True and the comparison has no `rows`, or
             the SQL cannot be read as of the build start.
+        NotCompared: `keep` is True and the comparison's `sheet_query_sql`
+            reads a row other than through `{rows}` (`_reads_only_rows`).
     """
     if keep:
         grain = _rows(comparison).grain
@@ -314,6 +341,7 @@ def dashboard_side_sql(
             f"SELECT * FROM ({pipeline.dashboard_scoped_rows_sql(cfg, comparison)}) "
             f"WHERE {key} IN (SELECT __key FROM __matched)"
         )
+        _reads_only_rows(comparison)
     else:
         rows = (
             # trunk-ignore(bandit/B608): identifiers are validated in config.py
@@ -616,7 +644,7 @@ def _job_sql(
     ctes = matched_ctes(cfg, comparison, sides, table)
     ex = pipeline.Expand(cfg, cube, schools, wh)
     grain = [p.cube for p in _rows(comparison).grain]
-    _, columns = fact_grain(
+    grain_table, columns = fact_grain(
         ex.cube_sql(pipeline.row_query(cfg.view, comparison), rows=True),
         cfg.view,
         grain,
@@ -629,6 +657,13 @@ def _job_sql(
         columns,
         lambda t: wh.columns(*t.split(".", 1)),
     )
+    # A grain read from a joined table names its columns there; a filtered
+    # table's same-named columns may mean something else.
+    if grain_table.lower() not in {t.lower() for t in tables}:
+        raise NotCompared(
+            f"the grain columns sit on {grain_table}, which Cube's filtered "
+            "tables do not include"
+        )
 
     def dash(keep: bool) -> str:
         return dashboard_side_sql(cfg, comparison, cuts, build, wh, keep=keep)
@@ -664,9 +699,12 @@ def plan(
     """Build the comparison's formula check, or why it cannot be built.
 
     Reads the run's row SQL (`prepared.row_sides`), its saved rows
-    (`explain.require_saved`), Cube's compiled SQL and the fact's columns;
-    no priced query runs. Never raises: every failure is a check whose cells
-    are all left to coverage under one reason. The run's SQL no longer
+    (`explain.require_saved`), Cube's compiled SQL and the fact's columns.
+    The check's own queries do not run here; the lookups the SQL needs (the
+    network's schools, view history) can bill, under the caps and
+    `maximum_bytes_billed` but outside the up-front price. Never raises:
+    every failure is a check whose cells are all left to coverage under one
+    reason. The run's SQL no longer
     building as it did, or the moment no longer readable, is `SQL_MOVED`;
     the saved rows gone or of another run, `SAVED_GONE`; Cube's refusal or
     error, `CUBE_REFUSED`; a Cube side the rewrite cannot place, its own

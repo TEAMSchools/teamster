@@ -1067,6 +1067,14 @@ def test_formulas_not_compared_reads_the_key_or_nothing():
     assert sort.formulas_not_compared(loaded) == {"c": {"r": 2}}
 
 
+def test_formula_checked_tells_an_empty_key_from_a_missing_one():
+    # Empty: the check left nothing uncompared. Missing: no check ran.
+    # Malformed: fail closed, as if none ran.
+    assert sort.formula_checked({"formulas_not_compared": {}})
+    assert not sort.formula_checked({})
+    assert not sort.formula_checked({"formulas_not_compared": "x"})
+
+
 def test_review_posts_ready_questions_and_lists_unsettled_items():
     run = _run()
     lead = "lead: relaxing main: school_id IN (1, 2) brings back 30 of 40 rows"

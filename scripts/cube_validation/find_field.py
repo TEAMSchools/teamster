@@ -404,10 +404,25 @@ def _chain_unresolvable(name: str, formulas: dict[str, str]) -> bool:
             continue
         seen.add(current)
         formula = formulas.get(current, "")
-        if USER_FUNCTION.search(formula) or _PASS_THROUGH.search(formula):
+        # `]]` escapes a `]` in a name, which `_BRACKETED` would cut short.
+        if (
+            USER_FUNCTION.search(formula)
+            or _PASS_THROUGH.search(formula)
+            or "]]" in formula
+        ):
             return True
         todo += [r for r in _BRACKETED.findall(formula) if r in formulas]
     return False
+
+
+def _level_field(level: str | None) -> str | None:
+    """The bare field a groupfilter's `level` names, derivation stripped:
+    `[none:region:nk]` and `[ds].[region]` both name `region`."""
+    if not level:
+        return None
+    last = "[" + level.rsplit("].[", 1)[-1] if "].[" in level else level
+    m = FIELD_REF.fullmatch(last)
+    return m["name"] if m is not None else _bare(last)
 
 
 def shown_values(
@@ -418,12 +433,18 @@ def shown_values(
     Values print only when the field, or every column a calculation reads, is in
     `SHOWN_FILTER_FIELDS`. A calculation whose columns cannot be worked out, or
     that reads the viewer's identity or passes columns to RAWSQL or a script, stays
-    hidden.
+    hidden, as does a filter holding a member of any level but `field_name`.
     """
     columns = columns_read(field_name, formulas)
     if not columns or not all(c in SHOWN_FILTER_FIELDS for c in columns):
         return None
     if field_name in formulas and _chain_unresolvable(field_name, formulas):
+        return None
+    if any(
+        _level_field(g.get("level")) != field_name
+        for g in filter_el.iter("groupfilter")
+        if g.get("member") is not None or g.get("level") is not None
+    ):
         return None
     if filter_el.get("class") == "quantitative":
         if mode := null_mode(filter_el):

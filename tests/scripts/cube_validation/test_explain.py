@@ -815,6 +815,7 @@ def _saved(tmp_path, monkeypatch, run):
                 "decisions_fingerprint": "",
                 "open": sort.open_keys(run),
                 "items": _items(run),
+                "formulas_not_compared": {},
             }
         )
     )
