@@ -283,7 +283,8 @@ def formulas_not_compared(loaded: dict) -> dict[str, dict[str, int]]:
     Read from the triage's `formulas_not_compared`, not from item evidence,
     which `explain --confirm` can rewrite. A triage without the key, or with a
     malformed one, gives `{}`; `formula_checked` tells that from a check that
-    left nothing uncompared.
+    left nothing uncompared. A comparison whose counts are not all positive
+    whole numbers is left out.
     """
     held = loaded.get("formulas_not_compared")
     if not isinstance(held, dict):
@@ -294,7 +295,8 @@ def formulas_not_compared(loaded: dict) -> dict[str, dict[str, int]]:
         if isinstance(reasons, dict)
         and reasons
         and all(
-            isinstance(n, int) and not isinstance(n, bool) for n in reasons.values()
+            isinstance(n, int) and not isinstance(n, bool) and n > 0
+            for n in reasons.values()
         )
     }
 

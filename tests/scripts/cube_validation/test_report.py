@@ -1085,6 +1085,20 @@ def test_formulas_not_compared_reads_the_key_or_nothing():
     )
     loaded = {"formulas_not_compared": {"c": {"r": 2}}}
     assert sort.formulas_not_compared(loaded) == {"c": {"r": 2}}
+    for n in (0, -3):
+        held = {"formulas_not_compared": {"c": {"r": n}, "d": {"r": 2}}}
+        assert sort.formulas_not_compared(held) == {"d": {"r": 2}}, n
+
+
+def test_still_with_the_analyst_redacts_a_long_digit_run_in_a_reason():
+    lines = report.still_with_analyst(
+        [], {}, {"v": {"c1": {"dry run failed for student 1234567": 12}}}
+    )
+
+    assert lines == [
+        "`c1` in `v`: formulas not compared: dry run failed for student "
+        "<redacted>; 12 cells closed by coverage only"
+    ]
 
 
 def test_formula_checked_tells_an_empty_key_from_a_missing_one():
