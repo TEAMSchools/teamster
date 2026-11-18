@@ -1,8 +1,8 @@
 models:
   - name: stg_google_appsheet__kfwd_career_conversations__output
     description: >-
-      Career conversation records from the KFWD AppSheet app, one row per alumni
-      contact.
+      Career Conversation checklist and notes from the KIPP Forward Career
+      Launch App, one row per alumni contact.
     columns:
       - name: contact_id
         description: Unique identifier for the alumni contact.

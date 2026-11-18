@@ -26,7 +26,7 @@ The family has 2 consumers:
 
 - the Career Launch views in the KIPP Forward Data Suite Tableau workbook, which
   read `rpt_tableau__kfwd_career_launch_survey`;
-- the KIPP Forward Career Launch AppSheet app, which reads its roster from
+- the KIPP Forward Career Launch App, which reads its roster from
   `rpt_appsheet__kfwd_career_launch_survey` and writes counselors' readiness
   assessments back to BigQuery.
 
@@ -121,8 +121,8 @@ reads 4 of its tabs, each through its own staging model; see _Inputs_.
 | Manual Uploads                                      | Google Sheet, filled from a template                    | Counselors, then data team |
 | Reconcile or Exclude decisions                      | Reconciliation Google Form                              | KFwd Career Team           |
 | Alumni roster, enrollments, programs, contact notes | Salesforce (KIPPADB)                                    | KFwd counselors            |
-| Career Conversation checklist                       | KIPP Forward Career Launch AppSheet app                 | Counselors                 |
-| Readiness assessments                               | KIPP Forward Career Launch AppSheet app                 | Counselors                 |
+| Career Conversation checklist                       | KIPP Forward Career Launch App                          | Counselors                 |
+| Readiness assessments                               | KIPP Forward Career Launch App                          | Counselors                 |
 | Rubric points, stages, GPA bands, caseloads         | Career Launch Scoring Rubric Google Sheet               | KFwd Career Team           |
 
 Each survey version asked different questions. The Strong Launch rule depends on
@@ -281,7 +281,7 @@ What that means for a reader:
 - A change on the Rubric, Stages, or GPA Bands tab rescores every past
   assessment once that tab's staging table rebuilds.
 
-## KIPP Forward Career Launch app
+## KIPP Forward Career Launch App
 
 ### What triggers it
 
