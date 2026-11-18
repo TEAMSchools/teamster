@@ -418,8 +418,9 @@ over.
     `career_ready_3`. A misspelled key scores that level 0 points.
   - **Stages:** each stage's name and lowest score.
   - **GPA Bands:** each band's label, lowest GPA, and points.
-  - **Caseloads:** staff whose alumni are always on the app roster. Names must
-    match the Salesforce contact owner or postsecondary advisor field exactly.
+  - **Caseloads:** staff whose alumni are on the app roster whatever their
+    cohort, unless the alum opted out of contact. Names must match the
+    Salesforce contact owner or postsecondary advisor field exactly.
 
 ## Decisions
 

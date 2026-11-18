@@ -1,7 +1,14 @@
 models:
   - name: stg_google_sheets__kippfwd__career_launch_bulk_add
+    description: >-
+      Career Launch survey answers that KIPP Forward counselors enter for alumni
+      who have not filled in the survey, one row per alum, from the Manual
+      Uploads sheet. int_surveys__kfwd_career_launch_responses unpivots each row
+      into one Bulk Add response. To update an alum's answers, replace their
+      existing row; a second row for the same contact fails the uniqueness test.
     columns:
       - name: contact_id
+        description: Salesforce contact id of the alum.
         data_type: string
         data_tests:
           - unique:
@@ -11,18 +18,35 @@ models:
               config:
                 severity: error
       - name: email
+        description: Alum's email address. Reported as the alumni_email answer.
         data_type: string
       - name: cell_phone
+        description: >-
+          Alum's cell phone number. Reported as the cell_number answer.
         data_type: string
       - name: education_level
+        description: >-
+          Alum's highest level of education. Reported as the
+          highest_level_of_education answer.
         data_type: string
       - name: post_grad_plan
+        description: >-
+          What the alum is doing after graduation. Reported as the after_grad
+          answer.
         data_type: string
       - name: salary
+        description: Alum's annual income. Reported as the annual_income answer.
         data_type: string
       - name: job_satisfaction
+        description: >-
+          Alum's job satisfaction, cast to string so it unpivots with the other
+          answers. Reported as the job_sat answer.
         data_type: string
       - name: company
+        description: Alum's employer. Reported as the company answer.
         data_type: string
       - name: benefits
+        description: >-
+          Alum's answer about job benefits, cast to string so it unpivots with
+          the other answers. Reported as the benefits answer.
         data_type: string

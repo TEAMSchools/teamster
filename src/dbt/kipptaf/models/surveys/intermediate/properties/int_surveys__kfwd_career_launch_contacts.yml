@@ -72,7 +72,7 @@ models:
         data_type: string
         description: >-
           GPA band label the current college GPA falls in. Null when the contact
-          has no current college GPA.
+          has no current college GPA or it is below the lowest band's min_gpa.
         config:
           meta:
             contains_pii: true
@@ -90,8 +90,8 @@ models:
       - name: gpa_points
         data_type: int64
         description: >-
-          Points the GPA band adds to the launch score. 0 when the contact has
-          no current college GPA.
+          Points the GPA band adds to the launch score. 0 when gpa_band is null
+          (no current college GPA, or one below the lowest band).
         config:
           meta:
             contains_pii: true

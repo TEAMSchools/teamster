@@ -1,5 +1,22 @@
 models:
   - name: rpt_tableau__kfwd_career_launch_survey
+    description: >-
+      KIPP Forward alumni and Career Launch survey responses for the Career
+      Launch Tableau views, built as a full join of the two. Each alumnus (HSG
+      or TAF status, cohort at or before the current academic year) has one row
+      per graduated postsecondary enrollment, or a single row when they have
+      none. Only the rn_graduated = 1 row takes survey answers, and it repeats
+      once per matched response; an alumnus with no matched response keeps null
+      survey columns. A response that matches no alumnus gets its own row with
+      null alumni columns and is_unmatched_response true. A response matches an
+      alumnus when the respondent email equals their primary or secondary
+      Salesforce email, when the reconciliation form links it to their contact,
+      or when its respondent Salesforce id is their contact id (Alchemer
+      responses carrying an id, and every Bulk Add row). Responses the
+      reconciliation form marks Exclude are dropped. Survey answer columns hold
+      the text as entered and are null when the response's survey did not ask
+      that question. For alumni counts, filter to rn_respondent = 1,
+      rn_graduated = 1, and is_unmatched_response false.
     config:
       contract:
         enforced: true
@@ -15,52 +32,104 @@ models:
     columns:
       - name: contact_id
         data_type: string
+        description:
+          Salesforce contact id of the alumnus. Null on a response that matched
+          no alumnus.
       - name: sf_first_name
         data_type: string
+        description: Alumnus first name from Salesforce.
       - name: sf_last_name
         data_type: string
+        description: Alumnus last name from Salesforce.
       - name: sf_lastfirst
         data_type: string
+        description:
+          Alumnus name as Last, First from Salesforce, falling back to the
+          PowerSchool student name.
       - name: contact_kipp_ms_graduate
         data_type: boolean
+        description:
+          Whether the Salesforce contact records the alumnus as a KIPP middle
+          school graduate.
       - name: contact_kipp_hs_graduate
         data_type: boolean
+        description:
+          Whether the Salesforce contact records the alumnus as a KIPP high
+          school graduate.
       - name: contact_kipp_hs_class
         data_type: int64
+        description: KIPP high school class year on the Salesforce contact.
       - name: college_match_display_gpa
         data_type: numeric
+        description:
+          College Match Display GPA (high school GPA) from the Salesforce
+          contact.
       - name: kipp_region_name
         data_type: string
+        description: KIPP region on the Salesforce contact.
       - name: contact_description
         data_type: string
+        description: Free-text Description field on the Salesforce contact.
       - name: contact_gender
         data_type: string
+        description: Gender on the Salesforce contact.
       - name: contact_ethnicity
         data_type: string
+        description: Ethnicity on the Salesforce contact.
       - name: expected_college_grad_date
         data_type: date
+        description:
+          Expected college graduation date from the Salesforce contact.
       - name: actual_college_grad_date
         data_type: date
+        description: Actual college graduation date from the Salesforce contact.
       - name: current_kipp_student
         data_type: string
+        description:
+          Current KIPP Student value on the Salesforce contact, or 'Missing from
+          Salesforce' when blank.
       - name: contact_owner_name
         data_type: string
+        description: Name of the Salesforce user who owns the contact.
       - name: pursuing_degree_type
         data_type: string
+        description:
+          Degree type of the graduated postsecondary enrollment on this row.
+          Null when the alumnus has no graduated enrollment.
       - name: type
         data_type: string
+        description:
+          Salesforce type of the graduated postsecondary enrollment on this row;
+          never High School or Middle School. Null when the alumnus has no
+          graduated enrollment.
       - name: start_date
         data_type: date
+        description:
+          Start date of the graduated postsecondary enrollment on this row.
       - name: actual_end_date
         data_type: date
+        description:
+          Actual end date of the graduated postsecondary enrollment on this row.
       - name: major
         data_type: string
+        description:
+          Major of the graduated postsecondary enrollment on this row.
       - name: status
         data_type: string
+        description:
+          Status of the enrollment on this row — always Graduated, or null when
+          the alumnus has no graduated enrollment.
       - name: ecc
         data_type: numeric
+        description:
+          Adjusted six-year minority graduation rate of the institution of the
+          graduated enrollment on this row, from its Salesforce account. Null
+          when the alumnus has no graduated enrollment.
       - name: institution
         data_type: string
+        description:
+          Name of the institution of the graduated enrollment on this row, from
+          its Salesforce account.
       - name: enrollment_id
         data_type: string
         description:
@@ -69,109 +138,216 @@ models:
       - name: reconciliation_response_id
         data_type: string
         description:
-          The survey response id when the career launch reconciliation sheet
-          matched this response to this alum. Null when the match came from
-          email or Salesforce id, and on rows with no response.
+          The response_id when the career launch reconciliation form links this
+          response to this alum's contact. Null when it does not, including a
+          response matched only by email or Salesforce id, and on rows with no
+          alum or no response.
       - name: college_programs
         data_type: string
+        description:
+          The alumnus's Salesforce College Program records, separated by
+          semicolons, each as the organization name followed by its opportunity
+          dates in parentheses when present. Leaves out records marked Not
+          Matched or Wait-listed. Null when there are none.
       - name: is_basta
         data_type: boolean
+        description:
+          True when the alumnus has a Project BASTA College Program record not
+          marked Not Matched or Wait-listed.
       - name: is_braven
         data_type: boolean
+        description:
+          True when the alumnus has a Braven College Program record not marked
+          Not Matched or Wait-listed.
       - name: is_backrs
         data_type: boolean
+        description:
+          True when the alumnus has a Backrs College Program record not marked
+          Not Matched or Wait-listed.
       - name: is_kippnj_internship
         data_type: boolean
+        description:
+          True when the alumnus has a College Program record with KIPP New
+          Jersey - Camden or KIPP New Jersey - Newark not marked Not Matched or
+          Wait-listed.
       - name: hs_gpa_bands
         data_type: string
+        description: >-
+          Band of college_match_display_gpa — 3.50+, 3.00-3.49, 2.50-2.99,
+          2.00-2.50 (which covers 2.00 to 2.49), or <2.00. Null when there is no
+          GPA.
       - name: sf_email
         data_type: string
+        description: Salesforce primary email, lowercased.
       - name: sf_secondary_email
         data_type: string
+        description: Salesforce secondary email, lowercased.
       - name: expected_grad_date_month
         data_type: int64
+        description: Month number of expected_college_grad_date.
       - name: expected_grad_date_year
         data_type: int64
+        description: Year of expected_college_grad_date.
       - name: actual_end_date_month
         data_type: int64
+        description: Month number of actual_end_date.
       - name: actual_end_date_year
         data_type: int64
+        description: Year of actual_end_date.
       - name: rn_graduated
         data_type: int64
+        description:
+          Order of this row's graduated enrollment among the alumnus's graduated
+          enrollments, earliest actual_end_date first. 1 on the single row of an
+          alumnus with no graduated enrollment; null on a response that matched
+          no alumnus.
       - name: survey_id
         data_type: string
+        description:
+          Id of the survey the response came from — the Alchemer survey id, the
+          Google Form id, or bulk_add for Bulk Add rows. Null on rows with no
+          response.
       - name: survey_title
         data_type: string
+        description:
+          Source of the response — Alchemer survey, Google Form v1, Google Form
+          v2, or Bulk Add. Null on rows with no response.
       - name: response_id
         data_type: string
+        description:
+          Id of the survey response; for a Bulk Add row, a hash of its contact
+          id. Null on rows with no response.
       - name: response_date_submitted
         data_type: timestamp
+        description:
+          When the response was submitted. Null for Bulk Add rows and rows with
+          no response.
       - name: respondent_user_principal_name
         data_type: string
+        description:
+          Respondent email on the response, lowercased, used to match it to an
+          alumnus. Null for Bulk Add rows.
       - name: after_grad
         data_type: string
+        description: Answer to the post-graduation plan question.
       - name: alumni_dob
         data_type: string
+        description: Date of birth the respondent entered.
       - name: alumni_email
         data_type: string
+        description: Email the respondent entered on the survey.
       - name: alumni_phone
         data_type: string
+        description: Phone number the respondent entered on the survey.
       - name: cell_number
         data_type: string
+        description: Cell phone number the respondent entered on the survey.
       - name: company
         data_type: string
+        description: Employer the respondent named.
       - name: complete_program
         data_type: string
+        description: Answer to the complete_program survey question.
       - name: debt_amount
         data_type: string
+        description: Debt amount the respondent reported.
       - name: debt_binary
         data_type: string
+        description: Whether the respondent reported having debt.
       - name: first_name
         data_type: string
+        description: First name the respondent entered on the survey.
       - name: grad_school_major
         data_type: string
+        description: Graduate school major the respondent reported.
       - name: grad_school_name
         data_type: string
+        description: Graduate school the respondent reported.
       - name: highest_level_of_education
         data_type: string
+        description: Highest level of education the respondent reported.
       - name: job_sat
         data_type: string
+        description: Answer to the job satisfaction question.
       - name: last_name
         data_type: string
+        description: Last name the respondent entered on the survey.
       - name: linkedin
         data_type: string
+        description: Answer to the linkedin survey question.
       - name: linkedin_link
         data_type: string
+        description: LinkedIn profile link the respondent entered.
       - name: not_pursuing_plan
         data_type: string
+        description: Answer to the not_pursuing_plan survey question.
       - name: reenrollment
         data_type: string
+        description: Answer to the reenrollment survey question.
       - name: role
         data_type: string
+        description: Job role the respondent reported.
       - name: satisfied_program
         data_type: string
+        description: Answer to the satisfied_program survey question.
       - name: search_focus
         data_type: string
+        description: Answer to the search_focus survey question.
       - name: annual_income
         data_type: string
+        description:
+          Salary answer as entered, from the income question or, when that is
+          blank, its alternate version.
       - name: benefits
         data_type: string
+        description:
+          Benefits answer as entered, from the benefits question or, when that
+          is blank, its alternate version.
       - name: annual_income_clean
         data_type: float64
+        description: >-
+          Dollar amount parsed from annual_income — the bottom of a range
+          ($45,000 - $49,999 gives 45000), the stated amount for an "or more"
+          answer, otherwise the first dollar amount. Null when annual_income
+          holds no dollar amount.
       - name: season_label_expected
         data_type: string
+        description:
+          Spring and the year when expected_college_grad_date falls in January
+          to June, otherwise Fall and the year. Null when there is no expected
+          date.
       - name: season_label
         data_type: string
+        description:
+          Spring and the year when actual_end_date falls in January to June,
+          otherwise Fall and the year. Null when the row has no graduated
+          enrollment.
       - name: is_unmatched_response
         data_type: boolean
+        description:
+          True on a response row that matched no alumnus; false on every alumni
+          row.
       - name: rn_respondent
         data_type: int64
+        description:
+          Ranks the alumnus's rows, Bulk Add rows first, then newest
+          response_date_submitted; rn_respondent = 1 is the current response.
+          Rows with no response tie, so the pick among them is arbitrary. Null
+          on a response that matched no alumnus.
       - name: es_graduated
         data_type: string
+        description:
+          PowerSchool abbreviation of the elementary school the alumnus
+          graduated from.
       - name: tier
         data_type: string
+        description:
+          Subject of the alumnus's most recent Salesforce contact note titled
+          Tier and a number.
       - name: advising_provider
         data_type: string
+        description:
+          Organization advising the alumnus, from the Salesforce contact.
       - name: postsec_advisor
         data_type: string
         description:
@@ -272,39 +448,38 @@ models:
       - name: cc1_count
         data_type: int64
         description:
-          Count of the alumnus's first Career Conversation (CC1) Salesforce
-          contact notes, summed across all academic years. Zero when none are
-          recorded.
+          Number of school years (July to June) in which the alumnus has at
+          least one CC1 Career Conversation contact note in Salesforce; not the
+          number of notes. Zero when none.
       - name: cc2_count
         data_type: int64
         description:
-          Count of the alumnus's second Career Conversation (CC2) Salesforce
-          contact notes, summed across all academic years. Zero when none are
-          recorded.
+          Number of school years (July to June) in which the alumnus has at
+          least one CC2 Career Conversation contact note in Salesforce; not the
+          number of notes. Zero when none.
       - name: cc3_count
         data_type: int64
         description:
-          Count of the alumnus's third Career Conversation (CC3) Salesforce
-          contact notes, summed across all academic years. Zero when none are
-          recorded.
+          Number of school years (July to June) in which the alumnus has at
+          least one CC3 Career Conversation contact note in Salesforce; not the
+          number of notes. Zero when none.
       - name: cc4_count
         data_type: int64
         description:
-          Count of the alumnus's fourth Career Conversation (CC4) Salesforce
-          contact notes, summed across all academic years. Zero when none are
-          recorded.
+          Number of school years (July to June) in which the alumnus has at
+          least one CC4 Career Conversation contact note in Salesforce; not the
+          number of notes. Zero when none.
       - name: cc5_count
         data_type: int64
         description:
-          Count of the alumnus's fifth Career Conversation (CC5) Salesforce
-          contact notes, summed across all academic years. Zero when none are
-          recorded.
+          Number of school years (July to June) in which the alumnus has at
+          least one CC5 Career Conversation contact note in Salesforce; not the
+          number of notes. Zero when none.
       - name: cc_total_count
         data_type: int64
         description:
-          Total count of the alumnus's Career Conversation (CC1 through CC5)
-          Salesforce contact notes, summed across all academic years. Zero when
-          none are recorded.
+          Sum of cc1_count through cc5_count, so it counts step-and-school-year
+          pairs with a Career Conversation note, not notes. Zero when none.
       - name: career_conversation_items_complete_count
         data_type: int64
         description:
@@ -329,9 +504,11 @@ models:
         data_type: datetime
         description: >-
           When the alumnus's latest Career Launch assessment took place, from
-          the KIPP Forward Career Launch AppSheet app. The assessment columns
-          that follow come from that same assessment, and all are NULL when the
-          alumnus has never been assessed.
+          the KIPP Forward Career Launch AppSheet app. The readiness columns
+          (levels, points, launch_score, launch_stage, has_all_levels,
+          coaching_focus, next_action) come from that same assessment, repeat on
+          every row for the alumnus, and are NULL when the alumnus has never
+          been assessed.
         config:
           meta:
             contains_pii: true
