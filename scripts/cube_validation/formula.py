@@ -12,8 +12,12 @@ The module is pure: it builds SQL and runs nothing.
 
 from __future__ import annotations
 
+from typing import Any
+
 from . import pipeline, reconcile
-from .config import Comparison, ViewConfig
+from .bq import Warehouse
+from .config import Comparison, RowSpec, ViewConfig
+from .moment import Build
 
 # A cell the check could not recompute closes by coverage under this label,
 # followed by one of the reasons below.
@@ -31,6 +35,13 @@ class NotCompared(Exception):
     """The formula check cannot run; the text is one of this module's reasons."""
 
 
+def _rows(comparison: Comparison) -> RowSpec:
+    """The comparison's `rows`; the check needs a row grain to match on."""
+    if comparison.rows is None:
+        raise pipeline.Refusal(f"comparison {comparison.id!r} has no rows")
+    return comparison.rows
+
+
 def _keyed(keys: list[str]) -> str:
     """One row's key from its grain keys; NULL when the first, the student, is."""
     fields = ", ".join(f"{k} AS k{i}" for i, k in enumerate(keys))
@@ -38,10 +49,11 @@ def _keyed(keys: list[str]) -> str:
 
 
 def key_sql(columns: list[str], dates: list[bool]) -> str:
-    """The key of one row from its grain columns, as the reconcile keys them.
+    """The key of one row from its grain columns, keyed as the reconcile keys
+    them.
 
-    A date column is read as its DATE first, so a TIMESTAMP and the DATE of
-    the same day key alike.
+    Beyond the reconcile's keys, a date column is first cast to DATE here, so
+    a TIMESTAMP and the DATE of the same day key alike.
 
     Args:
         columns: The row's grain columns, the student first.
@@ -51,7 +63,7 @@ def key_sql(columns: list[str], dates: list[bool]) -> str:
         A string expression; NULL when the first column's key is NULL.
     """
     read = [
-        f"DATE({c})" if is_date else c
+        f"CAST({c} AS DATE)" if is_date else c
         for c, is_date in zip(columns, dates, strict=True)
     ]
     return _keyed(reconcile._grain_keys(read))
@@ -77,10 +89,13 @@ def matched_ctes(
 
     Returns:
         CTEs ending in `__matched AS (SELECT __key ...)`, with no final SELECT.
+
+    Raises:
+        pipeline.Refusal: The comparison has no `rows`.
     """
     args, kwargs = pipeline.reconcile_args(cfg, comparison, sides)
     ctes, _ = reconcile._joined(*args, keys=True, moved=True, **kwargs)
-    n = len(args[2].grain)
+    n = len(_rows(comparison).grain)
     # `__k*` are already the reconcile's grain keys.
     joined_key = _keyed([f"__k{i}" for i in range(n)])
     # The saved grain is typed as the reconcile typed it, as `__k*` were, so
@@ -104,3 +119,57 @@ def matched_ctes(
         "  EXCEPT DISTINCT SELECT __key FROM __other\n"
         "  EXCEPT DISTINCT SELECT __key FROM __saved\n)"
     )
+
+
+def dashboard_side_sql(
+    cfg: ViewConfig,
+    comparison: Comparison,
+    cuts: list[dict[str, Any]],
+    build: Build,
+    wh: Warehouse,
+    *,
+    keep: bool,
+) -> str:
+    """The dashboard's cells per cut, from its sheet query as of the build start.
+
+    Args:
+        cfg: The view's config.
+        comparison: A comparison with `rows`.
+        cuts: The cuts to compute, each tagged `__cut` with its label.
+        build: The run's moment; the dashboard is read as of its start.
+        wh: The warehouse, for view history.
+        keep: True reads only the matched rows: the rows the reconcile reads
+            whose key `__matched` holds, so the caller prefixes `matched_ctes`.
+            False reads every row through the same rewrite, for the self-check
+            that it reproduces the run's cells.
+
+    Returns:
+        A `UNION ALL` of one SELECT per cut.
+
+    Raises:
+        pipeline.Refusal: `keep` is True and the comparison has no `rows`, or
+            the SQL cannot be read as of the build start.
+    """
+    if keep:
+        grain = _rows(comparison).grain
+        dates = pipeline.date_cubes(cfg)
+        key = key_sql([p.dashboard for p in grain], [p.cube in dates for p in grain])
+        rows = (
+            # trunk-ignore(bandit/B608): identifiers are validated in config.py
+            f"SELECT * FROM ({pipeline.dashboard_scoped_rows_sql(cfg, comparison)}) "
+            f"WHERE {key} IN (SELECT __key FROM __matched)"
+        )
+    else:
+        rows = (
+            # trunk-ignore(bandit/B608): identifiers are validated in config.py
+            f"SELECT * FROM (SELECT * FROM {pipeline.dashboard_ref(comparison)}) "
+            "WHERE TRUE"
+        )
+    parts = []
+    for cut in cuts:
+        sql = pipeline.sheet_query(cfg, comparison, cut, rows=rows)
+        at = pipeline.checked_as_of(sql, build.start, wh)
+        label = pipeline.lit(pipeline.cut_label(cut))
+        # trunk-ignore(bandit/B608): the label is literal-escaped and the SQL the tool's own
+        parts.append(f"SELECT {label} AS __cut, * FROM (\n{at.sql}\n)")
+    return "\nUNION ALL\n".join(parts)
