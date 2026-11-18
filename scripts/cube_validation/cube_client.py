@@ -221,6 +221,8 @@ class Cube:
         """Return Cube's `/meta` response: every cube and view this viewer sees."""
         meta = self._meta
         if meta is None:
+            # Any 200 reply is kept as returned, only a raised error is not:
+            # a run reads /meta once, so a bad reply costs a re-run, never a stale one.
             meta = self._meta = self._call("GET", "/meta")
 
         return copy.deepcopy(meta)
