@@ -89,7 +89,7 @@ def _skip_keys(skips: Iterable[Skip]) -> list[tuple[str, str]]:
 
 def _say_skips(skips: list[Skip]) -> None:
     for s in skips:
-        print(f"Skipping {s.comparison}: {s.why}.")
+        print(f"Skipping {s.comparison}: {s.why.rstrip('.')}.")
 
 
 def _refuse_all_skipped(

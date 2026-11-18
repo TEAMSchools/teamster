@@ -5704,3 +5704,9 @@ def test_decide_help_names_every_key_an_approved_entry_takes(capsys):
 
     help_text = " ".join(capsys.readouterr().out.split())
     assert '{"id", "call", "reason", "task", "item", "cause"}' in help_text
+
+
+def test_skip_lines_never_end_in_a_doubled_period(capsys):
+    compare._say_skips([pipeline.Skip("a", "why.")])
+
+    assert capsys.readouterr().out == "Skipping a: why.\n"

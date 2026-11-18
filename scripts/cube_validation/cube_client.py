@@ -372,8 +372,10 @@ def refuse_unless_safe(
     """
     if compiled.pre_aggregations:
         raise CubeRefusal(
-            "Cube served this from a pre-aggregation, which is stored data "
-            "rather than the fact the view reads."
+            "Cube served this from a pre-aggregation, stored data rather than "
+            "the fact the view reads; add a Cube-only `scope` on a never-null "
+            "member the rollup does not carry, such as the fact's primary key, "
+            "with `operator: set`"
         )
 
     facts = {f"{ds}.{name}".lower() for ds, name in _FACT_REF.findall(compiled.sql)}

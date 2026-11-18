@@ -501,3 +501,16 @@ def test_member_docs_reads_description_and_ai_context_for_one_view():
     assert docs["grade_level"].ai_context == ""
     assert docs["grade_level"].kind == "dimension"
     assert docs["pct_tardy"].kind == "measure"
+
+
+def test_pre_aggregation_refusal_names_the_scope_remedy():
+    with pytest.raises(CubeRefusal) as exc:
+        refuse_unless_safe(
+            Compiled(_sql(), ["A", "B", "C"], [{"id": "r"}]),
+            view_fact=VF,
+            network_schools=ALL,
+        )
+
+    text = str(exc.value)
+    assert "scope" in text and "operator: set" in text and "primary key" in text
+    assert not text.endswith(".")
