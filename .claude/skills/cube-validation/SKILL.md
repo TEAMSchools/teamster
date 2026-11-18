@@ -101,19 +101,23 @@ refuses when the view's only run read another fact.
 2. `find-field <file> --measure <name>` ranks workbook fields: calculated fields
    and aggregated raw fields (`SUM(<column>)`). Pass
    `--caption "<name the dashboard shows>"` to rank that field first, and
-   `--all` (or `--limit N`) to see past the top 5. A formula that uses a code
-   group prints its codes. Each listed sheet's shape follows: shelves, long or
-   wide export, displayed decimals, and filters. A filter on any field outside
-   the reference columns prints "chosen values hidden": decide with the analyst
-   whether the sheet query needs it, and never look up or copy its values. A
-   filter on a code group (a bin over a code column) is listed the same way; the
-   sheet query applies it, or `shelves: {clear_filters: [...]}` clears it. Show
-   the analyst the candidates. A name-alike field can mean something else, so no
-   comparison is written until the analyst confirms it. With the workbook
-   already on disk, `--twb <path>` reads it instead of downloading and signs in
-   to no Tableau (Cube still compiles the measure); `rebuild-sheet` always
-   exports. `rebuild-sheet <file> --comparison <id> --headers` prints each cut's
-   export headers (and a long export's field names) without querying, to find
+   `--all` (or `--limit N`) to see past the top 5. It downloads every Tableau
+   exposure's workbook; when the analyst knows the dashboard, pass
+   `--exposure <name>` (its exposure name in
+   `src/dbt/kipptaf/models/exposures/tableau.yml`; repeat it for several) to
+   read only those. A formula that uses a code group prints its codes. Each
+   listed sheet's shape follows: shelves, long or wide export, displayed
+   decimals, and filters. A filter on any field outside the reference columns
+   prints "chosen values hidden": decide with the analyst whether the sheet
+   query needs it, and never look up or copy its values. A filter on a code
+   group (a bin over a code column) is listed the same way; the sheet query
+   applies it, or `shelves: {clear_filters: [...]}` clears it. Show the analyst
+   the candidates. A name-alike field can mean something else, so no comparison
+   is written until the analyst confirms it. With the workbook already on disk,
+   `--twb <path>` reads it instead of downloading and signs in to no Tableau
+   (Cube still compiles the measure); `rebuild-sheet` always exports.
+   `rebuild-sheet <file> --comparison <id> --headers` prints each cut's export
+   headers (and a long export's field names) without querying, to find
    `sheet_field` before the first rebuild.
 
    Then `read-sheet <file> --twb <path> --sheet <sheet>` reads the chosen sheet
