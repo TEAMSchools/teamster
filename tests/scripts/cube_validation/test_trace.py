@@ -93,7 +93,7 @@ class DuckWarehouse:
         return self.duck.rows(sql)
 
     def table(self, dataset, name):
-        return TableInfo("TABLE", None)
+        return TableInfo("TABLE")
 
 
 def _manifest(tmp_path, models):
@@ -370,7 +370,7 @@ class FakeWarehouse:
         return self.answer(sql)
 
     def table(self, dataset, name):
-        return TableInfo("TABLE", None)
+        return TableInfo("TABLE")
 
 
 class _DryClient:

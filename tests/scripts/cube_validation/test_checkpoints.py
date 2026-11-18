@@ -51,7 +51,7 @@ def test_an_unfinished_folder_is_found_by_its_latest_checkpoint(tmp_path):
     got = checkpoints.find_unfinished(tmp_path, "v")
 
     assert got == checkpoints.Unfinished(
-        folder=folder, moment=BUILD, last_at=T0 + timedelta(hours=1), done=2
+        folder=folder, moment=BUILD, last_at=T0 + timedelta(hours=1)
     )
 
 

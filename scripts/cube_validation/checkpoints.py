@@ -34,7 +34,6 @@ class Unfinished:
     folder: Path
     moment: Build
     last_at: datetime
-    done: int
     # The fact table the run read (`ViewConfig.fact`), so a run of another
     # (a `--fact-dataset` dev build) never resumes it.
     fact: str = ""
@@ -156,7 +155,6 @@ def unfinished(folder: Path) -> Unfinished | None:
             m["job_id"],
         ),
         last_at=max(datetime.fromisoformat(e["at"]) for e in entries),
-        done=len(entries),
         fact=state.get("fact", ""),
     )
 

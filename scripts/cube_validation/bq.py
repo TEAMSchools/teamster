@@ -89,16 +89,17 @@ class Warehouse:
         return self._tables[key]
 
     def table(self, dataset: str, name: str) -> TableInfo:
-        """Return the kind of `dataset.name` and, for a view, its SQL when first read."""
+        """Return the kind of `dataset.name`; a view's SQL as of a moment is
+        `view_sql_as_of`'s."""
         t = self._get_table(dataset, name)
 
         if t.table_type == "VIEW":
-            return TableInfo("VIEW", t.view_query)
+            return TableInfo("VIEW")
 
         if t.table_type == "EXTERNAL":
-            return TableInfo("EXTERNAL", None)
+            return TableInfo("EXTERNAL")
 
-        return TableInfo("TABLE", None)
+        return TableInfo("TABLE")
 
     def columns(self, dataset: str, name: str) -> set[str]:
         """Return the field names of `dataset.name`'s schema; no query runs."""
@@ -283,9 +284,7 @@ class Warehouse:
         """USD priced or billed since the latest `budget` opened."""
         return self._spent
 
-    def script(
-        self, statements: list[str], timeout_s: float | None = None
-    ) -> list[dict]:
+    def script(self, statements: list[str]) -> list[dict]:
         """Run `statements` as one multi-statement job and return the last one's
         rows.
 
@@ -293,7 +292,7 @@ class Warehouse:
         query. Used to save a comparison's unmatched rows and count them in the
         same job (`reconcile.reconcile_script`).
         """
-        return self.rows(";\n".join(statements), timeout_s)
+        return self.rows(";\n".join(statements))
 
     def saved_labels(self, table_id: str) -> dict[str, str] | None:
         """A saved table's labels, or None when the table is gone (expired or

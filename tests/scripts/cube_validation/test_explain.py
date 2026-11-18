@@ -117,7 +117,7 @@ class Wh:
         return self.duck.rows(sql)
 
     def table(self, dataset, name):
-        return TableInfo("TABLE", None)
+        return TableInfo("TABLE")
 
     @contextlib.contextmanager
     def budget(self, max_usd):

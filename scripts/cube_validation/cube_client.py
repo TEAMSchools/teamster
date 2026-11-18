@@ -218,7 +218,6 @@ class MemberDoc:
     name: str
     title: str
     description: str
-    ai_context: str
     kind: str  # measure, dimension or segment
 
 
@@ -240,7 +239,6 @@ def member_docs(meta: dict, view: str) -> dict[str, MemberDoc]:
                     name=name,
                     title=m.get("title") or "",
                     description=m.get("description") or "",
-                    ai_context=(m.get("meta") or {}).get("ai_context") or "",
                     kind=kind,
                 )
 

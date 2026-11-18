@@ -59,8 +59,8 @@ def _gap(field="Enroll Status", kind="filter"):
     return Gap(kind, field, ("Roster",), ("enrollment",), restricting=False)
 
 
-def _doc(name, description="", ai_context="", title=""):
-    return MemberDoc(name, title, description, ai_context, "dimension")
+def _doc(name, description="", title=""):
+    return MemberDoc(name, title, description, "dimension")
 
 
 def test_unrestricting_filter_suggests_filters_nothing():
@@ -146,10 +146,8 @@ def test_every_verdict_reaches_the_evidence_but_only_same_maps():
     assert "grade_level: not compared: identifier column" in s.evidence
 
 
-def _measure_doc(description="", ai_context=""):
-    return MemberDoc(
-        "student_count", "Student Count", description, ai_context, "measure"
-    )
+def _measure_doc(description=""):
+    return MemberDoc("student_count", "Student Count", description, "measure")
 
 
 def test_an_item_no_filter_evidence_answers_goes_to_investigate():
@@ -167,11 +165,11 @@ def test_member_docs_are_never_evidence_on_a_group_or_cell_set():
     # row; the comparison's model doc is the lead instead.
     docs = {
         "student_count": _measure_doc("Counts students; grade level is as of entry."),
-        "grade_level": _doc("grade_level", ai_context="Use for the grade filter."),
+        "grade_level": _doc("grade_level", "Use for the grade filter."),
     }
     group = Group("enrollment", (("grade_level", "9"),), "cube_only", 40, 38)
     cfg = _cfg(restricting_filters=["Enroll Status"])
-    gap_docs = {"student_count": _measure_doc(ai_context="Excludes enroll status X.")}
+    gap_docs = {"student_count": _measure_doc("Excludes enroll status X.")}
     lead = {"enrollment": "lead: read docs/models/x.md (mentions rpt_x)"}
 
     [s] = suggest(cfg, _run(groups=[group]), docs, leads=lead)

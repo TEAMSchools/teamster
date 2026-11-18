@@ -257,7 +257,7 @@ class _Catalog:
     """Every relation a plain table, so `as_of` only pins it to the moment."""
 
     def table(self, dataset, name):
-        return TableInfo("TABLE", None)
+        return TableInfo("TABLE")
 
 
 def _side_tables(duck, dash_rows, cube_rows):

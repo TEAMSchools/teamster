@@ -59,7 +59,6 @@ _NOT_A_TABLE = re.compile(
 @dataclass(frozen=True)
 class TableInfo:
     kind: Literal["TABLE", "VIEW", "EXTERNAL"]
-    view_sql: str | None
 
 
 @dataclass(frozen=True)

@@ -467,7 +467,7 @@ def test_meta_calls_meta_endpoint():
     assert calls == [("GET", "https://c/cubejs-api/v1/meta")]
 
 
-def test_member_docs_reads_description_and_ai_context_for_one_view():
+def test_member_docs_reads_description_for_one_view():
     meta = {
         "cubes": [
             {
@@ -497,8 +497,7 @@ def test_member_docs_reads_description_and_ai_context_for_one_view():
     docs = member_docs(meta, "v")
 
     assert set(docs) == {"pct_tardy", "grade_level"}
-    assert docs["pct_tardy"].ai_context == "Codes T*."
-    assert docs["grade_level"].ai_context == ""
+    assert docs["pct_tardy"].description == "Share tardy."
     assert docs["grade_level"].kind == "dimension"
     assert docs["pct_tardy"].kind == "measure"
 
