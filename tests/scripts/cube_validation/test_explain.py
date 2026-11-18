@@ -12,6 +12,7 @@ from cube_validation import (
     coverage,
     explain,
     explain_progress,
+    formula,
     pipeline,
     reconcile,
     results,
@@ -919,6 +920,29 @@ def test_cells_confirm_when_every_differing_cell_lies_in_proven_groups():
     ]
     (group_id,) = _group_ids(_run([_placed(3)]))
     assert cells["proof"] == {"kind": "cells", "groups": [group_id], "closed": []}
+
+
+def test_covered_cells_keep_the_formula_check_s_not_compared_lines():
+    run = _run([_placed(3)], **CELLS_RUN)
+    items = _items(run)
+    for item in items:
+        if item["kind"] == "group":
+            item.update(suggestion="cause", cause=[{"side": "dashboard",
+                        "step": "C1", "label": "fails ok1", "n_rows": 3}])  # fmt: skip
+    cells = _by_id(items)["mastery:cells"]
+    # As `formula.label` prepends them, exact locally and masked when posted.
+    local = f"{formula.NOT_COMPARED}: a reason (3 cells closed by coverage only)"
+    posted = f"{formula.NOT_COMPARED}: a reason (<10 cells closed by coverage only)"
+    cells["evidence"] = [local, "an earlier line"]
+    cells["evidence_posted"] = [posted, "an earlier line"]
+
+    explain.link_cells(run, items, "mastery", CFG)
+
+    assert cells["suggestion"] == "cause"
+    assert cells["evidence"][0] == local
+    assert cells["evidence_posted"][0] == posted
+    assert cells["evidence"][1].startswith(explain._COVERED)
+    assert "an earlier line" not in cells["evidence"]
 
 
 def test_cells_stay_open_with_the_count_left_outside_proven_groups():

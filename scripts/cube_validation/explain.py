@@ -1457,8 +1457,9 @@ def link_cells(
                 suggestion="cause",
                 cause=list(merged.values()),
                 proof={"kind": "cells", "groups": list(used), "closed": list(shut)},
-                evidence=[line],
-                evidence_posted=[line],
+                # The formula check's disclosure (`formula.label`) stays.
+                evidence=[*_not_compared(target.get("evidence")), line],
+                evidence_posted=[*_not_compared(target.get("evidence_posted")), line],
             )
         else:
             if target.get("suggestion") == "cause":
@@ -1498,6 +1499,14 @@ def open_cell_lines(left: list[dict]) -> list[str]:
             f"  open: {o['why']}",
         ]
     return lines
+
+
+def _not_compared(lines: list[str] | None) -> list[str]:
+    """The lines `formula.label` prepends: cells the check left to coverage."""
+    # Local: formula imports this module.
+    from .formula import NOT_COMPARED
+
+    return [e for e in lines or [] if e.startswith(NOT_COMPARED)]
 
 
 def _unlinked(lines: list[str] | None) -> list[str]:
