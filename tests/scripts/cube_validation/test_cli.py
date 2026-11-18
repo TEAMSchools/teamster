@@ -3054,6 +3054,26 @@ def test_prove_writes_the_proof(fakes, tmp_path, capsys):
     assert "default-format" not in fakes.tbl.edited.split("<worksheets>")[1]
 
 
+def test_rebuild_sheet_refuses_a_text_measure_before_any_export(
+    fakes, tmp_path, capsys
+):
+    fakes.tbl.twb = fakes.tbl.twb.replace(
+        "<cols>(",
+        "<cols>([federated.0sample].[attr:region:nk] + ",
+    )
+    path = _file(
+        tmp_path,
+        YML.replace(REBUILD_CHECK, "    rebuild_check: null\n").replace(
+            "sheet_field: Rate", "sheet_field: Region"
+        ),
+    )
+    argv = ["rebuild-sheet", str(path), "--comparison", "ada-region"]
+
+    assert cli.main(argv) == 1
+    assert "text measures are not compared" in capsys.readouterr().err
+    assert not getattr(fakes.tbl, "captures", 0)
+
+
 def test_prove_unhides_a_dashboard_only_sheet_on_the_copy(fakes, tmp_path, capsys):
     fakes.tbl.twb = fakes.tbl.twb.replace(
         "<window class='worksheet' name='Rate by Region'>",

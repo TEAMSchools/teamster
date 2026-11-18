@@ -1264,7 +1264,18 @@ def test_export_number_reads_a_percent_of_total_as_a_fraction():
     assert _number("1,234.5%") == pytest.approx(12.345)
 
 
-@pytest.mark.parametrize("text", ["$12.50", "12 pts", "%", "12%%", "nan", "inf"])
+@pytest.mark.parametrize("text", ["$12.50", "12 pts", "12%%"])
 def test_export_number_still_refuses_other_formats(text):
     with pytest.raises(ValueError, match="still carries a number format"):
         _number(text)
+
+
+@pytest.mark.parametrize("text", ["met", "%", "nan", "inf"])
+def test_export_number_calls_a_word_a_text_measure(text):
+    with pytest.raises(ValueError, match="text measures are not compared"):
+        tableau_mod._number(text)
+
+
+def test_export_number_still_calls_a_digit_format_a_number_format():
+    with pytest.raises(ValueError, match="still carries a number format"):
+        tableau_mod._number("12K")

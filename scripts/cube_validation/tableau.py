@@ -67,6 +67,9 @@ _STYLE_RULE = re.compile(
 )
 _ATTR = re.compile(r"""([\w:.-]+)=(?:'([^']*)'|"([^"]*)")""")
 _DEFAULT_FORMAT = re.compile(r"""\s+default-format=(?:'[^']*'|"[^"]*")""")
+TEXT_MEASURE = (
+    "text measures are not compared; compare the numeric measure it is built from"
+)
 _THOUSANDS = re.compile(r"[-+]?\d{1,3}(?:,\d{3})+(?:\.\d+)?")
 _PLAIN_NUMBER = re.compile(r"[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?")
 _INSTANCE_SUFFIXES = {"nk", "ok", "qk"}
@@ -1279,6 +1282,8 @@ def _number(value: Any) -> float | None:
     if _THOUSANDS.fullmatch(body):
         body = body.replace(",", "")
     if not _PLAIN_NUMBER.fullmatch(body):
+        if not any(c.isdigit() for c in body):
+            raise ValueError(f"export value {text!r} is text; {TEXT_MEASURE}")
         raise ValueError(
             f"export value {text!r} still carries a number format; "
             "publish the copy through drop_number_formats"

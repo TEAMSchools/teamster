@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 # trunk-ignore(pyright/reportAttributeAccessIssue): conftest.py registers cube_validation
-from cube_validation import cli, read_sheet
+from cube_validation import cli, read_sheet, tableau
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.builder import Member
@@ -496,3 +496,13 @@ def test_read_sheet_points_a_non_null_filter_at_dashboard_filters_set():
     xml = TWB.replace(_ANCHOR, non_null + _ANCHOR)
     _, before = read_sheet.check("v", xml, "Grid", _comparison(), MEMBERS)
     assert any("non-null values only" in b and "operator: set" in b for b in before)
+
+
+def test_read_sheet_refuses_a_text_sheet_field():
+    facts = read_sheet.Sheet(
+        [], [], [], [], {"Status": {"status"}}, text_values=frozenset({"status"})
+    )
+    assert (
+        read_sheet.text_measure(facts, "Status")
+        == f"sheet_field 'Status': {tableau.TEXT_MEASURE}"
+    )

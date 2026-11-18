@@ -442,6 +442,38 @@ def sheet_shape(twb_xml: str, sheet: str) -> SheetShape:
     )
 
 
+def text_values(twb_xml: str, sheet: str) -> set[str]:
+    """Export names (lowercase) of the sheet's value fields that are text.
+
+    A string field read as `attr` shows a word, not a number. A count of one
+    (`cnt`, `ctd`, `cntd`) is numeric whatever the field's type.
+
+    Raises:
+        ValueError: The workbook has no such worksheet.
+    """
+    # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
+    root = ET.fromstring(twb_xml)
+    ws = worksheet(root, sheet)
+    if ws is None:
+        raise ValueError(f"the workbook has no worksheet {sheet!r}")
+    caption, _ = sheet_fields(ws)
+    datatype: dict[str, str] = {}
+    for col in [*root.iter("column"), *ws.iter("column")]:
+        name = _bare(col.get("name") or "")
+        caption.setdefault(name, col.get("caption") or name)
+        datatype[name] = col.get("datatype") or datatype.get(name, "")
+    refs = [el.text or "" for tag in ("rows", "cols") for el in ws.iter(tag)]
+    refs += [el.get("column") or "" for enc in ws.iter("encodings") for el in enc]
+    return {
+        (caption.get(m["name"]) or m["name"]).lower()
+        for text in refs
+        for m in FIELD_REF.finditer(text)
+        if is_value(m)
+        and m["deriv"] not in ("cnt", "ctd", "cntd")
+        and datatype.get(m["name"]) == "string"
+    }
+
+
 def _tokens(text: str) -> set[str]:
     parts = re.split(r"[^A-Za-z0-9]+", text.lower())
     return {p for p in parts if len(p) >= MIN_TOKEN_LENGTH and p not in SQL_KEYWORDS}

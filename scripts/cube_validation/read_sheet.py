@@ -86,6 +86,8 @@ class Sheet:
     parameters: list[Parameter]
     # Each value field as the sheet shows it, with the names an export gives it.
     values: dict[str, set[str]]
+    # Export names of the value fields that are text, not numbers.
+    text_values: frozenset[str] = frozenset()
 
 
 def _plain(text: str) -> str:
@@ -247,7 +249,14 @@ def read_sheet(twb_xml: str, sheet: str) -> Sheet:
         if name in params
     ]
 
-    return Sheet(list(fields.values()), calcs, filters, parameters, values)
+    return Sheet(
+        list(fields.values()),
+        calcs,
+        filters,
+        parameters,
+        values,
+        frozenset(finder.text_values(twb_xml, sheet)),
+    )
 
 
 def _value_names(
@@ -466,9 +475,24 @@ def _filter_lines(out: _Checklist, comparison: Comparison | None, facts: Sheet) 
         out.add(f"    - {line}", blocking)
 
 
+def text_measure(facts: Sheet, sheet_field: str | None) -> str | None:
+    """The blocking line when the compared measure is text, else None."""
+    if sheet_field:
+        if _export_name(sheet_field) in facts.text_values:
+            return f"sheet_field {sheet_field!r}: {tableau.TEXT_MEASURE}"
+        return None
+    names = [n for names in facts.values.values() for n in names]
+    if names and all(n in facts.text_values for n in names):
+        return f"the sheet's measure: {tableau.TEXT_MEASURE}"
+    return None
+
+
 def _measure_line(out: _Checklist, comparison: Comparison | None, facts: Sheet) -> None:
     shown = ", ".join(facts.values) or "none"
     wanted = comparison.sheet_field if comparison else None
+    if text := text_measure(facts, wanted):
+        out.add(f"  Measure: {text}", text)
+        return
     if not wanted:
         if len(facts.values) > 1:
             out.add(

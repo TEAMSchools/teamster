@@ -19,7 +19,7 @@ from typing import Any
 import tableauserverclient as TSC
 
 from . import find_field as finder
-from . import tableau
+from . import read_sheet, tableau
 from .bq import Warehouse
 from .config import Comparison, ViewConfig, write_rebuild_check
 from .cube_client import Cube
@@ -450,6 +450,10 @@ def _capture(
         shaped = tableau.set_shelves(twb, sheet, shelves).xml if shelves else twb
     except ValueError as exc:
         raise Refusal(f"comparison {comparison.id!r}: {exc}") from exc
+    if why := read_sheet.text_measure(
+        read_sheet.read_sheet(shaped, sheet), comparison.sheet_field
+    ):
+        raise Refusal(f"comparison {comparison.id!r}: {why}")
     columns = _sheet_columns(shaped, sheet)
     measures = [c.get("name") or "" for c in columns if c.get("role") == "measure"]
     if not measures:

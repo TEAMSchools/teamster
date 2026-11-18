@@ -12,6 +12,7 @@ from cube_validation.find_field import (
     rank,
     restricts,
     sheet_shape,
+    text_values,
 )
 
 TARDY_FORMULA = 'SUM(IF [Att Code (group)] = "Tardy" THEN 1 ELSE 0 END)'
@@ -124,3 +125,15 @@ def test_a_non_null_quantitative_filter_restricts():
 def test_sheet_shape_says_non_null_values_only():
     shape = sheet_shape(_one_filter_twb(NON_NULL), "S")
     assert shape.filters == ["score: non-null values only (narrows the sheet)"]
+
+
+def test_text_values_names_a_string_attr_but_not_its_countd():
+    twb = (
+        "<workbook><worksheets><worksheet name='S'><table><view>"
+        "<datasource-dependencies datasource='f'>"
+        "<column datatype='string' name='[status]' role='dimension' />"
+        "</datasource-dependencies></view>"
+        "<rows>([f].[attr:status:nk] + [f].[ctd:status:qk])</rows>"
+        "</table></worksheet></worksheets></workbook>"
+    )
+    assert text_values(twb, "S") == {"status"}
