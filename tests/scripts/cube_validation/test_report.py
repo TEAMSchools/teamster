@@ -1034,6 +1034,39 @@ def _still(run, loaded, waiting=None):
     return report.still_with_analyst(sort.unsettled(run, loaded), waiting or {})
 
 
+def test_still_with_the_analyst_lists_formulas_not_compared_masked():
+    lines = report.still_with_analyst(
+        [], {}, {"v": {"c1": {"no rows both sides hold": 3}}}
+    )
+
+    assert lines == [
+        "`c1` in `v`: formulas not compared: no rows both sides hold; "
+        "<10 cells closed by coverage only"
+    ]
+
+
+def test_still_with_the_analyst_sorts_formulas_not_compared():
+    lines = report.still_with_analyst(
+        [], {}, {"v": {"c2": {"b": 12, "a": 1}, "c1": {"z": 10}}}
+    )
+
+    assert [line.split(":")[0] for line in lines] == ["`c1` in `v`"] + [
+        "`c2` in `v`"
+    ] * 2
+    assert lines[1].endswith("a; <10 cells closed by coverage only")
+    assert lines[2].endswith("b; 12 cells closed by coverage only")
+
+
+def test_formulas_not_compared_reads_the_key_or_nothing():
+    assert sort.formulas_not_compared({}) == {}
+    assert sort.formulas_not_compared({"formulas_not_compared": "x"}) == {}
+    assert (
+        sort.formulas_not_compared({"formulas_not_compared": {"c": {"r": "x"}}}) == {}
+    )
+    loaded = {"formulas_not_compared": {"c": {"r": 2}}}
+    assert sort.formulas_not_compared(loaded) == {"c": {"r": 2}}
+
+
 def test_review_posts_ready_questions_and_lists_unsettled_items():
     run = _run()
     lead = "lead: relaxing main: school_id IN (1, 2) brings back 30 of 40 rows"

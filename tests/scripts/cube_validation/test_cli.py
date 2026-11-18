@@ -1659,6 +1659,34 @@ def test_review_posts_the_masked_lead_of_an_item_with_the_analyst(
     assert "3 of 30" not in body and "region = " not in section
 
 
+def test_ask_owner_lists_formulas_not_compared_and_record_answers_ignores_them(
+    fakes, tmp_path, capsys
+):
+    path = _file(tmp_path)
+    assert cli.main(["compare", str(path)]) == 0
+    for run_json in (tmp_path / "cache" / "v").glob("*/run.json"):
+        _write_sorted(run_json, [_sorted_item("e")])
+        triage = run_json.parent / "triage.json"
+        loaded = json.loads(triage.read_text())
+        loaded["formulas_not_compared"] = {"ada-region": {"no rows both sides hold": 3}}
+        triage.write_text(json.dumps(loaded))
+    capsys.readouterr()
+
+    assert cli.main(["ask-owner", str(path), "--domain", "Registrar"]) == 0
+
+    body = capsys.readouterr().out
+    section = body.split("## Still with the analyst", 1)[1]
+    assert (
+        "- `ada-region` in `v`: formulas not compared: no rows both sides hold; "
+        "<10 cells closed by coverage only\n" in section
+    )
+    assert "3 cells" not in body
+    assert "formulas not compared" not in body.split("## Still with the analyst")[0]
+    owner = _owner_file(tmp_path)
+    comment = _comment(tmp_path, [_answer(["miami-scope"], "fix_cube", "ok")])
+    assert _record([owner], comment) == 0
+
+
 def test_triage_and_review_name_a_skipped_comparison(fakes, tmp_path, capsys):
     path = _two(tmp_path, _no_rebuild_check)
     assert cli.main(["compare", str(path)]) == 0

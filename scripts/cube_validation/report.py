@@ -732,7 +732,9 @@ def _posted_why(why: str) -> str:
 
 
 def still_with_analyst(
-    items: list[Unsettled], waiting: dict[str, dict[str, str]]
+    items: list[Unsettled],
+    waiting: dict[str, dict[str, str]],
+    unchecked: dict[str, dict[str, dict[str, int]]] | None = None,
 ) -> list[str]:
     """The review's lines for what is not settled yet, never asked as questions.
 
@@ -741,6 +743,9 @@ def still_with_analyst(
     and counts, `_posted_lead`) or `no lead yet`.
     Then one line per comparison in `waiting` (per view, id to why: missing,
     stale or skipped, `sort.comparisons_waiting`). No stub value and no SQL.
+    Then, given `unchecked` (per view, comparison and reason, the cells the
+    formula check left to coverage, `sort.formulas_not_compared`), one
+    masked line per comparison and reason, sorted.
     """
     out = []
     for u in items:
@@ -763,6 +768,13 @@ def still_with_analyst(
         f"`{cid}` in `{view}`: {_posted_why(why)}"
         for view, whys in waiting.items()
         for cid, why in whys.items()
+    ]
+    out += [
+        f"`{cid}` in `{view}`: formulas not compared: {_safe_reason(reason, [])}; "
+        f"{mask(cells)} cells closed by coverage only"
+        for view, comparisons in sorted((unchecked or {}).items())
+        for cid, reasons in sorted(comparisons.items())
+        for reason, cells in sorted(reasons.items())
     ]
     return out
 

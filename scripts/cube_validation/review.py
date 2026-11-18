@@ -73,6 +73,7 @@ def ask_owner(
             run.view: sort.comparisons_waiting(cfg, run, proven[run.view])
             for run, cfg in zip(runs, configs, strict=True)
         },
+        {run.view: sort.formulas_not_compared(proven[run.view]) for run in runs},
     )
     # One question per unanswered owner cause, over the groups it decides.
     causes = {

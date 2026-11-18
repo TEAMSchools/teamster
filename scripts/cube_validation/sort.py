@@ -277,6 +277,27 @@ def _moment(run: RunResult) -> dict:
     }
 
 
+def formulas_not_compared(loaded: dict) -> dict[str, dict[str, int]]:
+    """Per comparison, the cells the formula check left to coverage, by reason.
+
+    Read from the triage's `formulas_not_compared`, not from item evidence,
+    which `explain --confirm` can rewrite. A triage without the key, or with a
+    malformed one, gives `{}`.
+    """
+    held = loaded.get("formulas_not_compared")
+    if not isinstance(held, dict):
+        return {}
+    return {
+        cid: dict(reasons)
+        for cid, reasons in held.items()
+        if isinstance(reasons, dict)
+        and reasons
+        and all(
+            isinstance(n, int) and not isinstance(n, bool) for n in reasons.values()
+        )
+    }
+
+
 def comparisons_waiting(
     cfg: ViewConfig, run: RunResult, loaded: dict
 ) -> dict[str, str]:
