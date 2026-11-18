@@ -142,16 +142,26 @@ def _number(value: Any) -> float | None:
     return None if value is None else float(value)
 
 
+class DuplicateCell(Refusal):
+    """2 rows of one side land on one cell. The message names the cell's
+    values, for the terminal; `why` leaves them out, for a skip that
+    `ask-owner` posts."""
+
+    def __init__(self, where: str, key: tuple[str, ...]):
+        self.why = f"{where}: 2 rows share the cell; the dims do not pick out one cell"
+        super().__init__(
+            f"{where}: 2 rows share the cell {', '.join(key) or '(total)'}; "
+            "the dims do not pick out one cell"
+        )
+
+
 def _by_key(rows: Iterable[dict], key, value, where: str) -> dict:
     """Index rows by cell key, refusing 2 rows that land on one cell."""
     out: dict = {}
     for r in rows:
         k = key(r)
         if k in out:
-            raise Refusal(
-                f"{where}: 2 rows share the cell {', '.join(k) or '(total)'}; "
-                "the dims do not pick out one cell"
-            )
+            raise DuplicateCell(where, k)
         out[k] = value(r)
     return out
 
@@ -1011,8 +1021,9 @@ def _compare_all(
     that changed during the build (`changed_dims`). A held checkpoint is kept
     as the latest result only when no later moment's result has replaced it
     since. A comparison whose SQL cannot be built at `build`, whose dry run
-    or a table scan it needs fails, or one of whose queries fails in BigQuery
-    is skipped and the rest run.
+    or a table scan it needs fails, one of whose queries fails in BigQuery,
+    or 2 of whose rows on one side land on one cell (`DuplicateCell`) is
+    skipped and the rest run.
 
     Raises:
         CostCapError: The priced total would pass the run's or the day's cap,
@@ -1156,6 +1167,14 @@ def _compare_all(
             # Its spend stays counted; the rest still run, so a resume does
             # not stop at it again.
             skip = _bigquery_skip(comparison.id, "a query", exc)
+            _say_skips([skip])
+            skips.append(skip)
+            checkpoints.record_spend(folder, process, wh.spent)
+            continue
+        except DuplicateCell as exc:
+            # Its rows cannot be compared cell by cell; the rest still run.
+            print(f"Comparison {comparison.id}: {exc}.")
+            skip = Skip(comparison.id, exc.why)
             _say_skips([skip])
             skips.append(skip)
             checkpoints.record_spend(folder, process, wh.spent)

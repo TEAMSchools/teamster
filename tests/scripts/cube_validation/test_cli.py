@@ -1519,6 +1519,38 @@ def test_a_bigquery_error_while_comparing_skips_it_and_keeps_its_spend(
     assert saved["cost_usd"] == pytest.approx(0.01 * len(fakes.bq.ran), rel=1e-3)
 
 
+def test_two_rows_on_one_cell_skip_only_their_comparison(fakes, tmp_path, capsys):
+    path = _two(tmp_path)
+    answer = fakes.bq.answer
+
+    def doubled(sql):
+        # c2's dashboard cells, after c1's reconcile: one region twice.
+        c1_done = any("-- outer" in q and "__c1_" in q for q in fakes.bq.ran)
+        if c1_done and "AS value" in sql and "rpt_d" in sql:
+            return [
+                {"region": "Newark", "value": 0.9},
+                {"region": "Newark", "value": 0.5},
+            ]
+        return answer(sql)
+
+    fakes.bq.answer = doubled
+
+    assert cli.main(["compare", str(path)]) == 0
+
+    out = capsys.readouterr().out
+    assert "Skipping c2: " in out and "2 rows share the cell" in out
+    # The terminal names the cell; the skip, which ask-owner posts, does not.
+    assert "the cell Newark" in out
+    saved = json.loads(_latest_run(tmp_path).read_text())
+    (skip,) = saved["skipped"]
+    assert skip["comparison"] == "c2"
+    assert "2 rows share the cell" in skip["why"] and "Newark" not in skip["why"]
+    assert _scripts_for(fakes.bq) == ["c1"]
+    results = latest.folder(tmp_path / "cache" / "v", "kipptaf_marts.fct_f")
+    assert latest._file(results, "c1").exists()
+    assert not latest._file(results, "c2").exists()
+
+
 def test_sort_and_review_go_on_past_a_comparison_skipped_for_a_missing_member(
     fakes, tmp_path, capsys
 ):
