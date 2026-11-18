@@ -1035,6 +1035,41 @@ def test_compare_asks_tableau_once_for_a_workbook_that_errs(
     assert asked == ["wb-1"]
 
 
+def test_compare_downloads_once_for_a_workbook_whose_download_errs(
+    fakes, tmp_path, monkeypatch, capsys
+):
+    # Republished, so each comparison's check downloads its workbook.
+    path = _republished(fakes, tmp_path)
+    head, rest = path.read_text().split("  - id: ada-region\n", 1)
+    other = rest.replace("workbook: wb-1", "workbook: wb-2")
+    path.write_text(
+        head + f"  - id: c1\n{rest}" + f"  - id: c2\n{other}" + f"  - id: c3\n{other}"
+    )
+    asked = []
+    download = fakes.tbl.download_twb
+
+    def fetch(luid):
+        asked.append(luid)
+        if luid == "wb-2":
+            raise TSC.ServerResponseError("404", "Resource Not Found", "gone")
+        return download(luid)
+
+    monkeypatch.setattr(fakes.tbl, "download_twb", fetch)
+
+    assert cli.main(["compare", str(path)]) == 0, capsys.readouterr().err
+
+    out = capsys.readouterr().out
+    for cid in ("c2", "c3"):
+        assert (
+            f"Skipping {cid}: the workbook could not be checked: Tableau answered "
+            "404 Resource Not Found"
+        ) in out
+    assert asked.count("wb-2") == 1
+    # The healthy workbook's comparison still compares.
+    assert "Skipping c1" not in out
+    assert _scripts_for(fakes.bq) == ["c1"]
+
+
 def test_unpublished_sheets_leaves_a_comparison_with_no_sheet_alone(fakes, tmp_path):
     path = _file(tmp_path, YML.replace("    sheet: Rate by Region\n", ""))
     (c,) = load_view_config(path).comparisons
