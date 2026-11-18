@@ -20,6 +20,15 @@ if "cube_validation" not in sys.modules:
     _spec.loader.exec_module(_module)
 
 
+@pytest.fixture(autouse=True)
+def _cache_in_tmp(monkeypatch, tmp_path):
+    """Keep every test off the analyst's own cache and spend ledger."""
+    from cube_validation import cli, report
+
+    monkeypatch.setattr(cli, "cache_root", lambda: tmp_path / "cache")
+    monkeypatch.setattr(report, "CACHE_ROOT", tmp_path / "cache")
+
+
 @pytest.fixture
 def duck():
     """Run BigQuery SQL on toy tables in DuckDB, offline.

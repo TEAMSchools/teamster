@@ -385,13 +385,6 @@ class Clock:
         return self.t
 
 
-@pytest.fixture(autouse=True)
-def _cache_in_tmp(monkeypatch, tmp_path):
-    """Keep every test off the analyst's own cache and spend ledger."""
-    monkeypatch.setattr(cli, "cache_root", lambda: tmp_path / "cache")
-    monkeypatch.setattr(report, "CACHE_ROOT", tmp_path / "cache")
-
-
 @pytest.fixture
 def fakes(monkeypatch, tmp_path):
     """Wire fakes into the command line and return them."""

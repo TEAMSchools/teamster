@@ -6,7 +6,7 @@ from types import SimpleNamespace
 import pytest
 
 # trunk-ignore(pyright/reportAttributeAccessIssue): conftest.py registers cube_validation
-from cube_validation import cli, compare, formula, latest, pipeline, report, results
+from cube_validation import compare, formula, latest, pipeline, report, results
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.bq import JOB_ID, CostCapError
@@ -41,14 +41,6 @@ from google.api_core.exceptions import BadRequest
 from google.auth.exceptions import RefreshError
 
 from .test_explain import SIDES, Wh
-
-
-@pytest.fixture(autouse=True)
-def _cache_in_tmp(monkeypatch, tmp_path):
-    """Keep every test off the analyst's own cache and spend ledger."""
-    monkeypatch.setattr(cli, "cache_root", lambda: tmp_path / "cache")
-    monkeypatch.setattr(report, "CACHE_ROOT", tmp_path / "cache")
-
 
 # --- matched keys -------------------------------------------------------------
 

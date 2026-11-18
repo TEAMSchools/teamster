@@ -23,12 +23,6 @@ TWB = (FIXTURES / "preflight.twb").read_text()
 DDI_TWB = Path("/workspaces/teamster/.claude/scratch/ddi-twb/ddi_suite.twb")
 
 
-@pytest.fixture(autouse=True)
-def _cache_in_tmp(monkeypatch, tmp_path):
-    """Keep every test off the analyst's own cache."""
-    monkeypatch.setattr(cli, "cache_root", lambda: tmp_path / "cache")
-
-
 def _member(name, kind="dimension"):
     return Member(f"v.{name}", "v", kind, name, "", "", "", "", view=True)
 
