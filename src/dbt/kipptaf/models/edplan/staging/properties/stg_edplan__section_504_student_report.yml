@@ -1,0 +1,15 @@
+models:
+  - name: stg_edplan__section_504_student_report
+    description:
+      EdPlan's 504 student report for every region that loads it, one row per
+      student per Section 504 event. Newark is the only region today. Column
+      descriptions live on the edplan package model of the same name.
+    config:
+      meta:
+        contains_pii: true
+    columns:
+      - name: _dbt_source_project
+        description: >-
+          Source-project discriminator (e.g. `kippnewark`) extracted from
+          `_dbt_source_relation`. Materialized at the union point so downstream
+          consumers can join on a stable value.
