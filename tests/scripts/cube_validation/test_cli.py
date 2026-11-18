@@ -901,6 +901,42 @@ def test_a_command_reads_past_an_unreadable_run_json(fakes, tmp_path):
     assert found == good and data["view"] == "v"
 
 
+def test_last_run_reads_past_a_run_json_that_is_no_object(fakes, tmp_path):
+    path = _file(tmp_path)
+    assert cli.main(["compare", str(path)]) == 0
+    good = _latest_run(tmp_path)
+    # A newer run.json that parses, but not to an object.
+    odd = good.parent.parent / "2026-10-23T000000Z" / "run.json"
+    odd.parent.mkdir()
+    odd.write_text("[1]")
+    os.utime(odd, (good.stat().st_mtime + 60,) * 2)
+
+    data = results.last_run(load_view_config(path), tmp_path / "cache")
+
+    assert data == json.loads(good.read_text())
+
+
+def test_run_jsons_written_at_once_resolve_to_the_later_folder(fakes, tmp_path):
+    path = _file(tmp_path)
+    assert cli.main(["compare", str(path)]) == 0
+    good = _latest_run(tmp_path)
+    data = json.loads(good.read_text())
+    at = good.stat().st_mtime
+    # Folders named before and after the run's, all written in the same instant.
+    for name in ("0000-01-01T000000Z", "later-b", "9999-12-31T000000Z", "later-z"):
+        copy_ = good.parent.parent / name / "run.json"
+        copy_.parent.mkdir()
+        copy_.write_text(json.dumps({**data, "folder": name}))
+        os.utime(copy_, (at, at))
+    os.utime(good, (at, at))
+    cfg = load_view_config(path)
+
+    saved, found = results._saved_run(cfg, tmp_path / "cache")
+
+    assert found.parent.name == "later-z" and saved["folder"] == "later-z"
+    assert results.last_run(cfg, tmp_path / "cache")["folder"] == "later-z"
+
+
 def test_a_run_json_with_no_fact_is_older_than_any_fact_s_run(fakes, tmp_path):
     path = _file(tmp_path)
     assert cli.main(["compare", str(path)]) == 0
