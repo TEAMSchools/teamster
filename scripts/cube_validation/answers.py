@@ -92,19 +92,9 @@ class HandCheck:
     filters: dict[str, Any] = field(default_factory=dict)
     # A cause's example that also holds other causes' rows.
     mixed: bool = False
-    # The fewest students the cause surely has in the cell (`cell_causes`).
+    # The cause's students in the cell, as its explanations counted them
+    # (`cell_causes`).
     cause_students: int | None = None
-
-
-# The side whose rows a group's bucket counts: its index in a `Group.cut_rows`
-# entry (label, Cube rows, dashboard rows). On that side every row of the group
-# is shown, so its rows there under every cut are `n_rows`.
-_ROWS_SIDE = {
-    "cube_only": 1,
-    "dashboard_filtered": 1,
-    "value_differs": 1,
-    "dashboard_only": 2,
-}
 
 
 def cell_causes(
@@ -112,55 +102,27 @@ def cell_causes(
     cfg: ViewConfig,
     comparison: str,
     items: list[dict],
-    recorded: list[dict] | None = None,
+    recorded: list[dict],
 ) -> list[tuple[dict, dict[str, int]]]:
     """Each differing cell of a comparison, with the causes its rows carry and
     how many students each has in it.
 
     `recorded` is the triage's `cause_students` for the comparison: the
     explanations' own distinct-student counts per cause, cell and cut, used as
-    they are. A triage saved before them gives None, and the count is then
-    the floor below.
+    they are. A cause in a cell with no count recorded for it counts 0.
 
     A cell's rows lie in the open groups with a row in it (`coverage.placed`,
     as `sort` links cells; none when the cell cannot be placed); each group
     carries its triage item's causes (`sort.cause_key`), and a group with
     none carries `""`.
 
-    A cause's students in a cell are not recorded: a group's `n_students`
-    covers all its causes and every cut. So the count is a floor: the most
-    students of one group that carries only that cause, splits by every one
-    of the cell's dims with the cell's values, and has all its rows in the
-    cell's cut (`Group.cut_rows`: its rows on its side under the cell's cut
-    are all its rows, `n_rows`, and more than 0). A cause with no such group
-    counts 0. Never a sum, which could count a student twice.
-
     Returns:
         `[(cell, {cause: students})]` in `run.diff_cells` order.
     """
-    from . import coverage, pipeline, reconcile
+    from . import coverage, pipeline
     from . import sort as sort_mod
 
     spec = next((c for c in cfg.comparisons if c.id == comparison), None)
-
-    def whole_in(g, cell) -> bool:
-        """Whether every row of `g` lies in `cell`: its dims and its cut."""
-        mine = {
-            k: (None if k in g.nulls else v)
-            for k, v in g.dims
-            if not k.startswith(reconcile.DASH_PREFIX) and k != "dashboard_filter"
-        }
-        for column, value in cell["dims"]:
-            if column not in mine or pipeline.value_key(
-                mine[column]
-            ) != pipeline.value_key(value):
-                return False
-        side = _ROWS_SIDE.get(g.bucket)
-        if side is None:
-            return False
-        held = [c[side] for c in g.cut_rows if c[0] == cell.get("cut", "{}")]
-        return len(held) == 1 and 0 < held[0] == g.n_rows
-
     by_key = {
         item.get("key"): frozenset(
             sort_mod.cause_key(c.get("side", ""), c.get("label") or "")
@@ -176,7 +138,7 @@ def cell_causes(
         if g.comparison_id == comparison
     ]
     counted: dict[tuple, dict[str, int]] = {}
-    for e in recorded or []:
+    for e in recorded:
         key = (e["cut"], tuple(pipeline.value_key(v) for _, v in e["dims"]))
         counted.setdefault(key, {})[e["cause"]] = int(e["n"])
     out = []
@@ -184,27 +146,22 @@ def cell_causes(
         if cell["comparison"] != comparison:
             continue
         held: dict[str, int] = {}
-        if recorded is not None:
-            dims = {k: v for k, v in cell["dims"]}
-            names = [p.cube for p in pipeline.group_dims(spec)] if spec else []
-            key = (
-                cell.get("cut", "{}"),
-                tuple(pipeline.value_key(dims.get(n)) for n in names),
-            )
-            # Only a cell whose dims are the counted columns has a count.
-            if set(dims) == set(names):
-                held = dict(counted.get(key, {}))
+        dims = {k: v for k, v in cell["dims"]}
+        names = [p.cube for p in pipeline.group_dims(spec)] if spec else []
+        key = (
+            cell.get("cut", "{}"),
+            tuple(pipeline.value_key(dims.get(n)) for n in names),
+        )
+        # Only a cell whose dims are the counted columns has a count.
+        if set(dims) == set(names):
+            held = dict(counted.get(key, {}))
         pool = [g for _, g in groups]
         inside = (coverage.placed(cell, pool, spec) if spec else None) or []
         for key, g in groups:
             if not any(g is p for p in inside):
                 continue
-            causes = by_key.get(key, frozenset({""}))
-            for cause in causes:
+            for cause in by_key.get(key, frozenset({""})):
                 held.setdefault(cause, 0)
-            if recorded is None and len(causes) == 1 and whole_in(g, cell):
-                (cause,) = causes
-                held[cause] = max(held[cause], g.n_students)
         out.append((cell, held))
     return out
 
@@ -681,11 +638,9 @@ def questions_json(
         """`cell_causes` of a comparison, worked out once per review."""
         if (view, cid) not in held:
             loaded = triage.get(view, {})
-            recorded = (
-                loaded["cause_students"].get(cid, [])
-                if "cause_students" in loaded
-                else None
-            )
+            # `sort.checked_sort` refuses a triage written before `sort`
+            # recorded these, so a missing entry is a comparison with none.
+            recorded = loaded.get("cause_students", {}).get(cid, [])
             held[view, cid] = cell_causes(
                 by_run[view], by_cfg[view], cid, loaded.get("items", []), recorded
             )

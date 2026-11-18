@@ -183,34 +183,6 @@ def _floor_group(bucket, in_cut, n_rows=30, cut=CUT):
                  cut_rows=(rows, ('{"Grade": "8"}', 0, 0)))  # fmt: skip
 
 
-def test_a_cause_s_students_in_a_cell_are_only_what_its_groups_prove():
-    def floor(groups, causes):
-        run = _floor_run(groups)
-        items = [
-            {"key": it.key, "kind": "group",
-             "cause": [{"side": "cube", "label": c} for c in causes]}
-            for it in sort_mod.open_items(run)
-        ]  # fmt: skip
-        ((_, held),) = cell_causes(run, _cfg(rows=FLOOR_ROWS), "enrollment", items)
-        return held
-
-    # All 30 rows in the cell's cut, 1 cause: its 25 students count.
-    assert floor([_floor_group("cube_only", 30)], ["C1"]) == {"cube: C1": 25}
-    # On the dashboard side, a dashboard-only group's rows count.
-    assert floor([_floor_group("dashboard_only", 30)], ["C1"]) == {"cube: C1": 25}
-    # Rows in another cut too: which students are in this one is unknown.
-    assert floor([_floor_group("cube_only", 12)], ["C1"]) == {"cube: C1": 0}
-    # No rows under the cell's cut, or none recorded for it: no row in the
-    # cell, so the cause is not in it at all.
-    assert floor([_floor_group("cube_only", 0, n_rows=0)], ["C1"]) == {}
-    assert floor([_floor_group("cube_only", 30, cut="{}")], ["C1"]) == {}
-    # 2 causes share the group's students: neither count is known.
-    assert floor([_floor_group("cube_only", 30)], ["C1", "C2"]) == {
-        "cube: C1": 0,
-        "cube: C2": 0,
-    }
-
-
 def test_example_cell_skips_cells_under_10_students():
     run = _run([_cell("small", 10, 99, n=9), _cell("none", 10, 98, n=None)])
     assert example_cell(run, "enrollment") is None
