@@ -616,7 +616,7 @@ def _early_skips(
             )
     remaining = left()
     workbooks = WorkbookCache(tbl)
-    stale = workbook_check(cfg, remaining, tbl=tbl, cube=cube, workbooks=workbooks)
+    stale = workbook_check(remaining, tbl=tbl, workbooks=workbooks)
     for c in remaining:
         if lines := [
             s.removeprefix(f"{c.id}: ") for s in stale if s.startswith(f"{c.id}: ")

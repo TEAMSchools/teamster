@@ -28,7 +28,6 @@ from .config import (
     find_comparison,
     write_rebuild_check,
 )
-from .cube_client import Cube
 from .moment import WINDOW
 from .pipeline import (
     Refusal,
@@ -835,30 +834,26 @@ class WorkbookCache:
 
 
 def workbook_check(
-    cfg: ViewConfig,
     comparisons: list[Comparison],
     *,
     tbl: tableau.Tableau,
-    cube: Cube,
     workbooks: WorkbookCache | None = None,
 ) -> list[str]:
-    """List the comparisons whose sheet or Cube members changed since their
-    rebuild check.
+    """List the comparisons whose sheet changed since their rebuild check.
 
     A workbook published after the check is downloaded once and its sheet
     compared by what the check covers: `fingerprint` (the sheet's formulas
     and filters) and `source_fingerprint` (its datasources' connection and
     filters). A republish that changed neither is printed as such and not
     listed. A rebuild check without `source_fingerprint` cannot rule out a datasource
-    change, so it is stale after any republish. A matched comparison that maps a
-    member Cube's `/meta` no longer lists is stale too, and one whose workbook
-    Tableau errs on reads `TABLEAU_ANSWERED` and its error.
+    change, so it is stale after any republish. One whose workbook Tableau
+    errs on reads `TABLEAU_ANSWERED` and its error.
 
     Args:
-        cfg: The view's config.
-        comparisons: The comparisons to check.
+        comparisons: The comparisons to check. `compare` skips one with no
+            rebuild check, or one mapping a member Cube's `/meta` lacks,
+            before it calls this; one with no rebuild check is passed over.
         tbl: Tableau, for each workbook's publish time and file.
-        cube: Cube, for its `/meta` members.
         workbooks: The run's shared workbook cache; a new one on `tbl` when
             omitted.
 
@@ -867,18 +862,10 @@ def workbook_check(
         ending in what to do.
     """
     workbooks = WorkbookCache(tbl) if workbooks is None else workbooks
-    proven = [c for c in comparisons if c.rebuild_check is not None]
-    stale = [
-        f"{line}, which Cube's model no longer has; fix the mapping and re-run "
-        "`rebuild-sheet`"
-        for line in missing_members(cfg, proven, cube.meta())
-    ]
+    stale: list[str] = []
     for comparison in comparisons:
-        if not comparison.workbook:
-            continue
         proof = comparison.rebuild_check
-        if proof is None:
-            stale.append(f"{comparison.id}: no rebuild check")
+        if not comparison.workbook or proof is None:
             continue
         try:
             updated = workbooks.updated(comparison.workbook)

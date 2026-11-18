@@ -3704,7 +3704,7 @@ def test_prove_does_not_write_a_failed_proof(fakes, tmp_path, capsys):
 def _workbook_check(fakes, path, ids=None):
     cfg = load_view_config(path)
     chosen = [c for c in cfg.comparisons if ids is None or c.id in ids]
-    return rebuild.workbook_check(cfg, chosen, tbl=fakes.tbl, cube=fakes.cube)
+    return rebuild.workbook_check(chosen, tbl=fakes.tbl)
 
 
 def test_prove_takes_no_check_flag(fakes, tmp_path, capsys):
@@ -3726,15 +3726,6 @@ def test_workbook_check_lists_stale_proofs(fakes, tmp_path):
 def test_workbook_check_is_empty_when_current(fakes, tmp_path, capsys):
     assert _workbook_check(fakes, _file(tmp_path)) == []
     assert capsys.readouterr().out == ""
-
-
-def test_workbook_check_lists_a_member_cube_dropped(fakes, tmp_path):
-    fakes.cube.dropped = {"v.regions_region_name"}
-
-    (line,) = _workbook_check(fakes, _file(tmp_path))
-
-    assert "ada-region" in line and "v.regions_region_name" in line
-    assert "re-run `rebuild-sheet`" in line
 
 
 def test_workbook_check_lists_only_the_comparisons_asked(fakes, tmp_path):
