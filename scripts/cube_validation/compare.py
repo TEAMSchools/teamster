@@ -28,7 +28,6 @@ from .moment import (
     pick_moment,
 )
 from .pipeline import (
-    SQL_BROKEN,
     SQL_ERRORS,
     Cell,
     Expand,
@@ -65,7 +64,7 @@ from .rebuild import (
     unpublished_sheets,
     workbook_check,
 )
-from .report import RunResult
+from .report import SQL_BROKEN, RunResult
 from .results import (
     ENTRY_CHANGED,
     NEVER_COMPARED,

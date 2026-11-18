@@ -727,12 +727,6 @@ def rebuild_sheet(
             "cuts": [cut_label(cut) for cut in exportable],
             # `compare` lists these rows as totals no rebuild check covered.
             "totals_skipped": totals_skipped,
-            # The parameter values the copy showed; the fingerprint covers them.
-            **(
-                {"parameters": dict(comparison.parameters)}
-                if comparison.parameters
-                else {}
-            ),
             # The reshape the copy carried; `compare` names it, since the check
             # covers the reshaped grain, not the sheet's own.
             **({"shelves": comparison.shelves} if comparison.shelves else {}),

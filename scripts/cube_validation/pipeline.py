@@ -184,10 +184,11 @@ def dashboard_predicate(
     return " AND ".join(parts) or "TRUE"
 
 
-def _any_cut_predicate(comparison: Comparison, with_filters: bool = True) -> str:
-    """OR of every cut, so a row-level reconcile counts each row once."""
+def _any_cut_predicate(comparison: Comparison) -> str:
+    """OR of every cut, so a row-level reconcile counts each row once. The
+    comparison's `dashboard_filters` are left out."""
     preds = [
-        dashboard_predicate(comparison, cut, with_filters)
+        dashboard_predicate(comparison, cut, with_filters=False)
         for cut in comparison_cuts(comparison)
     ]
     if "TRUE" in preds:
@@ -251,14 +252,11 @@ def _any_cut_cube_filters(view: str, comparison: Comparison) -> list[dict]:
     return [{"or": [{"and": f} for f in per_cut]}]
 
 
-def cell_query(
-    view: str, comparison: Comparison, cut: dict[str, Any], with_dims: bool = True
-) -> dict:
+def cell_query(view: str, comparison: Comparison, cut: dict[str, Any]) -> dict:
     """Return the Cube query for a comparison's cells under one cut."""
-    dims = comparison.dims if with_dims else []
     return {
         "measures": [member_name(view, comparison.measure)],
-        "dimensions": [member_name(view, d.cube) for d in dims],
+        "dimensions": [member_name(view, d.cube) for d in comparison.dims],
         "filters": _cut_cube_filters(view, comparison, cut)
         + scope_cube_filters(view, comparison),
     }
@@ -408,7 +406,7 @@ def _rows_sql(
         A SELECT over the dashboard view.
     """
     spec = comparison.rows
-    where = _any_cut_predicate(comparison, with_filters=False)
+    where = _any_cut_predicate(comparison)
     if scope := spec.dashboard_scope if spec else []:
         parts = [where, *map(dashboard_filter_sql, scope)]
         where = " AND ".join(f"({p})" for p in parts)
@@ -777,9 +775,6 @@ def checkpoint_fingerprint(comparison: Comparison, fingerprints: dict[str, str])
     ).hexdigest()
 
 
-SQL_BROKEN = report.SQL_BROKEN
-
-
 def reconcile_args(
     cfg: ViewConfig, comparison: Comparison, sides: RowSides
 ) -> tuple[tuple, dict]:
@@ -924,8 +919,8 @@ def sql_broken(exc: Exception) -> str:
     """Why a comparison's SQL cannot be built: a BigQuery error as fixed words
     with its job and reason code, never its message, which can quote values."""
     if isinstance(exc, GoogleAPIError):
-        return f"{SQL_BROKEN}: a lookup failed in BigQuery ({job_failure(exc)})"
-    return f"{SQL_BROKEN}: {exc}"
+        return f"{report.SQL_BROKEN}: a lookup failed in BigQuery ({job_failure(exc)})"
+    return f"{report.SQL_BROKEN}: {exc}"
 
 
 def group_from_json(data: dict) -> Group:
