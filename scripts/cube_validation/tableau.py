@@ -1200,6 +1200,8 @@ class RebuildResult:
         failures: One line per cell that differs or is on one side only.
         matched_at: When the comparison ran.
         browser: Cuts that set a parameter, to check in the browser.
+        blanks_skipped: Keys blank in the export and absent from the sheet
+            query, or NULL in the sheet query and absent from the export.
     """
 
     fingerprint: str
@@ -1207,6 +1209,7 @@ class RebuildResult:
     failures: list[str]
     matched_at: datetime
     browser: list[dict[str, Any]] = field(default_factory=list)
+    blanks_skipped: int = 0
 
     @property
     def matched(self) -> bool:
@@ -1325,7 +1328,10 @@ def match_export(
     comparison's dashboard dims, plus any key the caller adds to tell cuts
     apart (such as `cut`). Numeric keys match across types (2026, 2026.0 and
     '2026'). A combination on one side only fails, and so does each matched
-    pair that `cell_verdict` does not pass at `comparison.decimals`.
+    pair that `cell_verdict` does not pass at `comparison.decimals`. A key
+    that is blank in the export and missing from the sheet query, or NULL in
+    the sheet query and missing from the export, is skipped and counted in
+    `blanks_skipped`, not in `cells`: a blank cell has no value to compare.
 
     Args:
         comparison: The comparison; needs `sheet` and `decimals`.
@@ -1361,11 +1367,18 @@ def match_export(
     query, query_labels = _index(query_values, dims, "sheet query", failures)
 
     cells = 0
+    blanks = 0
     for key in sorted(dash.keys() | query.keys()):
         if key not in query:
+            if dash[key] is None:
+                blanks += 1
+                continue
             failures.append(f"{dash_labels[key]}: in the export only")
             continue
         if key not in dash:
+            if query[key] is None:
+                blanks += 1
+                continue
             failures.append(f"{query_labels[key]}: in the sheet query only")
             continue
         cells += 1
@@ -1385,6 +1398,7 @@ def match_export(
         failures=failures,
         matched_at=now or datetime.now(timezone.utc),
         browser=split_cuts(comparison.cuts, twb_xml)[1],
+        blanks_skipped=blanks,
     )
 
 

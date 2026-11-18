@@ -8,6 +8,7 @@ from types import SimpleNamespace
 import pytest
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+from cube_validation import rebuild
 from cube_validation.config import ColumnPair, Comparison
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
@@ -1279,3 +1280,119 @@ def test_export_number_calls_a_word_a_text_measure(text):
 def test_export_number_still_calls_a_digit_format_a_number_format():
     with pytest.raises(ValueError, match="still carries a number format"):
         tableau_mod._number("12K")
+
+
+# --- export matching: blanks, star totals, dual-axis repeats ------------------
+
+
+def test_match_export_skips_export_only_blanks_and_query_only_nulls():
+    exports = [{"region": "A", "value": "0.5"}, {"region": "B", "value": ""}]
+    query = [{"region": "A", "value": 0.5}, {"region": "C", "value": None}]
+
+    proof = match_export(_comparison(), exports, query, twb_xml=_twb(), now=NOW)
+
+    assert proof.matched and proof.cells == 1 and proof.blanks_skipped == 2
+
+
+def test_match_export_still_fails_a_blank_against_a_value():
+    exports = [{"region": "A", "value": ""}]
+    query = [{"region": "A", "value": 0.5}]
+
+    proof = match_export(_comparison(), exports, query, twb_xml=_twb(), now=NOW)
+
+    assert not proof.matched
+    assert proof.cells == 1 and len(proof.failures) == 1
+
+
+def _rebuild_comparison() -> Comparison:
+    return Comparison(
+        id="c", measure="m", dims=[ColumnPair(dashboard="school", cube="school")]
+    )
+
+
+def test_export_cells_skips_a_star_total_row_on_a_shelf_dim():
+
+    cells, totals, _ = rebuild._export_cells(
+        _rebuild_comparison(),
+        [{"School": "*", "v": "9"}, {"School": "A", "v": "1"}],
+        {"School": "school"},
+        "v",
+        [],
+        [{"school": "A"}],
+        shelf_dims={"school"},
+        ignored=set(),
+    )
+
+    assert totals == 1 and [x["school"] for x in cells] == ["A"]
+
+
+def test_export_cells_keeps_a_star_row_on_a_detail_dim():
+
+    cells, totals, _ = rebuild._export_cells(
+        _rebuild_comparison(),
+        [{"School": "*", "v": "9"}],
+        {"School": "school"},
+        "v",
+        [],
+        [{"school": "A"}],
+        shelf_dims=set(),
+        ignored=set(),
+    )
+
+    assert totals == 0 and [x["school"] for x in cells] == ["*"]
+
+
+def test_export_cells_keeps_a_star_row_when_the_sheet_query_has_a_real_star():
+
+    cells, totals, _ = rebuild._export_cells(
+        _rebuild_comparison(),
+        [{"School": "*", "v": "9"}],
+        {"School": "school"},
+        "v",
+        [],
+        [{"school": "*"}],
+        shelf_dims={"school"},
+        ignored=set(),
+    )
+
+    assert totals == 0 and len(cells) == 1
+
+
+def test_export_cells_drops_a_dual_axis_repeat_that_differs_only_in_a_table_calc():
+
+    rows = [
+        {"School": "A", "v": "1", "Rank": "1"},
+        {"School": "A", "v": "1", "Rank": "2"},
+    ]
+    cells, _, _ = rebuild._export_cells(
+        _rebuild_comparison(),
+        rows,
+        {"School": "school"},
+        "v",
+        [],
+        [],
+        shelf_dims={"school"},
+        ignored={"Rank"},
+    )
+
+    assert len(cells) == 1
+
+
+def test_export_cells_keeps_two_marks_that_differ_in_another_column():
+
+    rows = [
+        {"School": "A", "v": "1", "Teacher": "X"},
+        {"School": "A", "v": "1", "Teacher": "Y"},
+    ]
+    cells, _, _ = rebuild._export_cells(
+        _rebuild_comparison(),
+        rows,
+        {"School": "school"},
+        "v",
+        [],
+        [],
+        shelf_dims={"school"},
+        ignored={"Rank"},
+    )
+
+    assert len(cells) == 2

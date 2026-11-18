@@ -3129,7 +3129,7 @@ def test_prove_reads_aliases_back_and_skips_total_rows(fakes, tmp_path, capsys):
     assert proof.cells == 2
     # 1 total row in each of the 2 cuts.
     assert proof.totals_skipped == 2
-    assert "skipped 1 total rows (All)" in capsys.readouterr().out
+    assert "skipped 1 total rows (All, *)" in capsys.readouterr().out
 
 
 def test_export_cells_reads_an_unquoted_numeric_alias_key_back():
@@ -3155,7 +3155,14 @@ def test_export_cells_reads_an_unquoted_numeric_alias_key_back():
     probe = [{"grade_level": 0, "value": 0.94}, {"grade_level": 1, "value": 0.95}]
 
     cells, totals, _ = rebuild._export_cells(
-        comparison, rows, {"Grade Level": "grade_level"}, "Rate", columns, probe
+        comparison,
+        rows,
+        {"Grade Level": "grade_level"},
+        "Rate",
+        columns,
+        probe,
+        shelf_dims=set(),
+        ignored=set(),
     )
 
     assert cells == [
@@ -3180,7 +3187,14 @@ def test_export_cells_count_identical_pane_rows_once():
     ]
 
     cells, _, _ = rebuild._export_cells(
-        comparison, rows, {"Region": "region"}, "Distance", [], []
+        comparison,
+        rows,
+        {"Region": "region"},
+        "Distance",
+        [],
+        [],
+        shelf_dims=set(),
+        ignored=set(),
     )
 
     assert cells == [
@@ -3205,7 +3219,14 @@ def test_export_cells_sum_every_split_row_even_identical_ones():
     ]
 
     cells, _, summed = rebuild._export_cells(
-        comparison, rows, {"Region": "region"}, "Count", [], []
+        comparison,
+        rows,
+        {"Region": "region"},
+        "Count",
+        [],
+        [],
+        shelf_dims=set(),
+        ignored=set(),
     )
 
     assert cells == [{"region": "Camden", "value": "10"}]

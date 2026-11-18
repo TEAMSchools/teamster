@@ -171,6 +171,8 @@ def _cells(split_rows):
         "# Tardy",
         [],
         [],
+        shelf_dims=set(),
+        ignored=set(),
     )
 
 
@@ -260,6 +262,8 @@ def test_a_column_beside_measure_names_sums_split_rows_once():
         "Membershipvalue",
         [],
         [],
+        shelf_dims=set(),
+        ignored=set(),
     )
     assert cells == [{"region": "Newark", "value": "9"}] and summed == 1
 

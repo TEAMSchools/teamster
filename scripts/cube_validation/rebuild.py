@@ -340,7 +340,7 @@ def sheet_gaps(twb_xml: str, comparison: Comparison) -> SheetGaps:
     )
 
 
-TOTAL_LABEL = "All"
+TOTAL_LABELS = ("All", "*")
 
 
 def _alias_keys(columns: list[ET.Element], dim: str) -> dict[str, str]:
@@ -360,6 +360,63 @@ def _alias_keys(columns: list[ET.Element], dim: str) -> dict[str, str]:
     return out
 
 
+def _shelf_dims(
+    comparison: Comparison, shaped: str, sheet: str, columns: list[ET.Element]
+) -> set[str]:
+    """The comparison's dims that sit on the sheet's rows or columns shelf.
+
+    A dim matches by its dashboard name, a column caption or a `filters`
+    caption. A dim off the shelves is a detail field, whose `*` is a real
+    value.
+    """
+    shape = finder.sheet_shape(shaped, sheet)
+    shelved = {n.lower() for n in [*shape.rows, *shape.cols]}
+    out: set[str] = set()
+    for dim in comparison.dims:
+        names = {dim.dashboard}
+        names |= {
+            caption
+            for caption, pair in comparison.filters.items()
+            if pair.dashboard == dim.dashboard
+        }
+        names |= {
+            col.get("caption") or ""
+            for col in columns
+            if _bare(col.get("name") or "") == dim.dashboard
+        }
+        if any(n and n.lower() in shelved for n in names):
+            out.add(dim.dashboard)
+    return out
+
+
+def _ignored_headers(
+    headers: list[str],
+    mapping: dict[str, str],
+    value: str,
+    columns: list[ET.Element],
+    calcs: list[tableau.TableCalc],
+) -> set[str]:
+    """Export headers that name a measure or table calc other than the
+    compared value.
+
+    A dual axis repeats a row once per pane, and the panes differ only in such
+    a column.
+    """
+    names = {
+        read_sheet._export_name(n)
+        for col in columns
+        if col.get("role") == "measure"
+        for n in (col.get("caption") or "", _bare(col.get("name") or ""))
+        if n
+    }
+    names |= {read_sheet._export_name(c.caption) for c in calcs}
+    return {
+        h
+        for h in headers
+        if h not in mapping and h != value and read_sheet._export_name(h) in names
+    }
+
+
 def _export_cells(
     comparison: Comparison,
     rows: list[dict[str, str]],
@@ -367,36 +424,41 @@ def _export_cells(
     value: str,
     columns: list[ET.Element],
     probe_rows: list[dict],
+    *,
+    shelf_dims: set[str],
+    ignored: set[str],
 ) -> tuple[list[dict], int, int]:
     """Turn export rows into sheet-query-shaped cells; count total and summed rows.
 
     An export shows a dim's alias (grade 0 as `K`), so each value goes back
     through the sheet's aliases. A sheet with totals exports them as rows whose
-    dim reads `All`; those are dropped, unless the sheet query has a real `All`
-    member for that dim. With `split_rows: sum`, rows that share every mapped
-    dim (split by a sheet field Cube lacks) are added into one cell; blanks are
-    skipped, and a cell of blanks stays blank.
+    dim reads `All`, or `*` for a dim in `shelf_dims`; those are dropped,
+    unless the sheet query has a real member with that label for that dim. A
+    dual axis repeats a row once per pane, so rows that match in every column
+    but `ignored` count once. With `split_rows: sum`, every row is kept, and
+    rows that share every mapped dim (split by a sheet field Cube lacks) are
+    added into one cell; blanks are skipped, and a cell of blanks stays blank.
     """
     aliases = {d.dashboard: _alias_keys(columns, d.dashboard) for d in comparison.dims}
-    real_all = {
-        d.dashboard
+    real = {
+        (d.dashboard, label)
         for d in comparison.dims
-        if any(str(r[d.dashboard]) == TOTAL_LABEL for r in probe_rows)
+        for label in TOTAL_LABELS
+        if any(str(r[d.dashboard]) == label for r in probe_rows)
     }
     cells: list[dict] = []
     totals = 0
-    # A dual axis exports one row per pane, identical in every column: count
-    # it once. A row that differs anywhere still reads as a repeat. Summed
-    # split rows keep every row, since 2 rows of a split field the export
-    # does not show can match in every column.
     seen: set[tuple] = set()
     for r in rows:
-        whole = tuple(sorted((k, str(v)) for k, v in r.items()))
+        whole = tuple(sorted((k, str(v)) for k, v in r.items() if k not in ignored))
         if whole in seen and comparison.split_rows != "sum":
             continue
         seen.add(whole)
         dims = {d: r[h] for h, d in mapping.items()}
-        if any(v == TOTAL_LABEL and d not in real_all for d, v in dims.items()):
+        if any(
+            (v == "All" or (v == "*" and d in shelf_dims)) and (d, v) not in real
+            for d, v in dims.items()
+        ):
             totals += 1
             continue
         dims = {d: aliases[d].get(v, v) for d, v in dims.items()}
@@ -565,6 +627,11 @@ def rebuild_sheet(
             "of warehouse history; rebuild after the next refresh"
         )
 
+    sheet = comparison.sheet or ""
+    shelf_dims = _shelf_dims(comparison, shaped, sheet, columns)
+    # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
+    ws = finder.worksheet(ET.fromstring(shaped), sheet)
+    calcs = tableau.table_calcs(ws) if ws is not None else []
     exports: list[dict] = []
     probes: list[dict] = []
     totals_skipped = 0
@@ -582,10 +649,20 @@ def rebuild_sheet(
             rows = long_to_wide(rows, comparison.sheet_field)
             mapping, value = _export_columns(comparison, list(rows[0]), columns)
             cells, totals, summed = _export_cells(
-                comparison, rows, mapping, value, columns, probe_rows
+                comparison,
+                rows,
+                mapping,
+                value,
+                columns,
+                probe_rows,
+                shelf_dims=shelf_dims,
+                ignored=_ignored_headers(list(rows[0]), mapping, value, columns, calcs),
             )
             if totals:
-                print(f"cut {label}: skipped {totals} total rows ({TOTAL_LABEL})")
+                print(
+                    f"cut {label}: skipped {totals} total rows "
+                    f"({', '.join(TOTAL_LABELS)})"
+                )
             if summed:
                 print(f"cut {label}: summed {summed} split export rows into others")
             totals_skipped += totals
@@ -603,6 +680,11 @@ def rebuild_sheet(
         proof = tableau.match_export(comparison, exports, probes, twb_xml=twb, now=now)
     except ValueError as exc:
         raise Refusal(f"comparison {comparison.id!r}: {exc}") from exc
+    if proof.blanks_skipped:
+        print(
+            f"Skipped {proof.blanks_skipped} blank cells "
+            "(blank in the export, NULL in the sheet query)"
+        )
     for cut in browser:
         print(f"Check in the browser: {cut_label(cut)}")
     if not proof.matched:
