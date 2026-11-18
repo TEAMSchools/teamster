@@ -121,13 +121,17 @@ refuses when the view's only run read another fact.
    parameter value): each shelf field and its Cube member, table calcs and what
    they run along, every filter's kind (context, code group, relative date,
    parameter-driven) and whether other sheets share it through `filter-group`,
-   the parameters the sheet reads, and whether `sheet_field` is on the sheet.
-   Use it instead of reading the workbook XML by hand. Without `--sheet` it
-   checks every comparison's sheet, and names a comparison whose cells cannot be
-   covered ("Cells cannot be covered: <why>", step 6). `--twb` is required,
-   since `read-sheet` never signs in to Tableau: download the workbook once
-   through the runner, with this in place of its `cli.main` call, and reuse that
-   file:
+   the parameters the sheet reads, and whether `sheet_field` is on the sheet. It
+   refuses a text measure (compare the numeric measure it is built from) and
+   marks a sheet on no published dashboard (step 3, `unpublished`). It shows a
+   filter's values only when the allowlist permits. A filter on a field that is
+   never null needs `dashboard_filters` with `operator: set`. It skips and
+   counts blank cells, `*` total rows and dual-axis repeats. Use it instead of
+   reading the workbook XML by hand. Without `--sheet` it checks every
+   comparison's sheet, and names a comparison whose cells cannot be covered
+   ("Cells cannot be covered: <why>", step 6). `--twb` is required, since
+   `read-sheet` never signs in to Tableau: download the workbook once through
+   the runner, with this in place of its `cli.main` call, and reuse that file:
 
    ```python
    import pathlib
@@ -144,6 +148,10 @@ refuses when the view's only run read another fact.
    `config.py`. Give every comparison `rows`: without it, or when a cell dim is
    part of the row grain rather than a column the row groups split by, its
    differing cells cannot be covered and stay open. Optional keys:
+   - `unpublished: true`: compare a sheet that is on no published dashboard.
+     Without it, `read-sheet` and `rebuild-sheet` refuse that sheet and
+     `compare` skips it
+     (`... not on a published dashboard; set unpublished: true to compare it anyway`).
    - `sheet_field`: the field to compare, by its exported caption. In a long
      export (`Measure Names` / `Measure Values` columns) it is a `Measure Names`
      value; otherwise a column header. Required when the export has more than
@@ -198,11 +206,15 @@ refuses when the view's only run read another fact.
 
    Comparisons that repeat a block (one sheet, several fields) take it from a
    YAML anchor under a top-level `shared:` key: `<<: *roster`, then the keys
-   that differ.
+   that differ. A merge-key item may open with `<<:`; the writers find its
+   `id:`.
 
 4. Run `read-sheet <file> --twb <path>` again and settle its "Before
    rebuild-sheet" list with the analyst; rebuild only when it reads "nothing
-   blocks" or each item left is a decision the analyst made.
+   blocks" or each item left is a decision the analyst made. `rebuild-sheet`
+   refuses a text measure and an unpublished sheet the same way. A rebuild check
+   written for a non-null filter without `dashboard_filters` and `operator: set`
+   needs `rebuild-sheet` again once they are added.
    `rebuild-sheet <file> --comparison <id>` exports the sheet from a `TEMP-CB`
    copy and writes `rebuild_check` (with `matched_at` and
    `sheet_query_fingerprint`) when the sheet query reproduces every cell at
@@ -231,7 +243,10 @@ refuses when the view's only run read another fact.
      compares the rest: a missing `dashboard_view` or `decimals`, no rebuild
      check, a sheet query changed since its rebuild check, a member Cube's model
      lacks, a workbook changed since its rebuild check or one Tableau errs on,
-     SQL that cannot be built today or at the run's moment, or a dry run that
+     SQL that cannot be built today or at the run's moment, a sheet on no
+     published dashboard without `unpublished: true`, a pre-aggregation refusal
+     (a Cube-only `scope` on a never-null member such as the fact's primary key:
+     use `operator: set` in `dashboard_filters` instead), or a dry run that
      fails. A republished workbook whose sheet formulas and filters and
      datasource connection and filters are unchanged is kept, and said so. After
      the price, it also skips a comparison whose Cube SQL reads an `also_facts`
@@ -298,14 +313,15 @@ refuses when the view's only run read another fact.
    `<view>: comparison <id> <why>; compare it, then sort.` Such a comparison
    waits: `ask-owner` lists it under "Still with the analyst" until it is
    compared. Then `sort` puts every open item (row groups, cell sets, formula
-   differences, missing cuts and filters) into one pile: `map_filters`,
-   `filters_nothing`, `cause`, then `investigate`, each with its label and its
-   evidence. It lists 25 items per pile; `triage.json` holds them all. Run
-   `sort` after every `compare`: `explain`, `decide` and `ask-owner` read only
-   the sort beside the latest run and refuse one of another moment, one missing
-   any of the run's open items, or one whose explanation changed since. Items in
-   `investigate` do not block the rest: `decide` writes the others, and
-   `ask-owner` asks what is ready.
+   differences, missing cuts and filters) into one pile (a formula difference
+   can sit under row causes, so the check below runs on matched rows):
+   `map_filters`, `filters_nothing`, `cause`, then `investigate`, each with its
+   label and its evidence. It lists 25 items per pile; `triage.json` holds them
+   all. Run `sort` after every `compare`: `explain`, `decide` and `ask-owner`
+   read only the sort beside the latest run and refuse one of another moment,
+   one missing any of the run's open items, or one whose explanation changed
+   since. Items in `investigate` do not block the rest: `decide` writes the
+   others, and `ask-owner` asks what is ready.
 
    Nothing goes to the owner as a question without a cause explained row by row.
    A row group reaches `cause` only through a stored explanation (below),
@@ -331,6 +347,14 @@ refuses when the view's only run read another fact.
    comparison without `rows`, or whose cell dims sit in the row grain, cannot be
    placed: its cells stay open with that reason, and `read-sheet` and `compare`
    name it.
+
+   The formula check recomputes each differing cell on rows both sides matched.
+   It is priced with the explanations: the same dry run prints
+   `Formula check: N queries, $X (dry run).`, under `--max-usd` and the daily
+   cap. A cell it cannot check reads `formulas not compared: <why>`: the cell
+   closes by coverage as before, the owner sees the comparison under "Still with
+   the analyst", and `sort` and `ask-owner` still run. Fix the cause the line
+   names, then `sort` again.
 
    The trace leads. `sort` relaxes each step of the other side's SQL (WHERE and
    HAVING conjuncts, INNER JOINs, required LEFT JOINs, down 5 dbt models) and
@@ -380,7 +404,9 @@ refuses when the view's only run read another fact.
       `{unmatched}` and returns exactly `__row, cause`, one row per unmatched
       row. `{unmatched}` holds `__row`, `item_key`, `side`, the group-by
       columns, the grain under its Cube names, and `__rn` (past 1, a grain the
-      other side holds twice). A `CASE` in lineage order names each row's first
+      other side holds twice). It also holds `__moved` and `__d_<col>`, NULL
+      unless that column differs: read the dashboard's value of a column as
+      `COALESCE(u.__d_x, u.x)`. A `CASE` in lineage order names each row's first
       failing predicate, copied literally from the model's SQL. The cause is ONE
       `CASE` whose every `THEN` is a quoted cause name (no `IF()`, nested `CASE`
       or column there) and which ends in `ELSE 'UNEXPLAINED'`, never in a cause:
@@ -467,13 +493,18 @@ refuses when the view's only run read another fact.
       the flag, the missing key).
 
    Comparisons that differ only in `dims`, `measure` or what shapes their cells
-   (same `dashboard_view`, `rows`, `filters`, `defaults`, `cuts`, `scope` and
-   `dashboard_filters`) usually reconcile the same rows. Explain one of them:
-   its explanation also runs on the others' groups of that bucket, in `explain`
-   (printed as "Also <comparison> (same rows)") and in every `sort`, unless one
-   has an explanation file of its own, which then wins, even when it fails. Each
-   run checks that comparison's own rows, so a dim whose join drops or repeats
-   rows shows as a refusal there. Delete a duplicate file to share.
+   (same `dashboard_view`, same `rows` grain and values, and the same `filters`,
+   `defaults`, `cuts`, `scope` and `dashboard_filters`) usually reconcile the
+   same rows. Explain one of them: its explanation also runs on the others'
+   groups of that bucket, in `explain` (printed as "Also <comparison>: N of M
+   items explained.") and in every `sort`, unless one has an explanation file of
+   its own, which then wins, even when it fails. Each comparison runs it on its
+   own rows, so a dim whose join drops or repeats rows shows as a refusal there.
+   A shared explanation reads only `__row`, `side` and the grain: a group-by
+   column one sibling lacks fails there. Delete a duplicate file to share. Work
+   cause-first: explain a cause once, on the comparison that shows it most
+   clearly, let it run on every comparison of that model, then work comparison
+   by comparison on what is left.
 
    Every `sort` re-runs every stored explanation on the new run's rows first
    (`--no-explanations` skips them), then traces only what no explanation
