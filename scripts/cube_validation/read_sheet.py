@@ -128,15 +128,15 @@ def read_sheet(twb_xml: str, sheet: str) -> Sheet:
     """
     # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
     root = ET.fromstring(twb_xml)
-    ws = finder.worksheet(root, sheet)
+    ws = tableau.worksheet(root, sheet)
     if ws is None:
         raise ValueError(f"the workbook has no worksheet {sheet!r}")
     caption, personal = finder.sheet_fields(ws)
     for col in root.iter("column"):
-        name = finder._bare(col.get("name") or "")
+        name = tableau.bare_name(col.get("name") or "")
         caption.setdefault(name, col.get("caption") or name)
     formulas = {
-        finder._bare(c.name): c.formula for c in finder.calculated_fields(twb_xml)
+        tableau.bare_name(c.name): c.formula for c in finder.calculated_fields(twb_xml)
     }
     groups = finder.group_fields(root)
     calcs = tableau.table_calcs(ws)
@@ -179,10 +179,8 @@ def read_sheet(twb_xml: str, sheet: str) -> Sheet:
                 )
 
     params = {
-        finder._bare(col.get("name") or ""): col
-        for ds in root.iter("datasource")
-        if ds.get("name") == "Parameters"
-        for col in ds.findall("column")
+        tableau.bare_name(col.get("name") or ""): col
+        for col in tableau.parameter_columns(root)
     }
 
     def param_caption(name: str) -> str:
@@ -242,7 +240,7 @@ def read_sheet(twb_xml: str, sheet: str) -> Sheet:
             )
         )
     read = [
-        finder._bare(col.get("name") or "")
+        tableau.bare_name(col.get("name") or "")
         for deps in ws.iter("datasource-dependencies")
         if deps.get("datasource") == "Parameters"
         for col in deps.findall("column")
@@ -293,8 +291,8 @@ def _group_source(root: ET.Element, name: str) -> str:
     """The column a code group's codes come from."""
     for col in root.iter("column"):
         calc = col.find("calculation")
-        if finder._bare(col.get("name") or "") == name and calc is not None:
-            return finder._bare(calc.get("column") or "")
+        if tableau.bare_name(col.get("name") or "") == name and calc is not None:
+            return tableau.bare_name(calc.get("column") or "")
     return ""
 
 

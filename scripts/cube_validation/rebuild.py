@@ -126,8 +126,7 @@ TABLEAU_ANSWERED = "Tableau answered"
 
 def _sheet_columns(twb_xml: str, sheet: str) -> list[ET.Element]:
     # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
-    root = ET.fromstring(twb_xml)
-    ws = next((w for w in root.iter("worksheet") if w.get("name") == sheet), None)
+    ws = tableau.worksheet(ET.fromstring(twb_xml), sheet)
     if ws is None:
         raise Refusal(f"the workbook has no worksheet {sheet!r}")
     return [
@@ -137,8 +136,19 @@ def _sheet_columns(twb_xml: str, sheet: str) -> list[ET.Element]:
     ]
 
 
-def _bare(name: str) -> str:
-    return name[1:-1] if name.startswith("[") and name.endswith("]") else name
+def _dim_names(comparison: Comparison, dim: str, columns: list[ET.Element]) -> set[str]:
+    """The names a dim may go by on the sheet: its dashboard name, a `filters`
+    caption mapped to it, and the caption of its sheet column."""
+    names = {dim}
+    names |= {
+        caption for caption, pair in comparison.filters.items() if pair.dashboard == dim
+    }
+    names |= {
+        col.get("caption") or ""
+        for col in columns
+        if tableau.bare_name(col.get("name") or "") == dim
+    }
+    return names
 
 
 def _export_columns(
@@ -150,17 +160,7 @@ def _export_columns(
     lower = {h.lower(): h for h in headers}
     mapping: dict[str, str] = {}
     for dim in comparison.dims:
-        names = {dim.dashboard}
-        names |= {
-            caption
-            for caption, pair in comparison.filters.items()
-            if pair.dashboard == dim.dashboard
-        }
-        names |= {
-            col.get("caption") or ""
-            for col in columns
-            if _bare(col.get("name") or "") == dim.dashboard
-        }
+        names = _dim_names(comparison, dim.dashboard, columns)
         found = [lower[n.lower()] for n in names if n and n.lower() in lower]
         if not found:
             raise Refusal(
@@ -259,9 +259,7 @@ def _parameter_captions(twb_xml: str) -> dict[str, str]:
     root = ET.fromstring(twb_xml)
     return {
         (col.get("name") or "").strip("[]"): col.get("caption") or ""
-        for ds in root.iter("datasource")
-        if ds.get("name") == "Parameters"
-        for col in ds.findall("column")
+        for col in tableau.parameter_columns(root)
     }
 
 
@@ -277,7 +275,7 @@ def sheet_gaps(twb_xml: str, comparison: Comparison) -> SheetGaps:
     plain missing field).
     """
     # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
-    ws = finder.worksheet(ET.fromstring(twb_xml), comparison.sheet or "")
+    ws = tableau.worksheet(ET.fromstring(twb_xml), comparison.sheet or "")
     if ws is None:
         raise Refusal(f"the workbook has no worksheet {comparison.sheet!r}")
     pairs = [*comparison.dims, *comparison.filters.values()]
@@ -349,13 +347,10 @@ def _alias_keys(columns: list[ET.Element], dim: str) -> dict[str, str]:
     """
     out: dict[str, str] = {}
     for col in columns:
-        if _bare(col.get("name") or "") != dim:
+        if tableau.bare_name(col.get("name") or "") != dim:
             continue
         for alias in col.iter("alias"):
-            key, shown = alias.get("key") or "", alias.get("value") or ""
-            if len(key) > 1 and key[0] == key[-1] == '"':
-                key = key[1:-1]
-            out[shown] = key
+            out[alias.get("value") or ""] = tableau.unquote(alias.get("key"))
     return out
 
 
@@ -372,17 +367,7 @@ def _shelf_dims(
     shelved = {n.lower() for n in [*shape.rows, *shape.cols]}
     out: set[str] = set()
     for dim in comparison.dims:
-        names = {dim.dashboard}
-        names |= {
-            caption
-            for caption, pair in comparison.filters.items()
-            if pair.dashboard == dim.dashboard
-        }
-        names |= {
-            col.get("caption") or ""
-            for col in columns
-            if _bare(col.get("name") or "") == dim.dashboard
-        }
+        names = _dim_names(comparison, dim.dashboard, columns)
         if any(n and n.lower() in shelved for n in names):
             out.add(dim.dashboard)
     return out
@@ -405,7 +390,7 @@ def _ignored_headers(
         read_sheet._export_name(n)
         for col in columns
         if col.get("role") == "measure"
-        for n in (col.get("caption") or "", _bare(col.get("name") or ""))
+        for n in (col.get("caption") or "", tableau.bare_name(col.get("name") or ""))
         if n
     }
     names |= {read_sheet._export_name(c.caption) for c in calcs}
@@ -634,7 +619,7 @@ def rebuild_sheet(
     sheet = comparison.sheet or ""
     shelf_dims = _shelf_dims(comparison, shaped, sheet, columns)
     # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
-    ws = finder.worksheet(ET.fromstring(shaped), sheet)
+    ws = tableau.worksheet(ET.fromstring(shaped), sheet)
     calcs = tableau.table_calcs(ws) if ws is not None else []
     exports: list[dict] = []
     probes: list[dict] = []

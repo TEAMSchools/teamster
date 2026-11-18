@@ -18,7 +18,7 @@ from pathlib import Path
 
 import yaml
 
-from .tableau import displayed_decimals
+from .tableau import bare_name, displayed_decimals, unquote, worksheet
 
 TOP_N = 5
 MIN_TOKEN_LENGTH = 3
@@ -215,15 +215,6 @@ def calculated_fields(twb_xml: str | ET.Element) -> list[Calc]:
     return sorted(found.values(), key=lambda c: c.caption)
 
 
-def _bare(name: str) -> str:
-    return name[1:-1] if name.startswith("[") and name.endswith("]") else name
-
-
-def _unquote(text: str | None) -> str:
-    text = text or ""
-    return text[1:-1] if len(text) > 1 and text[0] == text[-1] == '"' else text
-
-
 def bins(twb_xml: str) -> dict[str, str]:
     """Map each categorical bin (a code group) to its groups and codes.
 
@@ -238,11 +229,11 @@ def bins(twb_xml: str) -> dict[str, str]:
         if calc is None or calc.get("class") != "categorical-bin":
             continue
         groups = [
-            f"{_unquote(b.get('value'))} = "
-            + ", ".join(_unquote(v.text) for v in b.findall("value"))
+            f"{unquote(b.get('value'))} = "
+            + ", ".join(unquote(v.text) for v in b.findall("value"))
             for b in calc.findall("bin")
         ]
-        out.setdefault(_bare(column.get("name") or ""), "; ".join(groups))
+        out.setdefault(bare_name(column.get("name") or ""), "; ".join(groups))
     return out
 
 
@@ -280,7 +271,7 @@ def aggregated_fields(twb_xml: str) -> list[Calc]:
     return sorted(
         (
             Calc(
-                f"{agg}({captions.get(column, _bare(column))})",
+                f"{agg}({captions.get(column, bare_name(column))})",
                 f"{agg}({column})",
                 sorted(sheets),
                 column,
@@ -306,7 +297,7 @@ GROUP_CLASSES = frozenset({"categorical-bin", "bin"})
 def group_fields(ws: ET.Element) -> set[str]:
     """Bare names of the sheet's group and bin fields."""
     return {
-        _bare(col.get("name") or "")
+        bare_name(col.get("name") or "")
         for col in ws.iter("column")
         if (calc := col.find("calculation")) is not None
         and calc.get("class") in GROUP_CLASSES
@@ -355,16 +346,12 @@ class SheetShape:
     decimals: dict[str, int] = field(default_factory=dict)
 
 
-def worksheet(root: ET.Element, sheet: str) -> ET.Element | None:
-    return next((w for w in root.iter("worksheet") if w.get("name") == sheet), None)
-
-
 def sheet_fields(ws: ET.Element) -> tuple[dict[str, str], set[str]]:
     """A worksheet's field captions by bare name, and its identity-based fields."""
     caption: dict[str, str] = {}
     personal: set[str] = set()
     for col in ws.iter("column"):
-        name = _bare(col.get("name") or "")
+        name = bare_name(col.get("name") or "")
         caption.setdefault(name, col.get("caption") or name)
         calc = col.find("calculation")
         if calc is not None and USER_FUNCTION.search(calc.get("formula") or ""):
@@ -443,7 +430,7 @@ def _level_field(level: str | None) -> str | None:
         return None
     last = "[" + level.rsplit("].[", 1)[-1] if "].[" in level else level
     m = FIELD_REF.fullmatch(last)
-    return m["name"] if m is not None else _bare(last)
+    return m["name"] if m is not None else bare_name(last)
 
 
 def shown_values(
@@ -482,7 +469,7 @@ def shown_values(
             return f"up to {high}"
         return None
     members = ", ".join(
-        _unquote(g.get("member")) for g in filter_el.iter("groupfilter")
+        unquote(g.get("member")) for g in filter_el.iter("groupfilter")
         if g.get("member") is not None
     )  # fmt: skip
     if not members:
@@ -534,7 +521,7 @@ def sheet_shape(twb_xml: str | ET.Element, sheet: str) -> SheetShape:
         if shown and fmt.get("value"):
             decimals.setdefault(shown, displayed_decimals(fmt.get("value") or ""))
 
-    formulas = {_bare(c.name): c.formula for c in calculated_fields(root)}
+    formulas = {bare_name(c.name): c.formula for c in calculated_fields(root)}
     filters = []
     for filter_el in ws.iter("filter"):
         field_name = filter_field(filter_el.get("column") or "", groups)
@@ -582,7 +569,7 @@ def text_values(twb_xml: str, sheet: str) -> set[str]:
     caption, _ = sheet_fields(ws)
     datatype: dict[str, str] = {}
     for col in [*root.iter("column"), *ws.iter("column")]:
-        name = _bare(col.get("name") or "")
+        name = bare_name(col.get("name") or "")
         caption.setdefault(name, col.get("caption") or name)
         datatype[name] = col.get("datatype") or datatype.get(name, "")
     refs = [el.text or "" for tag in ("rows", "cols") for el in ws.iter(tag)]

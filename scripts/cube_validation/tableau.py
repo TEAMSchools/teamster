@@ -97,8 +97,30 @@ def _attrs(tag: str) -> dict[str, str]:
     return {m[1]: html.unescape(m[2] or m[3] or "") for m in _ATTR.finditer(tag)}
 
 
-def _bare(name: str) -> str:
+def bare_name(name: str) -> str:
+    """A field name without its one pair of brackets: `[x]` reads `x`."""
     return name[1:-1] if name.startswith("[") and name.endswith("]") else name
+
+
+def unquote(text: str | None) -> str:
+    """A member value without its one pair of double quotes; None reads ""."""
+    text = text or ""
+    return text[1:-1] if len(text) > 1 and text[0] == text[-1] == '"' else text
+
+
+def worksheet(root: ET.Element, sheet: str) -> ET.Element | None:
+    """The workbook's worksheet named `sheet`, or None."""
+    return next((w for w in root.iter("worksheet") if w.get("name") == sheet), None)
+
+
+def parameter_columns(root: ET.Element) -> list[ET.Element]:
+    """The columns of the workbook's `Parameters` datasource: its parameters."""
+    return [
+        col
+        for ds in root.iter("datasource")
+        if ds.get("name") == "Parameters"
+        for col in ds.findall("column")
+    ]
 
 
 def _field_column(field_ref: str) -> str:
@@ -122,10 +144,10 @@ def _target_columns(root: ET.Element, measures: list[str]) -> set[str]:
     missing = []
     for measure in measures:
         found = {
-            _bare(col.get("name") or "")
+            bare_name(col.get("name") or "")
             for col in root.iter("column")
             if measure
-            in (col.get("caption"), col.get("name"), _bare(col.get("name") or ""))
+            in (col.get("caption"), col.get("name"), bare_name(col.get("name") or ""))
         }
         if not found:
             missing.append(measure)
@@ -169,7 +191,7 @@ def drop_number_formats(twb_xml: str, measures: list[str]) -> str:
     want_defaults = sum(
         1
         for col in root.iter("column")
-        if _bare(col.get("name") or "") in targets
+        if bare_name(col.get("name") or "") in targets
         and col.get("default-format") is not None
     )
     want_rules = sum(
@@ -184,7 +206,7 @@ def drop_number_formats(twb_xml: str, measures: list[str]) -> str:
     def column_tag(m: re.Match) -> str:
         nonlocal dropped_defaults
         tag = m.group(0)
-        if _bare(_attrs(tag).get("name", "")) not in targets:
+        if bare_name(_attrs(tag).get("name", "")) not in targets:
             return tag
         new, n = _DEFAULT_FORMAT.subn("", tag)
         dropped_defaults += n
@@ -343,10 +365,7 @@ def formula_fingerprint(twb_xml: str, sheet: str) -> str:
     """
     # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
     root = ET.fromstring(twb_xml)
-    ws = next(
-        (w for w in root.iter("worksheet") if w.get("name") == sheet),
-        None,
-    )
+    ws = worksheet(root, sheet)
     if ws is None:
         raise ValueError(f"the workbook has no worksheet {sheet!r}")
 
@@ -382,10 +401,7 @@ def source_fingerprint(twb_xml: str, sheet: str) -> str:
     """
     # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
     root = ET.fromstring(twb_xml)
-    ws = next(
-        (w for w in root.iter("worksheet") if w.get("name") == sheet),
-        None,
-    )
+    ws = worksheet(root, sheet)
     if ws is None:
         raise ValueError(f"the workbook has no worksheet {sheet!r}")
     used = {d.get("datasource") or "" for d in ws.iter("datasource-dependencies")} - {
@@ -439,11 +455,11 @@ def set_parameters(twb_xml: str, values: dict[str, str]) -> str:
         names = []
         for column in _COLUMN_BLOCK.finditer(block):
             attrs = _attrs(column.group(0).split(">", 1)[0])
-            names.append(attrs.get("caption") or _bare(attrs.get("name", "")))
+            names.append(attrs.get("caption") or bare_name(attrs.get("name", "")))
             if wanted_name in (
                 attrs.get("caption"),
                 attrs.get("name"),
-                _bare(attrs.get("name", "")),
+                bare_name(attrs.get("name", "")),
             ):
                 found = column
                 break
@@ -453,7 +469,7 @@ def set_parameters(twb_xml: str, values: dict[str, str]) -> str:
             )
         text = found.group(0)
         members = {
-            _unquote(html.unescape(m[1])): m[1]
+            unquote(html.unescape(m[1])): m[1]
             for m in re.finditer(r"<member\b[^>]*?\bvalue='([^']*)'", text)
         }
         if not members:
@@ -477,10 +493,6 @@ def set_parameters(twb_xml: str, values: dict[str, str]) -> str:
         )
         block = block.replace(text, f"{start}>{rest}", 1)
     return twb_xml[: block_match.start()] + block + twb_xml[block_match.end() :]
-
-
-def _unquote(text: str) -> str:
-    return text[1:-1] if len(text) > 1 and text[0] == text[-1] == '"' else text
 
 
 # A shelf: `<rows onTop='true'>(A / (B / C))</rows>`, or empty as `<rows />`.
@@ -705,7 +717,7 @@ def table_calcs(ws: ET.Element) -> list[TableCalc]:
     """
     caption = {}
     for col in ws.iter("column"):
-        name = _bare(col.get("name") or "")
+        name = bare_name(col.get("name") or "")
         caption.setdefault(name, col.get("caption") or name)
     found = []
     for deps in ws.iter("datasource-dependencies"):
@@ -716,7 +728,7 @@ def table_calcs(ws: ET.Element) -> list[TableCalc]:
             kind = calc.get("type") or ""
             derivation = instance.get("derivation") or ""
             agg = "" if derivation in ("", "None", "User") else f"{derivation}. "
-            column = _bare(instance.get("column") or "")
+            column = bare_name(instance.get("column") or "")
             words = _TABLE_CALC_WORDS.get(kind, f"{kind} of")
             found.append(
                 TableCalc(
@@ -794,7 +806,7 @@ def set_shelves(twb_xml: str, sheet: str, shelves: dict[str, Any]) -> Reshaped:
     """
     # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
     root = ET.fromstring(twb_xml)
-    ws = next((w for w in root.iter("worksheet") if w.get("name") == sheet), None)
+    ws = worksheet(root, sheet)
     blocks = [
         m
         for m in _WORKSHEET.finditer(twb_xml)
@@ -808,7 +820,7 @@ def set_shelves(twb_xml: str, sheet: str, shelves: dict[str, Any]) -> Reshaped:
 
     caption = {}
     for col in ws.iter("column"):
-        name = _bare(col.get("name") or "")
+        name = bare_name(col.get("name") or "")
         caption.setdefault(name, col.get("caption") or name)
 
     def shown(ref: str) -> str:
@@ -868,7 +880,7 @@ def set_shelves(twb_xml: str, sheet: str, shelves: dict[str, Any]) -> Reshaped:
             ds_name, col, listed = _added_column(
                 wanted, sheet, dependencies, datasources
             )
-            name = _bare(col.get("name") or "")
+            name = bare_name(col.get("name") or "")
             if col.get("role") == "measure":
                 raise ValueError(f"{wanted!r} is a measure; add a dimension")
             if col.find("calculation") is not None and not listed:
@@ -1116,7 +1128,9 @@ def _clear_filter(
 
 def _named(columns: list[ET.Element], wanted: str) -> list[ET.Element]:
     return [
-        c for c in columns if wanted in (c.get("caption"), _bare(c.get("name") or ""))
+        c
+        for c in columns
+        if wanted in (c.get("caption"), bare_name(c.get("name") or ""))
     ]
 
 
@@ -1168,7 +1182,7 @@ def _dimension_instance(
         {
             "column": name,
             "derivation": "None",
-            "name": f"[none:{_bare(name)}:{_INSTANCE_SUFFIX.get(kind, 'nk')}]",
+            "name": f"[none:{bare_name(name)}:{_INSTANCE_SUFFIX.get(kind, 'nk')}]",
             "pivot": "key",
             "type": kind,
         },
@@ -1179,19 +1193,16 @@ def _parameter_names(twb_xml: str) -> set[str]:
     # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
     root = ET.fromstring(twb_xml)
     names: set[str] = set()
-    for ds in root.iter("datasource"):
-        if ds.get("name") != "Parameters":
-            continue
-        for col in ds.findall("column"):
-            names |= {
-                n
-                for n in (
-                    col.get("caption"),
-                    col.get("name"),
-                    _bare(col.get("name") or ""),
-                )
-                if n
-            }
+    for col in parameter_columns(root):
+        names |= {
+            n
+            for n in (
+                col.get("caption"),
+                col.get("name"),
+                bare_name(col.get("name") or ""),
+            )
+            if n
+        }
     return names
 
 

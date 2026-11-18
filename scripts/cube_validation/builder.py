@@ -19,6 +19,7 @@ from . import find_field as finder
 from .cube_client import _FACT, Cube, CubeError, CubeRefusal, bind
 from .decisions import sql_fingerprint
 from .pipeline import measure_expression
+from .tableau import bare_name, unquote
 
 
 @dataclass(frozen=True)
@@ -154,12 +155,11 @@ def _sheet_uses(ws: ET.Element, groups: set[str]) -> dict[tuple[str, str], str]:
             uses[key] = role
 
     roles = {
-        finder._bare(col.get("name") or ""): col.get("role")
-        for col in ws.iter("column")
+        bare_name(col.get("name") or ""): col.get("role") for col in ws.iter("column")
     }
     for col in ws.iter("column"):
         if col.get("param-domain-type"):
-            add(("", finder._bare(col.get("name") or "")), "parameter")
+            add(("", bare_name(col.get("name") or "")), "parameter")
 
     def field_of(ref: str) -> tuple[tuple[str, str], str] | None:
         m = finder.FIELD_REF.search(ref)
@@ -200,7 +200,7 @@ def _sheet_uses(ws: ET.Element, groups: set[str]) -> dict[tuple[str, str], str]:
             if top is not None and top.get("function") == "except":
                 continue
             for member in filter_el.iter("groupfilter"):
-                if found := field_of(finder._unquote(member.get("member"))):
+                if found := field_of(unquote(member.get("member"))):
                     add(found[0], "measure")
             continue
         found = field_of(column)
@@ -225,9 +225,9 @@ def workbook_inventory(twb_xml: str) -> list[FieldUse]:
     """
     # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
     root = ET.fromstring(twb_xml)
-    calcs = {finder._bare(c.name): c.formula for c in finder.calculated_fields(twb_xml)}
+    calcs = {bare_name(c.name): c.formula for c in finder.calculated_fields(twb_xml)}
     raw = {
-        (c.formula.split("(", 1)[0], finder._bare(c.name)): c.formula
+        (c.formula.split("(", 1)[0], bare_name(c.name)): c.formula
         for c in finder.aggregated_fields(twb_xml)
     }
     found_bins = finder.bins(twb_xml)
