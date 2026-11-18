@@ -1175,6 +1175,22 @@ def test_a_failed_table_scan_skips_only_the_comparisons_that_read_it(
     assert [s["comparison"] for s in saved["skipped"]] == ["c2"]
 
 
+@pytest.mark.parametrize("dry", [True, False])
+def test_a_comparison_reading_2_failed_scans_is_skipped_once(
+    fakes, tmp_path, capsys, dry
+):
+    path = _two(tmp_path, _reads_membership, text=ALSO_FACTS_YML)
+    _second_fact_for_membership(fakes)
+    # c2 reads both tables; c1 reads only dim_locations.
+    _bigquery_refuses(fakes, "`fct_g` AS t", dry=dry)
+    _bigquery_refuses(fakes, "`dim_locations` AS t", dry=dry)
+
+    cli.main(["compare", str(path)])
+
+    out = capsys.readouterr().out
+    assert out.count("Skipping c2: ") == 1 and out.count("Skipping c1: ") == 1
+
+
 def test_a_plain_run_with_only_a_skipped_comparison_left_compares_nothing(
     fakes, tmp_path, capsys
 ):
@@ -1568,7 +1584,9 @@ def test_two_rows_on_one_cell_skip_only_their_comparison(fakes, tmp_path, capsys
     out = capsys.readouterr().out
     assert "Skipping c2: " in out and "2 rows share the cell" in out
     # The terminal names the cell; the skip, which ask-owner posts, does not.
-    assert "the cell Newark" in out
+    assert "c2 {} dashboard: 2 rows share the cell Newark;" in out
+    assert "Skipping c2: {} dashboard: 2 rows share the cell;" in out
+    assert "c2: c2" not in out
     saved = json.loads(_latest_run(tmp_path).read_text())
     (skip,) = saved["skipped"]
     assert skip["comparison"] == "c2"

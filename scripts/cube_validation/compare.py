@@ -147,21 +147,22 @@ class DuplicateCell(Refusal):
     values, for the terminal; `why` leaves them out, for a skip that
     `ask-owner` posts."""
 
-    def __init__(self, where: str, key: tuple[str, ...]):
+    def __init__(self, comparison: str, where: str, key: tuple[str, ...]):
+        # A skip carries its comparison's id, so `why` starts at the cut.
         self.why = f"{where}: 2 rows share the cell; the dims do not pick out one cell"
         super().__init__(
-            f"{where}: 2 rows share the cell {', '.join(key) or '(total)'}; "
-            "the dims do not pick out one cell"
+            f"{comparison} {where}: 2 rows share the cell "
+            f"{', '.join(key) or '(total)'}; the dims do not pick out one cell"
         )
 
 
-def _by_key(rows: Iterable[dict], key, value, where: str) -> dict:
+def _by_key(rows: Iterable[dict], key, value, comparison: str, where: str) -> dict:
     """Index rows by cell key, refusing 2 rows that land on one cell."""
     out: dict = {}
     for r in rows:
         k = key(r)
         if k in out:
-            raise DuplicateCell(where, k)
+            raise DuplicateCell(comparison, where, k)
         out[k] = value(r)
     return out
 
@@ -178,17 +179,19 @@ def _cells(
     `dashboard_filters` reproduces reads `dashboard_filtered`: the sheet's
     dashboard-only filter drops it, so it is explained, not a difference.
     """
-    where = f"{comparison.id} {cut_label(cut)}"
+    cid, where = comparison.id, cut_label(cut)
     dash = _by_key(
         dash_rows,
         lambda r: tuple(value_key(r[d.dashboard]) for d in comparison.dims),
         lambda r: _number(r["value"]),
+        cid,
         f"{where} dashboard",
     )
     cube = _by_key(
         cube_rows,
         lambda r: tuple(value_key(r[d.cube]) for d in comparison.dims),
         lambda r: _number(r["value"]),
+        cid,
         f"{where} Cube",
     )
     unfiltered = (
@@ -196,6 +199,7 @@ def _cells(
             unfiltered_rows,
             lambda r: tuple(value_key(r[d.dashboard]) for d in comparison.dims),
             lambda r: _number(r["value"]),
+            cid,
             f"{where} dashboard without its dashboard-only filters",
         )
         if unfiltered_rows is not None
@@ -1082,10 +1086,16 @@ def _compare_all(
 
     def unscanned(t: str, what: str, exc: GoogleAPIError) -> list[Skip]:
         """Skip every comparison that reads `t`: unscanned, it cannot be
-        known to have held during the build."""
+        known to have held during the build. One an earlier table's failure
+        skipped is skipped once."""
+        gone = {s.comparison for s in skips}
         readers = [p.comparison.id for p in plans if t in p.cube_tables | set(p.shared)]
         readers += [cid for cid, (_, h) in slices.items() if t in h.cube_tables]
-        return [_bigquery_skip(cid, f"{what} {t}", exc) for cid in readers]
+        return [
+            _bigquery_skip(cid, f"{what} {t}", exc)
+            for cid in readers
+            if cid not in gone
+        ]
 
     scan_usd = 0.0
     for t in list(scanned):
@@ -1182,7 +1192,7 @@ def _compare_all(
             continue
         except DuplicateCell as exc:
             # Its rows cannot be compared cell by cell; the rest still run.
-            print(f"Comparison {comparison.id}: {exc}.")
+            print(f"{exc}.")
             skip = Skip(comparison.id, exc.why)
             _say_skips([skip])
             skips.append(skip)
