@@ -1,6 +1,8 @@
+import dataclasses
+
 import pytest
 from cube_validation.config import Decision
-from cube_validation.decisions import apply, sql_fingerprint
+from cube_validation.decisions import MATCHED_ONLY, apply, sql_fingerprint
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.reconcile import CellDiff, Gap, Group
@@ -281,6 +283,42 @@ def test_a_formula_decision_reconfirms_when_sql_changed():
 
     assert applied.reconfirm == [d] and applied.quiet_cells == []
     assert applied.open_cells == [FORMULA]
+
+
+def _checked(n):
+    """The formula diff with `n` cells the formula check filed."""
+    return dataclasses.replace(FORMULA, matched_only=n)
+
+
+@pytest.mark.parametrize("now", [2, 1])
+def test_a_formula_decision_quiets_its_diff_while_the_check_filed_no_more(now):
+    d = _formula(fingerprints={**FP, MATCHED_ONLY: "2"})
+    diff = _checked(now)
+
+    applied = apply([d], [], {"enrollment": FP}, cell_diffs=[diff])
+
+    assert applied.quiet_cells == [(d, diff)] and applied.reconfirm == []
+
+
+def test_a_formula_decision_reconfirms_when_the_check_filed_more_cells():
+    d = _formula(fingerprints={**FP, MATCHED_ONLY: "2"})
+    diff = _checked(3)
+
+    applied = apply([d], [], {"enrollment": FP}, cell_diffs=[diff])
+
+    assert applied.reconfirm == [d] and applied.quiet_cells == []
+    assert applied.open_cells == [diff]
+
+
+def test_a_formula_decision_with_no_recorded_count_reads_as_zero():
+    d = _formula()
+    assert MATCHED_ONLY not in d.fingerprints
+
+    filed = apply([d], [], {"enrollment": FP}, cell_diffs=[_checked(1)])
+    assert filed.reconfirm == [d] and filed.quiet_cells == []
+
+    none = apply([d], [], {"enrollment": FP}, cell_diffs=[_checked(0)])
+    assert none.quiet_cells == [(d, _checked(0))] and none.reconfirm == []
 
 
 def test_a_formula_decision_never_quiets_a_cells_diff():

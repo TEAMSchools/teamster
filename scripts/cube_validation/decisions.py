@@ -3,7 +3,8 @@
 A decision quiets the groups it names only while the SQL on both sides is the
 SQL it was made against. A `group` decision names its groups by one column's
 value. A `formula` decision names its comparison's formula difference: the
-differing cells no unmatched row lies in. A `cause` decision names an explained
+differing cells no unmatched row lies in, and those the formula check filed,
+up to the count it recorded. A `cause` decision names an explained
 cause, never a group: the latest triage, which re-runs every stored explanation,
 says which items it decides (`sort.mark_decided`), so `apply` only checks
 its SQL. Pure: no I/O.
@@ -17,7 +18,7 @@ import json
 import re
 from dataclasses import dataclass, field
 
-from .config import Decision
+from .config import MATCHED_ONLY, Decision
 from .reconcile import CellDiff, Gap, Group
 
 
@@ -184,11 +185,14 @@ def apply(
             `rebuild-sheet` rewrites the list it matches.
         cell_diffs: Each comparison's differing cells. A `formula` decision
             quiets its comparison's `formula` diff while both fingerprints
-            hold; no decision quiets a `cells` diff, which coverage closes.
+            hold and the formula check has filed no more cells in it than the
+            decision recorded (`MATCHED_ONLY`); no decision quiets a `cells`
+            diff, which coverage closes.
 
     Returns:
         Groups still open or quieted, decisions to reconfirm because the SQL
-        changed (their groups stay open), decisions matching no group, and
+        changed or the formula check filed more cells (their groups or diff
+        stay open), decisions matching no group, and
         decisions only some of whose values match a group, with the values
         that match none. The values that do match stay quiet.
 
@@ -256,6 +260,11 @@ def apply(
             )
             if diff is None:
                 applied.no_longer_needed.append(decision)
+                continue
+            # Cells the formula check filed since the decision was made were
+            # never put to whoever made it: ask again.
+            if diff.matched_only > int(decision.fingerprints.get(MATCHED_ONLY) or 0):
+                applied.reconfirm.append(decision)
                 continue
             applied.quiet_cells.append((decision, diff))
             continue

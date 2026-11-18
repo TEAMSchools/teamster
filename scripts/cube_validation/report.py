@@ -319,7 +319,10 @@ def render_local(run: RunResult) -> str:
         + [_decision_line(d) for d, _ in run.applied.quiet_gaps]
         + [_decision_line(d) for d, _ in run.applied.quiet_cells]
     )
-    out += ["", "To re-confirm (the SQL changed):"]
+    out += [
+        "",
+        "To re-confirm (the SQL changed, or the formula check filed more cells):",
+    ]
     out += _bullets([_decision_line(d) for d in run.applied.reconfirm])
     out += ["", "No longer needed (no group matches):"]
     out += _bullets([_decision_line(d) for d in run.applied.no_longer_needed])

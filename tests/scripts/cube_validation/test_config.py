@@ -811,6 +811,32 @@ def test_formula_and_group_are_exclusive(tmp_path):
         load_view_config(_write(tmp_path, EXAMPLE + both))
 
 
+def test_a_formula_decision_loads_its_recorded_check_cells(tmp_path):
+    text = EXAMPLE + FORMULA_DECISION.replace("def }", "def, matched_only: '3' }")
+    (*_, d) = load_view_config(_write(tmp_path, text)).decisions
+    assert d.fingerprints["matched_only"] == "3"
+
+
+@pytest.mark.parametrize(
+    ("decision", "value", "match"),
+    [
+        (FORMULA_DECISION, "many", "must be a whole number"),
+        (FORMULA_DECISION, "'-1'", "must be a whole number"),
+        (
+            FORMULA_DECISION.replace(
+                "formula: true", "group: { column: x, values: ['1'] }"
+            ),
+            "'3'",
+            "belongs to a formula decision",
+        ),
+    ],
+)
+def test_a_bad_recorded_check_cell_count_is_refused(tmp_path, decision, value, match):
+    text = EXAMPLE + decision.replace("def }", f"def, matched_only: {value} }}")
+    with pytest.raises(ConfigError, match=rf"fingerprints\.matched_only: {match}"):
+        load_view_config(_write(tmp_path, text))
+
+
 def test_formula_must_be_true(tmp_path):
     text = EXAMPLE + FORMULA_DECISION.replace("formula: true", "formula: false")
     with pytest.raises(ConfigError, match=r"formula: must be true"):

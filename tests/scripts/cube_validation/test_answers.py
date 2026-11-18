@@ -718,6 +718,17 @@ def test_approved_decisions_take_the_stub_and_the_run_fingerprints():
                        "fingerprints": FPS["ada"]}  # fmt: skip
 
 
+def test_a_formula_decision_records_the_cells_the_check_filed():
+    entry = {"id": "f", "call": "domain_owner", "reason": "r", "item": "ada:formula"}
+
+    (filed,) = approved_decisions([entry], SORTED, FPS, formula_cells={"ada": 3})
+    (none,) = approved_decisions([entry], SORTED, FPS, formula_cells={"ada": 0})
+
+    assert filed["fingerprints"] == {**FPS["ada"], "matched_only": "3"}
+    # None filed reads as 0 with the key left out, as before the count existed.
+    assert none["fingerprints"] == FPS["ada"]
+
+
 def test_a_cell_set_takes_no_decision():
     entry = {"id": "x", "call": "deliberate", "reason": "r", "item": "ada:cells"}
 

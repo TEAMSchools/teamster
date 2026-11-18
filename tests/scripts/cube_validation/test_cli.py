@@ -5368,6 +5368,69 @@ def test_sort_files_a_decided_cell_whose_formulas_differ_as_formula(fakes, tmp_p
     assert _triage(tmp_path)["formulas_not_compared"] == {}
 
 
+def test_a_formula_decision_is_asked_again_once_the_check_files_more_cells(
+    fakes, tmp_path
+):
+    _miami_differs(fakes, tmp_path)
+    path = _with_decision(_saved_fingerprints(tmp_path), tmp_path, call="fix_cube")
+    assert cli.main(["reapply", str(path)]) == 0
+    fakes.bq.formula = {
+        "dashboard": [{"region": "Newark", "value": 0.9123},
+                      {"region": "Miami", "value": 0.6}],
+        "cube": [{"regions_region_name": "Newark", "value": 0.91234},
+                 {"regions_region_name": "Miami", "value": 0.95}],
+    }  # fmt: skip
+    assert "ada-region:formula" in _sorted_items(path, tmp_path)
+    approved = _approved(tmp_path, [{"id": "which-rate", "call": "domain_owner",
+                                     "reason": "Which rate is right?",
+                                     "item": "ada-region:formula"}])  # fmt: skip
+
+    assert cli.main(["decide", str(path), str(approved)]) == 0
+
+    (decision,) = [d for d in load_view_config(path).decisions if d.formula]
+    assert decision.fingerprints == {
+        **_saved_fingerprints(tmp_path),
+        "matched_only": "2",
+    }
+    applied = json.loads(_latest_run(tmp_path).read_text())["applied"]
+    assert [d["id"] for d, _ in applied["quiet_cells"]] == ["which-rate"]
+
+    # Recorded with fewer cells than the check has filed since (here, as a
+    # decision written before the count was): asked again.
+    text = path.read_text()
+    path.write_text(text.replace("matched_only: '2'", "matched_only: '1'"))
+    assert cli.main(["reapply", str(path)]) == 0
+
+    applied = json.loads(_latest_run(tmp_path).read_text())["applied"]
+    assert [d["id"] for d in applied["reconfirm"]] == ["which-rate"]
+    assert applied["quiet_cells"] == []
+    assert [d["kind"] for d in applied["open_cells"]] == ["formula"]
+
+    # As the runbook says: delete it and decide the item again.
+    path.write_text(text)
+    with_it = load_view_config(path)
+    lines = text.splitlines()
+    (start,) = [i for i, line in enumerate(lines) if line.endswith("- id: which-rate")]
+    item = lines[start][: lines[start].index("-")]
+    stop = next(
+        (
+            i
+            for i in range(start + 1, len(lines))
+            if not lines[i].startswith(item + " ")
+        ),
+        len(lines),
+    )
+    path.write_text("\n".join(lines[:start] + lines[stop:]) + "\n")
+    assert [d.id for d in load_view_config(path).decisions] == [
+        d.id for d in with_it.decisions if d.id != "which-rate"
+    ]
+    assert cli.main(["reapply", str(path)]) == 0
+    assert "ada-region:formula" in _sorted_items(path, tmp_path)
+    assert cli.main(["decide", str(path), str(approved)]) == 0
+    (decision,) = [d for d in load_view_config(path).decisions if d.formula]
+    assert decision.fingerprints["matched_only"] == "2"
+
+
 def test_sort_reuses_a_stored_check_without_spending(fakes, tmp_path):
     path = _miami_differs(fakes, tmp_path)
     assert cli.main(["sort", str(path), "--no-trace"]) == 0

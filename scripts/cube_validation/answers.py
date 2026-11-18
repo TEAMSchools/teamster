@@ -22,7 +22,7 @@ from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any
 
-from .config import _TASK, CALLS, Decision, ViewConfig, mask_digits
+from .config import _TASK, CALLS, MATCHED_ONLY, Decision, ViewConfig, mask_digits
 from .cube_client import _literal
 from .decisions import cause_state
 from .report import (
@@ -1110,6 +1110,7 @@ def approved_decisions(
     triage: dict,
     fingerprints: dict[str, dict[str, str]],
     existing: list[Decision] | tuple[Decision, ...] = (),
+    formula_cells: dict[str, int] | None = None,
 ) -> list[dict]:
     """Turn an approved triage batch into decisions, in the file's key order.
 
@@ -1128,7 +1129,9 @@ def approved_decisions(
     Every other item takes its key fields from the triage item's `stub`,
     which holds its real values; a formula difference's is `formula: true`.
     Either kind takes the comparison's `{cube, dashboard}` from the run's
-    fingerprints. A missing cut or filter covers the view, so it takes
+    fingerprints; a formula difference also records, when there are any,
+    the cells the formula check filed in it (`fingerprints.matched_only`), so
+    more filed later sends it to re-confirm (`decisions.apply`). A missing cut or filter covers the view, so it takes
     neither a comparison nor fingerprints. A cell set takes no decision.
 
     Args:
@@ -1138,6 +1141,8 @@ def approved_decisions(
         triage: The view's `triage.json`, marked by `sort.mark_decided`.
         fingerprints: The latest run's fingerprints per comparison id.
         existing: The file's decisions.
+        formula_cells: Per comparison, the cells the formula check filed in
+            the run's formula difference (`CellDiff.matched_only`).
 
     Returns:
         The decisions to write: new ones, and the file's cause decisions
@@ -1228,6 +1233,8 @@ def approved_decisions(
                 decision["task"] = task
             if fp:
                 decision["fingerprints"] = fp
+            if stub.get("formula") and (n := (formula_cells or {}).get(comparison)):
+                decision["fingerprints"] = {**fp, MATCHED_ONLY: str(n)}
             out.append(decision)
             continue
 

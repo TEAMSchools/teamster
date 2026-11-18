@@ -689,7 +689,15 @@ def _decide(cfg: ViewConfig, path: Path, approved_path: Path) -> int:
     saved = sort.checked_sort(run, run_json, cfg.decisions, path.parent)
 
     decisions = answers.approved_decisions(
-        approved, saved, run.fingerprints, existing=cfg.decisions
+        approved,
+        saved,
+        run.fingerprints,
+        existing=cfg.decisions,
+        formula_cells={
+            d.comparison_id: d.matched_only
+            for d in run.applied.open_cells
+            if d.kind == "formula"
+        },
     )
     writes = [(path, d) for d in decisions]
 
