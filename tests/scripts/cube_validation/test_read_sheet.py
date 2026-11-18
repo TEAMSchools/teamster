@@ -1,7 +1,5 @@
 import dataclasses
 import json
-
-# trunk-ignore(bandit/B405): parses only the suite's own fixture text
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
