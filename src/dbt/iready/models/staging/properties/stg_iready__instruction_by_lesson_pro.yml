@@ -1,48 +1,147 @@
 models:
   - name: stg_iready__instruction_by_lesson_pro
+    description: >-
+      One row per student per completed i-Ready Pro lesson from the vendor's Pro
+      Instruction by Lesson SFTP export, typed and with a numeric pass flag.
+      Covers i-Ready Pro lessons only; classic i-Ready lessons are in
+      stg_iready__instruction_by_lesson.
     columns:
       - name: student_id
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          The vendor's Student ID for the student in the i-Ready roster, cast to
+          an integer.
         data_tests:
           - not_null
       - name: academic_year_int
         data_type: int64
+        description: >-
+          The academic year the export was pulled for, as the integer start year
+          of the school year. Taken from the Dagster partition.
       - name: school
         data_type: string
+        description: >-
+          The name of the school i-Ready has the student enrolled at.
       - name: subject
         data_type: string
+        description: >-
+          The subject of the completed lesson, Math or Reading.
       - name: level
         data_type: string
+        description: >-
+          The level the completed lesson is in.
       - name: topic
         data_type: string
+        description: >-
+          The topic the completed lesson is in.
       - name: lesson_title
         data_type: string
+        description: >-
+          The title of the completed lesson.
       - name: lesson_status
         data_type: string
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Where the student is in lesson completion or retry, such as lesson
+          completed, retry available, or retry completed.
       - name: lesson_result
         data_type: string
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Result after the student completed the lesson, Passed or Not Passed.
       - name: lesson_time_on_task_min
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Minutes the student spent on the completed lesson, including time on
+          lesson retries if completed, cast to an integer.
       - name: lesson_language
         data_type: string
+        description: >-
+          The language of the completed lesson.
       - name: skills_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Total number of skills in the completed lesson, cast to an integer.
+          One column covers both the vendor's Math skills and Reading
+          foundational skills fields.
       - name: skills_successful
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of skills the student was successful on in the completed
+          lesson, cast to an integer. One column covers both the vendor's Math
+          skills and Reading foundational skills fields.
       - name: items_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of Language Comprehension items the student completed in the
+          lesson, cast to an integer. Reading only.
       - name: items_correct
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of Language Comprehension items the student answered correctly,
+          cast to an integer. Reading only.
       - name: percent_items_correct
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Percent of Language Comprehension items the student answered
+          correctly, cast to numeric. Reading only.
       - name: completion_date
         data_type: date
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          The date the student completed the lesson, parsed from the vendor's
+          month/day/year text.
       - name: student_grade
         data_type: string
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          The student's grade level, as loaded from the vendor roster.
       - name: percent_skills_successful
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Percent of skills the student was successful on in the lesson, cast to
+          numeric. One column covers both the vendor's Math skills and Reading
+          foundational skills fields.
       - name: passed_or_not_passed_numeric
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Numeric pass flag derived from lesson_result, 1.0 when the value is
+          Passed and 0.0 otherwise, so it can be averaged into a pass rate.
 
 unit_tests:
   - name: unit_iready_instruction_by_lesson_pro_decimal_formatted_ints

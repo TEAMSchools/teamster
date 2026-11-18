@@ -34,8 +34,6 @@ attendance_facts_policy = FreshnessPolicy.cron(
 )
 
 policies: dict[AssetKey, FreshnessPolicy] = {
-    AssetKey(["kipptaf", "people", "int_people__staff_roster"]): adp_wfn_policy,
-    AssetKey(["kipptaf", "people", "int_people__staff_roster_history"]): adp_wfn_policy,
     AssetKey(["kipptaf", "people", "stg_people__employee_numbers"]): adp_wfn_policy,
     AssetKey(
         ["kipptaf", "adp_workforce_now", "stg_adp_workforce_now__workers"]

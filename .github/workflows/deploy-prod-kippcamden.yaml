@@ -17,6 +17,7 @@ on:
       - Dockerfile
       - uv.lock
       - src/dbt/cambium/**
+      - src/dbt/dbt_overrides/**
       - src/dbt/deanslist/**
       - src/dbt/edplan/**
       - src/dbt/finalsite/**

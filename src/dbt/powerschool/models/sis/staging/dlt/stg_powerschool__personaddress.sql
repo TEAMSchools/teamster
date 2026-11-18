@@ -1,0 +1,23 @@
+select
+    street,
+    linetwo,
+    city,
+    postalcode,
+    unit,
+    whocreated,
+    whencreated,
+    whomodified,
+    whenmodified,
+    addressline3,
+    addressline4,
+    addressline5,
+    verification,
+
+    cast(personaddressid as int) as personaddressid,
+    cast(statescodesetid as int) as statescodesetid,
+    cast(countrycodesetid as int) as countrycodesetid,
+    cast(geocodelatitude as numeric) as geocodelatitude,
+    cast(geocodelongitude as numeric) as geocodelongitude,
+    cast(countycodesetid as int) as countycodesetid,
+    cast(isverified as int) as isverified,
+from {{ source("powerschool_dlt", "personaddress") }}

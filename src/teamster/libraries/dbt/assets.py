@@ -1,7 +1,7 @@
 import json
 import re
 
-from dagster import AssetExecutionContext, RetryPolicy
+from dagster import AssetExecutionContext, AssetObservation, RetryPolicy
 from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
 
 
@@ -10,6 +10,7 @@ def build_dbt_assets(
     dagster_dbt_translator: DagsterDbtTranslator,
     select: str = "fqn:*",
     exclude: str | None = None,
+    selector: str | None = None,
     partitions_def=None,
     name: str | None = None,
     op_tags: dict[str, object] | None = None,
@@ -17,10 +18,17 @@ def build_dbt_assets(
 ):
     sources = manifest["sources"]
 
+    # dagster-dbt selects against a dict shim of the manifest, which lacks dbt's
+    # depends_on_nodes property; a cautious criterion in selectors.yml reads it.
+    # shortcut: patches the dict in place; drop when dagster-dbt adds the key.
+    for node in manifest["nodes"].values():
+        node.setdefault("depends_on_nodes", node["depends_on"].get("nodes", []))
+
     @dbt_assets(
         manifest=manifest,
         select=select,
         exclude=exclude,
+        selector=selector,
         name=name,
         partitions_def=partitions_def,
         dagster_dbt_translator=dagster_dbt_translator,
@@ -112,6 +120,17 @@ def build_dbt_assets(
         # build models
         dbt_build = dbt_cli.cli(args=["build"], context=context)
 
-        yield from dbt_build.stream().fetch_column_metadata(with_column_lineage=False)
+        for event in dbt_build.stream().fetch_column_metadata(
+            with_column_lineage=False
+        ):
+            # dagster-dbt emits AssetObservation only for a test it cannot
+            # report as a selected check: one pulled in by dbt's eager indirect
+            # selection, or a multi-parent singular test with no
+            # meta.dagster.ref. It lands on every parent and pushes real
+            # materializations out of the asset catalog. The test result stays
+            # in the dbt logs. Verified against dagster-dbt 0.29.26
+            # (_to_observation_events_for_test); recheck on upgrade.
+            if not isinstance(event, AssetObservation):
+                yield event
 
     return _assets

@@ -3,12 +3,19 @@ models:
     description: >-
       Amplify mCLASS DIBELS progress monitoring aimline data from the PM_CUSTOM
       SFTP file. Each row represents a single probe assessment for a student
-      within a PM period, with aimline goal and status.
+      within a PM period, with aimline goal and status. Meant to hold one row
+      per probe; Amplify filing errors can break that, and the test below warns.
     config:
       meta:
         contains_pii: true
     data_tests:
       - dbt_utils.unique_combination_of_columns:
+          description: >-
+            Amplify mCLASS filed more than one aimline row under one student ID
+            for the same probe, day and grade, usually 2 children sharing an
+            account. The kipptaf aimline intermediate ignores every colliding
+            aimline row, so the probe carries no aimline goal or status. Fix it
+            in mCLASS by moving the result to the right student.
           arguments:
             combination_of_columns:
               - student_primary_id
@@ -19,8 +26,17 @@ models:
               - device_date
               - assessment_grade
           config:
-            severity: error
+            severity: warn
     columns:
+      - name: student_primary_id
+        data_type: int64
+        description: Student primary identifier (student number).
+        data_tests:
+          # gate: the kipptaf aimline intermediate ignores colliding rows,
+          # which would hide a whole file of null ids
+          - not_null:
+              config:
+                severity: error
       - name: measure
         data_type: string
         description: >-
@@ -102,9 +118,6 @@ models:
       - name: student_first_name
         data_type: string
         description: Student first name.
-      - name: student_primary_id
-        data_type: int64
-        description: Student primary identifier (student number).
       - name: enrollment_teacher_name
         data_type: string
         description: >-

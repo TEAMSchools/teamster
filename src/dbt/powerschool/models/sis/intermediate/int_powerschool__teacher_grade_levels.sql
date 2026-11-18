@@ -80,6 +80,7 @@ select
     grade_level_ratio,
 
     row_number() over (
-        partition by teachernumber, cc_academic_year order by grade_level_ratio desc
+        partition by teachernumber, cc_academic_year
+        order by grade_level_ratio desc, grade_level asc
     ) as grade_level_rank,
 from percentages

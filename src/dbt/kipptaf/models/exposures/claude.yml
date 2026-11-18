@@ -1,0 +1,25 @@
+exposures:
+  # The gradebook-flag-triage end-user Claude skill (TEAMSchools/ps-plugins,
+  # skills/gradebook-flag-triage/) reads these five relations by name through
+  # the BigQuery connector. Four are intermediates read directly, against the
+  # rpt_-in-between rule, as the short-term path decided on #5782; the Cube view
+  # that replaces this is a separate issue. This exposure records lineage only;
+  # it does not fail on a rename. A rename or column change here must update
+  # that skill's references/queries.md in the same change.
+  - name: gradebook_flag_triage_skill
+    label: Gradebook Flag Triage (Claude skill)
+    type: application
+    owner:
+      name: Data Team
+    depends_on:
+      - ref("rpt_tableau__gradebook_audit")
+      - ref("int_powerschool__gradebook_assignment_scores_rollup")
+      - ref("int_powerschool__gradebook_assignments_scores")
+      - ref("int_powerschool__u_expectations_qtd_unpivot")
+      - ref("int_extracts__course_enrollments_by_term")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - claude
+            - bigquery

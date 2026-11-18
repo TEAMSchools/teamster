@@ -1,0 +1,541 @@
+models:
+  - name: int_assessments__performance_band_union
+    description: >-
+      Every band of every Illuminate and Focus Assessments band set that scores
+      an internal assessment, one row per band, with the set's mastery band and
+      each band's level relative to that mastery band. Illuminate and Focus
+      number their band sets separately, so a set is identified by source and
+      band set id together. Band sets that score no internal assessment are left
+      out. Focus band set ids are unique only within 1 Focus instance; kippmiami
+      is the only one, so adding a second Focus region means adding the region
+      to the scores fact's join on this model.
+    config:
+      materialized: table
+      meta:
+        dagster:
+          # The assessment star's tick; the scores fact reads this model.
+          # Refs #4559, #4821
+          automation_condition:
+            cron_schedule: 30 0,10,13,15,17 * * *
+    # The scores fact joins on these 3 columns to read each score's level, so a
+    # duplicate here would fan out the fact.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - source
+              - performance_band_set_id
+              - band_number
+          config:
+            severity: error
+    columns:
+      # The level rule's guard. Severity warn by design: an error here would
+      # skip the scores fact and stop every assessment dashboard refreshing.
+      - name: is_level_rule_valid
+        data_type: boolean
+        description: >-
+          True when the band set meets the 3 assumptions the level rule needs:
+          every band from the set's mastery band up is a mastery band and no
+          band below it is; band numbers run 1 to N in cut-point order; and
+          mastery starts at band 3 or later, so Approaching and Far Below never
+          fall on 1 band. False flags a band set to fix in Illuminate or Focus
+          band-set setup, or a rule to decide; until then its scores load with
+          no level.
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+          - accepted_values:
+              arguments:
+                values: [true]
+                quote: false
+              config:
+                severity: warn
+
+      - name: source
+        quote: true
+        data_type: string
+        description: Source system of the band set, illuminate or apex.
+      - name: performance_band_set_id
+        data_type: int64
+        description: >-
+          The source system's own band set id; unique only together with source.
+      - name: band_number
+        data_type: int64
+        description: Position of the band in its set, 1 = lowest.
+      - name: is_mastery
+        data_type: boolean
+        description: The source's mastery flag for this band.
+      - name: mastery_band_number
+        data_type: int64
+        description: The set's lowest mastery band.
+      - name: mastery_level
+        data_type: string
+        description: >-
+          The band's level relative to its set's mastery band. At/Above is the
+          mastery band and every band above it; Approaching is the band directly
+          below the mastery band; Below is every band under that. Null when the
+          set fails the level rule's assumptions (is_level_rule_valid).
+      - name: is_far_below
+        data_type: boolean
+        description: >-
+          True for band 1 when band 1 is not a mastery band. Null when the set
+          fails the level rule's assumptions (is_level_rule_valid).
+
+unit_tests:
+  - name: test_performance_band_union_levels
+    description: >-
+      Illuminate set 1 starts mastery at band 4 and set 2 at band 3; Focus set 1
+      (same id as Illuminate set 1) has 8 bands, Level 3 at band 6, and repeats
+      the label Low Level 1 on bands 1 and 4. Illuminate set 4 scores only a
+      non-internal row, so it is left out. Illuminate set 5 starts mastery at
+      band 2, fails the level rule, and gets no level. Illuminate set 6 starts
+      mastery at band 3 but flags band 4 as not mastery, so it fails too.
+    model: int_assessments__performance_band_union
+    given:
+      # sql format: the model reads only these 3 columns
+      - input: ref('int_assessments__response_rollup')
+        format: sql
+        rows: |
+          select 'illuminate' as source, 1 as performance_band_set_id, true as is_internal_assessment
+          union all select 'illuminate', 2, true
+          union all select 'apex', 1, true
+          union all select 'illuminate', 4, false
+          union all select 'illuminate', 5, true
+          union all select 'illuminate', 6, true
+          union all select 'illuminate', null, true
+      - input: ref('int_illuminate__performance_band_sets')
+        rows:
+          - {
+              performance_band_set_id: 1,
+              description: Set A,
+              label: A1,
+              label_number: 1,
+              minimum_value: 0,
+              is_mastery: false,
+            }
+          - {
+              performance_band_set_id: 1,
+              description: Set A,
+              label: A2,
+              label_number: 2,
+              minimum_value: 21,
+              is_mastery: false,
+            }
+          - {
+              performance_band_set_id: 1,
+              description: Set A,
+              label: A3,
+              label_number: 3,
+              minimum_value: 41,
+              is_mastery: false,
+            }
+          - {
+              performance_band_set_id: 1,
+              description: Set A,
+              label: A4,
+              label_number: 4,
+              minimum_value: 61,
+              is_mastery: true,
+            }
+          - {
+              performance_band_set_id: 1,
+              description: Set A,
+              label: A5,
+              label_number: 5,
+              minimum_value: 81,
+              is_mastery: true,
+            }
+          - {
+              performance_band_set_id: 2,
+              description: Set B,
+              label: B1,
+              label_number: 1,
+              minimum_value: 0,
+              is_mastery: false,
+            }
+          - {
+              performance_band_set_id: 2,
+              description: Set B,
+              label: B2,
+              label_number: 2,
+              minimum_value: 40,
+              is_mastery: false,
+            }
+          - {
+              performance_band_set_id: 2,
+              description: Set B,
+              label: B3,
+              label_number: 3,
+              minimum_value: 60,
+              is_mastery: true,
+            }
+          - {
+              performance_band_set_id: 2,
+              description: Set B,
+              label: B4,
+              label_number: 4,
+              minimum_value: 75,
+              is_mastery: true,
+            }
+          - {
+              performance_band_set_id: 2,
+              description: Set B,
+              label: B5,
+              label_number: 5,
+              minimum_value: 88,
+              is_mastery: true,
+            }
+          - {
+              performance_band_set_id: 4,
+              description: Set D,
+              label: D1,
+              label_number: 1,
+              minimum_value: 0,
+              is_mastery: false,
+            }
+          - {
+              performance_band_set_id: 5,
+              description: Set E,
+              label: E1,
+              label_number: 1,
+              minimum_value: 0,
+              is_mastery: false,
+            }
+          - {
+              performance_band_set_id: 5,
+              description: Set E,
+              label: E2,
+              label_number: 2,
+              minimum_value: 50,
+              is_mastery: true,
+            }
+          - {
+              performance_band_set_id: 5,
+              description: Set E,
+              label: E3,
+              label_number: 3,
+              minimum_value: 65,
+              is_mastery: true,
+            }
+          - {
+              performance_band_set_id: 5,
+              description: Set E,
+              label: E4,
+              label_number: 4,
+              minimum_value: 80,
+              is_mastery: true,
+            }
+          - {
+              performance_band_set_id: 5,
+              description: Set E,
+              label: E5,
+              label_number: 5,
+              minimum_value: 90,
+              is_mastery: true,
+            }
+          - {
+              performance_band_set_id: 6,
+              description: Set F,
+              label: F1,
+              label_number: 1,
+              minimum_value: 0,
+              is_mastery: false,
+            }
+          - {
+              performance_band_set_id: 6,
+              description: Set F,
+              label: F2,
+              label_number: 2,
+              minimum_value: 20,
+              is_mastery: false,
+            }
+          - {
+              performance_band_set_id: 6,
+              description: Set F,
+              label: F3,
+              label_number: 3,
+              minimum_value: 40,
+              is_mastery: true,
+            }
+          - {
+              performance_band_set_id: 6,
+              description: Set F,
+              label: F4,
+              label_number: 4,
+              minimum_value: 60,
+              is_mastery: false,
+            }
+          - {
+              performance_band_set_id: 6,
+              description: Set F,
+              label: F5,
+              label_number: 5,
+              minimum_value: 80,
+              is_mastery: true,
+            }
+      - input: ref('int_focus__apex_band_levels')
+        format: sql
+        rows: |
+          select 1 as band_set_id, 'Low Level 1' as label, cast(0 as numeric) as min_score, 'Set C' as band_set_name, cast(20 as numeric) as upper_bound, 1 as label_number, false as is_mastery, 'x' as _dbt_source_relation, 'kippmiami' as _dbt_source_project
+          union all select 1, 'Mid Level 1', 20, 'Set C', 30, 2, false, 'x', 'kippmiami'
+          union all select 1, 'High Level 1', 30, 'Set C', 40, 3, false, 'x', 'kippmiami'
+          union all select 1, 'Low Level 1', 40, 'Set C', 50, 4, false, 'x', 'kippmiami'
+          union all select 1, 'High Level 2', 50, 'Set C', 60, 5, false, 'x', 'kippmiami'
+          union all select 1, 'Level 3', 60, 'Set C', 70, 6, true, 'x', 'kippmiami'
+          union all select 1, 'Level 4', 70, 'Set C', 80, 7, true, 'x', 'kippmiami'
+          union all select 1, 'Level 5', 80, 'Set C', 1000000, 8, true, 'x', 'kippmiami'
+    expect:
+      rows:
+        - {
+            source: illuminate,
+            performance_band_set_id: 1,
+            band_number: 1,
+            mastery_band_number: 4,
+            mastery_level: Below,
+            is_far_below: true,
+            is_level_rule_valid: true,
+          }
+        - {
+            source: illuminate,
+            performance_band_set_id: 1,
+            band_number: 2,
+            mastery_band_number: 4,
+            mastery_level: Below,
+            is_far_below: false,
+            is_level_rule_valid: true,
+          }
+        - {
+            source: illuminate,
+            performance_band_set_id: 1,
+            band_number: 3,
+            mastery_band_number: 4,
+            mastery_level: Approaching,
+            is_far_below: false,
+            is_level_rule_valid: true,
+          }
+        - {
+            source: illuminate,
+            performance_band_set_id: 1,
+            band_number: 4,
+            mastery_band_number: 4,
+            mastery_level: At/Above,
+            is_far_below: false,
+            is_level_rule_valid: true,
+          }
+        - {
+            source: illuminate,
+            performance_band_set_id: 1,
+            band_number: 5,
+            mastery_band_number: 4,
+            mastery_level: At/Above,
+            is_far_below: false,
+            is_level_rule_valid: true,
+          }
+        - {
+            source: illuminate,
+            performance_band_set_id: 2,
+            band_number: 1,
+            mastery_band_number: 3,
+            mastery_level: Below,
+            is_far_below: true,
+            is_level_rule_valid: true,
+          }
+        - {
+            source: illuminate,
+            performance_band_set_id: 2,
+            band_number: 2,
+            mastery_band_number: 3,
+            mastery_level: Approaching,
+            is_far_below: false,
+            is_level_rule_valid: true,
+          }
+        - {
+            source: illuminate,
+            performance_band_set_id: 2,
+            band_number: 3,
+            mastery_band_number: 3,
+            mastery_level: At/Above,
+            is_far_below: false,
+            is_level_rule_valid: true,
+          }
+        - {
+            source: illuminate,
+            performance_band_set_id: 2,
+            band_number: 4,
+            mastery_band_number: 3,
+            mastery_level: At/Above,
+            is_far_below: false,
+            is_level_rule_valid: true,
+          }
+        - {
+            source: illuminate,
+            performance_band_set_id: 2,
+            band_number: 5,
+            mastery_band_number: 3,
+            mastery_level: At/Above,
+            is_far_below: false,
+            is_level_rule_valid: true,
+          }
+        - {
+            source: apex,
+            performance_band_set_id: 1,
+            band_number: 1,
+            mastery_band_number: 6,
+            mastery_level: Below,
+            is_far_below: true,
+            is_level_rule_valid: true,
+          }
+        - {
+            source: apex,
+            performance_band_set_id: 1,
+            band_number: 2,
+            mastery_band_number: 6,
+            mastery_level: Below,
+            is_far_below: false,
+            is_level_rule_valid: true,
+          }
+        - {
+            source: apex,
+            performance_band_set_id: 1,
+            band_number: 3,
+            mastery_band_number: 6,
+            mastery_level: Below,
+            is_far_below: false,
+            is_level_rule_valid: true,
+          }
+        - {
+            source: apex,
+            performance_band_set_id: 1,
+            band_number: 4,
+            mastery_band_number: 6,
+            mastery_level: Below,
+            is_far_below: false,
+            is_level_rule_valid: true,
+          }
+        - {
+            source: apex,
+            performance_band_set_id: 1,
+            band_number: 5,
+            mastery_band_number: 6,
+            mastery_level: Approaching,
+            is_far_below: false,
+            is_level_rule_valid: true,
+          }
+        - {
+            source: apex,
+            performance_band_set_id: 1,
+            band_number: 6,
+            mastery_band_number: 6,
+            mastery_level: At/Above,
+            is_far_below: false,
+            is_level_rule_valid: true,
+          }
+        - {
+            source: apex,
+            performance_band_set_id: 1,
+            band_number: 7,
+            mastery_band_number: 6,
+            mastery_level: At/Above,
+            is_far_below: false,
+            is_level_rule_valid: true,
+          }
+        - {
+            source: apex,
+            performance_band_set_id: 1,
+            band_number: 8,
+            mastery_band_number: 6,
+            mastery_level: At/Above,
+            is_far_below: false,
+            is_level_rule_valid: true,
+          }
+        - {
+            source: illuminate,
+            performance_band_set_id: 5,
+            band_number: 1,
+            mastery_band_number: 2,
+            mastery_level: null,
+            is_far_below: null,
+            is_level_rule_valid: false,
+          }
+        - {
+            source: illuminate,
+            performance_band_set_id: 5,
+            band_number: 2,
+            mastery_band_number: 2,
+            mastery_level: null,
+            is_far_below: null,
+            is_level_rule_valid: false,
+          }
+        - {
+            source: illuminate,
+            performance_band_set_id: 5,
+            band_number: 3,
+            mastery_band_number: 2,
+            mastery_level: null,
+            is_far_below: null,
+            is_level_rule_valid: false,
+          }
+        - {
+            source: illuminate,
+            performance_band_set_id: 5,
+            band_number: 4,
+            mastery_band_number: 2,
+            mastery_level: null,
+            is_far_below: null,
+            is_level_rule_valid: false,
+          }
+        - {
+            source: illuminate,
+            performance_band_set_id: 5,
+            band_number: 5,
+            mastery_band_number: 2,
+            mastery_level: null,
+            is_far_below: null,
+            is_level_rule_valid: false,
+          }
+        - {
+            source: illuminate,
+            performance_band_set_id: 6,
+            band_number: 1,
+            mastery_band_number: 3,
+            mastery_level: null,
+            is_far_below: null,
+            is_level_rule_valid: false,
+          }
+        - {
+            source: illuminate,
+            performance_band_set_id: 6,
+            band_number: 2,
+            mastery_band_number: 3,
+            mastery_level: null,
+            is_far_below: null,
+            is_level_rule_valid: false,
+          }
+        - {
+            source: illuminate,
+            performance_band_set_id: 6,
+            band_number: 3,
+            mastery_band_number: 3,
+            mastery_level: null,
+            is_far_below: null,
+            is_level_rule_valid: false,
+          }
+        - {
+            source: illuminate,
+            performance_band_set_id: 6,
+            band_number: 4,
+            mastery_band_number: 3,
+            mastery_level: null,
+            is_far_below: null,
+            is_level_rule_valid: false,
+          }
+        - {
+            source: illuminate,
+            performance_band_set_id: 6,
+            band_number: 5,
+            mastery_band_number: 3,
+            mastery_level: null,
+            is_far_below: null,
+            is_level_rule_valid: false,
+          }

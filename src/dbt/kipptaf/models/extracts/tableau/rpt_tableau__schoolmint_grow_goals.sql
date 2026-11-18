@@ -41,19 +41,20 @@ select
     rt.end_date,
     rt.is_current,
 
-    m.tag_id as goal_code,
-    m.tag_name as goal_name,
-    m.strand_name,
-    m.bucket_name,
-    m.goal_type_name,
+    f.staff_observation_assignment_key as assignment_id,
+    f.assignment_created_timestamp as assignment_date,
 
-    a.assignment_id,
-    a.created as assignment_date,
-    a.creator_name as observer,
+    gt.staff_observation_goal_type_key as goal_code,
+    gt.goal_name,
+    gt.strand_name,
+    gt.bucket_name,
+    gt.goal_type as goal_type_name,
+
+    cs.full_name as observer,
 
     tgl.grade_level as grade_taught,
 
-    if(a.assignment_id is not null, 1, 0) as is_assigned,
+    if(f.staff_observation_assignment_key is not null, 1, 0) as is_assigned,
 from {{ ref("int_people__staff_roster_history") }} as srh
 left join
     {{ ref("int_people__location_crosswalk") }} as lc
@@ -67,17 +68,15 @@ inner join
     )
     and rt.type = 'MG'
     and rt.academic_year = {{ var("current_academic_year") }}
+left join {{ ref("dim_staff") }} as ts on srh.employee_number = ts.staff_unique_id
 left join
-    {{ ref("stg_schoolmint_grow__users") }} as u
-    on srh.employee_number = u.internal_id_int
+    {{ ref("fct_staff_observation_goals") }} as f
+    on ts.staff_key = f.teacher_staff_key
+    and f.assignment_date between rt.start_date and rt.end_date
 left join
-    {{ ref("stg_schoolmint_grow__assignments") }} as a
-    on u.user_id = a.user_id
-    and a.created_date_local between rt.start_date and rt.end_date
-left join
-    {{ ref("int_schoolmint_grow__assignments__tags") }} as t
-    on a.assignment_id = t.assignment_id
-left join {{ ref("int_schoolmint_grow__microgoals") }} as m on t.tag_id = m.tag_id
+    {{ ref("dim_staff_observation_goal_types") }} as gt
+    on f.staff_observation_goal_type_key = gt.staff_observation_goal_type_key
+left join {{ ref("dim_staff") }} as cs on f.creator_staff_key = cs.staff_key
 left join
     {{ ref("int_students__teacher_grade_levels") }} as tgl
     on srh.powerschool_teacher_number = tgl.teachernumber

@@ -1,7 +1,11 @@
 models:
   - name: int_topline__microgoals_assigned_weekly
+    config:
+      enabled: false
     data_tests:
       - dbt_utils.unique_combination_of_columns:
+          config:
+            enabled: false
           arguments:
             combination_of_columns:
               - employee_number

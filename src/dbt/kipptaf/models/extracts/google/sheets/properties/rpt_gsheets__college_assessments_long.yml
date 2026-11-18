@@ -234,3 +234,22 @@ models:
         description: >-
           Whether the Math score meets the college-ready benchmark. NA means no
           benchmark is defined for this score type.
+      - name: "`ELA Bucket`"
+        data_type: string
+        description: >-
+          The student's ELA bucket this year — Bucket 1, 2, 3 or 4, or No Bucket
+          Assigned for a senior with no stored bucket. Repeated on every row for
+          the student. Last in the column order so the sheet's existing columns
+          keep their positions.
+        config:
+          meta:
+            contains_pii: true
+      - name: "`Math Bucket`"
+        data_type: string
+        description: >-
+          The student's Math bucket this year — Bucket 1, 2, 3 or 4, or No
+          Bucket Assigned for a senior with no stored bucket. Repeated on every
+          row for the student.
+        config:
+          meta:
+            contains_pii: true

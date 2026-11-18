@@ -1,40 +1,66 @@
 models:
   - name: int_illuminate__student_session_aff
+    description: >-
+      Illuminate student enrollment stints (student-session affiliations) with
+      the session's academic year and site. One row per stint. The inner join to
+      sessions drops stints whose session is missing.
+    config:
+      meta:
+        contains_pii: true
     columns:
       - name: stu_sess_id
         data_type: int64
+        description: Illuminate student-session affiliation id.
+        data_tests:
+          - unique
       - name: student_id
         data_type: int64
+        description: Illuminate student id.
       - name: session_id
         data_type: int64
+        description: Illuminate session id.
       - name: grade_level_id
         data_type: int64
+        description: Illuminate grade level id for the stint.
       - name: attendance_program_id
         data_type: int64
+        description: Attendance program code id.
       - name: tuition_payer_code_id
         data_type: int64
+        description: Tuition payer code id.
       - name: entry_date
         data_type: date
+        description: Stint entry date.
       - name: leave_date
         data_type: date
+        description: Stint leave date.
       - name: entry_code_id
         data_type: int64
+        description: Entry code id.
       - name: exit_code_id
         data_type: int64
+        description: Exit code id.
       - name: track_number
         data_type: int64
+        description: Calendar track number.
       - name: fte_override
         data_type: numeric
+        description: FTE override for the stint.
       - name: is_primary_ada
         data_type: boolean
+        description: Whether the stint is the student's primary ADA enrollment.
       - name: created_at
         data_type: timestamp
+        description: When the stint record was created.
       - name: academic_year
         data_type: int64
+        description: The session's academic year, as Illuminate stores it.
       - name: site_id
         data_type: int64
+        description: The session's Illuminate site id.
       - name: rn_student_session_desc
         data_type: int64
-        description:
-          ROWNUMBER of value partitioned by student_id, academic_year ordered by
-          entry_date, leave_date.
+        description: >-
+          Row number within student_id and academic_year, ordered by entry_date
+          then leave_date, both descending. 1 is the student's latest stint in
+          that year.

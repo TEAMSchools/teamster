@@ -1,28 +1,10 @@
 with
-    /* Student Number from Family Surveys */
-    family_responses as (
-        select
-            survey_id,
-            survey_response_id,
-            academic_year,
-
-            safe_cast(
-                max(
-                    if(
-                        question_shortname
-                        in ('student_number', 'family_respondent_number'),
-                        answer,
-                        null
-                    )
-                ) over (partition by answer order by date_submitted) as int
-            ) as respondent_number,
-        from {{ ref("int_surveys__survey_responses") }}
+    open_rounds as (
+        select term_name, term_code, academic_year,
+        from {{ ref("dim_terms") }}
         where
-            survey_title in (
-                'KIPP NJ & KIPP Miami Family Survey',
-                'KIPP Miami Re-Commitment Form & Family School Community Diagnostic'
-            )
-            and question_shortname in ('student_number', 'family_respondent_number')
+            `type` = 'SURVEY'
+            and end_date >= current_date('{{ var("local_timezone") }}')
     )
 
 /* Google Forms and Alchemer Responses */
@@ -44,7 +26,7 @@ select
     coalesce(se1.spedlep, se2.spedlep) as student_spedlep,
 
     coalesce(
-        srh.employee_number, se1.student_number, fr.respondent_number
+        srh.employee_number, se1.student_number, ss.respondent_student_number
     ) as respondent_number,
 
     coalesce(srh.home_work_location_region, se1.region, se2.region) as region,
@@ -84,14 +66,16 @@ left join
     {{ ref("int_extracts__student_enrollments") }} as se1
     on sr.respondent_email = se1.student_email
     and sr.academic_year = se1.academic_year
+    and se1.rn_year = 1
 left join
-    family_responses as fr
-    on sr.survey_id = fr.survey_id
-    and sr.survey_response_id = fr.survey_response_id
+    {{ ref("int_surveys__survey_submissions") }} as ss
+    on sr.survey_id = ss.survey_id
+    and sr.survey_response_id = ss.survey_response_id
 left join
     {{ ref("int_extracts__student_enrollments") }} as se2
-    on fr.respondent_number = se2.student_number
-    and fr.academic_year = se2.academic_year
+    on ss.respondent_student_number = se2.student_number
+    and ss.academic_year = se2.academic_year
+    and se2.rn_year = 1
 left join
     {{ ref("stg_google_sheets__surveys__scd_answer_crosswalk") }} as ac
     on sr.question_shortname = ac.question_code
@@ -105,8 +89,14 @@ left join
     and srh.home_work_location_dagster_code_location = tgl._dbt_source_project
     and sr.academic_year = tgl.academic_year
     and tgl.grade_level_rank = 1
+left join
+    open_rounds as orr
+    on sr.survey_title = orr.term_name
+    and sr.term_code = orr.term_code
+    and sr.academic_year = orr.academic_year
 where
-    sr.question_shortname like '%scd%'
+    orr.term_code is null
+    and sr.question_shortname like '%scd%'
     and sr.survey_title in (
         'Engagement & Support Surveys',
         'KIPP NJ & KIPP Miami Family Survey',
@@ -114,6 +104,7 @@ where
         'School Community Diagnostic Staff Survey',
         'KIPP Miami Re-Commitment Form & Family School Community Diagnostic'
     )
+    and sr.round_rn = 1
 
 union all
 
@@ -122,7 +113,7 @@ select
     'PowerSchool' as survey_id,
     'PowerSchool Family School Community Diagnostic' as survey_title,
 
-    sr.external_student_id as survey_response_id,
+    cast(sr.id as string) as survey_response_id,
     sr.data_item_key as question_shortname,
 
     safe_cast(sr.submitted as timestamp) as date_submitted,
@@ -161,6 +152,7 @@ left join
     {{ ref("int_extracts__student_enrollments") }} as se
     on sr.external_student_id = safe_cast(se.student_number as string)
     and rt.academic_year = se.academic_year
+    and se.rn_year = 1
 left join
     {{ ref("stg_google_sheets__surveys__scd_answer_crosswalk") }} as ac
     on sr.data_item_key = ac.question_code
@@ -168,8 +160,14 @@ left join
 left join
     {{ ref("stg_google_sheets__surveys__scd_question_crosswalk") }} as qc
     on sr.data_item_key = qc.question_code
+left join
+    open_rounds as orr
+    on rt.name = orr.term_name
+    and rt.code = orr.term_code
+    and rt.academic_year = orr.academic_year
 where
-    sr.data_item_key in (
+    orr.term_code is null
+    and sr.data_item_key in (
         'School_Survey_01',
         'School_Survey_02',
         'School_Survey_03',

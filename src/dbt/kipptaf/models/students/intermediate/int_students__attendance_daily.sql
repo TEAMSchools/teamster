@@ -408,4 +408,18 @@ select
         else false
     end as is_truant,
 
+    case
+        when is_absent is null
+        then null
+        when is_oss = 1
+        then 'Out-of-School Suspension'
+        when is_iss = 1
+        then 'In-School Suspension'
+        when is_absent = 1
+        then 'Absent'
+        when is_tardy = 1
+        then 'Tardy'
+        else 'Present'
+    end as attendance_category,
+
 from running_calcs

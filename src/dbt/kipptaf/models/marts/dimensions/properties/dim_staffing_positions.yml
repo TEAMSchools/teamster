@@ -30,13 +30,6 @@ models:
             foreign_key:
               to: ref('dim_locations')
               to_columns: [location_key]
-        data_tests:
-          # TODO: #3686 — adp_location vs dim_locations.location_name coverage
-          # gap (same class as #3672). Promote to error once crosswalk is clean.
-          - relationships:
-              arguments:
-                to: ref('dim_locations')
-                field: location_key
       - name: incumbent_staff_key
         data_type: string
         description: >-
@@ -48,13 +41,6 @@ models:
             foreign_key:
               to: ref('dim_staff')
               to_columns: [staff_key]
-        data_tests:
-          # TODO: #3710 — Seat Tracker retains historical incumbents outside
-          # dim_staff's active-primary scope. Promote to error once resolved.
-          - relationships:
-              arguments:
-                to: ref('dim_staff')
-                field: staff_key
 
       - name: recruiter_staff_key
         data_type: string
@@ -67,13 +53,6 @@ models:
             foreign_key:
               to: ref('dim_staff')
               to_columns: [staff_key]
-        data_tests:
-          # TODO: #3710 — Seat Tracker recruiter values include staff outside
-          # dim_staff's active-primary scope. Promote to error once resolved.
-          - relationships:
-              arguments:
-                to: ref('dim_staff')
-                field: staff_key
 
       - name: academic_year
         data_type: int64

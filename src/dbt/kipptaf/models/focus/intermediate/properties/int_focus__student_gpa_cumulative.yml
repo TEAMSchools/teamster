@@ -1,0 +1,12 @@
+models:
+  - name: int_focus__student_gpa_cumulative
+    description: >-
+      Kipptaf-level union_relations passthrough of kippmiami's
+      int_focus__student_gpa_cumulative. Column docs and tests live on the
+      kippmiami source model.
+    config:
+      meta:
+        contains_pii: true
+    columns:
+      - name: _dbt_source_project
+        description: District code location derived from _dbt_source_relation.

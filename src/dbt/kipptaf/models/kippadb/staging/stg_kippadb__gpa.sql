@@ -48,6 +48,8 @@ with
             source_gpa.time_period_sort_order__c as time_period_sort_order,
             source_gpa.transcript_date__c as transcript_date,
             source_gpa.type__c as `type`,
+
+            round(source_gpa.gpa__c, 2) as gpa_rounded,
         from {{ source("kippadb", "gpa") }} as source_gpa
         where not source_gpa.isdeleted
     )
@@ -67,4 +69,9 @@ select
             date_field="transcript_date", start_month=7, year_source="start"
         )
     }} as academic_year,
+
+    row_number() over (
+        partition by student, record_type_id, gpa_rounded
+        order by transcript_date desc, last_modified_date desc, id desc
+    ) as rn_student_record_type_gpa,
 from gpa_clean

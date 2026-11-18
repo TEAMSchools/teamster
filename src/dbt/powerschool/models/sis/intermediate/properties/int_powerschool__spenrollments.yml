@@ -23,6 +23,15 @@ models:
         data_type: int64
       - name: specprog_name
         data_type: string
+      - name: student_number
+        data_type: int64
+        description:
+          School-facing student number, from stg_powerschool__students joined on
+          studentid. Null when the program enrollment's student has no student
+          record.
+        config:
+          meta:
+            contains_pii: true
       - name: is_out_of_district
         data_type: boolean
       - name: is_self_contained

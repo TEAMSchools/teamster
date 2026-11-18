@@ -93,6 +93,7 @@ with
             sc.location_grade_band as grade_band,
             sc.location_clean_name as school_clean_name,
             sc.location_region as school_business_unit_name,
+            sc.campus_name as school_campus_name,
         from responses_pivoted
         left join
             roster

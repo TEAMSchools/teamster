@@ -20,6 +20,8 @@ select
 
     gen.name as specprog_name,
 
+    s.student_number,
+
     if(gen.name = 'Out of District', true, false) as is_out_of_district,
 
     if(
@@ -30,3 +32,4 @@ inner join
     {{ ref("stg_powerschool__gen") }} as gen
     on sp.programid = gen.id
     and gen.cat = 'specprog'
+left join {{ ref("stg_powerschool__students") }} as s on sp.studentid = s.id

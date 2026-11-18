@@ -31,4 +31,4 @@ Authenticates to Tableau Server via Personal Access Token (PAT). Exposes
 re-signs-in (inside the existing tenacity loop) when Tableau rejects it with
 `401002`. Tableau intermittently rejects a token it issued under a second
 earlier; a fresh sign-in always recovers. Do not add a per-op 401 retry: this is
-the single fix point for all three Tableau assets.
+the single fix point for every Tableau asset.

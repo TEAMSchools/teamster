@@ -2,12 +2,12 @@ with
     -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
     responses as (
         select
-            employee_number,
+            respondent_employee_number as employee_number,
             academic_year,
-            survey_code,
+            term_code as survey_code,
             survey_response_id,
             date_submitted,
-        from {{ ref("rpt_tableau__survey_responses") }}
+        from {{ ref("int_surveys__survey_submissions") }}
         where round_rn = 1
     ),
 
@@ -55,6 +55,7 @@ select
     sr2.user_principal_name,
     sr2.sam_account_name,
 
+    sr2.reports_to_formatted_name as manager_name,
     sr2.reports_to_mail,
     sr2.reports_to_sam_account_name,
 

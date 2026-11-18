@@ -18,6 +18,7 @@ on:
       - uv.lock
       - src/dbt/amplify/**
       - src/dbt/cambium/**
+      - src/dbt/dbt_overrides/**
       - src/dbt/deanslist/**
       - src/dbt/edplan/**
       - src/dbt/finalsite/**

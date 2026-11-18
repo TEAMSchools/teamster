@@ -4,7 +4,8 @@ models:
       One row per student, at that student's most recent undergraduate
       enrollment (rn_undergrad = 1). Scoped to MS and HS school levels and to
       active or graduated enroll_status (0 or 3); out-of-district placements
-      excluded. Cumulative GPA and attendance are a snapshot as of that most
+      excluded. Miami is excluded until its GPA data is reviewed for this
+      report. Cumulative GPA and attendance are a snapshot as of that most
       recent enrollment's year — not necessarily the current academic year for a
       graduated or long-inactive student.
     data_tests:

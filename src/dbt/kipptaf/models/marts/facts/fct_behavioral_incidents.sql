@@ -71,7 +71,7 @@ select
 
     cast(i.close_ts_date as date) as close_date_key,
     cast(i.return_date_date as date) as return_date_key,
-from {{ ref("int_deanslist__incidents") }} as i
+from {{ ref("int_students__behavioral_incidents") }} as i
 inner join
     enrollments as enr
     on i.student_school_id = enr.student_number

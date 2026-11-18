@@ -1,0 +1,190 @@
+sources:
+  - name: branchingminds
+    schema:
+      "{%- if target.name in ['defer', 'dev'] -%}zz_{{ env_var('GITHUB_USER',
+      'dev') }}_{%- elif target.name == 'staging' -%}zz_stg_{%- endif
+      -%}kipptaf_branchingminds"
+    tables:
+      - name: src_branchingminds__academic_progress_monitoring
+        external:
+          location:
+            "{{ var('cloud_storage_uri_base')
+            }}/branchingminds/academic_progress_monitoring/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base')
+              }}/branchingminds/academic_progress_monitoring/"
+            format: AVRO
+            enable_logical_types: true
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - branchingminds
+                - academic_progress_monitoring
+      - name: src_branchingminds__benchmarks_universal_screeners
+        external:
+          location:
+            "{{ var('cloud_storage_uri_base')
+            }}/branchingminds/benchmarks_universal_screeners/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base')
+              }}/branchingminds/benchmarks_universal_screeners/"
+            format: AVRO
+            enable_logical_types: true
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - branchingminds
+                - benchmarks_universal_screeners
+      - name: src_branchingminds__current_student_tier_levels
+        external:
+          location:
+            "{{ var('cloud_storage_uri_base')
+            }}/branchingminds/current_student_tier_levels/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base')
+              }}/branchingminds/current_student_tier_levels/"
+            format: AVRO
+            enable_logical_types: true
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - branchingminds
+                - current_student_tier_levels
+      - name: src_branchingminds__daily_intervention_sessions
+        external:
+          location:
+            "{{ var('cloud_storage_uri_base')
+            }}/branchingminds/daily_intervention_sessions/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base')
+              }}/branchingminds/daily_intervention_sessions/"
+            format: AVRO
+            enable_logical_types: true
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - branchingminds
+                - daily_intervention_sessions
+      - name: src_branchingminds__goals
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/branchingminds/goals/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/branchingminds/goals/"
+            format: AVRO
+            enable_logical_types: true
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - branchingminds
+                - goals
+      - name: src_branchingminds__intervention_notes
+        external:
+          location:
+            "{{ var('cloud_storage_uri_base')
+            }}/branchingminds/intervention_notes/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base')
+              }}/branchingminds/intervention_notes/"
+            format: AVRO
+            enable_logical_types: true
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - branchingminds
+                - intervention_notes
+      - name: src_branchingminds__intervention_plans
+        external:
+          location:
+            "{{ var('cloud_storage_uri_base')
+            }}/branchingminds/intervention_plans/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base')
+              }}/branchingminds/intervention_plans/"
+            format: AVRO
+            enable_logical_types: true
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - branchingminds
+                - intervention_plans
+      - name: src_branchingminds__new_behavior_incident_report
+        external:
+          location:
+            "{{ var('cloud_storage_uri_base')
+            }}/branchingminds/new_behavior_incident_report/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base')
+              }}/branchingminds/new_behavior_incident_report/"
+            format: AVRO
+            enable_logical_types: true
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - branchingminds
+                - new_behavior_incident_report
+      - name: src_branchingminds__tiers
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/branchingminds/tiers/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/branchingminds/tiers/"
+            format: AVRO
+            enable_logical_types: true
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - branchingminds
+                - tiers

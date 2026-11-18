@@ -1,9 +1,19 @@
+with
+    open_rounds as (
+        select term_name, term_code, academic_year,
+        from {{ ref("dim_terms") }}
+        where
+            `type` = 'SURVEY'
+            and end_date >= current_date('{{ var("local_timezone") }}')
+    )
+
 -- trunk-ignore(sqlfluff/ST06): entity case fixed 3rd by Tableau RLS contract order
 select
     sr.survey_id,
     sr.survey_title,
     sr.survey_response_id,
     sr.survey_response_link,
+    sr.survey_question_id,
     sr.term_code as survey_code,
 
     'SURVEY' as survey_type,
@@ -79,3 +89,13 @@ left join
     and eh.home_work_location_dagster_code_location = tgl._dbt_source_project
     and sr.academic_year = tgl.academic_year
     and tgl.grade_level_rank = 1
+left join
+    open_rounds as orr
+    on sr.survey_title = orr.term_name
+    and sr.term_code = orr.term_code
+    and sr.academic_year = orr.academic_year
+where
+    orr.term_code is null
+    -- the surveys the Survey Dashboard reports on
+    and sr.survey_title
+    in ('Intent to Return Survey', 'KTAF Support Survey', 'Support Survey')

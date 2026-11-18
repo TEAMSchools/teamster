@@ -1,4 +1,24 @@
 with
+    terms as (
+        select
+            schoolid,
+            yearid,
+            academic_year,
+            abbreviation,
+            firstday,
+            lastday,
+            portion,
+
+            -- staging semester assumes quarters; semester years use their own term
+            case portion when 4 then semester when 2 then abbreviation end as semester,
+
+            max(portion) over (partition by schoolid, yearid) as term_unit_portion,
+        from {{ ref("stg_powerschool__terms") }}
+        -- Portions above 4 are partial-year terms (exam weeks, cycles) that do
+        -- not split the whole year.
+        where portion <= 4
+    ),
+
     week_rollup as (
         select
             cd.schoolid,
@@ -18,7 +38,7 @@ with
             count(cd.date_value) as date_count,
 
             max(t.semester) as semester,
-            max(t.abbreviation) as `quarter`,
+            max(t.abbreviation) as term,
         from {{ ref("stg_powerschool__calendar_day") }} as cd
         inner join
             {{ ref("stg_powerschool__schools") }} as sch
@@ -26,10 +46,10 @@ with
         inner join
             {{ ref("stg_powerschool__cycle_day") }} as cy on cd.cycle_day_id = cy.id
         inner join
-            {{ ref("stg_powerschool__terms") }} as t
+            terms as t
             on cd.schoolid = t.schoolid
             and cd.date_value between t.firstday and t.lastday
-            and t.portion = 4  /* quarters */
+            and t.portion = t.term_unit_portion
         inner join
             {{ ref("stg_powerschool__bell_schedule") }} as bs
             on cd.schoolid = bs.schoolid
@@ -67,8 +87,8 @@ with
                 partition by schoolid, yearid order by week_start_date asc
             ) as week_number_academic_year,
             row_number() over (
-                partition by schoolid, yearid, `quarter` order by week_start_date asc
-            ) as week_number_quarter,
+                partition by schoolid, yearid, term order by week_start_date asc
+            ) as week_number_term,
 
         from week_rollup
     )

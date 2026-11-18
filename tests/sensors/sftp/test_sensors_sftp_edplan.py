@@ -22,6 +22,7 @@ def test_edplan_sftp_sensor_kippnewark():
         sftp_sensor=sftp_sensor,
         ssh_edplan=SSHResource(
             remote_host="secureftp.easyiep.com",
+            remote_port=22,
             username=EnvVar("EDPLAN_SFTP_USERNAME_KIPPNEWARK"),
             password=EnvVar("EDPLAN_SFTP_PASSWORD_KIPPNEWARK"),
         ),
@@ -35,6 +36,7 @@ def test_edplan_sftp_sensor_kippcamden():
         sftp_sensor=sftp_sensor,
         ssh_edplan=SSHResource(
             remote_host="secureftp.easyiep.com",
+            remote_port=22,
             username=EnvVar("EDPLAN_SFTP_USERNAME_KIPPCAMDEN"),
             password=EnvVar("EDPLAN_SFTP_PASSWORD_KIPPCAMDEN"),
         ),

@@ -123,7 +123,7 @@ with
         -- stg_focus__marking_periods dropped those rows as a side effect; this
         -- filter preserves that exclusion explicitly now that academic_year
         -- comes from gg directly.
-        where gg.academic_year is not null
+        where gg.academic_year is not null and gg.standard_id is null
     )
 
 select *,

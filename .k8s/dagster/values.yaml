@@ -384,6 +384,17 @@ workspace:
   #   maxServers: 10
   serverTTL: ~
 
+  # Retry code locations whose code server failed to start (for example an image pull failure or
+  # startup timeout) after Dagster Cloud has been told about the failure. Off by default.
+  # The attempt count resets when a new version of the location is deployed, and code errors
+  # such as import errors are never retried.
+  #
+  # Example:
+  # codeLocationStartRetry:
+  #   maxAttempts: 3
+  #   backoffSeconds: 300 # delay before the first retry, doubles after each attempt
+  codeLocationStartRetry: ~
+
   # Specifies security settings for pods launched by the agent.
   securityContext: ~
 

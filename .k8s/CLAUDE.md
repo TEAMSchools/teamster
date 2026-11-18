@@ -32,14 +32,14 @@ skill.
   images, not Helm agent config.
 - `deploymentStartupTimeout` (Helm `workspace` key, chart default 300s) — time
   the agent waits for the code server Deployment to become ready, i.e. for the
-  pod to be SCHEDULED. Currently set to 900s. This is the timeout that fires
-  during a NAP `FailedScheduling` wait. Raising it also raises the agent's
-  worst-case first reconcile, so the `readinessProbe` `failureThreshold` and
-  `DAGSTER_CLOUD_CLEANUP_SERVER_GRACE_PERIOD_SECONDS` must move with it, along
-  with `install.sh`'s `rollout status --timeout`.
+  pod to be SCHEDULED (value in `values-override.yaml`). This is the timeout
+  that fires during a NAP `FailedScheduling` wait. Raising it also raises the
+  agent's worst-case first reconcile, so the `readinessProbe` `failureThreshold`
+  and `DAGSTER_CLOUD_CLEANUP_SERVER_GRACE_PERIOD_SECONDS` must move with it,
+  along with `install.sh`'s `rollout status --timeout`.
 - `serverProcessStartupTimeout` (Helm `workspace` key, default 180s) — time the
   agent waits for a code server gRPC ping after the Deployment exists. Fires on
-  slow definitions import, not on failed placement. Currently set to 300s in
+  slow definitions import, not on failed placement. Value in
   `values-override.yaml`.
 
 ## Scheduling
@@ -53,31 +53,55 @@ skill.
   (`autopilot-compute-class-limitation`) rejects multiple values for the same
   key but accepts multiple keys. Use `cloud.google.com/compute-class` +
   `kubernetes.io/arch` together to hard-pin both class and CPU architecture.
-- **Built-in `Scale-Out` only — do NOT use Custom ComputeClasses (CCCs).** CCCs
-  flip the billing model from per-pod (Autopilot pod-based) to per-VM +
-  Autopilot Performance Premium (per-vCPU/GiB management fee), even when the
-  underlying machine family is the same hardware Scale-Out runs on. Our pods
-  don't fill a t2d-standard-4, so we'd pay for empty capacity. CCCs also
-  silently drop `safe-to-evict: "false"` (extended-duration).
-- **Pod placement** — code server and run pods pin to Scale-Out arm64 (T2A);
-  agent pins to Scale-Out amd64 (T2D — image is amd64-only).
-- **No fallback — arm64 STOCKOUT will leave code server / run pods Pending.**
-  PDB-protected code servers tolerate this (last-good Deployment continues to
-  serve). Run pods queue until capacity returns. There is no graceful amd64
-  fallback under pod-priced billing — the only route to ordered fallback is
-  CCCs, which we rejected on cost. If STOCKOUT becomes recurring, manually flip
-  the affected pod's `kubernetes.io/arch` to `amd64` until capacity returns.
+- **Custom ComputeClasses (CCCs): `podFamily` rules only.** A CCC whose
+  priorities use `podFamily` keeps per-pod billing and honors
+  `safe-to-evict: "false"` against autoscaler scale-down. A CCC with
+  machine-family or machine-type rules bills per VM plus a management fee, and
+  our pods don't fill a node, so do not use those.
+- **Pod placement** — code server and run/step pods use the `dagster-arm-first`
+  CCC (`extraManifests`): `general-purpose-arm` first, `general-purpose` amd64
+  when GKE cannot provision arm64. Their `nodeSelector` names only the class (an
+  arch key would disable the fallback), and they carry an explicit
+  `kubernetes.io/arch=arm64:NoSchedule` toleration, since Autopilot adds it only
+  to pods that select arm64. A code server that fell back stays on amd64 (the
+  pricier tier) until its next redeploy. The agent pins to built-in Scale-Out
+  amd64 (image is amd64-only). Asserted in `tests/test_k8s_config.py`.
+- **Class priorities steer only new nodes.** kube-scheduler packs pods onto any
+  existing node of the class, so after a stockout a busy amd64 node keeps taking
+  every new run/step pod. The class sets `activeMigration.optimizeRulePriority`
+  to move work back to arm64 once it has capacity. Migration never evicts a
+  `safe-to-evict: "false"` pod, so a running step is never killed. Unverified
+  (#6077): whether GKE's own migration cordon (not `kubectl cordon`) applies to
+  an amd64 node it cannot fully drain. If amd64 nodes still outlive a stockout,
+  that is why.
+- **Keep the amd64 fallback, even though most new nodes come up amd64.**
+  `general-purpose-arm` provisions `e4a`, which often stocks out in our zones,
+  and GKE critical-pod preemptions hit run/step pods only on amd64 nodes. Run
+  retries absorb those preemptions. Do not pin back to built-in Scale-Out arm64
+  (`t2a`): its stockouts trip Dagster's start timeout, which fails runs for
+  good. Do not add a `machineFamily: t2a` rule either (per-VM billing, see
+  above). `general-purpose` and `general-purpose-arm` are the only `podFamily`
+  values, so no per-pod rule reaches another arm series.
+- **No node affinity on CCC pods carrying `safe-to-evict`.** Autopilot treats
+  the annotation as an extended-duration request and adds a
+  `cloud.google.com/extended-duration-pods` key, which Warden
+  (`autogke-node-affinity-selector-limitation`) rejects next to node affinity.
+  Pod anti-affinity is fine.
+- **CCC pods get no extended run time.** `safe-to-evict` still blocks autoscaler
+  scale-down, but node upgrades and maintenance can drain them (the cluster's
+  maintenance window is weekends). A drained code server is recreated by its
+  Deployment; a drain during the agent's metadata upload can still leave the
+  location in a terminal `ERROR` (see `dagster-k8s-ops`).
 - **Do NOT use `Balanced` or `Performance`** — Balanced minimum requests (1 vCPU
-  / 4 GiB) exceed ours (500m / 2 GiB). Performance has the same node-based
-  pricing penalty as CCCs.
+  / 4 GiB) exceed ours (500m / 2 GiB). Performance bills per node.
 - **`safe-to-evict: "false"` (extended-duration) is on agent, run, and code
-  server pods.** Under built-in Scale-Out it works as documented — blocks
-  cluster autoscaler eviction. Mutually exclusive with spot; do not move any of
-  them to a spot tier. Run pods also have `podFailurePolicy` (`DisruptionTarget`
-  → `Ignore`) as a secondary guard for non-autoscaler disruptions; the agent
-  does not. The code-server annotation depends on run pods and code servers
-  sharing priority 0: reintroducing a priority gap turns it back into the #4921
-  preemption storm. Asserted in `tests/test_k8s_config.py`.
+  server pods.** It blocks cluster autoscaler eviction on both built-in
+  Scale-Out and the `dagster-arm-first` CCC. Mutually exclusive with spot; do
+  not move any of them to a spot tier. Run pods also have `podFailurePolicy`
+  (`DisruptionTarget` → `Ignore`) as a secondary guard for non-autoscaler
+  disruptions; the agent does not. The code-server annotation depends on run
+  pods and code servers sharing priority 0: reintroducing a priority gap turns
+  it back into a preemption storm. Asserted in `tests/test_k8s_config.py`.
 - **Spot + built-in Scale-Out + arch is supported under pod-priced billing** —
   set `cloud.google.com/gke-spot: "true"` alongside the compute-class + arch
   nodeSelector; Autopilot auto-injects the toleration. Mutually exclusive with
@@ -86,11 +110,10 @@ skill.
   analysis.
 - **Run/step pods and code servers both run at priority 0.** Do not add a
   `priorityClassName` to either. A run pod that fits nowhere therefore waits for
-  NAP instead of preempting. Run pods sat at 1000 (`dagster-run`) until
-  2026-09-08, when one preempted the kippcamden code server mid-upload and left
-  the location in a terminal `ERROR` for four days (#5187). Only the agent
-  carries a PriorityClass (`dagster-agent`, 1000), and it lives on amd64 nodes
-  where it competes with nothing. Asserted in `tests/test_k8s_config.py`.
+  NAP instead of preempting. A higher run-pod priority preempts code servers
+  mid-upload and leaves the location in terminal `ERROR`. Only the agent carries
+  a PriorityClass (`dagster-agent`, 1000), and it lives on amd64 nodes where it
+  competes with nothing. Asserted in `tests/test_k8s_config.py`.
 - **Code server topology spread** uses `ScheduleAnyway` across
   `topology.kubernetes.io/zone` via `serverK8sConfig.podSpecConfig` — prefers
   cross-zone but allows same-zone during capacity exhaustion (do not switch to
@@ -103,9 +126,8 @@ k8s Secret keys come from the 1Password field's internal name, not the UI label.
 Known re-mappings on SFTP items: `password` → `newPassword`, `host` → `url`.
 Verify before writing `secretKeyRef.key`:
 `kubectl -n dagster-cloud get secret <op-name> -o jsonpath='{.data}' | jq keys`.
-Custom (user-added) text fields sync under their label verbatim (verified:
-numeric DeansList school-id labels → keys `121`, `966`); the remaps above only
-hit built-in login/SFTP-template fields.
+Custom (user-added) text fields sync under their label verbatim; the remaps
+above only hit built-in login/SFTP-template fields.
 
 ## Security
 
@@ -124,7 +146,7 @@ hit built-in login/SFTP-template fields.
 `serverK8sConfig.containerConfig.env`) sets the gRPC thread pool size. Each
 sensor eval, schedule eval, and health check holds one thread for its duration.
 Unset default is `min(32, cpu_count + 4)` — ~5 on 0.5 vCPU pods, too low for
-locations with many sensors. Currently set to 20 globally.
+locations with many sensors. The global value is in `values-override.yaml`.
 
 Sizing: sensors + (peak concurrent schedules / 3) + 3 headroom. Idle threads
 cost ~1MB each, zero CPU (GIL). Changes require `helm upgrade` (see Helm
@@ -190,6 +212,6 @@ sensor/schedule timeouts (default 300s) ARE configurable.
 `NOT_STARTED` status — does NOT catch dispatch-to-pod-confirmed stalls (run is
 already `STARTED` at LAUNCH_RUN dispatch, before pod confirmation).
 
-`run_monitoring.max_runtime_seconds` (the run-level ceiling, currently
-**1800s**) is a deployment-wide default — NOT set per-job in `src/teamster`
-(grep finds nothing). Override one job via a `dagster/max_runtime` run tag.
+`run_monitoring.max_runtime_seconds` (the run-level ceiling) is a
+deployment-wide default — NOT set per-job in `src/teamster`. Override one job
+via a `dagster/max_runtime` run tag.

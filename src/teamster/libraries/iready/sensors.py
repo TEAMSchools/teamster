@@ -15,6 +15,7 @@ from dagster import (
     SensorResult,
     SkipReason,
     define_asset_job,
+    in_process_executor,
     sensor,
 )
 from dagster_shared import check
@@ -44,6 +45,11 @@ def build_iready_sftp_sensor(
                 f"{base_job_name}_{partitions_def.get_serializable_unique_identifier()}"
             ),
             selection=list(keys),
+            # steps run in the run pod: a vendor drop fans out runs for every
+            # region at once, and step pods double that burst (Refs #6225).
+            # In process, not multiprocess: steps run one at a time, so two
+            # large files never share the run pod's memory limit
+            executor_def=in_process_executor,
         )
         for partitions_def, keys in keys_by_partitions_def.items()
     ]

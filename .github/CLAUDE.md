@@ -2,9 +2,10 @@
 
 ## Workflows
 
-- `claude-code-review.yaml` — auto-reviews PRs touching `src/`, `tests/`,
-  `scripts/`, `.github/workflows/`. Gating, the headless-deadlock caveat,
-  branch-deployment and push-`paths` behavior: `pr-ci-review` skill.
+- `claude-code-review.yaml` — auto-reviews every PR except those touching only
+  excluded files (docs, lockfiles, CSVs, cosmetic config; list in its `paths:`).
+  Gating, the headless-deadlock caveat, branch-deployment and push-`paths`
+  behavior: `pr-ci-review` skill.
 - `claude.yaml` — responds to `@claude` mentions on issues/PRs.
 - `dagster-cloud-deploy.yaml` — reusable workflow (`workflow_call`) for
   multi-arch Docker builds and Dagster Cloud deploys. Called by per-location
@@ -30,8 +31,7 @@
   trailing `# vX.Y.Z` comment (Dependabot's `github-actions` ecosystem proposes
   bumps). Local reusable-workflow refs (`./.github/workflows/*.yaml`) are not
   SHA-pinnable. Keep `actions/checkout` on one version across workflows.
-- Dagster Cloud actions are pinned to a commit SHA (all `uses:` point at the
-  same tag) — update all occurrences together when upgrading.
+- Update all Dagster Cloud action pins together when upgrading.
 - All workflows gate on `github.actor != 'dependabot[bot]'` — maintain this when
   adding new workflows. **One deliberate exception:** `pytest.yaml` omits the
   gate, because its `paths` include `pyproject.toml` and `uv.lock` and
@@ -72,13 +72,8 @@ principal itself.
 ## Other Files
 
 - `pull_request_template.md` — checklist for PRs (Dagster, dbt, docs sections).
-  Three tiers, plain to detailed: "Summary & Motivation" is plain-language, what
-  and why. "Reviewer Notes" is also plain-language — name what's worth a second
-  look and why, a line or two each, not the full reasoning. The "For Claude"
-  fold-out at the end holds the full technical detail behind each Reviewer Notes
-  flag (exact values, edge cases, full reasoning), plus whatever else got
-  simplified or cut from Summary for plain-language readability, AI-involvement
-  notes, and anything a future `@claude` invocation needs.
+  "Summary & Motivation" and "Reviewer Notes" are plain-language; full technical
+  detail goes in the "For Claude" fold-out.
 - `ISSUE_TEMPLATE/` — `bug_report.md` and `feature_request.md`, each with a "For
   Claude" section for `@claude`-driven issues; `config.yml` disables blank
   issues.

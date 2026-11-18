@@ -7,6 +7,7 @@ anyone trusts it.
 
 - Explain a gap before reporting it
 - A whole region missing: read Amplify's file before tracing any join
+- Not Tested here, but Amplify shows a score: check the collision warn tests
 - In the extract but not on the dashboard: three causes outside the SQL
 - The dashboard's BANs against the extract: a QA baseline
 - SY2026-2027 header rename: null ids are a column move, not missing data
@@ -43,6 +44,18 @@ The checks worth reaching for first, in order: is the window open yet
 thing -- it filters `academic_year = current_academic_year`, so it is empty
 whenever the new year's PM calendar has not been entered. Empty is the expected
 state mid-rollover, not a defect.
+
+## Not Tested here, but Amplify shows a score: check the collision warn tests
+
+Before tracing any join, check the uniqueness warn tests on
+`stg_amplify__mclass__sftp__benchmark_student_summary` and
+`stg_amplify__mclass__sftp__pm_student_summary`. A collision there means Amplify
+filed 2 results under 1 student ID, or 2 benchmark sittings on 1 day, and the
+mCLASS intermediates dropped every row in it on purpose. Do not "restore" the
+rows in SQL or pick one of them. The fix is in mCLASS: Amplify or the school
+moves the result to the right student, and the next load brings it back. The
+rule is the data team's, awaiting T&L's confirmation. It covers same-day
+sittings at 2 grades too, which the data team treats as mistakes.
 
 ## A whole region missing: read Amplify's file before tracing any join
 
@@ -191,10 +204,11 @@ year populates only its own column.
 Two failure shapes follow from it, and they look different:
 
 - **BM**: the Avro schema already carried both names, so the new column landed
-  in the warehouse with values and the old one went null. Symptom: the staging
-  `unique_combination_of_columns` test fails with exactly one duplicate key per
-  grade (all-null id). Fix shipped 2026-09-22: the staging model coalesces the
-  two columns.
+  in the warehouse with values and the old one went null. The staging model
+  coalesces the two columns. A repeat fails the staging `not_null` gate on the
+  id. That gate exists because the benchmark intermediate drops all-null-id rows
+  as collisions, which would otherwise show every student as Not Tested with no
+  failed build.
 - **PM**: the Avro schema (`PMStudentSummary` in
   `src/teamster/libraries/amplify/mclass/sftp/schema.py`) lacked the new names,
   so `fastavro` dropped the columns and SY2026-2027 PM rows had NO id column at

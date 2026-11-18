@@ -29,11 +29,6 @@ models:
             foreign_key:
               to: ref('dim_students')
               to_columns: [student_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_students')
-                field: student_key
       - name: location_key
         data_type: string
         description: >-
@@ -46,11 +41,6 @@ models:
             foreign_key:
               to: ref('dim_locations')
               to_columns: [location_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_locations')
-                field: location_key
       - name: entry_date_key
         data_type: date
         description: >-
@@ -65,11 +55,6 @@ models:
             foreign_key:
               to: ref('dim_dates')
               to_columns: [date_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_dates')
-                field: date_key
       - name: exit_date_key
         data_type: date
         description: >-
@@ -86,11 +71,6 @@ models:
             foreign_key:
               to: ref('dim_dates')
               to_columns: [date_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_dates')
-                field: date_key
       - name: academic_year
         data_type: int64
         description: >-

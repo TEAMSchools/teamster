@@ -18,6 +18,7 @@ from
             'Graduation Date' as `graduation_date`,
             'Hotspot info' as `hotspot_info`,
             'Locker Combo' as `locker_combo`,
-            'Locker Number' as `locker_number`
+            'Locker Number' as `locker_number`,
+            'NJSLA Portal Code' as `njsla_portal_code`
         )
     )

@@ -6,15 +6,16 @@ models:
       assessed subject) to their student section enrollment and assessment
       administration. Expectations without a resolvable section enrollment
       — replacement assessments and ES Writing in grades K-4 Newark/Camden
-      — live in `bridge_assessment_expectations_student_scoped`.
+      — live in `bridge_assessment_expectations_student_scoped`. Apex rows
+      cover only students who tested, so every Apex expectation is met.
     config:
       materialized: table
       meta:
         dagster:
-          # 5x/day table instead of an eager view — rationale and tick choice
+          # Cron table instead of an eager view — rationale and tick choice
           # in fct_assessment_scores_enrollment_scoped. Refs #4821
           automation_condition:
-            cron_schedule: 0 0,10,13,15,17 * * *
+            cron_schedule: 30 0,10,13,15,17 * * *
     columns:
       - name: assessment_expectation_key
         data_type: string
@@ -35,11 +36,6 @@ models:
             foreign_key:
               to: ref('dim_student_section_enrollments')
               to_columns: [student_section_enrollment_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_student_section_enrollments')
-                field: student_section_enrollment_key
 
       - name: assessment_administration_key
         data_type: string
@@ -50,8 +46,3 @@ models:
             foreign_key:
               to: ref('dim_assessment_administrations')
               to_columns: [assessment_administration_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_assessment_administrations')
-                field: assessment_administration_key

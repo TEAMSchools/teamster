@@ -6,7 +6,6 @@ models:
       (int_pearson__njsla_science). Passes through every column of those
       district models, which document them.
     config:
-      materialized: table
       meta:
         contains_pii: true
     columns:

@@ -1,0 +1,35 @@
+cubes:
+  - name: student_assessment_module_goal_rules
+    public: false
+    sql_table: kipptaf_marts.dim_assessment_module_goal_rules
+
+    # Reached only from student_assessment_scores, on the fact's
+    # assessment_module_goal_rule_key, which dbt matches on region, module
+    # type, subject and grade. The dim is a view and the fact a table on its
+    # own cron, so a sheet edit to a rule's region, module type, subject or
+    # Grade Min leaves fact rows pointing at a key the dim no longer has until
+    # the fact rebuilds; those scores read the lookup goal meanwhile, the same
+    # tradeoff dim_assessment_goals makes. Its members feed the differentiated
+    # goals on student_assessment_scores and are not exposed on their own.
+
+    dimensions:
+      - name: assessment_module_goal_rule_key
+        description: >-
+          Surrogate key derived from the rule's region, module type, subject
+          area, and lowest grade. Primary key.
+        sql: assessment_module_goal_rule_key
+        type: string
+        primary_key: true
+
+      - name: goal
+        description: >-
+          Fixed goal that replaces the lookup goal; null when the rule is an
+          offset.
+        sql: goal
+        type: number
+
+      - name: goal_offset
+        description: >-
+          Amount added to the lookup goal; null when the rule sets a fixed goal.
+        sql: goal_offset
+        type: number

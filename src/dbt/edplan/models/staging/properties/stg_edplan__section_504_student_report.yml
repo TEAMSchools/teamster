@@ -1,0 +1,175 @@
+models:
+  - name: stg_edplan__section_504_student_report
+    description:
+      EdPlan's 504 student report, one row per student per Section 504 event —
+      eligibility determinations, non-eligibility determinations, and 504 plans,
+      current and previous. EdPlan sends a full export with its own event
+      history each day, and each load replaces the last.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - internal_student_id
+              - document_id
+              - event_selector
+              - event_date
+          config:
+            severity: error
+    columns:
+      - name: student_number
+        data_type: int64
+        description: PowerSchool student number (EdPlan's Student ID).
+        data_tests:
+          - not_null:
+              description:
+                EdPlan's Student ID is blank or not a number for these rows. Fix
+                the student's Student ID in EdPlan to match PowerSchool.
+              config:
+                severity: warn
+        config:
+          meta:
+            contains_pii: true
+      - name: internal_student_id
+        data_type: string
+        description: EdPlan's internal student id.
+      - name: school
+        data_type: string
+        description: School name as EdPlan records it.
+      - name: last_name
+        data_type: string
+        description: Student last name.
+        config:
+          meta:
+            contains_pii: true
+      - name: first_name
+        data_type: string
+        description: Student first name.
+        config:
+          meta:
+            contains_pii: true
+      - name: gender
+        data_type: string
+        description: Student gender as EdPlan records it.
+        config:
+          meta:
+            contains_pii: true
+      - name: grade_abbrev
+        data_type: string
+        description: Grade level — digits, KF for kindergarten, or blank.
+        config:
+          meta:
+            contains_pii: true
+      - name: student_status
+        data_type: string
+        description: Student enrollment status in EdPlan.
+        config:
+          meta:
+            contains_pii: true
+      - name: date_snapshot_section_504_eligibility_y_n
+        data_type: string
+        description:
+          EdPlan's "Date Snapshot.Section 504 Eligibility (Y/N)" field, passed
+          through as Y or N text.
+        config:
+          meta:
+            contains_pii: true
+      - name: date_snapshot_historical_section_504_eligibility_y_n
+        data_type: string
+        description:
+          EdPlan's "Date Snapshot Historical.Section 504 Eligibility (Y/N)"
+          field, passed through as Y or N text.
+        config:
+          meta:
+            contains_pii: true
+      - name: section_504_case_manager
+        data_type: string
+        description: Name of the staff member who manages the student's 504.
+        config:
+          meta:
+            contains_pii: true
+      - name: event_selector
+        data_type: string
+        description:
+          Event status and type — one of "Currently Valid" or "Previous",
+          followed by "Section 504 Plan", "Section 504 Eligibility
+          Determination", or "Section 504 Non-Eligibility Determination".
+          Currently Valid marks the student's current record of that type.
+        config:
+          meta:
+            contains_pii: true
+      - name: event_type
+        data_type: string
+        description:
+          The event type from event_selector without its Currently Valid or
+          Previous prefix.
+        config:
+          meta:
+            contains_pii: true
+      - name: document_id
+        data_type: string
+        description:
+          EdPlan document id for the event. Blank on some previous
+          determinations.
+      - name: primary_disability
+        data_type: string
+        description: Primary disability recorded on the event.
+        config:
+          meta:
+            contains_pii: true
+      - name: secondary_disability
+        data_type: string
+        description: Secondary disability recorded on the event.
+        config:
+          meta:
+            contains_pii: true
+      - name: third_disability
+        data_type: string
+        description: Third disability recorded on the event.
+        config:
+          meta:
+            contains_pii: true
+      - name: state_studentnumber
+        data_type: int64
+        description: NJ state student id (SID).
+        config:
+          meta:
+            contains_pii: true
+      - name: ethnicity
+        data_type: string
+        description: Student ethnicity, trimmed.
+        config:
+          meta:
+            contains_pii: true
+      - name: race_abbrev_csv_list
+        data_type: string
+        description:
+          Comma-separated list of student race abbreviations, trimmed.
+        config:
+          meta:
+            contains_pii: true
+      - name: date_of_birth
+        data_type: date
+        description: Student date of birth.
+        config:
+          meta:
+            contains_pii: true
+      - name: event_date
+        data_type: date
+        description: Date of the 504 event.
+        config:
+          meta:
+            contains_pii: true
+      - name: begin_date
+        data_type: date
+        description: Start date of the 504 plan or determination.
+        config:
+          meta:
+            contains_pii: true
+      - name: end_date
+        data_type: date
+        description:
+          End date of the 504 plan or determination. A Currently Valid row can
+          carry an end date in the past.
+        config:
+          meta:
+            contains_pii: true

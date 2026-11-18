@@ -49,6 +49,20 @@ models:
           config:
             severity: error
             where: start_date is not null and end_date is not null
+      # RT consumers match a date against every RT term at a school, so 2
+      # quarters at one school must not share a date. The test above
+      # partitions by code and name, so it only compares a term with itself.
+      - dbt_utils.mutually_exclusive_ranges:
+          arguments:
+            lower_bound_column: start_date
+            upper_bound_column: end_date
+            partition_by: type, region, school_id, grade_band, academic_year
+            gaps: allowed
+            zero_length_range_allowed: true
+          config:
+            severity: error
+            where: >-
+              type = 'RT' and start_date is not null and end_date is not null
     columns:
       - name: type
         data_type: string
@@ -107,7 +121,12 @@ models:
           upstream.
       - name: grade_band
         data_type: string
-        description: Grade band (`ES`, `MS`, `HS`). Null when not band-specific.
+        description: >-
+          Grades or grade band the row applies to. A band label such as `ES`,
+          `MS`, `HS` or `K-2` on most types; on `LIT` rows, a comma-separated
+          list of grade levels (e.g. `0,1,2`, with 0 for kindergarten) that sit
+          that round, and one term can carry several rows that differ only by
+          band. Part of the dim_terms term_key. Null when not band-specific.
       - name: lockbox_date
         data_type: date
         description: >-

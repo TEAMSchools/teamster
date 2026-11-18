@@ -57,8 +57,8 @@
   `act_composite` row inside the same ACT/SAT-and-Total partition. 13 students
   read as 26 moved rows. Count distinct students, never rows.
 - **The BigQuery MCP cannot read Google Sheets externals** (no Drive scope), and
-  the prod `stg_*` table is frozen at the last build. Query the `src_*` external
-  live through ADC with `uv run python`, per
+  the prod `stg_*` table is frozen at the last build. Read the sheet live with
+  the Google Sheets MCP, per
   `.claude/context/claude_ai_Google_Cloud_BigQuery.md`.
 - **`rg -ril <pattern>` silently mangles output** — `-r` consumes `il` as a
   replacement string. Use plain `grep`.

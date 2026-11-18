@@ -1,0 +1,10 @@
+models:
+  - name: int_focus__apex_assessments
+    description: >-
+      Kipptaf-level union_relations passthrough of kippmiami's
+      int_focus__apex_assessments — one row per live Apex assessment with its
+      subject, band set and fallback administration date. Column docs and tests
+      live on the kippmiami source model.
+    columns:
+      - name: _dbt_source_project
+        description: District code location derived from _dbt_source_relation.

@@ -38,11 +38,6 @@ models:
             foreign_key:
               to: ref('dim_staff')
               to_columns: [staff_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_staff')
-                field: staff_key
 
       - name: time_approver_staff_key
         data_type: string
@@ -57,11 +52,6 @@ models:
             foreign_key:
               to: ref('dim_staff')
               to_columns: [staff_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_staff')
-                field: staff_key
 
       - name: position_id
         data_type: string

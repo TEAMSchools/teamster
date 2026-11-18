@@ -1,0 +1,2638 @@
+{
+  "sql": {
+    "external": true,
+    "sql": [
+      "SELECT \"student_assessments__academic_subject\" \"student_assessment_scores_view__academic_subject\", 1.0 * sum(\"student_assessment_scores___sum_proficient\") / NULLIF(sum(\"student_assessment_scores__count_scored\"), 0) \"student_assessment_scores_view__pct_proficient\" \nFROM  prod_pre_aggregations.student_assessment_scores_proficiency_rollup  AS \"student_assessment_scores__proficiency_rollup\"\nWHERE (\"dates__academic_year\" = ?) AND (\"locations__abbreviation\" IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?))\nGROUP BY 1\nORDER BY  2  DESC\nLIMIT 10000",
+      [
+        "2025",
+        "KIPP Lanning Sq Campus",
+        "Room 10",
+        "KHS",
+        "Hatch",
+        "Sumner",
+        "LSM",
+        "LSP",
+        "KIPP Miami - Poinciana Campus",
+        "Room 11",
+        "North Campus",
+        "Courage",
+        "Legacy ES",
+        "Legacy MS",
+        "Liberty",
+        "Miami Tech",
+        "Royalty",
+        "Sunrise",
+        "KIPP NJ",
+        "Room 12",
+        "PPES",
+        "PPMS",
+        "18th Ave Campus",
+        "Room 9",
+        "Norfolk St Campus",
+        "N. 13th St. Campus",
+        "BOLD",
+        "Justice",
+        "Purpose",
+        "Truth",
+        "Life",
+        "NCA",
+        "NCP",
+        "NLH",
+        "Rise",
+        "SPARK",
+        "Seek",
+        "TEAM",
+        "THRIVE",
+        "KURA"
+      ]
+    ],
+    "lambdaQueries": {},
+    "order": {
+      "student_assessment_scores_view.pct_proficient": "desc"
+    },
+    "cacheKeyQueries": [],
+    "preAggregations": [
+      {
+        "preAggregationId": "student_assessment_scores.proficiency_rollup",
+        "timezone": "UTC",
+        "timestampFormat": "YYYY-MM-DD[T]HH:mm:ss.SSSSSS[Z]",
+        "timestampPrecision": 6,
+        "tableName": "prod_pre_aggregations.student_assessment_scores_proficiency_rollup",
+        "invalidateKeyQueries": [
+          [
+            "SELECT last_modified_time FROM kipptaf_marts.__TABLES__ WHERE table_id = 'fct_assessment_scores_enrollment_scoped'",
+            [],
+            {
+              "external": false,
+              "renewalThreshold": 1800
+            }
+          ]
+        ],
+        "type": "rollup",
+        "external": true,
+        "previewSql": [
+          "SELECT * FROM prod_pre_aggregations.student_assessment_scores_proficiency_rollup LIMIT 1000",
+          []
+        ],
+        "preAggregationsSchema": "prod_pre_aggregations",
+        "loadSql": [
+          "SELECT `dates`.academic_year `dates__academic_year`, CONCAT(CAST(`dates`.academic_year AS STRING), '-', CAST(`dates`.academic_year + 1 AS STRING)) `dates__academic_year_label`, `locations`.abbreviation `locations__abbreviation`, `locations`.region_key `locations__region_key`, `regions`.`name` `regions__region_name`, `staff_lead_teacher`.full_name `staff_lead_teacher__full_name`, `student_assessment_administrations`.administration_period `student_assessment_administrations__administration_period`, `student_assessment_scores`.enrollment_resolution `student_assessment_scores__enrollment_resolution`, `student_assessment_scores`.response_type `student_assessment_scores__response_type`, `student_assessment_scores`.response_type_code `student_assessment_scores__response_type_code`, `student_assessment_scores`.response_type_description `student_assessment_scores__response_type_description`, `student_assessments`.academic_subject `student_assessments__academic_subject`, `student_assessments`.`type` `student_assessments__assessment_type`, `student_assessments`.grade_level_tested `student_assessments__grade_level_tested`, `student_assessments`.module_code `student_assessments__module_code`, `student_assessments`.module_type `student_assessments__module_type`, `student_assessments`.title `student_assessments__title`, `student_enrollment_status`.is_iep `student_enrollment_status__is_iep`, `student_school_enrollments`.grade_level `student_school_enrollments__grade_level`, `student_section_enrollments`.lead_teacher_staff_key `student_section_enrollments__lead_teacher_staff_key`, `students`.gender_identity `students__gender_identity`, `students`.race `students__race`, TIMESTAMP(DATETIME_TRUNC(TIMESTAMP(DATETIME(`dates`.date_timestamp, 'UTC')), YEAR)) `dates__date_day_year`, sum(CASE WHEN (`student_assessments`.assessment_key IS NOT NULL) AND (`regions`.region_key IS NOT NULL) THEN IF(`student_assessment_scores`.is_mastery, 1, 0) END) `student_assessment_scores___sum_proficient`, count(CASE WHEN (`student_assessments`.assessment_key IS NOT NULL) AND (`regions`.region_key IS NOT NULL) THEN `student_assessment_scores`.assessment_score_key END) `student_assessment_scores__count_assigned`, count(CASE WHEN (`student_assessment_scores`.is_mastery IS NOT NULL) AND (`student_assessments`.assessment_key IS NOT NULL) AND (`regions`.region_key IS NOT NULL) THEN `student_assessment_scores`.assessment_score_key END) `student_assessment_scores__count_scored`, count(CASE WHEN (`student_assessment_scores`.response_type != 'not_taken') AND (`student_assessments`.assessment_key IS NOT NULL) AND (`regions`.region_key IS NOT NULL) THEN `student_assessment_scores`.assessment_score_key END) `student_assessment_scores__count_taken` \nFROM  kipptaf_marts.fct_assessment_scores_enrollment_scoped  AS `student_assessment_scores`\nLEFT JOIN  kipptaf_marts.dim_dates  AS `dates` ON `dates`.date_key = `student_assessment_scores`.assessment_date_key\nLEFT JOIN  kipptaf_marts.dim_student_section_enrollments  AS `student_section_enrollments` ON `student_section_enrollments`.student_section_enrollment_key = `student_assessment_scores`.student_section_enrollment_key\n\nLEFT JOIN  kipptaf_marts.dim_student_enrollments  AS `student_school_enrollments` ON `student_school_enrollments`.student_enrollment_key = `student_section_enrollments`.student_enrollment_key\n\nLEFT JOIN  kipptaf_marts.dim_locations  AS `locations` ON `locations`.location_key = `student_school_enrollments`.location_key\nLEFT JOIN  kipptaf_marts.dim_regions  AS `regions` ON `regions`.region_key = `locations`.region_key\nLEFT JOIN  kipptaf_marts.dim_staff  AS `staff_lead_teacher` ON `staff_lead_teacher`.staff_key = `student_section_enrollments`.lead_teacher_staff_key\nLEFT JOIN  kipptaf_marts.dim_assessment_administrations  AS `student_assessment_administrations` ON `student_assessment_administrations`.assessment_administration_key = `student_assessment_scores`.assessment_administration_key\n\nLEFT JOIN  kipptaf_marts.dim_assessments  AS `student_assessments` ON `student_assessments`.assessment_key = `student_assessment_administrations`.assessment_key\nLEFT JOIN  kipptaf_marts.dim_student_enrollment_status  AS `student_enrollment_status` ON `student_enrollment_status`.student_enrollment_key = `student_school_enrollments`.student_enrollment_key\n\nLEFT JOIN  kipptaf_marts.dim_students  AS `students` ON `students`.student_key = `student_school_enrollments`.student_key\nWHERE (`dates`.date_timestamp >= TIMESTAMP(?) AND `dates`.date_timestamp <= TIMESTAMP(?))\nGROUP BY 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23",
+          ["__FROM_PARTITION_RANGE", "__TO_PARTITION_RANGE"]
+        ],
+        "sql": [
+          "SELECT `dates`.academic_year `dates__academic_year`, CONCAT(CAST(`dates`.academic_year AS STRING), '-', CAST(`dates`.academic_year + 1 AS STRING)) `dates__academic_year_label`, `locations`.abbreviation `locations__abbreviation`, `locations`.region_key `locations__region_key`, `regions`.`name` `regions__region_name`, `staff_lead_teacher`.full_name `staff_lead_teacher__full_name`, `student_assessment_administrations`.administration_period `student_assessment_administrations__administration_period`, `student_assessment_scores`.enrollment_resolution `student_assessment_scores__enrollment_resolution`, `student_assessment_scores`.response_type `student_assessment_scores__response_type`, `student_assessment_scores`.response_type_code `student_assessment_scores__response_type_code`, `student_assessment_scores`.response_type_description `student_assessment_scores__response_type_description`, `student_assessments`.academic_subject `student_assessments__academic_subject`, `student_assessments`.`type` `student_assessments__assessment_type`, `student_assessments`.grade_level_tested `student_assessments__grade_level_tested`, `student_assessments`.module_code `student_assessments__module_code`, `student_assessments`.module_type `student_assessments__module_type`, `student_assessments`.title `student_assessments__title`, `student_enrollment_status`.is_iep `student_enrollment_status__is_iep`, `student_school_enrollments`.grade_level `student_school_enrollments__grade_level`, `student_section_enrollments`.lead_teacher_staff_key `student_section_enrollments__lead_teacher_staff_key`, `students`.gender_identity `students__gender_identity`, `students`.race `students__race`, TIMESTAMP(DATETIME_TRUNC(TIMESTAMP(DATETIME(`dates`.date_timestamp, 'UTC')), YEAR)) `dates__date_day_year`, sum(CASE WHEN (`student_assessments`.assessment_key IS NOT NULL) AND (`regions`.region_key IS NOT NULL) THEN IF(`student_assessment_scores`.is_mastery, 1, 0) END) `student_assessment_scores___sum_proficient`, count(CASE WHEN (`student_assessments`.assessment_key IS NOT NULL) AND (`regions`.region_key IS NOT NULL) THEN `student_assessment_scores`.assessment_score_key END) `student_assessment_scores__count_assigned`, count(CASE WHEN (`student_assessment_scores`.is_mastery IS NOT NULL) AND (`student_assessments`.assessment_key IS NOT NULL) AND (`regions`.region_key IS NOT NULL) THEN `student_assessment_scores`.assessment_score_key END) `student_assessment_scores__count_scored`, count(CASE WHEN (`student_assessment_scores`.response_type != 'not_taken') AND (`student_assessments`.assessment_key IS NOT NULL) AND (`regions`.region_key IS NOT NULL) THEN `student_assessment_scores`.assessment_score_key END) `student_assessment_scores__count_taken` \nFROM  kipptaf_marts.fct_assessment_scores_enrollment_scoped  AS `student_assessment_scores`\nLEFT JOIN  kipptaf_marts.dim_dates  AS `dates` ON `dates`.date_key = `student_assessment_scores`.assessment_date_key\nLEFT JOIN  kipptaf_marts.dim_student_section_enrollments  AS `student_section_enrollments` ON `student_section_enrollments`.student_section_enrollment_key = `student_assessment_scores`.student_section_enrollment_key\n\nLEFT JOIN  kipptaf_marts.dim_student_enrollments  AS `student_school_enrollments` ON `student_school_enrollments`.student_enrollment_key = `student_section_enrollments`.student_enrollment_key\n\nLEFT JOIN  kipptaf_marts.dim_locations  AS `locations` ON `locations`.location_key = `student_school_enrollments`.location_key\nLEFT JOIN  kipptaf_marts.dim_regions  AS `regions` ON `regions`.region_key = `locations`.region_key\nLEFT JOIN  kipptaf_marts.dim_staff  AS `staff_lead_teacher` ON `staff_lead_teacher`.staff_key = `student_section_enrollments`.lead_teacher_staff_key\nLEFT JOIN  kipptaf_marts.dim_assessment_administrations  AS `student_assessment_administrations` ON `student_assessment_administrations`.assessment_administration_key = `student_assessment_scores`.assessment_administration_key\n\nLEFT JOIN  kipptaf_marts.dim_assessments  AS `student_assessments` ON `student_assessments`.assessment_key = `student_assessment_administrations`.assessment_key\nLEFT JOIN  kipptaf_marts.dim_student_enrollment_status  AS `student_enrollment_status` ON `student_enrollment_status`.student_enrollment_key = `student_school_enrollments`.student_enrollment_key\n\nLEFT JOIN  kipptaf_marts.dim_students  AS `students` ON `students`.student_key = `student_school_enrollments`.student_key\nWHERE (`dates`.date_timestamp >= TIMESTAMP(?) AND `dates`.date_timestamp <= TIMESTAMP(?))\nGROUP BY 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23",
+          ["__FROM_PARTITION_RANGE", "__TO_PARTITION_RANGE"]
+        ],
+        "outputColumnTypes": null,
+        "uniqueKeyColumns": [
+          "`dates__academic_year`",
+          "`dates__academic_year_label`",
+          "`locations__abbreviation`",
+          "`locations__region_key`",
+          "`regions__region_name`",
+          "`staff_lead_teacher__full_name`",
+          "`student_assessment_administrations__administration_period`",
+          "`student_assessment_scores__enrollment_resolution`",
+          "`student_assessment_scores__response_type`",
+          "`student_assessment_scores__response_type_code`",
+          "`student_assessment_scores__response_type_description`",
+          "`student_assessments__academic_subject`",
+          "`student_assessments__assessment_type`",
+          "`student_assessments__grade_level_tested`",
+          "`student_assessments__module_code`",
+          "`student_assessments__module_type`",
+          "`student_assessments__title`",
+          "`student_enrollment_status__is_iep`",
+          "`student_school_enrollments__grade_level`",
+          "`student_section_enrollments__lead_teacher_staff_key`",
+          "`students__gender_identity`",
+          "`students__race`",
+          "`dates__date_day_year`"
+        ],
+        "aggregationsColumns": [
+          "sum(`student_assessment_scores___sum_proficient`)",
+          "sum(`student_assessment_scores__count_assigned`)",
+          "sum(`student_assessment_scores__count_scored`)",
+          "sum(`student_assessment_scores__count_taken`)"
+        ],
+        "dataSource": "default",
+        "granularity": "year",
+        "partitionGranularity": "year",
+        "updateWindowSeconds": false,
+        "preAggregationStartEndQueries": [
+          ["SELECT DATE('2015-07-01')", []],
+          ["SELECT CURRENT_DATE('America/New_York')", []]
+        ],
+        "indexesSql": [],
+        "createTableIndexes": [],
+        "readOnly": false
+      }
+    ],
+    "dataSource": "default",
+    "aliasNameToMember": {
+      "student_assessment_scores_view__pct_proficient": "student_assessment_scores_view.pct_proficient",
+      "student_assessment_scores_view__academic_subject": "student_assessment_scores_view.academic_subject"
+    },
+    "canUseTransformedQuery": {
+      "sortedDimensions": [
+        "student_assessment_scores_view.abbreviation",
+        "student_assessment_scores_view.academic_subject",
+        "student_assessment_scores_view.academic_year"
+      ],
+      "sortedTimeDimensions": [],
+      "timeDimensions": [],
+      "measures": ["student_assessment_scores_view.pct_proficient"],
+      "leafMeasureAdditive": true,
+      "leafMeasures": [
+        "student_assessment_scores._sum_proficient",
+        "student_assessment_scores.count_scored"
+      ],
+      "leafMeasuresFullPaths": [
+        "student_assessment_scores._sum_proficient",
+        "student_assessment_scores.count_scored"
+      ],
+      "measureToLeafMeasures": {
+        "student_assessment_scores_view.pct_proficient": [
+          {
+            "measure": "student_assessment_scores._sum_proficient",
+            "additive": true,
+            "type": "sum"
+          },
+          {
+            "measure": "student_assessment_scores.count_scored",
+            "additive": true,
+            "type": "count"
+          }
+        ]
+      },
+      "hasNoTimeDimensionsWithoutGranularity": true,
+      "allFiltersWithinSelectedDimensions": false,
+      "isAdditive": false,
+      "granularityHierarchies": {
+        "dates.date_day.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "dates.date_day.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "dates.date_day.month": ["month", "day", "hour", "minute", "second"],
+        "dates.date_day.week": ["week", "day", "hour", "minute", "second"],
+        "dates.date_day.day": ["day", "hour", "minute", "second"],
+        "dates.date_day.hour": ["hour", "minute", "second"],
+        "dates.date_day.minute": ["minute", "second"],
+        "dates.date_day.second": ["second"],
+        "dates.school_week_start_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "dates.school_week_start_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "dates.school_week_start_date.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "dates.school_week_start_date.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "dates.school_week_start_date.day": ["day", "hour", "minute", "second"],
+        "dates.school_week_start_date.hour": ["hour", "minute", "second"],
+        "dates.school_week_start_date.minute": ["minute", "second"],
+        "dates.school_week_start_date.second": ["second"],
+        "dates.school_week_end_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "dates.school_week_end_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "dates.school_week_end_date.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "dates.school_week_end_date.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "dates.school_week_end_date.day": ["day", "hour", "minute", "second"],
+        "dates.school_week_end_date.hour": ["hour", "minute", "second"],
+        "dates.school_week_end_date.minute": ["minute", "second"],
+        "dates.school_week_end_date.second": ["second"],
+        "dates.calendar_week_start_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "dates.calendar_week_start_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "dates.calendar_week_start_date.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "dates.calendar_week_start_date.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "dates.calendar_week_start_date.day": [
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "dates.calendar_week_start_date.hour": ["hour", "minute", "second"],
+        "dates.calendar_week_start_date.minute": ["minute", "second"],
+        "dates.calendar_week_start_date.second": ["second"],
+        "dates.calendar_week_end_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "dates.calendar_week_end_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "dates.calendar_week_end_date.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "dates.calendar_week_end_date.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "dates.calendar_week_end_date.day": ["day", "hour", "minute", "second"],
+        "dates.calendar_week_end_date.hour": ["hour", "minute", "second"],
+        "dates.calendar_week_end_date.minute": ["minute", "second"],
+        "dates.calendar_week_end_date.second": ["second"],
+        "terms.start_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "terms.start_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "terms.start_date.month": ["month", "day", "hour", "minute", "second"],
+        "terms.start_date.week": ["week", "day", "hour", "minute", "second"],
+        "terms.start_date.day": ["day", "hour", "minute", "second"],
+        "terms.start_date.hour": ["hour", "minute", "second"],
+        "terms.start_date.minute": ["minute", "second"],
+        "terms.start_date.second": ["second"],
+        "terms.end_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "terms.end_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "terms.end_date.month": ["month", "day", "hour", "minute", "second"],
+        "terms.end_date.week": ["week", "day", "hour", "minute", "second"],
+        "terms.end_date.day": ["day", "hour", "minute", "second"],
+        "terms.end_date.hour": ["hour", "minute", "second"],
+        "terms.end_date.minute": ["minute", "second"],
+        "terms.end_date.second": ["second"],
+        "staff.birth_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff.birth_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff.birth_date.month": ["month", "day", "hour", "minute", "second"],
+        "staff.birth_date.week": ["week", "day", "hour", "minute", "second"],
+        "staff.birth_date.day": ["day", "hour", "minute", "second"],
+        "staff.birth_date.hour": ["hour", "minute", "second"],
+        "staff.birth_date.minute": ["minute", "second"],
+        "staff.birth_date.second": ["second"],
+        "staff.original_hire_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff.original_hire_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff.original_hire_date.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff.original_hire_date.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff.original_hire_date.day": ["day", "hour", "minute", "second"],
+        "staff.original_hire_date.hour": ["hour", "minute", "second"],
+        "staff.original_hire_date.minute": ["minute", "second"],
+        "staff.original_hire_date.second": ["second"],
+        "staff.rehire_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff.rehire_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff.rehire_date.month": ["month", "day", "hour", "minute", "second"],
+        "staff.rehire_date.week": ["week", "day", "hour", "minute", "second"],
+        "staff.rehire_date.day": ["day", "hour", "minute", "second"],
+        "staff.rehire_date.hour": ["hour", "minute", "second"],
+        "staff.rehire_date.minute": ["minute", "second"],
+        "staff.rehire_date.second": ["second"],
+        "staff_homeroom_teacher.birth_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_homeroom_teacher.birth_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_homeroom_teacher.birth_date.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_homeroom_teacher.birth_date.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_homeroom_teacher.birth_date.day": [
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_homeroom_teacher.birth_date.hour": ["hour", "minute", "second"],
+        "staff_homeroom_teacher.birth_date.minute": ["minute", "second"],
+        "staff_homeroom_teacher.birth_date.second": ["second"],
+        "staff_homeroom_teacher.original_hire_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_homeroom_teacher.original_hire_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_homeroom_teacher.original_hire_date.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_homeroom_teacher.original_hire_date.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_homeroom_teacher.original_hire_date.day": [
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_homeroom_teacher.original_hire_date.hour": [
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_homeroom_teacher.original_hire_date.minute": [
+          "minute",
+          "second"
+        ],
+        "staff_homeroom_teacher.original_hire_date.second": ["second"],
+        "staff_homeroom_teacher.rehire_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_homeroom_teacher.rehire_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_homeroom_teacher.rehire_date.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_homeroom_teacher.rehire_date.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_homeroom_teacher.rehire_date.day": [
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_homeroom_teacher.rehire_date.hour": ["hour", "minute", "second"],
+        "staff_homeroom_teacher.rehire_date.minute": ["minute", "second"],
+        "staff_homeroom_teacher.rehire_date.second": ["second"],
+        "staff_lead_teacher.birth_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_lead_teacher.birth_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_lead_teacher.birth_date.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_lead_teacher.birth_date.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_lead_teacher.birth_date.day": [
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_lead_teacher.birth_date.hour": ["hour", "minute", "second"],
+        "staff_lead_teacher.birth_date.minute": ["minute", "second"],
+        "staff_lead_teacher.birth_date.second": ["second"],
+        "staff_lead_teacher.original_hire_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_lead_teacher.original_hire_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_lead_teacher.original_hire_date.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_lead_teacher.original_hire_date.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_lead_teacher.original_hire_date.day": [
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_lead_teacher.original_hire_date.hour": [
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_lead_teacher.original_hire_date.minute": ["minute", "second"],
+        "staff_lead_teacher.original_hire_date.second": ["second"],
+        "staff_lead_teacher.rehire_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_lead_teacher.rehire_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_lead_teacher.rehire_date.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_lead_teacher.rehire_date.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_lead_teacher.rehire_date.day": [
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_lead_teacher.rehire_date.hour": ["hour", "minute", "second"],
+        "staff_lead_teacher.rehire_date.minute": ["minute", "second"],
+        "staff_lead_teacher.rehire_date.second": ["second"],
+        "staff_manager.birth_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_manager.birth_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_manager.birth_date.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_manager.birth_date.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_manager.birth_date.day": ["day", "hour", "minute", "second"],
+        "staff_manager.birth_date.hour": ["hour", "minute", "second"],
+        "staff_manager.birth_date.minute": ["minute", "second"],
+        "staff_manager.birth_date.second": ["second"],
+        "staff_manager.original_hire_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_manager.original_hire_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_manager.original_hire_date.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_manager.original_hire_date.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_manager.original_hire_date.day": [
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_manager.original_hire_date.hour": ["hour", "minute", "second"],
+        "staff_manager.original_hire_date.minute": ["minute", "second"],
+        "staff_manager.original_hire_date.second": ["second"],
+        "staff_manager.rehire_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_manager.rehire_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_manager.rehire_date.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_manager.rehire_date.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_manager.rehire_date.day": ["day", "hour", "minute", "second"],
+        "staff_manager.rehire_date.hour": ["hour", "minute", "second"],
+        "staff_manager.rehire_date.minute": ["minute", "second"],
+        "staff_manager.rehire_date.second": ["second"],
+        "staff_reporting_relationships.effective_start_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_reporting_relationships.effective_start_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_reporting_relationships.effective_start_date.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_reporting_relationships.effective_start_date.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_reporting_relationships.effective_start_date.day": [
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_reporting_relationships.effective_start_date.hour": [
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_reporting_relationships.effective_start_date.minute": [
+          "minute",
+          "second"
+        ],
+        "staff_reporting_relationships.effective_start_date.second": ["second"],
+        "staff_reporting_relationships.effective_end_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_reporting_relationships.effective_end_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_reporting_relationships.effective_end_date.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_reporting_relationships.effective_end_date.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_reporting_relationships.effective_end_date.day": [
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_reporting_relationships.effective_end_date.hour": [
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_reporting_relationships.effective_end_date.minute": [
+          "minute",
+          "second"
+        ],
+        "staff_reporting_relationships.effective_end_date.second": ["second"],
+        "staff_work_history.effective_start_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_work_history.effective_start_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_work_history.effective_start_date.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_work_history.effective_start_date.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_work_history.effective_start_date.day": [
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_work_history.effective_start_date.hour": [
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_work_history.effective_start_date.minute": ["minute", "second"],
+        "staff_work_history.effective_start_date.second": ["second"],
+        "student_assessment_scores.date_taken.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_assessment_scores.date_taken.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_assessment_scores.date_taken.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_assessment_scores.date_taken.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_assessment_scores.date_taken.day": [
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_assessment_scores.date_taken.hour": [
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_assessment_scores.date_taken.minute": ["minute", "second"],
+        "student_assessment_scores.date_taken.second": ["second"],
+        "student_attendance_enrollment_daily.attendance_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily.attendance_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily.attendance_date.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily.attendance_date.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily.attendance_date.day": [
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily.attendance_date.hour": [
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily.attendance_date.minute": [
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily.attendance_date.second": [
+          "second"
+        ],
+        "student_attendance_enrollment_periods.period_start_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods.period_start_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods.period_start_date.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods.period_start_date.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods.period_start_date.day": [
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods.period_start_date.hour": [
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods.period_start_date.minute": [
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods.period_start_date.second": [
+          "second"
+        ],
+        "student_attendance_enrollment_periods.period_start_membership_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods.period_start_membership_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods.period_start_membership_date.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods.period_start_membership_date.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods.period_start_membership_date.day": [
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods.period_start_membership_date.hour": [
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods.period_start_membership_date.minute": [
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods.period_start_membership_date.second": [
+          "second"
+        ],
+        "student_attendance_enrollment_periods.period_end_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods.period_end_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods.period_end_date.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods.period_end_date.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods.period_end_date.day": [
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods.period_end_date.hour": [
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods.period_end_date.minute": [
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods.period_end_date.second": [
+          "second"
+        ],
+        "student_school_enrollments.entry_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_school_enrollments.entry_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_school_enrollments.entry_date.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_school_enrollments.entry_date.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_school_enrollments.entry_date.day": [
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_school_enrollments.entry_date.hour": [
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_school_enrollments.entry_date.minute": ["minute", "second"],
+        "student_school_enrollments.entry_date.second": ["second"],
+        "student_school_enrollments.exit_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_school_enrollments.exit_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_school_enrollments.exit_date.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_school_enrollments.exit_date.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_school_enrollments.exit_date.day": [
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_school_enrollments.exit_date.hour": [
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_school_enrollments.exit_date.minute": ["minute", "second"],
+        "student_school_enrollments.exit_date.second": ["second"],
+        "student_section_enrollments.entry_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_section_enrollments.entry_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_section_enrollments.entry_date.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_section_enrollments.entry_date.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_section_enrollments.entry_date.day": [
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_section_enrollments.entry_date.hour": [
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_section_enrollments.entry_date.minute": ["minute", "second"],
+        "student_section_enrollments.entry_date.second": ["second"],
+        "student_section_enrollments.exit_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_section_enrollments.exit_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_section_enrollments.exit_date.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_section_enrollments.exit_date.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_section_enrollments.exit_date.day": [
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_section_enrollments.exit_date.hour": [
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_section_enrollments.exit_date.minute": ["minute", "second"],
+        "student_section_enrollments.exit_date.second": ["second"],
+        "students.birth_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "students.birth_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "students.birth_date.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "students.birth_date.week": ["week", "day", "hour", "minute", "second"],
+        "students.birth_date.day": ["day", "hour", "minute", "second"],
+        "students.birth_date.hour": ["hour", "minute", "second"],
+        "students.birth_date.minute": ["minute", "second"],
+        "students.birth_date.second": ["second"],
+        "staff_directory.effective_start_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_directory.effective_start_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_directory.effective_start_date.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_directory.effective_start_date.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_directory.effective_start_date.day": [
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_directory.effective_start_date.hour": [
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_directory.effective_start_date.minute": ["minute", "second"],
+        "staff_directory.effective_start_date.second": ["second"],
+        "staff_directory.dates_date_day.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_directory.dates_date_day.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_directory.dates_date_day.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_directory.dates_date_day.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_directory.dates_date_day.day": [
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_directory.dates_date_day.hour": ["hour", "minute", "second"],
+        "staff_directory.dates_date_day.minute": ["minute", "second"],
+        "staff_directory.dates_date_day.second": ["second"],
+        "staff_directory.original_hire_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_directory.original_hire_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_directory.original_hire_date.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_directory.original_hire_date.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_directory.original_hire_date.day": [
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_directory.original_hire_date.hour": ["hour", "minute", "second"],
+        "staff_directory.original_hire_date.minute": ["minute", "second"],
+        "staff_directory.original_hire_date.second": ["second"],
+        "staff_directory.rehire_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_directory.rehire_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_directory.rehire_date.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_directory.rehire_date.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_directory.rehire_date.day": ["day", "hour", "minute", "second"],
+        "staff_directory.rehire_date.hour": ["hour", "minute", "second"],
+        "staff_directory.rehire_date.minute": ["minute", "second"],
+        "staff_directory.rehire_date.second": ["second"],
+        "staff_pii.dates_date_day.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_pii.dates_date_day.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_pii.dates_date_day.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_pii.dates_date_day.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_pii.dates_date_day.day": ["day", "hour", "minute", "second"],
+        "staff_pii.dates_date_day.hour": ["hour", "minute", "second"],
+        "staff_pii.dates_date_day.minute": ["minute", "second"],
+        "staff_pii.dates_date_day.second": ["second"],
+        "staff_pii.birth_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_pii.birth_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_pii.birth_date.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_pii.birth_date.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "staff_pii.birth_date.day": ["day", "hour", "minute", "second"],
+        "staff_pii.birth_date.hour": ["hour", "minute", "second"],
+        "staff_pii.birth_date.minute": ["minute", "second"],
+        "staff_pii.birth_date.second": ["second"],
+        "student_assessment_scores_view.date_taken.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_assessment_scores_view.date_taken.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_assessment_scores_view.date_taken.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_assessment_scores_view.date_taken.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_assessment_scores_view.date_taken.day": [
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_assessment_scores_view.date_taken.hour": [
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_assessment_scores_view.date_taken.minute": [
+          "minute",
+          "second"
+        ],
+        "student_assessment_scores_view.date_taken.second": ["second"],
+        "student_assessment_scores_view.date_day.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_assessment_scores_view.date_day.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_assessment_scores_view.date_day.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_assessment_scores_view.date_day.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_assessment_scores_view.date_day.day": [
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_assessment_scores_view.date_day.hour": [
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_assessment_scores_view.date_day.minute": ["minute", "second"],
+        "student_assessment_scores_view.date_day.second": ["second"],
+        "student_assessment_scores_view.entry_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_assessment_scores_view.entry_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_assessment_scores_view.entry_date.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_assessment_scores_view.entry_date.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_assessment_scores_view.entry_date.day": [
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_assessment_scores_view.entry_date.hour": [
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_assessment_scores_view.entry_date.minute": [
+          "minute",
+          "second"
+        ],
+        "student_assessment_scores_view.entry_date.second": ["second"],
+        "student_assessment_scores_view.exit_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_assessment_scores_view.exit_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_assessment_scores_view.exit_date.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_assessment_scores_view.exit_date.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_assessment_scores_view.exit_date.day": [
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_assessment_scores_view.exit_date.hour": [
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_assessment_scores_view.exit_date.minute": ["minute", "second"],
+        "student_assessment_scores_view.exit_date.second": ["second"],
+        "student_assessment_scores_view.birth_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_assessment_scores_view.birth_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_assessment_scores_view.birth_date.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_assessment_scores_view.birth_date.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_assessment_scores_view.birth_date.day": [
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_assessment_scores_view.birth_date.hour": [
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_assessment_scores_view.birth_date.minute": [
+          "minute",
+          "second"
+        ],
+        "student_assessment_scores_view.birth_date.second": ["second"],
+        "student_attendance_enrollment_daily_view.attendance_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily_view.attendance_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily_view.attendance_date.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily_view.attendance_date.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily_view.attendance_date.day": [
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily_view.attendance_date.hour": [
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily_view.attendance_date.minute": [
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily_view.attendance_date.second": [
+          "second"
+        ],
+        "student_attendance_enrollment_daily_view.dates_date_day.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily_view.dates_date_day.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily_view.dates_date_day.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily_view.dates_date_day.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily_view.dates_date_day.day": [
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily_view.dates_date_day.hour": [
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily_view.dates_date_day.minute": [
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily_view.dates_date_day.second": [
+          "second"
+        ],
+        "student_attendance_enrollment_daily_view.dates_school_week_start_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily_view.dates_school_week_start_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily_view.dates_school_week_start_date.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily_view.dates_school_week_start_date.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily_view.dates_school_week_start_date.day": [
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily_view.dates_school_week_start_date.hour": [
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily_view.dates_school_week_start_date.minute": [
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily_view.dates_school_week_start_date.second": [
+          "second"
+        ],
+        "student_attendance_enrollment_daily_view.entry_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily_view.entry_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily_view.entry_date.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily_view.entry_date.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily_view.entry_date.day": [
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily_view.entry_date.hour": [
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily_view.entry_date.minute": [
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily_view.entry_date.second": [
+          "second"
+        ],
+        "student_attendance_enrollment_daily_view.exit_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily_view.exit_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily_view.exit_date.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily_view.exit_date.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily_view.exit_date.day": [
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily_view.exit_date.hour": [
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily_view.exit_date.minute": [
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily_view.exit_date.second": ["second"],
+        "student_attendance_enrollment_daily_view.birth_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily_view.birth_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily_view.birth_date.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily_view.birth_date.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily_view.birth_date.day": [
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily_view.birth_date.hour": [
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily_view.birth_date.minute": [
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_daily_view.birth_date.second": [
+          "second"
+        ],
+        "student_attendance_enrollment_periods_view.period_start_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods_view.period_start_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods_view.period_start_date.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods_view.period_start_date.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods_view.period_start_date.day": [
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods_view.period_start_date.hour": [
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods_view.period_start_date.minute": [
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods_view.period_start_date.second": [
+          "second"
+        ],
+        "student_attendance_enrollment_periods_view.period_start_membership_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods_view.period_start_membership_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods_view.period_start_membership_date.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods_view.period_start_membership_date.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods_view.period_start_membership_date.day": [
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods_view.period_start_membership_date.hour": [
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods_view.period_start_membership_date.minute": [
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods_view.period_start_membership_date.second": [
+          "second"
+        ],
+        "student_attendance_enrollment_periods_view.period_end_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods_view.period_end_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods_view.period_end_date.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods_view.period_end_date.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods_view.period_end_date.day": [
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods_view.period_end_date.hour": [
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods_view.period_end_date.minute": [
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods_view.period_end_date.second": [
+          "second"
+        ],
+        "student_attendance_enrollment_periods_view.entry_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods_view.entry_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods_view.entry_date.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods_view.entry_date.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods_view.entry_date.day": [
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods_view.entry_date.hour": [
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods_view.entry_date.minute": [
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods_view.entry_date.second": [
+          "second"
+        ],
+        "student_attendance_enrollment_periods_view.exit_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods_view.exit_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods_view.exit_date.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods_view.exit_date.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods_view.exit_date.day": [
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods_view.exit_date.hour": [
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods_view.exit_date.minute": [
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods_view.exit_date.second": [
+          "second"
+        ],
+        "student_attendance_enrollment_periods_view.birth_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods_view.birth_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods_view.birth_date.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods_view.birth_date.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods_view.birth_date.day": [
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods_view.birth_date.hour": [
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods_view.birth_date.minute": [
+          "minute",
+          "second"
+        ],
+        "student_attendance_enrollment_periods_view.birth_date.second": [
+          "second"
+        ],
+        "student_section_enrollments_view.entry_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_section_enrollments_view.entry_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_section_enrollments_view.entry_date.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_section_enrollments_view.entry_date.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_section_enrollments_view.entry_date.day": [
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_section_enrollments_view.entry_date.hour": [
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_section_enrollments_view.entry_date.minute": [
+          "minute",
+          "second"
+        ],
+        "student_section_enrollments_view.entry_date.second": ["second"],
+        "student_section_enrollments_view.exit_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_section_enrollments_view.exit_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_section_enrollments_view.exit_date.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_section_enrollments_view.exit_date.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_section_enrollments_view.exit_date.day": [
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_section_enrollments_view.exit_date.hour": [
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_section_enrollments_view.exit_date.minute": [
+          "minute",
+          "second"
+        ],
+        "student_section_enrollments_view.exit_date.second": ["second"],
+        "student_section_enrollments_view.birth_date.year": [
+          "year",
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_section_enrollments_view.birth_date.quarter": [
+          "quarter",
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_section_enrollments_view.birth_date.month": [
+          "month",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_section_enrollments_view.birth_date.week": [
+          "week",
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_section_enrollments_view.birth_date.day": [
+          "day",
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_section_enrollments_view.birth_date.hour": [
+          "hour",
+          "minute",
+          "second"
+        ],
+        "student_section_enrollments_view.birth_date.minute": [
+          "minute",
+          "second"
+        ],
+        "student_section_enrollments_view.birth_date.second": ["second"]
+      },
+      "hasMultipliedMeasures": false,
+      "hasCumulativeMeasures": false,
+      "windowGranularity": null,
+      "filterDimensionsSingleValueEqual": null,
+      "ownedDimensions": [
+        "student_assessment_scores.dates.academic_year",
+        "student_assessment_scores.student_section_enrollments.student_school_enrollments.locations.abbreviation",
+        "student_assessment_scores.student_assessment_administrations.student_assessments.academic_subject"
+      ],
+      "ownedTimeDimensionsWithRollupGranularity": [],
+      "ownedTimeDimensionsAsIs": [],
+      "allBackAliasMembers": {
+        "student_assessment_scores.pct_proficient": "student_assessment_scores_view.pct_proficient",
+        "student_assessment_scores.student_assessment_administrations.student_assessments.academic_subject": "student_assessment_scores_view.academic_subject",
+        "student_assessment_scores.dates.academic_year": "student_assessment_scores_view.academic_year",
+        "student_assessment_scores.student_section_enrollments.student_school_enrollments.locations.abbreviation": "student_assessment_scores_view.abbreviation"
+      },
+      "hasMultiStage": false
+    },
+    "memberNames": [
+      "student_assessment_scores_view.pct_proficient",
+      "student_assessment_scores.pct_proficient",
+      "student_assessment_scores._sum_proficient",
+      "student_assessments.assessment_key",
+      "regions.region_key",
+      "student_assessment_scores.count_scored",
+      "student_assessment_scores.assessment_score_key",
+      "student_assessment_scores_view.academic_subject",
+      "student_assessments.academic_subject",
+      "student_assessment_scores_view.academic_year",
+      "dates.academic_year",
+      "student_assessment_scores_view.abbreviation",
+      "locations.abbreviation",
+      "student_assessment_administrations.assessment_administration_key",
+      "student_section_enrollments.student_section_enrollment_key",
+      "student_school_enrollments.student_enrollment_key",
+      "locations.location_key",
+      "dates.date_key"
+    ]
+  },
+  "dataSource": "default"
+}

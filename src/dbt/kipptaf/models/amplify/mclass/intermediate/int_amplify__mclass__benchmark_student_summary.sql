@@ -22,6 +22,33 @@ with
             initcap(
                 regexp_extract(x.location_dagster_code_location, r'kipp(\w+)')
             ) as region,
+
+            count(*) over (
+                partition by
+                    ur._dbt_source_relation,
+                    ur._dbt_source_relation_2,
+                    x.location_dagster_code_location,
+                    ur.student_primary_id,
+                    ur.school_year,
+                    ur.benchmark_period,
+                    ur.assessment_grade
+            ) as n_grade_collisions,
+
+            -- a null date is not a shared day
+            if(
+                ur.device_date is not null,
+                count(*) over (
+                    partition by
+                        ur._dbt_source_relation,
+                        ur._dbt_source_relation_2,
+                        x.location_dagster_code_location,
+                        ur.student_primary_id,
+                        ur.school_year,
+                        ur.benchmark_period,
+                        ur.device_date
+                ),
+                1
+            ) as n_day_collisions,
         from union_relations as ur
         left join
             {{ ref("int_people__location_crosswalk") }} as x
@@ -29,7 +56,7 @@ with
     )
 
 select
-    * except (student_primary_id),
+    * except (student_primary_id, n_grade_collisions, n_day_collisions),
 
     {{
         focus_student_number(
@@ -38,3 +65,4 @@ select
     }} as student_primary_id,
 
 from location_xref
+where n_grade_collisions = 1 and n_day_collisions = 1

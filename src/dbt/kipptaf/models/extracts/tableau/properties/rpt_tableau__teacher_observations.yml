@@ -16,14 +16,6 @@ models:
           which is a property of the location rather than the person.
         data_tests:
           - not_null
-          - accepted_values:
-              arguments:
-                values:
-                  - TEAM Academy Charter School
-                  - KIPP Cooper Norcross Academy
-                  - KIPP Miami
-                  - KIPP Paterson
-                  - KIPP TEAM and Family Schools Inc.
       - name: employee_number
         data_type: int64
       - name: teammate

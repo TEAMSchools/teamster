@@ -21,6 +21,8 @@ models:
               - comparison_entity
               - comparison_demographic_group
               - comparison_demographic_subgroup
+          config:
+            severity: error
     columns:
       - name: comparison_demographic_subgroup
         data_type: string

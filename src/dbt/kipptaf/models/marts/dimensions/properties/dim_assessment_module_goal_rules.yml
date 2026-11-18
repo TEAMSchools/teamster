@@ -1,0 +1,62 @@
+models:
+  - name: dim_assessment_module_goal_rules
+    description: >-
+      DDI goal rules by module type. One row per region, module type, subject
+      area and grade range, holding either a fixed goal that replaces an
+      assessment's lookup goal or an offset added to it. A rule that is
+      malformed or overlaps another rule is left out, so the scores it would
+      match keep their lookup goal. Region is part of the key but not a column;
+      a rule's region is reached through the score that points at it.
+    config:
+      materialized: table
+      meta:
+        dagster:
+          # Shares the scores fact's tick, so the fact and this dim pick up a
+          # sheet edit together; they disagree only if the sheet's staging
+          # table rebuilds mid-tick. Rationale in
+          # fct_assessment_scores_enrollment_scoped.
+          automation_condition:
+            cron_schedule: 30 0,10,13,15,17 * * *
+    columns:
+      - name: assessment_module_goal_rule_key
+        data_type: string
+        description: >-
+          Surrogate key derived from the rule's region, module type, subject
+          area, and lowest grade. Primary key.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
+            warn_unenforced: false
+        data_tests:
+          - unique:
+              config:
+                severity: error
+
+      - name: module_type
+        data_type: string
+        description: Assessment module type the rule applies to (ET, CRQ, TP).
+
+      - name: academic_subject
+        data_type: string
+        description: >-
+          Subject area the rule applies to (Ed-Fi academic_subject_descriptor).
+          Null when the rule applies to every subject.
+
+      - name: grade_min
+        data_type: int64
+        description: Lowest grade level the rule applies to (0 is kindergarten).
+
+      - name: grade_max
+        data_type: int64
+        description: Highest grade level the rule applies to, inclusive.
+
+      - name: goal
+        data_type: float64
+        description: >-
+          Fixed goal that replaces the lookup goal; null when the rule is an
+          offset.
+
+      - name: goal_offset
+        data_type: float64
+        description: >-
+          Amount added to the lookup goal; null when the rule sets a fixed goal.

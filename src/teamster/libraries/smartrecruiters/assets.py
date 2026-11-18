@@ -1,7 +1,7 @@
 import time
 
 from dagster import AssetExecutionContext, AssetsDefinition, Output, asset
-from requests.exceptions import ConnectionError
+from requests.exceptions import ConnectionError, HTTPError
 
 from teamster.core.asset_checks import (
     build_check_spec_avro_schema_valid,
@@ -33,7 +33,19 @@ def build_smartrecruiters_report_asset(
         )
 
         context.log.info(f"Executing {report_name}")
-        report_execution_data = smartrecruiters.post(endpoint=report_endpoint).json()
+        try:
+            report_execution_data = smartrecruiters.post(
+                endpoint=report_endpoint
+            ).json()
+        except HTTPError as e:
+            # the API refuses a new file while one is generating (e.g. from the
+            # run this one retries); wait on the newest file instead
+            if "pending generation" not in str(e):
+                raise
+
+            report_execution_data = smartrecruiters.get(
+                endpoint=report_endpoint
+            ).json()["content"][0]
 
         report_file_id = report_execution_data["reportFileId"]
         report_file_status = report_execution_data["reportFileStatus"]
@@ -53,6 +65,12 @@ def build_smartrecruiters_report_asset(
 
             if report_file_record:
                 report_file_status = report_file_record[0]["reportFileStatus"]
+
+                if report_file_status == "FAILED":
+                    raise RuntimeError(
+                        f"Report file {report_file_id} failed: "
+                        f"{report_file_record[0].get('errorReason')}"
+                    )
 
             context.log.info(report_file_status)
             if report_file_status == "COMPLETED":

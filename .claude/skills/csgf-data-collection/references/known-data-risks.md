@@ -15,10 +15,7 @@ left over the summer (183 AY2025 students on 2026-09-29). Full writeup in
 cycle's HSDC tabs, check whether a newly-added HS-scoped model has a different
 filter before assuming it's a data problem.
 
-**Year anchoring across the eight `rpt_gsheets__csgf_*` models** (verified by
-reading each model's SQL directly, not just taken from prior notes -- see
-[issue #4897](https://github.com/TEAMSchools/teamster/issues/4897) for the
-original observation this confirms):
+**Year anchoring across the eight `rpt_gsheets__csgf_*` models:**
 
 | Model                      | Years of data referenced                                                                                                                                    |
 | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |

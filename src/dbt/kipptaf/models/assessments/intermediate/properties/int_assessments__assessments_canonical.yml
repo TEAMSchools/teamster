@@ -1,57 +1,54 @@
 models:
   - name: int_assessments__assessments_canonical
     description: >-
-      Canonical-grain projection of `int_assessments__assessments_members`. One
-      row per `canonical_assessment_id` — the logical assessment that may span
-      multiple regional members (e.g., the four regional copies of the same Q2
-      ELA module collapse to one canonical row). Canonical attrs (`title`,
-      `administered_date`, `grade_level_id`) are picked from the member with the
-      lowest `assessment_id` in the canonical group via
-      `dbt_utils.deduplicate(partition_by="canonical_assessment_id",
-      order_by="assessment_id")`, matching the `first_value(... order by
-      assessment_id) over canonical_w` window in the upstream model.
-      `regions_array` is the union of `regions_assessed_array` across all
-      internal members of the group. Internal assessments only
-      (`is_internal_assessment` filter applied upstream).
+      One row per `source` and `canonical_assessment_id`, the regional group
+      from `int_assessments__assessments_members.region_groups`. A group is the
+      copies of one assessment that a region gives, which Illuminate limits can
+      force to be several copies (the parts of a multi-part assessment). Group
+      attributes (`title`, `administered_date`, grade, and the tag columns) come
+      from the member whose `assessment_id` is the group id, the lowest id in
+      the group. Internal assessments with a region tag only.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - source
+              - canonical_assessment_id
     columns:
       - name: canonical_assessment_id
         data_tests:
-          - unique
           - not_null
         data_type: int64
         description: >-
-          Primary key. The lowest `assessment_id` within the canonical partition
-          `(academic_year, scope, subject_area, module_code, grade_level_id)`.
-          Members of `int_assessments__assessments_members` FK here via their
-          own `canonical_assessment_id` column.
+          Key, together with `source`. The lowest `assessment_id` among the
+          internal copies in the group; see `region_groups` on
+          `int_assessments__assessments_members`.
+      - name: source
+        data_type: string
+        description: >-
+          System the assessment comes from (`illuminate` or `apex`). Part of the
+          key.
       - name: regions_array
-        data_tests:
-          - not_null
         data_type: array<string>
         description: >-
-          Union of `regions_assessed_array` across all internal members of the
-          canonical group, computed via `array_agg(distinct region)` after
-          `unnest`. Consumers `cross join unnest(regions_array) as region` to
-          fan out to one row per (canonical assessment, region). Guaranteed
-          non-null by the INNER JOIN to `canonical_regions` in the model SQL —
-          canonical groups whose internal members all have empty
-          `regions_assessed_array` are dropped at the join.
+          Regions whose group this is, sorted. A group usually serves 1 region;
+          it serves more when its copies are tagged for each of them. Consumers
+          `cross join unnest(regions_array) as region` to fan out to one row per
+          (group, region).
       - name: title
         data_type: string
         description: >-
           `title` from the canonical member (lowest `assessment_id` in the
-          group). Equivalent to
-          `int_assessments__assessments_members.canonical_title`.
+          group).
       - name: administered_date
         data_type: date
         description: >-
-          `canonical_administered_at` from the canonical member. Already DATE
+          `administered_at` from the canonical member, renamed. Already DATE
           precision upstream — no cast applied.
       - name: grade_level_id
         data_type: int64
         description: >-
-          `grade_level_id` from the canonical member. Equivalent to
-          `int_assessments__assessments_members.canonical_grade_level_id`.
+          `grade_level_id` from the canonical member.
       - name: grade_level
         data_type: int64
         description: >-

@@ -1,12 +1,12 @@
 from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
 from dagster_shared import check
-from pydantic import PrivateAttr
+from pydantic import Field, PrivateAttr
 from requests import Response, Session
 from requests.exceptions import HTTPError
 
 
 class PowerSchoolEnrollmentResource(ConfigurableResource):
-    api_key: str
+    api_key: str = Field(repr=False)
     api_version: str = "v1"
     page_size: int = 50
 

@@ -42,6 +42,29 @@ Every Cube tool is stubbed (`harness.py`): `meta` returns a fixed catalog,
 `load`/`sql` record the query the model built and return a dummy result. No
 warehouse, no auth, no PII.
 
+### Family 4 — assessment traps (#5236)
+
+Does the drained Cube text change how the model queries the assessment view? Run
+with `--prompts prompts_assessment.yaml`. Each prompt names one trap from
+`traps.py`; a trap fires when the captured `load` query on
+`student_assessment_scores_view` shows the mistake. The one exception,
+`paterson_zero_as_failure`, checks the answer text for a coverage statement.
+
+| Arm        | Catalog and docstrings                                                   | Isolates                          |
+| ---------- | ------------------------------------------------------------------------ | --------------------------------- |
+| `A4_pre`   | `fixtures/meta_pre_drain.json` (origin/main), docstrings minus the drain | the floor                         |
+| `B4_post`  | the working tree, compiled by `src/cube/compile-meta.js`                 | the drain                         |
+| `C4_skill` | `B4_post` plus the orchestrator's policy and recipe sections             | what an org-level skill would add |
+
+The `load` stub returns 0 rows for a Paterson query, with the server's
+empty-result note on `B4_post` and `C4_skill` only. Every record also carries
+tokens (input, cache read, cache write, output), `cost_usd`, `num_turns` and
+`duration_ms`, and the run prints a median cost table per arm.
+
+Pass rule, from the knowledge-drain spec: `B4_post`'s pooled trap rate is below
+`A4_pre`'s, with at most 2 revision rounds. `C4_skill` and a Sonnet run report
+but do not gate.
+
 ## Prompts (`prompts.yaml`)
 
 - **Family 1** (16): determinate intent, 4 phrasings (`SY26`, `2025-2026`,
@@ -56,7 +79,21 @@ warehouse, no auth, no PII.
 
 Determinate prompts: `wrong_rate`, `silent_wrong_rate` (wrong **and** no
 interpretation echoed), `correct_rate`, `no_query_rate`. Ambiguous prompts:
-`disambig_rate`. Rates are reported with Wilson 95% intervals.
+`disambig_rate`. Family 4: `trap_rate`.
+
+Every rate is reported with a 95% Wilson interval clustered on prompt id. Reps
+of one prompt are correlated, so the independent unit is the prompt, not the
+rep, and adding reps does not narrow the interval the way adding prompts does.
+The interval uses the Korn-Graubard effective sample size and a Student-t
+critical value with `prompts - 1` degrees of freedom, ported from Inspect AI's
+`ci_wilson(cluster=...)`. The summary table prints `n/k` (records / prompts)
+beside each family.
+
+With 7 trap prompts the intervals are rough, and they are wide: expect 40 to 70
+points across at mid-range rates. At a rate of exactly 0% or 100% the method
+cannot estimate the correlation between reps, so the interval reflects only the
+small prompt count and is likely too narrow. The pass rule compares point rates,
+so the intervals inform the reading of a result but do not gate it.
 
 ## Two runners
 

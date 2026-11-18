@@ -3,7 +3,7 @@ import time
 from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
 from dagster_shared import check
 from oauthlib.oauth2 import BackendApplicationClient
-from pydantic import PrivateAttr
+from pydantic import Field, PrivateAttr
 from requests import Response
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import ConnectionError as RequestsConnectionError
@@ -22,8 +22,8 @@ class AdpWorkforceNowError(Exception):
 
 
 class AdpWorkforceNowResource(ConfigurableResource):
-    client_id: str
-    client_secret: str
+    client_id: str = Field(repr=False)
+    client_secret: str = Field(repr=False)
     cert_filepath: str
     key_filepath: str
     masked: bool = True
@@ -134,6 +134,34 @@ class AdpWorkforceNowResource(ConfigurableResource):
             method="GET", url=f"{self._service_root}/{endpoint}", params=params
         )
 
+    @retry(
+        stop=stop_after_attempt(5),
+        wait=wait_exponential_jitter(initial=10, max=60),
+        retry=retry_if_exception_type(JSONDecodeError),
+    )
+    def _get_page(self, endpoint: str, params: dict) -> dict | None:
+        """Fetch and parse one page, or return None past the last page.
+
+        ADP occasionally answers 200 with a body cut off mid-stream. The parse
+        lives here, not in ``_request``, so the refetch covers it.
+        """
+        response = self.get(endpoint=endpoint, params=params)
+
+        if response.status_code == 204:
+            return None
+
+        try:
+            return response.json()
+        except JSONDecodeError:
+            # never log the body: worker records are PII
+            self._log.warning(
+                msg=(
+                    f"Unparseable page at $skip={params.get('$skip')} "
+                    f"({len(response.content)} bytes); refetching"
+                )
+            )
+            raise
+
     def get_records(self, endpoint: str, params: dict | None = None) -> list[dict]:
         page_size = 100
         all_records = []
@@ -147,14 +175,12 @@ class AdpWorkforceNowResource(ConfigurableResource):
 
         while True:
             self._log.debug(msg=params)
-            response = self.get(endpoint=endpoint, params=params)
+            page = self._get_page(endpoint=endpoint, params=params)
 
-            if response.status_code == 204:
+            if page is None:
                 break
 
-            response_json = response.json()[endpoint_name]
-
-            all_records.extend(response_json)
+            all_records.extend(page[endpoint_name])
             params.update({"$skip": params["$skip"] + page_size})
 
         return all_records

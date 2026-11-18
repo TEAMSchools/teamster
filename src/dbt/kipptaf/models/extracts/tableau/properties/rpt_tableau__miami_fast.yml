@@ -1,5 +1,7 @@
 models:
   - name: rpt_tableau__miami_fast
+    config:
+      enabled: false
     description: >-
       Miami-only by name and by its `region = 'Miami'` filter. This model
       returned **zero rows of any kind** in prod as of 2026-08-27: its where

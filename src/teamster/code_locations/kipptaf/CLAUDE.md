@@ -9,43 +9,46 @@ LOCAL_TIMEZONE = ZoneInfo("America/New_York")
 
 ## Active Integrations
 
-| Module                   | Assets                                                    | Schedules        | Sensors                 |
-| ------------------------ | --------------------------------------------------------- | ---------------- | ----------------------- |
-| `dbt`                    | 3 asset groups (see below)                                | —                | —                       |
-| `dlt`                    | Illuminate (active), Salesforce (WIP), Zendesk (disabled) | daily + hourly   | —                       |
-| `google`                 | Directory, Forms, AppSheet specs, Sheets specs            | directory, forms | bigquery, forms, sheets |
-| `adp`                    | payroll SFTP + WFN API (WFM disabled)                     | WFN schedule     | WFN + payroll sensors   |
-| `airbyte`                | asset specs                                               | schedule         | disabled                |
-| `collegeboard`           | SFTP assets                                               | —                | —                       |
-| `coupa`                  | API assets                                                | schedule         | —                       |
-| `deanslist`              | API assets                                                | —                | sensor                  |
-| `extracts`               | BigQuery→SFTP                                             | schedule         | —                       |
-| `knowbe4`                | API assets                                                | schedule         | —                       |
-| `ldap`                   | LDAP assets                                               | schedule         | disabled                |
-| `level_data`             | Grow API assets                                           | schedule         | —                       |
-| `nsc`                    | SFTP assets                                               | —                | —                       |
-| `overgrad`               | API assets                                                | —                | —                       |
-| `performance_management` | SFTP assets                                               | —                | —                       |
-| `smartrecruiters`        | report assets                                             | schedule         | —                       |
-| `tableau`                | workbook refresh assets                                   | schedule         | —                       |
-| `zendesk`                | assets                                                    | schedule         | —                       |
-| `couchdrop`              | sensor only                                               | —                | sensor                  |
-
-**Coupa Dagster code is aliased `l`** — resource `lResource`, env vars `l_*`
-(`l_SFTP_*`, `l_API_*`), asset group `l`, and `libraries/l/` + `kipptaf/l/`
-modules that the `coupa` submodule wires from. Grep `l` as well as `coupa`. The
-dbt side is cleanly named `coupa`.
+| Module                   | Assets                                                         | Schedules        | Sensors                 |
+| ------------------------ | -------------------------------------------------------------- | ---------------- | ----------------------- |
+| `dbt`                    | 3 asset groups (see below)                                     | —                | —                       |
+| `dlt`                    | Illuminate (active), Salesforce (inactive), Zendesk (disabled) | daily + hourly   | —                       |
+| `google`                 | Directory, Forms, AppSheet specs, Sheets specs                 | directory, forms | bigquery, forms, sheets |
+| `adp`                    | payroll SFTP + WFN API (WFM disabled)                          | WFN schedule     | WFN + payroll sensors   |
+| `airbyte`                | asset specs                                                    | schedule         | disabled                |
+| `branchingminds`         | SFTP export assets (fiscal-year partitions)                    | —                | sensor                  |
+| `collegeboard`           | SFTP assets                                                    | —                | —                       |
+| `coupa`                  | API assets                                                     | schedule         | —                       |
+| `deanslist`              | API assets                                                     | —                | sensor                  |
+| `extracts`               | BigQuery→SFTP                                                  | schedule         | —                       |
+| `knowbe4`                | API assets                                                     | schedule         | —                       |
+| `ldap`                   | LDAP assets                                                    | schedule         | disabled                |
+| `level_data`             | Grow API assets                                                | schedule         | —                       |
+| `nsc`                    | SFTP assets                                                    | —                | —                       |
+| `overgrad`               | API assets                                                     | —                | —                       |
+| `performance_management` | SFTP assets                                                    | —                | —                       |
+| `smartrecruiters`        | report assets                                                  | schedule         | —                       |
+| `tableau`                | workbook refresh assets                                        | schedule         | —                       |
+| `zendesk`                | assets                                                         | schedule         | —                       |
+| `couchdrop`              | sensor only                                                    | —                | sensor                  |
 
 ## dbt Asset Groups (`dbt/assets.py`)
 
 Kipptaf splits dbt into **three separate asset groups** with different resource
 requirements and selection criteria:
 
-| Asset variable            | `select`              | `exclude`                              | Notes                                         |
-| ------------------------- | --------------------- | -------------------------------------- | --------------------------------------------- |
-| `core_dbt_assets`         | — (all)               | `source:adp_payroll+ tag:google_sheet` | Main run                                      |
-| `google_sheet_dbt_assets` | `tag:google_sheet`    | —                                      | Separate to isolate brittle gsheet deps       |
-| `adp_payroll_dbt_assets`  | `source:adp_payroll+` | —                                      | Partitioned by payroll file; cannot be merged |
+| Asset variable            | `select`                   | `exclude`                            | Notes                                         |
+| ------------------------- | -------------------------- | ------------------------------------ | --------------------------------------------- |
+| `core_dbt_assets`         | selector `core_dbt_assets` | (in `src/dbt/kipptaf/selectors.yml`) | Main run                                      |
+| `google_sheet_dbt_assets` | `tag:google_sheet`         | —                                    | Separate to isolate brittle gsheet deps       |
+| `adp_payroll_dbt_assets`  | `source:adp_payroll+`      | —                                    | Partitioned by payroll file; cannot be merged |
+
+The core selector excludes `tag:google_sheet` with
+`indirect_selection: cautious`. A plain `exclude=` uses eager selection, which
+drops every test that reads any sheet model, including tests whose check belongs
+to a core model. Do not move the exclude back into `exclude=`. A test whose
+check belongs to a sheet model carries `tag:google_sheet` so it leaves core
+(`.claude/rules/dbt-yaml.md`).
 
 `core_dbt_assets` is the one used by `TableauServerResource` dependencies
 (imported as `core_dbt_assets` from `kipptaf.dbt.assets`).
@@ -77,12 +80,12 @@ See `src/dbt/kipptaf/CLAUDE.md` for the full exposure YAML reference.
 ## ADP WFN `workers` asset
 
 Pulls with `asOfDate=<partition_key>` — each partition reconstructs ADP's state
-as of that date from ADP's _current_ data (full snapshot, ~4.5–4.7k workers).
-The schedule re-materializes only a rolling ~45-partition window
-(`partition_keys[-45:]`, roughly −1 month / +2 weeks via `end_offset=14`), so an
-ADP hard-delete / merge / backdated edit to a record older than the window
-doesn't propagate until you manually rematerialize the affected partition span.
-Absence from a re-pulled partition therefore means the record is gone from ADP.
+as of that date from ADP's _current_ data (full snapshot). The schedule
+re-materializes only a rolling ~45-partition window (`partition_keys[-45:]`,
+roughly −1 month / +2 weeks via `end_offset=14`), so an ADP hard-delete / merge
+/ backdated edit to a record older than the window doesn't propagate until you
+manually rematerialize the affected partition span. Absence from a re-pulled
+partition therefore means the record is gone from ADP.
 
 The asset pulls the **list** endpoint (`GET hr/v2/workers?asOfDate=`), which
 OMITS a worker not yet effective as of that date (hire date after the partition
@@ -91,6 +94,12 @@ date). The `_test_get_worker` harness in
 GET (`/workers/{aoid}`), which returns the worker regardless — so a
 single-worker probe does NOT predict which partitions a bulk re-pull will place
 them in.
+
+A `workers_sync` `zero_api_errors` failure with `EMPLOYEE_NOT_FOUND` is usually
+one of these ghosts: the record was deleted in ADP after its partition left the
+window, staging keeps it open, and the roster sends the sync to the deleted OID.
+Check the `stg_adp_workforce_now__workers__ghost_open_records` asset check
+before you debug the sync itself. The fix is the re-pull above.
 
 ## Illuminate DLT Schedule Split
 

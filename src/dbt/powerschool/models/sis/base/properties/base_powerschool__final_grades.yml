@@ -1,5 +1,11 @@
 models:
   - name: base_powerschool__final_grades
+    description: >-
+      Current-year term grades. One row per student, course and term (Q and E
+      storecodes), with running year-to-date (Y1) calculations. A section
+      enrollment gets a row for each term of its section that starts before the
+      student left the section, so a student who withdraws gets no rows for
+      later terms. Terms that have not been graded yet have blank grades.
     columns:
       - name: studentid
         data_type: int64

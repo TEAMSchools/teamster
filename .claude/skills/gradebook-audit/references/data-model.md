@@ -26,6 +26,16 @@ half its points) live in the package model
 `src/dbt/powerschool/models/sis/intermediate/int_powerschool__gradebook_assignments_scores.sql`,
 which builds in each district.
 
+The staff-facing statement of these rules for AY 2026-2027 is the
+[SY 27 Gradebook Health Checklists](https://docs.google.com/document/d/1j_D9uJki4AuJP0yijuVVYaJkvgCJB8tgINgLcF-YEJ8/edit)
+doc, one tab each for MS and HS. In October 2026 it matched the assignment
+checks rule for rule. Read it with the Google Docs connector. Quote it when
+telling a teacher which rule a score breaks, and check its sharing before
+linking it in a reply. If a rule you quote disagrees with the checks, the policy
+has moved: plan the change through
+[`../playbooks/plan-a-change.md`](../playbooks/plan-a-change.md) before telling
+the teacher to change scores.
+
 The grading policy also sets a 200-point quarterly total for Summative. No check
 enforces it, and Summative has no per-assignment maximum. If asked whether the
 audit catches an over- or under-weighted Summative quarter, the answer is no;
@@ -86,6 +96,16 @@ also name `rpt_tableau__gradebook_audit`. Do NOT read either as the answer —
 `gradebook_audit`'s workbook holds one sheet, has no views, and reads an extract
 from a dbt Cloud CI schema that no longer exists. Mention them only if the user
 asks about disabled or archived workbooks.
+
+A third consumer, the `gradebook-flag-triage` end-user skill, has its own
+exposure `gradebook_flag_triage_skill` in
+`src/dbt/kipptaf/models/exposures/claude.yml`. It reads the audit view plus four
+intermediates directly (`int_powerschool__gradebook_assignment_scores_rollup`,
+`int_powerschool__gradebook_assignments_scores`,
+`int_powerschool__u_expectations_qtd_unpivot`,
+`int_extracts__course_enrollments_by_term`), so a column change on any of those
+reaches a Slack answer with no rpt_ in between. What to update and when:
+[`../playbooks/change-a-flag.md`](../playbooks/change-a-flag.md).
 
 Two companion Google Sheets have their own exposures in
 `src/dbt/kipptaf/models/exposures/google-sheets.yml` — check there if asked

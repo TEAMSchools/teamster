@@ -1,0 +1,62 @@
+cubes:
+  # The ELA role of fct_student_subjects_annual. Joined from
+  # student_school_enrollments on student, academic year and discipline =
+  # 'ELA', so each stint matches at most one row. A fresh sql_table cube,
+  # not extends, per the role-cube rule.
+  - name: student_subjects_annual_ela
+    public: false
+    sql_table: kipptaf_marts.fct_student_subjects_annual
+
+    dimensions:
+      - name: student_subject_annual_key
+        description: >-
+          Surrogate key over student, academic year and discipline. Primary key.
+        sql: student_subject_annual_key
+        type: string
+        primary_key: true
+        public: false
+
+      - name: student_key
+        description: FK to dim_students.
+        sql: student_key
+        type: string
+        public: false
+
+      - name: academic_year
+        description: >-
+          Starting calendar year of the school year. Part of the grain.
+        sql: academic_year
+        type: number
+        public: false
+
+      - name: discipline
+        description: The subject of the row, ELA or Math. Part of the grain.
+        sql: discipline
+        type: string
+        public: false
+
+      - name: latest_dibels_composite_level
+        description: >-
+          The benchmark level of the student's latest DIBELS composite in the
+          school year, as Amplify labels it. Null on Math rows and when the
+          student has no composite that year.
+        sql: latest_dibels_composite_level
+        type: string
+        public: false
+
+      - name: prior_year_state_test_proficiency
+        description: >-
+          The student's proficiency level on last school year's annual state
+          test in this discipline, or No Test when there is none.
+        sql: prior_year_state_test_proficiency
+        type: string
+        public: false
+
+      - name: is_prior_year_low_25
+        description: >-
+          TRUE if the student's score in this discipline on last spring's
+          Florida FAST (PM3) ranks below the 25.5th percentile. Miami only;
+          FALSE in NJ regions.
+        sql: is_prior_year_low_25
+        type: boolean
+        public: false

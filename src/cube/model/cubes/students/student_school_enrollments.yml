@@ -31,6 +31,23 @@ cubes:
           {student_homeroom_section.is_current_homeroom}
         relationship: one_to_one
 
+      # The student's ELA and math rows of fct_student_subjects_annual for the
+      # stint's school year, one role cube per discipline. A student with 2
+      # stints in a year reads the same rows from both.
+      - name: student_subjects_annual_ela
+        sql: >
+          {student_subjects_annual_ela.student_key} = {CUBE}.student_key AND
+          {student_subjects_annual_ela.academic_year} = {CUBE}.academic_year AND
+          {student_subjects_annual_ela.discipline} = 'ELA'
+        relationship: many_to_one
+
+      - name: student_subjects_annual_math
+        sql: >
+          {student_subjects_annual_math.student_key} = {CUBE}.student_key AND
+          {student_subjects_annual_math.academic_year} = {CUBE}.academic_year
+          AND {student_subjects_annual_math.discipline} = 'Math'
+        relationship: many_to_one
+
     dimensions:
       - name: student_enrollment_key
         description: >-

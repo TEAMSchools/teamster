@@ -74,8 +74,6 @@ that function rather than hand-writing the alternations per code location.
 integrations — adp, google, ldap, tableau, etc. — are kipptaf-only). Use it as
 the reference implementation when adding new integrations to other districts.
 
-Each code location carries its own CLAUDE.md — read it before working there.
-
 **GCS bucket**: `teamster-<code_location>` (redirects to `teamster-test` in
 branch deployments).
 
@@ -89,6 +87,11 @@ Resources are defined in two places:
 - **`code_locations/<name>/resources.py`** — location-specific resources (e.g.,
   kipptaf defines ADP WFN, Airbyte, Coupa, LDAP, Tableau, etc.). Only exists
   when a code location needs resources beyond the shared set.
+
+Declare credential fields (secrets, passwords, tokens, API keys, OAuth client
+ids) as `name: str = Field(repr=False)` so tracebacks and log lines that print
+the resource omit them. `SecretStr` fails at class definition on a
+`ConfigurableResource` (`DagsterInvalidPythonicConfigDefinitionError`).
 
 **`EnvVar`-backed resource config resolves in TWO places** under
 `k8s_job_executor`: execution-plan build (code server) AND step-pod resource
@@ -106,17 +109,10 @@ In Python, get this slash form with `key.to_user_string()` —
 `str(AssetKey([...]))` returns the `AssetKey([...])` repr, not
 `code_location/integration/name` (bites asset-key assertions in import checks).
 
-## Automation Conditions
+## Automation Conditions and IO Managers
 
-See `core/CLAUDE.md` for automation condition builders
-(`dbt_view_automation_condition`, `dbt_union_relations_automation_condition`,
-`dbt_table_automation_condition`, `dbt_cron_automation_condition`). Non-dbt
-assets use `AutomationCondition.eager()` or sensor/schedule triggers.
-
-## IO Managers
-
-See `core/CLAUDE.md` for IO manager details (three modes: default, avro, file).
-All use Hive-style partitioned GCS paths.
+Automation-condition builders and the GCS IO managers: `core/CLAUDE.md`. Non-dbt
+assets use `AutomationCondition.eager()` or a sensor/schedule.
 
 ## Common Patterns
 
@@ -156,15 +152,21 @@ first post-deploy tick.
 **Retry pattern**: Use `tenacity` — standard import set:
 `retry, retry_if_exception_type, stop_after_attempt, wait_exponential_jitter`.
 Match on a specific exception class (define one if the upstream code raises bare
-`Exception`), never on error message or bare `Exception`. Existing examples:
-`libraries/adp/workforce_now/api/resources.py`,
-`libraries/tableau/resources.py`, `libraries/level_data/grow/resources.py`. Wrap
-the init path (`fetch_token` / `connect` in `setup_for_execution`) too, not just
-the request method. For network-call retries, the predicate must include
+`Exception`), never on error message or bare `Exception`; e.g. `GrowServerError`
+in `libraries/level_data/grow/resources.py`. Wrap the init path (`fetch_token` /
+`connect` in `setup_for_execution`) too, not just the request method. For
+network-call retries, the predicate must include
 `(RequestsConnectionError, Timeout, HTTPError)` — `HTTPError` alone misses
-`ConnectTimeout`. The `tableau` sign-in path is the exception:
-`tableauserverclient` raises its own errors, not `requests.HTTPError`, so its
-predicate is `(RequestsConnectionError, Timeout, InternalServerError)`
+`ConnectTimeout` (examples: `libraries/adp/workforce_now/api/resources.py`,
+`libraries/overgrad/resources.py`). Keep `RequestsConnectionError` whole even
+though `SSLError` includes certificate failures that won't recover: a wasted
+retry costs seconds, while failing fast on a handshake blip can throw away a
+long paginated pull. Let only 429 and 5xx reach the predicate as `HTTPError`;
+raise other 4xx as a non-retried error first, or a 401/404 burns every attempt
+(`overgrad/resources.py` `_request`). The `tableau` sign-in path is the
+exception: `tableauserverclient` raises its own errors, not
+`requests.HTTPError`, so its predicate is
+`(RequestsConnectionError, Timeout, InternalServerError, StaleSessionError)`
 (`InternalServerError` wraps a 5xx) and it fails fast on `FailedSignInError`
 (401) / `ServerResponseError` (other 4xx) — do not "restore" `HTTPError` there.
 For runtime-parameterized retry loops (e.g. `with_powerschool_retry`), use
@@ -211,9 +213,7 @@ the affected submodule alone (e.g.
 `prepare-and-package` for all 5 locations first or each dies on a missing
 `target/manifest.json`. The pytest failure is a bare
 `subprocess.CalledProcessError` that hides the cause; re-run
-`dagster definitions validate -m <module>` directly to see it. With manifests,
-conftest's 1Password bootstrap resolves kipptaf's dlt credentials too, so only
-`kippmiami` (`FOCUS_DB`) and `test_definitions_all` still fail.
+`uv run dagster definitions validate -m <module>` directly to see it.
 
 Importing a kipptaf **asset submodule** (e.g.
 `teamster.code_locations.kipptaf.google.directory.assets`) transitively imports

@@ -84,11 +84,13 @@ without checking one of these two sources first.
 - Total raw students: `stg_collegeboard__ap` row count for that admin year.
 - Total exam scores: `int_collegeboard__ap_unpivot` row count for the same year.
 - Gap count:
-  `select count(*) from kipptaf_dbt_test__audit.int_collegeboard__ap_unpivot__crosswalk_resolves`.
-  **This count has no year filter** — the underlying audit table carries no year
-  column, so it's a global count of every currently-unresolved gap across all
-  admin years, not scoped to the year above. Say so explicitly rather than
-  implying it's year-scoped like the other two counts.
+  `select count(*) from kipptaf_dbt_test__audit.relationships_stg_collegeboard_ada115e39694b541e69e7c19ae548029`,
+  the failure view of the `relationships` test on
+  `stg_collegeboard__ap.ap_number_ap_id`. **This count has no year filter** —
+  the underlying audit table carries no year column, so it's a global count of
+  every currently-unresolved gap across all admin years, not scoped to the year
+  above. Say so explicitly rather than implying it's year-scoped like the other
+  two counts.
 
 Present as: "The raw AP file has _N_ students resolving to _M_ exam scores for
 [year]. Separately, _G_ College Board IDs are unresolved in the crosswalk across

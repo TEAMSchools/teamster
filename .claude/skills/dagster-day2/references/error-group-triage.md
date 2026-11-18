@@ -8,10 +8,12 @@ to "cleanup candidates" treatment without needing this procedure.
 First, check `category` + `correlatedPodEvent` — both are auto-resolved by the
 collector:
 
-- **`category: "sigterm_during_import"`** with a `correlatedPodEvent` → the
-  group is a SIGTERM-mid-import artifact of a code-server pod being terminated
-  (eviction or preemption; pod priorities are in `.k8s/CLAUDE.md`). Do NOT
-  include in Emerging Issues. Emit a single Actions row:
+- **`category: "sigterm_during_import"`** → the collector set this from the
+  exception class alone (a SIGTERM-raised class), with or without a
+  `correlatedPodEvent`. Confirm a pod event or a deploy explains the SIGTERM; if
+  so, the group is a SIGTERM-mid-import artifact of a code-server pod being
+  terminated (eviction or preemption; pod priorities are in `.k8s/CLAUDE.md`).
+  Do NOT include in Emerging Issues. Emit a single Actions row:
   `Mute | Error group <id> (SIGTERM during import, <count> hits)`. The
   traceback's deepest project-code frame names whichever module was importing
   when SIGTERM arrived (pathlib, pydantic, fldoe.schema, etc.) — that file is
@@ -39,10 +41,12 @@ case.
 
 ### Use `exceptionLine`, not `exception`, for triage
 
-The `exception` field is the 300-char truncated header that Error Reporting
-groups by — often just the entry-point line (`Traceback... sys.exit(main())`).
-The collector resolves the bottom-of-traceback class into `exceptionLine` via a
-pod-log query; that is the real exception class.
+The `exception` field is the group's representative message cut to 300 chars —
+often just the entry-point line (`Traceback... sys.exit(main())`). The collector
+fills `exceptionLine` with the last exception-class line in the most recent
+event's pod logs (ERROR, ±2s), usually the bottom of the traceback. It can be
+null or pick a neighboring error on a busy pod, so check it against the group's
+stack in Error Reporting before acting on it.
 
 ## Stale open groups
 

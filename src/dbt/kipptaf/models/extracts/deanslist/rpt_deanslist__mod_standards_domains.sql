@@ -1,13 +1,13 @@
 with
     progress_report_region as (
-        select iae.assessment_id, progress_report_region,
+        select iae.source, iae.assessment_id, progress_report_region,
         from {{ ref("stg_google_appsheet__illuminate_assessments_extension") }} as iae
         cross join
             unnest(split(iae.regions_progress_report, ' , ')) as progress_report_region
     ),
 
     report_card_region as (
-        select iae.assessment_id, report_card_region,
+        select iae.source, iae.assessment_id, report_card_region,
         from {{ ref("stg_google_appsheet__illuminate_assessments_extension") }} as iae
         cross join unnest(split(iae.regions_report_card, ' , ')) as report_card_region
     )
@@ -16,7 +16,7 @@ select
     'Progress Report' as report_type,
 
     ar.academic_year,
-    ar.powerschool_student_number as student_number,
+    ar.student_number,
     ar.subject_area,
     ar.term_administered,
 
@@ -45,17 +45,18 @@ from {{ ref("int_assessments__response_rollup") }} as ar
 inner join
     {{ ref("int_extracts__student_enrollments") }} as co
     on ar.academic_year = co.academic_year
-    and ar.powerschool_student_number = co.student_number
+    and ar.student_number = co.student_number
     and co.rn_year = 1
     and co.grade_level < 5
 inner join
     progress_report_region as r
-    on ar.assessment_id = r.assessment_id
+    on ar.source = r.source
+    and ar.assessment_id = r.assessment_id
     and co.region = r.progress_report_region
 where ar.response_type = 'overall'
 group by
     ar.academic_year,
-    ar.powerschool_student_number,
+    ar.student_number,
     ar.subject_area,
     ar.term_administered,
     co.grade_level
@@ -66,7 +67,7 @@ select
     'Report Card' as report_type,
 
     ar.academic_year,
-    ar.powerschool_student_number as student_number,
+    ar.student_number,
     ar.subject_area,
     ar.term_administered,
 
@@ -98,17 +99,18 @@ inner join
 inner join
     {{ ref("int_extracts__student_enrollments") }} as co
     on ar.academic_year = co.academic_year
-    and ar.powerschool_student_number = co.student_number
+    and ar.student_number = co.student_number
     and co.rn_year = 1
     and co.grade_level < 5
 inner join
     report_card_region as r
-    on ar.assessment_id = r.assessment_id
+    on ar.source = r.source
+    and ar.assessment_id = r.assessment_id
     and co.region = r.report_card_region
 where ar.response_type = 'standard'
 group by
     ar.academic_year,
-    ar.powerschool_student_number,
+    ar.student_number,
     ar.subject_area,
     ar.term_administered,
     sd.standard_domain,

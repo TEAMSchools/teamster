@@ -95,6 +95,4 @@ Corrections go in the skill references, not in `docs/tableau-xml/`; the numbered
 files there are pointer stubs. Keep the Verified and Inferred marks honest: a
 claim moves from Inferred to Verified only after a render or a Desktop open, and
 a claim from your own Tableau experience goes in `unverified-warnings.md` with a
-probe until then. Run
-`/workspaces/teamster/.trunk/tools/trunk check --force --no-fix <files>` before
-pushing markdown.
+probe until then. Lint markdown per the `trunk-lint` skill before pushing.

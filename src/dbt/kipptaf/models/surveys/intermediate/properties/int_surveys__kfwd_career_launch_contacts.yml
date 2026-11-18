@@ -1,0 +1,191 @@
+models:
+  - name: int_surveys__kfwd_career_launch_contacts
+    description: >-
+      One row per Salesforce contact with the Career Launch inputs that come
+      from Salesforce rather than the AppSheet app: the current college GPA, its
+      GPA band and points, ECC, and whether the alum belongs on the Career
+      Launch app roster. GPA points use the GPA Bands tab of the Career Launch
+      Scoring Rubric sheet. They use today's GPA, so a past assessment's launch
+      score changes when the GPA does. A contact with no current college GPA
+      scores 0 GPA points. The Salesforce record behind the GPA is
+      contact_current_college_cumulative_gpa_source on int_kippadb__roster. The
+      roster rules count years from the current_academic_year variable, which
+      rolls over each July, so the list doesn't shift mid-year.
+    columns:
+      - name: contact_id
+        data_type: string
+        description: Salesforce contact id.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+      - name: current_college_cumulative_gpa
+        data_type: numeric
+        description: Current cumulative college GPA from the Salesforce contact.
+        config:
+          meta:
+            contains_pii: true
+      - name: is_on_caseload
+        data_type: boolean
+        description: >-
+          True when the alum's Salesforce contact owner or postsecondary advisor
+          is listed on the Caseloads tab of the Career Launch Scoring Rubric
+          sheet, whatever their cohort.
+        config:
+          meta:
+            contains_pii: true
+      - name: is_cohort_years_4_to_6
+        data_type: boolean
+        description: >-
+          True when the alum's KIPP high school class is 4, 5 or 6 years past
+          graduation: the current academic year minus 3, 4 or 5.
+        config:
+          meta:
+            contains_pii: true
+      - name: is_newest_class_outside_collab
+        data_type: boolean
+        description: >-
+          True when the alum is in the most recently graduated KIPP high school
+          class (the current academic year) and is not advised by the Collab
+          (advising provider KIPP NYC).
+        config:
+          meta:
+            contains_pii: true
+      - name: is_opted_out
+        data_type: boolean
+        description: >-
+          True when the alum opted out of national or regional contact in
+          Salesforce.
+        config:
+          meta:
+            contains_pii: true
+      - name: is_career_launch_active
+        data_type: boolean
+        description: >-
+          True when the alum belongs on the Career Launch app roster: on a
+          listed caseload, 4 to 6 years past graduation, or in the newest class
+          outside the Collab, and not opted out of contact.
+        config:
+          meta:
+            contains_pii: true
+      - name: gpa_band
+        data_type: string
+        description: >-
+          GPA band label the current college GPA falls in. Null when the contact
+          has no current college GPA.
+        config:
+          meta:
+            contains_pii: true
+      - name: ecc
+        data_type: numeric
+        description: >-
+          Adjusted six-year minority graduation rate of the college the contact
+          graduated from: the postsecondary enrollment
+          int_kippadb__enrollment_pivot picks as completed (BA, then AA, then
+          CTE), when its status is Graduated. Null when the contact has not
+          graduated. Context next to GPA; not scored.
+        config:
+          meta:
+            contains_pii: true
+      - name: gpa_points
+        data_type: int64
+        description: >-
+          Points the GPA band adds to the launch score. 0 when the contact has
+          no current college GPA.
+        config:
+          meta:
+            contains_pii: true
+
+unit_tests:
+  - name: test_int_surveys__kfwd_career_launch_contacts_roster_rules
+    description: >-
+      With the current academic year at 2026, an alum is active when a listed
+      name is their contact owner or postsecondary advisor (any cohort), when
+      their class is 2021 through 2023, or when their class is 2026 and they are
+      not advised by KIPP NYC. Classes 2020 and 2024 are out, and opting out of
+      contact removes an alum who would otherwise be active.
+    model: int_surveys__kfwd_career_launch_contacts
+    overrides:
+      vars:
+        current_academic_year: 2026
+    given:
+      - input: ref('base_kippadb__contact')
+        format: sql
+        rows: |
+          select
+              'advisor' as contact_id,
+              cast(null as numeric) as contact_current_college_cumulative_gpa,
+              false as contact_opt_out_national_contact,
+              false as contact_opt_out_regional_contact,
+              2012 as contact_kipp_hs_class,
+              cast(null as string) as contact_advising_provider,
+              'Someone Else' as contact_owner_name,
+              'Listed Advisor' as contact_postsec_advisor_name
+          union all
+          select 'owner', null, false, false, 2010, null, 'Listed Advisor', null
+          union all
+          select 'class_2023', null, false, false, 2023, null, null, null
+          union all
+          select 'class_2021', null, false, false, 2021, null, null, null
+          union all
+          select 'class_2020', null, false, false, 2020, null, null, null
+          union all
+          select 'class_2024', null, false, false, 2024, null, null, null
+          union all
+          select 'class_2026', null, false, false, 2026, null, null, null
+          union all
+          select 'class_2026_collab', null, false, false, 2026, 'KIPP NYC', null, null
+          union all
+          select 'class_2022_opted_out', null, false, true, 2022, null, null, null
+      - input: ref('stg_google_sheets__kfwd__career_launch_caseloads')
+        format: sql
+        rows: |
+          select 'Listed Advisor' as advisor_name
+      - input: ref('stg_google_sheets__kfwd__career_launch_gpa_bands')
+        format: sql
+        rows: |
+          select
+              cast(null as string) as label,
+              cast(null as float64) as min_gpa,
+              cast(null as int64) as points
+          from unnest([1])
+          where false
+      - input: ref('int_kippadb__enrollment_pivot')
+        format: sql
+        rows: |
+          select
+              cast(null as string) as student,
+              cast(null as string) as postsec_completed_status,
+              cast(null as numeric)
+              as postsec_completed_adjusted_6_year_minority_graduation_rate
+          from unnest([1])
+          where false
+    expect:
+      rows:
+        - contact_id: advisor
+          is_on_caseload: true
+          is_career_launch_active: true
+        - contact_id: owner
+          is_on_caseload: true
+          is_career_launch_active: true
+        - contact_id: class_2023
+          is_on_caseload: false
+          is_career_launch_active: true
+        - contact_id: class_2021
+          is_on_caseload: false
+          is_career_launch_active: true
+        - contact_id: class_2020
+          is_on_caseload: false
+          is_career_launch_active: false
+        - contact_id: class_2024
+          is_on_caseload: false
+          is_career_launch_active: false
+        - contact_id: class_2026
+          is_on_caseload: false
+          is_career_launch_active: true
+        - contact_id: class_2026_collab
+          is_on_caseload: false
+          is_career_launch_active: false
+        - contact_id: class_2022_opted_out
+          is_on_caseload: false
+          is_career_launch_active: false

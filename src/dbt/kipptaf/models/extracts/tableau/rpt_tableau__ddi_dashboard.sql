@@ -57,7 +57,7 @@ with
             )
     ),
 
-    identifiers as (
+    responses as (
         select
             co.student_number,
             co.student_name,
@@ -86,7 +86,7 @@ with
             co.week_start_monday,
             co.week_end_sunday,
             co.date_count as days_in_session,
-            co.quarter as term,
+            co.term,
             co.is_current_week_mon_sun as is_current_week,
 
             r.title,
@@ -107,21 +107,33 @@ with
 
             sd.standard_domain,
 
-            cc.sections_section_number as course_section,
-            cc.courses_course_name as course_name,
-            cc.courses_course_number as course_number,
-            cc.courses_credittype as course_credittype,
-            cc.teachernumber as course_teachernumber,
-            cc.teacher_lastfirst as course_teacher_name,
-            cc.is_foundations,
-
-            sf.dibels_most_recent_composite,
-            sf.state_test_proficiency,
-            sf.is_exempt_iready,
-            sf.nj_student_tier,
-            sf.is_low_25_fl,
-
             cast(r.assessment_id as string) as assessment_id,
+
+            -- Apex rows take the section the scaffold matched, Illuminate rows
+            -- the student's latest section in the subject
+            -- Focus rows null sections_section_number; cc_section_number is
+            -- the Focus section number
+            if(
+                r.source = 'apex', ca.cc_section_number, cc.sections_section_number
+            ) as course_section,
+            if(
+                r.source = 'apex', ca.courses_course_name, cc.courses_course_name
+            ) as course_name,
+            if(
+                r.source = 'apex', ca.courses_course_number, cc.courses_course_number
+            ) as course_number,
+            if(
+                r.source = 'apex', ca.courses_credittype, cc.courses_credittype
+            ) as course_credittype,
+            if(
+                r.source = 'apex', ca.teachernumber, cc.teachernumber
+            ) as course_teachernumber,
+            if(
+                r.source = 'apex', ca.teacher_lastfirst, cc.teacher_lastfirst
+            ) as course_teacher_name,
+            if(
+                r.source = 'apex', ca.is_foundations, cc.is_foundations
+            ) as is_foundations,
 
             if(r.date_taken is not null, 1, 0) as is_complete,
 
@@ -131,7 +143,7 @@ with
         from {{ ref("int_extracts__student_enrollments_weeks") }} as co
         left join
             {{ ref("int_assessments__response_rollup") }} as r
-            on co.student_number = r.powerschool_student_number
+            on co.student_number = r.student_number
             and co.academic_year = r.academic_year
             and co.region = r.region
             and r.administered_at between co.week_start_monday and co.week_end_sunday
@@ -147,11 +159,9 @@ with
             and not cc.is_dropped_section
             and cc.rn_student_year_illuminate_subject_desc = 1
         left join
-            {{ ref("int_extracts__student_enrollments_subjects") }} as sf
-            on co.student_number = sf.student_number
-            and co.academic_year = sf.academic_year
-            and cc.courses_credittype = sf.powerschool_credittype
-            and sf.rn_year = 1
+            {{ ref("base_powerschool__course_enrollments") }} as ca
+            on r.cc_dcid = ca.cc_dcid
+            and r._dbt_source_project = ca._dbt_source_project
         where
             /* Eligibility is enrollment as of the week end, not current
                enroll_status: that column is student-level and current-only, so
@@ -164,37 +174,73 @@ with
             and not co.is_out_of_district
             and co.academic_year >= {{ var("current_academic_year") - 1 }}
             {# TODO: Remove SY26 #}
-            /* Manual filter to avoid dashboard roll-up */
+            /* Manual filter to avoid dashboard roll-up. It also drops unmatched
+               weeks, which keeps week_start_monday non-null; removing it needs
+               the week_start_monday not_null test back. */
             and r.module_type != 'WPP'
+    ),
+
+    identifiers as (
+        select
+            r.*,
+
+            sf.dibels_most_recent_composite,
+            sf.state_test_proficiency,
+            sf.is_exempt_iready,
+            sf.nj_student_tier,
+            sf.is_low_25_fl,
+
+            coalesce(mgs.goal, mga.goal) as module_goal,
+            -- 0 when no rule adds an offset, so goal + offset is the raw goal
+            coalesce(mgs.goal_offset, mga.goal_offset, 0) as module_goal_offset,
+
+            -- T&L's QA goals apply to QA modules and to CRQ modules
+            r.module_type in ('QA', 'CRQ') as is_qa_goal_module,
+        from responses as r
+        left join
+            {{ ref("int_extracts__student_enrollments_subjects") }} as sf
+            on r.student_number = sf.student_number
+            and r.academic_year = sf.academic_year
+            and r.course_credittype = sf.powerschool_credittype
+            and sf.rn_year = 1
+        left join
+            {{ ref("int_assessments__module_goal_rules") }} as mgs
+            on r.region = mgs.region
+            and r.module_type = mgs.module_type
+            and r.subject_area = mgs.illuminate_subject_area
+            and r.grade_level between mgs.grade_min and mgs.grade_max
+        left join
+            {{ ref("int_assessments__module_goal_rules") }} as mga
+            on r.region = mga.region
+            and r.module_type = mga.module_type
+            and r.grade_level between mga.grade_min and mga.grade_max
+            and mga.illuminate_subject_area is null
     ),
 
     microgoals_long as (
         select
-            u.internal_id_int as employee_number,
+            ds.staff_unique_id as employee_number,
 
-            m.tag_name as goal_name,
+            gt.goal_name,
 
-            date_add(
-                date(timestamp_trunc(timestamp(a.created), week)), interval 1 day
-            ) as week_start_monday,
-        from {{ ref("stg_schoolmint_grow__users") }} as u
+            date(timestamp_trunc(f.assignment_created_timestamp, week)) as week_start,
+        from {{ ref("fct_staff_observation_goals") }} as f
+        inner join {{ ref("dim_staff") }} as ds on f.teacher_staff_key = ds.staff_key
         inner join
-            {{ ref("stg_schoolmint_grow__assignments") }} as a on u.user_id = a.user_id
-        inner join
-            {{ ref("int_schoolmint_grow__assignments__tags") }} as t
-            on a.assignment_id = t.assignment_id
-        inner join
-            {{ ref("int_schoolmint_grow__microgoals") }} as m on t.tag_id = m.tag_id
+            {{ ref("dim_staff_observation_goal_types") }} as gt
+            on f.staff_observation_goal_type_key = gt.staff_observation_goal_type_key
+            and gt.goal_name != ''
     ),
 
     microgoals as (
         select
             employee_number,
-            week_start_monday,
+
+            date_add(week_start, interval 1 day) as week_start_monday,
 
             string_agg(goal_name, ', ') as microgoals,
         from microgoals_long
-        group by employee_number, week_start_monday
+        group by employee_number, week_start
     )
 
 /* ES/MS assessments */
@@ -280,6 +326,22 @@ select
     coalesce(ip.is_pass_4_lessons_int_reading, 0) as is_passed_iready_4plus_reading_int,
     coalesce(ip.is_pass_2_lessons_int_math, 0) as is_passed_iready_2plus_math_int,
     coalesce(ip.is_pass_4_lessons_int_math, 0) as is_passed_iready_4plus_math_int,
+
+    coalesce(
+        co.module_goal,
+        if(co.is_qa_goal_module, g.qa_goal, null),
+        g.grade_goal + co.module_goal_offset
+    ) as grade_goal_differentiated,
+    coalesce(
+        co.module_goal,
+        if(co.is_qa_goal_module, g.qa_goal, null),
+        g.school_goal + co.module_goal_offset
+    ) as school_goal_differentiated,
+    coalesce(
+        co.module_goal,
+        if(co.is_qa_goal_module, g.qa_goal, null),
+        g.region_goal + co.module_goal_offset
+    ) as region_goal_differentiated,
 from identifiers as co
 left join
     {{ ref("int_assessments__academic_goals") }} as g
@@ -375,6 +437,22 @@ select
     null as is_passed_iready_4plus_reading_int,
     null as is_passed_iready_2plus_math_int,
     null as is_passed_iready_4plus_math_int,
+
+    coalesce(
+        co.module_goal,
+        if(co.is_qa_goal_module, g.qa_goal, null),
+        g.grade_goal + co.module_goal_offset
+    ) as grade_goal_differentiated,
+    coalesce(
+        co.module_goal,
+        if(co.is_qa_goal_module, g.qa_goal, null),
+        g.school_goal + co.module_goal_offset
+    ) as school_goal_differentiated,
+    coalesce(
+        co.module_goal,
+        if(co.is_qa_goal_module, g.qa_goal, null),
+        g.region_goal + co.module_goal_offset
+    ) as region_goal_differentiated,
 from identifiers as co
 left join
     {{ ref("int_assessments__academic_goals") }} as g
@@ -409,7 +487,7 @@ select
     null as enroll_status,
     null as cohort,
 
-    cw.location_grade_band as school_level,
+    pl.grade_band as school_level,
 
     null as gender,
     null as ethnicity,
@@ -419,7 +497,7 @@ select
     w.week_start_monday,
     w.week_end_sunday,
     w.date_count as days_in_session,
-    w.quarter as term,
+    w.term,
 
     o.rubric_name as title,
     m.microgoals as subject_area,
@@ -495,6 +573,9 @@ select
     null as is_passed_iready_4plus_reading_int,
     null as is_passed_iready_2plus_math_int,
     null as is_passed_iready_4plus_math_int,
+    null as grade_goal_differentiated,
+    null as school_goal_differentiated,
+    null as region_goal_differentiated,
 from {{ ref("int_performance_management__observation_details") }} as o
 inner join
     {{ ref("int_people__staff_roster") }} as r on o.employee_number = r.employee_number
@@ -509,8 +590,7 @@ inner join
     on r.home_work_location_powerschool_school_id = w.schoolid
     and o.observed_at between w.week_start_monday and w.week_end_sunday
 left join
-    {{ ref("int_people__location_crosswalk") }} as cw
-    on r.home_work_location_reporting_name = cw.location_clean_name
+    {{ ref("dim_locations") }} as pl on r.home_work_location_reporting_name = pl.name
 left join
     {{ ref("int_people__leadership_crosswalk") }} as lc
     on r.home_work_location_powerschool_school_id

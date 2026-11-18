@@ -797,6 +797,24 @@ sources:
                 - kippnewark
                 - powerschool
                 - int_powerschool__gpa_cumulative_year
+      - name: int_powerschool__student_y1_target
+        config:
+          meta:
+            dagster:
+              group: powerschool
+              asset_key:
+                - kippnewark
+                - powerschool
+                - int_powerschool__student_y1_target
+      - name: int_powerschool__course_pace
+        config:
+          meta:
+            dagster:
+              group: powerschool
+              asset_key:
+                - kippnewark
+                - powerschool
+                - int_powerschool__course_pace
       - name: int_powerschool__gradebook_assignments
         config:
           meta:

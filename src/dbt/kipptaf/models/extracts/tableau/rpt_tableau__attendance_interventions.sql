@@ -25,4 +25,8 @@ inner join
     {{ ref("int_students__attendance_interventions") }} as ai
     on co.student_number = ai.student_number
     and co.academic_year = ai.academic_year
-where co.academic_year = {{ var("current_academic_year") }} and co.enroll_status = 0
+    and co._dbt_source_project = ai._dbt_source_project
+where
+    co.academic_year = {{ var("current_academic_year") }}
+    and co.enroll_status = 0
+    and co.rn_year = 1

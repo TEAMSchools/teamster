@@ -1,13 +1,13 @@
 from bs4 import BeautifulSoup, Tag
 from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
 from dagster_shared import check
-from pydantic import PrivateAttr
+from pydantic import Field, PrivateAttr
 from requests import Session, exceptions
 
 
 class DibelsDataSystemResource(ConfigurableResource):
     username: str
-    password: str
+    password: str = Field(repr=False)
 
     _base_url: str = PrivateAttr(default="https://dibels.amplify.com")
     _session: Session = PrivateAttr(default_factory=Session)

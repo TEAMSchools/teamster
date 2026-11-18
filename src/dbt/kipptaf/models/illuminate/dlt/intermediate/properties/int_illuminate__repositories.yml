@@ -1,45 +1,76 @@
 models:
   - name: int_illuminate__repositories
+    description: >-
+      One row per non-deleted Illuminate repository (custom student data table),
+      with its creator and decoded scope and subject area. The inner join to
+      users drops repositories whose creator is missing.
     columns:
       - name: repository_id
         data_type: int64
+        description: Illuminate repository id. One row per value.
+        data_tests:
+          - unique
       - name: title
         data_type: string
+        description: Repository title.
       - name: description
         data_type: string
+        description: Repository description.
       - name: user_id
         data_type: int64
+        description: Illuminate user who created the repository.
       - name: type
         data_type: string
+        description: Repository type field from Illuminate.
       - name: created_at
         data_type: timestamp
+        description: When the repository was created.
       - name: updated_at
         data_type: timestamp
+        description: When the repository was last updated.
       - name: code_subject_area_id
         data_type: int64
+        description: DnA subject area code; decoded in subject_area.
       - name: repository_type
         data_type: string
+        description: Repository type as Illuminate classifies it.
       - name: code_scope_id
         data_type: int64
+        description: DnA scope code; decoded in scope.
       - name: db_virtual_table_id
         data_type: int64
+        description: Illuminate virtual table id backing the repository.
       - name: local_repository_id
         data_type: string
+        description: Locally assigned repository id.
       - name: guid
         data_type: string
+        description: Illuminate global id for the repository.
       - name: date_administered
         data_type: date
+        description: Administration date recorded on the repository.
       - name: creator_local_user_id
         data_type: string
+        description: Local user id of the repository creator.
       - name: creator_username
         data_type: string
+        description: Illuminate username of the repository creator.
       - name: creator_first_name
         data_type: string
+        description: First name of the repository creator.
       - name: creator_last_name
         data_type: string
+        description: Last name of the repository creator.
       - name: creator_email_1
         data_type: string
+        description: Primary email of the repository creator.
       - name: scope
         data_type: string
+        description: >-
+          Decoded DnA scope for code_scope_id. Null when the code does not
+          resolve.
       - name: subject_area
         data_type: string
+        description: >-
+          Decoded DnA subject area for code_subject_area_id. Null when the code
+          does not resolve.

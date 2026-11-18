@@ -1,0 +1,235 @@
+models:
+  - name: rpt_powerschool__stored_grades
+    description: |
+      Quarterly PowerSchool stored grades import for the NJ regions. Stored
+      grades drive MS and HS report cards and transcripts. One row per student,
+      section, and grading period with a graded adjusted percent, a non-homeroom
+      course, credit hours above 0, and an MS or HS school. Column names match
+      the PowerSchool import mapping. code_location and school_level are filter
+      columns and are not imported. Comment carries the teacher comment on HS
+      rows and is null on MS rows. PotentialCrHrs and EarnedCrHrs are 0 on
+      every row.
+
+      Each NJ project wraps this view as <region>_extracts.rpt_powerschool__stored_grades
+      without code_location. Run once per region, storecode, and school level,
+      download the result as CSV, and import it into that region's PowerSchool
+      server:
+
+        select * except (school_level)
+        from kippnewark_extracts.rpt_powerschool__stored_grades
+        where storecode = 'Q1' and school_level = 'MS'
+
+      Swap the dataset (kippnewark_extracts, kippcamden_extracts,
+      kipppaterson_extracts), the storecode, and the school level per run.
+    config:
+      meta:
+        contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - code_location
+              - student_number
+              - sectionid
+              - storecode
+    columns:
+      - name: student_number
+        description: Network student number.
+        data_type: int64
+        data_tests:
+          - not_null
+      - name: schoolid
+        description: PowerSchool school number of the stored grade.
+        data_type: int64
+        data_tests:
+          - not_null
+      - name: percent
+        description: >-
+          Adjusted term percent grade, capped at 100 for the import. The letter
+          grade and grade points are not recalculated from the cap.
+        data_type: float64
+        data_tests:
+          - not_null
+      - name: grade
+        description: Adjusted term letter grade.
+        data_type: string
+        data_tests:
+          - not_null
+      - name: storecode
+        description: Grading-period code, such as Q1.
+        data_type: string
+        data_tests:
+          - not_null
+      - name: course_number
+        description: PowerSchool course number of the section.
+        data_type: string
+        data_tests:
+          - not_null
+      - name: sectionid
+        description: PowerSchool section id.
+        data_type: int64
+        data_tests:
+          - not_null
+      - name: termid
+        description: PowerSchool term id of the section.
+        data_type: int64
+        data_tests:
+          - not_null
+      - name: grade_level
+        description: The student's current grade level in PowerSchool.
+        data_type: int64
+      - name: gpa_points
+        description: Term grade points.
+        data_type: float64
+      - name: credit_type
+        description: Course credit type, standardized across regions.
+        data_type: string
+      - name: course_name
+        description: PowerSchool course name.
+        data_type: string
+      - name: teacher_name
+        description: Section teacher, last name first.
+        data_type: string
+      - name: PotentialCrHrs
+        description: >-
+          Potential credit hours. 0 on every row, because PowerSchool stores
+          credit on year-end grades, not quarter grades.
+        data_type: int64
+      - name: EarnedCrHrs
+        description: >-
+          Earned credit hours. 0 on every row, because PowerSchool stores credit
+          on year-end grades, not quarter grades.
+        data_type: int64
+      - name: gradescale_name
+        description: Name of the course's grade scale.
+        data_type: string
+      - name: schoolname
+        description: Name of the section's school.
+        data_type: string
+      - name: Comment
+        description: >-
+          Teacher comment on the final grade for HS rows. Null on MS rows.
+        data_type: string
+      - name: code_location
+        description: >-
+          Region project the row came from (kippnewark, kippcamden,
+          kipppaterson). The region wrappers filter on it.
+        data_type: string
+      - name: school_level
+        description: >-
+          School level of the section's school, MS or HS, from school_level_alt.
+          Grades 5 and up at KIPP Sumner read as MS because they run as a middle
+          school, so they land in the MS import file.
+        data_type: string
+
+unit_tests:
+  - name: test_rpt_powerschool__stored_grades_filters
+    description: >-
+      Keeps graded MS and HS rows with credit hours above 0, including Sumner
+      grade 5+ rows as MS. Drops ES, homeroom, 0-credit, and ungraded rows, and
+      enrollments with no final grade. Caps percent at 100 and nulls the comment
+      on MS rows.
+    model: rpt_powerschool__stored_grades
+    given:
+      - input: ref('int_students__final_grades')
+        format: sql
+        rows: |
+          select
+              1 as cc_dcid,
+              'kippnewark' as _dbt_source_project,
+              1001 as student_number,
+              73252 as schoolid,
+              'Q1' as storecode,
+              3.0 as term_grade_points,
+              92.5 as term_percent_grade_adjusted,
+              'A-' as term_letter_grade_adjusted,
+              1.0 as potential_credit_hours,
+              'c1' as comment_value
+          union all
+          select 2, 'kippnewark', 1002, 73253, 'Q1', 4.0, 104.0, 'A+', 1.0, 'c2'
+          union all
+          select 3, 'kippnewark', 1003, 73254, 'Q1', 3.0, 88.0, 'B+', 1.0, 'c3'
+          union all
+          select 4, 'kippnewark', 1004, 73253, 'Q1', 3.0, 90.0, 'A-', 1.0, 'c4'
+          union all
+          select 5, 'kippnewark', 1005, 73252, 'Q1', 3.0, 91.0, 'A-', 0.0, 'c5'
+          union all
+          select
+              6, 'kippnewark', 1006, 73253, 'Q1', 0.0, null, null, 1.0, 'c6'
+          union all
+          select 8, 'kippcamden', 1008, 179905, 'Q1', 3.0, 85.0, 'B', 1.0, 'c8'
+      - input: ref('int_students__course_enrollments')
+        format: sql
+        rows: |
+          select
+              1 as cc_dcid,
+              'kippnewark' as _dbt_source_project,
+              7 as students_grade_level,
+              'MATH' as courses_credittype,
+              'MATH07' as cc_course_number,
+              'Math 7' as courses_course_name,
+              'Teacher, A' as teacher_lastfirst,
+              11 as cc_sectionid,
+              'Scale A' as courses_gradescale_name,
+              'School M' as school_name,
+              3600 as sections_termid,
+              'MS' as school_level,
+              'MS' as school_level_alt,
+              false as is_homeroom
+          union all
+          select
+              2, 'kippnewark', 10, 'ENG', 'ENG10', 'English 10', 'Teacher, B',
+              12, 'Scale B', 'School H', 3600, 'HS', 'HS', false
+          union all
+          select
+              3, 'kippnewark', 4, 'MATH', 'MATH04', 'Math 4', 'Teacher, C', 13,
+              'Scale A', 'School E', 3600, 'ES', 'ES', false
+          union all
+          select
+              4, 'kippnewark', 10, 'HR', 'HR', 'Homeroom', 'Teacher, B', 14,
+              'Scale B', 'School H', 3600, 'HS', 'HS', true
+          union all
+          select
+              5, 'kippnewark', 7, 'ART', 'ART07', 'Art 7', 'Teacher, D', 15,
+              'Scale A', 'School M', 3600, 'MS', 'MS', false
+          union all
+          select
+              6, 'kippnewark', 10, 'SCI', 'SCI10', 'Biology', 'Teacher, E', 16,
+              'Scale B', 'School H', 3600, 'HS', 'HS', false
+          union all
+          select
+              7, 'kippnewark', 10, 'SOC', 'SOC10', 'History', 'Teacher, F', 17,
+              'Scale B', 'School H', 3600, 'HS', 'HS', false
+          union all
+          select
+              8, 'kippcamden', 6, 'ENG', 'ENG06', 'English 6', 'Teacher, G', 18,
+              'Scale A', 'School S', 3600, 'ES', 'MS', false
+    expect:
+      rows:
+        - student_number: 1001
+          percent: 92.5
+          sectionid: 11
+          gradescale_name: Scale A
+          PotentialCrHrs: 0
+          EarnedCrHrs: 0
+          Comment: null
+          school_level: MS
+          code_location: kippnewark
+        - student_number: 1002
+          percent: 100.0
+          sectionid: 12
+          gradescale_name: Scale B
+          PotentialCrHrs: 0
+          EarnedCrHrs: 0
+          Comment: c2
+          school_level: HS
+          code_location: kippnewark
+        - student_number: 1008
+          percent: 85.0
+          sectionid: 18
+          gradescale_name: Scale A
+          PotentialCrHrs: 0
+          EarnedCrHrs: 0
+          Comment: null
+          school_level: MS
+          code_location: kippcamden

@@ -12,20 +12,19 @@ with
             m.module_code,
             m.module_type,
             m.is_internal_assessment,
+            m.bucket_subject,
+            m.source as assessment_type,
 
-            c.grade_level,
-
-            'illuminate' as assessment_type,
             'enrollment' as assessment_scope,
+            'internal' as assessment_family,
 
             cast(null as string) as combined_academic_subject,
             cast(null as string) as aligned_academic_subject,
             cast(null as string) as credit_category,
             cast(null as string) as test_type,
+
+            m.grade_level_id - 1 as grade_level,
         from {{ ref("int_assessments__assessments_members") }} as m
-        inner join
-            {{ ref("int_assessments__assessments_canonical") }} as c
-            on m.canonical_assessment_id = c.canonical_assessment_id
         where m.is_internal_assessment
     ),
 
@@ -41,6 +40,7 @@ with
 
             false as is_internal_assessment,
             'enrollment' as assessment_scope,
+            'state' as assessment_family,
 
             cast(null as int64) as source_assessment_id,
             cast(null as string) as module_type,
@@ -48,6 +48,10 @@ with
             cast(null as string) as aligned_academic_subject,
             cast(null as string) as credit_category,
             cast(null as string) as test_type,
+
+            case
+                discipline when 'ELA' then 'Reading' when 'Math' then 'Math'
+            end as bucket_subject,
         from {{ ref("int_assessments__state_nj_scores") }}
         where scale_score is not null
     ),
@@ -64,6 +68,7 @@ with
 
             false as is_internal_assessment,
             'enrollment' as assessment_scope,
+            'state' as assessment_family,
 
             cast(null as int64) as source_assessment_id,
             cast(null as string) as module_type,
@@ -71,6 +76,10 @@ with
             cast(null as string) as aligned_academic_subject,
             cast(null as string) as credit_category,
             cast(null as string) as test_type,
+
+            case
+                discipline when 'ELA' then 'Reading' when 'Math' then 'Math'
+            end as bucket_subject,
         from {{ ref("int_fldoe__all_assessments") }}
         where scale_score is not null
     ),
@@ -80,11 +89,13 @@ with
         select distinct
             subject as subject_area,
             subject as module_code,
+            subject as bucket_subject,
 
             'iready' as assessment_type,
             'i-Ready Diagnostic' as title,
             false as is_internal_assessment,
             'enrollment' as assessment_scope,
+            'vendor_diagnostic' as assessment_family,
 
             cast(null as int64) as grade_level,
             cast(null as int64) as source_assessment_id,
@@ -109,6 +120,7 @@ with
             'STAR' as title,
             false as is_internal_assessment,
             'enrollment' as assessment_scope,
+            'vendor_diagnostic' as assessment_family,
 
             cast(null as int64) as grade_level,
             cast(null as int64) as source_assessment_id,
@@ -119,6 +131,7 @@ with
             cast(null as string) as test_type,
 
             if(star_subject = 'Math', 'Math', 'ELA') as scope,
+            if(star_subject = 'Math', 'Math', 'Reading') as bucket_subject,
         from {{ ref("stg_renlearn__star") }}
         where completed_date_value is not null and unified_score is not null
     ),
@@ -132,8 +145,10 @@ with
             'dibels' as assessment_type,
             'DIBELS' as title,
             'ELA' as scope,
+            'Reading' as bucket_subject,
             false as is_internal_assessment,
             'enrollment' as assessment_scope,
+            'vendor_diagnostic' as assessment_family,
 
             cast(null as int64) as grade_level,
             cast(null as int64) as source_assessment_id,
@@ -165,21 +180,27 @@ with
             'college' as assessment_type,
             false as is_internal_assessment,
             'student' as assessment_scope,
+            'college' as assessment_family,
 
             'Official' as test_type,
+
+            case
+                course_discipline when 'ENG' then 'Reading' when 'MATH' then 'Math'
+            end as bucket_subject,
         from {{ ref("int_assessments__college_assessment") }}
     ),
 
     -- grain projection, not dup-masking
     -- One row per (scope, subject_area), matching Official college's per-subject
     -- grain, where Official uses `score_type` as `module_code` (for example
-    -- 'sat_math'). Practice derives a parallel `module_code` by concatenating
-    -- scope and subject area, so SAT Math and SAT Reading each get their own
-    -- `assessment_key`.
+    -- 'sat_math'). Practice reads a parallel `module_code` (scope and subject
+    -- area) from the practice model, so SAT Math and SAT Reading each get their
+    -- own `assessment_key`.
     practice_assessments as (
         select distinct
             scope,
             subject_area,
+            module_code,
 
             cast(null as int64) as source_assessment_id,
             cast(null as string) as module_type,
@@ -188,6 +209,7 @@ with
             'college' as assessment_type,
             false as is_internal_assessment,
             'student' as assessment_scope,
+            'college' as assessment_family,
 
             cast(null as string) as combined_academic_subject,
             cast(null as string) as aligned_academic_subject,
@@ -197,7 +219,12 @@ with
 
             scope as title,
 
-            lower(concat(scope, '_', replace(subject_area, ' ', '_'))) as module_code,
+            case
+                when subject_area in ('EBRW', 'English', 'Reading')
+                then 'Reading'
+                when subject_area = 'Math'
+                then 'Math'
+            end as bucket_subject,
         from {{ ref("int_assessments__college_assessment_practice") }}
     ),
 
@@ -216,19 +243,21 @@ with
             'AP' as scope,
             false as is_internal_assessment,
             'student' as assessment_scope,
+            'ap' as assessment_family,
 
             cast(null as string) as combined_academic_subject,
             cast(null as string) as aligned_academic_subject,
             cast(null as string) as credit_category,
             cast(null as string) as test_type,
+            cast(null as string) as bucket_subject,
         from {{ ref("int_assessments__ap_assessments") }}
     ),
 
     {%- set union_cols -%}
         assessment_type, source_assessment_id, title, subject_area, scope,
         module_code, module_type, grade_level, is_internal_assessment,
-        assessment_scope, combined_academic_subject, aligned_academic_subject,
-        credit_category, test_type
+        assessment_scope, assessment_family, combined_academic_subject,
+        aligned_academic_subject, credit_category, test_type, bucket_subject
     {%- endset %}
 
     -- trunk-ignore(sqlfluff/ST03): referenced by string in dbt_utils.deduplicate
@@ -289,11 +318,13 @@ select
     module_code,
     module_type,
     is_internal_assessment,
+    assessment_family,
     combined_academic_subject,
     aligned_academic_subject,
     credit_category,
     source_assessment_id,
     test_type,
+    bucket_subject,
 
     assessment_type as `type`,
     subject_area as academic_subject,

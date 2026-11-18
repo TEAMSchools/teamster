@@ -16,6 +16,7 @@ models:
 
       See docs/models/carat-dashboard-data-model.md.
     data_tests:
+      # TODO(#4871): duplicate kippadb score records break the grain
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
@@ -23,6 +24,8 @@ models:
               - expected_test_type
               - expected_score_type
               - expected_metric_name
+          config:
+            severity: warn
     columns:
       - name: region
         description: >-

@@ -1,7 +1,6 @@
 models:
   - name: stg_powerschool__gpprogresssubject
     config:
-      materialized: table
       meta:
         contains_pii: true
     description: >-

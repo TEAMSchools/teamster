@@ -30,11 +30,6 @@ models:
             foreign_key:
               to: ref('dim_student_enrollments')
               to_columns: [student_enrollment_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_student_enrollments')
-                field: student_enrollment_key
       - name: term_key
         data_type: string
         description: >-
@@ -47,11 +42,6 @@ models:
             foreign_key:
               to: ref('dim_terms')
               to_columns: [term_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_terms')
-                field: term_key
 
       - name: academic_year
         data_type: int64

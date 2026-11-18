@@ -21,11 +21,13 @@ with
             iae.module_code,
             iae.module_type,
             iae.module_sequence,
-            iae.illuminate_grade_level_id,
+            iae.illuminate_grade_level_id as tagged_grade_level_id,
             iae.regions_assessed,
             iae.regions_assessed_array,
             iae.regions_report_card,
             iae.regions_progress_report,
+
+            'illuminate' as `source`,
 
             coalesce(iae.administered_at, a.administered_at) as administered_at,
             coalesce(iae.subject, a.subject_area) as subject_area,
@@ -34,79 +36,147 @@ with
             ) as grade_level_id,
 
             if(iae.assessment_id is not null, true, false) as is_internal_assessment,
+            if(iae.regions_assessed = 'Miami', true, false) as is_florida_assessment,
         from {{ ref("int_illuminate__assessments") }} as a
         left join
             {{ ref("stg_google_appsheet__illuminate_assessments_extension") }} as iae
             on a.assessment_id = iae.assessment_id
+            and iae.source = 'illuminate'
         left join agl_dedup as agl on a.assessment_id = agl.assessment_id
+
+        union all
+
+        -- Apex is Miami-only, so it is internal and Florida with or without a tag
+        select
+            aa.assessment_id,
+            aa.title,
+
+            aa.academic_year + 1 as academic_year,
+
+            aa.academic_year as academic_year_clean,
+
+            cast(null as string) as scope,
+            cast(null as string) as creator_first_name,
+            cast(null as string) as creator_last_name,
+
+            aa.band_set_id as performance_band_set_id,
+
+            cast(null as string) as assessment_type,
+            cast(null as string) as tags,
+
+            iae.module_code,
+            iae.module_type,
+            iae.module_sequence,
+            iae.illuminate_grade_level_id as tagged_grade_level_id,
+
+            coalesce(iae.regions_assessed, 'Miami') as regions_assessed,
+            -- staging gives [] for a blank cell, which coalesce would keep
+            if(
+                array_length(iae.regions_assessed_array) > 0,
+                iae.regions_assessed_array,
+                ['Miami']
+            ) as regions_assessed_array,
+
+            iae.regions_report_card,
+            iae.regions_progress_report,
+
+            'apex' as `source`,
+
+            coalesce(iae.administered_at, aa.administered_at) as administered_at,
+            coalesce(iae.subject, aa.subject_area) as subject_area,
+
+            iae.illuminate_grade_level_id as grade_level_id,
+
+            true as is_internal_assessment,
+            true as is_florida_assessment,
+        from {{ ref("int_focus__apex_assessments") }} as aa
+        left join
+            {{ ref("stg_google_appsheet__illuminate_assessments_extension") }} as iae
+            on aa.assessment_id = iae.assessment_id
+            and iae.source = 'apex'
+        -- keep in step with int_assessments__scaffold (apex_tested)
+        where aa.academic_year >= 2026
     ),
 
-    canonical as (
+    region_copies as (
         select
+            source,
             assessment_id,
-            title,
-            academic_year,
-            academic_year_clean,
-            scope,
-            creator_first_name,
-            creator_last_name,
-            performance_band_set_id,
-            assessment_type,
-            tags,
-            module_code,
-            module_type,
-            module_sequence,
-            illuminate_grade_level_id,
-            regions_assessed,
-            regions_assessed_array,
-            regions_report_card,
-            regions_progress_report,
-            administered_at,
-            subject_area,
-            grade_level_id,
-            is_internal_assessment,
+            region,
 
+            -- untagged Apex assessments share null tags, so grouping them would
+            -- merge unrelated assessments; each is its own canonical group
             if(
-                is_internal_assessment,
-                first_value(assessment_id) over canonical_w,
+                source = 'illuminate',
+                min(assessment_id) over (
+                    partition by
+                        source,
+                        is_florida_assessment,
+                        academic_year,
+                        scope,
+                        subject_area,
+                        module_code,
+                        grade_level_id,
+                        region
+                ),
                 assessment_id
             ) as canonical_assessment_id,
         from extended
-        window
-            canonical_w as (
-                partition by
-                    is_internal_assessment,
-                    academic_year,
-                    scope,
-                    subject_area,
-                    module_code,
-                    grade_level_id
-                order by assessment_id
-            )
+        cross join unnest(regions_assessed_array) as region
+        where is_internal_assessment
+    ),
+
+    region_groups as (
+        select
+            source,
+            assessment_id,
+
+            array_agg(
+                struct(region, canonical_assessment_id) order by region
+            ) as region_groups,
+        from region_copies
+        group by source, assessment_id
+    ),
+
+    -- grain projection, not dup-masking: the crosswalk maps each subject area
+    -- to 1 discipline
+    subject_disciplines as (
+        select distinct illuminate_subject_area as subject_area, discipline,
+        from {{ ref("stg_google_sheets__assessments__course_subject_crosswalk") }}
+        where illuminate_subject_area is not null
     )
 
 select
-    assessment_id,
-    title,
-    academic_year,
-    academic_year_clean,
-    scope,
-    creator_first_name,
-    creator_last_name,
-    performance_band_set_id,
-    assessment_type,
-    tags,
-    module_code,
-    module_type,
-    module_sequence,
-    illuminate_grade_level_id,
-    regions_assessed,
-    regions_assessed_array,
-    regions_report_card,
-    regions_progress_report,
-    administered_at,
-    subject_area,
-    grade_level_id,
-    is_internal_assessment,
-    canonical_assessment_id,
-from canonical
+    c.source,
+    c.assessment_id,
+    c.title,
+    c.academic_year,
+    c.academic_year_clean,
+    c.scope,
+    c.creator_first_name,
+    c.creator_last_name,
+    c.performance_band_set_id,
+    c.assessment_type,
+    c.tags,
+    c.module_code,
+    c.module_type,
+    c.module_sequence,
+    c.tagged_grade_level_id,
+    c.regions_assessed,
+    c.regions_assessed_array,
+    c.regions_report_card,
+    c.regions_progress_report,
+    c.administered_at,
+    c.subject_area,
+    c.grade_level_id,
+    c.is_internal_assessment,
+
+    rg.region_groups,
+
+    case
+        sd.discipline when 'ELA' then 'Reading' when 'Math' then 'Math'
+    end as bucket_subject,
+from extended as c
+left join
+    region_groups as rg on c.source = rg.source and c.assessment_id = rg.assessment_id
+left join subject_disciplines as sd on c.subject_area = sd.subject_area

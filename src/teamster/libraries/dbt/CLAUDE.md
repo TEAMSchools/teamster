@@ -22,6 +22,10 @@ Wraps `@dbt_assets` with two additional behaviors before running `dbt build`:
 This means adding a new external source to a dbt project automatically triggers
 staging without any Dagster code changes.
 
+The `dbt build` stream drops every `AssetObservation` (reason in the code
+comment), so a dbt test reaches Dagster only as a check. Singular-test
+requirements: `.claude/rules/dbt-yaml.md`.
+
 ### `dagster_dbt_translator.py` — `CustomDagsterDbtTranslator`
 
 Customizes asset key and automation condition generation:
@@ -35,7 +39,11 @@ Customizes asset key and automation condition generation:
   `union_relations` are auto-detected (via `raw_code` inspection) and assigned
   `dbt_union_relations_automation_condition()`; TABLE models opt into
   `dbt_cron_automation_condition()` via
-  `meta.dagster.automation_condition.cron_schedule`. Condition semantics:
+  `meta.dagster.automation_condition.cron_schedule`, and into
+  `with_failed_deps_guard()` (on top of either) via
+  `meta.dagster.automation_condition.block_on_failed_deps`, and drop the
+  missing-deps guard from either via
+  `meta.dagster.automation_condition.allow_missing_deps`. Condition semantics:
   `core/CLAUDE.md` → `automation_conditions.py`. The cron timezone defaults to
   the `local_timezone` the code location passes at translator construction (each
   `dbt/assets.py` passes `str(LOCAL_TIMEZONE)`). Meta is resolved by

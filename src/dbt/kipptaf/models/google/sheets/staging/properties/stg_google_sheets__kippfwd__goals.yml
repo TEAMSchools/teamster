@@ -72,9 +72,8 @@ models:
         data_type: string
         description: >-
           Score identifier the goal is measured against, matching score_type on
-          the assessment hubs. psat10nmsqt_total is a combined PSAT10 and PSAT
-          NMSQT goal with no matching scaffold row, so it does not reach the
-          goals unpivot; test_kippfwd_goals_resolve_to_scaffold flags it.
+          the assessment hubs. A score type with no scaffold row does not reach
+          the goals unpivot; test_kippfwd_goals_resolve_to_scaffold flags it.
       - name: expected_metric_type
         data_type: string
         description: >-

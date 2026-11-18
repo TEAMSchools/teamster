@@ -54,7 +54,7 @@ class CustomAttribute(BaseModel):
     field_name: str | None = None
     field_display_name: str | None = None
 
-    value: bool | str | list[str] | None = None
+    value: bool | float | str | list[str] | None = None
 
 
 class Relationship(BaseModel):

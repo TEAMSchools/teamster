@@ -78,14 +78,11 @@ correct schema override.)
 
 **Writing about the hooks self-blocks:** an issue/PR/commit/comment body
 containing the tokens the hooks deny gets your own `mcp__*`/Bash write denied.
-Beyond bare `env`: `.env`/`.environment` (Rule 1 `\.env[.a-z]*` is unanchored —
-matches anywhere, even mid-word in prose), bounded dotfile/cert paths,
-`/proc/*/environ`, and secret-shaped fixtures (1Password refs that name a vault
-— the bare `op://` scheme passes — and key headers; these also trip
-`check-output.sh` on the _response_). Reword/backtick them, or keep literal
-evidence in `.claude/scratch/` and reference it. For non-Bash tools only Section
-1 path rules scan the body; Bash-only and `path_only` rules do not. (Edit/Write
-`content`/`new_string` is content-exempt, so editing docs is unaffected.)
+Beyond bare `env`: `.env`/`.environment` (even mid-word in prose), bounded
+dotfile/cert paths, `/proc/*/environ`, and secret-shaped fixtures (1Password
+refs that name a vault, and key headers). Reword or backtick them, or keep
+literal evidence in `.claude/scratch/` and reference it. Edit/Write content is
+exempt, so editing docs is unaffected.
 
 **Non-Bash tool inputs are path-scanned too:** `TodoWrite` / `AskUserQuestion`
 text containing a bare `env` (or other sensitive-path token) trips Rule 1 or 3c.
@@ -108,33 +105,27 @@ and MCP tools. Does NOT fire for Edit.
 
 **MCP spill files are Bash-readable — read them directly, never dispatch a
 subagent.** A large MCP result that overflows the context budget dumps to
-`~/.claude/projects/<proj>/<session>/tool-results/<tool>-<ts>.txt`, shaped
-`{result: string}` where `result` is itself a JSON string. No hook blocks that
-path: Rule 2's protected set is `settings.json`, `settings.local.json`,
-`hooks/*.sh` and `shell-snapshots/`, none of which match `.claude/projects/`.
-Extract with `jq -r '.result' <file> | jq '<filter>'`. The spill message itself
-suggests a subagent — ignore that; verified 2026-09-16 after following the old
-"Bash-unreadable" note here burned a ~42k-token dispatch to run one `jq length`.
+`~/.claude/projects/<proj>/<session>/tool-results/<tool>-<ts>.txt`. The shape
+depends on the server: most are `{result: string}` where `result` is itself a
+JSON string, and the Google Docs and Cube servers write the object directly
+(`{content: ...}`, `{cubes: ...}`). Probe with `jq 'keys'` first. No hook blocks
+that path. Extract with `jq -r '.result' <file> | jq '<filter>'` or
+`jq '<filter>' <file>` as the shape says. The spill message itself suggests a
+subagent — ignore that.
 
 ## Protected files
 
 Hook scripts, `settings.json`, and `.devcontainer/scripts/` are Edit-denied:
-draft the change and hand it to the user. Full procedure, `permissions.deny`
-semantics, and the settings-integrity checks load from
-`.claude/rules/claude-settings.md` on the first read of one of those files.
+draft the change and hand it to the user; `.claude/rules/claude-settings.md`
+(loads on the first read of one of those files) has the procedure.
 
 If the hook blocks a `git commit -m` message, Write the message into your
 SESSION scratchpad (absolute path given in the system prompt), one file per
 commit — `<scratchpad>/commit-msg-<slug>.txt` — then
-`git commit -F <that path>`. What makes this work is that Write's `content` is
-scan-exempt and no hook rule covers the scratchpad; the specific path is
-otherwise incidental. Never use a shared fixed path like
-`.claude/scratch/commit-msg.txt`: `.claude/scratch/` is per-checkout, so
-concurrent sessions in one worktree overwrite each other, and the old `rm -f`
-remedy destroys another session's pending message. Worse, a stale file makes
-Write fail ("File has not been read yet") while a batched `git commit -F` still
-runs — committing the OTHER session's message. Keep the Bash `description`
-generic; it is scanned too.
+`git commit -F <that path>`. Never use a shared fixed path such as
+`.claude/scratch/commit-msg.txt`: concurrent sessions overwrite it, and a stale
+file can commit another session's message. Keep the Bash `description` generic;
+it is scanned too.
 
 ## Scratch directory
 

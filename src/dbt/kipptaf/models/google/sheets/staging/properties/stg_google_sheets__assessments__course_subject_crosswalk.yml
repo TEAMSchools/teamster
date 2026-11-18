@@ -3,7 +3,8 @@ models:
     description: >-
       One row per course per SIS. Classifies PowerSchool and Focus courses for
       subject reporting and names each course's SIS-independent display label.
-      Maintained by the data team.
+      Sheet rows with a blank PowerSchool_Course_Number are dropped. Maintained
+      by the data team.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

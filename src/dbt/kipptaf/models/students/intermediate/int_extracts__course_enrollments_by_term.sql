@@ -1,61 +1,4 @@
 with
-    -- trunk-ignore(sqlfluff/ST03)
-    actual_quarters as (
-        select
-            c._dbt_source_project,
-            c.academic_year,
-            c.region,
-            c.schoolid,
-            c.`quarter`,
-            c.first_day_school_year,
-            c.last_day_school_year,
-            t.term_start_date as quarter_start_date,
-            t.term_end_date as quarter_end_date,
-
-            t.semester,
-            t.is_current_term as is_current_quarter,
-
-            if(
-                c.`quarter` = 'Q1' and t.term_start_date < c.first_day_school_year,
-                c.first_day_school_year,
-                t.term_start_date
-            ) as quarter_start_date_alt,
-
-            if(
-                c.`quarter` = 'Q4' and t.term_end_date > c.last_day_school_year,
-                c.last_day_school_year,
-                t.term_end_date
-            ) as quarter_end_date_alt,
-
-            sum(c.date_count) over (
-                partition by
-                    c._dbt_source_project,
-                    c.academic_year,
-                    c.region,
-                    c.schoolid,
-                    c.`quarter`
-            ) as days_in_quarter,
-
-        from {{ ref("int_students__calendar_week") }} as c
-        inner join
-            {{ ref("int_students__terms") }} as t
-            on c.academic_year = t.academic_year
-            and c.schoolid = t.schoolid
-            and c._dbt_source_project = t._dbt_source_project
-            and c.`quarter` = t.term
-            and t.term is not null
-    ),
-
-    quarters as (
-        {{
-            dbt_utils.deduplicate(
-                relation="actual_quarters",
-                partition_by="_dbt_source_project, academic_year, schoolid, `quarter`",
-                order_by="quarter_start_date",
-            )
-        }}
-    ),
-
     schedule_by_terms as (
         select
             e._dbt_source_project,
@@ -81,16 +24,16 @@ with
             e.teacher_lastfirst as teacher_name,
             e.is_ap_course,
 
-            q.`quarter`,
+            q.term as `quarter`,
             q.semester,
-            q.quarter_start_date,
-            q.quarter_end_date,
-            q.quarter_start_date_alt,
-            q.quarter_end_date_alt,
-            q.is_current_quarter,
+            q.term_start_date as quarter_start_date,
+            q.term_end_date as quarter_end_date,
+            q.term_start_date_clamped as quarter_start_date_alt,
+            q.term_end_date_clamped as quarter_end_date_alt,
+            q.is_current_term as is_current_quarter,
             q.first_day_school_year,
             q.last_day_school_year,
-            q.days_in_quarter,
+            q.days_in_term as days_in_quarter,
 
             if(
                 e.cc_dateenrolled < q.first_day_school_year,
@@ -106,14 +49,15 @@ with
 
         from {{ ref("base_powerschool__course_enrollments") }} as e
         inner join
-            quarters as q
+            {{ ref("int_students__terms") }} as q
             on e.cc_academic_year = q.academic_year
             and e.cc_schoolid = q.schoolid
             and e._dbt_source_project = q._dbt_source_project
-            and e.cc_dateenrolled <= q.quarter_end_date_alt
-            and e.exit_date >= q.quarter_start_date_alt
+            and e.cc_dateenrolled <= q.term_end_date_clamped
+            and e.exit_date >= q.term_start_date_clamped
         where
             not e.is_dropped_section
+            and q.days_in_term is not null
             -- Focus records no section student count, so this column is null on
             -- every Miami row. Null is not the PowerSchool quirk the filter
             -- targets -- a section holding enrollment rows while recording its
@@ -141,7 +85,7 @@ with
             on s.cc_academic_year = c.academic_year
             and s.cc_schoolid = c.schoolid
             and s._dbt_source_project = c._dbt_source_project
-            and s.`quarter` = c.`quarter`
+            and s.`quarter` = c.term
             and s.dateenrolled_alt <= c.school_week_end_date
             and s.dateleft_alt >= c.school_week_start_date
         group by

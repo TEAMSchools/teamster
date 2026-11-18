@@ -108,6 +108,7 @@ with
             multilingual_learner,
             native_hawaiian_or_other_pacific_islander,
             student_test_uuid,
+            student_growth_percentile,
             student_with_disabilities,
             two_or_more_races,
             `subject` as raw_subject,
@@ -241,6 +242,7 @@ with
                 cast(null as string) as aggregated_proficiency,
                 cast(null as string) as performance_band_group_label,
                 cast(null as boolean) as is_bl_fb,
+                cast(null as int64) as student_growth_percentile,
 
                 if(`subject` = 'Mathematics', 'Math', 'ELA') as discipline,
 
@@ -329,6 +331,7 @@ with
                 `period`,
                 state_student_id,
                 student_test_uuid,
+                student_growth_percentile,
                 student_with_disabilities,
                 raw_subject,
                 subject_area,
@@ -433,6 +436,7 @@ select
     results_type,
     state_student_id,
     student_test_uuid,
+    student_growth_percentile,
     student_with_disabilities,
     raw_subject,
     subject_area,

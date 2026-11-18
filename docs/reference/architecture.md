@@ -48,15 +48,14 @@ per-model unless overriding:
 
 ### kipptaf dbt asset groups
 
-`kipptaf` splits dbt into four separate `@dbt_assets` groups with different
-resource requirements and selection criteria:
+`kipptaf` splits dbt into three separate `@dbt_assets` groups with different
+selection criteria:
 
-| Variable                  | `select`              | `exclude`                                             | CPU   |
-| ------------------------- | --------------------- | ----------------------------------------------------- | ----- |
-| `core_dbt_assets`         | `fqn:*`               | `source:adp_payroll+`, `tag:google_sheet`, `extracts` | 2000m |
-| `reporting_dbt_assets`    | `extracts`            | `source:adp_payroll+`                                 | 1750m |
-| `google_sheet_dbt_assets` | `tag:google_sheet`    | —                                                     | —     |
-| `adp_payroll_dbt_assets`  | `source:adp_payroll+` | —                                                     | —     |
+| Variable                  | Selection                                                     |
+| ------------------------- | ------------------------------------------------------------- |
+| `core_dbt_assets`         | selector `core_dbt_assets` in `src/dbt/kipptaf/selectors.yml` |
+| `google_sheet_dbt_assets` | `tag:google_sheet`                                            |
+| `adp_payroll_dbt_assets`  | `source:adp_payroll+` (partitioned by payroll file)           |
 
 `core_dbt_assets` is the canonical group — it is the one Tableau workbook
 dependencies are resolved against.

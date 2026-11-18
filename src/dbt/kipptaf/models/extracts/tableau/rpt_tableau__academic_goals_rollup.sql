@@ -41,10 +41,7 @@ with
                 score_source = 'state_nj', assessment_name, 'FAST PM3'
             ) as assessment_type,
 
-            -- grade 3 FAST reads PM1 of the same year, not PM3 of the prior year
-            academic_year + if(
-                score_source = 'state_fl' and administration_period = 'PM1', 0, 1
-            ) as academic_year_plus,
+            benchmark_academic_year as academic_year_plus,
 
             is_proficient_int,
             is_approaching_int,
@@ -143,7 +140,7 @@ with
                 then 1
                 else 0
             end as is_below_int,
-        from {{ ref("int_iready__diagnostic_results") }}
+        from {{ ref("int_assessments__iready_diagnostic_results") }}
         where
             test_round = 'BOY'
             and rn_subj_round = 1
@@ -165,7 +162,7 @@ with
             if(level_number_with_typical >= 4, 1, 0) as is_proficient_int,
             if(level_number_with_typical = 3, 1, 0) as is_approaching_int,
             if(level_number_with_typical < 3, 1, 0) as is_below_int,
-        from {{ ref("int_iready__diagnostic_results") }}
+        from {{ ref("int_assessments__iready_diagnostic_results") }}
         where
             test_round = 'BOY'
             and rn_subj_round = 1

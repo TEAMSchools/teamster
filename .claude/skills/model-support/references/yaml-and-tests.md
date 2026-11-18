@@ -24,9 +24,8 @@ config, contains_pii, contract, data_type, or column names. The SQL is the
 source of truth over any doc. Never change a test to match a description
 or the reverse: flag the disagreement instead. Remove change-log narration,
 stale counts, TODOs, and issue refs (#1234) from descriptions. Then run,
-with cwd <worktree>,
-/workspaces/teamster/.trunk/tools/trunk check --force --no-fix <edited files> </dev/null
-and uv run dbt parse --no-partial-parse --project-dir <worktree>/src/dbt/<project>.
+lint the edited files per the `trunk-lint` skill (cwd <worktree>),
+and run uv run dbt parse --no-partial-parse --project-dir <worktree>/src/dbt/<project>.
 Report: per file a one-line summary; FLAGS with file:line evidence (column
 lists that don't match the SQL, missing uniqueness tests, wrong grains,
 student-level columns with no contains_pii tag, including kipptaf wrappers
@@ -110,13 +109,16 @@ select
 from `teamster-332318.<dataset>.<model>`
 ```
 
-For `accepted_values`, list the distinct values first. Staging tests need
-`config: severity: error`; the kipptaf default is warn.
+For `accepted_values`, list the distinct values first. Set severity per _Test
+severity_ in `.claude/rules/dbt-yaml.md`.
 
 ## A test that fails today
 
-Add it anyway; it warns. Put the cause in the reference doc under "Known issues,
-need to fix" with the query that shows it, in aggregates only.
+Add it anyway at `warn`, with a `TODO(#N)` to flip it once it passes, unless it
+is a defended source-data test (_Warn, defend, error_ in
+`.claude/rules/dbt-yaml.md`), which stays `warn`. Put the cause in the reference
+doc under "Known issues, need to fix" with the query that shows it, in
+aggregates only.
 
 Count duplicates on the source-grain model with its full natural key, including
 every column that legitimately repeats within a day (subject, section,

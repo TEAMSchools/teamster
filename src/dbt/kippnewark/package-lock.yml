@@ -3,6 +3,8 @@ packages:
     name: amplify
   - local: ../cambium
     name: cambium
+  - local: ../dbt_overrides
+    name: dbt_overrides
   - local: ../deanslist
     name: deanslist
   - local: ../edplan
@@ -25,4 +27,4 @@ packages:
   - name: dbt_utils
     package: dbt-labs/dbt_utils
     version: 1.4.1
-sha1_hash: f22fe5079038be95c323413489faec216ad2818f
+sha1_hash: a0e734f6ec3bab03e80ba137947e935efbe48301

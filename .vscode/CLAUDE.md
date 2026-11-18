@@ -1,15 +1,12 @@
 # CLAUDE.md — `.vscode/`
 
-VS Code tasks and scripts. Human-facing GCloud auth, Claude auth, and plugin
-setup docs are in `docs/guides/codespaces.md`.
+VS Code tasks and scripts. Human-facing GCloud auth and plugin setup docs are in
+`docs/guides/codespaces.md`.
 
 ## Environment Quirks
 
 - `lib/` is globally gitignored — name shell helper-library dirs `shared/`
   instead (none exists yet; create it rather than `lib/`)
-- `task.allowAutomaticTasks` has application scope — cannot be set in workspace
-  settings or `devcontainer.json` customizations; must go in the user's local VS
-  Code User Settings
 - `GITHUB_USER` is not available in VS Code task shells — derive with
   `gh api user --jq .login` and persist to `~/.bashrc`
 - Claude plugin state lives in `~/.claude/plugins/installed_plugins.json` — read
@@ -18,6 +15,10 @@ setup docs are in `docs/guides/codespaces.md`.
   available unless you `source "${HOME}/.local/bin/env"` first
 - Task scripts must also use `uv run` for venv-installed tools (`dbt`,
   `dagster`, etc.) — the venv is not activated in task shells
+- Trunk actions (`post-merge.sh` runs as one) get none of the `containerEnv`
+  variables. A script that runs `uv` under trunk exports `UV_CACHE_DIR` and
+  `UV_LINK_MODE` itself, or uv uses `~/.cache/uv` and copies every package into
+  the `.venv` instead of hardlinking it
 
 ## File Watcher
 

@@ -4,8 +4,8 @@ models:
       Term-grained GPA, one row per student, school, academic year and reporting
       term. Reads the shared `int_powerschool__gpa` package union and keys it on
       `student_number`, the student key every SIS shares. PowerSchool only:
-      Focus's `student_gpa_calculated` carries `marking_period_id = -1` on every
-      row, the vendor's course-history GPA, so Miami has no term GPA from AY2026
+      Focus's `student_gpa_calculated` can carry term marking-period rows, but
+      their GPA values are empty, so Miami has no usable term GPA from AY2026
       on. Miami rows here come from the frozen PowerSchool archive and stop at
       AY2025. Cumulative GPA lives in `int_students__gpa_cumulative`.
     config:
@@ -19,11 +19,6 @@ models:
           automation_condition:
             cron_schedule: 0 4 * * *
     data_tests:
-      # Scoped to rows that resolved a student_number. int_powerschool__gpa_term
-      # carries 4 Camden AY2015 rows at schoolid 0 whose students_student_number
-      # is null directly on the package fact, so they collide with each other.
-      # They are kept rather than dropped, and fct_grades_gpa excludes them
-      # anyway on its inner join to enrollment.
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
@@ -33,7 +28,7 @@ models:
               - term_name
               - _dbt_source_project
           config:
-            where: student_number is not null
+            severity: error
     columns:
       - name: _dbt_source_relation
         data_type: string

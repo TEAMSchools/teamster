@@ -11,21 +11,19 @@ models:
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           description: >-
-            Expected to warn (not error) when a student is enrolled in both a
-            main AP course and a companion section (e.g. a recitation period)
-            that PowerSchool tags with the same ap_course_subject — both are
-            legitimately separate course offerings, not a data error, so this is
-            intentionally left undeduped rather than collapsed by an arbitrary
-            tiebreak (course name, course number, and the enrollment record's
-            own surrogate ID were all considered and rejected as equally
-            meaningless for picking one section over the other). No upstream
-            cleanup is expected to resolve this, so don't widen the
-            combination_of_columns to silence it.
+            One row per student, year, and AP subject. Course enrollments reach
+            this model already narrowed to one per AP subject by
+            `rn_ap_course_subject_year`, so a duplicate here means a new join
+            fan-out, not two courses sharing an AP subject code. Those are
+            reported at the source by the powerschool package test
+            base_powerschool__course_enrollments__no_concurrent_ap_subject.
           arguments:
             combination_of_columns:
               - academic_year
               - student_number
               - subject_code
+          config:
+            severity: error
     columns:
       - name: academic_year
         data_type: int64

@@ -24,6 +24,7 @@ deanslist_month_partitioned_assets_job_schedule = build_deanslist_job_schedule(
     execution_timezone=str(LOCAL_TIMEZONE),
     asset_selection=month_partitioned_assets,
     current_fiscal_year=CURRENT_FISCAL_YEAR,
+    lookback_months=1,
 )
 
 deanslist_year_partitioned_assets_job_schedule = build_deanslist_job_schedule(

@@ -19,17 +19,29 @@ models:
       - name: first_name
         data_type: string
         description: Candidate's first name as entered in SmartRecruiters.
+        config:
+          meta:
+            contains_pii: true
 
       - name: last_name
         data_type: string
         description: Candidate's last name as entered in SmartRecruiters.
+        config:
+          meta:
+            contains_pii: true
 
       - name: full_name
         data_type: string
         description:
           Candidate's full name (first and last) as entered in SmartRecruiters.
+        config:
+          meta:
+            contains_pii: true
 
       - name: email
         data_type: string
         description:
           Candidate's primary email address from their SmartRecruiters profile.
+        config:
+          meta:
+            contains_pii: true

@@ -1,5 +1,5 @@
 select
-    s.powerschool_student_number as student_number,
+    s.student_number,
     s.assessment_id,
     s.title,
     s.scope,
@@ -24,7 +24,7 @@ select
 from {{ ref("int_assessments__scaffold") }} as s
 inner join
     {{ ref("int_extracts__student_enrollments") }} as co
-    on s.powerschool_student_number = co.student_number
+    on s.student_number = co.student_number
     and s.academic_year = co.academic_year
     and co.rn_year = 1
     and co.enroll_status = 0
@@ -41,3 +41,5 @@ where
     s.academic_year = {{ var("current_academic_year") }}
     and s.is_internal_assessment
     and not s.is_replacement
+    -- Apex session ids collide with Illuminate student_assessment_id
+    and s.source = 'illuminate'

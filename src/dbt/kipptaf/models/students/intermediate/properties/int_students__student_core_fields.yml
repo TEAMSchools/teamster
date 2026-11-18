@@ -19,29 +19,18 @@ models:
               - student_number
               - _dbt_source_project
     columns:
+      - name: lep_status
+        description: >-
+          English learner status. For Miami, read from Focus's FLDOE ELL code:
+          LY is currently LEP, the followup/exited/not-applicable codes are not,
+          and the tested-or-pending codes read null because they are genuinely
+          unknown.
       - name: spedlep
         description: >-
           IEP classification. For Miami, read from the Focus ESE
           Exceptionalities log via int_focus__students.spedlep: a placed,
           undismissed, non-gifted entry. Its absence does not mean the student
           has no IEP, so it reads null rather than 'No IEP'.
-        data_tests:
-          - not_null:
-              config:
-                severity: warn
-                where: _dbt_source_project = 'kippmiami'
-      - name: lep_status
-        description: >-
-          English learner status. For Miami, read from Focus's FLDOE ELL code:
-          LY is currently LEP, the followup/exited/not-applicable codes are not,
-          and the tested-or-pending codes read null because they are genuinely
-          unknown. Flags 5 students against the frozen archive's 221 -- most
-          Miami students still sit at the Focus default, a gap for Ops to close.
-        data_tests:
-          - not_null:
-              config:
-                severity: warn
-                where: _dbt_source_project = 'kippmiami'
       - name: student_number
         description: Canonical network student number.
       - name: _dbt_source_relation

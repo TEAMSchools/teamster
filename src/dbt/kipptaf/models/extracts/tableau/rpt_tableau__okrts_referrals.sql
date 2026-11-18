@@ -246,7 +246,7 @@ select
     co.week_number_academic_year,
     co.is_current_week_mon_sun,
     co.date_count as days_in_session,
-    co.quarter as term,
+    co.term,
 
     dli.incident_id,
     dli.create_ts_date,

@@ -1,14 +1,4 @@
-from typing import AbstractSet
-
 from dagster import AssetSelection, AutomationCondition
-from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.assets.graph.base_asset_graph import (
-    BaseAssetGraph,
-    BaseAssetNode,
-)
-from dagster._core.definitions.declarative_automation.operators.dep_operators import (
-    DepsAutomationCondition,
-)
 
 _MAX_VIEW_DEPTH = 10
 _VIEW_SELECTION = AssetSelection.tag("dagster/materialized", "view")
@@ -22,40 +12,15 @@ _SINCE_LAST_HANDLED = (
 )
 
 
-def _patched_get_dep_keys(
-    self: DepsAutomationCondition,
-    key: AssetKey,
-    asset_graph: BaseAssetGraph[BaseAssetNode],
-) -> AbstractSet[AssetKey]:
-    """Patched _get_dep_keys that copies the set before mutating.
-
-    Fixes a Dagster bug where allow/ignore selections use in-place set
-    operations (&=, -=) on the mutable set returned by parent_entity_keys,
-    permanently corrupting the asset graph's dependency information.
-    """
-    dep_keys = set(asset_graph.get(key).parent_entity_keys)
-
-    if self.allow_selection is not None:
-        dep_keys &= self.allow_selection.resolve(asset_graph, allow_missing=True)
-
-    if self.ignore_selection is not None:
-        dep_keys -= self.ignore_selection.resolve(asset_graph, allow_missing=True)
-
-    return dep_keys
-
-
-# TODO: remove when dagster > 1.9.12 fixes _get_dep_keys
-DepsAutomationCondition._get_dep_keys = _patched_get_dep_keys
-
-
 def _build_dbt_condition(
     *extra_triggers: AutomationCondition,
     requested_reset_triggers: AutomationCondition | None = None,
+    allow_missing_deps: bool = False,
 ) -> AutomationCondition:
     """Build a dbt automation condition with the shared structure.
 
-    All three dbt conditions (view, union_relations, table) share the same
-    skeleton — they differ only in what additional triggers (beyond
+    All four dbt conditions (view, union_relations, table, cron) share the
+    same skeleton — they differ only in what additional triggers (beyond
     newly_missing) cause a materialization request.
 
     The shared structure is a fork of AutomationCondition.eager() with:
@@ -80,7 +45,22 @@ def _build_dbt_condition(
     ``requested_reset_triggers`` stay armed until this asset is requested,
     not until it is updated. A materialization from a run that started
     before the trigger fired (a stale in-flight run, or a manual UI run)
-    therefore cannot consume it.
+    therefore cannot consume it. Stock eager() resets on newly_updated, so
+    an upstream update that lands during the asset's own run is cleared by
+    that run's completion and never re-runs.
+
+    Known limits of the requested reset:
+    - A trigger that fires on the tick right after the request is dropped:
+      that tick's newly_requested reset wins, because the trigger carries no
+      timing metadata. The requested run usually has not started yet, so it
+      reads the new data.
+    - A manual materialization does not clear a pending trigger, so one
+      extra run follows it.
+
+    ``allow_missing_deps`` drops the ``any_deps_missing`` guard. An
+    unpartitioned model over a daily-partitioned dep otherwise freezes for
+    good on one never-materialized partition. Use it only where each dep
+    partition is a full snapshot, so a gap loses a day, not records.
     """
     triggers: AutomationCondition = AutomationCondition.newly_missing()
     for trigger in extra_triggers:
@@ -96,10 +76,14 @@ def _build_dbt_condition(
             AutomationCondition.newly_requested()
         )
 
+    condition = AutomationCondition.in_latest_time_window() & handled
+    if not allow_missing_deps:
+        condition = condition & ~AutomationCondition.any_deps_missing().ignore(
+            _EXTERNAL_SOURCE_SELECTION
+        )
+
     return (
-        AutomationCondition.in_latest_time_window()
-        & handled
-        & ~AutomationCondition.any_deps_missing().ignore(_EXTERNAL_SOURCE_SELECTION)
+        condition
         & ~AutomationCondition.any_deps_in_progress()
         & ~AutomationCondition.in_progress()
     )
@@ -251,7 +235,9 @@ def dbt_union_relations_automation_condition() -> AutomationCondition:
     )
 
 
-def dbt_table_automation_condition() -> AutomationCondition:
+def dbt_table_automation_condition(
+    allow_missing_deps: bool = False,
+) -> AutomationCondition:
     """Automation condition for dbt TABLE models.
 
     Tables store physical data and must re-materialize when upstream changes.
@@ -261,15 +247,27 @@ def dbt_table_automation_condition() -> AutomationCondition:
     intermediate views that aren't re-materialized.
 
     Triggers: newly_missing, any_deps_updated (direct + through views),
-    code_version_changed.
+    code_version_changed. The ancestor-updated trigger resets on request
+    only, so an upstream update that lands mid-run triggers one more run.
+    any_deps_updated ignores updates from runs that also targeted this
+    asset, so a single run that builds the chain does not re-fire it.
+
+    Args:
+        allow_missing_deps: Drop the missing-deps guard (see
+            ``_build_dbt_condition``).
     """
     return _build_dbt_condition(
-        _build_any_ancestor_updated(view_selection=_VIEW_SELECTION)
+        requested_reset_triggers=_build_any_ancestor_updated(
+            view_selection=_VIEW_SELECTION
+        ),
+        allow_missing_deps=allow_missing_deps,
     )
 
 
 def dbt_cron_automation_condition(
-    cron_schedule: str, cron_timezone: str | None = None
+    cron_schedule: str,
+    cron_timezone: str | None = None,
+    allow_missing_deps: bool = False,
 ) -> AutomationCondition:
     """Automation condition for expensive dbt TABLE models on a cron cadence.
 
@@ -287,14 +285,41 @@ def dbt_cron_automation_condition(
 
     Triggers: newly_missing, cron_tick_passed, code_version_changed (deploys
     still rebuild immediately). Retains the deps-missing/in-progress guards.
+    The cron trigger resets on request only, so a tick that passes during the
+    table's own run is not cleared by that run's completion.
 
     A None cron_timezone falls back to Dagster's cron_tick_passed default
     (UTC). The dbt translator passes its code location's LOCAL_TIMEZONE, so
     dbt models get local ticks without hardcoding a zone here.
+
+    ``allow_missing_deps`` drops the missing-deps guard (see
+    ``_build_dbt_condition``).
     """
     return _build_dbt_condition(
-        AutomationCondition.cron_tick_passed(
+        requested_reset_triggers=AutomationCondition.cron_tick_passed(
             cron_schedule=cron_schedule,
             cron_timezone=cron_timezone or "UTC",
-        )
+        ),
+        allow_missing_deps=allow_missing_deps,
     )
+
+
+def with_failed_deps_guard(condition: AutomationCondition) -> AutomationCondition:
+    """Hold an asset back while any dep partition's latest attempt failed.
+
+    For a model that must not build over an incomplete upstream pull. An
+    unpartitioned asset over a partitioned dep checks every partition of the
+    dep, not a recent window, so one old failed partition holds it until that
+    partition is rerun. The wrapped condition's triggers stay armed while
+    held, so the asset is requested once the failed partition succeeds.
+
+    Args:
+        condition: The asset's automation condition, e.g. the dbt table or
+            cron condition.
+
+    Returns:
+        The condition, false while any dep partition is failed.
+    """
+    return condition & ~AutomationCondition.any_deps_match(
+        AutomationCondition.execution_failed()
+    ).with_label("any_deps_failed")

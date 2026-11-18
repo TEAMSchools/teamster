@@ -1,0 +1,8 @@
+cubes:
+  # Role alias for staff, used as the head-of-school join target on locations.
+  # Distinct role-play cube (like staff_lead_teacher) so head-of-school members
+  # can't collide with the teacher roles when a view reaches both. Inherits all
+  # of staff's dimensions.
+  - name: staff_head_of_school
+    extends: staff
+    public: false

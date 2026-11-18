@@ -118,7 +118,7 @@ with
 
             row_number() over (
                 partition by teachernumber, academic_year
-                order by grade_level_ratio desc
+                order by grade_level_ratio desc, grade_level asc
             ) as grade_level_rank,
         from percentages
     )

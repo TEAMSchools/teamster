@@ -1,4 +1,6 @@
 packages:
+  - local: ../dbt_overrides
+    name: dbt_overrides
   - local: ../finalsite
     name: finalsite
   - local: ../iready
@@ -13,4 +15,4 @@ packages:
   - name: dbt_utils
     package: dbt-labs/dbt_utils
     version: 1.4.1
-sha1_hash: dd79749225abd0e4c1b9df24ded37d28f6209f7c
+sha1_hash: 6293b660227a081fa429679d461938cb8ac28046

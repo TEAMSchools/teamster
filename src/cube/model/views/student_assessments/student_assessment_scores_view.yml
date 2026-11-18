@@ -1,20 +1,24 @@
 views:
   - name: student_assessment_scores_view
     description: >-
-      Assessment scores across internal Illuminate interims, NJ/FL state
-      assessments, and vendor benchmarks (i-Ready, DIBELS, STAR) — row-level
-      (one row per student x assessment x administration x response type) and
-      aggregate breakdowns in a single view. pct_proficient (mastery rate) is
-      the source-agnostic headline; scale_score is null for internal rows and
-      percent_correct is null for state and vendor rows. response_type /
-      response_type_code carry the standard/skill breakdown (Illuminate only).
-      State and vendor administrations have no single administered date, so the
-      Date members (academic_year, academic_year_label, date_day, month_number,
-      month_name) resolve for every source but are scoped by different dates per
-      source: the administration date for Illuminate/college, the student's
-      completion (test) date for state/vendor. A cross-source date cut (e.g.
-      "scores in May") therefore mixes those two date concepts. Contains direct
-      student identifiers — see access_policy for PII gating.
+      Assessment scores across internal interims (Illuminate and Focus
+      Assessments), NJ and FL state tests, and vendor diagnostics (i-Ready,
+      DIBELS, STAR), one row per student x assessment x administration x
+      response type. Enrollment-scoped: a score appears only if it resolves to a
+      section enrollment. pct_proficient is the headline, on a common scale
+      across sources, though the mastery bar behind it differs by source;
+      scale_score is null for Illuminate and Focus Assessments rows and
+      percent_correct is null for every other source. response_type splits
+      scores into overall, standard and group rows: standard covers Illuminate
+      and Focus Assessments, and group covers Illuminate, i-Ready and DIBELS.
+      There is no growth measure. The Date members resolve for every source but
+      read different dates: the administration date for Illuminate, Focus
+      Assessments and college, the test date for state tests and vendor
+      diagnostics, so a cross-source date cut mixes the two. Filter
+      assessment_date, not date_day, for a single date or a date range: it reads
+      only the matching months of the fact, while date_day reads every month.
+      Use academic_year_label for school-year filters. Contains direct student
+      identifiers; see access_policy for PII gating.
 
     cubes:
       - join_path: student_assessment_scores
@@ -24,17 +28,32 @@ views:
           - count_scored
           - count_proficient
           - count_students
+          - count_assessments
           - pct_taken
           - pct_proficient
           - pct_proficient_formative
           - pct_proficient_crq
+          - count_students_banded
+          - pct_students_at_level
+          - pct_students_below
+          - pct_students_far_below
           - avg_percent_correct
           - avg_scale_score
+          - grade_goal_distance
+          - school_goal_distance
+          - region_goal_distance
+          - grade_goal_status
+          - grade_goal_differentiated
+          - school_goal_differentiated
+          - region_goal_differentiated
           - assessment_score_key
+          - assessment_date
           - date_taken
           - enrollment_resolution
           - proficiency_level
           - performance_band_label_number
+          - mastery_level
+          - is_far_below
           - is_mastery
           - scale_score
           - percent_correct
@@ -43,11 +62,16 @@ views:
           - response_type_description
           - response_type_root_description
           - is_replacement
+          - bucket
+          - is_low_25
+          - state_test_proficiency
+          - dibels_most_recent_composite
 
       - join_path: student_assessment_scores.student_assessment_administrations.student_assessments
         includes:
           - title
           - academic_subject
+          - bucket_subject
           - assessment_type
           - category
           - module_code
@@ -55,6 +79,7 @@ views:
           - grade_level_tested
           - scope
           - is_internal_assessment
+          - assessment_family
 
       - join_path: student_assessment_scores.student_assessment_administrations
         includes:
@@ -69,6 +94,18 @@ views:
           - academic_year_label
           - month_number
           - month_name
+          - school_week_start_date
+          - school_week_end_date
+
+      - join_path: student_assessment_scores.student_assessment_goals
+        includes:
+          - grade_goal
+          - school_goal
+          - region_goal
+          - organization_goal
+          - grade_band_goal
+          - assessment_band_goal
+          - quarterly_assessment_goal
 
       - join_path: student_assessment_scores.student_section_enrollments.course_sections.courses
         includes:
@@ -76,7 +113,12 @@ views:
           - course_title
           - course_code
           - credit_type
-          - is_foundations
+          - name: is_foundations
+            meta:
+              ai_context: >-
+                The only intervention signal on this view; there is no program-
+                or MTSS-tracking dimension. Treat it as course enrollment, not a
+                record of intervention services delivered.
 
       - join_path: student_assessment_scores.student_section_enrollments.course_sections
         includes:
@@ -96,7 +138,12 @@ views:
       - join_path: student_assessment_scores.student_section_enrollments.staff_lead_teacher
         prefix: true
         includes:
-          - full_name
+          - name: full_name
+            meta:
+              ai_context: >-
+                Stored Last, First. Resolve a name against staff_directory
+                before filtering; a zero-row result is not proof the teacher has
+                no students.
           - first_name
           - last_name
 
@@ -112,12 +159,18 @@ views:
         includes:
           - is_ell
           - is_iep
+          - is_504
           - iep_classification
           - special_education_code
           - special_education_name
           - special_education_placement
           - is_meal_eligible
           - meal_eligibility
+          - is_sipps
+          - is_tutoring
+          - is_self_contained
+          - homeroom_name
+          - homeroom_section_number
 
       - join_path: >-
           student_assessment_scores.student_section_enrollments.student_school_enrollments.students
@@ -140,9 +193,29 @@ views:
           - location_name
           - abbreviation
           - region_key
-          - grade_band
+          - name: grade_band
+            meta:
+              ai_context: >-
+                A grade_band filter is a school filter. For a student's grade,
+                use grade_level.
           - campus
           - city
+          - school_id
+          - head_of_school_staff_key
+
+      - join_path: >-
+          student_assessment_scores.student_section_enrollments.student_school_enrollments.locations.staff_head_of_school
+        prefix: true
+        includes:
+          - name: full_name
+            meta:
+              ai_context: >-
+                Stored Last, First. Resolve a name against staff_directory
+                before filtering; a zero-row result is not proof the head of
+                school has no schools.
+          - first_name
+          - last_name
+          - google_email
 
       - join_path: >-
           student_assessment_scores.student_section_enrollments.student_school_enrollments.locations.regions
@@ -158,11 +231,34 @@ views:
           - term_type
 
     meta:
+      ai_context: >-
+        Totals will not reconcile to vendor-diagnostic or state reports, because
+        of enrollment scoping; i-Ready Outside Round sittings lose the most, so
+        treat those counts as a floor. Coverage is uneven by region, source and
+        year, and a source's first year can be partial; check volume by region
+        and year before calling a narrow result a failure or trending across a
+        boundary. A gap between two instruments on the same students is a
+        calibration difference until shown otherwise: report both rates side by
+        side and flag it rather than presenting an achievement gap. A school's
+        internal source can change between years (Illuminate to Focus
+        Assessments); a trend across that change compares 2 systems with
+        different band sets and participation rules, so report each source's
+        years as its own series and say where the source changed. Any growth
+        figure is analyst-built; say so. Students can sit a diagnostic more than
+        once in a window, mostly i-Ready. Repeat sittings inflate count_scored
+        and pull pct_proficient down, because retakes score lower
+        (count_students is already distinct); de-duplicate them before a
+        student-level rate, and since which sitting counts is an open decision,
+        say which you kept. A missing current-year state result is a release
+        lag, not a defect. Query this view, not upstream i-Ready tables, which
+        carry re-pull duplicates. A CCSS code's own grade can differ from
+        grade_level_tested; that is spiral review, not an error.
       folders:
         - name: Assessment
           members:
             - title
             - academic_subject
+            - bucket_subject
             - assessment_type
             - category
             - module_code
@@ -170,6 +266,7 @@ views:
             - grade_level_tested
             - scope
             - is_internal_assessment
+            - assessment_family
             - administration_period
             - test_type
             - source_assessment_id
@@ -177,6 +274,8 @@ views:
             - enrollment_resolution
             - proficiency_level
             - performance_band_label_number
+            - mastery_level
+            - is_far_below
             - is_mastery
             - scale_score
             - percent_correct
@@ -185,13 +284,28 @@ views:
             - response_type_description
             - response_type_root_description
             - is_replacement
+        - name: Goal
+          members:
+            - grade_goal
+            - school_goal
+            - region_goal
+            - organization_goal
+            - grade_band_goal
+            - assessment_band_goal
+            - quarterly_assessment_goal
+            - grade_goal_differentiated
+            - school_goal_differentiated
+            - region_goal_differentiated
         - name: Date
           members:
+            - assessment_date
             - date_day
             - academic_year
             - academic_year_label
             - month_number
             - month_name
+            - school_week_start_date
+            - school_week_end_date
         - name: Course
           members:
             - discipline
@@ -215,8 +329,14 @@ views:
             - grade_band
             - campus
             - city
+            - school_id
             - region_name
             - state
+            - head_of_school_staff_key
+            - staff_head_of_school_full_name
+            - staff_head_of_school_first_name
+            - staff_head_of_school_last_name
+            - staff_head_of_school_google_email
         - name: Student
           members:
             - student_key
@@ -234,12 +354,22 @@ views:
           members:
             - is_ell
             - is_iep
+            - is_504
             - iep_classification
             - special_education_code
             - special_education_name
             - special_education_placement
             - is_meal_eligible
             - meal_eligibility
+            - bucket
+            - is_sipps
+            - is_tutoring
+            - is_self_contained
+            - homeroom_name
+            - homeroom_section_number
+            - is_low_25
+            - state_test_proficiency
+            - dibels_most_recent_composite
         - name: Enrollment
           members:
             - student_section_enrollment_key

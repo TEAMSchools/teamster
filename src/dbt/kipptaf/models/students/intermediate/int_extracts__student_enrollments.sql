@@ -105,6 +105,41 @@ with
 
         from {{ ref("stg_powerschool__s_nj_stu_x") }}
         where graduation_pathway_math = 'M' or graduation_pathway_ela = 'M'
+    ),
+
+    hs_honors_dated as (
+        select
+            studentid,
+            academic_year,
+            _dbt_source_project,
+            enter_date,
+
+            -- exit before entry is a blank exit date (stored as 1900-01-01) or a
+            -- typo; treat it as still open
+            if(exit_date < enter_date, null, exit_date) as exit_date_or_open,
+
+            least(
+                current_date('{{ var("local_timezone") }}'),
+                date(academic_year + 1, 6, 30)
+            ) as as_of_date,
+        from {{ ref("int_powerschool__spenrollments") }}
+        where specprog_name = 'High School Honors Program'
+    ),
+
+    hs_honors as (
+        select
+            studentid,
+            academic_year,
+            _dbt_source_project,
+
+            row_number() over (
+                partition by _dbt_source_project, studentid, academic_year
+                order by enter_date desc
+            ) as rn_honors_year,
+        from hs_honors_dated
+        where
+            enter_date <= as_of_date
+            and (exit_date_or_open is null or exit_date_or_open >= as_of_date)
     )
 
 select
@@ -322,15 +357,6 @@ select
     ) as is_student_athlete,
 
     if(
-        current_date('{{ var("local_timezone") }}')
-        between tut.enter_date and tut.exit_date,
-        true,
-        false
-    ) as is_tutoring,
-
-    if(sip.students_student_number is not null, true, false) as is_sipps,
-
-    if(
         gc.cumulative_y1_gpa_projected_unweighted_band
         < gc.cumulative_y1_gpa_unweighted_band,
         true,
@@ -352,6 +378,16 @@ select
     ) as is_ada_above_or_at_80_cum_gpa_less_2,
 
     if(e.exitdate < cal.first_day_school_year, true, false) as is_pre_year_withdrawal,
+
+    e.academic_year = {{ var("current_academic_year") }} as is_current_academic_year,
+
+    case
+        when e.region = 'Miami'
+        then null
+        when hon.studentid is not null
+        then true
+        else false
+    end as is_hs_honors_program,
 
     case
         when e.grade_level = 99
@@ -491,19 +527,18 @@ left join
     and ath.specprog_name = 'Student Athlete'
     and ath.rn_student_program_year_desc = 1
 left join
-    {{ ref("int_powerschool__spenrollments") }} as tut
-    on e.studentid = tut.studentid
-    and e.academic_year = tut.academic_year
-    and e._dbt_source_project = tut._dbt_source_project
-    and tut.specprog_name = 'Tutoring'
-    and tut.rn_student_program_year_desc = 1
-left join
     {{ ref("int_powerschool__spenrollments") }} as hi
     on e.studentid = hi.studentid
     and e.academic_year = hi.academic_year
     and e._dbt_source_project = hi._dbt_source_project
     and hi.specprog_name = 'Home Instruction'
     and hi.rn_student_program_year_desc = 1
+left join
+    hs_honors as hon
+    on e.studentid = hon.studentid
+    and e.academic_year = hon.academic_year
+    and e._dbt_source_project = hon._dbt_source_project
+    and hon.rn_honors_year = 1
 left join
     {{ ref("int_people__leadership_crosswalk") }} as hos
     on e.schoolid = hos.home_work_location_powerschool_school_id
@@ -532,14 +567,6 @@ left join
     graduation_pathway_m as mc
     on e.students_dcid = mc.studentsdcid
     and e._dbt_source_project = mc._dbt_source_project
-left join
-    {{ ref("base_powerschool__course_enrollments") }} as sip
-    on e.student_number = sip.students_student_number
-    and e.academic_year = sip.cc_academic_year
-    and e._dbt_source_project = sip._dbt_source_project
-    and sip.courses_course_number = 'SEM01099G1'
-    and sip.rn_course_number_year = 1
-    and not sip.is_dropped_section
 left join
     {{ ref("int_students__contacts_pivot") }} as sc
     on e.student_number = sc.student_number

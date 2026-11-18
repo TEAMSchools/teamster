@@ -1,0 +1,43 @@
+models:
+  - name: stg_google_sheets__kfwd__early_apps_gpa_bands
+    description: >-
+      GPA bands for the KIPP Forward early apps tracker, from the gpa_bands tab
+      of the KIPP Forward Early Apps Settings sheet. A band runs from its
+      min_gpa up to, not including, the next band's min_gpa. The 1 band with a
+      blank min_gpa holds seniors with no GPA.
+    columns:
+      - name: gpa_band
+        data_type: string
+        description: Band name the tracker shows and the goals tab refers to.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+      - name: band_sort
+        data_type: int64
+        description: Display order of the band in the tracker.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: min_gpa
+        data_type: numeric
+        description: >-
+          Lowest unweighted GPA in the band, inclusive. Blank for the no-GPA
+          band.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+      - name: summary_group
+        data_type: string
+        description: >-
+          Row the band counts in on the tracker's Summary tab. Bands that share
+          a summary_group, such as Below 3.00 and No GPA, show as 1 row.
+        data_tests:
+          - not_null:
+              config:
+                severity: error

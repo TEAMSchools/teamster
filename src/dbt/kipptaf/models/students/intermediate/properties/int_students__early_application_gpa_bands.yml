@@ -1,0 +1,72 @@
+models:
+  - name: int_students__early_application_gpa_bands
+    description:
+      GPA bands for the KIPP Forward early apps tracker, 1 row per band, from
+      stg_google_sheets__kfwd__early_apps_gpa_bands. Turns each band's minimum
+      GPA into a range from lower_gpa up to, not including, upper_gpa, so a
+      senior's band is a plain range match. The no-GPA band covers -1 up to the
+      lowest real band, and int_students__early_applications_rollup gives a
+      senior with no GPA the value -1.
+    columns:
+      - name: gpa_band
+        data_type: string
+        description: Band name the tracker shows and the goals refer to.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+      - name: band_sort
+        data_type: int64
+        description: Display order of the band.
+      - name: summary_group
+        data_type: string
+        description:
+          Row the band counts in on the Summary tab. Bands that share a group
+          show as 1 row.
+      - name: summary_sort
+        data_type: int64
+        description: Lowest band_sort in the band's summary_group.
+      - name: lower_gpa
+        data_type: numeric
+        description:
+          Lowest unweighted GPA in the band, inclusive. -1 for the no-GPA band.
+      - name: upper_gpa
+        data_type: numeric
+        description:
+          The next band's lower_gpa, exclusive. 99 for the top band, so it has
+          no upper limit.
+
+unit_tests:
+  - name: test_int_students__early_application_gpa_bands
+    model: int_students__early_application_gpa_bands
+    description:
+      Each band runs up to the next band's minimum, the top band has no upper
+      limit, the blank-minimum band covers -1 up to the lowest band, and bands
+      sharing a summary group take the group's lowest band_sort.
+    given:
+      - input: ref("stg_google_sheets__kfwd__early_apps_gpa_bands")
+        format: sql
+        rows: |
+          select '3.75+' as gpa_band, 1 as band_sort, cast(3.75 as numeric) as min_gpa, '3.75+' as summary_group
+          union all
+          select '3.50-3.74', 2, cast(3.50 as numeric), '3.50-3.74'
+          union all
+          select 'Below 3.50', 3, cast(0 as numeric), 'Below 3.50 or no GPA'
+          union all
+          select 'No GPA', 4, cast(null as numeric), 'Below 3.50 or no GPA'
+    expect:
+      rows:
+        - { gpa_band: 3.75+, lower_gpa: 3.75, upper_gpa: 99, summary_sort: 1 }
+        - {
+            gpa_band: 3.50-3.74,
+            lower_gpa: 3.50,
+            upper_gpa: 3.75,
+            summary_sort: 2,
+          }
+        - {
+            gpa_band: Below 3.50,
+            lower_gpa: 0,
+            upper_gpa: 3.50,
+            summary_sort: 3,
+          }
+        - { gpa_band: No GPA, lower_gpa: -1, upper_gpa: 0, summary_sort: 3 }

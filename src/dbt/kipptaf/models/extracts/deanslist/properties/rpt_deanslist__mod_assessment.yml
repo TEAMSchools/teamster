@@ -1,11 +1,18 @@
 models:
   - name: rpt_deanslist__mod_assessment
     description: >
-      DeansList SFTP CDO extract for K-4 enrichment grades (non-ELA, non-Math
-      subjects). Each row is one student-subject-term average score for the
-      current academic year, drawn from Unit Assessments and assessments tagged
-      as report-card-eligible via AppSheet. The avg_pct_correct is the rounded
-      mean of all Illuminate overall scores for that student, subject, and term.
+      DeansList SFTP CDO extract for K-4 enrichment grades, covering every
+      subject area except Text Study and Mathematics. Each row is one
+      student-subject-term average score for the current academic year, drawn
+      from Unit Assessments and from assessments whose AppSheet report-card
+      regions include the student's region. Only assessments with a reporting
+      term are included. The avg_pct_correct is the rounded mean of the overall
+      percent correct across those assessments for that student, subject, and
+      term. A row whose average falls in no band of its performance band set is
+      dropped.
+    config:
+      meta:
+        contains_pii: true
     data_tests:
       # These 4 columns are the group by of assessment_response_avg, so the row
       # grain is already guaranteed. What this test actually catches is the
@@ -25,12 +32,12 @@ models:
       - name: academic_year
         data_type: int64
         description:
-          Academic year as a four-digit integer (e.g. 2025 for 2024-25).
+          Academic year as the starting calendar year (e.g. 2025 for 2025-26).
       - name: term_administered
         data_type: string
         description: >
-          Reporting term in which the assessment was administered (e.g. Q1, Q2).
-          Derived from the administered_at date in Illuminate.
+          RT reporting term (e.g. Q1, Q2) for the student's school whose date
+          range contains the assessment's administered date.
       - name: subject_area_label
         data_type: string
         description: >
@@ -49,9 +56,8 @@ models:
       - name: proficiency_label
         data_type: string
         description: >
-          Performance band label (e.g. Proficient, Developing) corresponding to
-          avg_pct_correct on the Illuminate performance band set for this
-          subject.
+          Label of the band whose range contains avg_pct_correct, on the
+          lowest-id performance band set among the averaged assessments.
       - name: subject_area
         data_type: string
         description: >
@@ -60,7 +66,8 @@ models:
       - name: scope
         data_type: string
         description:
-          Fixed value 'UA', identifying these rows as Unit Assessment scope.
+          Fixed value 'UA' for the DeansList CDO, set on every row whatever the
+          scope of the averaged assessments.
       - name: rn_unit
         data_type: int64
         description: >

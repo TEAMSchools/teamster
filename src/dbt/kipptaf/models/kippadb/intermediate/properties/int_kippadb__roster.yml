@@ -43,3 +43,20 @@ models:
             source_system: Overgrad
             source_model: int_overgrad__admissions
             source_column: award_letter__unmet_need
+
+      - name: contact_current_college_cumulative_gpa_source
+        data_type: string
+        description: >-
+          Source__c of the Salesforce GPA record behind
+          contact_current_college_cumulative_gpa, such as Unofficial Transcript
+          or Student Portal. Taken from the contact's Cumulative College GPA
+          record whose GPA matches the contact GPA to 2 decimals; when several
+          match, the one stg_kippadb__gpa ranks first in
+          rn_student_record_type_gpa. Null when the contact has no current
+          college GPA.
+        config:
+          meta:
+            source_system: Salesforce
+            source_model: stg_kippadb__gpa
+            source_column: source
+            contains_pii: true

@@ -1,7 +1,7 @@
 with
     responses_discipline as (
         select
-            powerschool_student_number,
+            student_number,
             academic_year,
             module_type,
             title,
@@ -39,7 +39,7 @@ with
         from {{ ref("int_extracts__student_enrollments_subjects_weeks") }} as sw
         left join
             responses_discipline as rr
-            on sw.student_number = rr.powerschool_student_number
+            on sw.student_number = rr.student_number
             and sw.academic_year = rr.academic_year
             and sw.discipline = rr.discipline
             and rr.administered_at between sw.week_start_monday and sw.week_end_sunday

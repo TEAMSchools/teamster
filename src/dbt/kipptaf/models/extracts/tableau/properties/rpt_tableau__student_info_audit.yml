@@ -1,8 +1,13 @@
 models:
   - name: rpt_tableau__student_info_audit
     description: >-
-      Network-wide data quality audit, Miami included. Miami held 12,294 rows in
-      prod as of 2026-08-27. Ratified on #4996.
+      Network-wide student data quality audit for the current academic year.
+      Most checks write one row per student, flagged or not. Under Enrolled
+      writes flagged students only, and Enrollment Dupes writes one row per
+      duplicate course enrollment. Miami is included except for the FTEID check,
+      because Focus has no FTE. Name Spelling flags a double space or any
+      character other than a letter in any script (accented included), a digit,
+      an underscore, a space, an apostrophe, a hyphen, or a comma.
     columns:
       - name: db_name
         data_type: string

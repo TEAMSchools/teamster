@@ -13,6 +13,12 @@ Loads on the first read of a CLAUDE.md, a rule, a context file, or a skill.
 
 - Before adding a line to any of these files: name the specific decision Claude
   will make differently because of it. If you cannot, cut it.
+- Before changing a rule, `rg` its key terms across `CLAUDE.md` files,
+  `.claude/`, and `docs/guides/`. Update each restatement or replace it with a
+  pointer to the rule's home; an unchanged copy becomes a contradiction.
+- State the behavior, not the evidence for it. Dated "verified" notes, run ids,
+  PR or comment numbers cited as proof, and counts go in the commit and PR. A
+  dated claim reads as current long after it stops being true.
 - When a change deletes something, delete the text about it; do not add text
   saying it was deleted. A tombstone ("`X` was retired", "there is no longer a
   `Y`") reads like it passes the necessity test and does not — the decision it
@@ -32,6 +38,9 @@ Loads on the first read of a CLAUDE.md, a rule, a context file, or a skill.
 - A new `.claude/rules/<topic>.md` whose `paths:` reach outside `src/dbt/` and
   `src/cube/` needs the first _Tooling_ bullet widened to match. That bullet
   names the trees to open with Read instead of `cat`; a rule outside them loads
-  for nobody who reads the file through Bash.
+  for nobody who reads the file through Bash. No widening is needed when Bash
+  cannot read the files anyway (hook Rule 2 blocks hooks, settings, and
+  `.devcontainer/scripts/`) or when the rule tells the reader to Read it
+  directly, as `worktrees.md` does.
 - Bold is reserved for the root _Never_ block. Elsewhere, bold only a line a
   reader who skims must not miss.

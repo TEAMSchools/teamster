@@ -1,7 +1,38 @@
 models:
   - name: rpt_tableau__okrts_behavior
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - region
+              - academic_year
+              - week_start_monday
+              - behavior_category
+              - behavior
+              - entry_staff
+          config:
+            severity: error
     columns:
       - name: student_number
+        data_type: int64
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: region
+        data_type: string
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: week_start_monday
+        data_type: date
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: academic_year
         data_type: int64
       - name: student_name
         data_type: string
@@ -9,10 +40,6 @@ models:
         data_type: int64
       - name: cohort
         data_type: int64
-      - name: academic_year
-        data_type: int64
-      - name: region
-        data_type: string
       - name: school_level
         data_type: string
       - name: school
@@ -31,8 +58,6 @@ models:
         data_type: int64
       - name: term
         data_type: string
-      - name: week_start_monday
-        data_type: date
       - name: week_end_sunday
         data_type: date
       - name: days_in_session
@@ -104,8 +129,109 @@ models:
         data_type: int64
         description: >-
           1 when the student has an Earned Quarterly Incentive award in the
-          week's quarter, otherwise 0. The quarter comes from the student's own
-          enrollment week for the award date. Awards are bulk-dated to the first
-          day of the next quarter, so they show in that quarter's weeks.
+          week's quarter, otherwise 0. The award's quarter is the reporting term
+          (dim_terms, type RT) at the award's school whose dates hold the award
+          date. DeansList dates each award on the last day of the quarter it
+          rewards, often a weekend or other day without school, so the date is
+          matched to term dates rather than to a school week.
       - name: state_studentnumber
         data_type: string
+
+unit_tests:
+  - name: unit_rpt_okrts_behavior_quarterly_award_quarter
+    description: >-
+      DeansList dates an Earned Quarterly Incentive on the last day of the
+      quarter it rewards. 1001 earns a Q1 award dated on a Sunday quarter end,
+      and 1002 earns one dated on a Monday quarter end that is not a school day.
+      Both flag every Q1 week and no Q2 week.
+    model: rpt_tableau__okrts_behavior
+    overrides:
+      vars:
+        current_academic_year: 2026
+    given:
+      - input: ref("int_extracts__student_enrollments_weeks")
+        rows:
+          - &week_q1
+            _dbt_source_project: kippnewark
+            student_number: 1001
+            schoolid: 100
+            deanslist_school_id: 1
+            academic_year: 2026
+            week_start_monday: 2026-10-26
+            week_end_sunday: 2026-11-01
+            term: Q1
+            is_enrolled_week: true
+          - &week_q2
+            <<: *week_q1
+            week_start_monday: 2026-11-02
+            week_end_sunday: 2026-11-08
+            term: Q2
+          - &week_q1_camden
+            <<: *week_q1
+            _dbt_source_project: kippcamden
+            student_number: 1002
+            schoolid: 200
+            deanslist_school_id: 2
+          - <<: *week_q1_camden
+            week_start_monday: 2026-11-02
+            week_end_sunday: 2026-11-08
+            term: Q2
+      - input: ref("stg_deanslist__behavior")
+        rows:
+          - student_school_id: 1001
+            dl_school_id: 1
+            academic_year: 2026
+            behavior: Earned Quarterly Incentive
+            behavior_date: 2026-11-01
+          - student_school_id: 1002
+            dl_school_id: 2
+            academic_year: 2026
+            behavior: Earned Quarterly Incentive
+            behavior_date: 2026-11-02
+      - input: ref("int_people__location_crosswalk")
+        rows:
+          - location_deanslist_school_id: 1
+            location_powerschool_school_id: 100
+          - location_deanslist_school_id: 2
+            location_powerschool_school_id: 200
+      - input: ref("int_students__calendar_week")
+        rows: []
+      - input: ref("dim_terms")
+        rows:
+          - &term_q1
+            school_id: 100
+            type: RT
+            term_name: Q1
+            academic_year: 2026
+            start_date: 2026-07-01
+            end_date: 2026-11-01
+          - <<: *term_q1
+            term_name: Q2
+            start_date: 2026-11-02
+            end_date: 2027-02-01
+          - <<: *term_q1
+            school_id: 200
+            end_date: 2026-11-02
+          - <<: *term_q1
+            school_id: 200
+            term_name: Q2
+            start_date: 2026-11-03
+            end_date: 2027-02-01
+    expect:
+      rows:
+        - student_number: 1001
+          week_start_monday: 2026-10-26
+          term: Q1
+          is_earned_quarterly_incentive: 1
+        - student_number: 1001
+          week_start_monday: 2026-11-02
+          term: Q2
+          is_earned_quarterly_incentive: 0
+        - student_number: 1002
+          week_start_monday: 2026-10-26
+          term: Q1
+          is_earned_quarterly_incentive: 1
+        - student_number: 1002
+          week_start_monday: 2026-11-02
+          term: Q2
+          is_earned_quarterly_incentive: 0

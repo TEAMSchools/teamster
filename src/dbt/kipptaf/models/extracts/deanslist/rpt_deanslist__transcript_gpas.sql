@@ -52,4 +52,5 @@ select
     cumulative_y1_gpa as `GPA_Y1_weighted`,
     cumulative_y1_gpa_unweighted as `GPA_Y1_unweighted`,
 from {{ ref("int_extracts__student_enrollments") }}
-where rn_undergrad = 1
+-- TODO(#5181): Miami stays out until this DeansList feed is reviewed for it.
+where rn_undergrad = 1 and region != 'Miami'

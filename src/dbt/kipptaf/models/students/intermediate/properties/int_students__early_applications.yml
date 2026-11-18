@@ -1,0 +1,240 @@
+models:
+  - name: int_students__early_applications
+    description:
+      One row per Overgrad college application whose deadline type is early
+      (early action, early action II, early decision, early decision II, or
+      single-choice early action), across every graduating class and school.
+      Also keeps applications with no deadline type, with is_early false, so the
+      tracker can show counselors a submitted application that cannot count as
+      early until its deadline type is filled in. Classifies each early
+      application as ED or EA, flags whether it was submitted, and attaches the
+      college's 6-year URM graduation rate from the Salesforce account matched
+      on IPEDS id. Feeds the KIPP Forward early apps tracker.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - _dbt_source_project
+              - admission_id
+          config:
+            severity: error
+    columns:
+      - name: _dbt_source_project
+        data_type: string
+        description: District code location the Overgrad record came from.
+      - name: admission_id
+        data_type: int64
+        description: Overgrad admission (application) id.
+      - name: overgrad_student_id
+        data_type: int64
+        description: Overgrad student id of the applicant.
+      - name: university_id
+        data_type: int64
+        description: Overgrad university id of the college applied to.
+      - name: university_name
+        data_type: string
+        description: Name of the college applied to, from Overgrad.
+        config:
+          meta:
+            contains_pii: true
+      - name: due_date_type
+        data_type: string
+        description:
+          Overgrad deadline type of the application. Null when not filled in.
+        config:
+          meta:
+            contains_pii: true
+      - name: is_early
+        data_type: boolean
+        description:
+          True when the deadline type is one of the 5 early types. False when
+          the deadline type is missing.
+        config:
+          meta:
+            contains_pii: true
+      - name: application_type
+        data_type: string
+        description:
+          ED for early decision and early decision II deadlines; EA for early
+          action, early action II, and single-choice early action deadlines.
+          Null when the deadline type is missing.
+        config:
+          meta:
+            contains_pii: true
+      - name: due_date
+        data_type: date
+        description: Application deadline date from Overgrad.
+        config:
+          meta:
+            contains_pii: true
+      - name: application_status
+        data_type: string
+        description:
+          Overgrad application status, for example Applied or Will Apply.
+        config:
+          meta:
+            contains_pii: true
+      - name: is_submitted
+        data_type: boolean
+        description:
+          True when the status is Applied or later (Accepted, Denied, Deferred,
+          Waitlisted, Enrolled). Will Apply, Withdrew, and Did Not Apply are not
+          submitted.
+        config:
+          meta:
+            contains_pii: true
+      - name: urm_graduation_rate
+        data_type: numeric
+        description:
+          Adjusted 6-year graduation rate for underrepresented minority
+          students, on a 0 to 100 scale, from the Salesforce account whose NCES
+          id matches the college's IPEDS id. A college whose Salesforce accounts
+          carry the same rate gets that rate. Null when no account matches, the
+          account has no rate, or 2 accounts disagree (see
+          has_conflicting_rate).
+      - name: has_conflicting_rate
+        data_type: boolean
+        description:
+          True when 2 Salesforce accounts for the college carry different URM
+          rates. The rate is left null so the college never counts toward a URM
+          bar until someone fixes the accounts.
+      - name: is_full_need
+        data_type: boolean
+        description:
+          Whether the college meets full demonstrated financial need. Always
+          true until a full-need source is added, so every college counts as
+          full need.
+      - name: updated_at
+        data_type: timestamp
+        description: When Overgrad last updated the application.
+
+unit_tests:
+  - name: test_int_students__early_applications_classification
+    model: int_students__early_applications
+    description:
+      Keeps early deadline types and missing deadline types, drops regular and
+      priority, labels ED and EA, marks Applied and Accepted as submitted but
+      not Will Apply or Withdrew, and joins 1 URM rate per IPEDS id even when 2
+      Salesforce accounts share it.
+    given:
+      - input: ref("int_overgrad__admissions")
+        rows:
+          - id: 1
+            student__id: 10
+            _dbt_source_project: kippnewark
+            university__id: 100
+            university__ipeds_id: 111
+            university_name: Example College A
+            due_date__type: early_decision
+            status: Applied
+            due_date__date: 2026-11-01
+            updated_at: 2026-10-28T13:00:00Z
+          - id: 2
+            student__id: 10
+            _dbt_source_project: kippnewark
+            university__id: 200
+            university__ipeds_id: 222
+            university_name: Example College B
+            due_date__type: early_decision_2
+            status: Will Apply
+            due_date__date: 2027-01-01
+            updated_at: 2026-10-28T13:00:00Z
+          - id: 3
+            student__id: 10
+            _dbt_source_project: kippnewark
+            university__id: 300
+            university__ipeds_id: 333
+            university_name: Example College C
+            due_date__type: single_choice_early_action
+            status: Accepted
+            due_date__date: 2026-11-01
+            updated_at: 2026-10-28T13:00:00Z
+          - id: 4
+            student__id: 10
+            _dbt_source_project: kippnewark
+            university__id: 400
+            university__ipeds_id: 444
+            university_name: Example College D
+            due_date__type: early_action
+            status: Withdrew
+            due_date__date: 2026-11-01
+            updated_at: 2026-10-28T13:00:00Z
+          - id: 5
+            student__id: 10
+            _dbt_source_project: kippnewark
+            university__id: 500
+            university__ipeds_id: 555
+            university_name: Example College E
+            due_date__type: regular
+            status: Applied
+            due_date__date: 2027-01-15
+            updated_at: 2026-10-28T13:00:00Z
+          - id: 6
+            student__id: 10
+            _dbt_source_project: kippnewark
+            university__id: 600
+            university__ipeds_id: 666
+            university_name: Example College F
+            due_date__type: priority
+            status: Applied
+            due_date__date: 2026-12-01
+            updated_at: 2026-10-28T13:00:00Z
+          - id: 7
+            student__id: 10
+            _dbt_source_project: kippnewark
+            university__id: 700
+            university__ipeds_id: 777
+            university_name: Example College G
+            due_date__type: null
+            status: Applied
+            due_date__date: null
+            updated_at: 2026-10-28T13:00:00Z
+      - input: ref("stg_kippadb__account")
+        rows:
+          - nces_id: 111
+            adjusted_6_year_minority_graduation_rate: 80.0
+          - nces_id: 111
+            adjusted_6_year_minority_graduation_rate: 80.0
+          - nces_id: 333
+            adjusted_6_year_minority_graduation_rate: null
+          - nces_id: 222
+            adjusted_6_year_minority_graduation_rate: 70.0
+          - nces_id: 222
+            adjusted_6_year_minority_graduation_rate: 75.0
+    expect:
+      rows:
+        - admission_id: 1
+          is_early: true
+          application_type: ED
+          is_submitted: true
+          urm_graduation_rate: 80.0
+          has_conflicting_rate: false
+          is_full_need: true
+        - admission_id: 2
+          is_early: true
+          application_type: ED
+          is_submitted: false
+          urm_graduation_rate: null
+          has_conflicting_rate: true
+          is_full_need: true
+        - admission_id: 3
+          is_early: true
+          application_type: EA
+          is_submitted: true
+          urm_graduation_rate: null
+          has_conflicting_rate: false
+          is_full_need: true
+        - admission_id: 4
+          is_early: true
+          application_type: EA
+          is_submitted: false
+          urm_graduation_rate: null
+          has_conflicting_rate: false
+          is_full_need: true
+        - admission_id: 7
+          is_early: false
+          application_type: null
+          is_submitted: true
+          urm_graduation_rate: null
+          has_conflicting_rate: false
+          is_full_need: true

@@ -15,6 +15,72 @@ models:
       than becoming null. The model produces ~170 string columns; only the
       fields consumed by the Focus extracts and the typed (boolean / array)
       fields are documented below.
+    data_tests:
+      - dbt_utils.expression_is_true:
+          name: int_finalsite__contact_custom_attributes_emrg_has_last_name
+          description: >-
+            A Finalsite emergency contact (`emrg_1` to `emrg_4`) has a first
+            name but no last name. In Miami the Focus contacts feed drops the
+            contact, because Focus requires a last name. In Newark, Camden and
+            Paterson the ParentSquare, DeansList and Clever feeds send it with a
+            blank last name. To fix, fill in the emergency contact's last name
+            on the student's Finalsite record.
+          arguments:
+            expression: |
+              not (
+                  (
+                      coalesce(emrg_1_name_first_name, '') != ''
+                      and coalesce(emrg_1_name_last_name, '') = ''
+                  )
+                  or (
+                      coalesce(emrg_2_name_first_name, '') != ''
+                      and coalesce(emrg_2_name_last_name, '') = ''
+                  )
+                  or (
+                      coalesce(emrg_3_name_first_name, '') != ''
+                      and coalesce(emrg_3_name_last_name, '') = ''
+                  )
+                  or (
+                      coalesce(emrg_4_name_first_name, '') != ''
+                      and coalesce(emrg_4_name_last_name, '') = ''
+                  )
+              )
+          config:
+            severity: warn
+      - dbt_utils.expression_is_true:
+          name: int_finalsite__contact_custom_attributes_emrg_has_relationship
+          description: >-
+            A Finalsite emergency contact (`emrg_1` to `emrg_4`) has a first
+            name but no relationship to the student, in either the pick-list or
+            the free-text relationship field. The downstream contact feeds send
+            the contact with no relationship. To fix, set the emergency
+            contact's relationship on the student's Finalsite record.
+          arguments:
+            expression: |
+              not (
+                  (
+                      coalesce(emrg_1_name_first_name, '') != ''
+                      and coalesce(emrg_1_relationship_ss, '') = ''
+                      and coalesce(emrg_1_relationship_txt, '') = ''
+                  )
+                  or (
+                      coalesce(emrg_2_name_first_name, '') != ''
+                      and coalesce(emrg_2_relationship_ss, '') = ''
+                      and coalesce(emrg_2_relationship_txt, '') = ''
+                  )
+                  or (
+                      coalesce(emrg_3_name_first_name, '') != ''
+                      and coalesce(emrg_3_relationship_ss, '') = ''
+                      and coalesce(emrg_3_relationship_txt, '') = ''
+                  )
+                  or (
+                      coalesce(emrg_4_name_first_name, '') != ''
+                      and coalesce(emrg_4_relationship_ss, '') = ''
+                      and coalesce(emrg_4_relationship_txt, '') = ''
+                  )
+              )
+          config:
+            severity: warn
     columns:
       - name: finalsite_enrollment_id
         data_type: string

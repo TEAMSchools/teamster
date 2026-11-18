@@ -45,7 +45,7 @@ inner join
     and co.schoolid = rt.school_id
     and rt.type = 'RT'
 left join
-    {{ ref("int_reporting__promotional_status") }} as ps
+    {{ ref("int_students__promotional_status") }} as ps
     on co.student_number = ps.student_number
     and co.academic_year = ps.academic_year
     and rt.name = ps.term_name
@@ -53,3 +53,5 @@ where
     co.academic_year = {{ var("current_academic_year") }}
     and co.rn_year = 1
     and co.enroll_status = 0
+    -- TODO(#6265): Miami has no policy rows until its integrations are complete
+    and co.region != 'Miami'

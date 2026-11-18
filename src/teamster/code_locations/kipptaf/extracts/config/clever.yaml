@@ -29,6 +29,8 @@ assets:
       format:
         header_replacements:
           ext__gifted: ext.gifted
+          ext__district_sisid: ext.district_sisid
+          ext__school_sisid: ext.school_sisid
   - query_config:
       type: schema
       value:

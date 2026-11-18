@@ -13,9 +13,20 @@ with
                     regexp_replace(measurement_name, r'[&\-]', ''), r':.*', ''
                 )
             ) as score_measurement_shortname,
+
+            -- Grow strands holding the AY2026 core values, which replaced S&O
+            if(
+                logical_or(
+                    strand_name in ('Values', 'Professionalism and Punctuality')
+                ) over (
+                    partition by observer_employee_number, academic_year, term_code
+                ),
+                'etr_values',
+                'etr_so'
+            ) as measure_set,
         from {{ ref("int_performance_management__observation_details") }}
         where
-            rubric_name in ('Coach ETR', 'Coach ETR and Reflection: Part 1 - Scores')
+            observation_type_abbreviation in ('PM', 'PMS')
             and row_score is not null
             and academic_year >= 2023
     ),
@@ -26,6 +37,7 @@ with
             academic_year,
             term_code,
             term_num,
+            measure_set,
             etr1a,
             etr1b,
             etr2a,
@@ -53,6 +65,13 @@ with
             so06,
             so07,
             so08,
+            excellence,
+            fun,
+            kid_focus,
+            presence,
+            punctuality,
+            radical_love,
+            team,
         from
             measures_long pivot (
                 avg(row_score_value)
@@ -83,7 +102,14 @@ with
                     'SO05',
                     'SO06',
                     'SO07',
-                    'SO08'
+                    'SO08',
+                    'EXCELLENCE' as excellence,
+                    'FUN' as fun,
+                    'KID FOCUS' as kid_focus,
+                    'PRESENCE' as presence,
+                    'PUNCTUALITY' as punctuality,
+                    'RADICAL LOVE' as radical_love,
+                    'TEAM' as team
                 )
             )
     ),
@@ -96,9 +122,7 @@ with
 
             avg(observation_score) as overall_score,
         from {{ ref("int_performance_management__observation_details") }}
-        where
-            rubric_name in ('Coach ETR', 'Coach ETR and Reflection: Part 1 - Scores')
-            and academic_year >= 2023
+        where observation_type_abbreviation in ('PM', 'PMS') and academic_year >= 2023
         group by observer_employee_number, academic_year, term_code
     )
 
@@ -107,6 +131,7 @@ select
     p.academic_year,
     p.term_code as form_term,
     p.term_num,
+    p.measure_set,
     p.etr1a,
     p.etr1b,
     p.etr2a,
@@ -134,6 +159,13 @@ select
     p.so06 as so6,
     p.so07 as so7,
     p.so08 as so8,
+    p.excellence,
+    p.fun,
+    p.kid_focus,
+    p.presence,
+    p.punctuality,
+    p.radical_love,
+    p.team,
 
     m.overall_score,
 from pivots as p

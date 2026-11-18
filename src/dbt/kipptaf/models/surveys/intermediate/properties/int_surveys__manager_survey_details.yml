@@ -1,5 +1,10 @@
 models:
   - name: int_surveys__manager_survey_details
+    description: >-
+      Manager Survey answers at 1 row per submission and question, with the
+      respondent and the staff member the submission rates. Covers live Google
+      Forms submissions and the historic Alchemer Manager archive (survey_id
+      historic_alchemer_Manager_survey).
     config:
       materialized: table
       # 175k rows re-derived from 7 base tables on each read — 0.35 GiB per

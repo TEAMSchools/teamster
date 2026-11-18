@@ -20,6 +20,8 @@ models:
               - expected_scope
               - expected_grade_level
               - expected_score_type
+          config:
+            severity: error
     columns:
       - name: academic_year
         data_type: int64

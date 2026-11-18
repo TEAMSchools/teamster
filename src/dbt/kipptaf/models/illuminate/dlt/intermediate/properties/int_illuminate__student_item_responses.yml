@@ -2,14 +2,20 @@ models:
   - name: int_illuminate__student_item_responses
     description: >-
       Item-level student assessment responses enriched with question metadata,
-      answer labels, and scoring. One row per student per question per
-      assessment attempt. Excludes responses to soft-deleted fields.
+      answer labels, and scoring. One row per student assessment response — a
+      student's answer to one question in one sitting; staging keeps one sitting
+      per student and assessment. Inner joins drop responses without a matching
+      response, field response, or field row, including responses to
+      soft-deleted fields.
+    config:
+      meta:
+        contains_pii: true
     columns:
       - name: student_assessment_response_id
         data_type: int64
         description: >-
-          Primary key, from students_assessments_responses. Unique per student
-          per question per assessment attempt.
+          Primary key, from students_assessments_responses. One row per
+          student's answer to one question in one sitting.
         data_tests:
           - unique:
               config:
@@ -48,7 +54,9 @@ models:
         description: Maximum points possible for this question.
       - name: factor
         data_type: float64
-        description: Weight multiplier applied to points.
+        description: >-
+          Weight multiplier Illuminate assigns to the question. Not applied in
+          percent_correct.
       - name: field_order
         data_type: int64
         description: Display order of this question within the assessment.
@@ -73,5 +81,5 @@ models:
       - name: percent_correct
         data_type: float64
         description: >-
-          Ratio of points to maximum (via safe_divide). NULL when points or
-          maximum is NULL. 1.0 = full credit; 0.0 = no credit.
+          Ratio of points to maximum (via safe_divide). Null when points or
+          maximum is null or maximum is 0. 1.0 is full credit; 0.0 is no credit.

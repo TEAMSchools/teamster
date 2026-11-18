@@ -38,6 +38,8 @@ monthly Agent-SDK credit pool.
 
 import argparse
 import asyncio
+import hashlib
+import itertools
 import json
 import sys
 from pathlib import Path
@@ -47,6 +49,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import arms as arms_mod  # noqa: E402
 import scorer as scorer_mod  # noqa: E402
+import traps  # noqa: E402
 import yaml  # noqa: E402
 
 # Claude Code model aliases (resolve to claude-sonnet-4-6 / claude-haiku-4-5).
@@ -54,7 +57,9 @@ DEFAULT_MODELS = ["sonnet", "haiku"]
 DEFAULT_REPS = 5
 DEFAULT_CONCURRENCY = 5  # keep small to stay under subscription rate limits
 MAX_TURNS = 12
-PROMPTS_PATH = Path(__file__).resolve().parent / "prompts.yaml"
+EVAL_DIR = Path(__file__).resolve().parent
+PROMPT_FILES = ["prompts.yaml", "prompts_assessment.yaml"]
+FAMILY4_ARMS = ["A4_pre", "B4_post", "C4_skill"]
 DEFAULT_OUT = Path(__file__).resolve().parent / "out" / "results_cc.jsonl"
 
 # Non-zero, internally consistent stub so the model answers in one load call.
@@ -69,15 +74,26 @@ _LOAD_RESULT = {
         }
     ]
 }
+# A plausible compiled query: a bare "SELECT 1" reads to the model as an
+# access denial and sends it chasing permissions.
 _SQL_RESULT = {
-    "sql": {"status": "ok", "sql": ["SELECT 1", []], "query_type": "regular"}
+    "sql": {
+        "status": "ok",
+        "sql": [
+            "SELECT ... FROM `kipptaf_marts`.`fct_assessment_scores_enrollment_scoped`"
+            " AS `student_assessment_scores` ... GROUP BY 1",
+            [],
+        ],
+        "query_type": "regular",
+    }
 }
 
 
-def load_prompts() -> list[dict[str, Any]]:
-    prompts = yaml.safe_load(PROMPTS_PATH.read_text(encoding="utf-8"))
+def load_prompts(name: str = "prompts.yaml") -> list[dict[str, Any]]:
+    path = EVAL_DIR / name
+    prompts = yaml.safe_load(path.read_text(encoding="utf-8"))
     if not isinstance(prompts, list) or not prompts:
-        raise RuntimeError(f"no prompts loaded from {PROMPTS_PATH}")
+        raise RuntimeError(f"no prompts loaded from {path}")
     return prompts
 
 
@@ -88,11 +104,23 @@ def parse_args() -> argparse.Namespace:
         "--arms",
         nargs="+",
         default=["A_baseline", "B_descriptions"],
-        choices=["A_baseline", "B_descriptions"],
+        choices=[
+            "A_baseline",
+            "B_descriptions",
+            *FAMILY4_ARMS,
+        ],
+        help=(
+            "A/B vary the load docstring; "
+            "A4/B4/C4 are family 4 (use with --prompts prompts_assessment.yaml)"
+        ),
     )
+    p.add_argument("--prompts", default="prompts.yaml", choices=PROMPT_FILES)
     p.add_argument("--reps", type=int, default=DEFAULT_REPS)
     p.add_argument("--concurrency", type=int, default=DEFAULT_CONCURRENCY)
     p.add_argument("--limit", type=int, default=0, help="cap prompts (0 = all)")
+    p.add_argument(
+        "--prompt-ids", nargs="+", default=None, help="run only these prompt ids"
+    )
     p.add_argument("--out", type=Path, default=DEFAULT_OUT)
     p.add_argument("--dry-run", action="store_true", help="no model calls")
     p.add_argument(
@@ -101,18 +129,134 @@ def parse_args() -> argparse.Namespace:
     return p.parse_args()
 
 
-def _make_tools(tool_desc: dict[str, str]) -> dict[str, Any]:
-    """Build in-process SDK tools; descriptions reuse the real server's text."""
+# Values per assessment-view dimension, so canned rows follow the query. A
+# single fixed row for every query made models notice the fake data and probe
+# with other filters, which tripped traps the text had avoided.
+_DIMENSION_VALUES = {
+    "assessment_type": ["iready", "dibels", "star"],
+    "administration_period": ["BOY", "MOY", "EOY"],
+    "academic_subject": ["Math", "Reading"],
+    "region_name": ["Newark", "Camden", "Miami"],
+    "grade_level": ["3", "4", "5"],
+    "module_code": ["QA1", "QA2", "QA3"],
+    "module_type": ["QA", "MQQ", "CRQ"],
+    "proficiency_level": [
+        "1 Grade Level Below",
+        "Early On Grade Level",
+        "Mid or Above Grade Level",
+    ],
+    "academic_year_label": ["2025-2026"],
+    "academic_year": ["2025"],
+}
+
+
+# The eval runs in October 2026, so academic year 2026-27 has only its BOY round.
+# Returning MOY or EOY rows for it made models flag the data as impossible and
+# stop, which scored as a trap the Cube text had not caused.
+_IN_PROGRESS_YEARS = {"2026", "2026-2027"}
+_ROUNDS_SO_FAR = {"BOY"}
+
+
+def _round_not_yet_given(values: dict[str, list[str]]) -> bool:
+    years = values.get("academic_year", []) + values.get("academic_year_label", [])
+    periods = values.get("administration_period", [])
+    return (
+        bool(years)
+        and all(y in _IN_PROGRESS_YEARS for y in years)
+        and bool(periods)
+        and not any(p in _ROUNDS_SO_FAR for p in periods)
+    )
+
+
+def _shaped_rows(query: dict[str, Any]) -> dict[str, Any]:
+    """Deterministic rows shaped by the query: one row per value combination of
+    its dimensions (filter values echoed where the query pins them), with
+    plausible measure values seeded from the query text."""
+    seed = int(
+        hashlib.sha256(json.dumps(query, sort_keys=True).encode()).hexdigest(), 16
+    )
+    pinned = {
+        str(f.get("member", "")).split(".")[-1]: [str(v) for v in f.get("values") or []]
+        for f in traps._flatten_filters(query.get("filters"))
+        if f.get("operator") in ("equals", "in", "inArray") and f.get("values")
+    }
+    dims = [d for d in query.get("dimensions") or [] if isinstance(d, str)]
+    choices = []
+    for d in dims:
+        short = d.split(".")[-1]
+        choices.append(pinned.get(short) or _DIMENSION_VALUES.get(short, ["A", "B"]))
+    rows = []
+    combos = itertools.product(*choices) if dims else [()]
+    for i, combo in enumerate(combos):
+        values = dict(pinned)
+        values.update({d.split(".")[-1]: [v] for d, v in zip(dims, combo, strict=True)})
+        if _round_not_yet_given(values):
+            continue
+        row: dict[str, str] = dict(zip(dims, combo, strict=True))
+        for j, m in enumerate(query.get("measures") or []):
+            x = (seed >> (8 * ((i * 7 + j) % 24))) & 0xFF
+            short = str(m).split(".")[-1]
+            row[m] = (
+                f"{0.25 + x / 600:.2f}"
+                if short.startswith("pct_")
+                else str(300 + x * 7)
+            )
+        rows.append(row)
+    if not rows:
+        return _empty_rows(query)
+    return {"data": rows[:24]}
+
+
+def _empty_rows(query: dict[str, Any]) -> dict[str, Any]:
+    """An empty slice in Cube's shape: no rows when the query groups by a
+    dimension or a time grain, else 1 row with a null per measure."""
+    grains = [
+        t.get("granularity")
+        for t in query.get("timeDimensions") or []
+        if isinstance(t, dict)
+    ]
+    if query.get("dimensions") or any(grains):
+        return {"data": []}
+    return {"data": [{m: None for m in query.get("measures") or []}]}
+
+
+def _stub_load(query: Any, arm: dict[str, Any], server: Any) -> dict[str, Any]:
+    """Canned load result: attendance rows for the crosswalk families; for the
+    assessment view, an empty slice on a Paterson query (with the server's
+    empty-result note on drained arms only) and rows shaped by the query
+    otherwise (`_shaped_rows`)."""
+    if not isinstance(
+        query, dict
+    ) or "student_assessment_scores_view" not in json.dumps(query):
+        return _LOAD_RESULT
+    if traps.is_paterson_query(query):
+        empty = _empty_rows(query)
+        if arm.get("empty_note"):
+            return server._with_empty_result_note(empty, query)
+        return empty
+    return _shaped_rows(query)
+
+
+def _make_tools(
+    tool_desc: dict[str, str], arm: dict[str, Any], server: Any
+) -> dict[str, Any]:
+    """Build in-process SDK tools; descriptions reuse the real server's text.
+
+    The arm's own "meta" catalog is served when it has one (the family 4
+    arms); the A/B arms serve arms.META_STUB.
+    """
     # trunk-ignore(pyright/reportMissingImports): claude-agent-sdk is a runtime --with dep
     from claude_agent_sdk import tool
 
     @tool("meta", tool_desc["meta"], {})
     async def meta_tool(_args: dict[str, Any]) -> dict[str, Any]:
-        return {"content": [{"type": "text", "text": json.dumps(arms_mod.META_STUB)}]}
+        payload = arm.get("meta", arms_mod.META_STUB)
+        return {"content": [{"type": "text", "text": json.dumps(payload)}]}
 
     @tool("load", tool_desc["load"], {"query": dict})
     async def load_tool(_args: dict[str, Any]) -> dict[str, Any]:
-        return {"content": [{"type": "text", "text": json.dumps(_LOAD_RESULT)}]}
+        result = _stub_load(_args.get("query"), arm, server)
+        return {"content": [{"type": "text", "text": json.dumps(result)}]}
 
     @tool("sql", tool_desc["sql"], {"query": dict})
     async def sql_tool(_args: dict[str, Any]) -> dict[str, Any]:
@@ -167,6 +311,13 @@ async def run_one(
     tool_calls: list[str] = []  # every tool name, in order — to diagnose loops
     text_parts: list[str] = []
     error: str | None = None
+    # "success", or "error_max_turns" / "error_during_execution" etc. The CLI
+    # reports the turn limit here before the SDK raises on the exit.
+    subtype: str | None = None
+    usage: dict[str, Any] = {}
+    cost_usd: float | None = None
+    num_turns: int | None = None
+    duration_ms: int | None = None
 
     try:
         async for message in query(prompt=prompt, options=options):
@@ -178,8 +329,14 @@ async def run_one(
                             load_queries.append(block.input.get("query"))
                     elif isinstance(block, TextBlock):
                         text_parts.append(block.text)
-            elif isinstance(message, ResultMessage) and message.result:
-                text_parts.append(message.result)
+            elif isinstance(message, ResultMessage):
+                if message.result:
+                    text_parts.append(message.result)
+                usage = message.usage or {}
+                subtype = message.subtype
+                cost_usd = message.total_cost_usd
+                num_turns = message.num_turns
+                duration_ms = message.duration_ms
     except Exception as exc:  # noqa: BLE001 - record, don't crash the sweep
         error = f"{type(exc).__name__}: {exc}"
 
@@ -188,6 +345,14 @@ async def run_one(
         "tool_calls": tool_calls,
         "final_text": "\n".join(text_parts),
         "error": error,
+        "subtype": subtype,
+        "input_tokens": usage.get("input_tokens"),
+        "output_tokens": usage.get("output_tokens"),
+        "cache_read_tokens": usage.get("cache_read_input_tokens"),
+        "cache_write_tokens": usage.get("cache_creation_input_tokens"),
+        "cost_usd": cost_usd,
+        "num_turns": num_turns,
+        "duration_ms": duration_ms,
     }
 
 
@@ -220,6 +385,7 @@ async def sweep(
     concurrency: int,
     tool_desc_by_arm: dict[str, dict[str, str]],
     out_path: Path,
+    server: Any,
 ) -> list[dict[str, Any]]:
     # trunk-ignore(pyright/reportMissingImports): claude-agent-sdk is a runtime --with dep
     from claude_agent_sdk import create_sdk_mcp_server
@@ -229,7 +395,7 @@ async def sweep(
     # so the servers must differ per arm — not just the system prompt.
     arm_servers = {}
     for name in arm_names:
-        arm_tools = _make_tools(tool_desc_by_arm[name])
+        arm_tools = _make_tools(tool_desc_by_arm[name], arm_defs[name], server)
         arm_servers[name] = create_sdk_mcp_server(
             name="cube",
             version="1.0.0",
@@ -237,12 +403,14 @@ async def sweep(
         )
     semaphore = asyncio.Semaphore(concurrency)
 
+    # Arm innermost: a session limit mid-sweep then cuts every arm at about the
+    # same prompt, instead of dropping whole prompts from the last arm only.
     jobs = [
         (model, arm_name, prompt, rep)
         for model in models
-        for arm_name in arm_names
         for prompt in prompts
         for rep in range(reps)
+        for arm_name in arm_names
     ]
     print(
         f"running {len(jobs)} conversations via Claude Agent SDK "
@@ -275,6 +443,8 @@ async def sweep(
         rec["final_text"] = result.get("final_text", "")
         rec["load_queries"] = result.get("load_queries", [])
         rec["tool_calls"] = result.get("tool_calls", [])
+        for field in scorer_mod._COST_FIELDS:
+            rec[field] = result.get(field)
         async with write_lock:
             out_fh.write(json.dumps(rec) + "\n")
             out_fh.flush()
@@ -296,19 +466,31 @@ def main() -> None:
     args = parse_args()
     server = arms_mod.load_server()
     arm_defs = arms_mod.build_arms(server)
+    if args.prompts == "prompts_assessment.yaml":
+        arm_defs.update(arms_mod.build_assessment_arms(server))
+    elif set(args.arms) & set(FAMILY4_ARMS):
+        raise SystemExit("family 4 arms need --prompts prompts_assessment.yaml")
     tool_desc_by_arm = {
         name: {t["name"]: t["description"] for t in arm_defs[name]["tools"]}
         for name in arm_defs
     }
-    prompts = load_prompts()
+    prompts = load_prompts(args.prompts)
 
     if args.smoke:
         prompts = prompts[:1]
-        args.arms = ["B_descriptions"]
+        # The assessment prompts need a family 4 arm's catalog, not the
+        # attendance stub.
+        assessment = args.prompts == "prompts_assessment.yaml"
+        args.arms = ["B4_post" if assessment else "B_descriptions"]
         args.models = args.models[:1]
         args.reps = 1
     if args.limit:
         prompts = prompts[: args.limit]
+    if args.prompt_ids:
+        unknown = set(args.prompt_ids) - {p["id"] for p in prompts}
+        if unknown:
+            raise SystemExit(f"unknown prompt ids: {sorted(unknown)}")
+        prompts = [p for p in prompts if p["id"] in args.prompt_ids]
 
     if args.dry_run:
         do_dry_run(arm_defs, args.arms, prompts)
@@ -325,6 +507,7 @@ def main() -> None:
             concurrency=args.concurrency,
             tool_desc_by_arm=tool_desc_by_arm,
             out_path=args.out,
+            server=server,
         )
     )
     print(f"\nwrote {len(records)} records to {args.out}\n", file=sys.stderr)
@@ -337,6 +520,8 @@ def main() -> None:
         )
 
     print(scorer_mod.format_summary(scorer_mod.aggregate(records)))
+    print()
+    print(scorer_mod.format_cost_summary(records))
 
 
 if __name__ == "__main__":

@@ -1,8 +1,5 @@
 # CLAUDE.md — `teamster/core/`
 
-Shared infrastructure used by every code location and library. Nothing here is
-integration-specific — it is the foundation all other modules build on.
-
 ## Files
 
 ### `resources.py`
@@ -60,8 +57,8 @@ Four dbt-specific `AutomationCondition` builders, all sharing a common skeleton
 via `_build_dbt_condition()`:
 
 - `dbt_view_automation_condition()` — for VIEW models: re-runs on
-  `newly_missing`, `code_version_changed`, or `execution_failed`. Intentionally
-  omits `any_deps_updated` since views are computed on read.
+  `newly_missing` or `code_version_changed`. Intentionally omits
+  `any_deps_updated` since views are computed on read.
 - `dbt_union_relations_automation_condition()` — for views using the
   `union_relations` macro: adds one trigger to the view condition, firing on the
   tick a parent's post-code-change materialization lands (parent's own code or
@@ -75,10 +72,35 @@ via `_build_dbt_condition()`:
   model via `meta.dagster.automation_condition.cron_schedule` (tables only; the
   translator ignores it on views). Timezone defaults to the code location's
   `LOCAL_TIMEZONE` via the translator.
+- `with_failed_deps_guard(condition)` — wraps a table or cron condition so the
+  model is held while any dep partition's latest attempt is failed. Opted into
+  per model via `meta.dagster.automation_condition.block_on_failed_deps: true`
+  (tables only). It checks every partition of a partitioned dep, not a recent
+  window, so one old failed partition holds the model until someone reruns it;
+  the held triggers stay armed, so the rerun rebuilds it. A partition that can
+  never succeed holds it for good: once the last good file for that date is
+  acceptable, report a materialization for that partition in the Dagster UI to
+  release it. A canceled run does not count as failed.
+- `allow_missing_deps` — a flag on the table and cron builders that drops the
+  `any_deps_missing` guard. Opted into per model via
+  `meta.dagster.automation_condition.allow_missing_deps: true` (tables only).
+  Without it, an unpartitioned model over a daily-partitioned dep freezes for
+  good on one never-materialized partition. Use it only where each partition is
+  a full snapshot, and pair it with a freshness policy so a skipped day still
+  alerts (`stg_edplan__njsmart_powerschool`).
 - `dbt_table_automation_condition()` — for TABLE models: also triggers on
   upstream data changes, including through intermediate views via
   `_build_any_ancestor_updated()` (recursive `any_deps_match` up to
-  `_MAX_VIEW_DEPTH` levels, currently 10)
+  `_MAX_VIEW_DEPTH` levels)
+
+The table and cron triggers, like the union_relations one, reset on
+`newly_requested` only. Stock `eager()` also resets on `newly_updated`, so an
+upstream update that lands during the asset's own run is cleared by that run's
+completion and the asset keeps stale data. Do not add `newly_updated` back to
+these resets. Same-run chains do not double-fire: `any_deps_updated` skips
+updates from runs whose `asset_selection` includes this asset. Unit tests must
+create such runs with `execute_in_process(asset_selection=...)`, because
+`materialize()` records an empty selection.
 
 **Unsynced badge behavior**: Dagster's "unsynced" indicator is driven by its
 data versioning system, not the automation condition. When an upstream table
@@ -100,18 +122,10 @@ comparing the wrapper's stored `input_data_version/<upstream>` materialization
 tag to the upstream's current `data_version`. `code_version_changed()` is true
 for exactly one tick (cursor compare), so never build a gate on it alone.
 
-**No dep-code-version gate**: `_build_dbt_condition()` does NOT block
-materialization when a direct dep has
-`code_version_changed().since(newly_updated())`. A previous gate did, but the
-operator is cursor-based — its SINCE memory could capture phantom "true" state
-from any past tick (sensor restart, condition change, manifest re-parse) and
-never reset on a FRESH dep (no `newly_updated` event to clear it), producing
-permanent deadlocks. The in-CL race the gate nominally prevented is already
-covered by dbt's intra-build DAG ordering plus `any_deps_missing` /
-`any_deps_in_progress`; cross-CL races fail at BigQuery query time (recoverable,
-not silent corruption). If a downstream table looks "stuck," the cause is
-elsewhere — start with `any_deps_missing` / `any_deps_in_progress` evaluator
-nodes.
+Do not add a gate on a dep's `code_version_changed().since(newly_updated())`:
+the cursor-based operator can latch true and never reset on a fresh dep, which
+deadlocks the model. For a stuck table, start with the `any_deps_missing` /
+`any_deps_in_progress` evaluator nodes.
 
 **Dep fan-out rule**: An unpartitioned dep of a partitioned asset fans out to
 ALL partitions on every materialization. To preserve per-partition triggering,

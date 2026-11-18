@@ -1,5 +1,10 @@
 models:
   - name: stg_adp_workforce_now__pension_and_benefits_enrollments
+    description: >-
+      Benefit and pension enrollments from the ADP Workforce Now SFTP export,
+      one row per position, plan, and enrollment status. The file holds current
+      enrollments only and is replaced on every load, so it keeps no history of
+      past plans.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -8,25 +13,55 @@ models:
               - enrollment_status
               - plan_name
     columns:
-      - name: employee_number
-        data_type: int64
       - name: position_id
         data_type: string
+        description: >-
+          ADP position ID. Joins to the staff roster, which combines a
+          position's active NJ pensions into 1 value.
+        data_tests:
+          - unique:
+              config:
+                severity: warn
+                where: enrollment_status = 'Active' and is_nj_pension
+                description:
+                  A position with more than 1 active NJ pension. End the old
+                  plan's enrollment in ADP Workforce Now.
+      - name: employee_number
+        data_type: int64
+        description: ADP employee number, cast to integer.
       - name: plan_type
         data_type: string
+        description: >-
+          ADP benefit category, such as Medical or Dental. NJ pension plans are
+          filed under Other.
       - name: plan_name
         data_type: string
+        description: >-
+          ADP plan name. The NJ pension plans begin with "NJ Pension -" and name
+          PERS, TPAF, or DCRP.
       - name: coverage_level
         data_type: string
+        description: Coverage level ADP reports for the enrollment.
       - name: effective_date
         data_type: date
+        description: Effective date of the enrollment record, parsed from text.
       - name: enrollment_end_date
         data_type: date
+        description: >-
+          Last date of the enrollment, parsed from text. 9999-12-31 when ADP
+          sends no end date.
       - name: enrollment_start_date
         data_type: date
+        description: First date of the enrollment, parsed from text.
       - name: enrollment_status
         data_type: string
-      - name: rn_enrollment_recent
-        data_type: int64
+        description: ADP enrollment status, such as Active.
+      - name: is_nj_pension
+        data_type: boolean
+        description: >-
+          True for the 3 NJ pension plans (PERS, TPAF, DCRP). Excludes each
+          plan's Contributory Insurance row, whose name also starts with "NJ
+          Pension -".
       - name: source_file_name
         data_type: string
+        description: Name of the SFTP file the row was loaded from.

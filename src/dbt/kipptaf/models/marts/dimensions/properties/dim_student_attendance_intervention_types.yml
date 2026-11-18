@@ -28,11 +28,6 @@ models:
             foreign_key:
               to: ref('dim_regions')
               to_columns: [region_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_regions')
-                field: region_key
 
       - name: family_communication_reason
         data_type: string

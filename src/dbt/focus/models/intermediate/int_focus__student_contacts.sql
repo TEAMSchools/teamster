@@ -26,6 +26,7 @@ with
             max(if(phone_type = 'home', value, null)) as phone_home,
             max(if(phone_type = 'work', value, null)) as phone_work,
             max(if(phone_type = 'daytime', value, null)) as phone_daytime,
+            max(if(phone_type = 'alternate', value, null)) as phone_alternate,
         from phones_ranked
         where type_rank = 1
         group by person_id
@@ -76,6 +77,7 @@ select
     pt.phone_home,
     pt.phone_work,
     pt.phone_daytime,
+    pt.phone_alternate,
 
     -- read off the unfiltered rank, not phones_typed's type_rank = 1 filter.
     -- the overall_rank = 1 row can belong to a phone_type that type_rank has

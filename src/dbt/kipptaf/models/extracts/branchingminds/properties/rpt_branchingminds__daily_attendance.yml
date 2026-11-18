@@ -6,13 +6,18 @@ models:
       category collapses in-school and out-of-school suspension into Absent,
       since Branching Minds' excused/unexcused absence distinction isn't modeled
       anywhere upstream. Drops days where the source recorded no attendance
-      (NULL attendance_value). Scoped to the current academic year only.
+      (NULL attendance_value). Scoped to the current academic year, through
+      yesterday. The upstream fills every scheduled day with a placeholder
+      Present until the register is taken, so today and later are excluded.
     columns:
       - name: event_id
         data_type: string
         description: >-
-          Unique identifier for the attendance record, taken from the underlying
-          attendance fact's surrogate key.
+          Unique identifier for the attendance record — a hash of
+          student_number, district project, and calendar date, the same inputs
+          as student_day_key on fct_student_attendance_enrollment_daily.
+          Branching Minds treats it as the record's identity, so its inputs and
+          their order must never change.
         data_tests:
           - unique:
               config:

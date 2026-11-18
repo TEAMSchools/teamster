@@ -14,4 +14,4 @@ where
     and sr.home_work_location_dagster_code_location != 'kipppaterson'
     and sr.home_work_location_reporting_name is not null
     and sch.name is null
-group by 1
+group by sr.home_work_location_reporting_name

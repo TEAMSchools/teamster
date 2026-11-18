@@ -277,11 +277,12 @@ case was a deletion or a merge on name and datatype is unverified
 
 ## Adjacent tooling, not verified here
 
-**Inferred**, from reading the files, never from a render or a Desktop open. The
-`tableau-dashboard-plugin` (skills `tableau-build`, `tableau-spec`, and
-siblings) generates new workbooks from a spec; it is the tool for building from
-scratch, not for editing an existing workbook. Two of its files may be useful
-inputs to a probe, on the same terms as anything else found in a file:
+**Inferred**, from reading the files, never from a render or a Desktop open. If
+the `tableau-dashboard-plugin` is installed, its skills (`tableau-build`,
+`tableau-spec`, and siblings) generate new workbooks from a spec; it is the tool
+for building from scratch, not for editing an existing workbook. Two of its
+files may be useful inputs to a probe, on the same terms as anything else found
+in a file:
 
 - `skills/tableau-build/scripts/validate_twb_xsd.py` validates a `.twb` against
   the Tableau 2026.1 XSD from `tableau/tableau-document-schemas` and needs

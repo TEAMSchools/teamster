@@ -1,151 +1,388 @@
 models:
   - name: stg_smartrecruiters__applications
+    description: >-
+      Staging layer over the SmartRecruiters (applicant tracking system)
+      applications report, with one row per job application. Columns not listed
+      in the SQL except clause pass through from the source as strings.
+      SmartRecruiters timestamps are UTC with no offset. The datetime columns
+      are those UTC values cast to datetime, the date columns are the UTC
+      calendar day, and the date_local columns are the calendar day in the
+      network's local timezone.
     columns:
       - name: application_id
+        description: Unique SmartRecruiters identifier for the job application.
         data_type: string
         data_tests:
-          - unique
+          - unique:
+              config:
+                severity: error
       - name: application_custom_step
+        description: >-
+          Name of the custom hiring step the application is currently in, if the
+          job uses one.
         data_type: string
       - name: application_field_application_review_score
+        description: Score entered in the application review custom field.
         data_type: string
       - name: application_field_job_title
+        description: >-
+          Job title entered in the application's job title custom field.
         data_type: string
       - name: application_field_phone_interview_score
+        description: >-
+          Recruiter-entered phone interview score from the custom field, as the
+          raw source string. See phone_interview_score for the integer.
         data_type: string
       - name: application_field_resume_score
+        description: >-
+          Recruiter-entered resume score from the custom field, as the raw
+          source string. See resume_score for the integer.
         data_type: string
       - name: application_reason_for_rejection
+        description: Reason recorded when the application was rejected.
         data_type: string
       - name: application_reason_for_withdrawal
+        description: Reason recorded when the application was withdrawn.
         data_type: string
       - name: application_state_in_review_date
+        description: >-
+          UTC timestamp, as a source string, when the application entered the In
+          Review state.
         data_type: string
       - name: application_state_interview_date
+        description: >-
+          UTC timestamp, as a source string, when the application entered the
+          Interview state.
         data_type: string
       - name: application_state_transferred_date
+        description: >-
+          UTC timestamp, as a source string, when the application was
+          transferred to another job.
         data_type: string
       - name: application_state_withdrawn_date
+        description: >-
+          UTC timestamp, as a source string, when the application was withdrawn.
         data_type: string
       - name: application_state
+        description: >-
+          Current high-level stage of the application, such as New, Interview,
+          Offer, Hired, Rejected, or Withdrawn.
         data_type: string
       - name: application_status_before_rejection
+        description: >-
+          Application status the candidate held just before being rejected.
         data_type: string
       - name: application_status_before_withdrawal
+        description: >-
+          Application status the candidate held just before withdrawing.
         data_type: string
       - name: application_status_in_review_performance_task_date
+        description: >-
+          UTC timestamp, as a source string, when the application reached the
+          Performance Task status within In Review.
         data_type: string
       - name: application_status_in_review_resume_review_date
+        description: >-
+          UTC timestamp, as a source string, when the application reached the
+          Resume Review status within In Review.
         data_type: string
       - name: application_status_interview_performance_task_date
+        description: >-
+          UTC timestamp, as a source string, when the application reached the
+          Performance Task status within Interview.
         data_type: string
       - name: application_status
+        description: >-
+          Current detailed status of the application within its state.
         data_type: string
       - name: application_url
+        description: Link to the application in SmartRecruiters.
         data_type: string
       - name: average_rating
+        description: >-
+          Average reviewer rating on the application in SmartRecruiters, cast to
+          numeric.
         data_type: numeric
       - name: candidate_email
+        description: Candidate's email address as entered on the application.
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: candidate_first_and_last_name
+        description: Candidate's full name as entered on the application.
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: candidate_first_name
+        description: Candidate's first name as entered on the application.
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: candidate_id
+        description: SmartRecruiters identifier for the candidate.
         data_type: string
       - name: candidate_last_name
+        description: Candidate's last name as entered on the application.
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: candidate_linkedin_profile_url
+        description: Link to the candidate's LinkedIn profile, if provided.
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: candidate_source_subtype
+        description: >-
+          Finer-grained channel for how the candidate first entered
+          SmartRecruiters.
         data_type: string
       - name: candidate_source_type
+        description: >-
+          Broad channel for how the candidate first entered SmartRecruiters.
         data_type: string
       - name: candidate_source
+        description: >-
+          Specific source, such as a job board or referrer, where the candidate
+          first entered SmartRecruiters.
         data_type: string
       - name: department_internal
+        description: >-
+          Internal department or role family of the job, such as Teacher or
+          Operations.
         data_type: string
       - name: department_org_field_value
+        description: >-
+          Organizational department value of the job, such as School Leadership
+          or Regional Support and Leadership.
         data_type: string
       - name: job_city
+        description: >-
+          City or cities the job is posted for, as entered on the job. Some jobs
+          list several regions in one value.
         data_type: string
       - name: job_title
+        description: Title of the job the candidate applied to.
         data_type: string
       - name: recruiters
+        description: Recruiters assigned to the job.
         data_type: string
       - name: source_subtype
+        description: >-
+          Finer-grained channel for how this application was received.
         data_type: string
       - name: source_type
+        description: >-
+          Broad channel for how this application was received, such as Organic,
+          Paid, or Referrals.
         data_type: string
       - name: source
+        description: >-
+          Specific source, such as a job board or referrer, of this application.
         data_type: string
       - name: hired_datetime
+        description: UTC datetime when the application moved to the Hired state.
         data_type: datetime
       - name: new_datetime
+        description: >-
+          UTC datetime when the application was created and entered the New
+          state.
         data_type: datetime
       - name: lead_datetime
+        description: UTC datetime when the application entered the Lead state.
         data_type: datetime
       - name: offer_datetime
+        description: UTC datetime when the application moved to the Offer state.
         data_type: datetime
       - name: rejected_datetime
+        description: UTC datetime when the application was rejected.
         data_type: datetime
       - name: demo_datetime
+        description: >-
+          UTC datetime when the application reached the Interview Demo status.
         data_type: datetime
       - name: phone_screen_complete_datetime
+        description: >-
+          UTC datetime when the application reached the Phone Screen Complete
+          status.
         data_type: datetime
       - name: phone_screen_requested_datetime
+        description: >-
+          UTC datetime when the application reached the Phone Screen Requested
+          status.
         data_type: datetime
       - name: last_update_datetime
+        description: UTC datetime of the most recent update to the application.
         data_type: datetime
       - name: time_in_application_state_in_review
+        description: >-
+          Days the application has spent in the In Review state, as counted by
+          SmartRecruiters.
         data_type: int64
       - name: time_in_application_state_interview
+        description: >-
+          Days the application has spent in the Interview state, as counted by
+          SmartRecruiters.
         data_type: int64
       - name: time_in_application_state_lead
+        description: >-
+          Days the application has spent in the Lead state, as counted by
+          SmartRecruiters.
         data_type: int64
       - name: time_in_application_state_new
+        description: >-
+          Days the application has spent in the New state, as counted by
+          SmartRecruiters.
         data_type: int64
       - name: time_in_application_state_offered
+        description: >-
+          Days the application has spent in the Offered state, as counted by
+          SmartRecruiters.
         data_type: int64
       - name: time_in_application_status_in_review_resume_review
+        description: >-
+          Days the application has spent in the Resume Review status, as counted
+          by SmartRecruiters.
         data_type: int64
       - name: time_in_application_status_interview_demo
+        description: >-
+          Days the application has spent in the Interview Demo status, as
+          counted by SmartRecruiters.
         data_type: int64
       - name: time_in_application_status_interview_phone_screen_complete
+        description: >-
+          Days the application has spent in the Phone Screen Complete status, as
+          counted by SmartRecruiters.
         data_type: int64
       - name: time_in_application_status_interview_phone_screen_requested
+        description: >-
+          Days the application has spent in the Phone Screen Requested status,
+          as counted by SmartRecruiters.
         data_type: int64
       - name: subject_preference
+        description: >-
+          Candidate's subject preference from the screening question, comma-
+          separated when several are chosen. Defaults to No Preference when
+          unanswered.
         data_type: string
       - name: demo_date
+        description: UTC calendar day of demo_datetime.
         data_type: date
       - name: hired_date
+        description: UTC calendar day of hired_datetime.
         data_type: date
       - name: last_update_date
+        description: UTC calendar day of last_update_datetime.
         data_type: date
       - name: lead_date
+        description: UTC calendar day of lead_datetime.
         data_type: date
       - name: new_date
+        description: UTC calendar day of new_datetime.
         data_type: date
       - name: offer_date
+        description: UTC calendar day of offer_datetime.
         data_type: date
       - name: phone_screen_complete_date
+        description: UTC calendar day of phone_screen_complete_datetime.
         data_type: date
       - name: phone_screen_requested_date
+        description: UTC calendar day of phone_screen_requested_datetime.
         data_type: date
       - name: rejected_date
+        description: UTC calendar day of rejected_datetime.
         data_type: date
       - name: invited_to_selection_day_date
+        description: UTC calendar day of invited_to_selection_day_datetime.
         data_type: date
       - name: invited_to_selection_day_datetime
+        description: >-
+          UTC datetime when the candidate was invited to selection day.
         data_type: datetime
       - name: selection_day_date
+        description: UTC calendar day of selection_day_datetime.
         data_type: date
       - name: selection_day_datetime
+        description: UTC datetime of the candidate's selection day interview.
         data_type: datetime
       - name: resume_score
+        description: >-
+          Recruiter-entered resume score from the custom field, cast to integer.
         data_type: int64
       - name: phone_interview_score
+        description: >-
+          Recruiter-entered phone interview score from the custom field, cast to
+          integer.
         data_type: int64
       - name: school_shared_with
+        description: >-
+          School the candidate was shared with, taken from the Miami field, or
+          the New Jersey field when Miami is empty.
         data_type: string
+      - name: demo_date_local
+        description: demo_datetime converted to the local-timezone calendar day.
+        data_type: date
+      - name: hired_date_local
+        description:
+          hired_datetime converted to the local-timezone calendar day.
+        data_type: date
+      - name: last_update_date_local
+        description: >-
+          last_update_datetime converted to the local-timezone calendar day.
+        data_type: date
+      - name: lead_date_local
+        description: lead_datetime converted to the local-timezone calendar day.
+        data_type: date
+      - name: new_date_local
+        description: new_datetime converted to the local-timezone calendar day.
+        data_type: date
+      - name: offer_date_local
+        description:
+          offer_datetime converted to the local-timezone calendar day.
+        data_type: date
+      - name: phone_screen_complete_date_local
+        description: >-
+          phone_screen_complete_datetime converted to the local-timezone
+          calendar day.
+        data_type: date
+      - name: phone_screen_requested_date_local
+        description: >-
+          phone_screen_requested_datetime converted to the local-timezone
+          calendar day.
+        data_type: date
+      - name: rejected_date_local
+        description: >-
+          rejected_datetime converted to the local-timezone calendar day.
+        data_type: date
+
+unit_tests:
+  - name: unit_stg_smartrecruiters_applications_local_dates
+    description: >-
+      SmartRecruiters timestamps are UTC, so an event at 9:30pm Eastern lands on
+      the next UTC day. The local date columns keep the Eastern calendar day.
+      App 1 arrived Wednesday 9:30pm Eastern and was rejected Monday 9am
+      Eastern. App 2 arrived Wednesday 11am Eastern, the same day in both zones.
+    model: stg_smartrecruiters__applications
+    given:
+      - input: source("smartrecruiters", "src_smartrecruiters__applications")
+        rows:
+          - application_id: app_1
+            application_state_new_date: 2026-10-29T01:30:00
+            application_state_rejected_date: 2026-11-02T14:00:00
+          - application_id: app_2
+            application_state_new_date: 2026-10-28T15:00:00
+            application_state_rejected_date: null
+    expect:
+      rows:
+        - application_id: app_1
+          new_date: 2026-10-29
+          new_date_local: 2026-10-28
+          rejected_date_local: 2026-11-02
+        - application_id: app_2
+          new_date: 2026-10-28
+          new_date_local: 2026-10-28
+          rejected_date_local: null

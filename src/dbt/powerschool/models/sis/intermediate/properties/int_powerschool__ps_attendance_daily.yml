@@ -1,47 +1,89 @@
 models:
   - name: int_powerschool__ps_attendance_daily
+    description: >-
+      One daily attendance record per student per date (studentid, att_date). It
+      keeps the daily-mode rows of stg_powerschool__attendance and adds the
+      attendance code from stg_powerschool__attendance_code, the calendar day
+      from stg_powerschool__calendar_day, and the cycle day from
+      stg_powerschool__cycle_day.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - studentid
+              - att_date
+          config:
+            severity: error
     columns:
       - name: id
         data_type: int64
+        description: The identifier of the attendance record.
       - name: studentid
         data_type: int64
+        description: The internal number of the student.
       - name: schoolid
         data_type: int64
+        description: The school where the attendance was taken.
       - name: att_date
         data_type: date
+        description: The date the attendance was taken for.
       - name: attendance_codeid
         data_type: int64
+        description: The identifier of the attendance code on the record.
       - name: att_mode_code
         data_type: string
-      - name: calendar_dayid
-        data_type: int64
-      - name: programid
-        data_type: int64
-      - name: total_minutes
-        data_type: int64
+        description:
+          The attendance mode. It is always ATT_ModeDaily in this model.
       - name: att_code
         data_type: string
+        description:
+          The school's attendance code, such as a tardy or absent code.
       - name: presence_status_cd
         data_type: string
+        description:
+          Whether the attendance code translates to Absent or Present.
       - name: count_for_ada
         data_type: int64
+        description: >-
+          The attendance code's calculate-ADA flag. 0 means a day with this code
+          gets an attendance value of 0 in
+          int_powerschool__ps_adaadm_daily_ctod.
       - name: count_for_adm
         data_type: int64
+        description: >-
+          The attendance code's calculate-ADM flag. 0 means a day with this code
+          gets a membership value of 0 in int_powerschool__ps_adaadm_daily_ctod.
       - name: a
         data_type: int64
+        description:
+          1 when the calendar day is in session for track A, otherwise 0.
       - name: b
         data_type: int64
+        description:
+          1 when the calendar day is in session for track B, otherwise 0.
       - name: c
         data_type: int64
+        description:
+          1 when the calendar day is in session for track C, otherwise 0.
       - name: d
         data_type: int64
+        description:
+          1 when the calendar day is in session for track D, otherwise 0.
       - name: e
         data_type: int64
+        description:
+          1 when the calendar day is in session for track E, otherwise 0.
       - name: f
         data_type: int64
+        description:
+          1 when the calendar day is in session for track F, otherwise 0.
       - name: insession
         data_type: int64
+        description:
+          1 when the calendar day is a school day for all students, otherwise 0.
       - name: cycle_day_id
         data_type: int64
+        description: The identifier of the calendar day's cycle day.
       - name: abbreviation
         data_type: string
+        description: The abbreviation of the calendar day's cycle day.

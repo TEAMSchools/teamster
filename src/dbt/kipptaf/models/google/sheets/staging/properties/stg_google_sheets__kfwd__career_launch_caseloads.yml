@@ -1,0 +1,17 @@
+models:
+  - name: stg_google_sheets__kfwd__career_launch_caseloads
+    description: >-
+      KIPP Forward staff whose caseloads are always on the Career Launch app
+      roster, from the Caseloads tab of the Career Launch Scoring Rubric sheet.
+      An alum is on a listed caseload when one of these names is their
+      Salesforce contact owner or postsecondary advisor.
+    columns:
+      - name: advisor_name
+        data_type: string
+        description: >-
+          Staff member's full name, spelled as it appears on the Salesforce
+          contact owner or postsecondary advisor field.
+        data_tests:
+          - unique:
+              config:
+                severity: error

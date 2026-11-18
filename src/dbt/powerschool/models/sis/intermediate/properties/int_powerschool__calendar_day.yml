@@ -6,27 +6,34 @@ models:
       join terms or schools themselves. Left joins: a day outside every year
       term has a null yearid and academic_year.
     data_tests:
-      - unique:
-          column_name: id
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - schoolid
+              - date_value
           config:
             severity: error
-      # Source data-quality guard: an in-session day that no isyearrec = 1 term
-      # covers means PowerSchool holds a calendar disagreeing with its own term
-      # record. The fix belongs in PowerSchool term configuration, so this is
-      # surveillance only — deriving academic_year from date_value instead would
-      # hide the source defect. Scoped past sentinel schools 0 and 999999, which
-      # carry junk full-year in-session calendars. kippmiami does not consume
-      # this package, so its days are not monitored.
       - dbt_utils.expression_is_true:
           arguments:
             expression: |
               academic_year is not null or insession != 1
+          description: >-
+            A PowerSchool calendar day marked in session that no year term
+            (isyearrec = 1) covers, so it has no yearid or academic_year. The
+            school's calendar and its year term disagree. Fix it in PowerSchool
+            by extending the school's year term to cover the day, or adding the
+            missing year term. Sentinel schools 0 and 999999 carry placeholder
+            full-year calendars and are excluded.
           config:
             severity: warn
             where: schoolid not in (0, 999999)
     columns:
       - name: id
         data_type: int64
+        data_tests:
+          - unique:
+              config:
+                severity: error
       - name: date_value
         data_type: date
       - name: scheduleid

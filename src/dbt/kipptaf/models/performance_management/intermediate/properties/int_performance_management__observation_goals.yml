@@ -1,0 +1,88 @@
+models:
+  - name: int_performance_management__observation_goals
+    description: >-
+      One row per SchoolMint Grow goal assignment and the goal it assigns, with
+      the teacher and the person who made it resolved to staff employee numbers.
+      Goal names and categories come from
+      int_schoolmint_grow__assignments__goals. Keeps only assignments whose
+      teacher has an employee number in Grow, so every row belongs to a staff
+      member.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - assignment_id
+              - goal_tag_id
+          config:
+            severity: error
+    columns:
+      - name: assignment_id
+        data_type: string
+        description: Grow assignment id.
+      - name: goal_tag_id
+        data_type: string
+        description: >-
+          Grow tag id of the microgoal or look-for category. Null for a goal
+          with no goal tag.
+      - name: teacher_employee_number
+        data_type: int64
+        description: Employee number of the teacher the goal is for.
+        config:
+          meta:
+            contains_pii: true
+      - name: creator_employee_number
+        data_type: int64
+        description: >-
+          Employee number of the person who made the assignment. Null when their
+          Grow user has no employee number.
+        config:
+          meta:
+            contains_pii: true
+      - name: assignment_created_timestamp
+        data_type: timestamp
+        description: When the assignment was created.
+      - name: assignment_date
+        data_type: date
+        description: Creation date in the local timezone.
+      - name: goal_type_name
+        data_type: string
+        description: Root of the goal's tag tree, Microgoals or Lookfors.
+      - name: goal_name
+        data_type: string
+        description: The goal as the coach picked it.
+      - name: strand_name
+        data_type: string
+        description: Microgoal strand, or a look-for's most specific category.
+      - name: bucket_name
+        data_type: string
+        description: The category one level above strand_name.
+
+unit_tests:
+  - name: test_int_performance_management__observation_goals_resolves_staff
+    description: >-
+      Resolves the teacher and creator to employee numbers by Grow user id. A
+      creator with no employee number stays on the row with a null creator; an
+      assignment whose teacher has no employee number is dropped.
+    model: int_performance_management__observation_goals
+    given:
+      - input: ref("int_schoolmint_grow__assignments__goals")
+        format: sql
+        rows: |
+          select 'a1' as assignment_id, 'u1' as user_id, 'u2' as creator_id, timestamp '2026-11-02 12:00:00' as created, date '2026-11-02' as created_date_local, 'm3' as goal_tag_id, 'Microgoals' as goal_type_name, '3D.01 Magic ratio.' as goal_name, '3D: Joy' as strand_name, '3: Kids Love Learning' as bucket_name
+          union all select 'a2', 'u1', 'u3', timestamp '2026-11-02 12:00:00', date '2026-11-02', 'm3', 'Microgoals', '3D.01 Magic ratio.', '3D: Joy', '3: Kids Love Learning'
+          union all select 'a3', 'u4', 'u2', timestamp '2026-11-02 12:00:00', date '2026-11-02', 'm3', 'Microgoals', '3D.01 Magic ratio.', '3D: Joy', '3: Kids Love Learning'
+      - input: ref("stg_schoolmint_grow__users")
+        format: sql
+        rows: |
+          select 'u1' as user_id, 101 as internal_id_int
+          union all select 'u2', 202
+          union all select 'u3', null
+          union all select 'u4', null
+    expect:
+      rows:
+        - assignment_id: a1
+          teacher_employee_number: 101
+          creator_employee_number: 202
+        - assignment_id: a2
+          teacher_employee_number: 101
+          creator_employee_number: null

@@ -26,6 +26,7 @@ deanslist_month_partitioned_assets_job_schedule = build_deanslist_job_schedule(
     execution_timezone=str(LOCAL_TIMEZONE),
     asset_selection=month_partitioned_assets,
     current_fiscal_year=CURRENT_FISCAL_YEAR,
+    lookback_months=1,
 )
 
 deanslist_year_partitioned_assets_job_schedule = build_deanslist_job_schedule(
@@ -38,6 +39,7 @@ deanslist_year_partitioned_assets_job_schedule = build_deanslist_job_schedule(
 
 deanslist_midday_commlog_job_schedule = build_deanslist_job_schedule(
     schedule_name=f"{CODE_LOCATION}__deanslist__midday_commlog_job",
+    job_name=f"{CODE_LOCATION}__deanslist__midday_commlog_asset_job",
     cron_schedule="0 14 * * *",
     execution_timezone=str(LOCAL_TIMEZONE),
     asset_selection=[

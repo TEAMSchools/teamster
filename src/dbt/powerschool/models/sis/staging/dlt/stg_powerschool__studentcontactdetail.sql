@@ -1,0 +1,22 @@
+select
+    relationshipnote,
+    whocreated,
+    whencreated,
+    whomodified,
+    whenmodified,
+
+    cast(startdate as date) as startdate,
+    cast(enddate as date) as enddate,
+    cast(studentcontactdetailid as int) as studentcontactdetailid,
+    cast(studentcontactassocid as int) as studentcontactassocid,
+    cast(relationshiptypecodesetid as int) as relationshiptypecodesetid,
+    cast(isactive as int) as isactive,
+    cast(isemergency as int) as isemergency,
+    cast(iscustodial as int) as iscustodial,
+    cast(liveswithflg as int) as liveswithflg,
+    cast(schoolpickupflg as int) as schoolpickupflg,
+    cast(receivesmailflg as int) as receivesmailflg,
+    cast(excludefromstatereportingflg as int) as excludefromstatereportingflg,
+    cast(generalcommflag as int) as generalcommflag,
+    cast(confidentialcommflag as int) as confidentialcommflag,
+from {{ source("powerschool_dlt", "studentcontactdetail") }}

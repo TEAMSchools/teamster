@@ -4,6 +4,28 @@ with
         select student_enrollment_key, is_ell, from {{ ref("dim_student_ell_status") }}
     ),
 
+    -- Stint-level flags with no source dates (504, SIPPS, tutoring,
+    -- self-contained) and homeroom: one row per stint.
+    stint_flags as (
+        select
+            is_504,
+            is_sipps,
+            is_tutoring,
+            is_self_contained,
+            advisory_name,
+            advisory_section_number,
+
+            {{
+                student_enrollment_key(
+                    "student_number",
+                    "_dbt_source_project",
+                    "academic_year",
+                    "entrydate",
+                )
+            }} as student_enrollment_key,
+        from {{ ref("int_students__student_enrollments") }}
+    ),
+
     -- IEP: latest span per stint (max effective_date_start_key).
     -- All five IEP columns come from the same row.
     iep_ranked as (
@@ -120,11 +142,43 @@ select
     iep.special_education_placement,
     meal.meal_eligibility,
 
+    sf.is_sipps,
+    sf.is_tutoring,
+    sf.is_self_contained,
+    sf.advisory_name as homeroom_name,
+    sf.advisory_section_number as homeroom_section_number,
+
     coalesce(ell.is_ell, false) as is_ell,
+    coalesce(sf.is_504, false) as is_504,
     coalesce(iep.is_iep, false) as is_iep,
     coalesce(meal.is_meal_eligible, false) as is_meal_eligible,
 
+    -- both buckets: 2025-26 is the first year of the 4-bucket model, and grade
+    -- 99 is the graduate placeholder row, which gets no bucket
+    if(
+        enr.academic_year >= 2025 and enr.grade_level != 99,
+        coalesce(rb.bucket, 'Bucket 4'),
+        null
+    ) as ela_bucket,
+
+    if(
+        enr.academic_year >= 2025 and enr.grade_level != 99,
+        coalesce(mb.bucket, 'Bucket 4'),
+        null
+    ) as math_bucket,
+
 from {{ ref("dim_student_enrollments") }} as enr
 left join ell on enr.student_enrollment_key = ell.student_enrollment_key
+left join stint_flags as sf on enr.student_enrollment_key = sf.student_enrollment_key
 left join iep on enr.student_enrollment_key = iep.student_enrollment_key
 left join meal on enr.student_enrollment_key = meal.student_enrollment_key
+left join
+    {{ ref("dim_student_bucket_status") }} as rb
+    on enr.student_enrollment_key = rb.student_enrollment_key
+    and rb.subject = 'Reading'
+    and rb.is_latest_in_enrollment
+left join
+    {{ ref("dim_student_bucket_status") }} as mb
+    on enr.student_enrollment_key = mb.student_enrollment_key
+    and mb.subject = 'Math'
+    and mb.is_latest_in_enrollment

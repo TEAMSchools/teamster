@@ -10,13 +10,12 @@ models:
       approximate at Q2 and Q3. Drives from course enrollments, so an enrollment
       with no grade posted survives with null grade columns. Filters out lunch,
       study hall, early dismissal, and advisory course numbers, and keeps one
-      enrollment per student, course, and year.
+      enrollment per student, course, and year. Stored grades are deduplicated
+      to one per student, year, course, and term, preferring a grade included in
+      GPA, then the grade stored for the enrolled section, then the latest date
+      stored, then the highest dcid — so the grade shown agrees with the one the
+      GPA models count.
     data_tests:
-      # TODO(#3915): returns to error when the storedgrades double-write cleanup
-      # completes. All duplicates are prior-year storedgrades rows; current-year
-      # branches are structurally disjoint (base_powerschool__final_grades holds
-      # only Q/E storecodes, so the explicit Y1 branch is the sole Y1 emitter,
-      # and E rows never match the term spine).
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
@@ -26,7 +25,7 @@ models:
               - course_number
               - category_name_code
           config:
-            severity: warn
+            severity: error
     columns:
       - name: studentid
         data_type: int64

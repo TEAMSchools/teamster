@@ -48,9 +48,9 @@ The `cube` MCP wraps Cube Cloud's REST API. Auth path that works:
 - Cube Cloud "Personal Core Data API Token" (PAT) returns 403 against `/meta`
   even with the right format — labeled "for SQL API connections" and behaves
   that way. JWT-from-secret is the only reliable path.
-- Cube SQL API `SET sql_user TO '...'` does NOT persist across MCP `execute_sql`
-  calls (each call = fresh Postgres connection). REST is the right abstraction
-  for stateless tool calls.
+- Cube SQL API `SET sql_user TO '...'` lasts only for its connection, and a
+  stateless tool call opens a fresh one. REST is the right abstraction for
+  stateless tool calls.
 
 ## Operational notes
 

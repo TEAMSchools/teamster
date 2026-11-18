@@ -6,6 +6,8 @@ from dagster import (
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
+    define_asset_job,
+    in_process_executor,
     sensor,
 )
 from dagster_shared import check
@@ -17,12 +19,21 @@ from teamster.code_locations.kipptaf.google.forms.assets import (
 from teamster.libraries.google.drive.resources import GoogleDriveResource
 from teamster.libraries.google.forms.resources import GoogleFormsResource
 
+# In process: a step pod per form adds to the pod bursts that GKE preempts on
+# new nodes (#6225). Each form is still its own run.
+google_forms_responses_asset_job = define_asset_job(
+    # trunk-ignore(pyright/reportFunctionMemberAccess)
+    name=f"{responses.key.to_python_identifier()}_asset_job",
+    # trunk-ignore(pyright/reportArgumentType)
+    selection=[responses],
+    executor_def=in_process_executor,
+)
+
 
 @sensor(
     # trunk-ignore(pyright/reportFunctionMemberAccess)
     name=f"{responses.key.to_python_identifier()}_sensor",
-    # trunk-ignore(pyright/reportArgumentType)
-    target=[responses],
+    target=google_forms_responses_asset_job,
     minimum_interval_seconds=(15 * 60),
 )
 def google_forms_responses_sensor(

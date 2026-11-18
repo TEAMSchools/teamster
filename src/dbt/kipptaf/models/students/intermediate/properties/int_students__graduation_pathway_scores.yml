@@ -174,10 +174,14 @@ models:
         description: >-
           Whether the student sat the NJGPA in English language arts at all.
           Sitting it at least once is a prerequisite for any other pathway to
-          count toward graduation.
+          count toward graduation. A student on the DLM pathway (code M) in ELA
+          counts as having sat it. One value per student, the same on every row.
       - name: attempted_njgpa_math
         data_type: boolean
-        description: Whether the student sat the NJGPA in mathematics at all.
+        description: >-
+          Whether the student sat the NJGPA in mathematics at all. A student on
+          the DLM pathway (code M) in math counts as having sat it. One value
+          per student, the same on every row.
       - name: points_short
         data_type: numeric
         description: >-
@@ -502,4 +506,126 @@ unit_tests:
             cutoff: 725,
             scale_score: null,
             met_pathway_cutoff: null,
+          }
+  - name: test_dlm_counts_as_njgpa_attempt_in_its_own_subject_only
+    description: >-
+      A student on the DLM pathway (PowerSchool code M) took the alternate
+      assessment in place of the NJGPA, so DLM counts as an NJGPA attempt in
+      that subject and no other. Both flags are per student, the same on every
+      row. Student 8 is on DLM in ELA with no NJGPA scores, so only the ELA flag
+      is true. Student 9 is on DLM in math and sat the NJGPA in ELA, so both
+      flags are true. A DLM row that marks both subjects attempted makes
+      grad_eligibility disagree across a student's rows.
+    model: int_students__graduation_pathway_scores
+    given:
+      - input: ref('int_extracts__student_enrollments_subjects')
+        format: sql
+        rows: |
+          select
+            'kippnewark_powerschool' as _dbt_source_relation,
+            'kippnewark' as _dbt_source_project,
+            8 as students_dcid,
+            8 as studentid,
+            8 as student_number,
+            '8' as state_studentnumber,
+            cast(null as string) as salesforce_id,
+            12 as grade_level,
+            0 as enroll_status,
+            2027 as cohort,
+            2027 as cohort_primary,
+            'ELA' as discipline,
+            'ENG' as powerschool_credittype,
+            true as met_fafsa_requirement,
+            'M' as ps_grad_path_code,
+            1 as rn_undergrad,
+            'Newark' as region
+          union all
+          select 'kippnewark_powerschool', 'kippnewark', 8, 8, 8, '8', null,
+            12, 0, 2027, 2027, 'Math', 'MATH', true, null, 1, 'Newark'
+          union all
+          select 'kippnewark_powerschool', 'kippnewark', 9, 9, 9, '9', null,
+            12, 0, 2027, 2027, 'ELA', 'ENG', true, null, 1, 'Newark'
+          union all
+          select 'kippnewark_powerschool', 'kippnewark', 9, 9, 9, '9', null,
+            12, 0, 2027, 2027, 'Math', 'MATH', true, 'M', 1, 'Newark'
+
+      - input: ref('int_assessments__state_nj_scores')
+        format: sql
+        rows: |
+          select
+            9 as student_number,
+            'ELA' as discipline,
+            cast(700 as numeric) as scale_score,
+            'ELAGP' as test_code,
+            'NJGPA' as assessment_name,
+            'NJGPA' as assessment_version,
+            cast(1 as numeric) as test_score_complete
+
+      - input: ref('stg_google_sheets__student_graduation_path_cutoffs')
+        format: sql
+        rows: |
+          select
+            2027 as cohort,
+            'ELA' as discipline,
+            'NJGPA' as pathway_option,
+            'ELAGP' as score_type,
+            'S' as pathway_code,
+            725 as cutoff,
+            'NJGPA' as assessment_version
+          union all
+          select 2027, 'Math', 'NJGPA', 'MATGP', 'S', 725, 'NJGPA'
+
+      - input: ref('int_powerschool__state_assessments_transfer_scores')
+        format: sql
+        rows: |
+          select
+            cast(null as int64) as studentid,
+            cast(null as string) as _dbt_source_project,
+            cast(null as string) as discipline,
+            cast(null as float64) as testscalescore,
+            cast(null as string) as testcode,
+            cast(null as string) as assessment_name,
+            cast(null as string) as assessment_version
+          limit 0
+
+      - input: ref('int_assessments__college_assessment')
+        format: sql
+        rows: |
+          select
+            cast(null as int64) as student_number,
+            cast(null as numeric) as scale_score,
+            cast(null as string) as score_type,
+            cast(null as string) as subject_area,
+            cast(null as string) as scope,
+            cast(null as string) as course_discipline
+          limit 0
+    expect:
+      rows:
+        - {
+            student_number: 8,
+            discipline: ELA,
+            pathway_option: DLM,
+            attempted_njgpa_ela: true,
+            attempted_njgpa_math: false,
+          }
+        - {
+            student_number: 8,
+            discipline: Math,
+            pathway_option: NJGPA,
+            attempted_njgpa_ela: true,
+            attempted_njgpa_math: false,
+          }
+        - {
+            student_number: 9,
+            discipline: ELA,
+            pathway_option: NJGPA,
+            attempted_njgpa_ela: true,
+            attempted_njgpa_math: true,
+          }
+        - {
+            student_number: 9,
+            discipline: Math,
+            pathway_option: DLM,
+            attempted_njgpa_ela: true,
+            attempted_njgpa_math: true,
           }

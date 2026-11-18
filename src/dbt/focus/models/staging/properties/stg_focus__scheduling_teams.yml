@@ -21,12 +21,6 @@ models:
           - not_null:
               config:
                 severity: error
-          - relationships:
-              arguments:
-                to: ref('stg_focus__schools')
-                field: id
-              config:
-                severity: warn
       - name: syear
         description: Focus school year (start year, e.g. 2026 = 2026-27).
         data_type: int

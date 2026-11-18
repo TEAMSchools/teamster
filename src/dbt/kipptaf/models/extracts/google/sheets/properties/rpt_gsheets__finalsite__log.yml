@@ -3,8 +3,10 @@ models:
     description: >
       All status rows sharing the same date as each applicant's latest status,
       limited to dates where two or more statuses occurred. latest_status
-      repeats the most recent status across all rows for a given applicant.
-      Feeds the SRE team's Finalsite Log Google Sheet.
+      repeats the most recent status across all rows for a given applicant. Each
+      applicant's rows come from the newest status report file that carries
+      them, because a prior cycle's file can also hold rows for the current
+      year. Feeds the SRE team's Finalsite Log Google Sheet.
     config:
       meta:
         contains_pii: true

@@ -5,7 +5,6 @@ models:
       Camden district projects. Passes through every column of the district
       stg_pearson__parcc models, which document them.
     config:
-      materialized: table
       meta:
         contains_pii: true
     columns:

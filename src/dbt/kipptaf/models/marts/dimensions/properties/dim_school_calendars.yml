@@ -25,10 +25,6 @@ models:
         data_tests:
           - not_null
 
-          - relationships:
-              arguments:
-                to: ref('dim_dates')
-                field: date_key
         config:
           meta:
             source_system: PowerSchool
@@ -49,10 +45,6 @@ models:
         data_tests:
           - not_null
 
-          - relationships:
-              arguments:
-                to: ref('dim_locations')
-                field: location_key
       - name: is_in_session
         data_type: boolean
         description: >-

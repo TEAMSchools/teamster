@@ -433,4 +433,6 @@ select
     cast(collegecreditsearned as int) as collegecreditsearned,
     cast(cteworkbasedlearning as int) as cteworkbasedlearning,
     cast(sid_excludeenrollment as int) as sid_excludeenrollment,
+
+    if(pid_504_tf = 1, true, false) as is_504,
 from {{ source("powerschool_dlt", "s_nj_stu_x") }}

@@ -6,10 +6,11 @@ models:
       `int_finalsite__enrollment_lifecycle`. Filtered to enrollments with a
       minted Focus id and a start date — pre-enrollment students
       (`enrollment_in_progress`, `assigned_school`) carry no `enrolled_date` and
-      are excluded until they enroll. Grade is translated inline (`k`→`KG`, else
-      zero-padded number); enrollment_code is derived from grade (`E05` for KG,
-      `E01` otherwise) and does not change on transfer-out; school maps via
-      `int_people__location_crosswalk`; and Focus student id (`student_id`) via
+      are excluded until they enroll. Grade is translated inline (`k`→`KG`,
+      `pre_k`→`PK`, else zero-padded number); enrollment_code is derived from
+      grade (`E05` for KG, `E01` otherwise) and does not change on transfer-out;
+      school maps via `int_people__location_crosswalk`; and Focus student id
+      (`student_id`) via
       `int_finalsite__contact_id_attributes.focus_student_id_prefixed` —
       together producing the 27-column layout consumed by the Focus SFTP
       transport. The Focus column header casing (`SYEAR`, `SCHOOL_ID`, etc.) is
@@ -45,9 +46,7 @@ models:
         data_type: int64
         description: School year start year (e.g. 2026 for the 2026-27 year).
         data_tests:
-          - not_null:
-              config:
-                severity: warn
+          - not_null
       - name: school_id
         data_type: string
         description:
@@ -61,11 +60,10 @@ models:
         data_type: string
         description:
           Focus grade ID translated inline from `grade_canonical_name` — `KG`
-          for `k`, otherwise the grade number zero-padded to two digits.
+          for `k`, `PK` for `pre_k`, otherwise the grade number zero-padded to
+          two digits.
         data_tests:
-          - not_null:
-              config:
-                severity: warn
+          - not_null
       - name: start_date
         data_type: string
         description:
@@ -382,6 +380,78 @@ unit_tests:
             moved_to: Prior Elementary,
             sec_sch: null,
             grde_prom_st: Retained,
+            good_cause_exempt: null,
+            graduation_requirement_program: null,
+            next_school: null,
+            next_grade: null,
+            district_ood: null,
+            sch_ood: null,
+            include_in_class_rank: null,
+            fl_days_present: null,
+            fl_days_absent: null,
+          }
+  - name: test_student_enrollment_pre_k_grade
+    description:
+      Verifies that Finalsite's `pre_k` canonical grade translates to the Focus
+      grade id `PK`.
+    model: rpt_focus__student_enrollment
+    given:
+      - input: ref('int_finalsite__enrollment_lifecycle')
+        format: sql
+        rows: |
+          select
+            'ep1' as finalsite_enrollment_id,
+            2026 as school_year_start,
+            'pre_k' as grade_canonical_name,
+            cast(null as string) as promotion_status,
+            'KIPP Royalty Academy' as assigned_school,
+            date '2026-08-12' as enrollment_start_date,
+            cast(null as date) as enrollment_end_date,
+            false as is_transfer_out
+      - input: ref('int_finalsite__contact_custom_attributes')
+        format: sql
+        rows: |
+          select
+            'ep1' as finalsite_enrollment_id,
+            cast(null as string) as withdrawal_school_txt,
+            cast(null as string) as fl_state_withdraw_codes_ss
+      - input: ref('int_people__location_crosswalk')
+        format: sql
+        rows: |
+          select
+            'KIPP Royalty Academy' as location_name,
+            '0001' as location_focus_school_id
+      - input: ref('int_finalsite__contact_id_attributes')
+        format: sql
+        rows: |
+          select
+            'ep1' as finalsite_enrollment_id,
+            '84009009003' as focus_student_id_prefixed
+      - input: ref('int_focus__school_year_first_day')
+        format: sql
+        rows: |
+          select 2026 as syear, date '2026-08-11' as first_day_of_school
+    expect:
+      rows:
+        - {
+            syear: 2026,
+            school_id: "0001",
+            student_id: "84009009003",
+            grade_id: PK,
+            start_date: "20260812",
+            enrollment_code: E01,
+            end_date: null,
+            calendar_id: null,
+            prior_dist: null,
+            prior_state: null,
+            prior_country: null,
+            ed_choice: null,
+            stdt_dis_affect: null,
+            offender_transfer_stdt: null,
+            came_from: null,
+            moved_to: null,
+            sec_sch: null,
+            grde_prom_st: null,
             good_cause_exempt: null,
             graduation_requirement_program: null,
             next_school: null,

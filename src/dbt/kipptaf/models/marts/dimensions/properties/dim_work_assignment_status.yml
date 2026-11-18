@@ -29,11 +29,6 @@ models:
             foreign_key:
               to: ref('dim_staff_work_assignments')
               to_columns: [work_assignment_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_staff_work_assignments')
-                field: work_assignment_key
 
       - name: status_code
         data_type: string

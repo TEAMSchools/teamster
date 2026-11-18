@@ -4,11 +4,10 @@ models:
       Every Alchemer survey submission at 1 row per response, with reporting
       term, campaign, and respondent identity resolved, plus the historic
       Alchemer Manager Survey archive at the same grain. Alchemer is
-      decommissioned and every input is frozen, so this model was built once on
-      2026-09-15 and is archived under the repo's archive pattern: the model is
-      disabled, the table is declared in sources-bigquery.yml, and the live
-      survey models read the source. Re-enable and rebuild only to change the
-      frozen rows.
+      decommissioned and every input is frozen, so this model is archived under
+      the repo's archive pattern: the model is disabled, the table is declared
+      in sources-bigquery.yml, and the live survey models read the source.
+      Re-enable and rebuild only to change the frozen rows.
 
       Only API responses that fall inside a SURVEY reporting-term window count
       as submissions; the inner join to the terms sheet is the filter. The
@@ -25,6 +24,18 @@ models:
               - survey_response_id
           config:
             enabled: false
+            severity: error
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - survey_title
+              - academic_year
+              - term_code
+              - rank_respondent
+              - rank_subject
+          config:
+            enabled: false
+            where: round_rn = 1
             severity: error
     columns:
       - name: survey_id
@@ -113,14 +124,60 @@ models:
 
       - name: round_rn
         description: >-
-          Always 1 on API responses; Alchemer responses were never ranked by
-          recency. Null on the archive.
+          Recency rank of the submission among the same respondent's submissions
+          to the same survey title in the same reporting term, about the same
+          rated person where the survey rates one; 1 is the latest by
+          date_submitted, then survey_response_id. The respondent is
+          respondent_student_number, else respondent_identifier; a submission
+          with neither ranks alone. The Manager Survey archive ranks alongside
+          the Alchemer API rows and loses every tie to them, so an archive row
+          that repeats an API submission is never 1.
+
+      - name: respondent_student_number
+        description: >-
+          Student the family submission is about, from the student_number answer
+          on the 2022 NJ & Miami Family Survey. Miami answers (any miami_*
+          question answered) get the 8400 prefix that maps a PowerSchool student
+          number to Focus. Null on every other survey and when the answer is not
+          a 5- or 6-digit number.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: subject_employee_number
+        description: >-
+          Employee number of the staff member the submission rates, as the
+          frozen int_surveys__response_identifiers table resolved it from the
+          subject_df_employee_number answer and its correction sheet; on the
+          archive, the subject the archive records. Null on surveys that rate no
+          one and on answers that table could not resolve.
+        config:
+          meta:
+            contains_pii: true
 
       - name: respondent_identifier
         description: >-
           Respondent employee number as a string, falling back to the respondent
           email when no staff record matched. Same composition as
           int_surveys__survey_submissions.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: rank_respondent
+        description: >-
+          Respondent identity round_rn partitions on — respondent_student_number
+          as a string, else respondent_identifier, else survey_response_id so a
+          submission with no respondent ranks alone.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: rank_subject
+        description: >-
+          Rated-person identity round_rn partitions on — subject_employee_number
+          as a string, else the raw subject answer, which on older surveys is a
+          name with no employee number. Null on surveys that rate no one.
         config:
           meta:
             contains_pii: true

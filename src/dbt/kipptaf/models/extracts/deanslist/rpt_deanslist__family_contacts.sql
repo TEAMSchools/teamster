@@ -46,6 +46,7 @@ with
             )
     )
 
+-- trunk-ignore(sqlfluff/ST06): DeansList contacts.txt column order
 select
     c.student_number as `StudentID`,
     c.contact_first_name as `ParentFirstName`,
@@ -53,7 +54,7 @@ select
     c.phone_home as `HomePhone`,
     c.phone_work as `WorkPhone`,
     c.email_current as `Email`,
-    c.relationship as `Relationship`,
+    coalesce(c.relationship, 'Unknown') as `Relationship`,
     c.contact_type as `ContactType`,
 
     cast(null as string) as `Language`,

@@ -1,0 +1,44 @@
+models:
+  - name: int_focus__student_group_memberships
+    description: >-
+      Focus student group memberships with their group's title and active dates
+      — one row per student per group per school year. Joins
+      stg_focus__students_join_groups to stg_focus__student_groups; every group
+      is kept, so consumers filter on title for the groups they need.
+    config:
+      meta:
+        contains_pii: true
+    columns:
+      - name: id
+        description: Primary key — Focus student-group membership id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: group_id
+        description: Focus student group the membership is in.
+        data_type: int
+      - name: student_id
+        description: Focus student id in the group.
+        data_type: int
+      - name: syear
+        description: Focus school year (start year, e.g. 2026 = 2026-27).
+        data_type: int
+      - name: created_at
+        description: >-
+          Timestamp the membership row was created in Focus — when the student
+          was added to the group.
+        data_type: timestamp
+      - name: title
+        description: Group name.
+        data_type: string
+      - name: start_date
+        description: First date the group is active.
+        data_type: date
+      - name: end_date
+        description: Last date the group is active.
+        data_type: date

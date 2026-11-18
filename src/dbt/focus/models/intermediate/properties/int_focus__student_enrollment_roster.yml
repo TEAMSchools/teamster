@@ -7,12 +7,15 @@ models:
       every stint, a June 30 default exitdate for still-open stints, network
       first-day-of-school point-in-time flags, and rn_year / year_in_school /
       year_in_network counters mirroring the PowerSchool enrollment-union
-      conventions. One row per Focus enrollment stint. Composed from the
-      combined int_focus__ models (int_focus__student_enrollment,
-      int_focus__students, int_focus__schools) rather than reaching back to
-      staging, so the labels and the conformed student columns are read, not
-      re-derived. This model carries the denormalized spine that used to live
-      under the name int_focus__student_enrollment; that name now follows the
+      conventions. One row per Focus enrollment stint. Enrollments marked with
+      the "Second School" custom field (custom_9) are excluded, because the
+      student stays enrolled at their primary school; courses taken at the
+      second school match no stint. Composed from the combined int_focus__
+      models (int_focus__student_enrollment, int_focus__students,
+      int_focus__schools) rather than reaching back to staging, so the labels
+      and the conformed student columns are read, not re-derived. This model
+      carries the denormalized spine that used to live under the name
+      int_focus__student_enrollment; that name now follows the
       staging-plus-labels pattern its siblings follow. Internal-only — a rpt_
       view must sit between this model and any external consumer.
     columns:
@@ -40,14 +43,6 @@ models:
           2025-26.
       - name: schoolid
         description: Focus school id of the enrollment.
-      - name: is_second_school
-        description: >-
-          TRUE when Focus marks this enrollment as the student's second school
-          (custom field custom_9, catalog title "Second School"). Never null --
-          an unchecked box is FALSE, which is the primary or home-campus
-          enrollment. Projected for the same-start-date dedupe, which uses it to
-          keep the primary record when a student holds two concurrent
-          enrollments at different schools.
       - name: school_number
         description: >-
           School Number custom field from int_focus__schools; used by kipptaf's

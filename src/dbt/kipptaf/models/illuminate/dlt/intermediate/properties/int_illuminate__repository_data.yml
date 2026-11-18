@@ -1,25 +1,57 @@
 models:
   - name: int_illuminate__repository_data
+    description: >-
+      Long-format values from the staged Illuminate repositories, unioned and
+      enriched with repository metadata, field labels, and the student's local
+      id. One row per repository, repository row, and field. A repository
+      reaches this model only when its staging model is listed in the
+      hand-maintained union. Inner joins drop rows for deleted repositories,
+      columns that are not registered repository fields, and students missing
+      from Illuminate students.
+    config:
+      meta:
+        contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - repository_id
+              - repository_row_id
+              - field_name
     columns:
       - name: repository_id
         data_type: int64
+        description: >-
+          Illuminate repository id, taken from the staging model name by the
+          unpivot macro.
       - name: repository_row_id
         data_type: int64
+        description: Row id within the repository.
       - name: student_id
         data_type: int64
+        description: Illuminate student id.
       - name: field_name
         data_type: string
+        description: Repository column name the value came from.
       - name: value
         data_type: string
+        description: The field value, cast to string by the unpivot.
       - name: title
         data_type: string
+        description: Repository title, from int_illuminate__repositories.
       - name: scope
         data_type: string
+        description: Repository scope, from int_illuminate__repositories.
       - name: subject_area
         data_type: string
+        description: Repository subject area, from int_illuminate__repositories.
       - name: date_administered
         data_type: date
+        description: >-
+          Repository administration date, from int_illuminate__repositories.
       - name: field_label
         data_type: string
+        description: Display label of the field, from repository_fields.
       - name: local_student_id
         data_type: int64
+        description: The student's local (school-facing) id, from students.

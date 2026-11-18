@@ -1,4 +1,5 @@
 with
+    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
     sub as (
         select
             {{
@@ -38,9 +39,30 @@ with
             on cc.schoolid = cr.schoolid
             and cc.yearid = cr.yearid
             and s.track = cr.track
+    ),
+
+    dedupe_dateleft as (
+        {{
+            dbt_utils.deduplicate(
+                relation="sub",
+                partition_by="cc_studentid, cc_sectionid, cc_dateleft",
+                order_by="is_dropped_section asc, cc_dateenrolled asc, cc_dcid desc",
+            )
+        }}
+    ),
+
+    dedupe_dateenrolled as (
+        {{
+            dbt_utils.deduplicate(
+                relation="dedupe_dateleft",
+                partition_by="cc_studentid, cc_sectionid, cc_dateenrolled",
+                order_by="is_dropped_section asc, cc_dateleft desc, cc_dcid desc",
+            )
+        }}
     )
 
 select
+    -- trunk-ignore(sqlfluff/AM04): deduplicate resolves columns at run time
     *,
 
     if(
@@ -54,11 +76,11 @@ select
 
     row_number() over (
         partition by cc_studyear, courses_credittype
-        order by cc_termid desc, cc_dateenrolled desc, cc_dateleft desc
+        order by cc_termid desc, cc_dateenrolled desc, cc_dateleft desc, cc_dcid desc
     ) as rn_credittype_year,
 
     row_number() over (
         partition by cc_studyear, cc_course_number
-        order by cc_termid desc, cc_dateenrolled desc, cc_dateleft desc
+        order by cc_termid desc, cc_dateenrolled desc, cc_dateleft desc, cc_dcid desc
     ) as rn_course_number_year,
-from sub
+from dedupe_dateenrolled

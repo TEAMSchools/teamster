@@ -9,14 +9,15 @@ models:
       during a week keeps one row, taken from the stint enrolled on the Monday,
       or the later stint when both are. Feeds int_topline__student_metrics.
     config:
+      enabled: false
       materialized: table
       meta:
         dagster:
-          # nightly instead of eager: sole consumer is
-          # int_topline__student_metrics, itself on the same midnight cron.
+          # cron instead of eager: sole consumer is
+          # int_topline__student_metrics, which shares this tick.
           # Refs #4153
           automation_condition:
-            cron_schedule: 0 0 * * *
+            cron_schedule: 30 0 * * *
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -26,6 +27,7 @@ models:
               - week_start_monday
               - discipline
           config:
+            enabled: false
             severity: error
     columns:
       - name: student_number

@@ -1,4 +1,5 @@
--- Add a region below once its Finalsite API layer is wired.
+-- Add a region below once its Finalsite API layer is wired. The column list
+-- comes from the regional relations at compile time.
 with
     union_relations as (
         {{

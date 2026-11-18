@@ -5,7 +5,8 @@ with
     -- (+1 offset) while dim_assessment_administrations hashes the raw value.
     internal_assessments as (
         select
-            rr.powerschool_student_number as student_number,
+            rr.student_number,
+            rr.source,
             rr.assessment_id,
             rr.response_type_id,
             rr.response_type_code,
@@ -32,8 +33,12 @@ with
 
             a.academic_year,
             a.module_code,
+            a.module_type,
 
             c.administered_date,
+
+            pb.mastery_level,
+            pb.is_far_below,
 
             coalesce(c.administered_date, rr.date_taken) as assessment_date_key,
 
@@ -45,10 +50,18 @@ with
         from {{ ref("int_assessments__response_rollup") }} as rr
         inner join
             {{ ref("int_assessments__assessments_members") }} as a
-            on rr.assessment_id = a.assessment_id
+            on rr.source = a.source
+            and rr.assessment_id = a.assessment_id
         inner join
             {{ ref("int_assessments__assessments_canonical") }} as c
-            on a.canonical_assessment_id = c.canonical_assessment_id
+            on rr.source = c.source
+            and rr.assessment_id = c.canonical_assessment_id
+        -- LEFT: a score with no band set or no band has no level
+        left join
+            {{ ref("int_assessments__performance_band_union") }} as pb
+            on rr.source = pb.source
+            and rr.performance_band_set_id = pb.performance_band_set_id
+            and rr.performance_band_label_number = pb.band_number
         where rr.is_internal_assessment
     ),
 
@@ -118,7 +131,7 @@ with
     -- Domain-level rows. module_code stays the subject so these rows hash to
     -- the same assessment_administration_key as the subject's overall row.
     -- No 'relative_placement is not null' predicate
-    -- because int_iready__domain_unpivot already enforces it (#4709).
+    -- because int_assessments__iready_domain_unpivot already enforces it (#4709).
     iready_domain_scores_raw as (
         select
             student_id as student_number,
@@ -147,7 +160,7 @@ with
             -- accepted_values test on relative_placement guards the strings.
             relative_placement
             in ('Early On Grade Level', 'Mid or Above Grade Level') as is_mastery,
-        from {{ ref("int_iready__domain_unpivot") }}
+        from {{ ref("int_assessments__iready_domain_unpivot") }}
         where
             completion_date is not null
             and _dbt_source_project is not null
@@ -321,6 +334,45 @@ with
             `type`, code, `name`, `start_date`, end_date, region, school_id, grade_band,
         from {{ ref("stg_google_sheets__reporting__terms") }}
         where `type` = 'RT'
+    ),
+
+    -- dim_assessment_goals' rows, with its key rebuilt through the same macro
+    academic_goals as (
+        select
+            academic_year,
+            school_id,
+            grade_level,
+            state_assessment_code,
+            illuminate_subject_area,
+
+            {{
+                assessment_goal_key(
+                    "academic_year",
+                    "school_id",
+                    "state_assessment_code",
+                    "grade_level",
+                    "illuminate_subject_area",
+                )
+            }} as assessment_goal_key,
+        from {{ ref("int_assessments__academic_goals") }}
+    ),
+
+    -- dim_assessment_module_goal_rules' rows, with its key rebuilt through the
+    -- same macro
+    module_goal_rules as (
+        select
+            region,
+            module_type,
+            illuminate_subject_area,
+            grade_min,
+            grade_max,
+
+            {{
+                assessment_module_goal_rule_key(
+                    "region", "module_type", "illuminate_subject_area", "grade_min"
+                )
+            }} as assessment_module_goal_rule_key,
+        from {{ ref("int_assessments__module_goal_rules") }}
     )
 
 /* internal assessments */
@@ -329,6 +381,7 @@ select
         dbt_utils.generate_surrogate_key(
             [
                 "ia.student_number",
+                "ia.source",
                 "ia.assessment_id",
                 "ia.assessment_ids_json",
                 "ia.response_type",
@@ -339,17 +392,15 @@ select
     }} as assessment_score_key,
 
     {{
-        dbt_utils.generate_surrogate_key(
-            [
-                "'illuminate'",
-                "ia.module_code",
-                "ia.administered_date",
-                "ia.academic_year",
-                "ia._dbt_source_project",
-                "null",
-                "ia.source_assessment_id",
-                "null",
-            ]
+        assessment_administration_key(
+            "ia.source",
+            "ia.module_code",
+            "ia.administered_date",
+            "ia.academic_year",
+            "ia._dbt_source_project",
+            "null",
+            "ia.source_assessment_id",
+            "null",
         )
     }} as assessment_administration_key,
 
@@ -371,6 +422,11 @@ select
         cast(null as string)
     ) as term_key,
 
+    coalesce(gg.assessment_goal_key, gs.assessment_goal_key) as assessment_goal_key,
+    coalesce(
+        mgs.assessment_module_goal_rule_key, mga.assessment_module_goal_rule_key
+    ) as assessment_module_goal_rule_key,
+
     sr.student_section_enrollment_key,
 
     ia.test_date as test_date_key,
@@ -389,6 +445,8 @@ select
     ia.response_type_root_description,
     ia.is_replacement,
     ia.performance_band_label_number,
+    ia.mastery_level,
+    ia.is_far_below,
 
     sr.resolution_type as enrollment_resolution,
 from internal_assessments as ia
@@ -398,7 +456,8 @@ from internal_assessments as ia
 -- resolved section (out of scope) -- the resolver is the scope of record.
 inner join
     {{ ref("int_assessments__resolved_section_enrollments") }} as sr
-    on ia.student_number = sr.powerschool_student_number
+    on ia.student_number = sr.student_number
+    and ia.source = sr.source
     and ia.assessment_id = sr.canonical_assessment_id
     and ia._dbt_source_project = sr._dbt_source_project
     and sr.source_type = 'internal'
@@ -407,6 +466,35 @@ left join
     on sr.powerschool_school_id = rt.school_id
     and sr.region = rt.region
     and ia.assessment_date_key between rt.`start_date` and rt.end_date
+-- the goal for the student's grade; high school goal rows carry no grade and
+-- apply to every grade at the school
+left join
+    academic_goals as gg
+    on sr.powerschool_school_id = gg.school_id
+    and sr.enrollment_academic_year = gg.academic_year
+    and sr.grade_level = gg.grade_level
+    and sr.subject_area = gg.illuminate_subject_area
+left join
+    academic_goals as gs
+    on sr.powerschool_school_id = gs.school_id
+    and sr.enrollment_academic_year = gs.academic_year
+    and sr.subject_area = gs.illuminate_subject_area
+    and gs.grade_level is null
+-- the goal rule for the score's module type: the subject's own rule, or the
+-- rule for every subject. Overlapping rules are dropped upstream, so at most
+-- one of the two matches.
+left join
+    module_goal_rules as mgs
+    on sr.region = mgs.region
+    and ia.module_type = mgs.module_type
+    and sr.subject_area = mgs.illuminate_subject_area
+    and sr.grade_level between mgs.grade_min and mgs.grade_max
+left join
+    module_goal_rules as mga
+    on sr.region = mga.region
+    and ia.module_type = mga.module_type
+    and sr.grade_level between mga.grade_min and mga.grade_max
+    and mga.illuminate_subject_area is null
 
 union all
 
@@ -457,6 +545,10 @@ select
         cast(null as string)
     ) as term_key,
 
+    gc.assessment_goal_key,
+
+    cast(null as string) as assessment_module_goal_rule_key,
+
     sr.student_section_enrollment_key,
 
     su.test_date as test_date_key,
@@ -476,6 +568,8 @@ select
     cast(null as string) as response_type_root_description,
     cast(null as bool) as is_replacement,
     cast(null as numeric) as performance_band_label_number,
+    cast(null as string) as mastery_level,
+    cast(null as bool) as is_far_below,
 
     sr.resolution_type as enrollment_resolution,
 from state_union as su
@@ -486,7 +580,7 @@ from state_union as su
 -- section.
 inner join
     {{ ref("int_assessments__resolved_section_enrollments") }} as sr
-    on su.student_number = sr.powerschool_student_number
+    on su.student_number = sr.student_number
     and su.academic_year = sr.academic_year
     and su.administration_period = sr.administration_period
     and su.illuminate_subject = sr.subject_area
@@ -497,6 +591,12 @@ left join
     on sr.powerschool_school_id = rt.school_id
     and sr.region = rt.region
     and su.test_date between rt.`start_date` and rt.end_date
+-- state goals are keyed on the state test code, not on subject and grade
+left join
+    academic_goals as gc
+    on sr.powerschool_school_id = gc.school_id
+    and sr.enrollment_academic_year = gc.academic_year
+    and su.module_code = gc.state_assessment_code
 
 union all
 
@@ -550,6 +650,9 @@ select
         cast(null as string)
     ) as term_key,
 
+    cast(null as string) as assessment_goal_key,
+    cast(null as string) as assessment_module_goal_rule_key,
+
     sr.student_section_enrollment_key,
 
     va.test_date as test_date_key,
@@ -569,6 +672,8 @@ select
     cast(null as string) as response_type_root_description,
     cast(null as bool) as is_replacement,
     cast(null as numeric) as performance_band_label_number,
+    cast(null as string) as mastery_level,
+    cast(null as bool) as is_far_below,
 
     sr.resolution_type as enrollment_resolution,
 from vendor_all as va
@@ -578,7 +683,7 @@ from vendor_all as va
 -- resolved section.
 inner join
     {{ ref("int_assessments__resolved_section_enrollments") }} as sr
-    on va.student_number = sr.powerschool_student_number
+    on va.student_number = sr.student_number
     and va.academic_year = sr.academic_year
     and va.administration_period = sr.administration_period
     and va.illuminate_subject = sr.subject_area

@@ -1,4 +1,4 @@
-from dagster import ScheduleDefinition
+from dagster import ScheduleDefinition, define_asset_job, in_process_executor
 
 from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.code_locations.kipptaf.google.directory.assets import (
@@ -31,8 +31,12 @@ google_directory_role_assignments_create_schedule = ScheduleDefinition(
         google_directory_role_assignments_create.key.to_python_identifier()
         + "_schedule"
     ),
-    target=google_directory_role_assignments_create,
-    cron_schedule="0 3 * * *",
+    target=define_asset_job(
+        name=f"{google_directory_role_assignments_create.key.to_python_identifier()}_asset_job",
+        selection=[google_directory_role_assignments_create],
+        executor_def=in_process_executor,
+    ),
+    cron_schedule="20 3 * * *",
     execution_timezone=str(LOCAL_TIMEZONE),
 )
 

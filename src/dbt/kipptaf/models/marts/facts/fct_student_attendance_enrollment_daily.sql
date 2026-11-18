@@ -23,6 +23,8 @@ with
             ada.is_oss,
             ada.is_iss,
             ada.is_suspended,
+            ada.attendance_category,
+            ada.n_absent_running_90,
 
             coalesce(ada.membershipvalue, ed.membershipvalue) as membershipvalue,
         from {{ ref("int_students__enrollment_daily") }} as ed
@@ -61,7 +63,8 @@ with
     --
     -- is_truant is carried rather than summed because it is a status, not an
     -- event: without the carry it would be null on every break day while
-    -- ada_tier beside it resolved.
+    -- ada_tier beside it resolved. The rolling absence count behind the Miami
+    -- truancy rule is carried with it, for the same reason.
     running as (
         select
             *,
@@ -95,6 +98,12 @@ with
                 order by calendardate asc
                 rows between unbounded preceding and current row
             ) as is_truant_carried,
+
+            last_value(n_absent_running_90 ignore nulls) over (
+                partition by student_number, _dbt_source_project, academic_year
+                order by calendardate asc
+                rows between unbounded preceding and current row
+            ) as n_absent_running_90_carried,
         from daily
     ),
 
@@ -166,10 +175,18 @@ select
     -- attendance for cannot support either verdict (#4744), so the two now
     -- resolve over exactly the same rows and one denominator serves both.
     if(n_membership_days_ytd > 0, is_truant_carried, null) as is_truant,
+    if(
+        n_membership_days_ytd > 0, n_absent_running_90_carried, null
+    ) as n_absent_days_rolling_90,
 
     n_membership_days_ytd,
     n_present_days_ytd,
     ada_tier,
+
+    -- Null, not 'Present', when no attendance row joined. A carried break day
+    -- and a session day with an unrecorded register both land here, and both
+    -- mean unknown rather than present.
+    attendance_category,
 
     membershipvalue as membership_value,
 
@@ -181,21 +198,4 @@ select
     cast(is_oss as int64) as is_oss,
     cast(is_iss as int64) as is_iss,
     cast(is_suspended as int64) as is_suspended,
-
-    -- Null, not 'Present', when no attendance row joined. A carried break day
-    -- and a session day with an unrecorded register both land here, and both
-    -- mean unknown rather than present.
-    case
-        when is_absent is null
-        then null
-        when is_oss = 1
-        then 'Out-of-School Suspension'
-        when is_iss = 1
-        then 'In-School Suspension'
-        when is_absent = 1
-        then 'Absent'
-        when is_tardy = 1
-        then 'Tardy'
-        else 'Present'
-    end as attendance_category,
 from tiered

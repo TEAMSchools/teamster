@@ -41,9 +41,10 @@ models:
           Lead teacher's PowerSchool teacher number. For Miami, resolved from
           the Focus `teacher_id` through `int_focus__users` to the staff roster:
           first by `ein`, falling back to a case-insensitive match on email for
-          a user whose `ein` doesn't resolve. See
-          `test_focus_course_sections_teacher_resolves` for how much of the
-          Focus population resolves through each path.
+          a user whose `ein` doesn't resolve. Null when the Focus course period
+          has no lead teacher (stg_focus__course_periods.teacher_id in the focus
+          package) or the teacher matches no roster record
+          (test_focus_course_sections_teacher_resolves).
         data_type: string
         config:
           meta:

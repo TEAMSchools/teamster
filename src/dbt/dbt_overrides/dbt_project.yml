@@ -1,0 +1,9 @@
+name: dbt_overrides
+version: 1.0.0
+config-version: 2
+require-dbt-version: [">=1.12.0", <2.0.0]
+
+profile: integration_tests
+
+macro-paths: [macros]
+seed-paths: []

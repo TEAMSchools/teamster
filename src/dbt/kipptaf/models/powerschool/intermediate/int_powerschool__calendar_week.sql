@@ -18,6 +18,8 @@ with
         }}
     )
 
+-- Miami's source is its frozen PowerSchool archive. A package column change
+-- needs that table rebuilt too (src/dbt/kippmiami/CLAUDE.md).
 select
     *,
     initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,

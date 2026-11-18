@@ -25,5 +25,7 @@ select
         then 'work'
         when regexp_contains(lower(title), r'day')
         then 'daytime'
+        when regexp_contains(lower(title), r'altern')
+        then 'alternate'
     end as phone_type,
 from {{ source("focus", "people_join_contacts") }}

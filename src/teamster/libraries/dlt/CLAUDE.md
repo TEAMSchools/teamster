@@ -30,15 +30,14 @@ PyArrow backend. Probe-gated, same style as `powerschool/`.
   sensor) → load exactly the run's asset selection with the passed signatures.
   `probe` absent (04:00 schedule / manual launch) → probe the selection once
   BEFORE the load, then load it all unconditionally. `refresh` is the separate
-  #4740 migration knob and is orthogonal to gating. A `dlt_extract_workers` run
-  tag caps dlt's extract concurrency, same diagnostic knob as `powerschool/`
-  (see its section below) — absent tag leaves dlt's default (5). No factory
-  param for it: no caller passes one, so there is no precedence to resolve.
+  #4740 migration knob and is orthogonal to gating. `dlt_extract_workers` run
+  tag: see `powerschool/` below.
 - Tiering (04:00 schedule vs intraday sensor): see `focus/CLAUDE.md` → _Probe
   gating_.
-- `cursor_column` is `updated_at` for every Focus table except `co_teachers`,
-  which is count-only. A new table must declare one in `config/focus.yaml`; the
-  code location reads `a["cursor_column"]`, so omitting it fails at module load.
+- `cursor_column` is `updated_at` for every Focus table except the count-only
+  ones, which declare `null`. A new table must declare one in
+  `config/focus.yaml`; the code location reads `a["cursor_column"]`, so omitting
+  it fails at module load.
 
 ### `salesforce/`
 
@@ -59,6 +58,12 @@ Loads PowerSchool SIS Oracle tables to BigQuery over an SSH tunnel
 (`table_rows` + PyArrow), full-replace. Change detection lives in the intraday
 sensor, not the op.
 
+- District wiring: each location has `powerschool/sis/dlt/config/assets.yaml`
+  (per-table `cursor_column` + `intraday`/`nightly` membership booleans), a
+  `<location>__powerschool__dlt__intraday_sensor`, and a nightly schedule that
+  full-refreshes its targets unconditionally and re-baselines. `ssh_powerschool`
+  (paramiko tunnel) and `db_powerschool` (Oracle creds) come from the shared
+  `core/resources.py` factories.
 - **Op run-config contract** (`PowerSchoolDltConfig`): `probe` present (intraday
   sensor) → load exactly the run's asset selection with the passed per-table
   signatures — no re-probe, no gate. `probe` absent (nightly schedule / manual
@@ -83,25 +88,33 @@ sensor, not the op.
   `sync_destination()` + probe.py's `stored_signatures`); request only changed
   tables with the probe payload in run config. Idle ticks launch nothing, so
   unchanged tables are never planned (no `ASSET_FAILED_TO_MATERIALIZE`).
-- **`oracledb DPY-4011` at a consistent ~8.6M rows (≈ 512 MiB) is the paramiko
-  rekey, fixed by `_persist_legacy_rsa`** (see `libraries/ssh/CLAUDE.md`), not a
-  volume cap. **No windowing/partitioning needed** — naive full-replace works at
-  any table size; `assignmentscore` (19M) completes as one query. Set dlt
-  extract concurrency from the op via `dlt_config["extract.workers"] = N`
-  (`dlt_config` = `from dlt import config as dlt_config`, a writable in-memory
-  provider that `pipeline.extract()` resolves `workers=ConfigValue` from) —
-  preferred over the `EXTRACT__WORKERS` env var so the op doesn't mutate the
-  process environment. **Do NOT write `dlt.config`** — the op's resource
-  parameter is named `dlt`, which shadows the top-level `dlt` module inside the
-  function body, so `dlt.config` resolves to `DagsterDltResource` (no `config`
-  attribute) and raises `AttributeError`. Both `powerschool/` and `focus/`
-  (below) read a `dlt_extract_workers` run tag and apply it via `dlt_config`.
-  `pipeline.run()` accepts no `workers` arg.
+- A mid-pull `oracledb DPY-4011` is the paramiko rekey
+  (`libraries/ssh/CLAUDE.md`), not a volume cap; full-replace needs no
+  windowing. Set dlt extract concurrency from the op via
+  `dlt_config["extract.workers"] = N` (`dlt_config` =
+  `from dlt import config as dlt_config`, a writable in-memory provider that
+  `pipeline.extract()` resolves `workers=ConfigValue` from) — preferred over the
+  `EXTRACT__WORKERS` env var so the op doesn't mutate the process environment.
+  **Do NOT write `dlt.config`** — the op's resource parameter is named `dlt`,
+  which shadows the top-level `dlt` module inside the function body, so
+  `dlt.config` resolves to `DagsterDltResource` (no `config` attribute) and
+  raises `AttributeError`. Both `powerschool/` and `focus/` (below) read a
+  `dlt_extract_workers` run tag and apply it via `dlt_config`. `pipeline.run()`
+  accepts no `workers` arg.
 
 ## Notes
 
 All DLT assets use `DagsterDltResource` (from `dagster-dlt`) and write directly
 to BigQuery — they do not go through the GCS IO managers.
+
+### Pool limits
+
+Every `dlt_<source>_<location>` pool (powerschool and focus) stays at limit 1
+(Dagster+ deployment setting). The in-flight guard runs only in the intraday
+sensor and sees only sensor- and schedule-launched runs; a schedule tick or a
+manual launch checks nothing. The pool is the only thing stopping 2 overlapping
+full-`replace` loads from racing on one table and its `_dlt_pipeline_state` row.
+Confirm the limit before enabling a sensor.
 
 ### Shared probe helpers (`probe.py`)
 
@@ -113,19 +126,31 @@ resource, focus a plain Postgres URL. Do not merge them into a generic sensor
 factory; `illuminate/` (#4446) is the third intended consumer of the helpers,
 not of a shared sensor.
 
+Any dlt call in a code-server process outside a traced pipeline step
+(`sync_destination()`, `resolve_configuration()`) must start with
+`get_resolved_traces().clear()`, as both intraday sensors do. dlt empties that
+per-thread config-trace log only when a traced step ends, and each entry pins
+its pipeline, so a sensor without the clear grows the code server until it is
+OOM-killed.
+
 ### Illuminate: unbounded Postgres `numeric`
 
 Postgres `numeric` with no precision/scale reflects as `precision=None` in
 SQLAlchemy. DLT defaults to `decimal128(38, 9)`, which truncates values with >9
 decimal places. `unbounded_numeric_adapter` in `illuminate/assets.py` handles
-this via `type_adapter_callback`, widening to `decimal128(38, 18)`.
+this via `type_adapter_callback`, widening to `decimal128(38, 18)`. It returns
+`Float` (`real` / `double precision`) untouched, so those land as `FLOAT64`.
+Handle `Float` explicitly in any numeric adapter, either passing it through
+(Illuminate, Focus) or converting it (`oracle_number_adapter` in PowerSchool).
+Never rely on `isinstance(col_type, Numeric)` to catch or skip it.
 
 **BigQuery type mapping**: `Numeric(38, 18)` maps to `BIGNUMERIC` (scale > 9),
 not `NUMERIC`. Fix pattern: cast at the dbt staging layer
 (`cast(col as numeric)`) so contracts and downstream models stay on `numeric`.
-If the adapter's scale changes, any existing BQ table with a conflicting column
-type must be dropped manually — `replace` write disposition does not allow type
-changes on existing tables.
+Float columns are outside this pattern: they stay `float64` in staging
+contracts. If the adapter's scale changes, any existing BQ table with a
+conflicting column type must be dropped manually — `replace` write disposition
+does not allow type changes on existing tables.
 
 ### `replace` write-disposition + runtime subsetting
 
@@ -151,11 +176,8 @@ changes on existing tables.
   for days starts failing the day its source goes to 0 rows; the destination
   table is already correctly truncated (dlt truncates autodetect tables before
   the load job), so there is no data to repair.
-- **Focus additionally materializes never-loaded tables** — its resource yields
-  `materialize_table_schema()` when the source has 0 rows, which requires the
-  `normalize.parquet_normalizer.add_dlt_*` knobs and made every Focus table gain
-  `_dlt_id` / `_dlt_load_id` (see `focus/CLAUDE.md`, #4740). Illuminate does NOT
-  do this: its one absent table is absorbed by the
+- Focus also creates empty tables (`focus/CLAUDE.md` → _Empty source tables_).
+  Illuminate does not: its one absent table is absorbed by the
   `illuminate_repository_unpivot` macro's empty fallback.
 - `replace` never changes an existing table's column **mode** (not just type):
   an all-`NULLABLE` load into a table whose column is `REQUIRED` fails with BQ

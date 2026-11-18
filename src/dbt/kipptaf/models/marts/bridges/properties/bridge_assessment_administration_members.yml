@@ -5,20 +5,10 @@ models:
       `dim_assessment_administrations` to the member-grain `dim_assessments`.
       One row per `(canonical-administration, member-assessment)` pairing.
 
-      Two cases produce multiple bridge rows per
-      `assessment_administration_key`:
-
-      1. **Multipart administrations** (e.g., FTELA U2 CRA + CRA-Essay) — both
-         halves administered to all regions on the same date, sharing one
-         `canonical_assessment_id`. Each region has 2 bridge rows (one per
-         member).
-
-      2. **Region-split assessments** — one canonical group's members were
-         tagged for disjoint regions (e.g., a Miami-only "FL" member and a
-         separate Camden/Newark/Paterson member). Each (canonical, region)
-         resolves to its region-tagged member.
-
-      Single-member canonical groups produce one bridge row per
+      Multipart administrations (e.g., FTELA U2 CRA + CRA-Essay) produce
+      multiple bridge rows per `assessment_administration_key`: the halves share
+      one regional `canonical_assessment_id`, so the region has 1 bridge row per
+      member. A single-member group produces 1 bridge row per
       `(canonical_assessment_id, region)`.
     config:
       # Disabled: nothing consumes this model. No `ref()` to it anywhere under

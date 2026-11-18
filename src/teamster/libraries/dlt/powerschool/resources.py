@@ -1,6 +1,7 @@
 from urllib.parse import quote
 
 from dagster import ConfigurableResource
+from pydantic import Field
 
 
 class OracleResource(ConfigurableResource):
@@ -11,7 +12,7 @@ class OracleResource(ConfigurableResource):
     """
 
     user: str
-    password: str
+    password: str = Field(repr=False)
     host: str
     port: str
     service_name: str

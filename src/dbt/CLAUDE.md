@@ -21,6 +21,10 @@ Authoritative consumer list for a source-system package:
 Packages" prose drifts; `packages.yml` is ground truth. `kipptaf` consumes most
 source data via `source()`, not as a package.
 
+Every `kipp*` project installs `dbt_overrides` and carries a root stub at
+`macros/materialization_test.sql`. A new dbt project that stores test failures
+needs both; see `src/dbt/dbt_overrides/CLAUDE.md`.
+
 **A model name can exist in both a source-system package and `kipptaf`** (e.g.
 `int_finalsite__student_contacts`). `ref()` resolves to the CURRENT project's
 copy, so when reading a `kipptaf` model's upstream, open the `kipptaf` file —
@@ -43,12 +47,9 @@ Not visible in the yml: `cloud_storage_uri_base` redirects to
 
 A source-system package's staging models build in **every** district that
 imports it, but only carry data where that source's Dagster ingestion is wired
-per code location — e.g. while finalsite `contacts` ingestion was Miami-only,
-`stg_finalsite__contacts` still built in all four districts (all import the
-`finalsite` package) but carried rows only in `kippmiami`; the contacts asset is
-now wired in all four regions. Before promoting a district model to a shared
-source package, confirm the source ingestion exists in every consuming district,
-or the promoted model builds empty there (or fails on a missing external).
+per code location. Before promoting a district model to a shared source package,
+confirm the source ingestion exists in every consuming district, or the promoted
+model builds empty there (or fails on a missing external).
 
 **Partial-endpoint onboarding**: when a district ingests only a subset of a
 source package's endpoints, disable BOTH the unused `stg_*` models AND their
@@ -92,20 +93,33 @@ deployments. Developers use `<repo-root>/.dbt/profiles.yml` (not
   `google/cloud/bigquery/retry.py`. Every other reason — `notFound`,
   `resourcesExceeded`, `invalidQuery` — fails on attempt 1 at any `job_retries`
   value, so never propose raising it for those.
+- **`job_retries` cannot restart a job BigQuery already failed** on dbt-bigquery
+  1.12.x. `raw_execute` mints one `job_id` for every attempt, so a retry hits
+  409 and `_submit_or_attach` reattaches to the dead job. A retryable reason
+  with `state=DONE` and one job id in `JOBS_BY_PROJECT` fails the model; only
+  the Dagster run-retry recovers it. Upstream: dbt-labs/dbt-adapters#2120.
 - **`job_execution_timeout_seconds`**: Set to `900` on the `prod` output of all
   five kipp\* profiles. Caps each BigQuery job server-side (`job_timeout_ms`) so
   a runaway single model is cancelled by BigQuery before Dagster's run-level
   `max_runtime` (1800s). Without it, a killed dbt run leaves the in-flight BQ
   job orphaned — dbt does NOT cancel on termination (upstream limitation,
   dbt-core #5275/#9639) — and the zombie `create or replace` can overwrite a
-  successful auto-retry's output with staler data. Routine models run <=330s
-  network-wide (affected models' p99 <=78s), so 900s won't false-kill legit
-  work.
+  successful auto-retry's output with staler data.
 - A dbt **`409 Already Exists: Job <id>`** failure is a `job_retries` collision
   (the original submit succeeded server-side but the response was lost; the
   retry re-sends the same job_id). The job usually **succeeded** — confirm via
   `JOBS_BY_PROJECT` (`state=DONE`, `error_result IS NULL`) before treating it as
   real. The Dagster run-retry absorbs it.
+
+## No seeds
+
+dbt seeds are forbidden: a seed commits data to the repo, so every data change
+becomes a code change and a redeploy. Every project sets `seed-paths: []`, so a
+CSV dropped into `seeds/` is never loaded and a `ref()` to it fails at parse.
+Hand-kept lookup data lives in a Google Sheet, read through a
+`sources-external.yml` entry and a `stg_google_sheets__*` model. A list another
+organization publishes at a stable URL is fetched by a Dagster asset instead, so
+no one copies it by hand. Never put a path back in `seed-paths`.
 
 ## Model Conventions
 
@@ -116,6 +130,10 @@ path-scoped rules on the first read of a matching file:
   picking and surrogate keys, date-range joins, formatting.
 - `.claude/rules/dbt-yaml.md` (`*.yml`): properties, sources, external tables,
   test config, unit-test fixtures, YAML conventions.
+- `.claude/rules/dbt-architecture.md` (`models/**`): layers, allowed edges,
+  intermediate kinds, and keys (rules A1-A12).
+- `.claude/rules/dbt-marts.md` (kipptaf `models/marts/**`): mart column naming,
+  grain, strict-chain traversal, and PK/FK shapes (rubric R1-R4, R6-R10).
 - `.claude/rules/dbt-models.md` (`models/**`, `tests/**`): per-layer
   requirements, moving and retiring models, materialization changes,
   cross-project column changes.

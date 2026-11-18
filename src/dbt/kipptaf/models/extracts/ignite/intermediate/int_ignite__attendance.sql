@@ -1,12 +1,17 @@
 with
     daily as (
         select
-            student_number, schoolid, academic_year, attendancevalue, membershipvalue,
-        from {{ ref("int_students__attendance_daily") }}
-        where
-            academic_year in ({{ var("ignite_academic_years") | join(", ") }})
-            and grade_level in ({{ var("ignite_grade_levels") | join(", ") }})
-            and student_number is not null
+            ad.student_number,
+            ad.schoolid,
+            ad.academic_year,
+            ad.attendancevalue,
+            ad.membershipvalue,
+        from {{ ref("int_students__attendance_daily") }} as ad
+        inner join
+            {{ ref("int_ignite__student_years") }} as sy
+            on ad.student_number = sy.student_number
+            and ad.academic_year = sy.academic_year
+        where ad.grade_level between 9 and 12
     )
 
 select

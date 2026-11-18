@@ -1,0 +1,103 @@
+models:
+  - name: int_focus__student_gpa_cumulative
+    description: >-
+      Current Focus cumulative GPA, one row per student and school. Reads the
+      course-history rows (`marking_period_id = -1`) of
+      stg_focus__student_gpa_calculated, where Focus writes one cumulative row
+      per school year, and keeps the row from the newest school year. Ties on
+      school year fall to the highest Focus calculation id.
+    config:
+      meta:
+        contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_id
+              - school_id
+          config:
+            severity: error
+    columns:
+      - name: id
+        description: Focus student GPA calculation id of the kept row.
+      - name: student_id
+        description: >-
+          Focus student id — the network student number prefixed with `8400`.
+      - name: school_id
+        description: Focus school the calculation belongs to.
+      - name: syear
+        description: >-
+          Focus school year (start year) of the kept row, the newest year the
+          student has a cumulative row at this school.
+      - name: class_rank
+        description: Class rank Focus computed. Rarely populated.
+      - name: cumulative_gpa
+        description: Cumulative unweighted GPA.
+      - name: cumulative_weighted_gpa
+        description: Cumulative weighted GPA.
+      - name: cumulative_credits
+        description: Credits the cumulative GPA was computed over.
+
+unit_tests:
+  - name: unit_int_focus__student_gpa_cumulative__latest_year
+    description: >-
+      Keeps the newest school year per student and school, keeps each school
+      separately, breaks a same-year tie on the higher id, and ignores term
+      marking-period rows.
+    model: int_focus__student_gpa_cumulative
+    given:
+      - input: ref("stg_focus__student_gpa_calculated")
+        rows:
+          - id: 1
+            student_id: 84000001
+            school_id: 10
+            syear: 2026
+            marking_period_id: -1
+            cumulative_gpa: 2.5
+          - id: 2
+            student_id: 84000001
+            school_id: 10
+            syear: 2027
+            marking_period_id: -1
+            cumulative_gpa: 3.1
+          - id: 3
+            student_id: 84000001
+            school_id: 10
+            syear: 2027
+            marking_period_id: 501
+            cumulative_gpa: 3.9
+          - id: 4
+            student_id: 84000001
+            school_id: 20
+            syear: 2026
+            marking_period_id: -1
+            cumulative_gpa: 2.0
+          - id: 5
+            student_id: 84000002
+            school_id: 10
+            syear: 2026
+            marking_period_id: -1
+            cumulative_gpa: 1.5
+          - id: 6
+            student_id: 84000002
+            school_id: 10
+            syear: 2026
+            marking_period_id: -1
+            cumulative_gpa: 1.8
+    expect:
+      rows:
+        - id: 2
+          student_id: 84000001
+          school_id: 10
+          syear: 2027
+          cumulative_gpa: 3.1
+        - id: 4
+          student_id: 84000001
+          school_id: 20
+          syear: 2026
+          cumulative_gpa: 2.0
+        - id: 6
+          student_id: 84000002
+          school_id: 10
+          syear: 2026
+          cumulative_gpa: 1.8

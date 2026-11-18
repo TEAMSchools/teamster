@@ -1,0 +1,44 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<workbook version='18.1' xmlns:user='http://www.tableausoftware.com/xml/user'>
+  <datasources>
+    <datasource caption='Roster' name='federated.0example'>
+      <column datatype='string' name='[is_present]' role='dimension' type='nominal' />
+      <column caption='Attendance Rate' datatype='real' name='[Calculation_1001]' role='measure' type='quantitative'>
+        <calculation class='tableau' formula='SUM(IIF([is_present] = 1, 1, 0)) / COUNT([membership_value])' />
+      </column>
+      <column caption='Attendance Pts' datatype='real' name='[Calculation_1002]' role='measure' type='quantitative'>
+        <calculation class='tableau' formula='IF [pts] &gt; 3 THEN &quot;High&quot;&#10;ELSE &quot;Low&quot; END' />
+      </column>
+      <column caption='Parameter 1' datatype='integer' name='[Parameter 1]' role='measure' type='quantitative' param-domain-type='any'>
+        <calculation class='tableau' formula='5' />
+      </column>
+    </datasource>
+  </datasources>
+  <worksheets>
+    <worksheet name='Rate by School'>
+      <table>
+        <view>
+          <datasources>
+            <datasource caption='Roster' name='federated.0example' />
+          </datasources>
+          <datasource-dependencies datasource='federated.0example'>
+            <column caption='Attendance Rate' datatype='real' name='[Calculation_1001]' role='measure' type='quantitative'>
+              <calculation class='tableau' formula='SUM(IIF([is_present] = 1, 1, 0)) / COUNT([membership_value])' />
+            </column>
+            <column-instance column='[Calculation_1001]' derivation='User' name='[usr:Calculation_1001:qk]' pivot='key' type='quantitative' />
+          </datasource-dependencies>
+        </view>
+      </table>
+    </worksheet>
+    <worksheet name='Points Detail'>
+      <table>
+        <view>
+          <datasource-dependencies datasource='federated.0example'>
+            <column-instance column='[Calculation_1001]' derivation='User' name='[usr:Calculation_1001:qk]' pivot='key' type='quantitative' />
+            <column-instance column='[Calculation_1002]' derivation='User' name='[usr:Calculation_1002:qk]' pivot='key' type='nominal' />
+          </datasource-dependencies>
+        </view>
+      </table>
+    </worksheet>
+  </worksheets>
+</workbook>

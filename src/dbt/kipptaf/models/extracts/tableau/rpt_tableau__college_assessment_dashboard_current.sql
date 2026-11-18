@@ -88,6 +88,9 @@ with
             s.subject_area,
             s.score_type,
 
+            b.nj_student_tier_ela,
+            b.nj_student_tier_math,
+
             avg(
                 if(
                     g.expected_goal_type = 'Attempts',
@@ -118,6 +121,11 @@ with
             scored_students as ss
             on e.student_number = ss.student_number
             and g.expected_test_type = ss.test_type
+        left join
+            {{ ref("int_students__college_assessment_buckets_pivot") }} as b
+            on e.student_number = b.student_number
+            and e.academic_year = b.academic_year
+            and e._dbt_source_project = b._dbt_source_project
         where
             e.academic_year = {{ var("current_academic_year") }}
             and e.school_level = 'HS'
@@ -157,7 +165,9 @@ with
             s.test_type,
             s.scope,
             s.subject_area,
-            s.score_type
+            s.score_type,
+            b.nj_student_tier_ela,
+            b.nj_student_tier_math
     ),
 
     tiers as (

@@ -12,10 +12,5 @@ with
         }}
     )
 
-select u.*, {{ extract_source_project("u") }} as _dbt_source_project, loc.location_key,
+select u.*, {{ extract_source_project("u") }} as _dbt_source_project,
 from union_relations as u
-left join
-    {{ ref("stg_google_sheets__people__locations") }} as loc
-    on u.school_id = loc.deanslist_school_id
-    and not loc.is_pathways
-    and loc.location_name <> 'KIPP Whittier Elementary'

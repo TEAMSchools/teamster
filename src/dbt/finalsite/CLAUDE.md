@@ -19,10 +19,6 @@ models/
   sources-external.yml
 ```
 
-`api/staging`: `stg_finalsite__contacts`,
-`stg_finalsite__contact_relationships`. `sftp/staging`:
-`stg_finalsite__status_report`.
-
 `api/intermediate` models:
 
 - `int_finalsite__enrollment_lifecycle` — one row per in-scope contact (all
@@ -31,9 +27,7 @@ models/
   receivers).
 - `int_finalsite__contacts__households` — one row per (contact, household), the
   per-contact-household flattening off `stg_finalsite__contacts`'s raw
-  `households` array. Moved out of the staging layer since it reads a
-  contract-widened column on `stg_finalsite__contacts` rather than the raw
-  source directly; not contract-enforced (the `api/intermediate` directory
+  `households` array. Not contract-enforced (the `api/intermediate` directory
   default), though every column still carries a `data_type` per convention.
 - `int_finalsite__contact_address_of_record` — one row per Finalsite contact
   (students and adults alike) carrying that contact's resolved address. A
@@ -61,7 +55,7 @@ models/
 
 `stg_finalsite__contacts` carries THREE repeated key-value arrays —
 `id_attributes`, `custom_attributes`, `track_attributes` (each
-`STRUCT<field_name, value STRUCT<string_value, boolean_value, array_string_value>>`);
+`STRUCT<field_name, value STRUCT<boolean_value, double_value, string_value, array_string_value>>`);
 each has a pivot int model above. Scan all three when sourcing a field, and
 verify by VALUES, not field name (e.g. `current_residence_ss` is McKinney-Vento
 housing status, not a county).
@@ -93,14 +87,5 @@ is login-gated.
 
 ## Cross-Project Usage
 
-Referenced as a dbt package by all four district projects (`kippnewark`,
-`kippcamden`, `kippmiami`, `kipppaterson`). `kipptaf` consumes the resulting
-tables via `source()` (network-wide union models live in
-`kipptaf/models/finalsite/`).
-
-**The `api/` layer is enabled only where Finalsite Contacts ingestion is
-wired.** Today that is all four regions (`kippmiami`, `kippnewark`,
-`kippcamden`, `kipppaterson`). The `sftp/` layer (`status_report`) stays enabled
-everywhere — kipptaf unions it across all four regions. Set
-`finalsite: api: +enabled: false` in a region's `dbt_project.yml` if its
-Finalsite contacts ingestion is ever removed.
+Set `finalsite: api: +enabled: false` in a region's `dbt_project.yml` if its
+Finalsite contacts ingestion is removed.

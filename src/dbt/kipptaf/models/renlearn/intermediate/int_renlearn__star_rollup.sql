@@ -63,4 +63,3 @@ select
         order by completed_date desc
     ) as rn_subj_year,
 from {{ ref("stg_renlearn__star") }}
-where deactivation_reason is null

@@ -1,7 +1,7 @@
 with
     itr_response as (
         select
-            employee_number,
+            respondent_employee_number as employee_number,
             answer,
             academic_year,
             max(date_submitted) as last_date_submitted,
@@ -38,21 +38,22 @@ with
                 else answer
             end as answer_short,
         -- trunk-ignore-end(sqlfluff/LT05)
-        from {{ ref("rpt_tableau__survey_responses") }}
+        from {{ ref("int_surveys__survey_responses") }}
         where
-            survey_code = 'ITR'
+            term_code = 'ITR'
             and question_shortname = 'itr_plans'
             and academic_year = {{ var("current_academic_year") }}
-        group by employee_number, answer, academic_year
+        group by respondent_employee_number, answer, academic_year
     ),
 
-    pm_tier as (
-        select employee_number, overall_tier, max(eval_date) as eval_date,
-
-        from {{ ref("int_performance_management__observations") }}
-        where observation_type_abbreviation = 'PMS'
-        group by employee_number, overall_tier
-
+    teacher_grade_levels as (
+        select
+            teachernumber,
+            _dbt_source_project,
+            cast(grade_level as string) as grade_level,
+        from {{ ref("int_students__teacher_grade_levels") }}
+        where
+            academic_year = {{ var("current_academic_year") }} and grade_level_rank = 1
     )
 
 select
@@ -81,9 +82,7 @@ select
 
     null as smart_recruiter_id,
 
-    coalesce(
-        cast(sr.primary_grade_level_taught as string), sr.home_department_name
-    ) as grade_department,
+    coalesce(tgl.grade_level, sr.home_department_name) as grade_department,
 
     coalesce(lc.location_region, sr.home_business_unit_name) as location_entity,
 
@@ -164,7 +163,15 @@ inner join
     {{ ref("int_people__location_crosswalk") }} as lc
     on sr.home_work_location_name = lc.location_name
 left join itr_response as ir on sr.employee_number = ir.employee_number
-left join pm_tier as pm on sr.employee_number = pm.employee_number
+left join
+    {{ ref("int_performance_management__observations") }} as pm
+    on sr.employee_number = pm.employee_number
+    and pm.observation_type_abbreviation = 'PMS'
+    and pm.rn_employee_type = 1
+left join
+    teacher_grade_levels as tgl
+    on sr.powerschool_teacher_number = tgl.teachernumber
+    and sr.home_work_location_dagster_code_location = tgl._dbt_source_project
 
 union all
 

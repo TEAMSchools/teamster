@@ -47,9 +47,9 @@
 -- No fuzzy/similarity matching anywhere -- every transform above is a
 -- deterministic string operation.
 with
-    -- kipptaf_dbt_test__audit.int_collegeboard__ap_unpivot__crosswalk_resolves
-    -- is a dbt test's store_failures output, not a ref()-able dbt node --
-    -- kept as a literal fully-qualified path.
+    -- The audit path below is the store_failures output of the relationships
+    -- test on stg_collegeboard__ap.ap_number_ap_id, not a ref()-able dbt node
+    -- -- kept as a literal fully-qualified path.
     gaps as (
         select
             a.ap_number_ap_id,
@@ -61,9 +61,9 @@ with
         from {{ ref("stg_collegeboard__ap") }} as a
         inner join
             -- trunk-ignore(sqlfluff/LT05): fully-qualified test-audit path, can't wrap
-            `teamster-332318`.kipptaf_dbt_test__audit.int_collegeboard__ap_unpivot__crosswalk_resolves
+            `teamster-332318`.kipptaf_dbt_test__audit.relationships_stg_collegeboard_ada115e39694b541e69e7c19ae548029
             as u
-            on a.ap_number_ap_id = u.ap_number_ap_id
+            on a.ap_number_ap_id = u.from_field
     ),
 
     ps as (

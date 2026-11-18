@@ -1,6 +1,7 @@
 -- Add a region below only when it cuts over to Finalsite contacts reporting.
 -- These rows flow straight into int_students__contacts' Finalsite branch, so a
 -- region that is still PowerSchool-sourced for contacts double-counts there.
+-- CI reads the district zz_stg_* copies only when this model is rebuilt.
 with
     union_relations as (
         {{

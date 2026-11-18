@@ -10,4 +10,4 @@ where
     sr.assignment_status is distinct from 'Terminated'
     and sr.home_work_location_name is not null
     and lc.location_clean_name is null
-group by 1
+group by sr.home_work_location_name

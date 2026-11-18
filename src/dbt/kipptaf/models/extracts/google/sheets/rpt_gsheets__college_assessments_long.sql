@@ -76,6 +76,9 @@ with
 
             gt.gpa_y1,
 
+            b.nj_student_tier_ela,
+            b.nj_student_tier_math,
+
             /* The bucket the three subject blocks below pivot on. Official rows
                carry it in aligned_subject, which folds SAT EBRW and ACT Reading
                into one EBRW/Reading value; practice rows leave that column null
@@ -114,6 +117,11 @@ with
             and e.schoolid = gt.schoolid
             and e._dbt_source_project = gt._dbt_source_project
             and gt.is_current
+        left join
+            {{ ref("int_students__college_assessment_buckets_pivot") }} as b
+            on e.student_number = b.student_number
+            and e.academic_year = b.academic_year
+            and e._dbt_source_project = b._dbt_source_project
         where
             e.academic_year = {{ var("current_academic_year") }}
             and e.graduation_year >= {{ var("current_academic_year") + 1 }}
@@ -154,6 +162,8 @@ with
             sat_total_superscore,
             sat_ebrw_highest,
             sat_math_highest,
+            nj_student_tier_ela,
+            nj_student_tier_math,
             scope as test_type,
             administration_type,
             test_date,
@@ -283,6 +293,8 @@ with
             sat_total_superscore,
             sat_ebrw_highest,
             sat_math_highest,
+            nj_student_tier_ela,
+            nj_student_tier_math,
             scope,
             administration_type,
             test_date
@@ -340,5 +352,8 @@ select
     math_highest_score_by_test as `Highest Score by Test - Math`,
     math_hs_grad_ready as `Meeting High School Grad Benchmark - Math`,
     math_college_ready as `Meeting College Ready Benchmark - Math`,
+
+    nj_student_tier_ela as `ELA Bucket`,
+    nj_student_tier_math as `Math Bucket`,
 
 from pivoted

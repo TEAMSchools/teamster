@@ -17,7 +17,7 @@ LOCAL_TIMEZONE = ZoneInfo("America/New_York")
 | `cambium`               | SFTP assets   | `AutomationConditionSensor`                                           |
 | `deanslist`             | API assets    | schedule (nightly)                                                    |
 | `edplan`                | SFTP asset    | sensor (`build_edplan_sftp_sensor`)                                   |
-| `finalsite`             | API + SFTP    | schedule (contacts 4am) + couchdrop sensor                            |
+| `finalsite`             | API + SFTP    | schedule (contacts 00:15 + 12:00 ET) + couchdrop sensor               |
 | `iready`                | SFTP assets   | sensor (`build_iready_sftp_sensor`)                                   |
 | `overgrad`              | API assets    | schedule                                                              |
 | `pearson`               | SFTP assets   | manual only (retired; Cambium replaced it)                            |
@@ -27,16 +27,5 @@ LOCAL_TIMEZONE = ZoneInfo("America/New_York")
 
 ## PowerSchool Configuration
 
-Uses **dlt** (sensor-gated intraday + unconditional nightly full-refresh), not
-ODBC. Config at `powerschool/sis/dlt/config/assets.yaml` (per-table
-`cursor_column` + `intraday`/`nightly` membership booleans). Intraday selection
-is decided by `kippnewark__powerschool__dlt__intraday_sensor` (probe + dlt-state
-baseline); the nightly schedule full-refreshes its targets unconditionally and
-re-baselines. Resources `ssh_powerschool` (paramiko tunnel) and `db_powerschool`
-(Oracle creds) are built by the shared `core/resources.py` factories. Writes
-directly to BigQuery — no GCS IO manager.
-
-The `dlt_powerschool_kippnewark` pool must stay at limit 1 (Dagster+ deployment
-setting) — it is the backstop against a manually-launched run overlapping a
-sensor/nightly load (the in-flight guard only sees sensor- and schedule-launched
-runs), and two concurrent full-`replace` loads of one table would corrupt it.
+dlt wiring and schedule: `libraries/dlt/CLAUDE.md` → `powerschool/`. Pool limit:
+same file → _Pool limits_.

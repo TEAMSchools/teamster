@@ -28,3 +28,12 @@ sources:
                 - kipptaf
                 - extracts
                 - rpt_powerschool__autocomm_students_iep
+      - name: rpt_powerschool__stored_grades
+        config:
+          meta:
+            dagster:
+              group: extracts
+              asset_key:
+                - kipptaf
+                - extracts
+                - rpt_powerschool__stored_grades

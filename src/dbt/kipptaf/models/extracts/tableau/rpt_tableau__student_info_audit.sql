@@ -48,22 +48,19 @@ with
 
             r.racecd,
 
-            cast(se.dob as string) as dob,
-
             cast(cec.sectionid_count as string) as sectionid_count,
 
             if(se.ethnicity is null, 1, 0) as missing_ethnicity_flag,
             if(se.gender is null, 1, 0) as missing_gender_flag,
             if(se.state_studentnumber is null, 1, 0) as missing_sid_flag,
-            if(se.dob is null, 1, 0) as missing_dob_flag,
 
             if(
-                regexp_contains(se.student_name, r"\s{2,}|[^\w\s',-]"), 1, 0
+                regexp_contains(se.student_name, r"\s{2,}|[^\w\p{L}\p{M}\s',-]"), 1, 0
             ) as name_spelling_flag,
 
             if(cec.sectionid_count < 3, true, false) as underenrollment_flag,
 
-            if(se.region = 'KMS', se.ethnicity, r.racecd) as race_eth_detail,
+            if(se.region = 'Miami', se.ethnicity, r.racecd) as race_eth_detail,
 
             case
                 when se.fteid != fte.id
@@ -241,30 +238,13 @@ select
     grade_level,
     advisory_name as team,
 
-    'Missing DOB' as element,
-
-    dob as detail,
-    missing_dob_flag as flag,
-from student_enrollments
-
-union all
-
-select
-    _dbt_source_relation as `db_name`,
-    schoolid,
-    school_name,
-    school_abbreviation,
-    student_number,
-    region,
-    lastfirst,
-    grade_level,
-    advisory_name as team,
-
     'Missing or Incorrect FTEID' as element,
 
     fteid_detail as detail,
     missing_fte_flag as flag,
 from student_enrollments
+-- Focus has no FTE
+where region != 'Miami'
 
 union all
 

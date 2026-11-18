@@ -2,12 +2,14 @@ import os
 import re
 import zipfile
 from collections.abc import Callable
+from datetime import datetime
 
 from dagster import (
     AssetExecutionContext,
     MultiPartitionKey,
     MultiPartitionsDefinition,
     Output,
+    TimeWindow,
     asset,
 )
 from dagster_shared import check
@@ -108,6 +110,7 @@ def build_sftp_file_asset(
     pdf_row_pattern: str | None = None,
     exclude_dirs: list[str] | None = None,
     ignore_multiple_matches: bool = False,
+    current_partition_only: bool = False,
     archive_remote_dir: Callable[[str], str] | None = None,
     file_sep: str = ",",
     file_encoding: str = "utf-8",
@@ -208,6 +211,7 @@ def build_sftp_file_asset(
             remote_dirs.append(archive_remote_dir(partition_key))
 
         file_matches: list[str] = []
+        file_mtimes: dict[str, int | None] = {}
 
         with (
             ssh.get_connection() as connection,
@@ -225,6 +229,8 @@ def build_sftp_file_asset(
                     continue
 
                 files.sort(key=lambda x: x[0].st_mtime or 0, reverse=True)
+
+                file_mtimes = {path: attr.st_mtime for attr, path in files}
 
                 file_matches = [
                     path
@@ -260,6 +266,24 @@ def build_sftp_file_asset(
             raise Exception(msg)
         else:
             file_match = file_matches[0]
+
+        # the vendor file only ever holds the current partition's data, so a
+        # past partition's file is a frozen snapshot that a re-run would destroy.
+        # Judge by the file's mtime, not the clock: a June 30 file can run after
+        # midnight.
+        if current_partition_only:
+            time_window = check.inst(
+                obj=context.partition_time_window, ttype=TimeWindow
+            )
+            file_datetime = datetime.fromtimestamp(
+                file_mtimes[file_match] or 0, tz=time_window.start.tzinfo
+            )
+
+            if not time_window.start <= file_datetime < time_window.end:
+                raise ValueError(
+                    f"{file_match} was modified {file_datetime}, outside partition "
+                    f"{partition_key}; refusing to overwrite its snapshot"
+                )
 
         local_filepath = ssh.sftp_get(
             remote_filepath=file_match,
@@ -463,7 +487,16 @@ def build_sftp_folder_asset(
     slugify_replacements: list[list[str]] | None = None,
     tags: dict[str, str] | None = None,
     op_tags: dict | None = None,
+    add_source_file_modified_timestamp: bool = False,
 ):
+    """Build an asset that concatenates every matching file in a folder.
+
+    Args:
+        add_source_file_modified_timestamp: stamp each row with its file's SFTP
+            mtime as `source_file_modified_timestamp`, so a consumer can keep
+            the most recently delivered copy of a record that appears in more
+            than one file. The asset's Avro schema must declare the field.
+    """
     if group_name is None:
         group_name = asset_key[1]
 
@@ -515,8 +548,8 @@ def build_sftp_folder_asset(
             )
 
         file_matches = [
-            path
-            for _, path in files
+            (attr, path)
+            for attr, path in files
             if re.search(
                 pattern=f"{remote_dir_regex_composed}/{remote_file_regex_composed}",
                 string=path,
@@ -537,9 +570,9 @@ def build_sftp_folder_asset(
 
             return None
 
-        local_filepaths = []
+        local_files = []
 
-        for file in file_matches:
+        for attr, file in file_matches:
             local_filepath = ssh.sftp_get(
                 remote_filepath=file,
                 local_filepath=resolve_local_filepath(
@@ -553,9 +586,9 @@ def build_sftp_folder_asset(
                 context.log.warning(msg=f"File is empty: {local_filepath}")
                 continue
 
-            local_filepaths.append(local_filepath)
+            local_files.append((local_filepath, attr.st_mtime))
 
-        for file_path in local_filepaths:
+        for file_path, file_mtime in local_files:
             records = file_to_records(
                 file_path=file_path,
                 encoding=file_encoding,
@@ -568,6 +601,10 @@ def build_sftp_folder_asset(
 
             if n_rows == 0:
                 context.log.warning(msg="File contains 0 rows")
+
+            if add_source_file_modified_timestamp:
+                for row in records:
+                    row["source_file_modified_timestamp"] = file_mtime
 
             all_records.extend(records)
 

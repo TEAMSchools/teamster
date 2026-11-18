@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class StudentTracker(BaseModel):
@@ -36,4 +36,4 @@ class StudentTracker(BaseModel):
     your_unique_identifier: str | None = None
     source_file_name: str | None = None
 
-    two_year_four_year: str | None = Field(None, alias="2_year_4_year")
+    two_year_four_year: str | None = None

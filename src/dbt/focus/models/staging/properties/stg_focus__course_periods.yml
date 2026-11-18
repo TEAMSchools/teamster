@@ -20,6 +20,18 @@ models:
           - not_null:
               config:
                 severity: error
+      - name: teacher_id
+        description: Focus staff id of the lead teacher (FLDOE TEACHER_ID).
+        data_type: int
+        data_tests:
+          - not_null:
+              name: stg_focus__course_periods__teacher_id_not_null
+              description: >-
+                A Focus course period has no lead teacher. Downstream, the
+                section has no teacher of record on rosters and gradebook
+                reports. Assign a lead teacher to the course period in Focus.
+              config:
+                severity: warn
       - name: syear
         description: Focus school year (start year, FLDOE SYEAR).
         data_type: int
@@ -43,9 +55,6 @@ models:
         data_type: int
       - name: marking_period_id
         description: Focus marking period id (FLDOE MARKING_PERIOD_ID).
-        data_type: int
-      - name: teacher_id
-        description: Focus staff id of the lead teacher (FLDOE TEACHER_ID).
         data_type: int
       - name: co_teacher_id1
         description: Co-teacher 1 staff id (FLDOE CO_TEACHER_ID1).

@@ -23,39 +23,17 @@ with
         where n.academic_year >= 2025 and ktc.advising_provider is null
     ),
 
-    dups as (
-        select
-            contact,
-            `subject`,
-            comments,
-            next_steps,
-            `date`,
-            `status`,
-            `type`,
-
-            count(id) as rows_total,
-
-        from salesforce_notes
-        group by contact, `subject`, comments, next_steps, `date`, `status`, `type`
-    ),
-
     row_counting as (
         select
-            s.*,
-
-            d.rows_total,
+            *,
 
             row_number() over (
-                partition by s.contact, s.comments order by s.name
+                partition by
+                    contact, `subject`, comments, next_steps, `date`, `status`, `type`
+                order by `name`
             ) as order_rows,
 
-        from salesforce_notes as s
-        inner join
-            dups as d
-            on s.contact = d.contact
-            and s.subject = d.subject
-            and s.comments = d.comments
-            and d.rows_total > 1
+        from salesforce_notes
     )
 
 select
@@ -69,4 +47,4 @@ select
     `status` as status__c,
     `type` as type__c,
 from row_counting
-where order_rows > 1
+where order_rows > 1 and comments != ''

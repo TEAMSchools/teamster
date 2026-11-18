@@ -8,7 +8,7 @@ from dlt.common.configuration.specs import ConnectionStringCredentials
 from dlt.common.runtime.collector import LogCollector
 from dlt.destinations import bigquery
 from dlt.sources.sql_database import remove_nullability_adapter, sql_database
-from sqlalchemy import Numeric
+from sqlalchemy import Float, Numeric
 from sqlalchemy.sql import Select, TableClause
 from sqlalchemy.types import TypeEngine
 
@@ -50,7 +50,15 @@ def unbounded_numeric_adapter(col_type: TypeEngine) -> TypeEngine | None:
     Postgres ``numeric`` with no size constraint reflects as
     ``precision=None, scale=None``.  DLT defaults to
     ``decimal128(38, 9)`` which truncates values with >9 decimal places.
+
+    ``Float`` (Postgres ``real`` / ``double precision``) is returned untouched so
+    it lands as FLOAT64. Before SQLAlchemy 2.1 it subclassed ``Numeric`` with
+    ``precision=None`` and was widened to BIGNUMERIC; the guard keeps that from
+    depending on the installed version.
     """
+    if isinstance(col_type, Float):
+        return col_type
+
     if isinstance(col_type, Numeric) and col_type.precision is None:
         return Numeric(precision=38, scale=18)
     return col_type

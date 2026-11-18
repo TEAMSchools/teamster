@@ -2,6 +2,7 @@
 packages:
   - local: ../amplify
   - local: ../cambium
+  - local: ../dbt_overrides
   - local: ../deanslist
   - local: ../edplan
   - local: ../finalsite

@@ -1084,3 +1084,19 @@ encoding anywhere in the 17 worksheets. Flagged in Notes, not counted above.
   (`dim_student_enrollment_status.sql` joins `dim_student_iep_status`,
   `dim_student_ell_status`, `dim_student_meal_eligibility_status` — no 504
   equivalent).
+
+## Revision 2026-11-09: Territory and location fields
+
+- **Territory has no data and will not be built.** The DDI Suite, FAST & iReady
+  and APM rows above list it as mart-missing or mart-ready. It is null in every
+  academic year of `int_extracts__student_enrollments`. It is a per-student
+  DeansList House roster at one Miami school, not a school attribute, so it does
+  not belong on `dim_locations` either. The dashboards' Territory filters have
+  nothing behind them today.
+- **Head of school, School Leader, operations director and school ID** land on
+  `dim_locations` in #6335 as `head_of_school_staff_key`,
+  `school_leader_staff_key`, `operations_director_staff_key` and `school_id`.
+  The three staff keys reach names and emails through the
+  `staff_head_of_school`, `staff_school_leader` and `staff_operations_director`
+  cubes. `student_assessment_scores_view` exposes `school_id` and the head of
+  school.

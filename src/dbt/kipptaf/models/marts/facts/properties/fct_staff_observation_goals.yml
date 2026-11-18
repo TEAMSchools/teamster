@@ -1,19 +1,17 @@
 models:
   - name: fct_staff_observation_goals
     description: >-
-      Staff observation goal assignment fact table. One row per teacher x goal
-      assignment. Records each goal or look-for assigned to a teacher through
-      SchoolMint Grow assignments, linked to the 4-level goal taxonomy. Foreign
-      keys to dim_staff (teacher and creator as role-playing dimensions) and
-      dim_staff_observation_goal_types.
+      Staff observation goal assignment fact table. One row per goal assigned to
+      a teacher through SchoolMint Grow; an assignment that holds several
+      microgoals has a row per microgoal, and a look-for or untagged goal is one
+      row. Foreign keys to dim_staff (teacher and creator as role-playing
+      dimensions) and dim_staff_observation_goal_types.
     columns:
       - name: staff_observation_goal_key
         data_type: string
         description: >-
-          Surrogate primary key derived from teacher employee number,
-          assignment_id, and goal tag_id. Generated with
-          generate_surrogate_key(["gu.internal_id_int", "a.assignment_id",
-          "m.tag_id"]).
+          Surrogate primary key derived from the teacher's employee number, the
+          assignment, and the goal's tag id (null for a goal with no goal tag).
         constraints:
           - type: primary_key
             warn_unsupported: false
@@ -30,44 +28,28 @@ models:
             foreign_key:
               to: ref('dim_staff')
               to_columns: [staff_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_staff')
-                field: staff_key
       - name: staff_observation_goal_type_key
         data_type: string
         description: >-
           Foreign key to dim_staff_observation_goal_types. Surrogate key derived
-          from the goal tag_id.
+          from the goal's tag id and goal name.
         config:
           meta:
             foreign_key:
               to: ref('dim_staff_observation_goal_types')
               to_columns: [staff_observation_goal_type_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_staff_observation_goal_types')
-                field: staff_observation_goal_type_key
 
       - name: creator_staff_key
         data_type: string
         description: >-
           Foreign key to dim_staff for the person who created the assignment.
-          Surrogate key derived from creator employee_number. May be null if the
-          creator cannot be matched to the staff roster.
+          Null when the creator's observation-platform user has no staff id.
 
         config:
           meta:
             foreign_key:
               to: ref('dim_staff')
               to_columns: [staff_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_staff')
-                field: staff_key
       - name: assignment_date
         data_type: date
         description: >-
@@ -82,3 +64,36 @@ models:
         data_type: int64
         description: >-
           Academic year derived from the assignment creation date.
+
+      - name: staff_observation_assignment_key
+        data_type: string
+        description: >-
+          Surrogate key for the Grow assignment. Rows of one assignment that
+          holds several goals share it, so a distinct count of it counts
+          assignments.
+
+unit_tests:
+  - name: test_fct_staff_observation_goals_keys
+    description: >-
+      A creator with no employee number gives a null creator_staff_key, and each
+      assignment, tagged or not, gets its own assignment key. An assignment with
+      two microgoals gives two rows that share one assignment key.
+    model: fct_staff_observation_goals
+    given:
+      - input: ref("int_performance_management__observation_goals")
+        format: sql
+        rows: |
+          select 'a1' as assignment_id, 'm3' as goal_tag_id, 101 as teacher_employee_number, cast(null as int64) as creator_employee_number, timestamp '2026-11-02 12:00:00' as assignment_created_timestamp, date '2026-11-02' as assignment_date, '3D.01 Magic ratio.' as goal_name
+          union all select 'a1', 'm4', 101, null, timestamp '2026-11-02 12:00:00', date '2026-11-02', '3D.02 Smile.'
+          union all select 'a2', null, 101, null, timestamp '2026-11-02 12:00:00', date '2026-11-02', 'Free text goal'
+    expect:
+      rows:
+        # md5 of the assignment id, the assignment key's hash
+        # trunk-ignore(gitleaks/generic-api-key): md5 test fixture, not a secret
+        - staff_observation_assignment_key: 8a8bb7cd343aa2ad99b7d762030857a2
+          creator_staff_key: null
+        # trunk-ignore(gitleaks/generic-api-key): md5 test fixture, not a secret
+        - staff_observation_assignment_key: 8a8bb7cd343aa2ad99b7d762030857a2
+          creator_staff_key: null
+        - staff_observation_assignment_key: 693a9fdd4c2fd0700968fba0d07ff3c0
+          creator_staff_key: null

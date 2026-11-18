@@ -22,6 +22,10 @@
 - **`EnvVar` in integration tests**: `EnvVar("X")` / `EnvVar.int("X")` inside
   `build_resources()`, per `src/teamster/CLAUDE.md` _Int env-var config_. Plain
   `int(EnvVar("X"))` casts the marker object, not the value.
+- **Credentialed one-offs print secrets in third-party frames**: resources hide
+  credential fields from `repr`, but a failure inside a token fetch still prints
+  the frame's arguments (e.g. `fetch_token(client_secret=...)`). Run
+  live-credential tests with `--tb=short` before pasting a traceback anywhere.
 - **Worktree tests**: VS Code doesn't discover tests in worktrees. Run from the
   CLI: `cd <abs-worktree> && uv run pytest ...` (conftest reads the token file
   itself). Invocation details: `.claude/rules/worktrees.md`.
@@ -51,9 +55,9 @@
   leave the changes stashed and the `stash pop` unrun. To confirm a failure is
   pre-existing, check the test is in an untouched dir and doesn't reference your
   changed symbols, rather than stash-comparing.
-- **`test_resource_ssh_dir_mtime_propagation.py` fails ~10 of 15 on `main`** —
-  it asserts LIVE SFTP servers propagate directory mtime, so failures track
-  vendor behavior, not your change, and `littlesis` flaps between runs. Baseline
+- **`test_resource_ssh_dir_mtime_propagation.py` fails often on `main`** — it
+  asserts LIVE SFTP servers propagate directory mtime, so failures track vendor
+  behavior, not your change, and `littlesis` flaps between runs. Baseline
   against `main` before attributing a failure here to an SSH edit.
 - **Cross-file conftest imports fail** (`tests/` has no `__init__.py`). For
   fixture-injected param types, skip the annotation or use `TYPE_CHECKING` with

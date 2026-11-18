@@ -288,16 +288,18 @@ models:
       - name: attempted_njgpa_ela
         data_type: boolean
         description: >-
-          Whether the student sat the NJGPA in English language arts at all.
-          True on the rows of a subject PowerSchool coded M. Defaults to false.
+          Whether the student sat the NJGPA in English language arts at all. A
+          student on the DLM pathway (code M) in ELA counts as having sat it.
+          One value per student, the same on every row. Defaults to false.
         config:
           meta:
             contains_pii: true
       - name: attempted_njgpa_math
         data_type: boolean
         description: >-
-          Whether the student sat the NJGPA in mathematics at all. True on the
-          rows of a subject PowerSchool coded M. Defaults to false.
+          Whether the student sat the NJGPA in mathematics at all. A student on
+          the DLM pathway (code M) in math counts as having sat it. One value
+          per student, the same on every row. Defaults to false.
         config:
           meta:
             contains_pii: true
@@ -373,12 +375,24 @@ models:
         description: >-
           Where the student stands against the graduation requirement overall,
           which is what the dashboard shows. One value per student. Derived from
-          whether each subject counts, whether FAFSA is required yet, and the
-          11th grade grace period -- not looked up. A subject counts when it is
-          met and the student sat the NJGPA in it. FAFSA is required for 12th
-          graders from the January deadline on. Grades 10 and below are always
-          Grad Eligible, since no requirement has come due, and an 11th grader
-          with no NJGPA record is Grad Eligible until results land in late June.
+          whether each subject counts, whether FAFSA is required yet, and
+          whether an 11th grader's results are still due -- not looked up. A
+          subject counts when it is met and the student sat the NJGPA in it; a
+          DLM code (M) counts as sitting it in that subject only. FAFSA is
+          required for 12th graders from the January deadline on. Grades 10 and
+          below are always Grad Eligible, since no requirement has come due. An
+          11th grader holding NJGPA records is judged like a 12th grader, minus
+          FAFSA, since testing ahead of peers usually means they are behind on
+          credits. Until results land in late June, an 11th grader with no
+          records reads Awaiting Results, and one whose only counting subject
+          leaves the other untested reads ELA Only / Awaiting Math or Math Only
+          / Awaiting ELA. A student who sat the NJGPA in a subject whose cut
+          score cohort has no NJGPA row on the cut score sheet reads Pending Cut
+          Score, since NJDOE publishes each class's cut scores only after the
+          test is scored. That holds even if the sheet already has the class's
+          ACT, SAT or PSAT rows, and it takes priority over a one-subject label
+          such as Math Only. The label does not change final_grad_path_code,
+          which stays R until the row arrives.
         config:
           meta:
             contains_pii: true
@@ -468,4 +482,194 @@ unit_tests:
             met_njgpa: true,
             met_ela: true,
             final_grad_path_code: S,
+          }
+  - name: test_juniors_awaiting_results_before_june
+    description: >-
+      Until NJGPA results land in late June, an 11th grader whose results are
+      still due must not read Grad Eligible. Student 2 holds no NJGPA records
+      and reads Awaiting Results. Student 3 is on DLM in ELA and has not tested
+      in math, so ELA counts and math is still due -- ELA Only / Awaiting Math.
+      Student 4 has the same shape after results land, so the open subject is
+      judged like a 12th grader's -- ELA Only. One label per student, on every
+      row.
+    model: int_students__graduation_path_codes
+    given:
+      - input: ref('int_students__graduation_pathway_scores')
+        format: sql
+        rows: |
+          select
+            'kippnewark_powerschool' as _dbt_source_relation,
+            'kippnewark' as _dbt_source_project,
+            2 as students_dcid,
+            2 as studentid,
+            2 as student_number,
+            '2' as state_studentnumber,
+            cast(null as string) as salesforce_id,
+            11 as grade_level,
+            0 as enroll_status,
+            2028 as cohort,
+            'ELA' as discipline,
+            'ENG' as powerschool_credittype,
+            cast(null as string) as ps_grad_path_code,
+            false as has_fafsa,
+            false as njgpa_season_11th,
+            false as fafsa_season_12th,
+            'NJGPA' as pathway_option,
+            'ELAGP' as score_type,
+            'S' as pathway_code,
+            725 as cutoff,
+            'NJGPA' as assessment_version,
+            cast(null as numeric) as scale_score,
+            cast(null as string) as subject_area,
+            cast(null as bool) as met_pathway_cutoff,
+            false as attempted_njgpa_ela,
+            false as attempted_njgpa_math,
+            cast(null as numeric) as points_short,
+            1 as rn_highest
+          union all
+          select 'kippnewark_powerschool', 'kippnewark', 2, 2, 2, '2', null,
+            11, 0, 2028, 'Math', 'MATH', null, false, false, false,
+            'NJGPA', 'MATGP', 'S', 725, 'NJGPA',
+            null, null, null, false, false, null, 1
+          union all
+          select 'kippnewark_powerschool', 'kippnewark', 3, 3, 3, '3', null,
+            11, 0, 2028, 'ELA', 'ENG', 'M', false, false, false,
+            'DLM', 'dlm_ela', 'M', null, null,
+            cast(0 as numeric), 'ELA', true, true, false, null, 1
+          union all
+          select 'kippnewark_powerschool', 'kippnewark', 3, 3, 3, '3', null,
+            11, 0, 2028, 'Math', 'MATH', null, false, false, false,
+            'NJGPA', 'MATGP', 'S', 725, 'NJGPA',
+            null, null, null, true, false, null, 1
+          union all
+          select 'kippnewark_powerschool', 'kippnewark', 4, 4, 4, '4', null,
+            11, 0, 2028, 'ELA', 'ENG', 'M', false, true, false,
+            'DLM', 'dlm_ela', 'M', null, null,
+            cast(0 as numeric), 'ELA', true, true, false, null, 1
+          union all
+          select 'kippnewark_powerschool', 'kippnewark', 4, 4, 4, '4', null,
+            11, 0, 2028, 'Math', 'MATH', null, false, true, false,
+            'NJGPA', 'MATGP', 'S', 725, 'NJGPA',
+            null, null, null, true, false, null, 1
+    expect:
+      rows:
+        - {
+            student_number: 2,
+            discipline: ELA,
+            grad_eligibility: Awaiting Results,
+          }
+        - {
+            student_number: 2,
+            discipline: Math,
+            grad_eligibility: Awaiting Results,
+          }
+        - {
+            student_number: 3,
+            discipline: ELA,
+            grad_eligibility: ELA Only / Awaiting Math,
+          }
+        - {
+            student_number: 3,
+            discipline: Math,
+            grad_eligibility: ELA Only / Awaiting Math,
+          }
+        - { student_number: 4, discipline: ELA, grad_eligibility: ELA Only }
+        - { student_number: 4, discipline: Math, grad_eligibility: ELA Only }
+  - name: test_pending_cut_score_when_class_has_no_cutoff_rows
+    description: >-
+      A student who sat the NJGPA before NJDOE published their class's cut
+      scores reads Pending Cut Score, not Not Grad Eligible. Student 5's cut
+      score cohort has no sheet rows, so the cut score join leaves
+      pathway_option null. Student 6's cohort has rows, but none for the version
+      they sat, so the NJGPA row carries a null score. That is a records
+      problem, not a pending one, and still reads Not Grad Eligible. Student 7's
+      cohort already has ACT rows for ELA but no NJGPA rows, and they passed
+      math. ELA is still pending, and that outranks Math Only. Pending subjects
+      keep a final code of R, because PowerSchool has no pending code.
+    model: int_students__graduation_path_codes
+    given:
+      - input: ref('int_students__graduation_pathway_scores')
+        format: sql
+        rows: |
+          select
+            'kippnewark_powerschool' as _dbt_source_relation,
+            'kippnewark' as _dbt_source_project,
+            5 as students_dcid,
+            5 as studentid,
+            5 as student_number,
+            '5' as state_studentnumber,
+            cast(null as string) as salesforce_id,
+            11 as grade_level,
+            0 as enroll_status,
+            2028 as cohort,
+            'ELA' as discipline,
+            'ENG' as powerschool_credittype,
+            cast(null as string) as ps_grad_path_code,
+            false as has_fafsa,
+            false as njgpa_season_11th,
+            false as fafsa_season_12th,
+            cast(null as string) as pathway_option,
+            cast(null as string) as score_type,
+            cast(null as string) as pathway_code,
+            cast(null as int64) as cutoff,
+            cast(null as string) as assessment_version,
+            cast(null as numeric) as scale_score,
+            cast(null as string) as subject_area,
+            cast(null as bool) as met_pathway_cutoff,
+            true as attempted_njgpa_ela,
+            false as attempted_njgpa_math,
+            cast(null as numeric) as points_short,
+            1 as rn_highest
+          union all
+          select 'kippnewark_powerschool', 'kippnewark', 5, 5, 5, '5', null,
+            11, 0, 2028, 'Math', 'MATH', null, false, false, false,
+            null, null, null, null, null,
+            null, null, null, true, false, null, 1
+          union all
+          select 'kippnewark_powerschool', 'kippnewark', 6, 6, 6, '6', null,
+            12, 0, 2027, 'ELA', 'ENG', null, true, false, false,
+            'NJGPA', 'ELAGP', 'S', 725, 'NJGPA',
+            null, null, null, true, false, null, 1
+          union all
+          select 'kippnewark_powerschool', 'kippnewark', 7, 7, 7, '7', null,
+            12, 0, 2028, 'ELA', 'ENG', null, true, false, false,
+            'ACT', 'act_reading', 'E', 16, 'ACT',
+            null, null, null, true, true, null, 1
+          union all
+          select 'kippnewark_powerschool', 'kippnewark', 7, 7, 7, '7', null,
+            12, 0, 2028, 'Math', 'MATH', null, true, false, false,
+            'NJGPA', 'MATGP', 'S', 725, 'NJGPA',
+            cast(800 as numeric), 'MATGP', true, true, true,
+            cast(75 as numeric), 1
+    expect:
+      rows:
+        - {
+            student_number: 5,
+            discipline: ELA,
+            final_grad_path_code: R,
+            grad_eligibility: Pending Cut Score,
+          }
+        - {
+            student_number: 5,
+            discipline: Math,
+            final_grad_path_code: R,
+            grad_eligibility: Pending Cut Score,
+          }
+        - {
+            student_number: 6,
+            discipline: ELA,
+            final_grad_path_code: R,
+            grad_eligibility: Not Grad Eligible,
+          }
+        - {
+            student_number: 7,
+            discipline: ELA,
+            final_grad_path_code: R,
+            grad_eligibility: Pending Cut Score,
+          }
+        - {
+            student_number: 7,
+            discipline: Math,
+            final_grad_path_code: S,
+            grad_eligibility: Pending Cut Score,
           }

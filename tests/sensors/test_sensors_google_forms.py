@@ -45,3 +45,17 @@ def test_google_forms_responses_sensor():
 
     assert len(sensor_result.run_requests) > 0
     assert len(sensor_result.dynamic_partitions_requests) > 0
+
+
+def test_google_forms_responses_sensor_runs_in_process():
+    from teamster.code_locations.kipptaf.google.forms.sensors import (
+        google_forms_responses_asset_job,
+        google_forms_responses_sensor,
+    )
+
+    assert (
+        google_forms_responses_sensor.job_name
+        == "kipptaf__google__forms__responses_asset_job"
+    )
+    assert google_forms_responses_asset_job.executor_def is not None
+    assert google_forms_responses_asset_job.executor_def.name == "in_process"

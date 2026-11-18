@@ -52,14 +52,14 @@ left join
     and not e.is_dropped_section
     and e.rn_credittype_year = 1
 left join
-    {{ ref("int_iready__diagnostic_results") }} as ir
+    {{ ref("int_assessments__iready_diagnostic_results") }} as ir
     on co.student_number = ir.student_id
     and co.academic_year = ir.academic_year_int
     and subj.iready_subject = ir.subject
     and ar = ir.test_round
     and ir.rn_subj_round = 1
 left join
-    {{ ref("int_iready__domain_unpivot") }} as up
+    {{ ref("int_assessments__iready_domain_unpivot") }} as up
     on ir.student_id = up.student_id
     and ir.academic_year_int = up.academic_year_int
     and ir.subject = up.subject

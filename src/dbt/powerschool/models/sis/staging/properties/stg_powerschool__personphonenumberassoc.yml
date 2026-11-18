@@ -5,6 +5,9 @@ models:
     columns:
       - name: phonenumberasentered
         data_type: string
+        config:
+          meta:
+            contains_pii: true
         description:
           Exact representation of what the user entered, including the
           extension, such as +001 (714) 123-4567 ext 1211. Required.

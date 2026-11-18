@@ -27,8 +27,6 @@ with
                 then false
             end as pre_met_pathway_cutoff,
 
-            if(e.ps_grad_path_code = 'M', true, false) as pre_attempted_njgpa_subject,
-
             /* NJGPA results land in late June, so 11th graders are not held to the
                test requirement until then. */
             if(
@@ -115,6 +113,19 @@ with
             and score_type != 'act_english'
     ),
 
+    njgpa_disciplines as (
+        select student_number, discipline,
+        from scores
+        where pathway_option = 'NJGPA'
+
+        union all
+
+        /* dlm stands in for the njgpa, in its own discipline only */
+        select student_number, discipline,
+        from students
+        where ps_grad_path_code = 'M'
+    ),
+
     attempted_subject_njgpa as (
         /* whether the student sat the njgpa for the discipline at all */
         select
@@ -122,8 +133,7 @@ with
 
             logical_or(discipline = 'ELA') as attempted_njgpa_ela,
             logical_or(discipline = 'Math') as attempted_njgpa_math,
-        from scores
-        where pathway_option = 'NJGPA'
+        from njgpa_disciplines
         group by student_number
     ),
 
@@ -248,17 +258,8 @@ with
 
             s.pre_met_pathway_cutoff as met_pathway_cutoff,
 
-            case
-                when s.ps_grad_path_code = 'M'
-                then s.pre_attempted_njgpa_subject
-                else coalesce(nj.attempted_njgpa_ela, false)
-            end as attempted_njgpa_ela,
-
-            case
-                when s.ps_grad_path_code = 'M'
-                then s.pre_attempted_njgpa_subject
-                else coalesce(nj.attempted_njgpa_math, false)
-            end as attempted_njgpa_math,
+            coalesce(nj.attempted_njgpa_ela, false) as attempted_njgpa_ela,
+            coalesce(nj.attempted_njgpa_math, false) as attempted_njgpa_math,
 
         from students as s
         left join attempted_subject_njgpa as nj on s.student_number = nj.student_number

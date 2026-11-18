@@ -6,6 +6,13 @@ models:
       here, with a matching Practice row on the scaffold, designates an
       Illuminate assessment as a reportable practice assessment; bands with no
       scaffold match are dropped by an inner join.
+
+
+      Rows with uses_bands_of filled in are a second kind and hold no bands.
+      Each maps one Apex module (Miami's practice tests, from Focus) to the
+      Illuminate assessment whose bands convert it, for a form both regions sat.
+      Every other column on those rows is blank, so they never reach the
+      scaffold join.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -15,9 +22,29 @@ models:
           config:
             severity: error
     columns:
+      - name: uses_bands_of
+        data_type: int64
+        description: >-
+          On an Apex module row, the Illuminate assessment_id whose bands
+          convert the module. Modules pointing to the same assessment are summed
+          before conversion, so their points together span that assessment's raw
+          range. Blank on band rows.
+        data_tests:
+          # the target must be a band row; Apex module ids share assessment_id
+          - dbt_utils.relationships_where:
+              arguments:
+                to: ref('stg_google_sheets__kippfwd__practice_scale_score_conversion')
+                field: assessment_id
+                to_condition:
+                  uses_bands_of is null and raw_score_low is not null
+              config:
+                severity: error
       - name: assessment_id
         data_type: int64
-        description: Illuminate canonical assessment id.
+        description: >-
+          Illuminate canonical assessment id on band rows. Apex assessment id on
+          rows with uses_bands_of filled in; the two id spaces can collide, so
+          uses_bands_of decides which system an id belongs to.
       - name: academic_year
         data_type: int64
         description: Start-year convention, so SY26-27 reads 2026.

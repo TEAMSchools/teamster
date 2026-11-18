@@ -1,11 +1,4 @@
 with
-    -- A student can have two course_enrollments rows tagged with the same
-    -- ap_course_subject (e.g. a main AP course plus a companion recitation
-    -- section) -- both are legitimate, distinct course offerings, not a data
-    -- error, so they're intentionally left undeduped here and surface as
-    -- separate rows below. Distinct from the PowerSchool double-write corpus
-    -- (#3900/#3915), which is literal duplicate records for the same
-    -- enrollment.
     course_enrollments as (
         select
             _dbt_source_project,
@@ -18,9 +11,9 @@ with
             teacher_lastfirst,
             courses_course_name,
 
-        from {{ ref("base_powerschool__course_enrollments") }}
+        from {{ ref("int_students__course_enrollments") }}
         where
-            rn_course_number_year = 1
+            rn_ap_course_subject_year = 1
             and ap_course_subject is not null
             and not is_dropped_section
     ),

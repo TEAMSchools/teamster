@@ -130,4 +130,8 @@ including files in another skill; several `offset` reads of one file count as
 one. Fixes that worked on CARAT: merge references that every task needed
 together; add an explicit "this overrides step N of X" link; name where a doc
 section stops ("read X and Y, stop at heading Z"); link a reference file
-directly instead of another skill's entry file. Re-run until it passes.
+directly instead of another skill's entry file. On DDI, every failure was a
+reference linking a sibling reference for one fact — inline the one-liner
+(cadence, asset names, a table location) instead of pointing; a "full mechanics:
+X" parenthetical invites the hop even when the needed facts are already inline.
+Re-run until it passes.

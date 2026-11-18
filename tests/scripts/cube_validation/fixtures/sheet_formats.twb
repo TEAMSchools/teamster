@@ -1,0 +1,79 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<workbook original-version='18.1' source-build='2025.1.0' version='18.1' xmlns:user='http://www.tableausoftware.com/xml/user'>
+  <datasources>
+    <datasource hasconnection='false' inline='true' name='Parameters' version='18.1'>
+      <aliases enabled='yes' />
+      <column caption='Basis' datatype='string' name='[Parameter 1]' param-domain-type='list' role='measure' type='nominal' value='&quot;Today&quot;'>
+        <calculation class='tableau' formula='&quot;Today&quot;' />
+        <members>
+          <member value='&quot;Today&quot;' />
+          <member value='&quot;Year end&quot;' />
+        </members>
+      </column>
+    </datasource>
+    <datasource caption='Sample Rows' inline='true' name='federated.0sample' version='18.1'>
+      <column caption='Region' datatype='string' name='[region]' role='dimension' type='nominal' />
+      <column caption='Rate' datatype='real' default-format='p0.0%' name='[Calculation_1001]' role='measure' type='quantitative'>
+        <calculation class='tableau' formula='SUM([is_present]) / SUM([is_enrolled])' />
+      </column>
+      <column caption='Count' datatype='integer' default-format='n#,##0' name='[Calculation_1002]' role='measure' type='quantitative'>
+        <calculation class='tableau' formula='COUNTD([row_key])' />
+      </column>
+    </datasource>
+  </datasources>
+  <worksheets>
+    <worksheet name='Rate by Region'>
+      <table>
+        <view>
+          <datasources>
+            <datasource caption='Sample Rows' name='federated.0sample' />
+          </datasources>
+          <datasource-dependencies datasource='federated.0sample'>
+            <column caption='Rate' datatype='real' default-format='p0.0%' name='[Calculation_1001]' role='measure' type='quantitative'>
+              <calculation class='tableau' formula='SUM([is_present]) / SUM([is_enrolled])' />
+            </column>
+            <column caption='Count' datatype='integer' default-format='n#,##0' name='[Calculation_1002]' role='measure' type='quantitative'>
+              <calculation class='tableau' formula='COUNTD([row_key])' />
+            </column>
+            <column caption='Region' datatype='string' name='[region]' role='dimension' type='nominal' />
+            <column-instance column='[region]' derivation='None' name='[none:region:nk]' pivot='key' type='nominal' />
+            <column-instance column='[Calculation_1001]' derivation='User' name='[usr:Calculation_1001:qk]' pivot='key' type='quantitative' />
+            <column-instance column='[Calculation_1002]' derivation='User' name='[usr:Calculation_1002:qk]' pivot='key' type='quantitative' />
+          </datasource-dependencies>
+          <filter class='categorical' column='[federated.0sample].[none:region:nk]'>
+            <groupfilter function='member' level='[none:region:nk]' member='&quot;North&quot;' user:ui-domain='database' user:ui-enumeration='inclusive' user:ui-marker='enumerate' />
+          </filter>
+          <aggregation value='true' />
+        </view>
+        <style>
+          <style-rule element='cell'>
+            <format attr='text-format' field='[federated.0sample].[usr:Calculation_1001:qk]' value='p0.0%' />
+            <format attr='text-format' field='[federated.0sample].[usr:Calculation_1002:qk]' value='n#,##0' />
+            <format attr='width' field='[federated.0sample].[usr:Calculation_1001:qk]' value='120' />
+          </style-rule>
+        </style>
+        <panes>
+          <pane selection-relaxation-option='selection-relaxation-allow'>
+            <view>
+              <breakdown value='auto' />
+            </view>
+            <mark class='Automatic' />
+            <style>
+              <style-rule element='mark'>
+                <format attr='text-format' field='[federated.0sample].[pcto:usr:Calculation_1001:qk:2]' value='p0%' />
+              </style-rule>
+            </style>
+          </pane>
+        </panes>
+        <rows>[federated.0sample].[none:region:nk]</rows>
+        <cols>([federated.0sample].[usr:Calculation_1001:qk] + [federated.0sample].[usr:Calculation_1002:qk])</cols>
+      </table>
+      <simple-id uuid='{00000000-0000-0000-0000-000000000001}' />
+    </worksheet>
+  </worksheets>
+  <windows>
+    <window class='worksheet' name='Rate by Region'>
+      <simple-id uuid='{00000000-0000-0000-0000-000000000002}' />
+    </window>
+  </windows>
+</workbook>

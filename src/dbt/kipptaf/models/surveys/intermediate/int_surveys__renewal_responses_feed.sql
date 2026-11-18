@@ -20,14 +20,16 @@ with
 
             ra.approval_level,
 
-            safe_cast(
-                regexp_extract(fr.answer, r'\((\d{6})\)') as int
-            ) as subject_employee_number,
+            ss.subject_employee_number,
         from {{ ref("int_surveys__survey_responses") }} as fr
         left join
             {{ ref("stg_google_sheets__people__renewal_approvers") }} as ra
             on fr.respondent_email = ra.approver_email
             and fr.academic_year = ra.academic_year
+        left join
+            {{ ref("int_surveys__submission_subjects") }} as ss
+            on fr.survey_id = ss.survey_id
+            and fr.survey_response_id = ss.survey_response_id
         where fr.survey_title = 'Renewal Approval Tool Processing'
     ),
 

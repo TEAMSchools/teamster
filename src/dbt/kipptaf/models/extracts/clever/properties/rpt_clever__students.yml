@@ -5,8 +5,28 @@ models:
       phone type). UNPIVOT drops null inputs, so a contact with no phone of a
       given type emits no row for it. contact_1 is the single reportable parent
       (contact_type 'primary'); emergency_1 through emergency_4 are emergency
-      contacts.
+      contacts. ext__district_sisid and ext__school_sisid carry the region's
+      NJDOE codes from dim_regions so Amplify can pass them to NJDOE.
     columns:
+      - name: ext__district_sisid
+        data_type: string
+        description:
+          NJDOE district code for the student's region, from
+          dim_regions.state_district_id. Written to Clever as
+          ext.district_sisid.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: ext__school_sisid
+        data_type: string
+        description:
+          NJDOE school code for the student's region, from
+          dim_regions.state_school_id. Written to Clever as ext.school_sisid.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
       - name: last_name
         data_type: string
       - name: middle_name

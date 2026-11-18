@@ -65,7 +65,7 @@ with
             bt.category_type,
 
             w.academic_year,
-            w.quarter as term,
+            w.term,
             w.week_start_monday,
             w.week_end_sunday,
             w.date_count as days_in_session,
@@ -132,6 +132,7 @@ with
             dl_school_id,
             academic_year,
             behavior,
+            behavior_date,
 
             date_add(
                 date_trunc(behavior_date, week(sunday)), interval 1 day
@@ -151,16 +152,29 @@ with
         where behavior = 'Progress to Quarterly Incentive'
     ),
 
+    school_crosswalk as (
+        -- grain projection, not dup-masking: 1 row per DeansList school
+        select distinct
+            location_deanslist_school_id as deanslist_school_id,
+            location_powerschool_school_id as powerschool_school_id,
+        from {{ ref("int_people__location_crosswalk") }}
+        where
+            location_deanslist_school_id is not null
+            and location_powerschool_school_id is not null
+    ),
+
     quarterly_awards as (
         -- grain projection, not dup-masking
-        select distinct i.student_school_id, i.dl_school_id, i.academic_year, w.quarter,
+        select distinct
+            i.student_school_id, i.dl_school_id, i.academic_year, t.term_name as term,
         from incentives as i
+        inner join school_crosswalk as sc on i.dl_school_id = sc.deanslist_school_id
         inner join
-            {{ ref("int_extracts__student_enrollments_weeks") }} as w
-            on i.student_school_id = w.student_number
-            and i.dl_school_id = w.deanslist_school_id
-            and i.academic_year = w.academic_year
-            and i.week_start_monday = w.week_start_monday
+            {{ ref("dim_terms") }} as t
+            on sc.powerschool_school_id = t.school_id
+            and i.academic_year = t.academic_year
+            and i.behavior_date between t.start_date and t.end_date
+            and t.type = 'RT'
         where i.behavior = 'Earned Quarterly Incentive'
     )
 
@@ -188,7 +202,7 @@ select
     co.self_contained_status,
     co.homeless_status,
     co.homeless_primary_nighttime_residence,
-    co.quarter as term,
+    co.term,
     co.week_start_monday,
     co.week_end_sunday,
     co.date_count as days_in_session,
@@ -231,5 +245,5 @@ left join
     on co.student_number = qa.student_school_id
     and co.deanslist_school_id = qa.dl_school_id
     and co.academic_year = qa.academic_year
-    and co.quarter = qa.quarter
+    and co.term = qa.term
 where co.is_enrolled_week and co.academic_year >= {{ var("current_academic_year") - 1 }}

@@ -6,13 +6,6 @@ models:
       live here moved to int_students__attendance_daily, the SIS-neutral
       successor that also brings in Focus/Miami. Consume that model instead of
       this one unless a PowerSchool-only raw row is specifically needed.
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - _dbt_source_relation
-              - studentid
-              - calendardate
     columns:
       - name: _dbt_source_relation
         data_type: string

@@ -4,12 +4,16 @@ models:
       Term related information used for the school such as Semester, Full Year,
       etc.
     data_tests:
-      # Warn rather than error on purpose. PowerSchool does not enforce this
-      # key, no district violates it today, and int_powerschool__terms_spine
-      # already reduces to one row per key, so a duplicate is not a build
-      # emergency. The test exists so a duplicate surfaces to ops instead of
-      # being absorbed silently downstream.
+      # TODO(#5558): runbook
       - dbt_utils.unique_combination_of_columns:
+          name: stg_powerschool__terms__one_term_per_abbreviation
+          description:
+            A school has 2 PowerSchool terms with the same abbreviation in one
+            school year. PowerSchool allows this, but downstream models keep
+            only 1 of the 2. A PowerSchool admin renames or deletes the extra
+            term in that school's years and terms setup.
+            int_powerschool__terms_spine keeps 1 row per abbreviation until it
+            is fixed.
           arguments:
             combination_of_columns:
               - schoolid

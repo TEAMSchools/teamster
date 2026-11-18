@@ -118,7 +118,7 @@ build.
 | `id`     | Lowercase letters, digits, and underscores only. Must be unique           |
 | `name`   | Non-empty. Use what the tool calls itself when you open it                |
 | `url`    | Must start with `https://`                                                |
-| `system` | One of the nine values in [Systems](#systems)                             |
+| `system` | One of the values in [Systems](#systems)                                  |
 | `group`  | One of the seven ids in [Groups](#groups). Required — there is no default |
 | `status` | `needs-review` or `verified`                                              |
 
@@ -343,17 +343,18 @@ Pick the one the tool most belongs under. If none fits, raise it — do not gues
 
 ### Systems
 
-| Value           | Display label |
-| --------------- | ------------- |
-| `tableau`       | Tableau       |
-| `appsheet`      | AppSheet      |
-| `zendesk`       | Zendesk       |
-| `google-sheet`  | Google Sheet  |
-| `google-slides` | Google Slides |
-| `google-form`   | Google Form   |
-| `google-doc`    | Google Doc    |
-| `apps-script`   | Apps Script   |
-| `other`         | Other         |
+| Value           | Display label       |
+| --------------- | ------------------- |
+| `tableau`       | Tableau             |
+| `appsheet`      | AppSheet            |
+| `zendesk`       | Zendesk             |
+| `google-sheet`  | Google Sheet        |
+| `google-slides` | Google Slides       |
+| `google-form`   | Google Form         |
+| `google-doc`    | Google Doc          |
+| `google-folder` | Google Drive folder |
+| `apps-script`   | Apps Script         |
+| `other`         | Other               |
 
 Anything `google-*` or `appsheet` triggers
 [the sharing check](#the-sharing-check).

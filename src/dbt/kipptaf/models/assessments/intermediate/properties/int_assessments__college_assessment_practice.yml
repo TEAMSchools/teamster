@@ -1,16 +1,25 @@
 models:
   - name: int_assessments__college_assessment_practice
     description: >-
-      Practice SAT, PSAT, and ACT results from Illuminate, converted from raw
-      score to scale score through two KIPP Forward sheet tabs.
-      practice_scale_score_conversion supplies the raw-to-scale bands and
-      scaffold supplies the vocabulary, joined on academic_year, the sheet's
-      scope against expected_scope, and score_type against expected_score_type.
-      An assessment appears here only if its id is in the conversion sheet and
-      its score_type has a matching Practice scaffold row — that inner join is
-      the designation mechanism, and it drops unmatched bands silently.
-      Illuminate's own scope is never read, because externally created
+      Practice SAT, PSAT, and ACT results from Illuminate, and from Apex for
+      Miami, converted from raw score to scale score through two KIPP Forward
+      sheet tabs. practice_scale_score_conversion supplies the raw-to-scale
+      bands and scaffold supplies the vocabulary, joined on academic_year, the
+      sheet's scope against expected_scope, and score_type against
+      expected_score_type. An assessment appears here only if its id is in the
+      conversion sheet and its score_type has a matching Practice scaffold row —
+      that inner join is the designation mechanism, and it drops unmatched bands
+      silently. Illuminate's own scope is never read, because externally created
       assessments carry Benchmark or null rather than the test name.
+
+
+      Miami's practice results come from Apex in Focus, which splits a section
+      into modules. Conversion-sheet rows with uses_bands_of map each module to
+      the Illuminate assessment of the same form; the model sums a student's
+      module points for that assessment and converts the sum with its bands. A
+      section scores only when the student has every module pointing to it, so a
+      missed module drops the section and leaves the Total unscored. Apex yields
+      Subject and Total rows only, since it reports no response groups.
 
 
       Three row types. Group rows carry the per-response-group detail, one per
@@ -112,18 +121,21 @@ models:
         data_type: int64
         description: >-
           Illuminate canonical assessment id, and the key joining to the
-          conversion sheet. Null on Total rows, which aggregate across
-          assessments.
+          conversion sheet. On Apex rows, the Illuminate assessment whose bands
+          converted the summed modules, so it keeps one id per section. Null on
+          Total rows, which aggregate across assessments.
       - name: assessment_title
         data_type: string
-        description: Illuminate assessment title. Reads NA on Total rows.
+        description: >-
+          Illuminate assessment title. On Apex rows, the module titles joined
+          with a plus sign. Reads NA on Total rows.
       - name: administration_round
         data_type: string
         description: >-
-          Month and two-digit year derived from Illuminate's administered_at,
-          such as Oct 23. Null where administered_at is null, which is every
-          externally created assessment — scope_round is the reliable
-          administration identifier.
+          Month and two-digit year derived from administered_at, such as Oct 23.
+          Null where administered_at is null, which is every externally created
+          Illuminate assessment — scope_round is the reliable administration
+          identifier. Apex rows take the earliest module's assignment date.
       - name: course_discipline
         data_type: string
         description: >-
@@ -132,8 +144,9 @@ models:
       - name: test_date
         data_type: date
         description: >-
-          The student's response date, from Illuminate. On Total rows this is
-          the latest section date, since sections can be sat on different days.
+          The student's response date, from Illuminate or Apex. On Apex rows it
+          is the latest module date, and on Total rows the latest section date,
+          since modules and sections can be sat on different days.
       - name: test_month
         data_type: string
         description: Full month name of test_date.
@@ -141,9 +154,10 @@ models:
         data_type: string
         description: >-
           Group, Subject, or Total. Group carries Illuminate's response-group
-          detail. Subject and Total are both built from Illuminate's overall
-          rows, which are never emitted as themselves — Subject one per
-          assessment, Total one per administration.
+          detail. Subject and Total are both built from overall rows, which are
+          never emitted as themselves — Subject one per assessment, Total one
+          per administration. Apex supplies overall rows only, one per section
+          after its modules are summed.
       - name: response_type_description
         data_type: string
         description: >-
@@ -173,6 +187,12 @@ models:
           conversion sheet to the scaffold. Non-null on every row type — Total
           rows get theirs from a case on scope, since the conversion sheet holds
           no total bands to join.
+      - name: module_code
+        data_type: string
+        description: >-
+          Practice module identifier, scope and subject_area lowercased and
+          joined by an underscore, such as sat_math. The assessment marts key
+          practice assessments and administrations on it.
       - name: points
         data_type: numeric
         description: >-

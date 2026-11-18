@@ -6,53 +6,110 @@ models:
       calendar over the half-open `[entrydate, exitdate_clipped)`. The clipped
       exit comes from int_powerschool__ps_enrollment_all, which cuts a stint off
       where the student's next stint begins at any school, so overlapping stints
-      cannot emit 2 rows for one student-day here. The grain is guarded
-      upstream, where a defect would originate: the overlap test on
+      cannot emit 2 rows for one student-day here. The upstream defects that
+      would break the grain are tested where they originate: the overlap test on
       int_powerschool__ps_enrollment_all, the `(schoolid, date_value)`
       uniqueness test on stg_powerschool__calendar_day, and the `id` uniqueness
       test on stg_powerschool__bell_schedule.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - studentid
+              - calendardate
+          config:
+            severity: error
     columns:
       - name: studentid
         data_type: int64
+        description: The internal number of the student.
+      - name: student_number
+        data_type: int64
+        description: Student number assigned by the school.
+        config:
+          meta:
+            contains_pii: true
       - name: schoolid
         data_type: int64
+        description: The school of the enrollment stint.
+      - name: entrydate
+        data_type: date
+        description: The entry date of the enrollment stint.
       - name: student_track
         data_type: string
+        description:
+          The track (A to F) on the enrollment stint, or NULL when the student
+          has none.
       - name: fteid
         data_type: int64
+        description:
+          The full-time equivalency (FTE) record on the enrollment stint.
       - name: dflt_att_mode_code
         data_type: string
+        description: The default attendance mode of the enrollment stint.
       - name: dflt_conversion_mode_code
         data_type: string
+        description:
+          The default attendance conversion mode of the enrollment stint.
       - name: grade_level
         data_type: int64
+        description: The student's grade level on the enrollment stint.
       - name: yearid
         data_type: int64
+        description:
+          The year of the enrollment stint. It is the academic year minus 1990.
       - name: calendardate
         data_type: date
+        description: The in-session calendar day.
       - name: a
         data_type: int64
+        description:
+          1 when the calendar day is in session for track A, otherwise 0.
       - name: b
         data_type: int64
+        description:
+          1 when the calendar day is in session for track B, otherwise 0.
       - name: c
         data_type: int64
+        description:
+          1 when the calendar day is in session for track C, otherwise 0.
       - name: d
         data_type: int64
+        description:
+          1 when the calendar day is in session for track D, otherwise 0.
       - name: e
         data_type: int64
+        description:
+          1 when the calendar day is in session for track E, otherwise 0.
       - name: f
         data_type: int64
+        description:
+          1 when the calendar day is in session for track F, otherwise 0.
       - name: bell_schedule_id
         data_type: int64
+        description: The bell schedule on the calendar day.
       - name: cycle_day_id
         data_type: int64
+        description: The cycle day on the calendar day.
       - name: attendance_conversion_id
         data_type: int64
+        description: The attendance conversion set on the day's bell schedule.
       - name: studentmembership
         data_type: float64
+        description: >-
+          The enrollment's membership share when the student's track is in
+          session on the day or the student has no track, otherwise 0.
       - name: calendarmembership
         data_type: float64
+        description: >-
+          The calendar day's membership value when the student's track is in
+          session on the day or the student has no track, otherwise 0.
       - name: ontrack
         data_type: int64
+        description:
+          1 when the student's track is in session on the day or the student has
+          no track, otherwise 0.
       - name: offtrack
         data_type: int64
+        description:
+          1 when the student's track is not in session on the day, otherwise 0.
