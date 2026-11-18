@@ -348,19 +348,17 @@ def load_sort(
     run: RunResult, run_json: Path, *, for_explain: bool = False
 ) -> tuple[Path, dict]:
     """Read the triage beside `run_json`, refusing one that is missing,
-    unreadable, of another moment, or blind to an open item of `run`.
+    unreadable, of another moment, written before the formula check
+    (`formula_checked`), or blind to an open item of `run`.
 
     Args:
         run: The view's latest run.
         run_json: The `run.json` it came from.
-        for_explain: Read it as `explain` does, which only adds explanations to
-            the triage: no formula gate (`formula_checked`), and explain's
-            wording, whose remedy ends in "first" and which counts no unseen
-            items.
+        for_explain: Word the refusals as `explain` does: its remedy ends in
+            "first", and it counts no unseen items.
 
     Raises:
-        pipeline.Refusal: The triage fails one of those checks, or (unless
-            `for_explain`) predates the formula check.
+        pipeline.Refusal: The triage fails one of those checks.
 
     Returns:
         The triage's path and its contents.
@@ -386,7 +384,7 @@ def load_sort(
         raise other_moment if for_explain else unreadable
     if loaded.get("moment") != _moment(run):
         raise other_moment
-    if not for_explain and not formula_checked(loaded):
+    if not formula_checked(loaded):
         raise pipeline.Refusal(
             f"{view}: the triage predates the formula check; {again}"
         )

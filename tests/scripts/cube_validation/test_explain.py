@@ -1727,6 +1727,23 @@ def test_confirm_refuses_a_bad_reproduce_query_before_any_query(
     assert wh.ran == [] and not (tmp_path / "validation").exists()
 
 
+def test_explain_refuses_a_triage_written_before_the_formula_check(
+    duck, tmp_path, monkeypatch, offline
+):
+    _tables(duck)
+    path = _saved(tmp_path, monkeypatch, _run([_group(3)]))
+    old = json.loads(path.read_text())
+    del old["formulas_not_compared"]
+    path.write_text(json.dumps(old))
+
+    with pytest.raises(
+        pipeline.Refusal, match="the triage predates the formula check; run `sort`"
+    ):
+        _confirm_text(duck, tmp_path, EXPLANATION)
+
+    assert json.loads(path.read_text()) == old
+
+
 def test_confirm_refuses_a_reproduce_query_bigquery_refuses(
     duck, tmp_path, monkeypatch, offline
 ):
