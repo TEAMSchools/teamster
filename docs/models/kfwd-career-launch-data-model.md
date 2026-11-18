@@ -14,9 +14,9 @@ Career Conversation, a counselor rates the alum on 4 readiness indicators. The
 ratings and the alum's college GPA add up to a **launch score** and a **launch
 stage**.
 
-The data team owns the models, with Anthony Walters (Associate Director of Data)
-as owner. Casey Gibson (Systems Analyst) is taking them over. The KFwd Career
-Team owns the survey, the Strong Launch rule, and reconciliation.
+The data team owns the models. Anthony Walters started and built them; Casey
+Gibson owns them now. The KFwd Career Team owns the survey, the Strong Launch
+rule, reconciliation, and the Career Launch Scoring Rubric sheet.
 
 Not every alum answers. The earliest responses date from 2022, so earlier
 cohorts are thin. Survey waves go out after the December and May graduation
@@ -123,7 +123,7 @@ reads 4 of its tabs, each through its own staging model; see _Inputs_.
 | Alumni roster, enrollments, programs, contact notes | Salesforce (KIPPADB)                                    | KFwd counselors            |
 | Career Conversation checklist                       | KIPP Forward Career Launch AppSheet app                 | Counselors                 |
 | Readiness assessments                               | KIPP Forward Career Launch AppSheet app                 | Counselors                 |
-| Rubric points, stages, GPA bands, caseloads         | Career Launch Scoring Rubric Google Sheet               | KFwd team                  |
+| Rubric points, stages, GPA bands, caseloads         | Career Launch Scoring Rubric Google Sheet               | KFwd Career Team           |
 
 Each survey version asked different questions. The Strong Launch rule depends on
 it:
@@ -322,17 +322,19 @@ Other columns the app reads:
   `int_kippadb__enrollment_pivot` picks as completed (Bachelor's, then
   Associate's, then CTE), only when its status is `Graduated`. Empty for an alum
   who has not graduated.
-- **Advisor** — `Collab` for an alum advised by KIPP NYC; anyone else shows
-  their Salesforce contact owner. This differs from the Tableau extract, which
-  shows the postsecondary advisor.
+- **Advisor** — `Collab` for an alum advised by KIPP NYC; anyone else shows the
+  name of their Salesforce postsecondary advisor, the same as the Tableau
+  extract.
 
 ### Steps
 
 1. The counselor picks the alum in the app.
 2. The counselor rates the 4 indicators and records the coaching focus, the next
    action, and notes. The app shows the launch score and stage.
-3. AppSheet writes the assessment to the
-   `src_kfwd_career_conversations__assessments` table in BigQuery.
+3. The counselor checks off the checklist items the alum has finished.
+4. AppSheet writes the assessment to the
+   `src_kfwd_career_conversations__assessments` table and the checklist to the
+   `src_kfwd_career_conversations__output` table in BigQuery.
 
 ### Outputs
 
@@ -448,9 +450,9 @@ over.
 - **Salary uses the bottom of each range.**
 - **KIPP NYC-advised alumni show `Collab` as advisor,** at the Career Team's
   request.
-- **The Tableau advisor is the Salesforce postsecondary advisor,** not the
-  contact owner, because counselor assignments changed and the contact owner no
-  longer shows who advises the alum.
+- **The advisor is the Salesforce postsecondary advisor,** in both the dashboard
+  and the app, not the contact owner, because counselor assignments changed and
+  the contact owner no longer shows who advises the alum.
 - **Launch scores use today's GPA,** so the app and the dashboard show the same
   score.
 - **ECC is context, not points.**
@@ -465,8 +467,7 @@ over.
   the `rn_respondent` ordering. Tracked in #5894.
 - **Manual Uploads benefits do not count.** The rule checks benefits only for
   `Google Form v2`, so an upload at $50,000 or more is a Strong Launch without
-  benefits: a looser bar than v2. Uploads also store benefits as `true` or
-  `false`, not `Yes` or `No`. To see it, select distinct `survey_title` and
+  benefits: a looser bar than v2. To see it, select distinct `survey_title` and
   `benefits` from the extract. Tracked in #5708.
 - **A Manual Upload outranks a newer survey.** Uploads have no date, and
   `rn_respondent` ranks them first. KFwd wants the most recent record to win, so
