@@ -175,6 +175,13 @@ jobs:
             Never end a turn waiting on background work. Posting the review with
             update_claude_comment must be your final action, and must happen
             even if some checks are still incomplete.
+
+            Tools: read files, plugin skills included, with the Read, Grep and
+            Glob tools, never with cat, head, tail or wc. Bash runs only the git
+            commands listed in this job's allowed tools, one command per call,
+            never chained with ;, && or a pipe; anything else is denied. A
+            denied tool call is final, and no one can approve it: switch to an
+            allowed tool and keep reviewing. Never stop to wait for approval.
           allowed_bots: dbt-cloud
           include_fix_links: false
           use_sticky_comment: true
