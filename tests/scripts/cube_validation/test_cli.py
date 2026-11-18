@@ -872,13 +872,13 @@ def test_a_comparison_run_composes_another_cube_cannot_compile_today(
 
 def test_run_json_is_written_whole(fakes, tmp_path, monkeypatch):
     written = []
-    write = checkpoints._write_text
+    write = checkpoints.write_text
 
     def spy(path, text):
         written.append(path.name)
         write(path, text)
 
-    monkeypatch.setattr(checkpoints, "_write_text", spy)
+    monkeypatch.setattr(checkpoints, "write_text", spy)
 
     assert cli.main(["compare", str(_file(tmp_path))]) == 0
 

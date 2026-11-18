@@ -8,9 +8,7 @@ catalog `as_of` needs.
 from __future__ import annotations
 
 import json
-import os
 import re
-import tempfile
 from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
@@ -19,6 +17,7 @@ from pathlib import Path
 from google.api_core.exceptions import GoogleAPIError, NotFound
 from google.cloud import bigquery
 
+from .checkpoints import write_json
 from .timetravel import PROJECT, TableInfo, closing_paren, utc_literal
 
 USD_PER_TIB = 6.25
@@ -146,7 +145,7 @@ class Warehouse:
     def _save_views(self) -> None:
         if self._cache_dir is None:
             return
-        _write_json(
+        write_json(
             self._cache_dir / _VIEWS_FILE,
             {
                 f"{dataset}.{name}": [
@@ -277,7 +276,7 @@ class Warehouse:
         path = self._ledger / _SPEND_FILE
         ledger = _read_json(path, {})
         ledger[_today()] = ledger.get(_today(), 0.0) + usd
-        _write_json(path, ledger)
+        write_json(path, ledger)
 
     @property
     def spent(self) -> float:
@@ -420,15 +419,6 @@ def _read_json(path: Path, default):
         return json.loads(path.read_text())
     except FileNotFoundError:
         return default
-
-
-def _write_json(path: Path, data) -> None:
-    """Replace `path` whole, so a reader never sees half a file."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fd, tmp = tempfile.mkstemp(dir=path.parent, suffix=".tmp")
-    with os.fdopen(fd, "w") as f:
-        json.dump(data, f)
-    os.replace(tmp, path)
 
 
 def _close_paren(text: str, open_at: int) -> int:

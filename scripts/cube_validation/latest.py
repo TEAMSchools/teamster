@@ -16,7 +16,6 @@ import hashlib
 import json
 import re
 from dataclasses import dataclass
-from datetime import datetime
 from pathlib import Path
 
 from . import checkpoints
@@ -71,12 +70,12 @@ def _file(results: Path, comparison_id: str) -> Path:
 
 def write(results: Path, comparison_id: str, result: Latest) -> None:
     """Replace the comparison's latest result in `results` (`folder`), whole."""
-    checkpoints._write_json(
+    checkpoints.write_json(
         _file(results, comparison_id),
         {
             "comparison": comparison_id,
             "fact": result.fact,
-            "moment": checkpoints._moment_json(result.moment),
+            "moment": result.moment.to_json(),
             "fingerprint": result.fingerprint,
             "entry": result.entry,
             "ran_at": result.ran_at,
@@ -105,7 +104,7 @@ def add_formula_check(results: Path, comparison_id: str, check: dict) -> None:
     except FileNotFoundError:
         return
     data["data"]["formula_check"] = check
-    checkpoints._write_json(path, data)
+    checkpoints.write_json(path, data)
 
 
 def read_all(results: Path, fact: str) -> dict[str, Latest]:
@@ -119,13 +118,8 @@ def read_all(results: Path, fact: str) -> dict[str, Latest]:
     for path in sorted(results.glob("*.json")):
         try:
             e = json.loads(path.read_text())
-            m = e["moment"]
             out[e["comparison"]] = Latest(
-                moment=Build(
-                    datetime.fromisoformat(m["start"]),
-                    datetime.fromisoformat(m["end"]),
-                    m["job_id"],
-                ),
+                moment=Build.from_json(e["moment"]),
                 fingerprint=e["fingerprint"],
                 entry=e["entry"],
                 ran_at=e["ran_at"],

@@ -756,11 +756,7 @@ def questions_json(
                 "evidence": evidence,
                 "counts": question_parts(q),
                 "hand_checks": checks,
-                "moment": {
-                    "start": moment.start.isoformat(),
-                    "end": moment.end.isoformat(),
-                    "job_id": moment.job_id,
-                },
+                "moment": moment.to_json(),
                 "expires": expires.isoformat(),
                 "expired": now >= expires,
                 **extra,

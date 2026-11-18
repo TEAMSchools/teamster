@@ -29,7 +29,7 @@ from typing import TYPE_CHECKING
 
 from google.api_core.exceptions import GoogleAPIError
 
-from . import decisions, latest, pipeline, results, trace
+from . import checkpoints, decisions, latest, pipeline, results, trace
 from .bq import CostCapError, Warehouse
 from .config import Comparison, Decision, RebuildCheck, ViewConfig, mask_digits
 from .cube_client import Cube, MemberDoc, member_docs, network_schools
@@ -276,9 +276,7 @@ def _moment(run: RunResult) -> dict:
     """The run a triage sorted: its moment, and each composed comparison's,
     so a run composed again from a newer result needs a new triage."""
     return {
-        "start": run.moment.start.isoformat(),
-        "end": run.moment.end.isoformat(),
-        "job_id": run.moment.job_id,
+        **run.moment.to_json(),
         "moments": {cid: run_stamp(m) for cid, m in run.moments.items()},
     }
 
@@ -346,6 +344,65 @@ def comparisons_waiting(
     return out
 
 
+def load_sort(
+    run: RunResult, run_json: Path, *, for_explain: bool = False
+) -> tuple[Path, dict]:
+    """Read the triage beside `run_json`, refusing one that is missing,
+    unreadable, of another moment, or blind to an open item of `run`.
+
+    Args:
+        run: The view's latest run.
+        run_json: The `run.json` it came from.
+        for_explain: Read it as `explain` does, which only adds explanations to
+            the triage: no formula gate (`formula_checked`), and explain's
+            wording, whose remedy ends in "first" and which counts no unseen
+            items.
+
+    Raises:
+        pipeline.Refusal: The triage fails one of those checks, or (unless
+            `for_explain`) predates the formula check.
+
+    Returns:
+        The triage's path and its contents.
+    """
+    view, found = run.view, run_json.parent / "triage.json"
+    again = f"run `sort` for {run.moment.start:%Y-%m-%d %H:%M} UTC" + (
+        " first" if for_explain else ""
+    )
+    if not found.exists():
+        raise pipeline.Refusal(f"{view}: no sort of the latest run; {again}")
+    unreadable = pipeline.Refusal(
+        f"{view}: triage.json is unreadable; "
+        + (again if for_explain else "re-run `sort`")
+    )
+    try:
+        loaded = json.loads(found.read_text())
+    except json.JSONDecodeError as exc:
+        raise unreadable from exc
+    other_moment = pipeline.Refusal(
+        f"{view}: triage.json is of another moment; {again}"
+    )
+    if not isinstance(loaded, dict):
+        raise other_moment if for_explain else unreadable
+    if loaded.get("moment") != _moment(run):
+        raise other_moment
+    if not for_explain and not formula_checked(loaded):
+        raise pipeline.Refusal(
+            f"{view}: the triage predates the formula check; {again}"
+        )
+    if unseen := len(set(open_keys(run)) - set(loaded.get("open") or [])):
+        if for_explain:
+            raise pipeline.Refusal(
+                f"{view}: the latest run has open items its sort lacks; {again}"
+            )
+        were = "is" if unseen == 1 else "are"
+        raise pipeline.Refusal(
+            f"{view}: {unseen} open item{'' if unseen == 1 else 's'} of the "
+            f"latest run {were} not in its sort; {again}"
+        )
+    return found, loaded
+
+
 def checked_sort(
     run: RunResult,
     run_json: Path,
@@ -384,29 +441,8 @@ def checked_sort(
         The triage as `triage.json` holds it, with `unsettled`: its items
         still in `investigate`.
     """
-    view, found = run.view, run_json.parent / "triage.json"
-    again = f"run `sort` for {run.moment.start:%Y-%m-%d %H:%M} UTC"
-    if not found.exists():
-        raise pipeline.Refusal(f"{view}: no sort of the latest run; {again}")
-    unreadable = pipeline.Refusal(f"{view}: triage.json is unreadable; re-run `sort`")
-    try:
-        loaded = json.loads(found.read_text())
-    except json.JSONDecodeError as exc:
-        raise unreadable from exc
-    if not isinstance(loaded, dict):
-        raise unreadable
-    if loaded.get("moment") != _moment(run):
-        raise pipeline.Refusal(f"{view}: triage.json is of another moment; {again}")
-    if not formula_checked(loaded):
-        raise pipeline.Refusal(
-            f"{view}: the triage predates the formula check; {again}"
-        )
-    if unseen := len(set(open_keys(run)) - set(loaded.get("open") or [])):
-        were = "is" if unseen == 1 else "are"
-        raise pipeline.Refusal(
-            f"{view}: {unseen} open item{'' if unseen == 1 else 's'} of the "
-            f"latest run {were} not in its sort; {again}"
-        )
+    view = run.view
+    found, loaded = load_sort(run, run_json)
     items = loaded.get("items", [])
     piles = Counter(item.get("suggestion") for item in items)
     if other := sorted(str(p) for p in set(piles) - set(SUGGESTIONS)):
@@ -1605,7 +1641,8 @@ def sort_run(
         found = [_from_json(i) for i in items]
 
     out = run_json.parent / "triage.json"
-    out.write_text(
+    checkpoints.write_text(
+        out,
         json.dumps(
             {
                 "view": run.view,
@@ -1626,7 +1663,7 @@ def sort_run(
                 "formulas_not_compared": unchecked,
             },
             indent=1,
-        )
+        ),
     )
 
     shown = found

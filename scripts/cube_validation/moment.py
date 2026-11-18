@@ -23,6 +23,23 @@ class Build:
     end: datetime
     job_id: str
 
+    def to_json(self) -> dict:
+        """The build as run state, results and triages store it."""
+        return {
+            "start": self.start.isoformat(),
+            "end": self.end.isoformat(),
+            "job_id": self.job_id,
+        }
+
+    @classmethod
+    def from_json(cls, data: dict) -> Build:
+        """The build `to_json` wrote."""
+        return cls(
+            datetime.fromisoformat(data["start"]),
+            datetime.fromisoformat(data["end"]),
+            data["job_id"],
+        )
+
 
 class _Rows(Protocol):
     def rows(self, sql: str) -> list[dict]: ...

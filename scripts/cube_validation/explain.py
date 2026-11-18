@@ -42,6 +42,7 @@ from sqlglot.errors import SqlglotError
 from sqlglot.tokens import TokenType
 
 from . import (
+    checkpoints,
     coverage,
     decisions,
     explain_progress,
@@ -1806,26 +1807,6 @@ def apply_runs(
 # --- the command -------------------------------------------------------------------
 
 
-def _load_sort(run: RunResult, run_json: Path) -> tuple[Path, dict]:
-    found = run_json.parent / "triage.json"
-    again = f"run `sort` for {run.moment.start:%Y-%m-%d %H:%M} UTC first"
-    if not found.exists():
-        raise pipeline.Refusal(f"{run.view}: no sort of the latest run; {again}")
-    try:
-        loaded = json.loads(found.read_text())
-    except json.JSONDecodeError as exc:
-        raise pipeline.Refusal(
-            f"{run.view}: triage.json is unreadable; {again}"
-        ) from exc
-    if not isinstance(loaded, dict) or loaded.get("moment") != sort._moment(run):
-        raise pipeline.Refusal(f"{run.view}: triage.json is of another moment; {again}")
-    if set(sort.open_keys(run)) - set(loaded.get("open") or []):
-        raise pipeline.Refusal(
-            f"{run.view}: the latest run has open items its sort lacks; {again}"
-        )
-    return found, loaded
-
-
 def _mark(run: RunResult, items: list[dict], cfg: ViewConfig) -> None:
     """Refresh the decision marks after a re-sort, as `sort` writes them."""
     for item in items:
@@ -1844,7 +1825,7 @@ def _save_sort(path: Path, loaded: dict, items: list[dict]) -> None:
     loaded["items"] = sorted(
         items, key=lambda i: sort.SUGGESTIONS.index(i["suggestion"])
     )
-    path.write_text(json.dumps(loaded, indent=1))
+    checkpoints.write_text(path, json.dumps(loaded, indent=1))
 
 
 def _report(items: list[dict], wanted: set[str] | None) -> None:
@@ -1900,7 +1881,7 @@ def explain(
         CostCapError: The explanation would pass a cap.
     """
     run, run_json = results.latest_run(cfg, cache_root)
-    path, loaded = _load_sort(run, run_json)
+    path, loaded = sort.load_sort(run, run_json, for_explain=True)
     all_items = loaded.get("items", [])
     target = next((c for c in cfg.comparisons if c.id == comparison), None)
     if target is None:

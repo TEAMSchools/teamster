@@ -10,12 +10,10 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
-import tempfile
 from collections.abc import Iterable
 from pathlib import Path
 
-from .checkpoints import TRIAGE_PROGRESS
+from .checkpoints import TRIAGE_PROGRESS, write_json
 
 FILE = TRIAGE_PROGRESS
 
@@ -55,9 +53,4 @@ def load(folder: Path) -> dict[str, dict]:
 def save(folder: Path, key: str, outcome: dict) -> None:
     """Keep one explanation's outcome, replacing the file whole so a stop mid-write
     keeps the last whole file."""
-    data = {**load(folder), key: outcome}
-    folder.mkdir(parents=True, exist_ok=True)
-    fd, tmp = tempfile.mkstemp(dir=folder, prefix=f".{FILE}.")
-    with os.fdopen(fd, "w") as f:
-        json.dump(data, f)
-    os.replace(tmp, folder / FILE)
+    write_json(folder / FILE, {**load(folder), key: outcome})

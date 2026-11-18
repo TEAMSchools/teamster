@@ -440,20 +440,12 @@ def _gaps(comparisons: list[Comparison]) -> tuple[list[Gap], list[str]]:
 def last_run(cfg: ViewConfig, cache_root: Path) -> dict | None:
     """The view's last readable `run.json` of `cfg.fact`, or None.
 
-    A run saved before runs recorded their fact is no fact's run.
+    A run saved before runs recorded their fact is no fact's run (`_saved_run`).
     """
-    saved = [
-        (path.stat().st_mtime, path)
-        for path in (cache_root / cfg.view).glob("*/run.json")
-    ]
-    for _, path in sorted(saved, reverse=True):
-        try:
-            data = json.loads(path.read_text())
-        except (OSError, ValueError):
-            continue
-        if data.get("fact") == cfg.fact:
-            return data
-    return None
+    try:
+        return _saved_run(cfg, cache_root)[0]
+    except Refusal:
+        return None
 
 
 def composed_from(
@@ -469,8 +461,7 @@ def composed_from(
     held = [c for c in comparisons if c.id in results]
     none = [c.id for c in comparisons if c.id not in results]
     return (data.get("missing") or []) == none and all(
-        (data.get("moments") or {}).get(c.id)
-        == checkpoints._moment_json(results[c.id].moment)
+        (data.get("moments") or {}).get(c.id) == results[c.id].moment.to_json()
         and (data.get("entries") or {}).get(c.id) == results[c.id].entry
         and (data.get("fingerprints") or {}).get(c.id)
         == results[c.id].data.get("fingerprints", {}).get(c.id)
@@ -602,7 +593,7 @@ def compose_run(
     if echo:
         print(text)
     saved = report.save_local(result, text, root=cache_root)
-    checkpoints._write_text(saved.with_name("run.json"), _run_json(result))
+    checkpoints.write_text(saved.with_name("run.json"), _run_json(result))
     checkpoints.finish(folder)
     if echo:
         print(f"Saved {saved}")
@@ -730,19 +721,11 @@ def _cell_diff(data: dict) -> CellDiff:
     )
 
 
-def _build(data: dict) -> Build:
-    return Build(
-        datetime.fromisoformat(data["start"]),
-        datetime.fromisoformat(data["end"]),
-        data["job_id"],
-    )
-
-
 def _run_from_json(data: dict) -> RunResult:
     applied = data["applied"]
     return RunResult(
         view=data["view"],
-        moment=_build(data["moment"]),
+        moment=Build.from_json(data["moment"]),
         measures=[MeasureResult(**m) for m in data["measures"]],
         applied=Applied(
             open=[group_from_json(g) for g in applied["open"]],
@@ -781,7 +764,7 @@ def _run_from_json(data: dict) -> RunResult:
         cell_sql_usd=data.get("cell_sql_usd", {}),
         cube_host=data.get("cube_host", ""),
         fact=data.get("fact", ""),
-        moments={k: _build(v) for k, v in data.get("moments", {}).items()},
+        moments={k: Build.from_json(v) for k, v in data.get("moments", {}).items()},
         entries=data.get("entries", {}),
         missing=data.get("missing", []),
         skipped=data.get("skipped", []),
@@ -805,8 +788,8 @@ def _saved_run(cfg: ViewConfig, cache_root: Path) -> tuple[dict, Path]:
 
     The latest run is the `run.json` of the fact the command was given
     (`--fact-dataset` names a dev build's) written last, whatever moment it
-    read. A run saved before runs recorded their fact is no fact's run, as in
-    `last_run`: it never stands in for one.
+    read; of 2 written at once, the later-named folder's. A run saved before
+    runs recorded their fact is no fact's run: it never stands in for one.
 
     Raises:
         Refusal: The view has no saved run of `cfg.fact`; the message names
@@ -815,7 +798,7 @@ def _saved_run(cfg: ViewConfig, cache_root: Path) -> tuple[dict, Path]:
     """
     saved = sorted(
         (cache_root / cfg.view).glob("*/run.json"),
-        key=lambda p: p.stat().st_mtime,
+        key=lambda p: (p.stat().st_mtime, p),
         reverse=True,
     )
     other, legacy = None, None
@@ -976,8 +959,9 @@ def reapply(cfg: ViewConfig, cache_root: Path) -> RunResult:
     at = old_text.find("\n## Cells\n")
     tail = old_text[at + 1 :] if at != -1 else ""
     text = report.render_local(result) + ("\n" + tail if tail else "")
-    report.save_local(result, text, root=cache_root).with_name("run.json").write_text(
-        _run_json(result)
+    checkpoints.write_text(
+        report.save_local(result, text, root=cache_root).with_name("run.json"),
+        _run_json(result),
     )
     return result
 
