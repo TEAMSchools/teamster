@@ -5,7 +5,9 @@ will meet: the shelf fields and the Cube member each maps to, table calculations
 filters (context, code group, relative date, parameter-driven), the parameters
 the sheet reads, and whether `sheet_field` is on the sheet. It ends with the
 items to settle before `rebuild-sheet`. It reads a local `.twb` and the
-`members` cache, and prints no filter or parameter value.
+`members` cache, and prints a filter's chosen values only for a field on
+`find_field.SHOWN_FILTER_FIELDS` (one that cannot identify a person). It prints
+no parameter value.
 """
 
 from __future__ import annotations
@@ -33,6 +35,11 @@ _AGG_PREFIX = re.compile(
     re.IGNORECASE,
 )
 _AGG_CALL = re.compile(r"^\w+\((.*)\)$")
+# A count of a string field is a number: `COUNTD(x)`, `Distinct count of x`.
+_COUNT_FIELD = re.compile(
+    r"^\s*(?:(?:count|countd|cnt|cntd)\(|(?:distinct\s+count|count|countd)\b)",
+    re.IGNORECASE,
+)
 _ENCODINGS = {"lod": "detail"}
 SHOWN_SHARED = 5
 
@@ -65,6 +72,8 @@ class SheetFilter:
     columns: tuple[str, ...] = ()
     parameters: tuple[str, ...] = ()
     null_mode: str | None = None
+    # The chosen values, only for a field that cannot identify a person.
+    shown: str = ""
 
 
 @dataclass(frozen=True)
@@ -217,16 +226,9 @@ def read_sheet(twb_xml: str, sheet: str) -> Sheet:
                 ),
                 source=_group_source(root, name) if name in groups else "",
                 columns=tuple(
-                    dict.fromkeys(
-                        [name]
-                        + [
-                            r
-                            for n in chain
-                            for r in _BRACKETED.findall(formulas.get(n, ""))
-                            if r not in formulas and r != "Parameters"
-                        ]
-                    )
+                    dict.fromkeys([name, *finder.columns_read(name, formulas)])
                 ),
+                shown=finder.shown_values(el, name, formulas) or "",
                 parameters=tuple(
                     dict.fromkeys(
                         param_caption(p)
@@ -484,6 +486,10 @@ def _filter_lines(out: _Checklist, comparison: Comparison | None, facts: Sheet) 
 def text_measure(facts: Sheet, sheet_field: str | None) -> str | None:
     """The blocking line when the compared measure is text, else None."""
     if sheet_field:
+        # `text_values` holds export names, so a count of a field the sheet also
+        # shows as `attr` shares its name.
+        if _COUNT_FIELD.match(sheet_field):
+            return None
         if _export_name(sheet_field) in facts.text_values:
             return f"sheet_field {sheet_field!r}: {tableau.TEXT_MEASURE}"
         return None
@@ -555,6 +561,8 @@ def _sheet_lines(label: str, sheet: str, facts: Sheet) -> list[str]:
                 f"; shared through filter-group {f.group} with {len(f.shared_with)} "
                 f"other sheets ({names})"
             )
+        if f.restricting and f.shown:
+            line += f"; shows {f.shown}"
         lines.append(line)
     if not facts.filters:
         lines[-1] = "  Filters: none"

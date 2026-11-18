@@ -83,8 +83,13 @@ SHOWN_FILTER_FIELDS = frozenset(
         "school_level",
         "school_abbreviation",
         "term",
+        "response_type",
+        "module_type",
+        "is_normed_scope",
     }
 )
+_BRACKETED = re.compile(r"\[([^\[\]]+)\]")
+_PARAMETER_REF = re.compile(r"\[Parameters\]\.\[[^\[\]]+\]")
 
 
 @dataclass(frozen=True)
@@ -365,11 +370,89 @@ def _ref_caption(m: re.Match, caption: dict[str, str]) -> str | None:
     return f"{agg}({name})" if agg else None
 
 
+def columns_read(name: str, formulas: dict[str, str]) -> tuple[str, ...]:
+    """The datasource columns `name` reads through calculations, parameters left
+    out; `name` itself when it is no calculation.
+    """
+    if name not in formulas:
+        return (name,)
+    seen: list[str] = []
+    todo = [name]
+    columns: list[str] = []
+    while todo:
+        current = todo.pop()
+        if current in seen:
+            continue
+        seen.append(current)
+        formula = _PARAMETER_REF.sub("", formulas.get(current, ""))
+        for ref in _BRACKETED.findall(formula):
+            if ref in formulas:
+                todo.append(ref)
+            else:
+                columns.append(ref)
+    return tuple(dict.fromkeys(columns))
+
+
+def _chain_reads_viewer(name: str, formulas: dict[str, str]) -> bool:
+    seen, todo = set(), [name]
+    while todo:
+        current = todo.pop()
+        if current in seen:
+            continue
+        seen.add(current)
+        formula = formulas.get(current, "")
+        if USER_FUNCTION.search(formula):
+            return True
+        todo += [r for r in _BRACKETED.findall(formula) if r in formulas]
+    return False
+
+
+def shown_values(
+    filter_el: ET.Element, field_name: str, formulas: dict[str, str]
+) -> str | None:
+    """A restricting filter's chosen values, or None when they stay hidden.
+
+    Values print only when the field, or every column a calculation reads, is in
+    `SHOWN_FILTER_FIELDS`. A calculation whose columns cannot be worked out, or
+    that reads the viewer's identity, stays hidden.
+    """
+    columns = columns_read(field_name, formulas)
+    if not columns or not all(c in SHOWN_FILTER_FIELDS for c in columns):
+        return None
+    if field_name in formulas and _chain_reads_viewer(field_name, formulas):
+        return None
+    if filter_el.get("class") == "quantitative":
+        if mode := null_mode(filter_el):
+            return f"{mode} values only"
+        bounds = {
+            c.tag: (c.text or "").strip() for c in filter_el if c.tag in ("min", "max")
+        }
+        low, high = bounds.get("min"), bounds.get("max")
+        if low and high:
+            return f"from {low} to {high}"
+        if low:
+            return f"from {low}"
+        if high:
+            return f"up to {high}"
+        return None
+    members = ", ".join(
+        _unquote(g.get("member")) for g in filter_el.iter("groupfilter")
+        if g.get("member") is not None
+    )  # fmt: skip
+    if not members:
+        return None
+    top = filter_el.find("groupfilter")
+    if top is not None and top.get("function") == "except":
+        return f"all except {members}"
+    return members
+
+
 def sheet_shape(twb_xml: str, sheet: str) -> SheetShape:
     """Read a sheet's shelves, export form, filters and displayed decimals.
 
-    A filter set to chosen values shows them only for a field in
-    `SHOWN_FILTER_FIELDS`; any other field's values stay hidden. Permission
+    A filter set to chosen values or a range prints them only for a field in
+    `SHOWN_FILTER_FIELDS` (a calculation: only when every column it reads is
+    there); any other field's values stay hidden. Permission
     fields and filters on aggregated values are left out.
 
     Raises:
@@ -405,6 +488,7 @@ def sheet_shape(twb_xml: str, sheet: str) -> SheetShape:
         if shown and fmt.get("value"):
             decimals.setdefault(shown, displayed_decimals(fmt.get("value") or ""))
 
+    formulas = {_bare(c.name): c.formula for c in calculated_fields(twb_xml)}
     filters = []
     for filter_el in ws.iter("filter"):
         field_name = filter_field(filter_el.get("column") or "", groups)
@@ -413,19 +497,12 @@ def sheet_shape(twb_xml: str, sheet: str) -> SheetShape:
         name = caption.get(field_name, field_name)
         if not restricts(filter_el):
             filters.append(f"{name}: All")
+        elif (shown := shown_values(filter_el, field_name, formulas)) is not None:
+            filters.append(f"{name}: {shown} (narrows the sheet)")
         elif mode := null_mode(filter_el):
             filters.append(f"{name}: {mode} values only (narrows the sheet)")
         elif filter_el.get("class") == "quantitative":
             filters.append(f"{name}: a range (narrows the sheet)")
-        elif field_name in SHOWN_FILTER_FIELDS:
-            top = filter_el.find("groupfilter")
-            members = ", ".join(
-                _unquote(g.get("member")) for g in filter_el.iter("groupfilter")
-                if g.get("member") is not None
-            )  # fmt: skip
-            if top is not None and top.get("function") == "except":
-                members = f"all except {members}"
-            filters.append(f"{name}: {members} (narrows the sheet)")
         else:
             filters.append(
                 f"{name}: chosen values hidden (narrows the sheet); "

@@ -158,7 +158,8 @@ def test_sheet_lines_flag_relative_dates_code_groups_and_shared_filters():
     )
     assert "- School: regular; keeps all\n" in text
     # A filter's chosen values never print.
-    assert "ELA" not in text and "2026" not in text
+    # Discipline is off the allowlist; Academic Year is on it.
+    assert "ELA" not in text and "shows 2026" in text
 
 
 def test_restricting_filters_block_until_the_comparison_handles_them():
@@ -554,3 +555,35 @@ def test_read_sheet_lets_an_opted_in_unpublished_sheet_through():
     text = read_sheet.report(cfg, lambda wb: ("w.twb", UNPUBLISHED), MEMBERS)
     # The header still says so: the comparison opted in, the sheet is unchanged.
     assert text.startswith("Grid (w.twb); not on a published dashboard\n")
+
+
+def test_read_sheet_shows_an_allowlisted_filter_s_values():
+    facts = read_sheet.read_sheet(TWB, "Grid")
+    by = {f.caption: f for f in facts.filters}
+    assert by["Academic Year"].shown == "2026"
+    assert by["School"].shown == ""
+    text = "\n".join(read_sheet._sheet_lines("v", "Grid", facts))
+    assert "Academic Year: regular; restricting; shows 2026" in text
+
+
+def test_read_sheet_keeps_a_filter_off_the_allowlist_hidden():
+    facts = read_sheet.read_sheet(TWB, "Grid")
+    by = {f.caption: f for f in facts.filters}
+    assert by["Discipline"].shown == ""
+    assert "ELA" not in "\n".join(read_sheet._sheet_lines("v", "Grid", facts))
+
+
+def test_a_countd_sheet_field_is_not_text_beside_an_attr_of_the_same_field():
+    twb = (
+        "<workbook><worksheets><worksheet name='S'><table><view>"
+        "<datasource-dependencies datasource='f'>"
+        "<column datatype='string' name='[status]' role='dimension' />"
+        "</datasource-dependencies></view>"
+        "<rows>([f].[attr:status:nk] + [f].[ctd:status:qk])</rows>"
+        "<cols/></table></worksheet></worksheets></workbook>"
+    )
+    facts = read_sheet.read_sheet(twb, "S")
+    assert read_sheet.text_measure(facts, "COUNTD(status)") is None
+    assert read_sheet.text_measure(facts, "Distinct count of status") is None
+    assert read_sheet.text_measure(facts, "ATTR(status)") is not None
+    assert read_sheet.text_measure(facts, "status") is not None

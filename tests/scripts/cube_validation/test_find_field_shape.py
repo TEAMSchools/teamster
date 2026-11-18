@@ -7,11 +7,13 @@ from cube_validation.find_field import (
     aggregated_fields,
     bins,
     calculated_fields,
+    columns_read,
     explain_bins,
     null_mode,
     rank,
     restricts,
     sheet_shape,
+    shown_values,
     text_values,
 )
 
@@ -137,3 +139,81 @@ def test_text_values_names_a_string_attr_but_not_its_countd():
         "</table></worksheet></worksheets></workbook>"
     )
     assert text_values(twb, "S") == {"status"}
+
+
+def _filter(column, body, cls="categorical", **attrs):
+    extra = "".join(f" {k}='{v}'" for k, v in attrs.items())
+    return ET.fromstring(
+        f"<filter class='{cls}' column='[ds].[{column}]'{extra}>{body}</filter>"
+    )
+
+
+def test_shown_values_lists_chosen_members_of_an_allowlisted_field():
+    union = _filter(
+        "none:response_type:nk",
+        "<groupfilter function='union'>"
+        "<groupfilter function='member' level='[response_type]' member='&quot;Overall&quot;' />"
+        "<groupfilter function='member' level='[response_type]' member='&quot;Growth&quot;' />"
+        "</groupfilter>",
+    )
+    assert shown_values(union, "response_type", {}) == "Overall, Growth"
+    out = _filter(
+        "none:response_type:nk",
+        "<groupfilter function='except'>"
+        "<groupfilter function='level-members' level='[response_type]' />"
+        "<groupfilter function='member' level='[response_type]' member='&quot;Overall&quot;' />"
+        "</groupfilter>",
+    )
+    assert shown_values(out, "response_type", {}) == "all except Overall"
+
+
+def test_shown_values_gives_a_quantitative_filter_s_bounds_and_mode():
+    ranged = _filter(
+        "none:is_normed_scope:qk", "<min>1</min><max>1</max>", cls="quantitative"
+    )
+    assert shown_values(ranged, "is_normed_scope", {}) == "from 1 to 1"
+    low = _filter("none:is_normed_scope:qk", "<min>2</min>", cls="quantitative")
+    assert shown_values(low, "is_normed_scope", {}) == "from 2"
+    high = _filter("none:is_normed_scope:qk", "<max>3</max>", cls="quantitative")
+    assert shown_values(high, "is_normed_scope", {}) == "up to 3"
+    non_null = _filter(
+        "none:is_normed_scope:qk",
+        "",
+        cls="quantitative",
+        **{"included-values": "non-null"},
+    )
+    assert shown_values(non_null, "is_normed_scope", {}) == "non-null values only"
+
+
+def test_shown_values_hides_a_field_off_the_allowlist():
+    el = _filter(
+        "none:student_number:ok",
+        "<groupfilter function='member' level='[student_number]' member='999999' />",
+    )
+    assert shown_values(el, "student_number", {}) is None
+
+
+def test_a_calc_filter_shows_only_when_every_column_it_reads_is_allowlisted():
+    formulas = {
+        "Calculation_1": "[module_type] = 'WPP' AND [region] = 'Newark'",
+        "Calculation_2": "[student_number] > 0",
+        "Calculation_3": "[Calculation_2] AND [region] = 'Newark'",
+        "Calculation_4": "[Parameters].[Parameter 1]",
+    }
+
+    def calc(name):
+        return _filter(
+            f"none:{name}:nk",
+            f"<groupfilter function='member' level='[{name}]' member='true' />",
+        )
+
+    assert shown_values(calc("Calculation_1"), "Calculation_1", formulas) == "true"
+    assert shown_values(calc("Calculation_2"), "Calculation_2", formulas) is None
+    assert shown_values(calc("Calculation_3"), "Calculation_3", formulas) is None
+    assert shown_values(calc("Calculation_4"), "Calculation_4", formulas) is None
+
+
+def test_columns_read_follows_calcs_and_skips_parameters():
+    formulas = {"A": "[B] + [x] + [Parameters].[P]", "B": "[y]"}
+    assert columns_read("A", formulas) == ("x", "y")
+    assert columns_read("plain", formulas) == ("plain",)
