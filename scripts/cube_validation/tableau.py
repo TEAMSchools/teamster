@@ -223,17 +223,21 @@ def drop_number_formats(twb_xml: str, measures: list[str]) -> str:
     return out
 
 
-def published_sheets(twb_xml: str) -> set[str]:
+def published_sheets(twb_xml: str | ET.Element) -> set[str]:
     """The worksheets a viewer of the published workbook can see.
 
     A sheet is seen when a dashboard holds it in a zone (zones nest; every
     level counts), when a story point captures it (`captured-sheet`), or
     when its own window is not hidden. A hidden window publishes no view, so
     a hidden sheet in no dashboard or story is a working sheet no viewer
-    sees.
+    sees. `twb_xml` may be the workbook already parsed.
     """
-    # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
-    root = ET.fromstring(twb_xml)
+    root = (
+        twb_xml
+        if isinstance(twb_xml, ET.Element)
+        # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
+        else ET.fromstring(twb_xml)
+    )
     zoned = {
         zone.get("name") or ""
         for dashboard in root.iter("dashboard")

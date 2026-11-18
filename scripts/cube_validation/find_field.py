@@ -166,7 +166,16 @@ def _dig(node: object, *keys: str) -> object:
     return node
 
 
-def calculated_fields(twb_xml: str) -> list[Calc]:
+def parse_workbook(twb_xml: str | ET.Element) -> ET.Element:
+    """A workbook's root element. A root passed in comes back as is, so a
+    caller reading several sheets of one workbook parses it once."""
+    if isinstance(twb_xml, ET.Element):
+        return twb_xml
+    # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
+    return ET.fromstring(twb_xml)
+
+
+def calculated_fields(twb_xml: str | ET.Element) -> list[Calc]:
     """List a workbook's calculated fields and the worksheets that use them.
 
     A calculated field is a `<column>` holding a `<calculation>` under a
@@ -175,13 +184,12 @@ def calculated_fields(twb_xml: str) -> list[Calc]:
     by the parser.
 
     Args:
-        twb_xml: The text of a `.twb` file.
+        twb_xml: The text of a `.twb` file, or its parsed root.
 
     Returns:
         One `Calc` per distinct calculated field, ordered by caption.
     """
-    # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
-    root = ET.fromstring(twb_xml)
+    root = parse_workbook(twb_xml)
 
     used_by: dict[str, set[str]] = {}
     for sheet in root.iter("worksheet"):
@@ -472,19 +480,19 @@ def shown_values(
     return members
 
 
-def sheet_shape(twb_xml: str, sheet: str) -> SheetShape:
+def sheet_shape(twb_xml: str | ET.Element, sheet: str) -> SheetShape:
     """Read a sheet's shelves, export form, filters and displayed decimals.
 
     A filter set to chosen values or a range prints them only for a field in
     `SHOWN_FILTER_FIELDS` (a calculation: only when every column it reads is
     there); any other field's values stay hidden. Permission
-    fields and filters on aggregated values are left out.
+    fields and filters on aggregated values are left out. `twb_xml` may be
+    the workbook already parsed (`parse_workbook`).
 
     Raises:
         ValueError: The workbook has no such worksheet.
     """
-    # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
-    root = ET.fromstring(twb_xml)
+    root = parse_workbook(twb_xml)
     ws = worksheet(root, sheet)
     if ws is None:
         raise ValueError(f"the workbook has no worksheet {sheet!r}")
@@ -513,7 +521,7 @@ def sheet_shape(twb_xml: str, sheet: str) -> SheetShape:
         if shown and fmt.get("value"):
             decimals.setdefault(shown, displayed_decimals(fmt.get("value") or ""))
 
-    formulas = {_bare(c.name): c.formula for c in calculated_fields(twb_xml)}
+    formulas = {_bare(c.name): c.formula for c in calculated_fields(root)}
     filters = []
     for filter_el in ws.iter("filter"):
         field_name = filter_field(filter_el.get("column") or "", groups)

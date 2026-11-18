@@ -12,12 +12,13 @@ no parameter value.
 
 from __future__ import annotations
 
+import functools
 import re
 
 # trunk-ignore(bandit/B405): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
 import xml.etree.ElementTree as ET
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from . import coverage
 from . import find_field as finder
@@ -97,8 +98,20 @@ class Sheet:
     values: dict[str, set[str]]
     # Export names of the value fields that are text, not numbers.
     text_values: frozenset[str] = frozenset()
-    # Whether a dashboard viewer can see the sheet (`tableau.published_sheets`).
-    published: bool = True
+    # The parsed workbook and the sheet's name, for `published`. A Sheet built
+    # without a workbook reads as published.
+    workbook: ET.Element | None = field(default=None, repr=False, compare=False)
+    name: str = ""
+
+    @functools.cached_property
+    def published(self) -> bool:
+        """Whether a dashboard viewer can see the sheet (`tableau.published_sheets`).
+
+        Worked out on first use, since most reads of a sheet never ask.
+        """
+        if self.workbook is None:
+            return True
+        return self.name in tableau.published_sheets(self.workbook)
 
 
 def _plain(text: str) -> str:
@@ -260,7 +273,8 @@ def read_sheet(twb_xml: str, sheet: str) -> Sheet:
         parameters,
         values,
         frozenset(finder.text_values(twb_xml, sheet)),
-        sheet in tableau.published_sheets(twb_xml),
+        root,
+        sheet,
     )
 
 

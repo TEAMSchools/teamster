@@ -1496,6 +1496,11 @@ def test_new_keys_set_change_the_fingerprints(tmp_path):
 
     entries = {latest.entry_fingerprint(x) for x in (c, opted, recorded)}
     assert len(entries) == 3
+    sides = {"cube": "x", "dashboard": "y"}
+    checkpoints = {
+        pipeline.checkpoint_fingerprint(x, sides) for x in (c, opted, recorded)
+    }
+    assert len(checkpoints) == 3
 
 
 def test_unpublished_and_published_load(tmp_path):

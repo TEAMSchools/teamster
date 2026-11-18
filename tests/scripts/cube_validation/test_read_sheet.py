@@ -1,17 +1,23 @@
 import dataclasses
 import json
+
+# trunk-ignore(bandit/B405): parses only the suite's own fixture text
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 import pytest
 
 # trunk-ignore(pyright/reportAttributeAccessIssue): conftest.py registers cube_validation
-from cube_validation import cli, read_sheet, tableau
+from cube_validation import cli, pipeline, read_sheet, tableau
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.builder import Member
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.config import ColumnPair, Comparison, RowSpec
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+from cube_validation.find_field import Candidate
 
 FIXTURES = Path(__file__).parent / "fixtures"
 TWB = (FIXTURES / "preflight.twb").read_text()
@@ -543,6 +549,37 @@ def test_read_sheet_marks_and_blocks_an_unpublished_sheet():
     text = read_sheet.report(cfg, lambda wb: ("w.twb", UNPUBLISHED), MEMBERS)
     assert text.startswith("Grid (w.twb); not on a published dashboard\n")
     assert f"      - {NOT_PUBLISHED_ITEM}" in text
+
+
+def test_read_sheet_reads_published_only_when_asked(monkeypatch):
+    calls = []
+    real = tableau.published_sheets
+    monkeypatch.setattr(
+        tableau, "published_sheets", lambda twb: calls.append(1) or real(twb)
+    )
+
+    facts = read_sheet.read_sheet(UNPUBLISHED, "Grid")
+    read_sheet.text_measure(facts, None)
+    assert calls == []
+
+    assert facts.published is False and facts.published is False
+    assert calls == [1]
+
+
+def test_print_sheets_parses_each_workbook_once(monkeypatch, capsys):
+    found = [
+        Candidate("wb-1", "w.twb", ["Grid", "Other"], "a", "SUM([x])", 1.0),
+        Candidate("wb-1", "w.twb", ["Other"], "b", "SUM([y])", 0.5),
+    ]
+    parses = []
+    real = ET.fromstring
+    monkeypatch.setattr(ET, "fromstring", lambda text: parses.append(1) or real(text))
+
+    pipeline._print_sheets(found, {"wb-1": TWB})
+
+    out = capsys.readouterr().out
+    assert "  Grid (w.twb): " in out and "  Other (w.twb): " in out
+    assert len(parses) == 1
 
 
 def test_read_sheet_lets_an_opted_in_unpublished_sheet_through():

@@ -1081,9 +1081,13 @@ def _print_sheets(found: list[finder.Candidate], twbs: dict[str, str]) -> None:
     if not sheets:
         return
     print("\nSheets:")
-    published = {luid: tableau.published_sheets(twbs[luid]) for luid, _, _ in sheets}
+    roots = {
+        luid: finder.parse_workbook(twbs[luid])
+        for luid in dict.fromkeys(luid for luid, _, _ in sheets)
+    }
+    published = {luid: tableau.published_sheets(root) for luid, root in roots.items()}
     for luid, label, sheet in sheets:
-        shape = finder.sheet_shape(twbs[luid], sheet)
+        shape = finder.sheet_shape(roots[luid], sheet)
         print(
             f"  {sheet} ({label}): rows {', '.join(shape.rows) or 'none'}; "
             f"columns {', '.join(shape.cols) or 'none'}"
