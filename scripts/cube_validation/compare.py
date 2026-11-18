@@ -46,6 +46,7 @@ from .pipeline import (
     dashboard_rows_sql,
     date_cubes,
     expanded_fingerprints,
+    grouped_dims,
     inline_unmatched,
     reconcile_args,
     row_pairs,
@@ -121,14 +122,8 @@ def _students_sql(cfg: ViewConfig, comparison: Comparison, student: str) -> str:
     """
     # trunk-ignore(bandit/B608): identifiers are validated in config.py and values are bound or literal-escaped
     rows = f"SELECT * FROM {dashboard_ref(comparison)}"
-    dates = date_cubes(cfg)
-    dims = [
-        f"DATE({d.dashboard}) AS {d.dashboard}" if d.cube in dates else d.dashboard
-        for d in comparison.dims
-    ]
-    group = (
-        " GROUP BY " + ", ".join(str(i + 2) for i in range(len(dims))) if dims else ""
-    )
+    # `__cut` is column 1, so the dims start at 2.
+    dims, group = grouped_dims(cfg, comparison, first=2)
     count = f"COUNT(DISTINCT {student}) AS n_students"
     return " UNION ALL ".join(
         # trunk-ignore(bandit/B608): identifiers are validated in config.py and values are bound or literal-escaped

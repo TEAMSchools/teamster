@@ -333,6 +333,27 @@ def date_cubes(cfg: ViewConfig) -> set[str]:
     return {cfg.time_dimension} if cfg.time_dimension else set()
 
 
+def grouped_dims(
+    cfg: ViewConfig, comparison: Comparison, first: int = 1
+) -> tuple[list[str], str]:
+    """The dims as the sheet query selects them, and its GROUP BY.
+
+    A time dim is selected as its DATE under its own name. The GROUP BY names
+    the dims by position, the first at column `first`; it is empty with no dims.
+    """
+    dates = date_cubes(cfg)
+    select = [
+        f"DATE({d.dashboard}) AS {d.dashboard}" if d.cube in dates else d.dashboard
+        for d in comparison.dims
+    ]
+    group = (
+        " GROUP BY " + ", ".join(str(i + first) for i in range(len(select)))
+        if select
+        else ""
+    )
+    return select, group
+
+
 def _select(name: str, source: str, is_date: bool) -> str:
     return f"DATE({source}) AS {name}" if is_date else f"{source} AS {name}"
 
@@ -495,16 +516,7 @@ def sheet_query(
         raise Refusal(
             f"comparison {comparison.id!r} has no sheet_query or sheet_query_sql"
         )
-    dates = date_cubes(cfg)
-    select = [
-        f"DATE({d.dashboard}) AS {d.dashboard}" if d.cube in dates else d.dashboard
-        for d in comparison.dims
-    ]
-    group = (
-        " GROUP BY " + ", ".join(str(i + 1) for i in range(len(select)))
-        if select
-        else ""
-    )
+    select, group = grouped_dims(cfg, comparison)
     return (
         # trunk-ignore(bandit/B608): identifiers are validated in config.py and values are bound or literal-escaped
         f"SELECT {', '.join([*select, f'{comparison.sheet_query} AS value'])} "
