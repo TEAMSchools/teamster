@@ -251,7 +251,6 @@ class ViewConfig:
     view: str
     fact: str
     comparisons: list[Comparison]
-    email: str | None = None
     time_dimension: str | None = None
     decisions: list[Decision] = field(default_factory=list)
     tasks: dict[str, str] = field(default_factory=dict)
@@ -817,6 +816,12 @@ def load_view_config(path: Path) -> ViewConfig:
         if ids.count(cid) > 1:
             root.fail(f"comparisons[{i}].id", f"duplicate comparison id {cid!r}")
 
+    if "email" in root.data:
+        root.fail(
+            "email",
+            "delete it; nothing committed may hold an email. Pass `--email` or "
+            "set CUBE_VALIDATION_EMAIL when you run the command",
+        )
     for key in ("anchors", "identities"):
         if key in root.data:
             root.fail(
@@ -832,7 +837,6 @@ def load_view_config(path: Path) -> ViewConfig:
     return ViewConfig(
         view=_identifier(root, "view", required=True),
         fact=_table_ref(root, "fact", required=True),
-        email=root.get("email", str),
         time_dimension=time_dimension,
         comparisons=comparisons,
         decisions=[

@@ -70,7 +70,6 @@ def test_loads_example(tmp_path):
     cfg = load_view_config(_write(tmp_path, EXAMPLE))
 
     assert cfg.view == "student_attendance_enrollment_daily_view"
-    assert cfg.email is None
     first = cfg.comparisons[0]
     assert first.dims[0].cube == "regions_region_name"
     assert first.filters["Region"].dashboard == "region"
@@ -80,10 +79,11 @@ def test_loads_example(tmp_path):
     assert cfg.decisions[0].call == "deliberate"
 
 
-def test_email_is_optional_but_read_when_present(tmp_path):
-    cfg = load_view_config(_write(tmp_path, "email: a@example.org\n" + EXAMPLE))
+def test_an_email_key_is_refused(tmp_path):
+    path = _write(tmp_path, "email: a@example.org\n" + EXAMPLE)
 
-    assert cfg.email == "a@example.org"
+    with pytest.raises(ConfigError, match=r"email: .*--email"):
+        load_view_config(path)
 
 
 def test_dashboard_columns_names_must_be_identifiers(tmp_path):
