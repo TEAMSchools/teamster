@@ -20,9 +20,7 @@ pulls, despite separate subdomains/credentials — so `build_finalsite_asset` pu
 every district's op in one shared `finalsite_api` pool (limit **1**, set in
 Dagster+ Deployment then Concurrency; the `pool=` kwarg alone does nothing until
 the limit is configured). `_request` also retries `403` and transient network
-faults. Pagination is sequential cursor-only (~1 req/s, 25/page): a full/seed
-pull for kippnewark (~24k contacts) is ~20 min, but an incremental tick is ~81
-pages (~1-2 min).
+faults. Pagination is sequential and cursor-only.
 
 **`resources.py`** (`FinalsiteResource`): REST client with pagination support.
 

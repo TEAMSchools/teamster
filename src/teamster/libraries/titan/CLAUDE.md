@@ -18,5 +18,4 @@ into a `SkipReason`. Non-partitioned assets only.
 ## Freshness Policies
 
 Code locations attach `FreshnessPolicy.cron` to `titan/person_data` and
-`stg_titan__person_data` — deadline 1:00am, 1-hour window (kippcamden,
-kippnewark).
+`stg_titan__person_data` in each Titan code location's `freshness.py`.

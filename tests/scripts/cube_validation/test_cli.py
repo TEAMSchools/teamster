@@ -20,6 +20,7 @@ from cube_validation import (
     compare,
     coverage,
     explain,
+    formula,
     latest,
     pipeline,
     rebuild,
@@ -41,11 +42,24 @@ from cube_validation.config import ColumnPair, Comparison, load_view_config
 from cube_validation.cube_client import Compiled, CubeError
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+from cube_validation.formula import (
+    NO_ROWS,
+    NOT_COMPARED,
+    NOT_COMPOSED,
+    OUTSIDE,
+    RUN_FAILED,
+)
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+from cube_validation.saved import SCRATCH_DATASET
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.tableau import Snapshot, formula_fingerprint
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.timetravel import utc_literal
-from google.api_core.exceptions import BadRequest
+from google.api_core.exceptions import BadRequest, NotFound
+from google.auth.exceptions import RefreshError
 
 FIXTURES = Path(__file__).parent / "fixtures"
 REAL_TABLEAU_SESSION = cli.tableau_session
@@ -140,16 +154,36 @@ class FakeBigQuery:
         ]
         self.views: dict[str, str] = {}
         self.build = (START, END)
+        # Each table's columns, by name, for `Warehouse.columns`.
+        self.schemas: dict[str, list[str]] = {"fct_f": list(FACT_COLUMNS)}
+        # Each saved table's labels, by dotted id, as the save script set them.
+        self.saved: dict[str, dict[str, str]] = {}
+        # The formula check's 4 queries' rows, by `Job.sql` key, without
+        # `__cut`. A missing self-check answers as the run's own cells did;
+        # a missing matched side, as the dashboard's cells, so by default the
+        # sides agree on matched rows and coverage decides.
+        self.formula: dict[str, list[dict]] = {}
 
     def get_table(self, ref):
+        if ref in self.saved:
+            return SimpleNamespace(
+                table_type="TABLE", view_query=None, modified=END,
+                labels=self.saved[ref], schema=[],
+            )  # fmt: skip
+        if f".{SCRATCH_DATASET}." in ref:
+            raise NotFound(f"Not found: Table {ref}")
         name = ref.rsplit(".", 1)[-1]
+        schema = [SimpleNamespace(name=c) for c in self.schemas.get(name, [])]
         if name in self.views:
             return SimpleNamespace(
                 table_type="VIEW",
                 view_query=self.views[name],
                 modified=START - timedelta(days=2),
+                schema=schema,
             )
-        return SimpleNamespace(table_type="TABLE", view_query=None, modified=START)
+        return SimpleNamespace(
+            table_type="TABLE", view_query=None, modified=START, schema=schema
+        )
 
     def query(self, sql, job_config=None):
         nbytes = int(self.cost(sql) / 6.25 * TIB)
@@ -170,12 +204,16 @@ class FakeBigQuery:
             return SimpleNamespace(total_bytes_processed=0, result=refuse)
         self.ran.append(sql)
         self.log.append(("run", sql))
+        for table, pairs in _SAVED_TABLE.findall(sql):
+            self.saved[table.replace("`", "")] = dict(_LABEL.findall(pairs))
         rows = self.answer(sql)
         return SimpleNamespace(
             total_bytes_processed=nbytes, total_bytes_billed=nbytes, result=lambda: rows
         )
 
     def answer(self, sql):
+        if cuts := _FORMULA_CUT.findall(sql):
+            return self._formula(sql, cuts)
         if "JOBS_BY_PROJECT" in sql:
             start, end = self.build
             return [{"job_id": "job-1", "start_time": start, "end_time": end}]
@@ -199,6 +237,36 @@ class FakeBigQuery:
         if "AS value" in sql and "rpt_d" in sql:
             return self.sheet_query
         return []
+
+    def _formula(self, sql, cuts):
+        """One of the formula check's queries: its rows per cut it computes."""
+        # Only the dashboard's side reads the sheet's view past the cut tag.
+        side = "dashboard" if "rpt_d" in sql.split("AS __cut", 1)[1] else "cube"
+        key = side if "__matched" in sql else f"{side}_self"
+        if key in self.formula:
+            rows = self.formula[key]
+        elif side == "dashboard":
+            rows = self.sheet_query
+        elif key == "cube":
+            rows = [{"regions_region_name": r["region"], "value": r["value"]}
+                    for r in self.sheet_query]  # fmt: skip
+        else:
+            rows = self.cells or [{"regions_region_name": "Newark", "value": 0.91234}]
+        return [{"__cut": cut.replace("\\'", "'"), **r} for cut in cuts for r in rows]
+
+
+# The fact's columns, as `Warehouse.columns` reads its schema.
+FACT_COLUMNS = (
+    "lea_student_identifier", "attendance_date", "attendance_value",
+    "membership_value", "regions_region_name", "dates_academic_year", "is_present",
+)  # fmt: skip
+# A save script's table and its labels (`reconcile.reconcile_script`).
+_SAVED_TABLE = re.compile(
+    r"CREATE OR REPLACE TABLE (\S+)\nOPTIONS\([^\n]*?labels = \[([^\]]*)\]"
+)
+_LABEL = re.compile(r"\('([^']*)', '([^']*)'\)")
+# A formula check query's cut tags (`formula.dashboard_side_sql`, `cube_side_sql`).
+_FORMULA_CUT = re.compile(r"SELECT '((?:[^'\\]|\\.)*)' AS __cut, \* FROM")
 
 
 class FakeCube:
@@ -289,6 +357,7 @@ class FakeTableau:
         self.refresh = NOW - timedelta(hours=2)
 
     def download_twb(self, luid):
+        self.downloads = getattr(self, "downloads", 0) + 1
         return self.twb
 
     def workbook_updated(self, luid):
@@ -314,13 +383,6 @@ class Clock:
     def __call__(self):
         self.t += timedelta(seconds=1)
         return self.t
-
-
-@pytest.fixture(autouse=True)
-def _cache_in_tmp(monkeypatch, tmp_path):
-    """Keep every test off the analyst's own cache and spend ledger."""
-    monkeypatch.setattr(cli, "cache_root", lambda: tmp_path / "cache")
-    monkeypatch.setattr(report, "CACHE_ROOT", tmp_path / "cache")
 
 
 @pytest.fixture
@@ -810,13 +872,13 @@ def test_a_comparison_run_composes_another_cube_cannot_compile_today(
 
 def test_run_json_is_written_whole(fakes, tmp_path, monkeypatch):
     written = []
-    write = checkpoints._write_text
+    write = checkpoints.write_text
 
     def spy(path, text):
         written.append(path.name)
         write(path, text)
 
-    monkeypatch.setattr(checkpoints, "_write_text", spy)
+    monkeypatch.setattr(checkpoints, "write_text", spy)
 
     assert cli.main(["compare", str(_file(tmp_path))]) == 0
 
@@ -837,6 +899,42 @@ def test_a_command_reads_past_an_unreadable_run_json(fakes, tmp_path):
     data, found = results._saved_run(cfg, tmp_path / "cache")
 
     assert found == good and data["view"] == "v"
+
+
+def test_last_run_reads_past_a_run_json_that_is_no_object(fakes, tmp_path):
+    path = _file(tmp_path)
+    assert cli.main(["compare", str(path)]) == 0
+    good = _latest_run(tmp_path)
+    # A newer run.json that parses, but not to an object.
+    odd = good.parent.parent / "2026-10-23T000000Z" / "run.json"
+    odd.parent.mkdir()
+    odd.write_text("[1]")
+    os.utime(odd, (good.stat().st_mtime + 60,) * 2)
+
+    data = results.last_run(load_view_config(path), tmp_path / "cache")
+
+    assert data == json.loads(good.read_text())
+
+
+def test_run_jsons_written_at_once_resolve_to_the_later_folder(fakes, tmp_path):
+    path = _file(tmp_path)
+    assert cli.main(["compare", str(path)]) == 0
+    good = _latest_run(tmp_path)
+    data = json.loads(good.read_text())
+    at = good.stat().st_mtime
+    # Folders named before and after the run's, all written in the same instant.
+    for name in ("0000-01-01T000000Z", "later-b", "9999-12-31T000000Z", "later-z"):
+        copy_ = good.parent.parent / name / "run.json"
+        copy_.parent.mkdir()
+        copy_.write_text(json.dumps({**data, "folder": name}))
+        os.utime(copy_, (at, at))
+    os.utime(good, (at, at))
+    cfg = load_view_config(path)
+
+    saved, found = results._saved_run(cfg, tmp_path / "cache")
+
+    assert found.parent.name == "later-z" and saved["folder"] == "later-z"
+    assert results.last_run(cfg, tmp_path / "cache")["folder"] == "later-z"
 
 
 def test_a_run_json_with_no_fact_is_older_than_any_fact_s_run(fakes, tmp_path):
@@ -911,6 +1009,146 @@ def test_a_changed_workbook_skips_only_its_comparisons(fakes, tmp_path, capsys):
     assert _scripts_for(fakes.bq) == ["c1"]
 
 
+def test_compare_skips_a_sheet_on_no_published_dashboard(fakes, tmp_path, capsys):
+    _hide_rate_by_region(fakes.tbl)
+    # c2's sheet shows in its own window, so it publishes.
+    fakes.tbl.twb = fakes.tbl.twb.replace(
+        "  </windows>",
+        "    <window class='worksheet' name='Rate Copy' />\n  </windows>",
+    )
+    path = _two(
+        tmp_path, lambda e: e.replace("sheet: Rate by Region", "sheet: Rate Copy")
+    )
+
+    assert cli.main(["compare", str(path)]) == 0
+
+    out = capsys.readouterr().out
+    assert (
+        "Skipping c1: not on a published dashboard; set unpublished: true to "
+        "compare it anyway"
+    ) in out
+    assert "Skipping c2" not in out
+    assert _scripts_for(fakes.bq) == ["c2"]
+
+
+def test_compare_downloads_a_republished_workbook_once(fakes, tmp_path, capsys):
+    path = _republished(fakes, tmp_path)
+    head, rest = path.read_text().split("  - id: ada-region\n", 1)
+    path.write_text(head + f"  - id: c1\n{rest}" + f"  - id: c2\n{rest}")
+
+    assert cli.main(["compare", str(path)]) == 0, capsys.readouterr().err
+
+    # Both checks read the one republished file.
+    assert fakes.tbl.downloads == 1
+    assert _scripts_for(fakes.bq) == ["c1", "c2"]
+
+
+def test_compare_asks_tableau_once_for_a_workbook_that_errs(
+    fakes, tmp_path, monkeypatch, capsys
+):
+    asked = []
+
+    def answer(luid):
+        asked.append(luid)
+        raise TSC.ServerResponseError("404", "Resource Not Found", "gone")
+
+    monkeypatch.setattr(fakes.tbl, "workbook_updated", answer)
+
+    assert cli.main(["compare", str(_two(tmp_path))]) == 1
+
+    out = capsys.readouterr().out
+    for cid in ("c1", "c2"):
+        assert (
+            f"Skipping {cid}: the workbook could not be checked: Tableau answered "
+            "404 Resource Not Found"
+        ) in out
+    assert asked == ["wb-1"]
+
+
+def test_compare_downloads_once_for_a_workbook_whose_download_errs(
+    fakes, tmp_path, monkeypatch, capsys
+):
+    # Republished, so each comparison's check downloads its workbook.
+    path = _republished(fakes, tmp_path)
+    head, rest = path.read_text().split("  - id: ada-region\n", 1)
+    other = rest.replace("workbook: wb-1", "workbook: wb-2")
+    path.write_text(
+        head + f"  - id: c1\n{rest}" + f"  - id: c2\n{other}" + f"  - id: c3\n{other}"
+    )
+    asked = []
+    download = fakes.tbl.download_twb
+
+    def fetch(luid):
+        asked.append(luid)
+        if luid == "wb-2":
+            raise TSC.ServerResponseError("404", "Resource Not Found", "gone")
+        return download(luid)
+
+    monkeypatch.setattr(fakes.tbl, "download_twb", fetch)
+
+    assert cli.main(["compare", str(path)]) == 0, capsys.readouterr().err
+
+    out = capsys.readouterr().out
+    for cid in ("c2", "c3"):
+        assert (
+            f"Skipping {cid}: the workbook could not be checked: Tableau answered "
+            "404 Resource Not Found"
+        ) in out
+    assert asked.count("wb-2") == 1
+    # The healthy workbook's comparison still compares.
+    assert "Skipping c1" not in out
+    assert _scripts_for(fakes.bq) == ["c1"]
+
+
+def test_unpublished_sheets_leaves_a_comparison_with_no_sheet_alone(fakes, tmp_path):
+    path = _file(tmp_path, YML.replace("    sheet: Rate by Region\n", ""))
+    (c,) = load_view_config(path).comparisons
+    assert c.sheet is None and c.rebuild_check is not None
+
+    assert rebuild.unpublished_sheets([c], tbl=fakes.tbl) == {}
+
+
+def test_compare_downloads_no_workbook_for_a_check_that_recorded_published(
+    fakes, tmp_path, capsys
+):
+    proof = REBUILD_CHECK + "      published: true\n"
+    path = _two(tmp_path, text=YML.replace(REBUILD_CHECK, proof))
+
+    assert cli.main(["compare", str(path)]) == 0
+
+    assert not getattr(fakes.tbl, "downloads", 0)
+    assert _scripts_for(fakes.bq) == ["c1", "c2"]
+
+
+def test_compare_checks_again_after_a_republish(fakes, tmp_path, capsys):
+    path = _republished(fakes, tmp_path)
+    path.write_text(
+        path.read_text().replace(
+            "      sheet_query_fingerprint",
+            "      published: true\n      sheet_query_fingerprint",
+        )
+    )
+    _hide_rate_by_region(fakes.tbl)
+
+    assert cli.main(["compare", str(path)]) == 1
+
+    assert fakes.tbl.downloads
+    assert "not on a published dashboard" in capsys.readouterr().out
+    assert _scripts_for(fakes.bq) == []
+
+
+def test_compare_runs_an_opted_in_unpublished_sheet(fakes, tmp_path, capsys):
+    _hide_rate_by_region(fakes.tbl)
+    text = YML.replace(
+        "    sheet_field: Rate\n", "    sheet_field: Rate\n    unpublished: true\n"
+    )
+
+    assert cli.main(["compare", str(_two(tmp_path, text=text))]) == 0
+
+    assert "not on a published dashboard" not in capsys.readouterr().out
+    assert _scripts_for(fakes.bq) == ["c1", "c2"]
+
+
 def test_a_changed_second_fact_skips_only_the_comparisons_that_read_it(
     fakes, tmp_path, capsys
 ):
@@ -936,6 +1174,50 @@ def test_a_changed_second_fact_skips_only_the_comparisons_that_read_it(
     assert _scripts_for(fakes.bq) == ["c1"]
     assert len(_compared(fakes.bq)) == 6
     assert latest._file(results, "c2").read_text() == before
+
+
+def test_a_failed_table_scan_skips_only_the_comparisons_that_read_it(
+    fakes, tmp_path, capsys
+):
+    path = _two(tmp_path, _reads_membership, text=ALSO_FACTS_YML)
+    _second_fact_for_membership(fakes)
+    assert cli.main(["compare", str(path)]) == 0
+    results = latest.folder(tmp_path / "cache" / "v", "kipptaf_marts.fct_f")
+    before = latest._file(results, "c2").read_text()
+    fakes.bq.build = LATER
+    fakes.bq.ran.clear()
+    capsys.readouterr()
+    # The scan itself fails, after its dry run priced it.
+    _bigquery_refuses(fakes, "`fct_g` AS t", dry=False)
+
+    assert cli.main(["compare", str(path), "--all"]) == 0
+
+    out = capsys.readouterr().out
+    assert (
+        "Skipping c2: a scan of kipptaf_marts.fct_g failed in BigQuery "
+        "(job ?, invalidQuery); compare it again later."
+    ) in out
+    assert "12345" not in out
+    assert _scripts_for(fakes.bq) == ["c1"]
+    assert latest._file(results, "c2").read_text() == before
+    saved = json.loads(_latest_run(tmp_path).read_text())
+    assert [s["comparison"] for s in saved["skipped"]] == ["c2"]
+
+
+@pytest.mark.parametrize("dry", [True, False])
+def test_a_comparison_reading_2_failed_scans_is_skipped_once(
+    fakes, tmp_path, capsys, dry
+):
+    path = _two(tmp_path, _reads_membership, text=ALSO_FACTS_YML)
+    _second_fact_for_membership(fakes)
+    # c2 reads both tables; c1 reads only dim_locations.
+    _bigquery_refuses(fakes, "`fct_g` AS t", dry=dry)
+    _bigquery_refuses(fakes, "`dim_locations` AS t", dry=dry)
+
+    cli.main(["compare", str(path)])
+
+    out = capsys.readouterr().out
+    assert out.count("Skipping c2: ") == 1 and out.count("Skipping c1: ") == 1
 
 
 def test_a_plain_run_with_only_a_skipped_comparison_left_compares_nothing(
@@ -1310,6 +1592,40 @@ def test_a_bigquery_error_while_comparing_skips_it_and_keeps_its_spend(
     assert saved["cost_usd"] == pytest.approx(0.01 * len(fakes.bq.ran), rel=1e-3)
 
 
+def test_two_rows_on_one_cell_skip_only_their_comparison(fakes, tmp_path, capsys):
+    path = _two(tmp_path)
+    answer = fakes.bq.answer
+
+    def doubled(sql):
+        # c2's dashboard cells, after c1's reconcile: one region twice.
+        c1_done = any("-- outer" in q and "__c1_" in q for q in fakes.bq.ran)
+        if c1_done and "AS value" in sql and "rpt_d" in sql:
+            return [
+                {"region": "Newark", "value": 0.9},
+                {"region": "Newark", "value": 0.5},
+            ]
+        return answer(sql)
+
+    fakes.bq.answer = doubled
+
+    assert cli.main(["compare", str(path)]) == 0
+
+    out = capsys.readouterr().out
+    assert "Skipping c2: " in out and "2 rows share the cell" in out
+    # The terminal names the cell; the skip, which ask-owner posts, does not.
+    assert "c2 {} dashboard: 2 rows share the cell Newark;" in out
+    assert "Skipping c2: {} dashboard: 2 rows share the cell;" in out
+    assert "c2: c2" not in out
+    saved = json.loads(_latest_run(tmp_path).read_text())
+    (skip,) = saved["skipped"]
+    assert skip["comparison"] == "c2"
+    assert "2 rows share the cell" in skip["why"] and "Newark" not in skip["why"]
+    assert _scripts_for(fakes.bq) == ["c1"]
+    results = latest.folder(tmp_path / "cache" / "v", "kipptaf_marts.fct_f")
+    assert latest._file(results, "c1").exists()
+    assert not latest._file(results, "c2").exists()
+
+
 def test_sort_and_review_go_on_past_a_comparison_skipped_for_a_missing_member(
     fakes, tmp_path, capsys
 ):
@@ -1541,6 +1857,78 @@ def test_review_posts_the_masked_lead_of_an_item_with_the_analyst(
     )
     assert "brings back <10 of 30 rows" in section
     assert "3 of 30" not in body and "region = " not in section
+
+
+def test_ask_owner_lists_formulas_not_compared_and_record_answers_ignores_them(
+    fakes, tmp_path, capsys
+):
+    path = _file(tmp_path)
+    assert cli.main(["compare", str(path)]) == 0
+    for run_json in (tmp_path / "cache" / "v").glob("*/run.json"):
+        _write_sorted(run_json, [_sorted_item("e")])
+        triage = run_json.parent / "triage.json"
+        loaded = json.loads(triage.read_text())
+        loaded["formulas_not_compared"] = {"ada-region": {"no rows both sides hold": 3}}
+        triage.write_text(json.dumps(loaded))
+    capsys.readouterr()
+
+    assert cli.main(["ask-owner", str(path), "--domain", "Registrar"]) == 0
+
+    body = capsys.readouterr().out
+    section = body.split("## Still with the analyst", 1)[1]
+    assert (
+        "- `ada-region` in `v`: formulas not compared: no rows both sides hold; "
+        "<10 cells closed by coverage only\n" in section
+    )
+    assert "3 cells" not in body
+    assert "formulas not compared" not in body.split("## Still with the analyst")[0]
+    owner = _owner_file(tmp_path)
+    comment = _comment(tmp_path, [_answer(["miami-scope"], "fix_cube", "ok")])
+    assert _record([owner], comment) == 0
+
+
+def _predating_the_formula_check(tmp_path):
+    """Compare, then write a triage as a `sort` before the formula check did:
+    no `formulas_not_compared` at all."""
+    path = _file(tmp_path)
+    assert cli.main(["compare", str(path)]) == 0
+    (run_json,) = (tmp_path / "cache" / "v").glob("*/run.json")
+    _write_sorted(run_json, [_sorted_item("e"), _gap_sorted_item()])
+    triage = run_json.parent / "triage.json"
+    loaded = json.loads(triage.read_text())
+    del loaded["formulas_not_compared"]
+    triage.write_text(json.dumps(loaded))
+    return path
+
+
+def test_ask_owner_refuses_a_triage_that_predates_the_formula_check(
+    fakes, tmp_path, capsys
+):
+    # Its cells closed by coverage alone, with nothing to say so.
+    path = _predating_the_formula_check(tmp_path)
+    capsys.readouterr()
+
+    assert cli.main(["ask-owner", str(path), "--domain", "Registrar"]) == 1
+
+    err = capsys.readouterr().err
+    assert "v: the triage predates the formula check; run `sort` for" in err
+
+
+def test_decide_refuses_a_triage_that_predates_the_formula_check(
+    fakes, tmp_path, capsys
+):
+    path = _predating_the_formula_check(tmp_path)
+    approved = _approved(
+        tmp_path,
+        [{"id": "no-team", "call": "deliberate", "reason": "A label only.",
+          "task": "", "item": "cut:Team"}],
+    )  # fmt: skip
+    capsys.readouterr()
+
+    assert cli.main(["decide", str(path), str(approved)]) == 1
+
+    assert "the triage predates the formula check" in capsys.readouterr().err
+    assert load_view_config(path).decisions == []
 
 
 def test_triage_and_review_name_a_skipped_comparison(fakes, tmp_path, capsys):
@@ -2750,6 +3138,7 @@ def _write_sorted(run_json, items=(), open_keys=None):
                 "decisions_fingerprint": run.decisions_fingerprint,
                 "open": sort.open_keys(run) if open_keys is None else open_keys,
                 "items": list(items),
+                "formulas_not_compared": {},
             }
         )
     )
@@ -3054,17 +3443,130 @@ def test_prove_writes_the_proof(fakes, tmp_path, capsys):
     assert "default-format" not in fakes.tbl.edited.split("<worksheets>")[1]
 
 
-def test_prove_unhides_a_dashboard_only_sheet_on_the_copy(fakes, tmp_path, capsys):
+def test_rebuild_sheet_refuses_a_text_measure_before_any_export(
+    fakes, tmp_path, capsys
+):
     fakes.tbl.twb = fakes.tbl.twb.replace(
+        "<cols>(",
+        "<cols>([federated.0sample].[attr:region:nk] + ",
+    )
+    path = _file(
+        tmp_path,
+        YML.replace(REBUILD_CHECK, "    rebuild_check: null\n").replace(
+            "sheet_field: Rate", "sheet_field: Region"
+        ),
+    )
+    argv = ["rebuild-sheet", str(path), "--comparison", "ada-region"]
+
+    assert cli.main(argv) == 1
+    assert "text measures are not compared" in capsys.readouterr().err
+    assert not getattr(fakes.tbl, "captures", 0)
+
+
+def test_rebuild_sheet_refuses_an_unwritable_comparison_before_any_export(
+    fakes, tmp_path, capsys
+):
+    head = YML.split("comparisons:\n", 1)[0]
+    flow = (
+        "comparisons: [{id: ada-region, measure: avg_daily_attendance, "
+        "workbook: wb-1, sheet: Rate by Region, "
+        "dashboard_view: kipptaf_tableau.rpt_d, decimals: 3}]\n"
+    )
+    # Loads through the config loader, but no line edit can find the item.
+    path = _file(tmp_path, head + flow)
+    argv = ["rebuild-sheet", str(path), "--comparison", "ada-region"]
+
+    assert cli.main(argv) == 1
+    assert (
+        "comparisons: 'ada-region' cannot be edited by line; write it as a block list"
+    ) in capsys.readouterr().err
+    assert not getattr(fakes.tbl, "captures", 0)
+
+
+def _hide_rate_by_region(tbl):
+    """Hide the fixture sheet's window; no dashboard holds it, so it publishes
+    no view."""
+    tbl.twb = tbl.twb.replace(
         "<window class='worksheet' name='Rate by Region'>",
         "<window class='worksheet' hidden='true' name='Rate by Region'>",
     )
+
+
+def test_rebuild_sheet_refuses_an_unpublished_sheet_before_any_export(
+    fakes, tmp_path, capsys
+):
+    _hide_rate_by_region(fakes.tbl)
+    path = _file(tmp_path, NO_REBUILD_CHECK)
+    argv = ["rebuild-sheet", str(path), "--comparison", "ada-region"]
+
+    assert cli.main(argv) == 1
+    assert (
+        "comparison 'ada-region': sheet 'Rate by Region' is not on a published "
+        "dashboard; set unpublished: true to compare it anyway"
+    ) in capsys.readouterr().err
+    assert not getattr(fakes.tbl, "captures", 0)
+    assert "published" not in path.read_text()
+
+
+def test_rebuild_sheet_records_published(fakes, tmp_path, capsys):
+    path = _file(tmp_path, NO_REBUILD_CHECK)
+    argv = ["rebuild-sheet", str(path), "--comparison", "ada-region"]
+
+    assert cli.main(argv) == 0, capsys.readouterr().err
+
+    proof = load_view_config(path).comparisons[0].rebuild_check
+    assert proof is not None and proof.published is True
+
+    # An opted-in unpublished sheet is compared, and the check says so.
+    _hide_rate_by_region(fakes.tbl)
+    path = _file(
+        tmp_path,
+        NO_REBUILD_CHECK.replace(
+            "    sheet_field: Rate\n", "    sheet_field: Rate\n    unpublished: true\n"
+        ),
+    )
+
+    assert cli.main(argv) == 0, capsys.readouterr().err
+
+    proof = load_view_config(path).comparisons[0].rebuild_check
+    assert proof is not None and proof.published is False
+
+
+def test_prove_unhides_a_dashboard_only_sheet_on_the_copy(fakes, tmp_path, capsys):
+    _hide_rate_by_region(fakes.tbl)
+    fakes.tbl.twb = fakes.tbl.twb.replace(
+        "  </worksheets>\n",
+        "  </worksheets>\n  <dashboards><dashboard name='Overview'><zones>"
+        "<zone id='1' name='Rate by Region' /></zones></dashboard></dashboards>\n",
+    )
+    assert "<dashboards>" in fakes.tbl.twb
     path = _file(tmp_path, YML.replace(REBUILD_CHECK, "    rebuild_check: null\n"))
     argv = ["rebuild-sheet", str(path), "--comparison", "ada-region"]
 
     assert cli.main(argv) == 0, capsys.readouterr().err
 
     assert "hidden=" not in fakes.tbl.edited
+
+
+def test_rebuild_sheet_prints_the_blank_cells_it_skipped(fakes, tmp_path, capsys):
+    # Camden is blank in the export and absent from the sheet query.
+    fakes.tbl.exports = [
+        [
+            {"Region": "Newark", "Rate": "0.9123", "Count": "12"},
+            {"Region": "Camden", "Rate": "", "Count": ""},
+        ]
+        for _ in range(2)
+    ]
+    path = _file(tmp_path, YML.replace(REBUILD_CHECK, "    rebuild_check: null\n"))
+    argv = ["rebuild-sheet", str(path), "--comparison", "ada-region"]
+
+    assert cli.main(argv) == 0, capsys.readouterr().err
+
+    assert (
+        "Skipped 2 blank cells (blank in the export, NULL in the sheet query)"
+        in capsys.readouterr().out
+    )
+    assert load_view_config(path).comparisons[0].rebuild_check.cells == 2
 
 
 def test_prove_reads_aliases_back_and_skips_total_rows(fakes, tmp_path, capsys):
@@ -3091,7 +3593,7 @@ def test_prove_reads_aliases_back_and_skips_total_rows(fakes, tmp_path, capsys):
     assert proof.cells == 2
     # 1 total row in each of the 2 cuts.
     assert proof.totals_skipped == 2
-    assert "skipped 1 total rows (All)" in capsys.readouterr().out
+    assert "skipped 1 total rows (All, *)" in capsys.readouterr().out
 
 
 def test_export_cells_reads_an_unquoted_numeric_alias_key_back():
@@ -3117,7 +3619,14 @@ def test_export_cells_reads_an_unquoted_numeric_alias_key_back():
     probe = [{"grade_level": 0, "value": 0.94}, {"grade_level": 1, "value": 0.95}]
 
     cells, totals, _ = rebuild._export_cells(
-        comparison, rows, {"Grade Level": "grade_level"}, "Rate", columns, probe
+        comparison,
+        rows,
+        {"Grade Level": "grade_level"},
+        "Rate",
+        columns,
+        probe,
+        shelf_dims=set(),
+        ignored=set(),
     )
 
     assert cells == [
@@ -3142,7 +3651,14 @@ def test_export_cells_count_identical_pane_rows_once():
     ]
 
     cells, _, _ = rebuild._export_cells(
-        comparison, rows, {"Region": "region"}, "Distance", [], []
+        comparison,
+        rows,
+        {"Region": "region"},
+        "Distance",
+        [],
+        [],
+        shelf_dims=set(),
+        ignored=set(),
     )
 
     assert cells == [
@@ -3167,7 +3683,14 @@ def test_export_cells_sum_every_split_row_even_identical_ones():
     ]
 
     cells, _, summed = rebuild._export_cells(
-        comparison, rows, {"Region": "region"}, "Count", [], []
+        comparison,
+        rows,
+        {"Region": "region"},
+        "Count",
+        [],
+        [],
+        shelf_dims=set(),
+        ignored=set(),
     )
 
     assert cells == [{"region": "Camden", "value": "10"}]
@@ -3228,11 +3751,7 @@ def test_prove_does_not_write_a_failed_proof(fakes, tmp_path, capsys):
 def _workbook_check(fakes, path, ids=None):
     cfg = load_view_config(path)
     chosen = [c for c in cfg.comparisons if ids is None or c.id in ids]
-    return rebuild.workbook_check(cfg, chosen, tbl=fakes.tbl, cube=fakes.cube)
-
-
-def test_prove_takes_no_check_flag(fakes, tmp_path, capsys):
-    assert cli.main(["rebuild-sheet", str(_file(tmp_path)), "--check"]) == 2
+    return rebuild.workbook_check(chosen, tbl=fakes.tbl)
 
 
 def test_prove_requires_a_comparison(fakes, tmp_path, capsys):
@@ -3250,15 +3769,6 @@ def test_workbook_check_lists_stale_proofs(fakes, tmp_path):
 def test_workbook_check_is_empty_when_current(fakes, tmp_path, capsys):
     assert _workbook_check(fakes, _file(tmp_path)) == []
     assert capsys.readouterr().out == ""
-
-
-def test_workbook_check_lists_a_member_cube_dropped(fakes, tmp_path):
-    fakes.cube.dropped = {"v.regions_region_name"}
-
-    (line,) = _workbook_check(fakes, _file(tmp_path))
-
-    assert "ada-region" in line and "v.regions_region_name" in line
-    assert "re-run `rebuild-sheet`" in line
 
 
 def test_workbook_check_lists_only_the_comparisons_asked(fakes, tmp_path):
@@ -3557,14 +4067,14 @@ def test_dashboard_columns_reach_every_dashboard_read(tmp_path):
     assert derived in pipeline.sheet_query(cfg, comparison, {})
 
 
-def test_dashboard_columns_change_the_row_population(tmp_path):
+def test_dashboard_columns_do_not_change_the_explanation_key(tmp_path):
     # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-    from cube_validation.config import row_population
+    from cube_validation.config import explanation_key
 
     plain = load_view_config(_file(tmp_path, YML)).comparisons[0]
     computed = load_view_config(_file(tmp_path, COMPUTED)).comparisons[0]
 
-    assert row_population(plain) != row_population(computed)
+    assert explanation_key(plain) == explanation_key(computed)
 
 
 # --- run: missing cuts and filters ----------------------------------------------
@@ -3709,6 +4219,32 @@ def test_discover_reads_a_local_workbook_without_tableau(
     assert "'# Tardy'" in out
     assert "Roster (roster.twb): rows Region, Student Number" in out
     assert fakes.cube.compiled_queries == [{"measures": ["v.avg_daily_attendance"]}]
+
+
+def test_find_field_marks_an_unpublished_sheet(fakes, tmp_path, capsys):
+    # The roster fixture has no dashboard and no window for its sheet.
+    twb = tmp_path / "roster.twb"
+    twb.write_text((FIXTURES / "roster.twb").read_text())
+    argv = ["find-field", str(_file(tmp_path)), "--measure", "avg_daily_attendance",
+            "--caption", "# Tardy", "--twb", str(twb)]  # fmt: skip
+
+    assert cli.main(argv) == 0, capsys.readouterr().err
+
+    sheets = capsys.readouterr().out.split("Sheets:", 1)[1].splitlines()
+    at = next(i for i, x in enumerate(sheets) if x.startswith("  Roster (roster.twb)"))
+    assert sheets[at + 1] == "    not on a published dashboard"
+
+    # Shown in its own window, the sheet publishes.
+    twb.write_text(
+        (FIXTURES / "roster.twb")
+        .read_text()
+        .replace(
+            "</workbook>",
+            "<windows><window class='worksheet' name='Roster' /></windows></workbook>",
+        )
+    )
+    assert cli.main(argv) == 0
+    assert "not on a published dashboard" not in capsys.readouterr().out
 
 
 def test_discover_keeps_the_top_5_by_default(fakes, tmp_path, monkeypatch, capsys):
@@ -4165,17 +4701,6 @@ def test_an_old_run_json_with_a_measure_s_findings_is_older(
     assert "older validator" in capsys.readouterr().err
 
 
-def test_an_old_run_json_s_cell_sizes_are_ignored(fakes, tmp_path):
-    assert cli.main(["compare", str(_file(tmp_path))]) == 0
-    saved = _saved_run(tmp_path)
-    saved["cell_rows"] = {"ada-region": [{"bucket": "match"}]}
-    saved["cell_students"] = {"ada-region": []}
-
-    result = results._run_from_json(saved)
-
-    assert not hasattr(result, "cell_rows") and not hasattr(result, "cell_students")
-
-
 def test_run_json_round_trips_the_hand_check_fields(fakes, tmp_path):
     fakes.bq.cells = [{"regions_region_name": "Miami", "value": 0.95}]
     assert cli.main(["compare", str(_file(tmp_path))]) == 0
@@ -4514,14 +5039,12 @@ def test_triage_confirm_reaches_its_command(fakes, tmp_path, monkeypatch):
     assert "cells" not in seen
 
 
-def test_triage_confirm_takes_no_cells_flag(fakes, tmp_path, monkeypatch):
+def test_explain_requires_a_bucket(fakes, tmp_path, monkeypatch):
     path = _file(tmp_path)
-    monkeypatch.setattr(explain, "explain", lambda *a, **k: pytest.fail("confirm ran"))
+    monkeypatch.setattr(explain, "explain", lambda *a, **k: pytest.fail("explain ran"))
 
-    argv = ["explain", str(path), "--comparison", "ada-region"]
-    assert cli.main([*argv, "--cells"]) == 2
-    # Every confirm proves a bucket.
-    assert cli.main(argv) == 2
+    # Every explanation explains one bucket.
+    assert cli.main(["explain", str(path), "--comparison", "ada-region"]) == 2
 
 
 def test_triage_command_writes_triage_json_beside_latest_run(fakes, tmp_path, capsys):
@@ -4752,6 +5275,496 @@ def test_a_value_check_past_the_cap_still_writes_the_batch(
     items = json.loads((saved.parent / "triage.json").read_text())["items"]
     (gap,) = [i for i in items if i["kind"] == "gap"]
     assert any(e.startswith("school_level: not checked:") for e in gap["evidence"])
+
+
+def _miami_differs(fakes, tmp_path, path=None):
+    """Compare a run whose Miami cells differ, each holding the dashboard-only
+    Miami group, while Newark passes."""
+    fakes.bq.sheet_query = [{"region": "Newark", "value": 0.9123},
+                            {"region": "Miami", "value": 0.5}]  # fmt: skip
+    fakes.bq.cells = [{"regions_region_name": "Newark", "value": 0.91234},
+                      {"regions_region_name": "Miami", "value": 0.95}]  # fmt: skip
+    path = path or _file(tmp_path)
+    assert cli.main(["compare", str(path)]) == 0
+    return path
+
+
+# A formula check query: each cut's tag (`formula.dashboard_side_sql`).
+FORMULA_QUERY = "AS __cut, * FROM"
+
+
+def _formula_runs(bq, since=0):
+    return [
+        sql for kind, sql in bq.log[since:] if kind == "run" and FORMULA_QUERY in sql
+    ]
+
+
+def _triage(tmp_path):
+    return json.loads((_latest_run(tmp_path).parent / "triage.json").read_text())
+
+
+def test_sort_prices_the_formula_check_with_the_explanations(
+    fakes, tmp_path, capsys, monkeypatch
+):
+    path = _miami_differs(fakes, tmp_path)
+    # A stored explanation of the Miami group, priced at $2 against the
+    # formula check's $4, so only the two together pass a $5 cap.
+    explained = path.parent / "explanations" / "v" / "ada-region__dashboard_only.sql"
+    explained.parent.mkdir(parents=True, exist_ok=True)
+    explained.write_text(
+        "-- cause C1 = dashboard: the sheet drops them\n"
+        "SELECT u.__row, CASE WHEN TRUE THEN 'C1' ELSE 'UNEXPLAINED' END AS cause\n"
+        "FROM {unmatched} AS u\n"
+    )
+    fakes.bq.cost = lambda sql: (
+        1.0 if FORMULA_QUERY in sql else 2.0 if "AS cause" in sql else 0.0
+    )
+    stored = explain.run_stored
+    priced = []
+
+    def run_stored(*a, also_usd=0.0, **k):
+        priced.append(also_usd)
+        return stored(*a, also_usd=also_usd, **k)
+
+    monkeypatch.setattr(explain, "run_stored", run_stored)
+    since = len(fakes.bq.log)
+    capsys.readouterr()
+
+    def capped(usd):
+        return ["--max-usd", usd, "--max-usd-per-day", "50"]
+
+    # One cap refusal covers the explanations and the formula check.
+    assert cli.main(["sort", str(path), "--no-trace", *capped("5")]) == 1
+    out, err = capsys.readouterr()
+    assert "Formula check: 4 queries, $4.00 (dry run)." in out
+    assert "Explanations: 1 to run, $2.00 (dry run)" in out
+    assert "these queries ($6.00) would pass the $5.00 cap" in err
+    assert priced == [pytest.approx(4.0)]
+    # With explanations off, the check alone is still capped up front.
+    assert (
+        cli.main(["sort", str(path), "--no-trace", "--no-explanations", *capped("3")])
+        == 1
+    )
+    assert "these queries ($4.00) would pass the $3.00 cap" in capsys.readouterr().err
+    assert _formula_runs(fakes.bq, since) == []
+
+    # Under the same $5 cap the check alone runs: only the sum passed it.
+    argv = ["sort", str(path), "--no-trace", "--no-explanations", *capped("5")]
+    assert cli.main(argv) == 0
+    assert len(_formula_runs(fakes.bq, since)) == 4
+
+
+def test_sort_files_a_decided_cell_whose_formulas_differ_as_formula(fakes, tmp_path):
+    # The DDI goal shape: each Miami cell holds a row group a decision closes,
+    # so coverage alone would close the cells; but on matched rows the 2 sides
+    # still differ, so the cells differ by their formulas.
+    _miami_differs(fakes, tmp_path)
+    path = _with_decision(_saved_fingerprints(tmp_path), tmp_path, call="fix_cube")
+    assert cli.main(["reapply", str(path)]) == 0
+    before = json.loads(_latest_run(tmp_path).read_text())
+    assert before["applied"]["open"] == [] and before["applied"]["quiet"]
+    assert {c["kind"] for c in before["diff_cells"]} == {"cells"}
+    fakes.bq.formula = {
+        "dashboard": [{"region": "Newark", "value": 0.9123},
+                      {"region": "Miami", "value": 0.6}],
+        "cube": [{"regions_region_name": "Newark", "value": 0.91234},
+                 {"regions_region_name": "Miami", "value": 0.95}],
+    }  # fmt: skip
+
+    items = _sorted_items(path, tmp_path)
+
+    assert "ada-region:cells" not in items
+    item = items["ada-region:formula"]
+    assert (item["suggestion"], item["proof"]["kind"]) == ("cause", "formula")
+    assert item["cause"][0]["label"] == sort.MATCHED_LABEL
+    assert item["evidence_posted"][0] == (
+        f"<10 {sort.MATCHED_LABEL}: with their unmatched rows left out, the 2 sides "
+        "still differ"
+    )
+    assert "Miami" not in json.dumps(item["evidence_posted"])
+    after = json.loads(_latest_run(tmp_path).read_text())
+    assert {c["kind"] for c in after["diff_cells"]} == {"formula"}
+    (diff,) = after["applied"]["open_cells"]
+    assert (diff["kind"], diff["matched_only"]) == ("formula", 2)
+    assert _triage(tmp_path)["formulas_not_compared"] == {}
+
+
+def test_a_formula_decision_is_asked_again_once_the_check_files_more_cells(
+    fakes, tmp_path, capsys
+):
+    _miami_differs(fakes, tmp_path)
+    path = _with_decision(_saved_fingerprints(tmp_path), tmp_path, call="fix_cube")
+    assert cli.main(["reapply", str(path)]) == 0
+    fakes.bq.formula = {
+        "dashboard": [{"region": "Newark", "value": 0.9123},
+                      {"region": "Miami", "value": 0.6}],
+        "cube": [{"regions_region_name": "Newark", "value": 0.91234},
+                 {"regions_region_name": "Miami", "value": 0.95}],
+    }  # fmt: skip
+    assert "ada-region:formula" in _sorted_items(path, tmp_path)
+    approved = _approved(tmp_path, [{"id": "which-rate", "call": "domain_owner",
+                                     "reason": "Which rate is right?",
+                                     "item": "ada-region:formula"}])  # fmt: skip
+
+    assert cli.main(["decide", str(path), str(approved)]) == 0
+
+    (decision,) = [d for d in load_view_config(path).decisions if d.formula]
+    assert decision.fingerprints == {
+        **_saved_fingerprints(tmp_path),
+        "matched_only": "2",
+    }
+    applied = json.loads(_latest_run(tmp_path).read_text())["applied"]
+    assert [d["id"] for d, _ in applied["quiet_cells"]] == ["which-rate"]
+
+    # Recorded with fewer cells than the check has filed since (here, as a
+    # decision written before the count was): asked again.
+    text = path.read_text()
+    path.write_text(text.replace("matched_only: '2'", "matched_only: '1'"))
+    assert cli.main(["reapply", str(path)]) == 0
+
+    applied = json.loads(_latest_run(tmp_path).read_text())["applied"]
+    assert [d["id"] for d in applied["reconfirm"]] == ["which-rate"]
+    assert applied["quiet_cells"] == []
+    assert [d["kind"] for d in applied["open_cells"]] == ["formula"]
+    # Out of the questions while it waits; ask-owner says so on stderr.
+    assert "ada-region:formula" in _sorted_items(path, tmp_path)
+    capsys.readouterr()
+    assert cli.main(["ask-owner", str(path), "--domain", "Registrar"]) == 0
+    out, err = capsys.readouterr()
+    assert ("v: 1 decision to re-confirm, left out of the questions: which-rate") in err
+    assert "re-confirm" not in out
+
+    # As the runbook says: delete it and decide the item again under a new
+    # id, so the owner's session does not skip it as answered.
+    path.write_text(text)
+    with_it = load_view_config(path)
+    lines = text.splitlines()
+    (start,) = [i for i, line in enumerate(lines) if line.endswith("- id: which-rate")]
+    item = lines[start][: lines[start].index("-")]
+    stop = next(
+        (
+            i
+            for i in range(start + 1, len(lines))
+            if not lines[i].startswith(item + " ")
+        ),
+        len(lines),
+    )
+    path.write_text("\n".join(lines[:start] + lines[stop:]) + "\n")
+    assert [d.id for d in load_view_config(path).decisions] == [
+        d.id for d in with_it.decisions if d.id != "which-rate"
+    ]
+    assert cli.main(["reapply", str(path)]) == 0
+    assert "ada-region:formula" in _sorted_items(path, tmp_path)
+    again = _approved(tmp_path, [{"id": "which-rate-2", "call": "domain_owner",
+                                  "reason": "Which rate is right?",
+                                  "item": "ada-region:formula"}])  # fmt: skip
+    assert cli.main(["decide", str(path), str(again)]) == 0
+    (decision,) = [d for d in load_view_config(path).decisions if d.formula]
+    assert decision.id == "which-rate-2"
+    assert decision.fingerprints["matched_only"] == "2"
+
+
+def test_sort_reuses_a_stored_check_without_spending(fakes, tmp_path):
+    path = _miami_differs(fakes, tmp_path)
+    assert cli.main(["sort", str(path), "--no-trace"]) == 0
+    assert len(_formula_runs(fakes.bq)) == 4
+    held = latest.folder(tmp_path / "cache" / "v", "kipptaf_marts.fct_f")
+    check = latest.read_all(held, "kipptaf_marts.fct_f")["ada-region"].data[
+        "formula_check"
+    ]
+    # The sides agree on matched rows: coverage decides.
+    assert len(check["coverage"]) == 2 and check["formula"] == []
+    since = len(fakes.bq.log)
+
+    assert cli.main(["sort", str(path), "--no-trace"]) == 0
+
+    assert not [sql for _, sql in fakes.bq.log[since:] if FORMULA_QUERY in sql]
+    loaded = _triage(tmp_path)
+    assert loaded["formulas_not_compared"] == {} and loaded["stale"] == {}
+
+
+def _stored_formula_check(tmp_path) -> dict:
+    held = latest.folder(tmp_path / "cache" / "v", "kipptaf_marts.fct_f")
+    return latest.read_all(held, "kipptaf_marts.fct_f")["ada-region"].data[
+        "formula_check"
+    ]
+
+
+def _keep_formula_check(tmp_path, check: dict) -> None:
+    held = latest.folder(tmp_path / "cache" / "v", "kipptaf_marts.fct_f")
+    latest.add_formula_check(held, "ada-region", check)
+
+
+def _older(check: dict, version) -> dict:
+    """The check as an older validator kept it: `None` for one with no
+    version at all."""
+    older = {k: v for k, v in check.items() if k != "version"}
+    return older if version is None else {**older, "version": version}
+
+
+@pytest.mark.parametrize(
+    ("version", "uncompared"), [(None, True), (0, True), (None, False), (0, False)]
+)
+def test_sort_runs_an_older_stored_check_again(fakes, tmp_path, version, uncompared):
+    path = _miami_differs(fakes, tmp_path)
+    assert cli.main(["sort", str(path), "--no-trace"]) == 0
+    check = _stored_formula_check(tmp_path)
+    # As an older validator kept it: one that found no matched rows, or one
+    # that decided every cell, whose verdicts the update may change.
+    if uncompared:
+        check = {**check, "coverage": [], "not_compared": {NO_ROWS: check["coverage"]}}
+    _keep_formula_check(tmp_path, _older(check, version))
+    since = len(fakes.bq.log)
+
+    assert cli.main(["sort", str(path), "--no-trace"]) == 0
+
+    # The validator updated, the check runs again and any label goes.
+    assert len(_formula_runs(fakes.bq, since)) == 4
+    assert _triage(tmp_path)["formulas_not_compared"] == {}
+    assert _stored_formula_check(tmp_path)["version"] == formula.CHECK_VERSION
+
+
+def test_sort_reuses_a_stored_check_with_uncompared_cells_of_this_version(
+    fakes, tmp_path
+):
+    path = _miami_differs(fakes, tmp_path)
+    assert cli.main(["sort", str(path), "--no-trace"]) == 0
+    check = _stored_formula_check(tmp_path)
+    assert check["version"] == formula.CHECK_VERSION
+    no_rows = {**check, "coverage": [], "not_compared": {NO_ROWS: check["coverage"]}}
+    _keep_formula_check(tmp_path, no_rows)
+    since = len(fakes.bq.log)
+
+    assert cli.main(["sort", str(path), "--no-trace"]) == 0
+
+    # Nothing changed since it ran: neither priced nor run again.
+    assert not [sql for _, sql in fakes.bq.log[since:] if FORMULA_QUERY in sql]
+    loaded = _triage(tmp_path)
+    assert loaded["formulas_not_compared"] == {"ada-region": {NO_ROWS: 2}}
+    assert loaded["stale"] == {}
+    assert _stored_formula_check(tmp_path) == no_rows
+
+
+@pytest.mark.parametrize("falls", ["plan", "dry run", "run"])
+def test_a_re_run_that_falls_back_keeps_the_stored_check_s_verdicts(
+    fakes, tmp_path, capsys, monkeypatch, falls
+):
+    _miami_differs(fakes, tmp_path)
+    path = _with_decision(_saved_fingerprints(tmp_path), tmp_path, call="fix_cube")
+    assert cli.main(["reapply", str(path)]) == 0
+    fakes.bq.formula = {
+        "dashboard": [{"region": "Newark", "value": 0.9123},
+                      {"region": "Miami", "value": 0.6}],
+        "cube": [{"regions_region_name": "Newark", "value": 0.91234},
+                 {"regions_region_name": "Miami", "value": 0.95}],
+    }  # fmt: skip
+    assert cli.main(["sort", str(path), "--no-trace"]) == 0
+    check = _stored_formula_check(tmp_path)
+    filed, no_rows = check["formula"]
+    # An older validator's check: 1 cell filed as formula, 1 with no rows
+    # both sides hold. Composed again, the run files the first as formula.
+    older = _older(
+        {**check, "formula": [filed], "not_compared": {NO_ROWS: [no_rows]},
+         "lines": check["lines"][:1]},
+        None,
+    )  # fmt: skip
+    _keep_formula_check(tmp_path, older)
+    run_json = _latest_run(tmp_path)
+    results.recompose(
+        load_view_config(path),
+        tmp_path / "cache",
+        results._run_from_json(json.loads(run_json.read_text())),
+        run_json,
+        cube=fakes.cube,
+    )
+    # Re-planned for its version, the check cannot run this time.
+    if falls == "plan":
+        monkeypatch.setattr(
+            formula,
+            "plan",
+            lambda cfg, run, c, *, fingerprint, **k: formula.not_compared(
+                c.id, fingerprint, formula.checkable_cells(run, c), formula.SAVED_GONE
+            ),
+        )
+    else:
+        _bigquery_refuses(fakes, "__matched", dry=falls == "dry run")
+    capsys.readouterr()
+
+    assert cli.main(["sort", str(path), "--no-trace"]) == 0
+
+    why = (
+        formula.SAVED_GONE
+        if falls == "plan"
+        else "BigQuery refused it (job ?, invalidQuery); sort again"
+    )
+    out = capsys.readouterr().out
+    assert (
+        f"Formula check of ada-region: kept the stored check; this run fell back: "
+        f"{why}\n"
+    ) in out
+    assert "12345" not in out
+    loaded = _triage(tmp_path)
+    assert loaded["formulas_not_compared"] == {"ada-region": {NO_ROWS: 1}}
+    after = json.loads(_latest_run(tmp_path).read_text())
+    kinds = {(c["cut"], c["key"]): c["kind"] for c in after["diff_cells"]}
+    assert kinds == {tuple(filed): "formula", tuple(no_rows): "cells"}
+    # The fallback is not kept: the next sort tries again.
+    assert _stored_formula_check(tmp_path) == older
+
+
+@pytest.mark.parametrize(
+    "error",
+    [
+        RuntimeError("Cube timed out"),
+        pipeline.Refusal("the run is not composed from the latest results"),
+    ],
+)
+def test_sort_keeps_its_checks_labelled_when_composing_again_fails(
+    fakes, tmp_path, capsys, monkeypatch, error
+):
+    _miami_differs(fakes, tmp_path)
+    path = _with_decision(_saved_fingerprints(tmp_path), tmp_path, call="fix_cube")
+    assert cli.main(["reapply", str(path)]) == 0
+    fakes.bq.formula = {
+        "dashboard": [{"region": "Newark", "value": 0.9123},
+                      {"region": "Miami", "value": 0.6}],
+        "cube": [{"regions_region_name": "Newark", "value": 0.91234},
+                 {"regions_region_name": "Miami", "value": 0.95}],
+    }  # fmt: skip
+
+    def failed(*a, **k):
+        raise error
+
+    monkeypatch.setattr(results, "recompose", failed)
+
+    assert cli.main(["sort", str(path), "--no-trace"]) == 0
+
+    assert str(error) in capsys.readouterr().out
+    assert _triage(tmp_path)["formulas_not_compared"] == {
+        "ada-region": {NOT_COMPOSED: 2}
+    }
+    # The run still files the cells as a cell set; the check that ran stays
+    # beside its result, for the next compose to file.
+    after = json.loads(_latest_run(tmp_path).read_text())
+    assert {c["kind"] for c in after["diff_cells"]} == {"cells"}
+    held = latest.folder(tmp_path / "cache" / "v", "kipptaf_marts.fct_f")
+    check = latest.read_all(held, "kipptaf_marts.fct_f")["ada-region"].data[
+        "formula_check"
+    ]
+    assert len(check["formula"]) == 2 and check["not_compared"] == {}
+
+
+def test_sort_labels_a_run_not_composed_from_the_latest_results_unpriced(
+    fakes, tmp_path
+):
+    path = _miami_differs(fakes, tmp_path)
+    # As a compare stopped after keeping a newer result, before composing.
+    held = latest.folder(tmp_path / "cache" / "v", "kipptaf_marts.fct_f")
+    file = latest._file(held, "ada-region")
+    kept = json.loads(file.read_text())
+    file.write_text(json.dumps({**kept, "entry": "a newer entry"}))
+    since = len(fakes.bq.log)
+
+    assert cli.main(["sort", str(path), "--no-trace"]) == 0
+
+    loaded = _triage(tmp_path)
+    assert loaded["formulas_not_compared"] == {"ada-region": {NOT_COMPOSED: 2}}
+    # Neither priced nor run: a check of this run would be filed by a compose
+    # that replaces it.
+    assert not [sql for _, sql in fakes.bq.log[since:] if FORMULA_QUERY in sql]
+    assert (
+        "formula_check"
+        not in latest.read_all(held, "kipptaf_marts.fct_f")["ada-region"].data
+    )
+
+
+def test_a_formula_dry_run_bigquery_refuses_leaves_its_cells_to_coverage(
+    fakes, tmp_path, capsys
+):
+    path = _miami_differs(fakes, tmp_path)
+    _bigquery_refuses(fakes, "__matched", dry=True)
+
+    assert cli.main(["sort", str(path), "--no-trace"]) == 0
+
+    why = "BigQuery refused it (job ?, invalidQuery); sort again"
+    loaded = _triage(tmp_path)
+    assert loaded["stale"] == {}
+    assert loaded["formulas_not_compared"] == {"ada-region": {why: 2}}
+    assert _formula_runs(fakes.bq) == []
+    assert "12345" not in json.dumps(loaded) and "12345" not in capsys.readouterr().out
+
+
+def test_sort_comparison_checks_only_the_comparisons_named(fakes, tmp_path):
+    path = _miami_differs(fakes, tmp_path, _four(tmp_path))
+    since = len(fakes.bq.log)
+
+    argv = ["sort", str(path), "--no-trace", "--comparison", "ada-region-2"]
+    assert cli.main(argv) == 0
+
+    assert len(_formula_runs(fakes.bq, since)) == 4
+    loaded = _triage(tmp_path)
+    assert loaded["formulas_not_compared"] == {
+        f"ada-region-{i}": {OUTSIDE: 2} for i in (1, 3, 4)
+    }
+    items = {i["id"]: i for i in loaded["items"]}
+    assert items["ada-region-1:cells"]["evidence"][0] == (
+        f"formulas not compared: {OUTSIDE} (2 cells closed by coverage only)"
+    )
+    assert items["ada-region-1:cells"]["evidence_posted"][0] == (
+        f"formulas not compared: {OUTSIDE} (<10 cells closed by coverage only)"
+    )
+    # Checked: the sides agree on matched rows, so coverage decides.
+    assert not items["ada-region-2:cells"]["evidence"][0].startswith(NOT_COMPARED)
+
+
+def test_a_formula_dry_run_that_fails_outside_bigquery_leaves_sort_running(
+    fakes, tmp_path, capsys
+):
+    path = _miami_differs(fakes, tmp_path)
+    query = fakes.bq.query
+
+    def expired(sql, job_config=None):
+        if FORMULA_QUERY in sql and job_config is not None and job_config.dry_run:
+            raise RefreshError("Reauthentication is needed.")
+        return query(sql, job_config)
+
+    fakes.bq.query = expired
+
+    assert cli.main(["sort", str(path), "--no-trace"]) == 0
+
+    loaded = _triage(tmp_path)
+    assert loaded["formulas_not_compared"] == {"ada-region": {RUN_FAILED: 2}}
+    cells = {i["id"]: i for i in loaded["items"]}["ada-region:cells"]
+    assert cells["evidence_posted"][0] == (
+        f"formulas not compared: {RUN_FAILED} (<10 cells closed by coverage only)"
+    )
+    assert "Reauthentication is needed." in capsys.readouterr().out
+    assert _formula_runs(fakes.bq) == []
+
+
+def test_a_failed_check_neither_refuses_sort_nor_makes_the_comparison_stale(
+    fakes, tmp_path, capsys
+):
+    path = _miami_differs(fakes, tmp_path)
+    _bigquery_refuses(fakes, "__matched", dry=False)
+
+    assert cli.main(["sort", str(path), "--no-trace"]) == 0
+
+    why = "BigQuery refused it (job ?, invalidQuery); sort again"
+    loaded = _triage(tmp_path)
+    assert loaded["stale"] == {}
+    assert loaded["formulas_not_compared"] == {"ada-region": {why: 2}}
+    cells = {i["id"]: i for i in loaded["items"]}["ada-region:cells"]
+    assert cells["evidence_posted"][0] == (
+        f"formulas not compared: {why} (<10 cells closed by coverage only)"
+    )
+    assert "12345" not in json.dumps(loaded) and "12345" not in capsys.readouterr().out
+    # Nothing ran to keep: the next sort tries again.
+    held = latest.folder(tmp_path / "cache" / "v", "kipptaf_marts.fct_f")
+    assert (
+        "formula_check"
+        not in latest.read_all(held, "kipptaf_marts.fct_f")["ada-region"].data
+    )
 
 
 # --- add-decisions and record-answers ----------------------------------------
@@ -5614,11 +6627,6 @@ def test_a_run_saved_before_null_aware_groups_refuses(fakes, tmp_path, capsys, c
     assert f"`compare --moment {start}`" in err and "proof" not in err
 
 
-def test_check_api_is_not_a_command(fakes, tmp_path, capsys):
-    assert cli.main(["check-api", str(_file(tmp_path))]) == 2
-    assert "invalid choice: 'check-api'" in capsys.readouterr().err
-
-
 @pytest.mark.parametrize(
     "old, new",
     [("discover", "find-field"), ("preflight", "read-sheet"),
@@ -5645,3 +6653,9 @@ def test_decide_help_names_every_key_an_approved_entry_takes(capsys):
 
     help_text = " ".join(capsys.readouterr().out.split())
     assert '{"id", "call", "reason", "task", "item", "cause"}' in help_text
+
+
+def test_skip_lines_never_end_in_a_doubled_period(capsys):
+    compare._say_skips([pipeline.Skip("a", "why.")])
+
+    assert capsys.readouterr().out == "Skipping a: why.\n"

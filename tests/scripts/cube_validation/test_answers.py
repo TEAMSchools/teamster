@@ -183,34 +183,6 @@ def _floor_group(bucket, in_cut, n_rows=30, cut=CUT):
                  cut_rows=(rows, ('{"Grade": "8"}', 0, 0)))  # fmt: skip
 
 
-def test_a_cause_s_students_in_a_cell_are_only_what_its_groups_prove():
-    def floor(groups, causes):
-        run = _floor_run(groups)
-        items = [
-            {"key": it.key, "kind": "group",
-             "cause": [{"side": "cube", "label": c} for c in causes]}
-            for it in sort_mod.open_items(run)
-        ]  # fmt: skip
-        ((_, held),) = cell_causes(run, _cfg(rows=FLOOR_ROWS), "enrollment", items)
-        return held
-
-    # All 30 rows in the cell's cut, 1 cause: its 25 students count.
-    assert floor([_floor_group("cube_only", 30)], ["C1"]) == {"cube: C1": 25}
-    # On the dashboard side, a dashboard-only group's rows count.
-    assert floor([_floor_group("dashboard_only", 30)], ["C1"]) == {"cube: C1": 25}
-    # Rows in another cut too: which students are in this one is unknown.
-    assert floor([_floor_group("cube_only", 12)], ["C1"]) == {"cube: C1": 0}
-    # No rows under the cell's cut, or none recorded for it: no row in the
-    # cell, so the cause is not in it at all.
-    assert floor([_floor_group("cube_only", 0, n_rows=0)], ["C1"]) == {}
-    assert floor([_floor_group("cube_only", 30, cut="{}")], ["C1"]) == {}
-    # 2 causes share the group's students: neither count is known.
-    assert floor([_floor_group("cube_only", 30)], ["C1", "C2"]) == {
-        "cube: C1": 0,
-        "cube: C2": 0,
-    }
-
-
 def test_example_cell_skips_cells_under_10_students():
     run = _run([_cell("small", 10, 99, n=9), _cell("none", 10, 98, n=None)])
     assert example_cell(run, "enrollment") is None
@@ -678,7 +650,7 @@ def test_note_refusal_lets_dates_and_small_numbers_through(note):
 
 SORTED = {
     "items": [
-        {"id": "ada:region=Miami", "stub": {"comparison": "ada",
+        {"id": "ada:region=Miami", "kind": "group", "stub": {"comparison": "ada",
          "group": {"column": "regions_region_name", "values": ["Miami"]}}},
         {"id": "cut:Team", "stub": {"missing_cut": "Team"}},
         {"id": "ada:cells", "kind": "cells",
@@ -692,30 +664,30 @@ FPS = {"ada": {"cube": "c1", "dashboard": "d1"}}
 
 def test_approved_decisions_take_the_stub_and_the_run_fingerprints():
     approved = [
-        {"id": "miami", "call": "fix_cube", "reason": "r1", "task": "#1",
-         "item": "ada:region=Miami"},
         {"id": "team", "call": "deliberate", "reason": "r2", "task": "",
          "item": "cut:Team"},
         {"id": "formula", "call": "domain_owner", "reason": "r3",
          "item": "ada:formula"},
     ]  # fmt: skip
 
-    miami, team, formula = approved_decisions(approved, SORTED, FPS)
+    team, formula = approved_decisions(approved, SORTED, FPS)
 
-    assert miami == {
-        "id": "miami",
-        "comparison": "ada",
-        "group": {"column": "regions_region_name", "values": ["Miami"]},
-        "call": "fix_cube",
-        "reason": "r1",
-        "task": "#1",
-        "fingerprints": {"cube": "c1", "dashboard": "d1"},
-    }
     assert team == {"id": "team", "missing_cut": "Team", "call": "deliberate",
                     "reason": "r2"}  # fmt: skip
     assert formula == {"id": "formula", "comparison": "ada", "formula": True,
                        "call": "domain_owner", "reason": "r3",
                        "fingerprints": FPS["ada"]}  # fmt: skip
+
+
+def test_a_formula_decision_records_the_cells_the_check_filed():
+    entry = {"id": "f", "call": "domain_owner", "reason": "r", "item": "ada:formula"}
+
+    (filed,) = approved_decisions([entry], SORTED, FPS, formula_cells={"ada": 3})
+    (none,) = approved_decisions([entry], SORTED, FPS, formula_cells={"ada": 0})
+
+    assert filed["fingerprints"] == {**FPS["ada"], "matched_only": "3"}
+    # None filed reads as 0 with the key left out, as before the count existed.
+    assert none["fingerprints"] == FPS["ada"]
 
 
 def test_a_cell_set_takes_no_decision():
@@ -760,6 +732,11 @@ def test_a_missing_filter_in_cause_is_decided_across_the_view():
     [
         ({"id": "x", "call": "deliberate", "reason": "r", "item": "nope"}, "nope"),
         ({"id": "x", "call": "deliberate", "item": "cut:Team"}, "reason"),
+        # A row group as `sort` writes it: decided only on an explained cause.
+        (
+            {"id": "x", "call": "fix_cube", "reason": "r", "item": "ada:region=Miami"},
+            "a row group no explanation decides",
+        ),
     ],
 )
 def test_approved_decisions_refuse(entry, match):

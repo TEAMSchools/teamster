@@ -6,7 +6,7 @@ import json
 import re
 import subprocess
 import sys
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 
 from . import answers, report, sort
@@ -14,17 +14,16 @@ from .config import ViewConfig
 from .pipeline import Refusal
 from .results import latest_run
 
-BODY_WARN_CHARS = report.BODY_WARN_CHARS
-
 
 def ask_owner(
     configs: list[ViewConfig],
     domain: str,
     cache_root: Path,
-    now: datetime | None = None,
-    view_files: list[Path] | None = None,
-    comments: list[str] | None = None,
-    json_file: Path | None = None,
+    *,
+    now: datetime,
+    view_files: list[Path],
+    comments: list[str],
+    json_file: Path,
 ) -> str:
     """Return the review-issue body from each view's latest saved run.
 
@@ -34,34 +33,35 @@ def ask_owner(
     asked; what is not settled yet (items still in `investigate`, and
     comparisons missing, stale or skipped, `sort.comparisons_waiting`) is
     listed under "Still with the analyst" and never asked.
-    Nothing is posted; a question with no triage evidence, and a body near
-    GitHub's cap, are named on stderr.
+    Nothing is posted; a question with no triage evidence, a decision waiting
+    to be re-confirmed (asked again only once decided again), and a body near
+    GitHub's cap are named on stderr.
 
     Args:
         configs: The views to review.
         domain: The domain whose owner reviews.
         cache_root: The run cache.
         now: The current time, to say whether a hand check's pinned SQL still
-            runs; defaults to the clock.
+            runs.
         view_files: Each config's validation file, in order: stored explanation
             paths are relative to its directory.
-        comments: Given, receives the follow-up comments a long body's
-            Reproduce blocks move to (`report.render_review_issue`).
-        json_file: Given, the questions JSON is written there (`reviews/`
-            beside the validation file) and the body links it at the commit
-            that holds it, instead of carrying it.
+        comments: Receives the follow-up comments a long body's Reproduce
+            blocks move to (`report.render_review_issue`).
+        json_file: Where the questions JSON is written (`reviews/` beside the
+            validation file); the body links it at the commit that holds it,
+            instead of carrying it.
 
     Raises:
         Refusal: A view has no usable saved run (see `latest_run`), or its
             triage is missing, stale, unreadable, or has a cause decision and
-            a `group` decision disagreeing (see `sort.checked_sort`). With
-            `json_file`: the file is new or changed, or its commit is not
-            pushed (it is written; commit and push it, then review again).
+            a `group` decision disagreeing (see `sort.checked_sort`). Or
+            `json_file` is new or changed, or its commit is not pushed (it is
+            written; commit and push it, then review again).
     """
     saved = [latest_run(cfg, cache_root) for cfg in configs]
     runs = [run for run, _ in saved]
     # Stored explanation paths are relative to each validation file's directory.
-    bases = [f.parent for f in view_files] if view_files else [None] * len(configs)
+    bases = [f.parent for f in view_files]
     proven = {
         run.view: sort.checked_sort(run, run_json, cfg.decisions, base)
         for (run, run_json), cfg, base in zip(saved, configs, bases, strict=True)
@@ -73,6 +73,7 @@ def ask_owner(
             run.view: sort.comparisons_waiting(cfg, run, proven[run.view])
             for run, cfg in zip(runs, configs, strict=True)
         },
+        {run.view: sort.formulas_not_compared(proven[run.view]) for run in runs},
     )
     # One question per unanswered owner cause, over the groups it decides.
     causes = {
@@ -87,14 +88,14 @@ def ask_owner(
     }
     sources = {
         cfg.view: explanation_source(f)
-        for cfg, f in zip(configs, view_files or [], strict=False)
+        for cfg, f in zip(configs, view_files, strict=True)
     }
     questions = answers.questions_json(
         runs,
         configs,
         definitions,
         found,
-        now or datetime.now(timezone.utc),
+        now,
         causes,
         sources,
     )
@@ -103,13 +104,23 @@ def ask_owner(
         run.view: sort.cause_asks(run, proven[run.view], cfg.decisions, owner=False)
         for run, cfg in zip(runs, configs, strict=True)
     }
-    link = None
-    if json_file is not None:
-        link = _review_file(Path(json_file), report.posted_json(questions))
+    link = _review_file(json_file, report.posted_json(questions))
+    unpublished = {
+        cfg.view: {c.id for c in cfg.comparisons if c.unpublished} for cfg in configs
+    }
     body = report.render_review_issue(
-        domain, runs, definitions, questions, causes, comments, decided, link, still
+        domain,
+        runs,
+        definitions,
+        questions,
+        causes,
+        comments,
+        decided,
+        link,
+        still,
+        unpublished,
     )
-    if len(body) > BODY_WARN_CHARS:
+    if len(body) > report.BODY_WARN_CHARS:
         # stderr, so the warning never lands in the issue body.
         print(
             f"warning: the body is {len(body):,} characters; GitHub refuses an "
@@ -121,6 +132,17 @@ def ask_owner(
             # stderr, so the note never lands in the issue body.
             print(
                 f"{q['id']}: no triage evidence; `sort` the view to add it",
+                file=sys.stderr,
+            )
+    for run in runs:
+        if ids := [d.id for d in run.applied.reconfirm]:
+            # stderr, so the note never lands in the issue body. A decision
+            # waiting here asks nothing until it is decided again.
+            n = len(ids)
+            print(
+                f"{run.view}: {n} decision{'' if n == 1 else 's'} to re-confirm, "
+                f"left out of the questions: {', '.join(ids)}; see `To re-confirm` "
+                "in its result",
                 file=sys.stderr,
             )
     if waiting := report.untasked(d for cfg in configs for d in cfg.decisions):

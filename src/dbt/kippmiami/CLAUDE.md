@@ -2,7 +2,7 @@
 
 District-specific dbt project for **KIPP Miami** schools (Florida). The only
 district project with Florida-specific state data (`fldoe`). Produces
-school-level PowerSchool staging and extracts.
+school-level extracts.
 
 ## Model Structure
 
@@ -55,6 +55,5 @@ source. Do not drop it, `dagster_kippmiami_dlt_powerschool`, or the GCS files.
 `focus` — `focus_schema` points to `dagster_kippmiami_dlt_focus`. Miami does not
 use `deanslist`, `edplan`, `overgrad`, `pearson`, `powerschool`, or `titan`.
 
-DeansList was removed in #5110. `kippmiami_deanslist` holds the last build
-(2026-07-22), frozen, and kipptaf reads it as a BQ-native source for history. Do
-not drop the dataset.
+`kippmiami_deanslist` is frozen history that kipptaf reads as a BQ-native
+source. Do not drop it.

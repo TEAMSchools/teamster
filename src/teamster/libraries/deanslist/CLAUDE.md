@@ -24,8 +24,8 @@ Date windows are computed from `FiscalYear` (July start). For
 `assets.py` — `build_deanslist_paginated_multi_partition_asset` appended to
 `year_partitioned_assets` — NOT in `config/*.yaml`. When adding deanslist to a
 district or auditing endpoint parity, check `assets.py`; diffing only the config
-YAMLs misses it (how Paterson shipped without behavior, #4376). A district using
-it must also wire `io_manager_gcs_file` in `definitions.py`.
+YAMLs misses it. A district using it must also wire `io_manager_gcs_file` in
+`definitions.py`.
 
 ## Resource: `DeansListResource`
 

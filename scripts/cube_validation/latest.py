@@ -12,16 +12,14 @@ student rows stay in BigQuery.
 
 from __future__ import annotations
 
-import dataclasses
 import hashlib
 import json
 import re
 from dataclasses import dataclass
-from datetime import datetime
 from pathlib import Path
 
 from . import checkpoints
-from .config import Comparison
+from .config import Comparison, fingerprint_data
 from .moment import Build
 
 DIR = "latest"
@@ -52,11 +50,10 @@ def folder(view_dir: Path, fact: str) -> Path:
 
 def entry_fingerprint(comparison: Comparison) -> str:
     """The comparison's config entry, its rebuild check (`rebuild_check`)
-    included and its `definitions` left out: words for the owner change no
-    result."""
+    included, as `config.fingerprint_data` reads it."""
     return hashlib.sha256(
         json.dumps(
-            dataclasses.asdict(dataclasses.replace(comparison, definitions={})),
+            fingerprint_data(comparison),
             sort_keys=True,
             default=str,
         ).encode()
@@ -73,18 +70,41 @@ def _file(results: Path, comparison_id: str) -> Path:
 
 def write(results: Path, comparison_id: str, result: Latest) -> None:
     """Replace the comparison's latest result in `results` (`folder`), whole."""
-    checkpoints._write_json(
+    checkpoints.write_json(
         _file(results, comparison_id),
         {
             "comparison": comparison_id,
             "fact": result.fact,
-            "moment": checkpoints._moment_json(result.moment),
+            "moment": result.moment.to_json(),
             "fingerprint": result.fingerprint,
             "entry": result.entry,
             "ran_at": result.ran_at,
             "data": result.data,
         },
     )
+
+
+def add_formula_check(results: Path, comparison_id: str, check: dict) -> None:
+    """Keep a formula check (`formula.Check.to_json`) beside the comparison's
+    latest result in `results` (`folder`), replacing any earlier one.
+
+    The check names the result it checked by fingerprint, so a newer result
+    written over this file drops it, and one kept elsewhere never counts. With
+    no result to keep it beside, it is dropped: the next `compare` writes a
+    result no older check fits.
+
+    Raises:
+        ValueError: The check is of another comparison.
+    """
+    if (other := check.get("comparison")) != comparison_id:
+        raise ValueError(f"the formula check checks {other}, not {comparison_id}")
+    path = _file(results, comparison_id)
+    try:
+        data = json.loads(path.read_text())
+    except FileNotFoundError:
+        return
+    data["data"]["formula_check"] = check
+    checkpoints.write_json(path, data)
 
 
 def read_all(results: Path, fact: str) -> dict[str, Latest]:
@@ -98,13 +118,8 @@ def read_all(results: Path, fact: str) -> dict[str, Latest]:
     for path in sorted(results.glob("*.json")):
         try:
             e = json.loads(path.read_text())
-            m = e["moment"]
             out[e["comparison"]] = Latest(
-                moment=Build(
-                    datetime.fromisoformat(m["start"]),
-                    datetime.fromisoformat(m["end"]),
-                    m["job_id"],
-                ),
+                moment=Build.from_json(e["moment"]),
                 fingerprint=e["fingerprint"],
                 entry=e["entry"],
                 ran_at=e["ran_at"],

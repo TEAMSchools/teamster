@@ -67,6 +67,10 @@ _STYLE_RULE = re.compile(
 )
 _ATTR = re.compile(r"""([\w:.-]+)=(?:'([^']*)'|"([^"]*)")""")
 _DEFAULT_FORMAT = re.compile(r"""\s+default-format=(?:'[^']*'|"[^"]*")""")
+TEXT_MEASURE = (
+    "text measures are not compared; compare the numeric measure it is built from"
+)
+NOT_PUBLISHED = "not on a published dashboard"
 _THOUSANDS = re.compile(r"[-+]?\d{1,3}(?:,\d{3})+(?:\.\d+)?")
 _PLAIN_NUMBER = re.compile(r"[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?")
 _INSTANCE_SUFFIXES = {"nk", "ok", "qk"}
@@ -93,8 +97,30 @@ def _attrs(tag: str) -> dict[str, str]:
     return {m[1]: html.unescape(m[2] or m[3] or "") for m in _ATTR.finditer(tag)}
 
 
-def _bare(name: str) -> str:
+def bare_name(name: str) -> str:
+    """A field name without its one pair of brackets: `[x]` reads `x`."""
     return name[1:-1] if name.startswith("[") and name.endswith("]") else name
+
+
+def unquote(text: str | None) -> str:
+    """A member value without its one pair of double quotes; None reads ""."""
+    text = text or ""
+    return text[1:-1] if len(text) > 1 and text[0] == text[-1] == '"' else text
+
+
+def worksheet(root: ET.Element, sheet: str) -> ET.Element | None:
+    """The workbook's worksheet named `sheet`, or None."""
+    return next((w for w in root.iter("worksheet") if w.get("name") == sheet), None)
+
+
+def parameter_columns(root: ET.Element) -> list[ET.Element]:
+    """The columns of the workbook's `Parameters` datasource: its parameters."""
+    return [
+        col
+        for ds in root.iter("datasource")
+        if ds.get("name") == "Parameters"
+        for col in ds.findall("column")
+    ]
 
 
 def _field_column(field_ref: str) -> str:
@@ -118,10 +144,10 @@ def _target_columns(root: ET.Element, measures: list[str]) -> set[str]:
     missing = []
     for measure in measures:
         found = {
-            _bare(col.get("name") or "")
+            bare_name(col.get("name") or "")
             for col in root.iter("column")
             if measure
-            in (col.get("caption"), col.get("name"), _bare(col.get("name") or ""))
+            in (col.get("caption"), col.get("name"), bare_name(col.get("name") or ""))
         }
         if not found:
             missing.append(measure)
@@ -165,7 +191,7 @@ def drop_number_formats(twb_xml: str, measures: list[str]) -> str:
     want_defaults = sum(
         1
         for col in root.iter("column")
-        if _bare(col.get("name") or "") in targets
+        if bare_name(col.get("name") or "") in targets
         and col.get("default-format") is not None
     )
     want_rules = sum(
@@ -180,7 +206,7 @@ def drop_number_formats(twb_xml: str, measures: list[str]) -> str:
     def column_tag(m: re.Match) -> str:
         nonlocal dropped_defaults
         tag = m.group(0)
-        if _bare(_attrs(tag).get("name", "")) not in targets:
+        if bare_name(_attrs(tag).get("name", "")) not in targets:
             return tag
         new, n = _DEFAULT_FORMAT.subn("", tag)
         dropped_defaults += n
@@ -217,6 +243,35 @@ def drop_number_formats(twb_xml: str, measures: list[str]) -> str:
     if _empty_rules(ET.fromstring(out)) > _empty_rules(root):
         raise ValueError("the edit left an empty style-rule")
     return out
+
+
+def published_sheets(twb_xml: str | ET.Element) -> set[str]:
+    """The worksheets a viewer of the published workbook can see.
+
+    A sheet is seen when a dashboard holds it in a zone (zones nest; every
+    level counts), when a story point captures it (`captured-sheet`), or
+    when its own window is not hidden. A hidden window publishes no view, so
+    a hidden sheet in no dashboard or story is a working sheet no viewer
+    sees. `twb_xml` may be the workbook already parsed.
+    """
+    root = (
+        twb_xml
+        if isinstance(twb_xml, ET.Element)
+        # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
+        else ET.fromstring(twb_xml)
+    )
+    zoned = {
+        zone.get("name") or ""
+        for dashboard in root.iter("dashboard")
+        for zone in dashboard.iter("zone")
+    }
+    shown = {
+        window.get("name") or ""
+        for window in root.iter("window")
+        if window.get("class") == "worksheet" and window.get("hidden") != "true"
+    }
+    captured = {point.get("captured-sheet") or "" for point in root.iter("story-point")}
+    return (zoned | shown | captured) - {""}
 
 
 def expose_sheet(twb_xml: str, sheet: str) -> str:
@@ -310,10 +365,7 @@ def formula_fingerprint(twb_xml: str, sheet: str) -> str:
     """
     # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
     root = ET.fromstring(twb_xml)
-    ws = next(
-        (w for w in root.iter("worksheet") if w.get("name") == sheet),
-        None,
-    )
+    ws = worksheet(root, sheet)
     if ws is None:
         raise ValueError(f"the workbook has no worksheet {sheet!r}")
 
@@ -349,10 +401,7 @@ def source_fingerprint(twb_xml: str, sheet: str) -> str:
     """
     # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
     root = ET.fromstring(twb_xml)
-    ws = next(
-        (w for w in root.iter("worksheet") if w.get("name") == sheet),
-        None,
-    )
+    ws = worksheet(root, sheet)
     if ws is None:
         raise ValueError(f"the workbook has no worksheet {sheet!r}")
     used = {d.get("datasource") or "" for d in ws.iter("datasource-dependencies")} - {
@@ -406,11 +455,11 @@ def set_parameters(twb_xml: str, values: dict[str, str]) -> str:
         names = []
         for column in _COLUMN_BLOCK.finditer(block):
             attrs = _attrs(column.group(0).split(">", 1)[0])
-            names.append(attrs.get("caption") or _bare(attrs.get("name", "")))
+            names.append(attrs.get("caption") or bare_name(attrs.get("name", "")))
             if wanted_name in (
                 attrs.get("caption"),
                 attrs.get("name"),
-                _bare(attrs.get("name", "")),
+                bare_name(attrs.get("name", "")),
             ):
                 found = column
                 break
@@ -420,7 +469,7 @@ def set_parameters(twb_xml: str, values: dict[str, str]) -> str:
             )
         text = found.group(0)
         members = {
-            _unquote(html.unescape(m[1])): m[1]
+            unquote(html.unescape(m[1])): m[1]
             for m in re.finditer(r"<member\b[^>]*?\bvalue='([^']*)'", text)
         }
         if not members:
@@ -444,10 +493,6 @@ def set_parameters(twb_xml: str, values: dict[str, str]) -> str:
         )
         block = block.replace(text, f"{start}>{rest}", 1)
     return twb_xml[: block_match.start()] + block + twb_xml[block_match.end() :]
-
-
-def _unquote(text: str) -> str:
-    return text[1:-1] if len(text) > 1 and text[0] == text[-1] == '"' else text
 
 
 # A shelf: `<rows onTop='true'>(A / (B / C))</rows>`, or empty as `<rows />`.
@@ -672,7 +717,7 @@ def table_calcs(ws: ET.Element) -> list[TableCalc]:
     """
     caption = {}
     for col in ws.iter("column"):
-        name = _bare(col.get("name") or "")
+        name = bare_name(col.get("name") or "")
         caption.setdefault(name, col.get("caption") or name)
     found = []
     for deps in ws.iter("datasource-dependencies"):
@@ -683,7 +728,7 @@ def table_calcs(ws: ET.Element) -> list[TableCalc]:
             kind = calc.get("type") or ""
             derivation = instance.get("derivation") or ""
             agg = "" if derivation in ("", "None", "User") else f"{derivation}. "
-            column = _bare(instance.get("column") or "")
+            column = bare_name(instance.get("column") or "")
             words = _TABLE_CALC_WORDS.get(kind, f"{kind} of")
             found.append(
                 TableCalc(
@@ -761,7 +806,7 @@ def set_shelves(twb_xml: str, sheet: str, shelves: dict[str, Any]) -> Reshaped:
     """
     # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
     root = ET.fromstring(twb_xml)
-    ws = next((w for w in root.iter("worksheet") if w.get("name") == sheet), None)
+    ws = worksheet(root, sheet)
     blocks = [
         m
         for m in _WORKSHEET.finditer(twb_xml)
@@ -775,7 +820,7 @@ def set_shelves(twb_xml: str, sheet: str, shelves: dict[str, Any]) -> Reshaped:
 
     caption = {}
     for col in ws.iter("column"):
-        name = _bare(col.get("name") or "")
+        name = bare_name(col.get("name") or "")
         caption.setdefault(name, col.get("caption") or name)
 
     def shown(ref: str) -> str:
@@ -835,7 +880,7 @@ def set_shelves(twb_xml: str, sheet: str, shelves: dict[str, Any]) -> Reshaped:
             ds_name, col, listed = _added_column(
                 wanted, sheet, dependencies, datasources
             )
-            name = _bare(col.get("name") or "")
+            name = bare_name(col.get("name") or "")
             if col.get("role") == "measure":
                 raise ValueError(f"{wanted!r} is a measure; add a dimension")
             if col.find("calculation") is not None and not listed:
@@ -1083,7 +1128,9 @@ def _clear_filter(
 
 def _named(columns: list[ET.Element], wanted: str) -> list[ET.Element]:
     return [
-        c for c in columns if wanted in (c.get("caption"), _bare(c.get("name") or ""))
+        c
+        for c in columns
+        if wanted in (c.get("caption"), bare_name(c.get("name") or ""))
     ]
 
 
@@ -1135,7 +1182,7 @@ def _dimension_instance(
         {
             "column": name,
             "derivation": "None",
-            "name": f"[none:{_bare(name)}:{_INSTANCE_SUFFIX.get(kind, 'nk')}]",
+            "name": f"[none:{bare_name(name)}:{_INSTANCE_SUFFIX.get(kind, 'nk')}]",
             "pivot": "key",
             "type": kind,
         },
@@ -1146,19 +1193,16 @@ def _parameter_names(twb_xml: str) -> set[str]:
     # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
     root = ET.fromstring(twb_xml)
     names: set[str] = set()
-    for ds in root.iter("datasource"):
-        if ds.get("name") != "Parameters":
-            continue
-        for col in ds.findall("column"):
-            names |= {
-                n
-                for n in (
-                    col.get("caption"),
-                    col.get("name"),
-                    _bare(col.get("name") or ""),
-                )
-                if n
-            }
+    for col in parameter_columns(root):
+        names |= {
+            n
+            for n in (
+                col.get("caption"),
+                col.get("name"),
+                bare_name(col.get("name") or ""),
+            )
+            if n
+        }
     return names
 
 
@@ -1197,6 +1241,8 @@ class RebuildResult:
         failures: One line per cell that differs or is on one side only.
         matched_at: When the comparison ran.
         browser: Cuts that set a parameter, to check in the browser.
+        blanks_skipped: Keys blank in the export and absent from the sheet
+            query, or NULL in the sheet query and absent from the export.
     """
 
     fingerprint: str
@@ -1204,6 +1250,7 @@ class RebuildResult:
     failures: list[str]
     matched_at: datetime
     browser: list[dict[str, Any]] = field(default_factory=list)
+    blanks_skipped: int = 0
 
     @property
     def matched(self) -> bool:
@@ -1279,6 +1326,11 @@ def _number(value: Any) -> float | None:
     if _THOUSANDS.fullmatch(body):
         body = body.replace(",", "")
     if not _PLAIN_NUMBER.fullmatch(body):
+        # Any value with no digit reads as text, so a "Null" or "N/A" cell in
+        # a number measure refuses as a text measure too. That fails closed:
+        # the check stops rather than guess a number for the cell.
+        if not any(c.isdigit() for c in body):
+            raise ValueError(f"export value {text!r} is text; {TEXT_MEASURE}")
         raise ValueError(
             f"export value {text!r} still carries a number format; "
             "publish the copy through drop_number_formats"
@@ -1320,7 +1372,10 @@ def match_export(
     comparison's dashboard dims, plus any key the caller adds to tell cuts
     apart (such as `cut`). Numeric keys match across types (2026, 2026.0 and
     '2026'). A combination on one side only fails, and so does each matched
-    pair that `cell_verdict` does not pass at `comparison.decimals`.
+    pair that `cell_verdict` does not pass at `comparison.decimals`. A key
+    that is blank in the export and missing from the sheet query, or NULL in
+    the sheet query and missing from the export, is skipped and counted in
+    `blanks_skipped`, not in `cells`: a blank cell has no value to compare.
 
     Args:
         comparison: The comparison; needs `sheet` and `decimals`.
@@ -1356,11 +1411,18 @@ def match_export(
     query, query_labels = _index(query_values, dims, "sheet query", failures)
 
     cells = 0
+    blanks = 0
     for key in sorted(dash.keys() | query.keys()):
         if key not in query:
+            if dash[key] is None:
+                blanks += 1
+                continue
             failures.append(f"{dash_labels[key]}: in the export only")
             continue
         if key not in dash:
+            if query[key] is None:
+                blanks += 1
+                continue
             failures.append(f"{query_labels[key]}: in the sheet query only")
             continue
         cells += 1
@@ -1380,6 +1442,7 @@ def match_export(
         failures=failures,
         matched_at=now or datetime.now(timezone.utc),
         browser=split_cuts(comparison.cuts, twb_xml)[1],
+        blanks_skipped=blanks,
     )
 
 

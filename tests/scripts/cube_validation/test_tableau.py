@@ -8,6 +8,7 @@ from types import SimpleNamespace
 import pytest
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+from cube_validation import rebuild
 from cube_validation.config import ColumnPair, Comparison
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
@@ -26,6 +27,7 @@ from cube_validation.tableau import (
     expose_sheet,
     formula_fingerprint,
     match_export,
+    published_sheets,
     set_shelves,
     split_cuts,
 )
@@ -117,6 +119,53 @@ def test_expose_sheet_refuses_a_duplicate_window():
     )
     with pytest.raises(ValueError, match="2 worksheet windows"):
         expose_sheet(src, "Rate by Region")
+
+
+PUBLISHED = """\
+<?xml version='1.0' encoding='utf-8' ?>
+<workbook>
+  <worksheets>
+    <worksheet name='A' />
+    <worksheet name='B' />
+    <worksheet name='C' />
+    <worksheet name='D' />
+  </worksheets>
+  <dashboards>
+    <dashboard name='Overview'>
+      <zones>
+        <zone id='1' type-v2='layout-basic'>
+          <zone id='2' type-v2='layout-flow'>
+            <zone id='3' name='A' />
+          </zone>
+        </zone>
+      </zones>
+    </dashboard>
+  </dashboards>
+  <windows>
+    <window class='dashboard' name='Overview' />
+    <window class='worksheet' hidden='true' name='A' />
+    <window class='worksheet' name='B' />
+    <window class='worksheet' hidden='true' name='C' />
+  </windows>
+</workbook>
+"""
+
+
+def test_published_sheets_reads_dashboard_zones_and_visible_windows():
+    # A: hidden, but in a (nested) dashboard zone. B: its own visible window.
+    # C: hidden and in no zone. D: no window at all.
+    assert published_sheets(PUBLISHED) == {"A", "B"}
+
+
+def test_published_sheets_counts_a_sheet_a_story_point_captures():
+    story = PUBLISHED.replace(
+        "</dashboards>",
+        "<dashboard name='Tour' type='storyboard'><zones><zone id='9' />"
+        "<story-points><story-point captured-sheet='C' id='1' />"
+        "</story-points></zones></dashboard></dashboards>",
+    )
+    # C: hidden and in no zone, but a story point shows it.
+    assert published_sheets(story) == {"A", "B", "C"}
 
 
 def test_displayed_decimals_cases():
@@ -1264,7 +1313,199 @@ def test_export_number_reads_a_percent_of_total_as_a_fraction():
     assert _number("1,234.5%") == pytest.approx(12.345)
 
 
-@pytest.mark.parametrize("text", ["$12.50", "12 pts", "%", "12%%", "nan", "inf"])
+@pytest.mark.parametrize("text", ["$12.50", "12 pts", "12%%"])
 def test_export_number_still_refuses_other_formats(text):
     with pytest.raises(ValueError, match="still carries a number format"):
         _number(text)
+
+
+@pytest.mark.parametrize("text", ["met", "%", "nan", "inf"])
+def test_export_number_calls_a_word_a_text_measure(text):
+    with pytest.raises(ValueError, match="text measures are not compared"):
+        tableau_mod._number(text)
+
+
+def test_export_number_still_calls_a_digit_format_a_number_format():
+    with pytest.raises(ValueError, match="still carries a number format"):
+        tableau_mod._number("12K")
+
+
+# --- export matching: blanks, star totals, dual-axis repeats ------------------
+
+
+def test_match_export_skips_export_only_blanks_and_query_only_nulls():
+    exports = [{"region": "A", "value": "0.5"}, {"region": "B", "value": ""}]
+    query = [{"region": "A", "value": 0.5}, {"region": "C", "value": None}]
+
+    proof = match_export(_comparison(), exports, query, twb_xml=_twb(), now=NOW)
+
+    assert proof.matched and proof.cells == 1 and proof.blanks_skipped == 2
+
+
+def test_match_export_still_fails_a_blank_against_a_value():
+    exports = [{"region": "A", "value": ""}]
+    query = [{"region": "A", "value": 0.5}]
+
+    proof = match_export(_comparison(), exports, query, twb_xml=_twb(), now=NOW)
+
+    assert not proof.matched
+    assert proof.cells == 1 and len(proof.failures) == 1
+
+
+def _rebuild_comparison() -> Comparison:
+    return Comparison(
+        id="c", measure="m", dims=[ColumnPair(dashboard="school", cube="school")]
+    )
+
+
+def test_export_cells_skips_a_star_total_row_on_a_shelf_dim():
+
+    cells, totals, _ = rebuild._export_cells(
+        _rebuild_comparison(),
+        [{"School": "*", "v": "9"}, {"School": "A", "v": "1"}],
+        {"School": "school"},
+        "v",
+        [],
+        [{"school": "A"}],
+        shelf_dims={"school"},
+        ignored=set(),
+    )
+
+    assert totals == 1 and [x["school"] for x in cells] == ["A"]
+
+
+def test_export_cells_keeps_a_star_row_on_a_detail_dim():
+
+    cells, totals, _ = rebuild._export_cells(
+        _rebuild_comparison(),
+        [{"School": "*", "v": "9"}],
+        {"School": "school"},
+        "v",
+        [],
+        [{"school": "A"}],
+        shelf_dims=set(),
+        ignored=set(),
+    )
+
+    assert totals == 0 and [x["school"] for x in cells] == ["*"]
+
+
+def test_export_cells_keeps_a_star_row_when_the_sheet_query_has_a_real_star():
+
+    cells, totals, _ = rebuild._export_cells(
+        _rebuild_comparison(),
+        [{"School": "*", "v": "9"}],
+        {"School": "school"},
+        "v",
+        [],
+        [{"school": "*"}],
+        shelf_dims={"school"},
+        ignored=set(),
+    )
+
+    assert totals == 0 and len(cells) == 1
+
+
+def test_export_cells_drops_a_dual_axis_repeat_that_differs_only_in_a_table_calc():
+
+    rows = [
+        {"School": "A", "v": "1", "Rank": "1"},
+        {"School": "A", "v": "1", "Rank": "2"},
+    ]
+    cells, _, _ = rebuild._export_cells(
+        _rebuild_comparison(),
+        rows,
+        {"School": "school"},
+        "v",
+        [],
+        [],
+        shelf_dims={"school"},
+        ignored={"Rank"},
+    )
+
+    assert len(cells) == 1
+
+
+def test_export_cells_keeps_two_marks_that_differ_in_another_column():
+
+    rows = [
+        {"School": "A", "v": "1", "Teacher": "X"},
+        {"School": "A", "v": "1", "Teacher": "Y"},
+    ]
+    comparison = _comparison(dims=[ColumnPair(dashboard="school", cube="school")])
+    cells, _, _ = rebuild._export_cells(
+        comparison,
+        rows,
+        {"School": "school"},
+        "v",
+        [],
+        [],
+        shelf_dims={"school"},
+        ignored=set(),
+    )
+
+    assert len(cells) == 2
+    # Teacher splits the mark but no dim carries it, so the match refuses the
+    # pair rather than compare either row.
+    proof = match_export(
+        comparison, cells, [{"school": "A", "value": 1}], twb_xml=_twb(), now=NOW
+    )
+    assert not proof.matched
+    assert proof.failures == ["school=A: more than 1 export row"]
+
+
+_SHELF_TWB = """<?xml version='1.0' encoding='utf-8' ?>
+<workbook>
+  <worksheets>
+    <worksheet name='S'>
+      <table>
+        <view>
+          <datasource-dependencies datasource='federated.x'>
+            <column caption='Campus' name='[school]' role='dimension' />
+            <column caption='Grade' name='[grade_level]' role='dimension' />
+          </datasource-dependencies>
+        </view>
+        <rows>[federated.x].[none:school:nk]</rows>
+        <cols />
+      </table>
+    </worksheet>
+  </worksheets>
+</workbook>
+"""
+
+
+def test_shelf_dims_matches_a_dim_by_its_column_caption_alone():
+    comparison = Comparison(
+        id="c",
+        measure="m",
+        dims=[
+            ColumnPair(dashboard="school", cube="school"),
+            ColumnPair(dashboard="grade_level", cube="grade_level"),
+        ],
+    )
+    # The shelf shows `Campus`; only the column list ties it to `school`.
+    columns = [
+        ET.fromstring("<column caption='Campus' name='[school]' role='dimension' />"),
+        ET.fromstring(
+            "<column caption='Grade' name='[grade_level]' role='dimension' />"
+        ),
+    ]
+
+    assert rebuild._shelf_dims(comparison, _SHELF_TWB, "S", columns) == {"school"}
+    assert rebuild._shelf_dims(comparison, _SHELF_TWB, "S", []) == set()
+
+
+def test_ignored_headers_matches_an_aggregate_caption_across_its_spellings():
+    columns = [
+        ET.fromstring(
+            "<column caption='AVG(x)' name='[Calculation_1]' role='measure' />"
+        ),
+        ET.fromstring("<column caption='Rate' name='[rate]' role='measure' />"),
+    ]
+    headers = ["School", "Rate", "Avg. x", "Teacher"]
+
+    ignored = rebuild._ignored_headers(
+        headers, {"School": "school"}, "Rate", columns, []
+    )
+
+    assert ignored == {"Avg. x"}

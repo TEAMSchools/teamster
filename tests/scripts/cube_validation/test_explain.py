@@ -12,6 +12,7 @@ from cube_validation import (
     coverage,
     explain,
     explain_progress,
+    formula,
     pipeline,
     reconcile,
     results,
@@ -116,7 +117,7 @@ class Wh:
         return self.duck.rows(sql)
 
     def table(self, dataset, name):
-        return TableInfo("TABLE", None)
+        return TableInfo("TABLE")
 
     @contextlib.contextmanager
     def budget(self, max_usd):
@@ -266,7 +267,7 @@ def test_a_proof_refuses_saved_rows_labelled_for_another_run(
 def test_a_missing_table_past_time_travel_says_to_start_a_new_run(
     duck, tmp_path, offline, monkeypatch
 ):
-    monkeypatch.setattr(explain, "_utcnow", lambda: BUILD.end + timedelta(days=9))
+    monkeypatch.setattr(explain, "utcnow", lambda: BUILD.end + timedelta(days=9))
 
     with pytest.raises(
         pipeline.Refusal, match="Run `compare --comparison mastery` at a new moment"
@@ -277,7 +278,7 @@ def test_a_missing_table_past_time_travel_says_to_start_a_new_run(
 def test_a_missing_table_within_time_travel_says_to_save_it_again(
     duck, tmp_path, offline, monkeypatch
 ):
-    monkeypatch.setattr(explain, "_utcnow", lambda: BUILD.end + timedelta(hours=2))
+    monkeypatch.setattr(explain, "utcnow", lambda: BUILD.end + timedelta(hours=2))
 
     with pytest.raises(
         pipeline.Refusal,
@@ -783,7 +784,7 @@ def test_a_proof_file_opts_out_of_trunk_and_keeps_its_bucket_map():
         "-- trunk-ignore-all(sqlfluff)\n-- fmt: off\n"
         f"-- cause C1 = dashboard: {CAUSES['C1'][1]}\n"
     )
-    assert explain.split_block(text) == (CAUSES, EXPLANATION.strip())
+    assert explain.split_explanation(text) == (CAUSES, {}, EXPLANATION.strip())
 
 
 def test_a_formatting_only_edit_keeps_the_fingerprint(tmp_path):
@@ -815,6 +816,7 @@ def _saved(tmp_path, monkeypatch, run):
                 "decisions_fingerprint": "",
                 "open": sort.open_keys(run),
                 "items": _items(run),
+                "formulas_not_compared": {},
             }
         )
     )
@@ -918,6 +920,29 @@ def test_cells_confirm_when_every_differing_cell_lies_in_proven_groups():
     ]
     (group_id,) = _group_ids(_run([_placed(3)]))
     assert cells["proof"] == {"kind": "cells", "groups": [group_id], "closed": []}
+
+
+def test_covered_cells_keep_the_formula_check_s_not_compared_lines():
+    run = _run([_placed(3)], **CELLS_RUN)
+    items = _items(run)
+    for item in items:
+        if item["kind"] == "group":
+            item.update(suggestion="cause", cause=[{"side": "dashboard",
+                        "step": "C1", "label": "fails ok1", "n_rows": 3}])  # fmt: skip
+    cells = _by_id(items)["mastery:cells"]
+    # As `formula.label` prepends them, exact locally and masked when posted.
+    local = f"{formula.NOT_COMPARED}: a reason (3 cells closed by coverage only)"
+    posted = f"{formula.NOT_COMPARED}: a reason (<10 cells closed by coverage only)"
+    cells["evidence"] = [local, "an earlier line"]
+    cells["evidence_posted"] = [posted, "an earlier line"]
+
+    explain.link_cells(run, items, "mastery", CFG)
+
+    assert cells["suggestion"] == "cause"
+    assert cells["evidence"][0] == local
+    assert cells["evidence_posted"][0] == posted
+    assert cells["evidence"][1].startswith(explain._COVERED)
+    assert "an earlier line" not in cells["evidence"]
 
 
 def test_cells_stay_open_with_the_count_left_outside_proven_groups():
@@ -1186,7 +1211,7 @@ def test_a_proof_counts_each_cause_s_students_per_cell_and_cut(duck, tmp_path, o
     students: list[dict] = []
 
     found = explain.run_explanation(
-        wh, CFG, COMPARISON, SIDES, proof, [("G1", _group(3))], BUILD, {},
+        wh, COMPARISON, SIDES, proof, [("G1", _group(3))], BUILD, {},
         students, table=explain.require_saved(wh, CFG, run, COMPARISON),
     )  # fmt: skip
 
@@ -1296,7 +1321,9 @@ def test_a_row_with_no_cube_value_keys_to_its_group_and_counts_in_each_side_s_ce
     cuts = [("c.grade = '5'", "d.grade = '5'"), ("c.grade = '6'", "d.grade = '6'")]
     labels = [label for label, _, _ in pipeline.cut_flags(BY_GRADE)]
     (group,) = reconcile.groups_from(
-        "mastery", duck.rows(reconcile.reconcile_sql(*sides, cuts=cuts)), labels
+        "mastery",
+        duck.script(reconcile.reconcile_script(*sides, cuts=cuts, table="counted_t")),
+        labels,
     )
     duck.rows(
         "CREATE TABLE saved_t AS " + reconcile.unmatched_rows_sql(*sides, cuts=cuts)
@@ -1401,7 +1428,7 @@ def test_compose_opts_out_of_banned_syntax_only_when_the_proof_uses_it():
     picked = explain.compose(causes, "select * from {unmatched} qualify true")
     assert "sql-banned-syntax" not in plain
     assert "sql-banned-syntax" in picked
-    assert explain.split_block(picked)[0] == causes
+    assert explain.split_explanation(picked)[0] == causes
 
 
 # --- one explanation per row population --------------------------------------
@@ -1416,16 +1443,80 @@ SIBLING = Comparison(
 CFG2 = ViewConfig(view="v", fact="m.fct", comparisons=[COMPARISON, SIBLING])
 
 
-def test_comparisons_that_differ_only_in_dims_share_a_row_population():
+def test_comparisons_on_one_model_and_grain_share_an_explanation():
+    other = replace(
+        COMPARISON,
+        id="b",
+        dims=[ColumnPair("region", "region")],
+        filters={"grade": ["5"]},
+        defaults={"year": "2026"},
+        scope=[{"school": ["X"]}],
+        cuts=[{}],
+        dashboard_columns={"x": "1"},
+    )
 
-    by_region = replace(COMPARISON, id="r", dims=[ColumnPair("region", "region")])
-    narrower = replace(COMPARISON, id="n", scope=[{"school": ["X"]}])
+    key = explain.explanation_key(COMPARISON)
+    assert key is not None and explain.explanation_key(other) == key
+    cfg = ViewConfig("v", "m.fct", [COMPARISON, other])
+    assert explain.siblings(cfg, COMPARISON) == [other]
 
-    key = explain.row_population(COMPARISON)
-    assert key is not None and explain.row_population(by_region) == key
-    assert explain.row_population(narrower) != key
-    assert explain.row_population(replace(COMPARISON, rows=None)) is None
-    assert explain.siblings(CFG2, COMPARISON) == [SIBLING]
+
+def test_another_grain_or_model_does_not_share():
+    key = explain.explanation_key(COMPARISON)
+    other_values = replace(
+        COMPARISON, id="v", rows=replace(ROWS, values=[ColumnPair("x", "y")])
+    )
+    other_grain = replace(
+        COMPARISON, id="g", rows=replace(ROWS, grain=[ColumnPair("student", "lea")])
+    )
+    other_model = replace(COMPARISON, id="m", dashboard_view="other")
+
+    for c in (other_values, other_grain, other_model):
+        assert explain.explanation_key(c) != key
+    cfg = ViewConfig("v", "m.fct", [COMPARISON, other_values, other_grain, other_model])
+    assert explain.siblings(cfg, COMPARISON) == []
+    assert explain.explanation_key(replace(COMPARISON, rows=None)) is None
+
+
+def test_a_shared_explanation_runs_on_each_comparison_s_own_rows(
+    duck, tmp_path, monkeypatch, offline
+):
+    # The sibling reads another filter's rows: Cube also holds student 9, whom
+    # the explanation's join to the dashboard cannot place.
+    _tables(duck)
+    duck.table(
+        "cube_t2",
+        "lea BIGINT, aid VARCHAR, abbreviation VARCHAR",
+        [*CUBE_ROWS, (9, "z", "X")],
+    )
+    cube2 = CUBE.replace("cube_t", "cube_t2")
+    sides2 = replace(
+        SIDES,
+        cube=AsOf(cube2, frozenset({"m.cube_t2"}), frozenset()),
+        cube_rows_sql=cube2,
+    )
+    monkeypatch.setattr(
+        pipeline,
+        "row_sides",
+        lambda cfg, c, **k: sides2 if c.id == "mastery-b" else SIDES,
+    )
+    sibling = replace(SIBLING, filters={"grade": ["5"]})
+    cfg = ViewConfig("v", "m.fct", [COMPARISON, sibling])
+    run = _run(
+        [_group(3), Group("mastery-b", (("abbreviation", "X"),), "cube_only", 4, 4)]
+    )
+    directory, _ = _explanation(tmp_path)
+    wh = Wh(duck)
+    _save(duck, wh, run, cfg)
+
+    ran = explain.run_stored(cfg, run, directory, wh=wh, cube=None)
+
+    (own,) = [r for r in ran if r.items[0][1].comparison_id == "mastery"]
+    (shared,) = [r for r in ran if r.items[0][1].comparison_id == "mastery-b"]
+    assert all(o.explained for o in own.found.values())
+    assert shared.found is not None
+    assert [o.unexplained for o in shared.found.values()] == [1]
+    assert not any(o.explained for o in shared.found.values())
 
 
 def _items2(run):
@@ -1495,9 +1586,7 @@ def test_confirm_also_proves_the_comparisons_with_the_same_rows(
 
     items = json.loads(path.read_text())["items"]
     assert {i["suggestion"] for i in items} == {"cause"}
-    assert (
-        "Also mastery-b (same rows): 1 of 1 items explained." in capsys.readouterr().out
-    )
+    assert "Also mastery-b: 1 of 1 items explained." in capsys.readouterr().out
     proofs = tmp_path / "validation" / "explanations" / "v"
     assert [p.name for p in proofs.iterdir()] == ["mastery__cube_only.sql"]
 
@@ -1535,7 +1624,6 @@ def test_a_reproduce_query_rides_in_the_header_and_not_the_fingerprint():
     assert "-- reproduce C1:\n--  SELECT f.school, COUNT(*) AS n_rows\n" in text
     causes, reproduce, body = explain.split_explanation(text)
     assert (causes, reproduce, body) == (CAUSES, {"C1": REPRODUCE}, EXPLANATION.strip())
-    assert explain.split_block(text) == (CAUSES, EXPLANATION.strip())
     assert explain.fingerprint(causes, body) == explain.fingerprint(CAUSES, EXPLANATION)
 
 
@@ -1637,6 +1725,23 @@ def test_confirm_refuses_a_bad_reproduce_query_before_any_query(
         )
 
     assert wh.ran == [] and not (tmp_path / "validation").exists()
+
+
+def test_explain_refuses_a_triage_written_before_the_formula_check(
+    duck, tmp_path, monkeypatch, offline
+):
+    _tables(duck)
+    path = _saved(tmp_path, monkeypatch, _run([_group(3)]))
+    old = json.loads(path.read_text())
+    del old["formulas_not_compared"]
+    path.write_text(json.dumps(old))
+
+    with pytest.raises(
+        pipeline.Refusal, match="the triage predates the formula check; run `sort`"
+    ):
+        _confirm_text(duck, tmp_path, EXPLANATION)
+
+    assert json.loads(path.read_text()) == old
 
 
 def test_confirm_refuses_a_reproduce_query_bigquery_refuses(
@@ -2016,3 +2121,42 @@ def test_the_explanations_folder_sits_beside_the_validation_file(tmp_path):
     found = explain.explanations_dir(view_file, "v")
 
     assert found == tmp_path / "explanations" / "v"
+
+
+def test_unmatched_carries_moved_and_the_dashboard_cell(duck):
+    # Row 1 sits in school X for Cube and Y for the dashboard; row 2 in X on both.
+    duck.table(
+        "saved_t",
+        "bucket VARCHAR, __row BIGINT, abbreviation VARCHAR, __moved BOOLEAN, "
+        "__d_abbreviation VARCHAR, __gc0 BIGINT, __gc1 VARCHAR, __gd0 BIGINT, "
+        "__gd1 VARCHAR, __rn BIGINT, __ck0 BOOLEAN, __dk0 BOOLEAN",
+        [("dims_differ", 1, "X", True, "Y", 1, "a", 1, "a", 1, True, True),
+         ("dims_differ", 2, "X", False, None, 2, "b", 2, "b", 1, True, True)],
+    )  # fmt: skip
+    ctes, select = explain.unmatched_sql(COMPARISON, "dims_differ", [], "saved_t")
+    assert "__moved" in select and "__d_abbreviation" in select
+
+    rows = duck.rows(
+        f"{ctes}\nSELECT u.__row AS r, u.__moved AS moved, "
+        "COALESCE(u.__d_abbreviation, u.abbreviation) AS d "
+        f"FROM ({select}) AS u ORDER BY u.__row"
+    )
+
+    assert [(r["r"], bool(r["moved"]), r["d"]) for r in rows] == [
+        (1, True, "Y"),
+        (2, False, "X"),
+    ]
+
+
+def test_unmatched_without_group_by_dims_has_no_moved_or_dashboard_cell(duck):
+    ungrouped = replace(COMPARISON, dims=[])
+    duck.table(
+        "saved_t",
+        "bucket VARCHAR, __row BIGINT, __gc0 BIGINT, __gc1 VARCHAR, __gd0 BIGINT, "
+        "__gd1 VARCHAR, __rn BIGINT, __ck0 BOOLEAN, __dk0 BOOLEAN",
+        [("cube_only", 1, 1, "a", 1, "a", 1, True, True)],
+    )  # fmt: skip
+
+    _, select = explain.unmatched_sql(ungrouped, "cube_only", [], "saved_t")
+
+    assert "__moved" not in select and "__d_" not in select

@@ -8,9 +8,7 @@ catalog `as_of` needs.
 from __future__ import annotations
 
 import json
-import os
 import re
-import tempfile
 from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
@@ -19,6 +17,7 @@ from pathlib import Path
 from google.api_core.exceptions import GoogleAPIError, NotFound
 from google.cloud import bigquery
 
+from .checkpoints import write_json
 from .timetravel import PROJECT, TableInfo, closing_paren, utc_literal
 
 USD_PER_TIB = 6.25
@@ -89,16 +88,21 @@ class Warehouse:
         return self._tables[key]
 
     def table(self, dataset: str, name: str) -> TableInfo:
-        """Return the kind of `dataset.name` and, for a view, its SQL when first read."""
+        """Return the kind of `dataset.name`; a view's SQL as of a moment is
+        `view_sql_as_of`'s."""
         t = self._get_table(dataset, name)
 
         if t.table_type == "VIEW":
-            return TableInfo("VIEW", t.view_query)
+            return TableInfo("VIEW")
 
         if t.table_type == "EXTERNAL":
-            return TableInfo("EXTERNAL", None)
+            return TableInfo("EXTERNAL")
 
-        return TableInfo("TABLE", None)
+        return TableInfo("TABLE")
+
+    def columns(self, dataset: str, name: str) -> set[str]:
+        """Return the field names of `dataset.name`'s schema; no query runs."""
+        return {f.name for f in self._get_table(dataset, name).schema}
 
     def view_sql_as_of(self, dataset: str, name: str, ts: datetime) -> str:
         """Return the SQL body of view `dataset.name` as it stood at `ts`.
@@ -141,7 +145,7 @@ class Warehouse:
     def _save_views(self) -> None:
         if self._cache_dir is None:
             return
-        _write_json(
+        write_json(
             self._cache_dir / _VIEWS_FILE,
             {
                 f"{dataset}.{name}": [
@@ -197,8 +201,12 @@ class Warehouse:
     def estimate(self, sql: str) -> float:
         """Return the USD cost of `sql` from a dry run, counted against no cap.
 
-        For a query someone else runs outside the validator; `price` is the
-        one that counts.
+        The price a command sums before it runs anything (`compare`,
+        `explain`, the trace's dry runs), to refuse the total up front
+        (`refuse_past_caps`); each query then counts what it bills (`rows`).
+        It also checks and prices a query nothing here runs: `explain`'s
+        reproduce queries, which the owner pastes into BigQuery. `price`
+        instead counts the dry run's cost as spent.
         """
         config = bigquery.QueryJobConfig(dry_run=True, use_query_cache=False)
         job = self._client.query(sql, job_config=config)
@@ -268,16 +276,14 @@ class Warehouse:
         path = self._ledger / _SPEND_FILE
         ledger = _read_json(path, {})
         ledger[_today()] = ledger.get(_today(), 0.0) + usd
-        _write_json(path, ledger)
+        write_json(path, ledger)
 
     @property
     def spent(self) -> float:
         """USD priced or billed since the latest `budget` opened."""
         return self._spent
 
-    def script(
-        self, statements: list[str], timeout_s: float | None = None
-    ) -> list[dict]:
+    def script(self, statements: list[str]) -> list[dict]:
         """Run `statements` as one multi-statement job and return the last one's
         rows.
 
@@ -285,7 +291,7 @@ class Warehouse:
         query. Used to save a comparison's unmatched rows and count them in the
         same job (`reconcile.reconcile_script`).
         """
-        return self.rows(";\n".join(statements), timeout_s)
+        return self.rows(";\n".join(statements))
 
     def saved_labels(self, table_id: str) -> dict[str, str] | None:
         """A saved table's labels, or None when the table is gone (expired or
@@ -413,15 +419,6 @@ def _read_json(path: Path, default):
         return json.loads(path.read_text())
     except FileNotFoundError:
         return default
-
-
-def _write_json(path: Path, data) -> None:
-    """Replace `path` whole, so a reader never sees half a file."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fd, tmp = tempfile.mkstemp(dir=path.parent, suffix=".tmp")
-    with os.fdopen(fd, "w") as f:
-        json.dump(data, f)
-    os.replace(tmp, path)
 
 
 def _close_paren(text: str, open_at: int) -> int:

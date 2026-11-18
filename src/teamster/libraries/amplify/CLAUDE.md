@@ -1,6 +1,6 @@
 # CLAUDE.md — `teamster/libraries/amplify/`
 
-Two Amplify product integrations with distinct access methods:
+Amplify product integrations with distinct access methods:
 
 - `dibels/` — Amplify DIBELS Data System (DDS) via REST API
 - `mclass/api/` — Amplify mClass via REST API ("Download Your Data" reports)

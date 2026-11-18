@@ -1,8 +1,6 @@
 # CLAUDE.md — `dbt/kipppaterson/`
 
-District-specific dbt project for **KIPP New Jersey - Paterson** schools. The
-narrowest of the three NJ district projects — fewer enabled models than Newark
-or Camden.
+District-specific dbt project for **KIPP New Jersey - Paterson** schools.
 
 ## Model Structure
 
@@ -14,9 +12,8 @@ models/
     intermediate/
 ```
 
-PowerSchool data source: **dlt** (the package default; `odbc` and `sftp` are
-off). Paterson disables a set of grad-plan and gradebook `stg_powerschool__*`
-dlt models its PowerSchool instance does not populate — see the
+Paterson disables a set of grad-plan and gradebook `stg_powerschool__*` dlt
+models its PowerSchool instance does not populate — see the
 `powerschool.sis.staging.dlt` block in `dbt_project.yml`.
 
 ## Source Packages
@@ -36,16 +33,6 @@ Endpoint-level notes:
   last prod tables frozen as history for kipptaf. `stg_pearson__njgpa`,
   `stg_pearson__parcc` and `stg_pearson__student_test_update` were never enabled
   here
-- `amplify` — both `dds` and `mclass/api` disabled
-- `finalsite`
-- `titan` — `stg_titan__person_data` only; `stg_titan__income_form_data`
-  disabled (parity with Newark and Camden)
-- `edplan` — `stg_edplan__njsmart_powerschool` and the regional
-  `int_edplan__njsmart_powerschool_union` only.
-  `stg_edplan__njsmart_powerschool_archive` is disabled (as in Newark and
-  Camden) AND Paterson sets `edplan_has_archive: false`, which drops the archive
-  leg from the regional union — the one-time NJSMART archive load predates
-  Paterson's feed, so no `kipppaterson_edplan` archive table exists to read
 - `deanslist` — `behavior`, `comm_log`, `incidents`, `roster_assignments`,
   `rosters`, `students`, `terms`, and `users` endpoints pulled. The
   `stg_deanslist__dff_stats`, `stg_deanslist__followups`,

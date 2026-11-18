@@ -1,11 +1,12 @@
 import dataclasses
 import json
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 import pytest
 
 # trunk-ignore(pyright/reportAttributeAccessIssue): conftest.py registers cube_validation
-from cube_validation import cli, read_sheet
+from cube_validation import cli, pipeline, read_sheet, tableau
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.builder import Member
@@ -13,16 +14,13 @@ from cube_validation.builder import Member
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.config import ColumnPair, Comparison, RowSpec
 
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+from cube_validation.find_field import Candidate
+
 FIXTURES = Path(__file__).parent / "fixtures"
 TWB = (FIXTURES / "preflight.twb").read_text()
 # Read only, never committed; the real-workbook test skips without it.
 DDI_TWB = Path("/workspaces/teamster/.claude/scratch/ddi-twb/ddi_suite.twb")
-
-
-@pytest.fixture(autouse=True)
-def _cache_in_tmp(monkeypatch, tmp_path):
-    """Keep every test off the analyst's own cache."""
-    monkeypatch.setattr(cli, "cache_root", lambda: tmp_path / "cache")
 
 
 def _member(name, kind="dimension"):
@@ -157,8 +155,8 @@ def test_sheet_lines_flag_relative_dates_code_groups_and_shared_filters():
         in text
     )
     assert "- School: regular; keeps all\n" in text
-    # A filter's chosen values never print.
-    assert "ELA" not in text and "2026" not in text
+    # Discipline is off the allowlist; Academic Year is on it.
+    assert "ELA" not in text and "shows 2026" in text
 
 
 def test_restricting_filters_block_until_the_comparison_handles_them():
@@ -469,3 +467,207 @@ def test_a_rows_grain_field_on_the_shelves_is_mapped():
 
     assert "- Week Start Monday (columns): v.assessment_week (rows:)" in text
     assert not [b for b in before if b.startswith("Week Start Monday")]
+
+
+def test_export_name_reads_a_countd_caption():
+    assert (
+        read_sheet._export_name("Distinct count of Student Number") == "student number"
+    )
+
+
+def test_measure_line_finds_a_countd_sheet_field():
+    facts = read_sheet.Sheet(
+        [], [], [], [], {"COUNTD(Student Number)": {"student number"}}
+    )
+    out = read_sheet._Checklist([], [])
+    read_sheet._measure_line(
+        out, _comparison(sheet_field="Distinct count of Student Number"), facts
+    )
+    assert out.before == []
+
+
+def test_read_sheet_points_a_non_null_filter_at_dashboard_filters_set():
+    non_null = (
+        "<filter class='quantitative' column='[federated.0pf].[none:score:qk]' "
+        "included-values='non-null'/>\n          "
+    )
+    xml = TWB.replace(_ANCHOR, non_null + _ANCHOR)
+    _, before = read_sheet.check("v", xml, "Grid", _comparison(), MEMBERS)
+    assert any("non-null values only" in b and "operator: set" in b for b in before)
+
+
+def test_read_sheet_refuses_a_text_sheet_field():
+    facts = read_sheet.Sheet(
+        [], [], [], [], {"Status": {"status"}}, text_values=frozenset({"status"})
+    )
+    assert (
+        read_sheet.text_measure(facts, "Status")
+        == f"sheet_field 'Status': {tableau.TEXT_MEASURE}"
+    )
+
+
+def test_text_measure_refuses_a_text_field_whose_caption_starts_with_count():
+    facts = read_sheet.Sheet(
+        [], [], [], [], {"Count Type": {"count type"}},
+        text_values=frozenset({"count type"}),
+    )  # fmt: skip
+    assert (
+        read_sheet.text_measure(facts, "Count Type")
+        == f"sheet_field 'Count Type': {tableau.TEXT_MEASURE}"
+    )
+    status = read_sheet.Sheet(
+        [], [], [], [], {"ATTR(Status)": {"status"}},
+        text_values=frozenset({"status"}),
+    )  # fmt: skip
+    for counted in ("COUNTD(Status)", "CNT(Status)", "Distinct count of Status",
+                    "Count of Status"):  # fmt: skip
+        assert read_sheet.text_measure(status, counted) is None, counted
+
+
+STATUS_TWB = (
+    "<workbook><worksheets><worksheet name='S'><table><view>"
+    "<datasource-dependencies datasource='f'>"
+    "<column caption='Status' datatype='string' name='[status]' role='dimension' />"
+    "</datasource-dependencies></view>"
+    "<rows>{rows}</rows>"
+    "</table></worksheet></worksheets></workbook>"
+)
+
+
+def test_text_measure_without_sheet_field_counts_a_count_as_a_number():
+    both = read_sheet.read_sheet(
+        STATUS_TWB.format(rows="([f].[attr:status:nk] + [f].[ctd:status:qk])"), "S"
+    )
+    assert set(both.values) == {"Status", "COUNTD(Status)"}
+    assert read_sheet.text_measure(both, None) is None
+
+    attr = read_sheet.read_sheet(STATUS_TWB.format(rows="[f].[attr:status:nk]"), "S")
+    assert read_sheet.text_measure(attr, None) == (
+        f"the sheet's measure: {tableau.TEXT_MEASURE}"
+    )
+
+
+def test_sheet_lines_say_an_allowlisted_null_mode_once():
+    non_null = (
+        "<filter class='quantitative' column='[federated.0pf].[none:grade_level:qk]' "
+        "included-values='non-null'/>\n          "
+    )
+    facts = read_sheet.read_sheet(TWB.replace(_ANCHOR, non_null + _ANCHOR), "Grid")
+    (grade,) = [f for f in facts.filters if f.name == "grade_level"]
+    assert grade.shown == "non-null values only"
+
+    text = "\n".join(read_sheet._sheet_lines("w.twb", "Grid", facts))
+
+    assert "- Grade Level: regular; non-null values only\n" in text
+    assert "shows non-null" not in text
+
+
+def test_read_sheet_does_not_point_a_null_filter_at_the_not_null_operator():
+    null_only = (
+        "<filter class='quantitative' column='[federated.0pf].[none:score:qk]' "
+        "included-values='null'/>\n          "
+    )
+    xml = TWB.replace(_ANCHOR, null_only + _ANCHOR)
+    _, before = read_sheet.check("v", xml, "Grid", _comparison(), MEMBERS)
+    line = next(b for b in before if "null values only" in b)
+    assert "operator" not in line
+
+
+UNPUBLISHED = TWB.replace(
+    "<window class='worksheet' name='Grid'>",
+    "<window class='worksheet' hidden='true' name='Grid'>",
+)
+NOT_PUBLISHED_ITEM = (
+    "sheet: not on a published dashboard; set unpublished: true to compare it anyway"
+)
+
+
+def test_read_sheet_marks_and_blocks_an_unpublished_sheet():
+    assert UNPUBLISHED != TWB
+    assert read_sheet.read_sheet(TWB, "Grid").published is True
+    assert read_sheet.read_sheet(UNPUBLISHED, "Grid").published is False
+
+    _, before = read_sheet.check("v", UNPUBLISHED, "Grid", _comparison(), MEMBERS)
+    assert NOT_PUBLISHED_ITEM in before
+    _, published = read_sheet.check("v", TWB, "Grid", _comparison(), MEMBERS)
+    assert NOT_PUBLISHED_ITEM not in published
+
+    cfg = type("Cfg", (), {"view": "v", "comparisons": [_comparison()]})()
+    text = read_sheet.report(cfg, lambda wb: ("w.twb", UNPUBLISHED), MEMBERS)
+    assert text.startswith("Grid (w.twb); not on a published dashboard\n")
+    assert f"      - {NOT_PUBLISHED_ITEM}" in text
+
+
+def test_read_sheet_reads_published_only_when_asked(monkeypatch):
+    calls = []
+    real = tableau.published_sheets
+    monkeypatch.setattr(
+        tableau, "published_sheets", lambda twb: calls.append(1) or real(twb)
+    )
+
+    facts = read_sheet.read_sheet(UNPUBLISHED, "Grid")
+    read_sheet.text_measure(facts, None)
+    assert calls == []
+
+    assert facts.published is False and facts.published is False
+    assert calls == [1]
+
+
+def test_print_sheets_parses_each_workbook_once(monkeypatch, capsys):
+    found = [
+        Candidate("wb-1", "w.twb", ["Grid", "Other"], "a", "SUM([x])", 1.0),
+        Candidate("wb-1", "w.twb", ["Other"], "b", "SUM([y])", 0.5),
+    ]
+    parses = []
+    real = ET.fromstring
+    monkeypatch.setattr(ET, "fromstring", lambda text: parses.append(1) or real(text))
+
+    pipeline._print_sheets(found, {"wb-1": TWB})
+
+    out = capsys.readouterr().out
+    assert "  Grid (w.twb): " in out and "  Other (w.twb): " in out
+    assert len(parses) == 1
+
+
+def test_read_sheet_lets_an_opted_in_unpublished_sheet_through():
+    comparison = _comparison(unpublished=True)
+
+    _, before = read_sheet.check("v", UNPUBLISHED, "Grid", comparison, MEMBERS)
+
+    assert NOT_PUBLISHED_ITEM not in before
+    cfg = type("Cfg", (), {"view": "v", "comparisons": [comparison]})()
+    text = read_sheet.report(cfg, lambda wb: ("w.twb", UNPUBLISHED), MEMBERS)
+    # The header still says so: the comparison opted in, the sheet is unchanged.
+    assert text.startswith("Grid (w.twb); not on a published dashboard\n")
+
+
+def test_read_sheet_shows_an_allowlisted_filter_s_values():
+    facts = read_sheet.read_sheet(TWB, "Grid")
+    by = {f.caption: f for f in facts.filters}
+    assert by["Academic Year"].shown == "2026"
+    assert by["School"].shown == ""
+    text = "\n".join(read_sheet._sheet_lines("v", "Grid", facts))
+    assert "Academic Year: regular; restricting; shows 2026" in text
+
+
+def test_read_sheet_keeps_a_filter_off_the_allowlist_hidden():
+    facts = read_sheet.read_sheet(TWB, "Grid")
+    by = {f.caption: f for f in facts.filters}
+    assert by["Discipline"].shown == ""
+    assert "ELA" not in "\n".join(read_sheet._sheet_lines("v", "Grid", facts))
+
+
+def test_a_countd_sheet_field_is_not_text_beside_an_attr_of_the_same_field():
+    twb = (
+        "<workbook><worksheets><worksheet name='S'><table><view>"
+        "<datasource-dependencies datasource='f'>"
+        "<column datatype='string' name='[status]' role='dimension' />"
+        "</datasource-dependencies></view>"
+        "<rows>([f].[attr:status:nk] + [f].[ctd:status:qk])</rows>"
+        "<cols/></table></worksheet></worksheets></workbook>"
+    )
+    facts = read_sheet.read_sheet(twb, "S")
+    assert read_sheet.text_measure(facts, "COUNTD(status)") is None
+    assert read_sheet.text_measure(facts, "Distinct count of status") is None
+    assert read_sheet.text_measure(facts, "ATTR(status)") is not None
+    assert read_sheet.text_measure(facts, "status") is not None

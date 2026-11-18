@@ -2,8 +2,7 @@
 
 District-specific dbt project for **KIPP New Jersey - Newark** schools. Combines
 local PowerSchool staging with cross-project references to produce school-level
-extracts. This is the most complete NJ district project, including all available
-source integrations.
+extracts.
 
 ## Model Structure
 
@@ -15,14 +14,3 @@ models/
   extracts/
     powerschool/ # PowerSchool autocomm extracts (teachers, students IEP)
 ```
-
-PowerSchool data source: **dlt** (Oracle over SSH tunnel → BigQuery;
-`dlt.+enabled: true`, `odbc.+enabled: false`)
-
-## Source Packages
-
-District-specific notes:
-
-- `iready` uses `iready_schema: kippnj_iready`
-- `amplify` — products selectively enabled per `dbt_project.yml`
-- Several models from each package are disabled (see `dbt_project.yml`)

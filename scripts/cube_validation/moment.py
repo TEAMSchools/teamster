@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Protocol
 
 from .timetravel import PROJECT, utc_literal
@@ -17,11 +17,33 @@ class MomentError(RuntimeError):
     """No usable build to pin the validation to."""
 
 
+def utcnow() -> datetime:
+    """The current time in UTC, the `now` a moment is picked against."""
+    return datetime.now(timezone.utc)
+
+
 @dataclass(frozen=True)
 class Build:
     start: datetime
     end: datetime
     job_id: str
+
+    def to_json(self) -> dict:
+        """The build as run state, results and triages store it."""
+        return {
+            "start": self.start.isoformat(),
+            "end": self.end.isoformat(),
+            "job_id": self.job_id,
+        }
+
+    @classmethod
+    def from_json(cls, data: dict) -> Build:
+        """The build `to_json` wrote."""
+        return cls(
+            datetime.fromisoformat(data["start"]),
+            datetime.fromisoformat(data["end"]),
+            data["job_id"],
+        )
 
 
 class _Rows(Protocol):

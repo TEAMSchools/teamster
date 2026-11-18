@@ -8,7 +8,7 @@ import functools
 import re
 import uuid
 from collections.abc import Callable, Iterable
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -26,9 +26,9 @@ from .moment import (
     fact_builds,
     fingerprint_sql,
     pick_moment,
+    utcnow,
 )
 from .pipeline import (
-    SQL_BROKEN,
     SQL_ERRORS,
     Cell,
     Expand,
@@ -46,6 +46,7 @@ from .pipeline import (
     dashboard_rows_sql,
     date_cubes,
     expanded_fingerprints,
+    grouped_dims,
     inline_unmatched,
     reconcile_args,
     row_pairs,
@@ -58,8 +59,14 @@ from .pipeline import (
     value_key,
     wrap_cube,
 )
-from .rebuild import TABLEAU_ANSWERED, missing_members, workbook_check
-from .report import RunResult
+from .rebuild import (
+    TABLEAU_ANSWERED,
+    WorkbookCache,
+    missing_members,
+    unpublished_sheets,
+    workbook_check,
+)
+from .report import SQL_BROKEN, RunResult
 from .results import (
     ENTRY_CHANGED,
     NEVER_COMPARED,
@@ -89,7 +96,7 @@ def _skip_keys(skips: Iterable[Skip]) -> list[tuple[str, str]]:
 
 def _say_skips(skips: list[Skip]) -> None:
     for s in skips:
-        print(f"Skipping {s.comparison}: {s.why}.")
+        print(f"Skipping {s.comparison}: {s.why.rstrip('.')}.")
 
 
 def _refuse_all_skipped(
@@ -115,14 +122,8 @@ def _students_sql(cfg: ViewConfig, comparison: Comparison, student: str) -> str:
     """
     # trunk-ignore(bandit/B608): identifiers are validated in config.py and values are bound or literal-escaped
     rows = f"SELECT * FROM {dashboard_ref(comparison)}"
-    dates = date_cubes(cfg)
-    dims = [
-        f"DATE({d.dashboard}) AS {d.dashboard}" if d.cube in dates else d.dashboard
-        for d in comparison.dims
-    ]
-    group = (
-        " GROUP BY " + ", ".join(str(i + 2) for i in range(len(dims))) if dims else ""
-    )
+    # `__cut` is column 1, so the dims start at 2.
+    dims, group = grouped_dims(cfg, comparison, first=2)
     count = f"COUNT(DISTINCT {student}) AS n_students"
     return " UNION ALL ".join(
         # trunk-ignore(bandit/B608): identifiers are validated in config.py and values are bound or literal-escaped
@@ -136,16 +137,27 @@ def _number(value: Any) -> float | None:
     return None if value is None else float(value)
 
 
-def _by_key(rows: Iterable[dict], key, value, where: str) -> dict:
+class DuplicateCell(Refusal):
+    """2 rows of one side land on one cell. The message names the cell's
+    values, for the terminal; `why` leaves them out, for a skip that
+    `ask-owner` posts."""
+
+    def __init__(self, comparison: str, where: str, key: tuple[str, ...]):
+        # A skip carries its comparison's id, so `why` starts at the cut.
+        self.why = f"{where}: 2 rows share the cell; the dims do not pick out one cell"
+        super().__init__(
+            f"{comparison} {where}: 2 rows share the cell "
+            f"{', '.join(key) or '(total)'}; the dims do not pick out one cell"
+        )
+
+
+def _by_key(rows: Iterable[dict], key, value, comparison: str, where: str) -> dict:
     """Index rows by cell key, refusing 2 rows that land on one cell."""
     out: dict = {}
     for r in rows:
         k = key(r)
         if k in out:
-            raise Refusal(
-                f"{where}: 2 rows share the cell {', '.join(k) or '(total)'}; "
-                "the dims do not pick out one cell"
-            )
+            raise DuplicateCell(comparison, where, k)
         out[k] = value(r)
     return out
 
@@ -162,17 +174,19 @@ def _cells(
     `dashboard_filters` reproduces reads `dashboard_filtered`: the sheet's
     dashboard-only filter drops it, so it is explained, not a difference.
     """
-    where = f"{comparison.id} {cut_label(cut)}"
+    cid, where = comparison.id, cut_label(cut)
     dash = _by_key(
         dash_rows,
         lambda r: tuple(value_key(r[d.dashboard]) for d in comparison.dims),
         lambda r: _number(r["value"]),
+        cid,
         f"{where} dashboard",
     )
     cube = _by_key(
         cube_rows,
         lambda r: tuple(value_key(r[d.cube]) for d in comparison.dims),
         lambda r: _number(r["value"]),
+        cid,
         f"{where} Cube",
     )
     unfiltered = (
@@ -180,6 +194,7 @@ def _cells(
             unfiltered_rows,
             lambda r: tuple(value_key(r[d.dashboard]) for d in comparison.dims),
             lambda r: _number(r["value"]),
+            cid,
             f"{where} dashboard without its dashboard-only filters",
         )
         if unfiltered_rows is not None
@@ -564,8 +579,9 @@ def _early_skips(
     A comparison is skipped when it lacks a key a run needs (`_NEEDED`), it
     has no rebuild check, its sheet query changed since the check, it maps a
     member Cube's `/meta` lacks (`missing_members`), or its workbook changed
-    since the check or Tableau errs on it (`workbook_check`). Each check reads
-    only the comparisons no earlier check skipped.
+    since the check or Tableau errs on it (`workbook_check`), or its sheet is
+    on no published dashboard (`unpublished_sheets`). Each check reads only
+    the comparisons no earlier check skipped.
     """
     skips: list[Skip] = []
 
@@ -598,7 +614,8 @@ def _early_skips(
                 )
             )
     remaining = left()
-    stale = workbook_check(cfg, remaining, tbl=tbl, cube=cube)
+    workbooks = WorkbookCache(tbl)
+    stale = workbook_check(remaining, tbl=tbl, workbooks=workbooks)
     for c in remaining:
         if lines := [
             s.removeprefix(f"{c.id}: ") for s in stale if s.startswith(f"{c.id}: ")
@@ -609,6 +626,8 @@ def _early_skips(
                 else "workbook changed since its rebuild check"
             )
             skips.append(Skip(c.id, f"{what}: {'; '.join(lines)}"))
+    for cid, why in unpublished_sheets(left(), tbl=tbl, workbooks=workbooks).items():
+        skips.append(Skip(cid, why))
     return skips
 
 
@@ -646,10 +665,6 @@ def _sql_skips(
 # after it, only with `--resume`, up to time travel's reach.
 AUTO_RESUME = timedelta(hours=24)
 RESUME_LIMIT = timedelta(days=7)
-
-
-def _utcnow() -> datetime:
-    return datetime.now(timezone.utc)
 
 
 def _run_folder(
@@ -761,7 +776,7 @@ def compare(
     cube_host: str = "",
     resume: bool = False,
     restart: bool = False,
-    clock: Callable[[], datetime] = _utcnow,
+    clock: Callable[[], datetime] = utcnow,
     ticker: report.Ticker | None = None,
     only: list[str] | None = None,
     every: bool = False,
@@ -808,7 +823,6 @@ def compare(
         CostCapError: The priced queries would pass `max_usd` or the day's
             cap.
         MomentError: No usable build in the 7-day window.
-        CubeRefusal: Cube's SQL would not match a raw rebuild.
     """
     if resume and requested is not None:
         raise Refusal("`--moment` picks the moment itself; drop `--resume`")
@@ -1001,8 +1015,9 @@ def _compare_all(
     that changed during the build (`changed_dims`). A held checkpoint is kept
     as the latest result only when no later moment's result has replaced it
     since. A comparison whose SQL cannot be built at `build`, whose dry run
-    or a table scan it needs fails, or one of whose queries fails in BigQuery
-    is skipped and the rest run.
+    or a table scan it needs fails, one of whose queries fails in BigQuery,
+    or 2 of whose rows on one side land on one cell (`DuplicateCell`) is
+    skipped and the rest run.
 
     Raises:
         CostCapError: The priced total would pass the run's or the day's cap,
@@ -1059,6 +1074,20 @@ def _compare_all(
     shared = sorted({t for p in plans for t in p.shared if t not in known})
     # Each table once, at both ends of the build, whichever checks need it.
     scanned = unique([*cfg.also_facts, *shared, *dims])
+
+    def unscanned(t: str, what: str, exc: GoogleAPIError) -> list[Skip]:
+        """Skip every comparison that reads `t`: unscanned, it cannot be
+        known to have held during the build. One an earlier table's failure
+        skipped is skipped once."""
+        gone = {s.comparison for s in skips}
+        readers = [p.comparison.id for p in plans if t in p.cube_tables | set(p.shared)]
+        readers += [cid for cid, (_, h) in slices.items() if t in h.cube_tables]
+        return [
+            _bigquery_skip(cid, f"{what} {t}", exc)
+            for cid in readers
+            if cid not in gone
+        ]
+
     scan_usd = 0.0
     for t in list(scanned):
         try:
@@ -1066,16 +1095,8 @@ def _compare_all(
                 wh.estimate(fingerprint_sql(t, ts)) for ts in (build.start, build.end)
             )
         except GoogleAPIError as exc:
-            # Unscanned, so every comparison that reads it is skipped.
             scanned.remove(t)
-            readers = [
-                p.comparison.id for p in plans if t in p.cube_tables | set(p.shared)
-            ]
-            readers += [cid for cid, (_, h) in slices.items() if t in h.cube_tables]
-            skips += [
-                _bigquery_skip(cid, f"the dry run of a scan of {t}", exc)
-                for cid in readers
-            ]
+            skips += unscanned(t, "the dry run of a scan of", exc)
     gone = {s.comparison for s in skips}
     slices = {cid: v for cid, v in slices.items() if cid not in gone}
     priced = [
@@ -1094,13 +1115,23 @@ def _compare_all(
     )
     wh.refuse_past_caps(total)
 
-    changed = set(changed_between(wh, scanned, build.start, build.end))
+    changed: set[str] = set()
+    for t in scanned:
+        try:
+            changed.update(changed_between(wh, [t], build.start, build.end))
+        except GoogleAPIError as exc:
+            skips += unscanned(t, "a scan of", exc)
+    gone = {s.comparison for s in skips}
     skips += _moved_fact_skips(
         cfg,
         build,
         changed,
-        {p.comparison.id: p.cube_tables for p in plans}
-        | {cid: held.cube_tables for cid, (_, held) in slices.items()},
+        {p.comparison.id: p.cube_tables for p in plans if p.comparison.id not in gone}
+        | {
+            cid: held.cube_tables
+            for cid, (_, held) in slices.items()
+            if cid not in gone
+        },
     )
     gone = {s.comparison for s in skips}
     slices = {cid: v for cid, v in slices.items() if cid not in gone}
@@ -1146,6 +1177,14 @@ def _compare_all(
             # Its spend stays counted; the rest still run, so a resume does
             # not stop at it again.
             skip = _bigquery_skip(comparison.id, "a query", exc)
+            _say_skips([skip])
+            skips.append(skip)
+            checkpoints.record_spend(folder, process, wh.spent)
+            continue
+        except DuplicateCell as exc:
+            # Its rows cannot be compared cell by cell; the rest still run.
+            print(f"{exc}.")
+            skip = Skip(comparison.id, exc.why)
             _say_skips([skip])
             skips.append(skip)
             checkpoints.record_spend(folder, process, wh.spent)

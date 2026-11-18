@@ -5,12 +5,13 @@ import pytest
 from cube_validation.config import ColumnPair, Comparison, RowSpec
 from cube_validation.reconcile import (
     Group,
+    _joined,
     _label,
+    _outer_sql,
     cell_verdict,
     clauses_for,
     groups_from,
     reconcile_script,
-    reconcile_sql,
     scope_filters,
     trace_sql,
     unmatched_rows_sql,
@@ -26,13 +27,21 @@ ROWS = RowSpec(
 GROUP_BY = [ColumnPair("grade_level", "grade_level_cube")]
 
 
-def _sql():
-    return reconcile_sql(
-        "SELECT 1 AS lea_student_identifier",
-        "SELECT 1 AS student_number",
-        ROWS,
-        GROUP_BY,
+def _script(
+    cube_rows_sql="SELECT 1 AS lea_student_identifier",
+    dashboard_rows_sql="SELECT 1 AS student_number",
+    rows=ROWS,
+    group_by=GROUP_BY,
+    **kw,
+):
+    return reconcile_script(
+        cube_rows_sql, dashboard_rows_sql, rows, group_by, table="saved_t", **kw
     )
+
+
+def _sql():
+    """The script's first statement: the join every later one reads."""
+    return _script()[0]
 
 
 def _outer_select(sql: str) -> str:
@@ -41,8 +50,8 @@ def _outer_select(sql: str) -> str:
     return tail.split("FROM", 1)[0]
 
 
-def test_reconcile_sql_returns_aggregates_only():
-    outer = _outer_select(_sql())
+def test_reconcile_returns_aggregates_only():
+    outer = _outer_select(_script()[-1])
 
     assert "n_rows" in outer
     assert "n_students" in outer
@@ -54,7 +63,7 @@ def test_reconcile_sql_returns_aggregates_only():
     assert re.search(r"COUNT\(DISTINCT", outer)
 
 
-def test_reconcile_sql_names_both_sources_and_buckets():
+def test_reconcile_names_both_sources_and_buckets():
     sql = _sql()
 
     assert "SELECT 1 AS lea_student_identifier" in sql
@@ -64,7 +73,7 @@ def test_reconcile_sql_names_both_sources_and_buckets():
     assert "FULL OUTER JOIN" in sql
 
 
-def test_reconcile_sql_numbers_duplicates_on_the_grain():
+def test_reconcile_numbers_duplicates_on_the_grain():
     sql = _sql()
 
     assert sql.count("ROW_NUMBER() OVER (PARTITION BY") == 2
@@ -72,7 +81,7 @@ def test_reconcile_sql_numbers_duplicates_on_the_grain():
     assert "__rn" in sql.split("FULL OUTER JOIN", 1)[1].split("-- outer")[0]
 
 
-def test_reconcile_sql_values_compare_null_safe_and_type_tolerant():
+def test_reconcile_values_compare_null_safe_and_type_tolerant():
     sql = _sql()
 
     assert (
@@ -89,7 +98,7 @@ def test_reconcile_sql_values_compare_null_safe_and_type_tolerant():
     assert "d.is_present IS NULL AND c.attendance_value IS NULL" in sql
 
 
-def test_reconcile_sql_group_by_reads_the_side_holding_the_row():
+def test_reconcile_group_by_reads_the_side_holding_the_row():
     # Cube's value for a row Cube holds, never the dashboard's in its place.
     sql = _sql()
 
@@ -99,8 +108,8 @@ def test_reconcile_sql_group_by_reads_the_side_holding_the_row():
     ) in sql
 
 
-def test_reconcile_sql_group_by_column_is_selected_from_each_source():
-    sql = reconcile_sql("SELECT 1", "SELECT 2", ROWS, GROUP_BY)
+def test_reconcile_group_by_column_is_selected_from_each_source():
+    sql = _script("SELECT 1", "SELECT 2")[0]
 
     assert "grade_level_cube" in sql
     assert "grade_level" in sql
@@ -225,7 +234,7 @@ def test_cell_verdict_rounds_half_up_at_display_boundaries():
     assert cell_verdict(0.9325, 0.932, decimals=3) == "differs"
 
 
-def test_reconcile_sql_grain_keys_join_across_numeric_types():
+def test_reconcile_grain_keys_join_across_numeric_types():
     sql = _sql()
     join = sql.split("FULL OUTER JOIN", 1)[1].split("-- outer")[0]
 
@@ -242,7 +251,7 @@ def _plain(col: str) -> str:
     return f"COALESCE(CAST(SAFE_CAST(CAST({col} AS STRING)"
 
 
-def test_reconcile_sql_later_null_grain_matches_null_but_no_value():
+def test_reconcile_later_null_grain_matches_null_but_no_value():
     # A NULL keys as '' and any value, the empty string included, as '=<v>':
     # NULL meets NULL, never a value. Still an equality, so the join hashes.
     on = _sql().split("FULL OUTER JOIN", 1)[1].split("-- outer")[0].split("ON", 1)[1]
@@ -252,7 +261,7 @@ def test_reconcile_sql_later_null_grain_matches_null_but_no_value():
     assert "IS NULL" not in on
 
 
-def test_reconcile_sql_null_student_never_matches():
+def test_reconcile_null_student_never_matches():
     # Rows with no student id would otherwise pair up by value order and read
     # as matches; a plain key leaves NULL = NULL unknown, so they stay one-sided.
     on = _sql().split("FULL OUTER JOIN", 1)[1].split("-- outer")[0].split("ON", 1)[1]
@@ -261,7 +270,7 @@ def test_reconcile_sql_null_student_never_matches():
         assert _null_safe(col) not in on
 
 
-def test_reconcile_sql_numbers_duplicates_on_the_join_keys():
+def test_reconcile_numbers_duplicates_on_the_join_keys():
     # Each side partitions by the keys it joins on, so NULLs and 1 vs 1.0
     # number alike on both sides.
     sql = _sql()
@@ -362,8 +371,12 @@ def test_the_save_script_counts_exactly_as_the_reconcile(duck):
     for statement in setup:
         duck.rows(statement)
 
+    # The join without the saved rows' keys and grain columns counts the same.
+    ctes, group_names = _joined(*SAVE_ARGS, filters=(), moved=True)
+    plain = ctes + "\n" + _outer_sql(group_names, (), (), "joined")
+
     assert "-- outer" in counts
-    assert duck.rows(counts) == duck.rows(reconcile_sql(*SAVE_ARGS))
+    assert duck.rows(counts) == duck.rows(plain)
 
 
 def test_the_save_script_keeps_only_unmatched_rows_with_each_side_s_grain(duck):
@@ -434,8 +447,8 @@ def _by_region(duck):
         "student BIGINT, item VARCHAR, region VARCHAR, ok_d BOOLEAN, __df0 BOOLEAN",
         [(2, "a", "Miami", True, True), (3, "a", "Newark", True, False)],
     )
-    return duck.rows(
-        reconcile_sql(
+    return duck.script(
+        _script(
             "SELECT * FROM c_rows",
             "SELECT * FROM d_rows",
             REGION_ROWS,
@@ -473,8 +486,8 @@ def test_a_key_in_2_cuts_pairs_its_rows_within_each_cut(duck):
         "student BIGINT, item VARCHAR, region VARCHAR, ok_d BOOLEAN",
         [(1, "a", "Newark", False), (1, "a", "Miami", True)],
     )
-    result = duck.rows(
-        reconcile_sql(
+    result = duck.script(
+        _script(
             "SELECT * FROM c_rows",
             "SELECT * FROM d_rows",
             REGION_ROWS,
@@ -558,23 +571,24 @@ def test_the_trace_leaves_over_the_row_the_reconcile_does(duck):
 
 def test_the_reconcile_returns_no_value_sums(duck):
     _save_tables(duck)
-    row = duck.rows(reconcile_sql(*SAVE_ARGS, cuts=[("TRUE", "TRUE")]))[0]
+    row = duck.script(_script(*SAVE_ARGS, cuts=[("TRUE", "TRUE")]))[0]
 
     assert any(k.endswith("_rows") and k.startswith("__s_") for k in row)
     assert not any(k.endswith(("_n0", "_sum0")) for k in row)
 
 
 def test_reconcile_counts_rows_a_dashboard_only_filter_drops_apart():
-    sql = reconcile_sql(
+    join, _, counts = _script(
         "SELECT 1", "SELECT 2", FILTERED_ROWS, [], filters=[("__df0", "enroll_status")]
     )
-    assert "THEN 'dashboard_filtered'" in sql
-    assert "WHEN NOT d.__df0 THEN 'enroll_status'" in sql
-    assert "AS __filter" in sql and "GROUP BY bucket, __filter" in sql
+    assert "THEN 'dashboard_filtered'" in join
+    assert "WHEN NOT d.__df0 THEN 'enroll_status'" in join
+    assert "AS __filter" in join and "GROUP BY bucket, __filter" in counts
 
 
 def test_reconcile_without_filters_has_no_filter_column():
-    assert "__filter" not in reconcile_sql("SELECT 1", "SELECT 2", FILTERED_ROWS, [])
+    script = _script("SELECT 1", "SELECT 2", FILTERED_ROWS, [])
+    assert not any("__filter" in statement for statement in script)
 
 
 def test_groups_from_names_the_dropping_filter_only_on_its_rows():
@@ -778,8 +792,8 @@ def _moved(duck, cuts=()):
         "student BIGINT, item VARCHAR, grade_d VARCHAR, ok_d BOOLEAN",
         [(1, "a", "1", True), (2, "a", "2", False)],
     )
-    return duck.rows(
-        reconcile_sql(
+    return duck.script(
+        _script(
             "SELECT * FROM `teamster-332318.m.cube_t`",
             "SELECT * FROM `teamster-332318.d.dash_t`",
             MOVED_ROWS,
@@ -825,8 +839,8 @@ def _by_week(duck, cube_type, cube_week, dash_type, dash_week):
         f"student BIGINT, item VARCHAR, week_d {dash_type}, ok_d BOOLEAN",
         [(1, "a", dash_week, True)],
     )
-    rows = duck.rows(
-        reconcile_sql(
+    rows = duck.script(
+        _script(
             "SELECT * FROM `teamster-332318.m.cube_t`",
             "SELECT * FROM `teamster-332318.d.dash_t`",
             MOVED_ROWS,
@@ -870,8 +884,8 @@ def test_one_day_gets_one_group_label_whichever_side_holds_the_row(duck):
         "student BIGINT, item VARCHAR, week_d DATE, ok_d BOOLEAN",
         [(2, "b", "2026-09-21", True)],
     )
-    rows = duck.rows(
-        reconcile_sql(
+    rows = duck.script(
+        _script(
             "SELECT * FROM `teamster-332318.m.cube_t`",
             "SELECT * FROM `teamster-332318.d.dash_t`",
             MOVED_ROWS,
@@ -895,8 +909,8 @@ def test_a_group_label_that_is_not_a_day_keeps_its_text(duck):
         "student BIGINT, item VARCHAR, week_d VARCHAR, ok_d BOOLEAN",
         [(2, "b", "Week 3", True)],
     )
-    rows = duck.rows(
-        reconcile_sql(
+    rows = duck.script(
+        _script(
             "SELECT * FROM `teamster-332318.m.cube_t`",
             "SELECT * FROM `teamster-332318.d.dash_t`",
             MOVED_ROWS,
@@ -935,8 +949,8 @@ def test_rows_the_dashboard_filters_out_count_on_cube_s_side_only(duck):
         [(1, "a", "1", True, True), (2, "a", "1", False, False),
          (4, "a", "1", True, False)],
     )  # fmt: skip
-    result = duck.rows(
-        reconcile_sql(
+    result = duck.script(
+        _script(
             "SELECT * FROM `teamster-332318.m.cube_t`",
             "SELECT * FROM `teamster-332318.d.dash_t`",
             MOVED_ROWS,
@@ -976,8 +990,8 @@ def test_the_reconcile_keeps_rows_per_cut(duck):
         ("c.rtype_c = 'overall'", "d.rtype_d = 'overall'"),
         ("c.rtype_c = 'standard'", "d.rtype_d = 'standard'"),
     ]
-    result = duck.rows(
-        reconcile_sql(
+    result = duck.script(
+        _script(
             "SELECT * FROM `teamster-332318.m.cube_t`",
             "SELECT * FROM `teamster-332318.d.dash_t`",
             rows,
@@ -1021,8 +1035,8 @@ def _daily_buckets(duck, dash_rows, cube_rows, reduce):
         grain=[ColumnPair("student", "lea"), ColumnPair("period", "per")],
         values=[ColumnPair("is_chronic", "chronic_c")],
     )
-    result = duck.rows(
-        reconcile_sql(
+    result = duck.script(
+        _script(
             "SELECT * FROM `teamster-332318.m.cube_t`",
             _daily(reduce),
             rows,

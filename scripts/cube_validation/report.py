@@ -58,9 +58,6 @@ def _is_identifier(column: str) -> bool:
     return column not in _SHOWN_COLUMNS
 
 
-_SEPARATED_DIGITS = SEPARATED_DIGITS
-
-
 @dataclass
 class MeasureResult:
     measure: str
@@ -319,7 +316,10 @@ def render_local(run: RunResult) -> str:
         + [_decision_line(d) for d, _ in run.applied.quiet_gaps]
         + [_decision_line(d) for d, _ in run.applied.quiet_cells]
     )
-    out += ["", "To re-confirm (the SQL changed):"]
+    out += [
+        "",
+        "To re-confirm (the SQL changed, or the formula check filed more cells):",
+    ]
     out += _bullets([_decision_line(d) for d in run.applied.reconfirm])
     out += ["", "No longer needed (no group matches):"]
     out += _bullets([_decision_line(d) for d in run.applied.no_longer_needed])
@@ -513,7 +513,7 @@ def _safe_reason(reason: str, values: list) -> str:
         text = re.sub(
             rf"(?<![\w.]){re.escape(_clean(value))}(?![\w.])", "<redacted>", text
         )
-    text = _SEPARATED_DIGITS.sub(
+    text = SEPARATED_DIGITS.sub(
         lambda m: (
             "<redacted>" if sum(c.isdigit() for c in m.group()) >= 5 else m.group()
         ),
@@ -525,7 +525,7 @@ def _safe_reason(reason: str, values: list) -> str:
 
 def _with_task(reason: str, task: str) -> str:
     """End a reason once, then add the task: no `?.` after a question."""
-    reason = reason if reason.endswith(("?", "!", ".")) else f"{reason}."
+    reason = _ended(reason)
     return f"{reason} Task: {task}" if task else reason
 
 
@@ -732,7 +732,9 @@ def _posted_why(why: str) -> str:
 
 
 def still_with_analyst(
-    items: list[Unsettled], waiting: dict[str, dict[str, str]]
+    items: list[Unsettled],
+    waiting: dict[str, dict[str, str]],
+    unchecked: dict[str, dict[str, dict[str, int]]] | None = None,
 ) -> list[str]:
     """The review's lines for what is not settled yet, never asked as questions.
 
@@ -741,6 +743,9 @@ def still_with_analyst(
     and counts, `_posted_lead`) or `no lead yet`.
     Then one line per comparison in `waiting` (per view, id to why: missing,
     stale or skipped, `sort.comparisons_waiting`). No stub value and no SQL.
+    Then, given `unchecked` (per view, comparison and reason, the cells the
+    formula check left to coverage, `sort.formulas_not_compared`), one
+    masked line per comparison and reason, sorted.
     """
     out = []
     for u in items:
@@ -763,6 +768,13 @@ def still_with_analyst(
         f"`{cid}` in `{view}`: {_posted_why(why)}"
         for view, whys in waiting.items()
         for cid, why in whys.items()
+    ]
+    out += [
+        f"`{cid}` in `{view}`: formulas not compared: {_safe_reason(reason, [])}; "
+        f"{mask(cells)} cells closed by coverage only"
+        for view, comparisons in sorted((unchecked or {}).items())
+        for cid, reasons in sorted(comparisons.items())
+        for reason, cells in sorted(reasons.items())
     ]
     return out
 
@@ -1125,6 +1137,7 @@ def render_review_issue(
     decided: dict[str, list[CauseAsk]] | None = None,
     json_link: str | None = None,
     still: list[str] | None = None,
+    unpublished: dict[str, set[str]] | None = None,
 ) -> str:
     """Render the issue body asking a domain owner to judge open items.
 
@@ -1149,6 +1162,8 @@ def render_review_issue(
             `questions`); the body links it instead of carrying the block.
         still: What is not settled yet (`still_with_analyst`), listed after
             the questions under its own heading and never asked.
+        unpublished: Per view, the comparisons that opted in to a sheet on no
+            published dashboard; a question naming one ends with a note.
 
     Returns:
         Markdown in the feature-request structure. Every count is masked and
@@ -1171,6 +1186,16 @@ def render_review_issue(
     question_lines = [
         f"Q{n}. {_ended('; '.join(question_parts(q)))} "
         f"Reason: {_with_task(question_reason(q), q['task'])}"
+        + "".join(
+            f" Note: `{cid}`'s sheet is on no published dashboard."
+            for cid in sorted(
+                {
+                    cid
+                    for view, ids in (unpublished or {}).items()
+                    for cid in defined_comparisons([q], view) & ids
+                }
+            )
+        )
         for n, q in enumerate(asked, start=1)
     ]
     also = also_decided(runs, decided)

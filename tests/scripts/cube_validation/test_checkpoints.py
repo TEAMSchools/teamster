@@ -19,6 +19,18 @@ def test_the_run_folder_is_the_one_save_local_writes(tmp_path):
     assert report.run_dir(tmp_path, "v", BUILD) == tmp_path / "v" / "2026-10-28T213500Z"
 
 
+def test_a_failed_write_keeps_the_old_file_and_leaves_no_temp_file(tmp_path):
+    path = tmp_path / "run.json"
+    checkpoints.write_text(path, "old")
+
+    # A lone surrogate cannot be encoded, so the write raises midway.
+    with pytest.raises(UnicodeEncodeError):
+        checkpoints.write_text(path, "new \ud800")
+
+    assert path.read_text() == "old"
+    assert [p.name for p in tmp_path.iterdir()] == ["run.json"]
+
+
 def test_a_checkpoint_round_trips_and_replaces_its_earlier_copy(tmp_path):
     folder = _folder(tmp_path)
 
@@ -51,7 +63,7 @@ def test_an_unfinished_folder_is_found_by_its_latest_checkpoint(tmp_path):
     got = checkpoints.find_unfinished(tmp_path, "v")
 
     assert got == checkpoints.Unfinished(
-        folder=folder, moment=BUILD, last_at=T0 + timedelta(hours=1), done=2
+        folder=folder, moment=BUILD, last_at=T0 + timedelta(hours=1)
     )
 
 

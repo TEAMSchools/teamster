@@ -7,7 +7,7 @@ filters and queries, cells, the SQL fingerprints and checkpoint slices, the row
 sides, the skip and refusal types, and `find-field`. The dashboard side is read
 as of a fact build's start and Cube as of its end. Every BigQuery query runs
 inside `Warehouse.budget`, and only aggregates come back: row-level
-comparisons run inside BigQuery through `reconcile.reconcile_sql`.
+comparisons run inside BigQuery through `reconcile.reconcile_script`.
 """
 
 from __future__ import annotations
@@ -30,7 +30,14 @@ from . import decisions
 from . import find_field as finder
 from . import reconcile, report, tableau
 from .bq import ViewHistoryError, Warehouse, job_failure
-from .config import WEEK_END_KEY, ColumnPair, Comparison, ViewConfig
+from .config import (
+    WEEK_END_KEY,
+    ColumnPair,
+    Comparison,
+    RowSpec,
+    ViewConfig,
+    fingerprint_data,
+)
 from .cube_client import (
     Compiled,
     Cube,
@@ -48,6 +55,23 @@ from .timetravel import PROJECT, AsOf, as_of, repin, utc_literal
 
 class Refusal(RuntimeError):
     """A command stopped on purpose; the message says why."""
+
+
+def rows_of(comparison: Comparison, to: str = "") -> RowSpec:
+    """The comparison's `rows`, refusing a comparison with none.
+
+    Args:
+        comparison: The comparison.
+        to: What the rows were wanted for, ending the refusal ("explain"
+            refuses "has no rows to explain"); none ends it at "has no rows".
+
+    Raises:
+        Refusal: The comparison has no `rows`.
+    """
+    if comparison.rows is None:
+        why = f" to {to}" if to else ""
+        raise Refusal(f"comparison {comparison.id!r} has no rows{why}")
+    return comparison.rows
 
 
 @dataclasses.dataclass(frozen=True)
@@ -178,10 +202,11 @@ def dashboard_predicate(
     return " AND ".join(parts) or "TRUE"
 
 
-def _any_cut_predicate(comparison: Comparison, with_filters: bool = True) -> str:
-    """OR of every cut, so a row-level reconcile counts each row once."""
+def _any_cut_predicate(comparison: Comparison) -> str:
+    """OR of every cut, so a row-level reconcile counts each row once. The
+    comparison's `dashboard_filters` are left out."""
     preds = [
-        dashboard_predicate(comparison, cut, with_filters)
+        dashboard_predicate(comparison, cut, with_filters=False)
         for cut in comparison_cuts(comparison)
     ]
     if "TRUE" in preds:
@@ -245,14 +270,11 @@ def _any_cut_cube_filters(view: str, comparison: Comparison) -> list[dict]:
     return [{"or": [{"and": f} for f in per_cut]}]
 
 
-def cell_query(
-    view: str, comparison: Comparison, cut: dict[str, Any], with_dims: bool = True
-) -> dict:
+def cell_query(view: str, comparison: Comparison, cut: dict[str, Any]) -> dict:
     """Return the Cube query for a comparison's cells under one cut."""
-    dims = comparison.dims if with_dims else []
     return {
         "measures": [member_name(view, comparison.measure)],
-        "dimensions": [member_name(view, d.cube) for d in dims],
+        "dimensions": [member_name(view, d.cube) for d in comparison.dims],
         "filters": _cut_cube_filters(view, comparison, cut)
         + scope_cube_filters(view, comparison),
     }
@@ -311,6 +333,27 @@ def date_cubes(cfg: ViewConfig) -> set[str]:
     return {cfg.time_dimension} if cfg.time_dimension else set()
 
 
+def grouped_dims(
+    cfg: ViewConfig, comparison: Comparison, first: int = 1
+) -> tuple[list[str], str]:
+    """The dims as the sheet query selects them, and its GROUP BY.
+
+    A time dim is selected as its DATE under its own name. The GROUP BY names
+    the dims by position, the first at column `first`; it is empty with no dims.
+    """
+    dates = date_cubes(cfg)
+    select = [
+        f"DATE({d.dashboard}) AS {d.dashboard}" if d.cube in dates else d.dashboard
+        for d in comparison.dims
+    ]
+    group = (
+        " GROUP BY " + ", ".join(str(i + first) for i in range(len(select)))
+        if select
+        else ""
+    )
+    return select, group
+
+
 def _select(name: str, source: str, is_date: bool) -> str:
     return f"DATE({source}) AS {name}" if is_date else f"{source} AS {name}"
 
@@ -331,10 +374,7 @@ def dashboard_rows_sql(cfg: ViewConfig, comparison: Comparison) -> str:
     latest value keeps every tied row, for the reconcile to report as
     duplicates.
     """
-    dates = date_cubes(cfg)
-    seen: dict[str, bool] = {}
-    for p in row_pairs(comparison):
-        seen.setdefault(p.dashboard, p.cube in dates)
+    seen = _row_dates(cfg, comparison)
     cols = [
         f"DATE({name}) AS {name}" if is_date else name for name, is_date in seen.items()
     ] + [
@@ -343,27 +383,92 @@ def dashboard_rows_sql(cfg: ViewConfig, comparison: Comparison) -> str:
             comparison.dashboard_filters, filter_flags(comparison), strict=True
         )
     ]
-    where = _any_cut_predicate(comparison, with_filters=False)
-    if scope := comparison.rows.dashboard_scope if comparison.rows else []:
+    # The ranking reads the row SQL's own columns: its date columns are
+    # already DATEs and its filter flags are columns.
+    return _rows_sql(
+        comparison,
+        ", ".join(cols),
+        keys={name: name for name in seen},
+        kept=[flag for flag, _ in filter_flags(comparison)],
+    )
+
+
+def dashboard_scoped_rows_sql(cfg: ViewConfig, comparison: Comparison) -> str:
+    """Return every column of the dashboard rows the reconcile reads.
+
+    The rows are `dashboard_rows_sql`'s: any cut, with no `dashboard_filters`
+    applied, inside `rows.dashboard_scope`, and cut by `rows.reduce` to the
+    latest per grain key, ranked the same way. Every column of the dashboard
+    view is kept, so the sheet query can read them in place of the view.
+    """
+    seen = _row_dates(cfg, comparison)
+    # Every column is selected raw, so the sheet query's own `DATE(day) AS day`
+    # reads the same input; only the partition keys read a date column as its
+    # DATE, as the reconcile's row SQL keys it. Each filter is read inline.
+    return _rows_sql(
+        comparison,
+        "*",
+        keys={
+            name: f"DATE({name})" if is_date else name for name, is_date in seen.items()
+        },
+        kept=[
+            f"COALESCE({dashboard_filter_sql(e)}, FALSE)"
+            for e in comparison.dashboard_filters
+        ],
+    )
+
+
+def _row_dates(cfg: ViewConfig, comparison: Comparison) -> dict[str, bool]:
+    """Each dashboard column the row SQL selects, and whether it is a date."""
+    dates = date_cubes(cfg)
+    seen: dict[str, bool] = {}
+    for p in row_pairs(comparison):
+        seen.setdefault(p.dashboard, p.cube in dates)
+    return seen
+
+
+def _rows_sql(
+    comparison: Comparison, select: str, *, keys: dict[str, str], kept: list[str]
+) -> str:
+    """The dashboard rows of every cut inside `rows.dashboard_scope`, cut by
+    `rows.reduce` to the latest per grain key within each cut.
+
+    Args:
+        comparison: The comparison.
+        select: The columns to select from the dashboard view.
+        keys: Per row column, how the ranking reads it; the grain's and the
+            varying captions' make the partition.
+        kept: Per `dashboard_filters` entry, as the ranking reads whether it
+            keeps the row.
+
+    Returns:
+        A SELECT over the dashboard view.
+    """
+    spec = comparison.rows
+    where = _any_cut_predicate(comparison)
+    if scope := spec.dashboard_scope if spec else []:
         parts = [where, *map(dashboard_filter_sql, scope)]
         where = " AND ".join(f"({p})" for p in parts)
-    reduce = comparison.rows.reduce if comparison.rows else {}
+    reduce = spec.reduce if spec else {}
     if reduce:
-        cols.append(f"{reduce['by']} AS __reduce_by")
+        select += f", {reduce['by']} AS __reduce_by"
     # trunk-ignore(bandit/B608): identifiers are validated in config.py and values are bound or literal-escaped
-    sql = f"SELECT {', '.join(cols)} FROM {dashboard_ref(comparison)} WHERE {where}"
-    if not reduce:
+    sql = f"SELECT {select} FROM {dashboard_ref(comparison)} WHERE {where}"
+    if spec is None or not reduce:
         return sql
     split = [comparison.filters[c].dashboard for c in _varying_captions(comparison)]
-    keys = ", ".join(unique([p.dashboard for p in comparison.rows.grain] + split))
-    kept = [f"{flag} AND " for flag, _ in filter_flags(comparison)]
+    partition = ", ".join(
+        keys[c] for c in unique([p.dashboard for p in spec.grain] + split)
+    )
     order = (
-        f"({''.join(kept)}TRUE) DESC, __reduce_by DESC" if kept else "__reduce_by DESC"
+        f"({''.join(f'{k} AND ' for k in kept)}TRUE) DESC, __reduce_by DESC"
+        if kept
+        else "__reduce_by DESC"
     )
     return (
         # trunk-ignore(bandit/B608): identifiers are validated in config.py
         f"SELECT * EXCEPT (__reduce_by) FROM ({sql}) "
-        f"QUALIFY RANK() OVER (PARTITION BY {keys} ORDER BY {order}) = 1"
+        f"QUALIFY RANK() OVER (PARTITION BY {partition} ORDER BY {order}) = 1"
     )
 
 
@@ -387,16 +492,20 @@ def sheet_query(
     comparison: Comparison,
     cut: dict[str, Any],
     with_filters: bool = True,
+    rows: str | None = None,
 ) -> str:
     """Return the sheet query over the dashboard rows under one cut, before time
     travel.
 
     `sheet_query` is an aggregate over the rows; `sheet_query_sql` is a template whose
     `{rows}`, `{where}` and `{dims}` are filled here. `with_filters` False
-    leaves out the `dashboard_filters`, to name the cells they drop.
+    leaves out the `dashboard_filters`, to name the cells they drop. `rows`,
+    when given, is read in place of every row of the dashboard view; left
+    out, the SQL is the one `sheet_query_fingerprint` covers.
     """
-    # trunk-ignore(bandit/B608): identifiers are validated in config.py and values are bound or literal-escaped
-    rows = f"SELECT * FROM {dashboard_ref(comparison)}"
+    if rows is None:
+        # trunk-ignore(bandit/B608): identifiers are validated in config.py and values are bound or literal-escaped
+        rows = f"SELECT * FROM {dashboard_ref(comparison)}"
     where = dashboard_predicate(comparison, cut, with_filters)
     names = [d.dashboard for d in comparison.dims]
     if comparison.sheet_query_sql:
@@ -407,16 +516,7 @@ def sheet_query(
         raise Refusal(
             f"comparison {comparison.id!r} has no sheet_query or sheet_query_sql"
         )
-    dates = date_cubes(cfg)
-    select = [
-        f"DATE({d.dashboard}) AS {d.dashboard}" if d.cube in dates else d.dashboard
-        for d in comparison.dims
-    ]
-    group = (
-        " GROUP BY " + ", ".join(str(i + 1) for i in range(len(select)))
-        if select
-        else ""
-    )
+    select, group = grouped_dims(cfg, comparison)
     return (
         # trunk-ignore(bandit/B608): identifiers are validated in config.py and values are bound or literal-escaped
         f"SELECT {', '.join([*select, f'{comparison.sheet_query} AS value'])} "
@@ -690,22 +790,19 @@ def side_fingerprints(
 
 
 def checkpoint_fingerprint(comparison: Comparison, fingerprints: dict[str, str]) -> str:
-    """What a comparison's saved work holds for: its config entry and both
-    sides' SQL. Any edit to either makes the saved work stale, but its
-    `definitions`, which change no result."""
+    """What a comparison's saved work holds for: its config entry, as
+    `config.fingerprint_data` reads it, and both sides' SQL. Any edit to
+    either makes the saved work stale."""
     return hashlib.sha256(
         json.dumps(
             [
-                dataclasses.asdict(dataclasses.replace(comparison, definitions={})),
+                fingerprint_data(comparison),
                 fingerprints,
             ],
             sort_keys=True,
             default=str,
         ).encode()
     ).hexdigest()
-
-
-SQL_BROKEN = report.SQL_BROKEN
 
 
 def reconcile_args(
@@ -791,8 +888,7 @@ def row_sides(
         Refusal: The comparison has no rows, or either side's SQL (cells and
             rows, expanded as of the moment) differs from what the run ran.
     """
-    if comparison.rows is None:
-        raise Refusal(f"comparison {comparison.id!r} has no rows to trace")
+    rows_of(comparison, "trace")
 
     ex = Expand(cfg, cube, schools, wh)
     cube_at = ex.at(ex.cube_sql(row_query(cfg.view, comparison), rows=True), build.end)
@@ -852,8 +948,8 @@ def sql_broken(exc: Exception) -> str:
     """Why a comparison's SQL cannot be built: a BigQuery error as fixed words
     with its job and reason code, never its message, which can quote values."""
     if isinstance(exc, GoogleAPIError):
-        return f"{SQL_BROKEN}: a lookup failed in BigQuery ({job_failure(exc)})"
-    return f"{SQL_BROKEN}: {exc}"
+        return f"{report.SQL_BROKEN}: a lookup failed in BigQuery ({job_failure(exc)})"
+    return f"{report.SQL_BROKEN}: {exc}"
 
 
 def group_from_json(data: dict) -> Group:
@@ -1009,12 +1105,19 @@ def _print_sheets(found: list[finder.Candidate], twbs: dict[str, str]) -> None:
     if not sheets:
         return
     print("\nSheets:")
+    roots = {
+        luid: finder.parse_workbook(twbs[luid])
+        for luid in dict.fromkeys(luid for luid, _, _ in sheets)
+    }
+    published = {luid: tableau.published_sheets(root) for luid, root in roots.items()}
     for luid, label, sheet in sheets:
-        shape = finder.sheet_shape(twbs[luid], sheet)
+        shape = finder.sheet_shape(roots[luid], sheet)
         print(
             f"  {sheet} ({label}): rows {', '.join(shape.rows) or 'none'}; "
             f"columns {', '.join(shape.cols) or 'none'}"
         )
+        if sheet not in published[luid]:
+            print(f"    {tableau.NOT_PUBLISHED}")
         export = (
             "long (set sheet_field to a Measure Names value)"
             if shape.long_export

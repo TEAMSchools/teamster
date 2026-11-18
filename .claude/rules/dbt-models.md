@@ -46,11 +46,10 @@ whether it was already reverted**:
 `git log -S '<config key>' -- <properties yml>`. A reverted perf change reads as
 an obvious win and CI passes for a while.
 
-A table model with a plan of hundreds of stages (straggler-fragile, e.g.
-[#4153](https://github.com/TEAMSchools/teamster/issues/4153)) usually inherits
-the depth from view upstreams: BigQuery inlines each view's full SQL per
-reference, recursively — a view ref'd 4x expands 4x. Check upstream
-materializations before flattening SQL. When flipping views to cron tables:
+A table model with a plan of hundreds of stages usually inherits the depth from
+view upstreams: BigQuery inlines each view's full SQL per reference, recursively
+— a view ref'd 4x expands 4x. Check upstream materializations before flattening
+SQL. When flipping views to cron tables:
 
 - Map EVERY consumer's refresh cadence first (exposure `cron_schedule`, Dagster
   schedules). An intraday consumer (hourly ops dashboard, 5x/day DDI suite)
@@ -128,11 +127,10 @@ stale from the CI error's `compiled_code` `from` clause: a ref resolving to
 
 A value-only change that alters a value's **format** (e.g. raw phone → E.164) is
 schema-safe but can silently break downstream extracts with positional / format
-assumptions — the shared `int_finalsite__student_contacts` E.164 change broke
-`rpt_clever__students`' `left(regexp_replace(phone, '\W'), 10)` (it truncated
-the 11-digit `+1…`). Before reformatting a value at a shared model, grep
-consumers for `left(` / `substr(` / digit-count assumptions on that column — CI
-won't catch it (compiles fine; no error).
+assumptions (a consumer's `left(…, 10)` truncates an 11-digit `+1…`). Before
+reformatting a value at a shared model, grep consumers for `left(` / `substr(` /
+digit-count assumptions on that column — CI won't catch it (compiles fine; no
+error).
 
 A doc-only inline SQL comment on a heavily-consumed intermediate still marks it
 `state:modified`, fanning CI's `state:modified+` rebuild across its whole
@@ -150,9 +148,8 @@ empty expansion still compiles clean.
 
 ### Comments and descriptions
 
-The content test is in `.claude/rules/comments.md`. dbt-specific: a `.sql`
-comment edit marks the model `state:modified` and widens CI's rebuild, so sweep
-comments beyond the block you are editing only when asked.
+Content test: `.claude/rules/comments.md`. Sweep comments beyond your block only
+when asked (a `.sql` comment marks the model `state:modified`; see above).
 
 ### Per-layer requirements
 
@@ -170,10 +167,8 @@ comments beyond the block you are editing only when asked.
 **All `rpt_`, `dim_*`, and `fct_*` models must**:
 
 1. Have `contract: enforced: true`
-2. Have a uniqueness test. The kipptaf `rpt_` models listed on
-   [#5990](https://github.com/TEAMSchools/teamster/issues/5990) lack one; add it
-   in any PR that modifies one (_Tests on marts and `rpt_` models_ in
-   `.claude/rules/dbt-yaml.md`).
+2. Have a uniqueness test; add a missing one in any PR that modifies the model
+   (_Tests on marts and `rpt_` models_ in `.claude/rules/dbt-yaml.md`).
 
 **Exceptions** — a kipptaf union view over district `stg_` or `int_` models (a
 `dbt_utils.union_relations` passthrough with no other logic), and a thin
@@ -202,10 +197,10 @@ tests that ref it and `relationships` tests pointing at it enabled (see
 _Disabling a model_ in `.claude/rules/dbt-yaml.md`); disable or remove those
 too.
 
-Exception, decided on #5162: a kipptaf `select *` union passthrough over
-district sources with no remaining `ref()` is deleted outright, source entries
-included. It holds no logic, and the district relations it read stay in place,
-so a forgotten consumer loses nothing that disabling would have preserved.
+Exception: a kipptaf `select *` union passthrough over district sources with no
+remaining `ref()` is deleted outright, source entries included. It holds no
+logic, and the district relations it read stay in place, so a forgotten consumer
+loses nothing that disabling would have preserved.
 
 ### Verifying a test-removal PR
 
@@ -223,9 +218,3 @@ REMOVED and since-added ones as ADDED.
 
 `<layer>_<source>__<parent>__<child>` — `stg_coupa__users__roles`,
 `int_deanslist__incidents__actions`, `int_focus__users__pivot`.
-
-### Legacy `base_` prefix
-
-Existing `base_` models are being renamed to `int_`
-([#2541](https://github.com/TEAMSchools/teamster/issues/2541)). Do not create
-new `base_` models.

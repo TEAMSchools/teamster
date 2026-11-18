@@ -7,7 +7,7 @@ from cube_validation import compare, coverage, results
 from cube_validation.config import ColumnPair, Comparison, RowSpec
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation.reconcile import Group, groups_from, reconcile_sql
+from cube_validation.reconcile import Group, groups_from, reconcile_script
 
 GRADE_5, GRADE_6 = '{"Grade": "5"}', '{"Grade": "6"}'
 SPEC = Comparison(
@@ -168,14 +168,15 @@ def test_a_row_both_sides_file_under_another_cut_is_a_group_in_both_cells(duck):
         "student BIGINT, grade_d VARCHAR, region_d VARCHAR, ok_d BOOLEAN",
         [(1, "5", "Miami", True), (2, "6", "Miami", True)],
     )
-    result = duck.rows(
-        reconcile_sql(
+    result = duck.script(
+        reconcile_script(
             "SELECT * FROM `teamster-332318.m.cube_t`",
             "SELECT * FROM `teamster-332318.d.dash_t`",
             SPEC.rows,
             SPEC.dims,
             cuts=[("c.grade = '5'", "d.grade_d = '5'"),
                   ("c.grade = '6'", "d.grade_d = '6'")],
+            table="saved_t",
         )
     )  # fmt: skip
 
@@ -197,14 +198,15 @@ def test_a_row_under_another_cut_is_a_group_with_no_group_by(duck):
     duck.table(
         "dash_t", "student BIGINT, grade_d VARCHAR, ok_d BOOLEAN", [(2, "6", True)]
     )  # fmt: skip
-    result = duck.rows(
-        reconcile_sql(
+    result = duck.script(
+        reconcile_script(
             "SELECT * FROM `teamster-332318.m.cube_t`",
             "SELECT * FROM `teamster-332318.d.dash_t`",
             SPEC.rows,
             [],
             cuts=[("c.grade = '5'", "d.grade_d = '5'"),
                   ("c.grade = '6'", "d.grade_d = '6'")],
+            table="saved_t",
         )
     )  # fmt: skip
 
@@ -228,8 +230,8 @@ def test_a_row_with_another_value_in_another_cell_sits_in_both_cells(duck):
         "student BIGINT, grade_d VARCHAR, region_d VARCHAR, ok_d BOOLEAN",
         [(2, "5", "Newark", False)],
     )
-    result = duck.rows(
-        reconcile_sql(
+    result = duck.script(
+        reconcile_script(
             "SELECT * FROM `teamster-332318.m.cube_t`",
             "SELECT * FROM `teamster-332318.d.dash_t`",
             SPEC.rows,
@@ -238,6 +240,7 @@ def test_a_row_with_another_value_in_another_cell_sits_in_both_cells(duck):
                 ("c.grade = '5'", "d.grade_d = '5'"),
                 ("c.grade = '6'", "d.grade_d = '6'"),
             ],
+            table="saved_t",
         )
     )
 
@@ -259,13 +262,14 @@ def test_a_row_with_another_value_in_the_same_cell_keeps_its_dims(duck):
         "student BIGINT, grade_d VARCHAR, region_d VARCHAR, ok_d BOOLEAN",
         [(2, "5", "Miami", False)],
     )
-    result = duck.rows(
-        reconcile_sql(
+    result = duck.script(
+        reconcile_script(
             "SELECT * FROM `teamster-332318.m.cube_t`",
             "SELECT * FROM `teamster-332318.d.dash_t`",
             SPEC.rows,
             SPEC.dims,
             cuts=[("c.grade = '5'", "d.grade_d = '5'")],
+            table="saved_t",
         )
     )
 
@@ -290,13 +294,14 @@ def _placed_cells(duck, cube, dash, cube_type="VARCHAR", dash_type="VARCHAR"):
         dash,
     )
     spec = dataclasses.replace(SPEC, cuts=[{"Grade": "5"}])
-    result = duck.rows(
-        reconcile_sql(
+    result = duck.script(
+        reconcile_script(
             "SELECT * FROM `teamster-332318.m.cube_t`",
             "SELECT * FROM `teamster-332318.d.dash_t`",
             spec.rows,
             spec.dims,
             cuts=[("c.grade = '5'", "d.grade_d = '5'")],
+            table="saved_t",
         )
     )
     groups = groups_from("c1", result, [GRADE_5])

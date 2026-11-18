@@ -19,10 +19,15 @@ from typing import Any
 import tableauserverclient as TSC
 
 from . import find_field as finder
-from . import tableau
+from . import read_sheet, tableau
 from .bq import Warehouse
-from .config import Comparison, ViewConfig, write_rebuild_check
-from .cube_client import Cube
+from .config import (
+    Comparison,
+    ConfigError,
+    ViewConfig,
+    find_comparison,
+    write_rebuild_check,
+)
 from .moment import WINDOW
 from .pipeline import (
     Refusal,
@@ -121,8 +126,7 @@ TABLEAU_ANSWERED = "Tableau answered"
 
 def _sheet_columns(twb_xml: str, sheet: str) -> list[ET.Element]:
     # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
-    root = ET.fromstring(twb_xml)
-    ws = next((w for w in root.iter("worksheet") if w.get("name") == sheet), None)
+    ws = tableau.worksheet(ET.fromstring(twb_xml), sheet)
     if ws is None:
         raise Refusal(f"the workbook has no worksheet {sheet!r}")
     return [
@@ -132,8 +136,19 @@ def _sheet_columns(twb_xml: str, sheet: str) -> list[ET.Element]:
     ]
 
 
-def _bare(name: str) -> str:
-    return name[1:-1] if name.startswith("[") and name.endswith("]") else name
+def _dim_names(comparison: Comparison, dim: str, columns: list[ET.Element]) -> set[str]:
+    """The names a dim may go by on the sheet: its dashboard name, a `filters`
+    caption mapped to it, and the caption of its sheet column."""
+    names = {dim}
+    names |= {
+        caption for caption, pair in comparison.filters.items() if pair.dashboard == dim
+    }
+    names |= {
+        col.get("caption") or ""
+        for col in columns
+        if tableau.bare_name(col.get("name") or "") == dim
+    }
+    return names
 
 
 def _export_columns(
@@ -145,17 +160,7 @@ def _export_columns(
     lower = {h.lower(): h for h in headers}
     mapping: dict[str, str] = {}
     for dim in comparison.dims:
-        names = {dim.dashboard}
-        names |= {
-            caption
-            for caption, pair in comparison.filters.items()
-            if pair.dashboard == dim.dashboard
-        }
-        names |= {
-            col.get("caption") or ""
-            for col in columns
-            if _bare(col.get("name") or "") == dim.dashboard
-        }
+        names = _dim_names(comparison, dim.dashboard, columns)
         found = [lower[n.lower()] for n in names if n and n.lower() in lower]
         if not found:
             raise Refusal(
@@ -254,9 +259,7 @@ def _parameter_captions(twb_xml: str) -> dict[str, str]:
     root = ET.fromstring(twb_xml)
     return {
         (col.get("name") or "").strip("[]"): col.get("caption") or ""
-        for ds in root.iter("datasource")
-        if ds.get("name") == "Parameters"
-        for col in ds.findall("column")
+        for col in tableau.parameter_columns(root)
     }
 
 
@@ -272,7 +275,7 @@ def sheet_gaps(twb_xml: str, comparison: Comparison) -> SheetGaps:
     plain missing field).
     """
     # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
-    ws = finder.worksheet(ET.fromstring(twb_xml), comparison.sheet or "")
+    ws = tableau.worksheet(ET.fromstring(twb_xml), comparison.sheet or "")
     if ws is None:
         raise Refusal(f"the workbook has no worksheet {comparison.sheet!r}")
     pairs = [*comparison.dims, *comparison.filters.values()]
@@ -334,7 +337,7 @@ def sheet_gaps(twb_xml: str, comparison: Comparison) -> SheetGaps:
     )
 
 
-TOTAL_LABEL = "All"
+TOTAL_LABELS = ("All", "*")
 
 
 def _alias_keys(columns: list[ET.Element], dim: str) -> dict[str, str]:
@@ -344,14 +347,58 @@ def _alias_keys(columns: list[ET.Element], dim: str) -> dict[str, str]:
     """
     out: dict[str, str] = {}
     for col in columns:
-        if _bare(col.get("name") or "") != dim:
+        if tableau.bare_name(col.get("name") or "") != dim:
             continue
         for alias in col.iter("alias"):
-            key, shown = alias.get("key") or "", alias.get("value") or ""
-            if len(key) > 1 and key[0] == key[-1] == '"':
-                key = key[1:-1]
-            out[shown] = key
+            out[alias.get("value") or ""] = tableau.unquote(alias.get("key"))
     return out
+
+
+def _shelf_dims(
+    comparison: Comparison, shaped: str, sheet: str, columns: list[ET.Element]
+) -> set[str]:
+    """The comparison's dims that sit on the sheet's rows or columns shelf.
+
+    A dim matches by its dashboard name, a column caption or a `filters`
+    caption. A dim off the shelves is a detail field, whose `*` is a real
+    value.
+    """
+    shape = finder.sheet_shape(shaped, sheet)
+    shelved = {n.lower() for n in [*shape.rows, *shape.cols]}
+    out: set[str] = set()
+    for dim in comparison.dims:
+        names = _dim_names(comparison, dim.dashboard, columns)
+        if any(n and n.lower() in shelved for n in names):
+            out.add(dim.dashboard)
+    return out
+
+
+def _ignored_headers(
+    headers: list[str],
+    mapping: dict[str, str],
+    value: str,
+    columns: list[ET.Element],
+    calcs: list[tableau.TableCalc],
+) -> set[str]:
+    """Export headers that name a measure or table calc other than the
+    compared value.
+
+    A dual axis repeats a row once per pane, and the panes differ only in such
+    a column.
+    """
+    names = {
+        read_sheet._export_name(n)
+        for col in columns
+        if col.get("role") == "measure"
+        for n in (col.get("caption") or "", tableau.bare_name(col.get("name") or ""))
+        if n
+    }
+    names |= {read_sheet._export_name(c.caption) for c in calcs}
+    return {
+        h
+        for h in headers
+        if h not in mapping and h != value and read_sheet._export_name(h) in names
+    }
 
 
 def _export_cells(
@@ -361,36 +408,41 @@ def _export_cells(
     value: str,
     columns: list[ET.Element],
     probe_rows: list[dict],
+    *,
+    shelf_dims: set[str],
+    ignored: set[str],
 ) -> tuple[list[dict], int, int]:
     """Turn export rows into sheet-query-shaped cells; count total and summed rows.
 
     An export shows a dim's alias (grade 0 as `K`), so each value goes back
     through the sheet's aliases. A sheet with totals exports them as rows whose
-    dim reads `All`; those are dropped, unless the sheet query has a real `All`
-    member for that dim. With `split_rows: sum`, rows that share every mapped
-    dim (split by a sheet field Cube lacks) are added into one cell; blanks are
-    skipped, and a cell of blanks stays blank.
+    dim reads `All`, or `*` for a dim in `shelf_dims`; those are dropped,
+    unless the sheet query has a real member with that label for that dim. A
+    dual axis repeats a row once per pane, so rows that match in every column
+    but `ignored` count once. With `split_rows: sum`, every row is kept, and
+    rows that share every mapped dim (split by a sheet field Cube lacks) are
+    added into one cell; blanks are skipped, and a cell of blanks stays blank.
     """
     aliases = {d.dashboard: _alias_keys(columns, d.dashboard) for d in comparison.dims}
-    real_all = {
-        d.dashboard
+    real = {
+        (d.dashboard, label)
         for d in comparison.dims
-        if any(str(r[d.dashboard]) == TOTAL_LABEL for r in probe_rows)
+        for label in TOTAL_LABELS
+        if any(str(r[d.dashboard]) == label for r in probe_rows)
     }
     cells: list[dict] = []
     totals = 0
-    # A dual axis exports one row per pane, identical in every column: count
-    # it once. A row that differs anywhere still reads as a repeat. Summed
-    # split rows keep every row, since 2 rows of a split field the export
-    # does not show can match in every column.
     seen: set[tuple] = set()
     for r in rows:
-        whole = tuple(sorted((k, str(v)) for k, v in r.items()))
+        whole = tuple(sorted((k, str(v)) for k, v in r.items() if k not in ignored))
         if whole in seen and comparison.split_rows != "sum":
             continue
         seen.add(whole)
         dims = {d: r[h] for h, d in mapping.items()}
-        if any(v == TOTAL_LABEL and d not in real_all for d, v in dims.items()):
+        if any(
+            (v == "All" or (v == "*" and d in shelf_dims)) and (d, v) not in real
+            for d, v in dims.items()
+        ):
             totals += 1
             continue
         dims = {d: aliases[d].get(v, v) for d, v in dims.items()}
@@ -443,6 +495,11 @@ def _capture(
     _require(comparison, "workbook", "sheet")
     workbook, sheet = comparison.workbook or "", comparison.sheet or ""
     twb = tbl.download_twb(workbook)
+    if not comparison.unpublished and sheet not in tableau.published_sheets(twb):
+        raise Refusal(
+            f"comparison {comparison.id!r}: sheet {sheet!r} is "
+            f"{tableau.NOT_PUBLISHED}; set unpublished: true to compare it anyway"
+        )
     parameters, shelves = comparison.parameters, comparison.shelves
     try:
         if parameters:
@@ -450,6 +507,10 @@ def _capture(
         shaped = tableau.set_shelves(twb, sheet, shelves).xml if shelves else twb
     except ValueError as exc:
         raise Refusal(f"comparison {comparison.id!r}: {exc}") from exc
+    if why := read_sheet.text_measure(
+        read_sheet.read_sheet(shaped, sheet), comparison.sheet_field
+    ):
+        raise Refusal(f"comparison {comparison.id!r}: {why}")
     columns = _sheet_columns(shaped, sheet)
     measures = [c.get("name") or "" for c in columns if c.get("role") == "measure"]
     if not measures:
@@ -542,6 +603,10 @@ def rebuild_sheet(
     """
     comparison = _comparison_by_id(cfg, path, comparison_id)
     _require(comparison, "workbook", "sheet", "dashboard_view", "decimals")
+    try:
+        find_comparison(path, comparison.id)
+    except ConfigError as exc:
+        raise Refusal(str(exc)) from exc
     twb, shaped, columns, exportable, browser, snap = _capture(
         comparison, tbl, captures
     )
@@ -551,6 +616,11 @@ def rebuild_sheet(
             "of warehouse history; rebuild after the next refresh"
         )
 
+    sheet = comparison.sheet or ""
+    shelf_dims = _shelf_dims(comparison, shaped, sheet, columns)
+    # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
+    ws = tableau.worksheet(ET.fromstring(shaped), sheet)
+    calcs = tableau.table_calcs(ws) if ws is not None else []
     exports: list[dict] = []
     probes: list[dict] = []
     totals_skipped = 0
@@ -568,10 +638,20 @@ def rebuild_sheet(
             rows = long_to_wide(rows, comparison.sheet_field)
             mapping, value = _export_columns(comparison, list(rows[0]), columns)
             cells, totals, summed = _export_cells(
-                comparison, rows, mapping, value, columns, probe_rows
+                comparison,
+                rows,
+                mapping,
+                value,
+                columns,
+                probe_rows,
+                shelf_dims=shelf_dims,
+                ignored=_ignored_headers(list(rows[0]), mapping, value, columns, calcs),
             )
             if totals:
-                print(f"cut {label}: skipped {totals} total rows ({TOTAL_LABEL})")
+                print(
+                    f"cut {label}: skipped {totals} total rows "
+                    f"({', '.join(TOTAL_LABELS)})"
+                )
             if summed:
                 print(f"cut {label}: summed {summed} split export rows into others")
             totals_skipped += totals
@@ -589,6 +669,11 @@ def rebuild_sheet(
         proof = tableau.match_export(comparison, exports, probes, twb_xml=twb, now=now)
     except ValueError as exc:
         raise Refusal(f"comparison {comparison.id!r}: {exc}") from exc
+    if proof.blanks_skipped:
+        print(
+            f"Skipped {proof.blanks_skipped} blank cells "
+            "(blank in the export, NULL in the sheet query)"
+        )
     for cut in browser:
         print(f"Check in the browser: {cut_label(cut)}")
     if not proof.matched:
@@ -620,16 +705,13 @@ def rebuild_sheet(
             "source_fingerprint": tableau.source_fingerprint(
                 twb, comparison.sheet or ""
             ),
+            # False only for a comparison set `unpublished: true`; `_capture`
+            # refuses any other unpublished sheet.
+            "published": sheet in tableau.published_sheets(twb),
             # `compare` lists every other cut as one to check in the browser.
             "cuts": [cut_label(cut) for cut in exportable],
             # `compare` lists these rows as totals no rebuild check covered.
             "totals_skipped": totals_skipped,
-            # The parameter values the copy showed; the fingerprint covers them.
-            **(
-                {"parameters": dict(comparison.parameters)}
-                if comparison.parameters
-                else {}
-            ),
             # The reshape the copy carried; `compare` names it, since the check
             # covers the reshaped grain, not the sheet's own.
             **({"shelves": comparison.shelves} if comparison.shelves else {}),
@@ -678,54 +760,98 @@ def _print_failures(
         print(f"  Full list: {path}")
 
 
+class WorkbookCache:
+    """Each workbook's publish time and file, asked of Tableau once.
+
+    Share one across `workbook_check` and `unpublished_sheets` so a compare
+    run downloads a republished workbook once. A Tableau error is kept as
+    well, so later comparisons on that workbook read it without asking again.
+    """
+
+    def __init__(self, tbl: tableau.Tableau) -> None:
+        self.tbl = tbl
+        self._updated: dict[str, datetime | TSC.ServerResponseError] = {}
+        self._twbs: dict[str, str | TSC.ServerResponseError] = {}
+
+    def updated(self, luid: str) -> datetime:
+        """The workbook's publish time.
+
+        Raises:
+            TSC.ServerResponseError: Tableau erred on this workbook, now or
+                on an earlier ask.
+        """
+        if luid not in self._updated:
+            try:
+                self._updated[luid] = self.tbl.workbook_updated(luid)
+            except TSC.ServerResponseError as exc:
+                self._updated[luid] = exc
+        got = self._updated[luid]
+        if isinstance(got, TSC.ServerResponseError):
+            raise got
+        return got
+
+    def twb(self, luid: str) -> str:
+        """The workbook's XML.
+
+        Raises:
+            TSC.ServerResponseError: Tableau erred on this workbook's download,
+                now or on an earlier ask.
+        """
+        if luid not in self._twbs:
+            try:
+                self._twbs[luid] = self.tbl.download_twb(luid)
+            except TSC.ServerResponseError as exc:
+                self._twbs[luid] = exc
+        got = self._twbs[luid]
+        if isinstance(got, TSC.ServerResponseError):
+            raise got
+        return got
+
+    def downloaded(self, luid: str) -> bool:
+        """True when the workbook's XML is already in hand."""
+        return isinstance(self._twbs.get(luid), str)
+
+
 def workbook_check(
-    cfg: ViewConfig,
     comparisons: list[Comparison],
     *,
     tbl: tableau.Tableau,
-    cube: Cube,
+    workbooks: WorkbookCache | None = None,
 ) -> list[str]:
-    """List the comparisons whose sheet or Cube members changed since their
-    rebuild check.
+    """List the comparisons whose sheet changed since their rebuild check.
 
     A workbook published after the check is downloaded once and its sheet
     compared by what the check covers: `fingerprint` (the sheet's formulas
     and filters) and `source_fingerprint` (its datasources' connection and
     filters). A republish that changed neither is printed as such and not
     listed. A rebuild check without `source_fingerprint` cannot rule out a datasource
-    change, so it is stale after any republish. A matched comparison that maps a
-    member Cube's `/meta` no longer lists is stale too, and one whose workbook
-    Tableau errs on reads `TABLEAU_ANSWERED` and its error.
+    change, so it is stale after any republish. One whose workbook Tableau
+    errs on reads `TABLEAU_ANSWERED` and its error.
 
     Args:
-        cfg: The view's config.
-        comparisons: The comparisons to check.
+        comparisons: The comparisons to check. `compare` skips one with no
+            rebuild check, or one mapping a member Cube's `/meta` lacks,
+            before it calls this; one with no rebuild check is passed over.
         tbl: Tableau, for each workbook's publish time and file.
-        cube: Cube, for its `/meta` members.
+        workbooks: The run's shared workbook cache; a new one on `tbl` when
+            omitted.
 
     Returns:
         One line per problem, each starting with its comparison's id and
         ending in what to do.
     """
-    proven = [c for c in comparisons if c.rebuild_check is not None]
-    stale = [
-        f"{line}, which Cube's model no longer has; fix the mapping and re-run "
-        "`rebuild-sheet`"
-        for line in missing_members(cfg, proven, cube.meta())
-    ]
-    twbs: dict[str, str] = {}
+    workbooks = WorkbookCache(tbl) if workbooks is None else workbooks
+    stale: list[str] = []
     for comparison in comparisons:
-        if not comparison.workbook:
-            continue
         proof = comparison.rebuild_check
-        if proof is None:
-            stale.append(f"{comparison.id}: no rebuild check")
+        if not comparison.workbook or proof is None:
             continue
         try:
-            updated = tbl.workbook_updated(comparison.workbook)
-            if comparison.workbook not in twbs and proof.workbook_updated_at:
-                if updated > datetime.fromisoformat(proof.workbook_updated_at):
-                    twbs[comparison.workbook] = tbl.download_twb(comparison.workbook)
+            updated = workbooks.updated(comparison.workbook)
+            republished = bool(proof.workbook_updated_at) and updated > (
+                datetime.fromisoformat(proof.workbook_updated_at or "")
+            )
+            twb = workbooks.twb(comparison.workbook) if republished else ""
         except TSC.ServerResponseError as exc:
             # One workbook's error is its comparisons' alone.
             stale.append(
@@ -745,7 +871,7 @@ def workbook_check(
             f"workbook published {updated.isoformat()}, after the rebuild check's "
             f"{proof.workbook_updated_at}"
         )
-        twb, sheet = twbs[comparison.workbook], comparison.sheet or ""
+        sheet = comparison.sheet or ""
         try:
             formulas = tableau.formula_fingerprint(twb, sheet)
             sources = tableau.source_fingerprint(twb, sheet)
@@ -775,3 +901,61 @@ def workbook_check(
                 f"{comparison.id}: republished {updated.isoformat()}, sheet unchanged"
             )
     return stale
+
+
+def unpublished_sheets(
+    comparisons: list[Comparison],
+    *,
+    tbl: tableau.Tableau,
+    workbooks: WorkbookCache | None = None,
+) -> dict[str, str]:
+    """Name the comparisons whose sheet no published dashboard shows.
+
+    A comparison with `unpublished: true` or no `sheet` is never listed. A
+    workbook is downloaded once, and only when one of its comparisons' check
+    does not record that the sheet is published, or the workbook was
+    published after the check.
+
+    Args:
+        comparisons: The comparisons to check.
+        tbl: Tableau, for each workbook's publish time and file.
+        workbooks: The run's shared workbook cache; a new one on `tbl` when
+            omitted.
+
+    Returns:
+        Each such comparison's id and why it is skipped; a workbook Tableau
+        errs on reads `TABLEAU_ANSWERED` and its error.
+    """
+    workbooks = WorkbookCache(tbl) if workbooks is None else workbooks
+    skipped: dict[str, str] = {}
+    for comparison in comparisons:
+        proof = comparison.rebuild_check
+        if (
+            comparison.unpublished
+            or not comparison.workbook
+            or not comparison.sheet
+            or proof is None
+        ):
+            continue
+        luid = comparison.workbook
+        try:
+            if not workbooks.downloaded(luid):
+                at = proof.workbook_updated_at
+                if (
+                    proof.published is True
+                    and at
+                    and workbooks.updated(luid) <= datetime.fromisoformat(at)
+                ):
+                    continue
+            twb = workbooks.twb(luid)
+        except TSC.ServerResponseError as exc:
+            skipped[comparison.id] = (
+                f"the workbook could not be checked: {TABLEAU_ANSWERED} "
+                f"{exc.code} {exc.summary}"
+            )
+            continue
+        if comparison.sheet not in tableau.published_sheets(twb):
+            skipped[comparison.id] = (
+                f"{tableau.NOT_PUBLISHED}; set unpublished: true to compare it anyway"
+            )
+    return skipped

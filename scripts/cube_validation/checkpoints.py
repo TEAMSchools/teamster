@@ -34,24 +34,31 @@ class Unfinished:
     folder: Path
     moment: Build
     last_at: datetime
-    done: int
     # The fact table the run read (`ViewConfig.fact`), so a run of another
     # (a `--fact-dataset` dev build) never resumes it.
     fact: str = ""
 
 
-def _write_json(path: Path, data: dict) -> None:
-    """Replace `path` whole, so a stop mid-write keeps the last whole file."""
-    _write_text(path, json.dumps(data))
+def write_json(path: Path, data: dict) -> None:
+    """Replace `path` with `data` as compact JSON, whole (see `write_text`)."""
+    write_text(path, json.dumps(data))
 
 
-def _write_text(path: Path, text: str) -> None:
-    """Replace `path` whole, so a stop mid-write keeps the last whole file."""
+def write_text(path: Path, text: str) -> None:
+    """Replace `path` whole, so a stop mid-write keeps the last whole file.
+
+    Writes a temp file in the folder (made if missing), then `os.replace`s it;
+    a failed write removes the temp file.
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.")
-    with os.fdopen(fd, "w") as f:
-        f.write(text)
-    os.replace(tmp, path)
+    try:
+        with os.fdopen(fd, "w") as f:
+            f.write(text)
+        os.replace(tmp, path)
+    except BaseException:
+        Path(tmp).unlink(missing_ok=True)
+        raise
 
 
 def _read_state(folder: Path) -> dict | None:
@@ -61,22 +68,14 @@ def _read_state(folder: Path) -> dict | None:
         return None
 
 
-def _moment_json(moment: Build) -> dict:
-    return {
-        "start": moment.start.isoformat(),
-        "end": moment.end.isoformat(),
-        "job_id": moment.job_id,
-    }
-
-
 def start(folder: Path, moment: Build, process: str, fact: str = "") -> None:
     """Mark the folder's run of `fact` unfinished at `moment`, keeping what
     earlier processes spent, and add `process` at $0."""
     spent = (_read_state(folder) or {}).get("spent", {})
-    _write_json(
+    write_json(
         folder / STATE,
         {
-            "moment": _moment_json(moment),
+            "moment": moment.to_json(),
             "fact": fact,
             "finished": False,
             "spent": {**spent, process: spent.get(process, 0.0)},
@@ -87,13 +86,13 @@ def start(folder: Path, moment: Build, process: str, fact: str = "") -> None:
 def finish(folder: Path) -> None:
     """Mark the folder's run finished: a later `compare` does not resume it."""
     state = _read_state(folder) or {}
-    _write_json(folder / STATE, {**state, "finished": True})
+    write_json(folder / STATE, {**state, "finished": True})
 
 
 def record_spend(folder: Path, process: str, usd: float) -> None:
     """Record what `process` has spent so far on this run."""
     state = _read_state(folder) or {}
-    _write_json(
+    write_json(
         folder / STATE, {**state, "spent": {**state.get("spent", {}), process: usd}}
     )
 
@@ -113,7 +112,7 @@ def write(
     folder: Path, comparison_id: str, fingerprint: str, data: dict, at: datetime
 ) -> None:
     """Save a finished comparison's slice, replacing any earlier one."""
-    _write_json(
+    write_json(
         _file(folder, comparison_id),
         {
             "comparison": comparison_id,
@@ -147,16 +146,10 @@ def unfinished(folder: Path) -> Unfinished | None:
     entries = _entries(folder)
     if not entries:
         return None
-    m = state["moment"]
     return Unfinished(
         folder=folder,
-        moment=Build(
-            datetime.fromisoformat(m["start"]),
-            datetime.fromisoformat(m["end"]),
-            m["job_id"],
-        ),
+        moment=Build.from_json(state["moment"]),
         last_at=max(datetime.fromisoformat(e["at"]) for e in entries),
-        done=len(entries),
         fact=state.get("fact", ""),
     )
 
@@ -192,4 +185,4 @@ def clear(folder: Path, keep_spend_of: str | None = None) -> None:
     for name in (STATE, TRIAGE_PROGRESS):
         (folder / name).unlink(missing_ok=True)
     if keep and state.get("spent"):
-        _write_json(folder / STATE, {"finished": False, "spent": state["spent"]})
+        write_json(folder / STATE, {"finished": False, "spent": state["spent"]})

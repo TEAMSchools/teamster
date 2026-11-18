@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -19,12 +20,20 @@ TS = datetime(2026, 10, 22, 19, 0, 0, tzinfo=timezone.utc)
 CLAUSE = "FOR SYSTEM_TIME AS OF TIMESTAMP '2026-10-22 19:00:00.000000+00:00'"
 
 
+@dataclass(frozen=True)
+class _Entry:
+    """A catalog table: its kind and, for a view, the SQL it had."""
+
+    kind: str
+    view_sql: str | None
+
+
 class FakeCatalog:
-    def __init__(self, tables: dict[str, TableInfo]):
+    def __init__(self, tables: dict[str, _Entry]):
         self._tables = tables
 
     def table(self, dataset: str, name: str) -> TableInfo:
-        return self._tables[f"{dataset}.{name}"]
+        return TableInfo(self._tables[f"{dataset}.{name}"].kind)
 
     def view_sql_as_of(self, dataset: str, name: str, ts: datetime) -> str:
         view_sql = self._tables[f"{dataset}.{name}"].view_sql
@@ -41,9 +50,7 @@ def test_cube_table_gets_alias_before_clause():
         "dim_dates",
         "dim_regions",
     ]
-    catalog = FakeCatalog(
-        {f"kipptaf_marts.{n}": TableInfo("TABLE", None) for n in names}
-    )
+    catalog = FakeCatalog({f"kipptaf_marts.{n}": _Entry("TABLE", None) for n in names})
     ts = datetime(2026, 10, 22, 20, 44, 4, tzinfo=timezone.utc)
 
     result = as_of(sql, ts, catalog)
@@ -61,11 +68,11 @@ def test_view_is_inlined_recursively():
     sql = "SELECT 1 FROM  kipptaf_marts.dim_locations  AS `locations`"
     catalog = FakeCatalog(
         {
-            "kipptaf_marts.dim_locations": TableInfo(
+            "kipptaf_marts.dim_locations": _Entry(
                 "VIEW",
                 "select * from `teamster-332318`.`kipptaf_google_sheets`.`stg_x` as x",
             ),
-            "kipptaf_google_sheets.stg_x": TableInfo("TABLE", None),
+            "kipptaf_google_sheets.stg_x": _Entry("TABLE", None),
         }
     )
 
@@ -81,9 +88,7 @@ def test_view_is_inlined_recursively():
 
 def test_quoted_ref_is_left_alone():
     body = (FIXTURES / "view_union.sql").read_text()
-    catalog = FakeCatalog(
-        {"kippmiami_focus.stg_focus__schools": TableInfo("TABLE", None)}
-    )
+    catalog = FakeCatalog({"kippmiami_focus.stg_focus__schools": _Entry("TABLE", None)})
 
     result = as_of(body, TS, catalog)
 
@@ -100,7 +105,7 @@ def test_quoted_ref_is_left_alone():
 
 def test_external_table_is_read_live():
     sql = "SELECT 1 FROM ds.sheet AS `s`"
-    catalog = FakeCatalog({"ds.sheet": TableInfo("EXTERNAL", None)})
+    catalog = FakeCatalog({"ds.sheet": _Entry("EXTERNAL", None)})
 
     result = as_of(sql, TS, catalog)
 
@@ -131,11 +136,7 @@ def test_pin_clock_variants():
 
 def test_view_depth_limit():
     catalog = FakeCatalog(
-        {
-            "ds.loop": TableInfo(
-                "VIEW", "select * from `teamster-332318`.`ds`.`loop` as l"
-            )
-        }
+        {"ds.loop": _Entry("VIEW", "select * from `teamster-332318`.`ds`.`loop` as l")}
     )
 
     with pytest.raises(ValueError, match="depth"):
@@ -144,7 +145,7 @@ def test_view_depth_limit():
 
 def test_timestamp_is_normalized_to_utc():
     eastern = timezone(timedelta(hours=-4))
-    catalog = FakeCatalog({"ds.t": TableInfo("TABLE", None)})
+    catalog = FakeCatalog({"ds.t": _Entry("TABLE", None)})
 
     result = as_of(
         "from ds.t as `t`", datetime(2026, 10, 22, 15, 0, 0, tzinfo=eastern), catalog
@@ -187,12 +188,12 @@ def test_pin_clock_unbalanced_is_refused():
 def test_clock_inside_inlined_view_is_pinned():
     catalog = FakeCatalog(
         {
-            "ds.v": TableInfo(
+            "ds.v": _Entry(
                 "VIEW",
                 "select current_date as d, current_timestamp() as t "
                 "from `teamster-332318`.`ds`.`base` as b",
             ),
-            "ds.base": TableInfo("TABLE", None),
+            "ds.base": _Entry("TABLE", None),
         }
     )
 
@@ -205,7 +206,7 @@ def test_clock_inside_inlined_view_is_pinned():
 
 def test_dbt_ref_after_join_and_unaliased_ref():
     catalog = FakeCatalog(
-        {"ds.a": TableInfo("TABLE", None), "ds.b": TableInfo("TABLE", None)}
+        {"ds.a": _Entry("TABLE", None), "ds.b": _Entry("TABLE", None)}
     )
     sql = "select 1 from `teamster-332318`.`ds`.`a` join `teamster-332318`.`ds`.`b` as b on true"
 
@@ -217,9 +218,7 @@ def test_dbt_ref_after_join_and_unaliased_ref():
 
 
 def test_comma_joined_from_list_is_refused():
-    catalog = FakeCatalog(
-        {"d.t": TableInfo("TABLE", None), "d.u": TableInfo("TABLE", None)}
-    )
+    catalog = FakeCatalog({"d.t": _Entry("TABLE", None), "d.u": _Entry("TABLE", None)})
 
     with pytest.raises(ValueError, match="comma"):
         as_of("select 1 from d.t as `x`, d.u as `y`", TS, catalog)
@@ -228,7 +227,7 @@ def test_comma_joined_from_list_is_refused():
 def test_a_dbt_ref_with_a_bare_alias_keeps_it_before_the_clause():
     # `dbt_utils.deduplicate` writes `from <relation> original`.
     catalog = FakeCatalog(
-        {"ds.t": TableInfo("TABLE", None), "ds.v": TableInfo("VIEW", "select 1 as x")}
+        {"ds.t": _Entry("TABLE", None), "ds.v": _Entry("VIEW", "select 1 as x")}
     )
     sql = (
         "select 1 from `teamster-332318`.`ds`.`t` original\n"
@@ -246,7 +245,7 @@ def test_a_dbt_ref_with_a_bare_alias_keeps_it_before_the_clause():
 def test_a_ref_in_a_comment_is_left_out_not_inlined():
     # dbt keeps `-- depends_on: {{ ref(...) }}` lines in compiled SQL.
     catalog = FakeCatalog(
-        {"ds.t": TableInfo("TABLE", None), "ds.v": TableInfo("VIEW", "select\n2")}
+        {"ds.t": _Entry("TABLE", None), "ds.v": _Entry("VIEW", "select\n2")}
     )
     sql = (
         "select '--x', \"/*y*/\" from `teamster-332318`.`ds`.`t`\n"
@@ -262,7 +261,7 @@ def test_a_ref_in_a_comment_is_left_out_not_inlined():
 
 
 def test_a_comma_before_unnest_is_not_a_second_table():
-    catalog = FakeCatalog({"ds.a": TableInfo("TABLE", None)})
+    catalog = FakeCatalog({"ds.a": _Entry("TABLE", None)})
     sql = "select r from `teamster-332318`.`ds`.`a` as a,\n    unnest(a.regions) as r"
 
     result = as_of(sql, TS, catalog)
@@ -272,7 +271,7 @@ def test_a_comma_before_unnest_is_not_a_second_table():
 
 
 def test_unaliased_cube_style_ref_is_refused():
-    catalog = FakeCatalog({"d.t": TableInfo("TABLE", None)})
+    catalog = FakeCatalog({"d.t": _Entry("TABLE", None)})
 
     with pytest.raises(ValueError, match="not recognized"):
         as_of("select 1 from d.t x", TS, catalog)
@@ -289,7 +288,7 @@ def test_unaliased_cube_style_ref_is_refused():
     ],
 )
 def test_a_refused_ref_names_the_form_that_is_read(ref):
-    catalog = FakeCatalog({"kipptaf_marts.dim_assessments": TableInfo("TABLE", None)})
+    catalog = FakeCatalog({"kipptaf_marts.dim_assessments": _Entry("TABLE", None)})
 
     with pytest.raises(ValueError, match="each part in its own backticks") as err:
         as_of(f"select 1 from {ref} as r", TS, catalog)
@@ -308,8 +307,8 @@ def test_extract_from_is_not_a_table_ref():
 def test_repin_moves_only_the_named_tables():
     catalog = FakeCatalog(
         {
-            "ds.a": TableInfo("TABLE", None),
-            "ds.b": TableInfo("TABLE", None),
+            "ds.a": _Entry("TABLE", None),
+            "ds.b": _Entry("TABLE", None),
         }
     )
     sql = (
@@ -344,7 +343,7 @@ def test_strip_comments_drops_hash_comments_outside_quotes():
 def test_a_table_before_unpivot_is_pinned_inside_a_subquery(alias):
     import sqlglot
 
-    catalog = FakeCatalog({"ds.t": TableInfo("TABLE", None)})
+    catalog = FakeCatalog({"ds.t": _Entry("TABLE", None)})
     sql = f"select * from `teamster-332318`.`ds`.`t`{alias} unpivot (v for k in (a, b))"
 
     result = as_of(sql, TS, catalog)

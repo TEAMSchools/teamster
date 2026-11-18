@@ -70,10 +70,10 @@ Claude Code hooks communicate decisions via **stdout JSON + exit code 0**:
 - **PostToolUse redact**: exit 0 with
   `{"hookSpecificOutput": {"updatedToolOutput": <redacted tool_response>, ...}}`.
   PostToolUse cannot deny: the tool already ran, and `permissionDecision` is
-  silently ignored on this event (the scanner emitted it for months with no
-  effect). `updatedToolOutput` must keep the tool's output shape or the harness
-  drops it and shows the original. `{"decision": "block", "reason": ...}` ends
-  the turn with a warning and is used only when there is nothing to redact.
+  silently ignored on this event. `updatedToolOutput` must keep the tool's
+  output shape or the harness drops it and shows the original.
+  `{"decision": "block", "reason": ...}` ends the turn with a warning and is
+  used only when there is nothing to redact.
 
 **Exit 1 is a non-blocking error** — Claude Code logs it but executes the tool
 anyway. Never use `exit 1` to deny. Never write deny JSON to stderr (`>&2`). The

@@ -25,27 +25,20 @@ and diagnostics are in the `cube-ops` skill.
   `SELECT t.*` is separately forbidden: it silently breaks the moment the base
   model gains a same-named column. The Cube custom-calendar **range-join
   recipe** (`BETWEEN` / `>=`) applies only to a _join's_ `sql:` predicate — it
-  is NOT a license for a `JOIN` inside a cube-body `sql:`. (Cube's own dbt
-  guidance and the `original_sql` pre-agg confirm the one-model rule.) The
-  one-model rule holds with zero exceptions: SCD2 period-intersection grains
-  (`staff_work_history` ← `dim_staff_work_history`,
-  `staff_reporting_relationships` ← `dim_staff_reporting_periods`) are
-  materialized in dbt marts and read via `sql_table:`, not built in a cube-body
-  `sql:`.
+  is NOT a license for a `JOIN` inside a cube-body `sql:`. SCD2
+  period-intersection grains are dbt marts read via `sql_table:`.
 - **Naming.** Cube `name:` always matches its filename, and neither carries the
   warehouse `dim_`/`fct_` prefix — the file `conformed/dates.yml` defines
   `name: dates` reading `sql_table: kipptaf_marts.dim_dates`. **Domain-prefix
   rule:** student-domain cubes start with `student`
   (`student_attendance_enrollment_daily`,
   `student_attendance_enrollment_periods`, `student_school_enrollments`,
-  `students`); staff-domain cubes start with `staff`. This is an organizational
-  convention only: every view enforces access through its own `access_policy`
-  matching a `securityContext` group (see View access policies below); a
-  misnamed cube has no security consequence, but keep the convention so the
-  domain is legible from the name. Conformed dims (`dates`, `locations`,
-  `regions`, `terms`, `school_calendars`) are deliberately unprefixed — they
-  carry no domain access tier. Student views are single, collapsed views named
-  `<domain>_view` (`student_attendance_enrollment_daily_view`,
+  `students`); staff-domain cubes start with `staff`. Naming is organizational
+  only; access comes from each view's `access_policy`. Conformed dims (`dates`,
+  `locations`, `regions`, `terms`, `school_calendars`) are deliberately
+  unprefixed — they carry no domain access tier. Student views are single,
+  collapsed views named `<domain>_view`
+  (`student_attendance_enrollment_daily_view`,
   `student_attendance_enrollment_periods_view`,
   `student_section_enrollments_view`, `student_assessment_scores_view`) — a view
   can't share a bare name with its same-domain cube, hence the `_view` suffix.
@@ -80,19 +73,15 @@ and diagnostics are in the `cube-ops` skill.
   reference a time dimension in a join `sql:`. Cube substitutes the
   query-timezone conversion (`convertTz`) into join predicates, so
   `{dates.date_day} = CAST({CUBE}.date_key AS TIMESTAMP)` matches zero rows
-  under any non-UTC query timezone (#4298). Join on raw DATE keys instead
+  under any non-UTC query timezone. Join on raw DATE keys instead
   (`{dates.date_key} = {CUBE}.date_key`). A bare `DATE` column is NOT an
   alternative to the cast: Cube always emits `TIMESTAMP` literals, so a
   `type: time` dimension over an uncast DATE fails with
   `No matching signature for operator >= for argument types: DATE, TIMESTAMP`.
 - **Qualify the column with `{CUBE}` in any expression-bodied dimension whose
   column name also exists on a joined cube.** Cube auto-qualifies a scalar
-  `sql: <column>` but NOT an expression, so `sql: CAST(date_key AS TIMESTAMP)`
-  on `student_attendance_enrollment_daily` was ambiguous against
-  `dim_dates.date_key` and **filtering that published member failed outright**
-  with `Column name date_key is ambiguous`. Grouping by it compiled fine — the
-  asymmetry is why this survives review, so check filters, not just group-bys.
-  Same root cause as the #4546 `CONCAT` note on `dates.academic_year_label`.
+  `sql: <column>` but NOT an expression. Filtering (not grouping) on such a
+  member fails with `Column name … is ambiguous`, so test filters.
 - **A date filter routed through the `dates` join cannot prune a partitioned
   fact.** `dates_date_day` compiles to a predicate on `dim_dates`
   (`dates.date_timestamp >= TIMESTAMP(?)`), and BigQuery cannot prune a fact's
@@ -101,11 +90,10 @@ and diagnostics are in the `cube-ops` skill.
   description routes single-date and range filters there.
   `fct_student_attendance_enrollment_daily` is
   `PARTITION BY DATE_TRUNC(date_key, MONTH)` and
-  `student_attendance_enrollment_daily.attendance_date` is that member: a
-  single-date headcount through it reads about 20x fewer bytes than through
-  `dates_date_day`, for identical rows. A `CAST` around the partitioning column
-  does NOT block pruning. Keep the `dates_*` members for grouping and for
-  academic-year / month / week-of questions, where they are the only path.
+  `student_attendance_enrollment_daily.attendance_date` is that member. A `CAST`
+  around the partitioning column does NOT block pruning. Keep the `dates_*`
+  members for grouping and for academic-year / month / week-of questions, where
+  they are the only path.
 - **Hidden helper measures** prefix with `_` and set `public: false` (see
   `_count_tier_1_2` on `student_attendance_enrollment_periods`).
 - **`description:` says what a member is; `meta.ai_context:` says how to use
@@ -160,9 +148,7 @@ and diagnostics are in the `cube-ops` skill.
   within a comparable scope (`avg_scale_score` / `avg_percent_correct` pooled
   across incompatible assessment sources). Give such scope-bound measures a
   leading `Grain: ... meaningful only within {scope} ... silent-failure trap`
-  clause in `description:` (#4476). No schema field enforces this — a
-  `reaggregatable` boolean was rejected because "scope-bound" isn't
-  machine-detectable; it's a review-checked convention.
+  clause in `description:`. This is a review-checked convention.
 - **Folders group dimensions only.** Cube Cloud separates measures natively;
   don't list measures under `members:`.
 - **Folder member naming.** Bare for top-cube members; `<prefix>_<member>` for
@@ -176,24 +162,22 @@ and diagnostics are in the `cube-ops` skill.
   `build_range_end`.** Without them Cube derives the range from the
   `time_dimension` min/max — and a `dates.date_day` anchor routes through
   `dim_dates` (calendar spine to 9999), so the refresh worker enumerates
-  thousands of empty yearly partitions on the post-merge prod redeploy (#4460).
-  Bound to real data, and end the range at the latest date a row can carry, not
+  thousands of empty yearly partitions on the post-merge prod redeploy. Bound to
+  real data, and end the range at the latest date a row can carry, not
   `CURRENT_DATE`: rows past the end are missing from every query the rollup
   serves, with no fallback to the fact. A refresh-key window must reach the same
   end, or future partitions never rebuild. Cube rebuilds a changed pre-agg on
   merge to `main`, so validate the build stays bounded on a branch staging
   deployment FIRST — confirm the partition count via `JOBS_BY_PROJECT` for
   `cube-cloud@teamster-332318`.
-- **Measure Cube's own overhead before proposing a pre-aggregation.** It runs
-  about a second per query on the student views (planning, Cube Store transport,
-  connection) and exceeds BigQuery execution time on most of them, so a pre-agg
-  removes the smaller half: even a perfect one saves a few seconds of the MCP's
-  55-second budget. Also check additivity first: `count_distinct` is
-  non-additive as a **rollup** property, so a day-grain rollup serves day-grain
-  queries and cannot reaggregate to month or year — you would need one pre-agg
-  per grain, or `count_distinct_approx` (HLL, wrong for a reported headcount).
-  Partitioning the underlying mart is usually the cheaper win; see the
-  partition-pruning rule under Authoring conventions.
+- **Measure Cube's own overhead before proposing a pre-aggregation.** Cube's
+  per-query overhead usually exceeds BigQuery time, so a pre-agg saves little.
+  Also check additivity first: `count_distinct` is non-additive as a **rollup**
+  property, so a day-grain rollup serves day-grain queries and cannot
+  reaggregate to month or year — you would need one pre-agg per grain, or
+  `count_distinct_approx` (HLL, wrong for a reported headcount). Partitioning
+  the underlying mart is usually the cheaper win; see the partition-pruning rule
+  under Authoring conventions.
 - **Do not add a custom granularity for academic-year buckets.** Use the
   `academic_year` dimension: July bucketing already lives in `dim_dates`, and an
   `offset` granularity costs more slot time for the same answer. `origin` is
@@ -255,13 +239,10 @@ reason about.
   domain-agnostic, reused as-is when comp/observations/benefits views are built.
   `tests/cube/test_cube_schema.py` checks that every `staff_pii_scope` member in
   `access.js` is exposed only behind `staff-pii-*` groups.
-- **No aggregate-demographics view yet.** A `staff_summary` view once exposed
-  `gender_identity`/`race`/`is_hispanic` as open, unscoped aggregate breakdowns
-  — removed because small-cell slices (e.g. location × race) can re-identify an
-  individual, and suppression isn't built. Re-introduce only once
+- **No demographic-aggregate view, and no demographic fields on
+  `staff_directory`,** until
   [#4237](https://github.com/TEAMSchools/teamster/issues/4237) (small-cell
-  suppression) ships; don't add demographic fields to `staff_directory` in the
-  meantime as a workaround.
+  suppression) ships.
 - **Forward-compatible staff tiers**: `staff-compensation`,
   `staff-observations`, `staff-benefits` are emitted by `buildGroups` when the
   corresponding `*_scope` column is non-`none`, but no view has an
@@ -284,10 +265,10 @@ assessment views, which join `locations` unprefixed — bare
 bracketed form: `values: ["{ securityContext.region_key }"]`.
 `operator: equals` + array value compiles to SQL `IN`. An **empty** array does
 NOT compile to `IN ()`/zero rows — Cube (Tesseract) throws "Values required for
-filter" and fails the query (fail-closed, but a hard error, not a clean deny;
-#4269). `access.buildGroups` therefore does not emit a staff-pii group whose
-remit/chain array resolved empty, so such a viewer takes the no-group
-default-deny path instead of hitting that error.
+filter" and fails the query (fail-closed, but a hard error, not a clean deny).
+`access.buildGroups` therefore does not emit a staff-pii group whose remit/chain
+array resolved empty, so such a viewer takes the no-group default-deny path
+instead of hitting that error.
 
 **Scope selection is group-based, not `conditions.if`-based.** `conditions.if`
 only compiles a bare truthy reference (`if: "{ userAttributes.x }"`) — a `==`
@@ -333,26 +314,23 @@ access policies above). `cube.js` exports exactly `driverFactory`,
   derived from `iat`, which rejects a stale cached Playground token and any
   token with no `iat` at all. Cube Cloud's `iss: "cubecloud"` context never
   reaches `jwt.verify` — it bypasses `checkAuth` entirely and is handled in
-  `contextToGroups` (#4526). **Every 403 names the failed check** via
+  `contextToGroups`. **Every 403 names the failed check** via
   `jwtRejectionReason` (too-old-from-`iat` with the re-mint step / expired past
   `exp` / bad signature pointing at this deployment's `CUBEJS_API_SECRET` /
-  missing `iat`); a bare "Invalid token" for all of them is what made the
-  `maxAge` cap read as an access bug. Keep them distinguishable.
+  missing `iat`). Keep them distinguishable.
 - **`checkSqlAuth` (SQL API)** returns
   `{ password: process.env.CUBEJS_SQL_PASSWORD, securityContext }` — Cube
   validates the presented password against the RETURNED one, so returning `null`
   rejects every connection. Identity is resolved from the connecting `user` (or
   `CUBE_SQL_DEV_EMAIL` outside prod); the presented `password` is not compared
   and is absent entirely on `SET USER` re-auth flows.
-- **`contextToGroups` owns the Cube Cloud path** (#4526). Cube Cloud bypasses
+- **`contextToGroups` owns the Cube Cloud path.** Cube Cloud bypasses
   `checkAuth` and injects
   `{ cubeCloud: { username, groups, roles, userAttributes, meta, userCredentials }, iss: "cubecloud", exp }`
   with no top-level `email` (observed on 1.7.14; re-check after upgrades), so
   this hook re-derives the context from `cubeCloud.username` and **overwrites**
   it. **Cube Cloud MERGES a pasted Security Context into the TOP LEVEL**, so
-  every top-level value there is caller-supplied: pasting
-  `{"groups": ["staff-pii-all_in_scope"], "allowed_abbreviations": [...]}` was
-  honored verbatim before the overwrite landed. Never reintroduce a
+  every top-level value there is caller-supplied. Never reintroduce a
   `!securityContext.groups` guard here — that guard IS the bypass. The branch
   gates on the presence of the top-level `cubeCloud` key, not on
   `cubeCloud.username` being truthy: a REST/MCP context (no `cubeCloud` key at
@@ -362,19 +340,9 @@ access policies above). `cube.js` exports exactly `driverFactory`,
   the empty default-deny context via `resolveAccess` — a missing `username` is a
   DENY, not a pass-through.
 - **Gating on the `cubeCloud` key assumes a paste cannot REPLACE that key.**
-  Cube Cloud must apply its own block after the merged paste; if a paste could
-  win, pasting `{"cubeCloud": {"username": "<anyone>"}}` would resolve that
-  person's real context and collapse the design, not merely the gate. Tested on
-  a Dev Mode deployment: a network-scoped caller pasting a school-scoped
-  viewer's email as `cubeCloud.username` still got their own four-region scope,
-  so the injected block wins. It wins against a FALSY paste too: pasting
-  `{"cubeCloud": null, "groups": ["student-region"], "region_key": "<a region>"}`
-  returned the caller's own four-region scope rather than the single pasted
-  region, so the gate still fired AND the pasted `groups` / `region_key` were
-  both overwritten. The merge order is therefore
-  `{...paste, cubeCloud: realBlock}`, which makes the pasted value irrelevant.
-  Empirical, not guaranteed — Cube Cloud's merge is closed-source and the OSS
-  tree has no `cubeCloud` reference — so re-confirm after a Cube Cloud upgrade.
+  Cube Cloud merges as `{...paste, cubeCloud: realBlock}` (a pasted `cubeCloud`,
+  even null, is overwritten). This is closed-source behavior, so re-confirm
+  after a Cube Cloud upgrade.
 - **Every securityContext field a policy interpolates MUST be returned by
   `access.buildSecurityContext`.** This is what makes the overwrite above a
   COMPLETE one, and it is the load-bearing assumption of the paste fix — not a
@@ -424,7 +392,7 @@ access policies above). `cube.js` exports exactly `driverFactory`,
   It is an exact-domain allowlist, not a suffix test, so it bounds the
   super-user to real staff addresses. Add a domain only when staff sign in with
   it (check `dim_staff_cube_access.google_email`); never widen it to a suffix or
-  wildcard (#5517).
+  wildcard.
 
 ## Semi-additive / period-end snapshot measures
 
@@ -457,16 +425,13 @@ flag, and none available. Pin `attendance_date`, not `dates_date_day` (see the
 partition-pruning rule above).
 
 **Nested-aggregate and rank multi-stage measures are viable on both attendance
-facts, the daily one included.** `add_group_by` (a per-school ratio summed or
-averaged across schools) and `type: rank` with `reduce_by` both return within a
-few seconds over five academic years of
-`fct_student_attendance_enrollment_daily` on a local Cube server, well inside
-the Cube MCP server's 55-second poll deadline. Other multi-stage types
-(`time_shift`, `group_by` percent-of-total) are untested here. The cost is slot
-time, not latency: Cube's compiled multi-stage SQL burns many times the slot
-time of the equivalent hand-written query. So precompute in dbt for cost when a
-value is a fixed period-end figure read often, and reach for multi-stage when
-the second aggregation level depends on the query's own slice. Use
+facts, the daily one included:** `add_group_by` (a per-school ratio summed or
+averaged across schools) and `type: rank` with `reduce_by`. Other multi-stage
+types (`time_shift`, `group_by` percent-of-total) are untested here. The cost is
+slot time, not latency: Cube's compiled multi-stage SQL burns many times the
+slot time of the equivalent hand-written query. So precompute in dbt for cost
+when a value is a fixed period-end figure read often, and reach for multi-stage
+when the second aggregation level depends on the query's own slice. Use
 `add_group_by`/`reduce_by`; the `grain` parameter in current Cube docs replaces
 them, but check it against the deployed Cube version before relying on it.
 
@@ -535,39 +500,7 @@ school-year-shaped.
 
 ## `prefix: true` join member names
 
-A member inside a `prefix: true` includes block is exposed with the last
-`join_path` segment prepended: `school_week_start_date` under
-`join_path: student_attendance_enrollment_daily.dates` (prefix: true) surfaces
-as `dates_school_week_start_date`. A same-named fact-level dimension alongside
-the join creates ambiguity Cube can't resolve at query time. Route via the join
-when `dim_dates` carries the same value — avoids the compile error and the
-redundant fact column. **To test a model VARIANT without touching the repo tree,
-point `CUBEJS_SCHEMA_PATH` at a copy** —
-`cp -r src/cube/model <scratch>/model-x`, `sed` the `sql_table` redirect there,
-then run `npx cubejs-server` with cwd `src/cube` (so the dotenv file still
-loads) and `CUBEJS_SCHEMA_PATH` set. No `zz_` redirect in the working tree means
-no accidental commit, and two variants can be compared by restarting against a
-different copy. Two traps:
-
-- **The path must be RELATIVE.** Cube's `FileRepository` does
-  `path.join(process.cwd(), schemaPath)`, and `path.join` does not reset on an
-  absolute second argument, so an absolute path silently resolves under the cwd.
-  Worse, `ensureDir` then CREATES the wrong directory and compiles an **empty
-  schema**, whose symptom is `Table or CTE with name '<view>' not found` — the
-  same string as an RLS denial. Count the `../` segments from `src/cube`.
-- Set `CUBEJS_REFRESH_WORKER=false` or the refresh worker starts building the
-  `student_assessment_scores` pre-agg, one BigQuery job per quarterly partition.
-
-**Cube caches a query result by its text, so a repeat run measures the cache.**
-To time anything, append a unique never-matching predicate per run
-(`AND academic_year <> <counter>`), seeded from the clock so a second PROCESS
-does not replay the first one's values — that defeats BigQuery's 24-hour results
-cache too. Confirm with `cache_hit = false` in `JOBS_BY_PROJECT`. Schema
-compilation is per-process and lands on the first query: pay it with a throwaway
-warmup query before timing.
-
-**`src/cube/node_modules` can lag the lockfile**, which silently invalidates any
-"on version X" claim from a local run. Check
-`node -e "console.log(require('./node_modules/@cubejs-backend/server/package.json').version)"`
-before attributing behaviour to a version; `npm ci` in `src/cube` closes the
-gap.
+A dimension on the fact with the same name as a member a `prefix: true` join
+surfaces (`dates_school_week_start_date`) creates ambiguity Cube can't resolve
+at query time. Route via the join when `dim_dates` carries the same value —
+avoids the compile error and the redundant fact column.

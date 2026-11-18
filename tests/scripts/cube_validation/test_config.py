@@ -1,11 +1,17 @@
+import dataclasses
 from pathlib import Path
 
 import pytest
 import yaml
 
+# trunk-ignore(pyright/reportAttributeAccessIssue): conftest.py registers cube_validation
+from cube_validation import latest, pipeline
+
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.config import (
     ConfigError,
+    comparison_item,
+    find_comparison,
     load_view_config,
     mask_digits,
     with_fact_dataset,
@@ -64,7 +70,6 @@ def test_loads_example(tmp_path):
     cfg = load_view_config(_write(tmp_path, EXAMPLE))
 
     assert cfg.view == "student_attendance_enrollment_daily_view"
-    assert cfg.email is None
     first = cfg.comparisons[0]
     assert first.dims[0].cube == "regions_region_name"
     assert first.filters["Region"].dashboard == "region"
@@ -74,10 +79,11 @@ def test_loads_example(tmp_path):
     assert cfg.decisions[0].call == "deliberate"
 
 
-def test_email_is_optional_but_read_when_present(tmp_path):
-    cfg = load_view_config(_write(tmp_path, "email: a@example.org\n" + EXAMPLE))
+def test_an_email_key_is_refused(tmp_path):
+    path = _write(tmp_path, "email: a@example.org\n" + EXAMPLE)
 
-    assert cfg.email == "a@example.org"
+    with pytest.raises(ConfigError, match=r"email: .*--email"):
+        load_view_config(path)
 
 
 def test_dashboard_columns_names_must_be_identifiers(tmp_path):
@@ -805,6 +811,34 @@ def test_formula_and_group_are_exclusive(tmp_path):
         load_view_config(_write(tmp_path, EXAMPLE + both))
 
 
+def test_a_formula_decision_loads_its_recorded_check_cells(tmp_path):
+    text = EXAMPLE + FORMULA_DECISION.replace("def }", "def, matched_only: '3' }")
+    (*_, d) = load_view_config(_write(tmp_path, text)).decisions
+    assert d.fingerprints["matched_only"] == "3"
+
+
+@pytest.mark.parametrize(
+    ("decision", "value", "match"),
+    [
+        (FORMULA_DECISION, "many", "must be a whole number"),
+        (FORMULA_DECISION, "'-1'", "must be a whole number"),
+        # A digit `int` cannot read.
+        (FORMULA_DECISION, "'²'", "must be a whole number"),
+        (
+            FORMULA_DECISION.replace(
+                "formula: true", "group: { column: x, values: ['1'] }"
+            ),
+            "'3'",
+            "belongs to a formula decision",
+        ),
+    ],
+)
+def test_a_bad_recorded_check_cell_count_is_refused(tmp_path, decision, value, match):
+    text = EXAMPLE + decision.replace("def }", f"def, matched_only: {value} }}")
+    with pytest.raises(ConfigError, match=rf"fingerprints\.matched_only: {match}"):
+        load_view_config(_write(tmp_path, text))
+
+
 def test_formula_must_be_true(tmp_path):
     text = EXAMPLE + FORMULA_DECISION.replace("formula: true", "formula: false")
     with pytest.raises(ConfigError, match=r"formula: must be true"):
@@ -974,11 +1008,18 @@ def test_write_decision_restores_file_when_result_does_not_load(tmp_path):
     assert path.read_text() == EXAMPLE
 
 
-def test_write_decision_refuses_an_id_it_cannot_find_by_its_line(tmp_path):
-    # `id` is not the item's first key, so a line edit could not replace it.
+def test_write_decision_refuses_a_flow_mapping_item_it_cannot_find_by_its_line(
+    tmp_path,
+):
     text = EXAMPLE.replace(
         "  - id: example\n    comparison: ada-y1-region\n",
-        "  - comparison: ada-y1-region\n    id: example\n",
+        "  - {id: example, comparison: ada-y1-region, call: deliberate, reason: r}\n",
+    )
+    text = text.replace(
+        '    group: { column: grade_level, values: ["9"] }\n'
+        "    call: deliberate\n    reason: counted differently\n"
+        '    task: ""\n    fingerprints: { cube: abc, dashboard: def }\n',
+        "",
     )
     path = _write(tmp_path, text)
 
@@ -1200,3 +1241,318 @@ def test_an_old_decision_proof_fingerprint_is_refused_with_its_new_name(tmp_path
     assert str(exc.value) == (
         f"{path}: decisions[1].fingerprints.proof: renamed; write it as explanation"
     )
+
+
+MERGED = """\
+view: v
+fact: d.t
+shared:
+  roster: &roster
+    workbook: wb
+comparisons:
+  - <<: *roster
+    id: goal  # the goal sheet
+    measure: m
+decisions:
+  - id: goal
+    comparison: goal
+    call: deliberate
+    reason: r
+    formula: true
+"""
+
+
+def test_write_rebuild_check_finds_a_comparison_that_opens_with_a_merge_key(tmp_path):
+    path = _write(tmp_path, MERGED)
+
+    write_rebuild_check(
+        path, "goal", {"fingerprint": "f", "cells": 1, "matched_at": "t"}
+    )
+
+    c = load_view_config(path).comparisons[0]
+    assert c.rebuild_check.fingerprint == "f" and c.workbook == "wb"
+
+
+def test_comparison_item_ignores_a_decision_with_the_same_id():
+    lines = MERGED.splitlines()
+
+    start, end, key_indent = comparison_item(lines, "goal")
+
+    assert lines[start] == "  - <<: *roster"
+    assert lines[end] == "decisions:"
+    assert key_indent == 4
+    assert comparison_item(lines, "missing") is None
+
+
+def test_find_comparison_raises_when_no_item_matches(tmp_path):
+    path = _write(
+        tmp_path,
+        MERGED.replace(
+            "  - <<: *roster\n    id: goal  # the goal sheet\n    measure: m\n",
+            "  - {id: other}\n",
+        ),
+    )
+
+    with pytest.raises(ConfigError, match="no comparison with id 'goal'"):
+        find_comparison(path, "goal")
+
+
+@pytest.mark.parametrize(
+    "old, new",
+    [
+        (
+            "  - <<: *roster\n    id: goal  # the goal sheet\n    measure: m\n",
+            "  - {id: goal, measure: m}\n",
+        ),
+        (
+            "comparisons:\n  - <<: *roster\n    id: goal  # the goal sheet\n"
+            "    measure: m\n",
+            "comparisons: [{id: goal, measure: m}]\n",
+        ),
+    ],
+    ids=["flow mapping", "flow list"],
+)
+def test_find_comparison_names_a_flow_written_comparison(tmp_path, old, new):
+    path = _write(tmp_path, MERGED.replace(old, new))
+
+    for edit in (
+        lambda: find_comparison(path, "goal"),
+        lambda: write_rebuild_check(path, "goal", {"fingerprint": "f"}),
+    ):
+        with pytest.raises(ConfigError) as exc:
+            edit()
+        assert str(exc.value) == (
+            f"{path}: comparisons: 'goal' cannot be edited by line; write it "
+            "as a block list (`- id: ...` items)"
+        )
+
+
+@pytest.mark.parametrize(
+    "id_line", ['  - id: "goal"', "  - id: 'goal'", "  - id: goal  # the goal sheet"]
+)
+def test_comparison_item_reads_a_quoted_or_commented_id(id_line):
+    lines = ["comparisons:", "  - id: other", id_line, "    measure: m"]
+
+    assert comparison_item(lines, "goal") == (2, 4, 4)
+
+
+def test_comparison_item_reads_a_block_list_at_indent_0():
+    lines = [
+        "comparisons:",
+        "- id: other",
+        "  measure: m",
+        "- id: goal",
+        "  measure: m",
+        "decisions: []",
+    ]
+
+    assert comparison_item(lines, "goal") == (3, 5, 2)
+
+
+def test_comparison_item_takes_the_first_of_two_items_with_one_id():
+    lines = [
+        "comparisons:",
+        "  - id: goal",
+        "    measure: first",
+        "  - id: goal",
+        "    measure: second",
+    ]
+
+    assert comparison_item(lines, "goal") == (1, 3, 4)
+
+
+def test_write_rebuild_check_inserts_before_trailing_blanks_and_comments(tmp_path):
+    text = (
+        "view: v\nfact: d.t\ncomparisons:\n"
+        "  - id: goal\n    measure: m\n\n  # the next one\n"
+        "  - id: other\n    measure: m\n\n# the end\n"
+    )
+    path = _write(tmp_path, text)
+
+    write_rebuild_check(path, "goal", {"fingerprint": "f"})
+    write_rebuild_check(path, "other", {"fingerprint": "g"})
+
+    assert path.read_text() == (
+        "view: v\nfact: d.t\ncomparisons:\n"
+        "  - id: goal\n    measure: m\n    rebuild_check:\n      fingerprint: f\n"
+        "\n  # the next one\n"
+        "  - id: other\n    measure: m\n    rebuild_check:\n      fingerprint: g\n"
+        "\n# the end\n"
+    )
+
+
+def test_write_decision_replaces_a_decision_whose_id_is_not_its_first_key(tmp_path):
+    path = _write(
+        tmp_path,
+        MERGED.replace(
+            "  - id: goal\n    comparison: goal\n",
+            "  - comparison: goal\n    id: goal\n",
+        ),
+    )
+
+    write_decision(
+        path,
+        {"id": "goal", "comparison": "goal", "call": "deliberate", "reason": "new"},
+    )
+
+    (d,) = load_view_config(path).decisions
+    assert (d.call, d.reason) == ("deliberate", "new")
+
+
+# Every field an existing validation file sets, the rebuild check included,
+# with placeholder values. The golden digests below were taken from the code
+# before `unpublished` and `rebuild_check.published` existed: a file without
+# them must keep every saved result and checkpoint it has.
+FINGERPRINT_FIXTURE = """\
+view: example_view
+fact: kipptaf_marts.fct_example
+time_dimension: week_start_date
+comparisons:
+  - id: example__sheet
+    measure: example_measure
+    confirmed: true
+    workbook: 00000000-0000-0000-0000-000000000000
+    sheet: Example Sheet
+    dashboard_view: kipptaf_tableau.rpt_tableau__example
+    sheet_query: MAX(goal_tableau) - AVG(is_mastery_int)
+    decimals: 2
+    sheet_field: Example Field
+    split_rows: sum
+    dims:
+      - { dashboard: week_start_monday, cube: week_start_date }
+      - { dashboard: grade_level, cube: grade_level }
+    filters:
+      Academic Year: { dashboard: academic_year, cube: academic_year }
+      Response Type: { dashboard: response_type, cube: response_type }
+    defaults:
+      Academic Year: 2026
+      Response Type: overall
+    cuts: [{}, { Response Type: standard }]
+    scope:
+      - { cube: is_enrolled, operator: equals, values: [true] }
+    dashboard_filters:
+      - { dashboard: is_mastery_int, operator: set }
+    rows:
+      grain:
+        - { dashboard: row_key_a, cube: row_key_a }
+        - { dashboard: row_key_b, cube: row_key_b }
+      values:
+        - { dashboard: is_mastery, cube: is_mastery }
+      dashboard_scope:
+        - { dashboard: source, operator: equals, values: [example] }
+      reduce: { rule: latest, by: loaded_at }
+    dashboard_columns:
+      goal_tableau: CASE WHEN grade_level < 9 THEN 0.8 ELSE goal END
+    parameters:
+      Example Parameter: Example Member
+    shelves:
+      drop: [Example Group]
+      add: { rows: [Grade Level] }
+      clear_filters: [Example Filter]
+    definitions:
+      dashboard: The dashboard's words.
+      cube: Cube's words.
+    rebuild_check:
+      fingerprint: aaaa
+      cells: 483
+      matched_at: "2026-11-16T00:10:47.795513+00:00"
+      workbook_updated_at: "2026-11-15T23:42:43+00:00"
+      sheet_query_fingerprint: bbbb
+      source_fingerprint: cccc
+      cuts:
+        - "{}"
+      totals_skipped: 0
+      shelves:
+        drop:
+          - Example Group
+        clear_filters:
+          - Example Filter
+        add:
+          rows:
+            - Grade Level
+      missing_cuts: []
+      missing_filters:
+        - Example Missing Filter
+      restricting_filters: []
+      filter_notes:
+        Example Switch: display switch on Example Parameter
+      missing_columns:
+        Example Missing Filter: example_column
+"""
+MINIMAL = """\
+view: v
+fact: kipptaf_marts.f
+comparisons:
+  - id: minimal
+    measure: m
+    rebuild_check: null
+"""
+
+
+@pytest.mark.parametrize(
+    "text, entry, checkpoint",
+    [
+        (
+            FINGERPRINT_FIXTURE,
+            "5a184bcc491098df1b50e0a6af9f1de9f41bce44920054038d976b21ccfb1072",
+            "6b3cf179e7cd4c959a72054a5a898285198046c9597758d83eae453c62e47024",
+        ),
+        (
+            MINIMAL,
+            "1e6d1d3e1cbe17e054a53083c55be46390cd0fca9ffeb4d1202e382505a078cb",
+            "971e691dcc902e25342ba3fb3865b2e20a96979fd785fd8812c7edada308e7d0",
+        ),
+    ],
+)
+def test_new_keys_left_unset_keep_every_fingerprint(tmp_path, text, entry, checkpoint):
+    (c,) = load_view_config(_write(tmp_path, text)).comparisons
+
+    assert latest.entry_fingerprint(c) == entry
+    assert (
+        pipeline.checkpoint_fingerprint(c, {"cube": "x", "dashboard": "y"})
+        == checkpoint
+    )
+
+
+def test_new_keys_set_change_the_fingerprints(tmp_path):
+    (c,) = load_view_config(_write(tmp_path, FINGERPRINT_FIXTURE)).comparisons
+    assert c.rebuild_check is not None
+    opted = dataclasses.replace(c, unpublished=True)
+    recorded = dataclasses.replace(
+        c, rebuild_check=dataclasses.replace(c.rebuild_check, published=True)
+    )
+
+    entries = {latest.entry_fingerprint(x) for x in (c, opted, recorded)}
+    assert len(entries) == 3
+    sides = {"cube": "x", "dashboard": "y"}
+    checkpoints = {
+        pipeline.checkpoint_fingerprint(x, sides) for x in (c, opted, recorded)
+    }
+    assert len(checkpoints) == 3
+
+
+def test_unpublished_and_published_load(tmp_path):
+    text = FINGERPRINT_FIXTURE.replace(
+        "    sheet_field: Example Field\n",
+        "    sheet_field: Example Field\n    unpublished: true\n",
+    ).replace("      cells: 483\n", "      cells: 483\n      published: false\n")
+
+    (c,) = load_view_config(_write(tmp_path, text)).comparisons
+
+    assert c.unpublished is True
+    assert c.rebuild_check is not None and c.rebuild_check.published is False
+    (unset,) = load_view_config(_write(tmp_path, FINGERPRINT_FIXTURE)).comparisons
+    assert unset.unpublished is False
+    assert unset.rebuild_check is not None and unset.rebuild_check.published is None
+
+
+@pytest.mark.parametrize(
+    "old, new, where",
+    [
+        ("    sheet_field: Example Field\n", "    sheet_field: Example Field\n    unpublished: yes please\n", "unpublished"),
+        ("      cells: 483\n", "      cells: 483\n      published: 1\n", "rebuild_check.published"),
+    ],
+)  # fmt: skip
+def test_unpublished_and_published_refuse_a_non_boolean(tmp_path, old, new, where):
+    with pytest.raises(ConfigError, match=rf"{where}: must be bool"):
+        load_view_config(_write(tmp_path, FINGERPRINT_FIXTURE.replace(old, new)))

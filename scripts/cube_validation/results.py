@@ -129,11 +129,14 @@ def _cell_diffs(
     sides: "Sides",
     cube: Cube,
     older: frozenset[str] = frozenset(),
+    checks: dict[str, set[tuple[str, str]]] | None = None,
 ) -> tuple[list[CellDiff], set[Cell]]:
     """Each comparison's differing cells, with candidate causes.
 
     A cell `coverage.placed` finds no group in is a formula difference: every
-    row in it matched on both sides. Those cells make the comparison's
+    row in it matched on both sides. So is a cell holding groups whose
+    `(cut, key)` is in `checks` under its comparison: the formula check found
+    it still differs on matched rows alone. Those cells make the comparison's
     `formula` diff; the rest, holding groups or unplaceable, its `cells` diff.
     A cell that cannot be placed is never a formula difference. A comparison
     in `older` (not compared by this process) composes its older cells even
@@ -161,11 +164,15 @@ def _cell_diffs(
             expr = "a measure Cube cannot compile today"
         else:
             expr = measure_expression(compiled, cfg.view, comparison.measure)
+        checked = (checks or {}).get(comparison.id, set())
         formula: list[Cell] = []
         cells: list[Cell] = []
+        matched_only = 0
         for c in differing:
             inside = coverage.placed(_coverage_cell(c), sides.groups, comparison)
-            (formula if inside == [] else cells).append(c)
+            on_matched = bool(inside) and (c.cut, c.key) in checked
+            matched_only += on_matched
+            (formula if inside == [] or on_matched else cells).append(c)
         formula_cells.update(formula)
         if cells:
             causes = candidate_causes(comparison, cells, comparison.decimals or 0, expr)
@@ -180,8 +187,14 @@ def _cell_diffs(
                 )
             )
         if formula:
+            free = len(formula) - matched_only
             causes = [
-                f"{len(formula)} differing cells hold no unmatched row",
+                *([f"{free} differing cells hold no unmatched row"] if free else []),
+                *(
+                    [f"{matched_only} {sort.MATCHED_LABEL} only"]
+                    if matched_only
+                    else []
+                ),
                 *candidate_causes(comparison, formula, comparison.decimals or 0, expr),
             ]
             out.append(
@@ -190,6 +203,7 @@ def _cell_diffs(
                     dict(Counter(c.verdict for c in formula)),
                     tuple(causes),
                     kind="formula",
+                    matched_only=matched_only,
                 )
             )
     return out, formula_cells
@@ -426,20 +440,12 @@ def _gaps(comparisons: list[Comparison]) -> tuple[list[Gap], list[str]]:
 def last_run(cfg: ViewConfig, cache_root: Path) -> dict | None:
     """The view's last readable `run.json` of `cfg.fact`, or None.
 
-    A run saved before runs recorded their fact is no fact's run.
+    A run saved before runs recorded their fact is no fact's run (`_saved_run`).
     """
-    saved = [
-        (path.stat().st_mtime, path)
-        for path in (cache_root / cfg.view).glob("*/run.json")
-    ]
-    for _, path in sorted(saved, reverse=True):
-        try:
-            data = json.loads(path.read_text())
-        except (OSError, ValueError):
-            continue
-        if data.get("fact") == cfg.fact:
-            return data
-    return None
+    try:
+        return _saved_run(cfg, cache_root)[0]
+    except Refusal:
+        return None
 
 
 def composed_from(
@@ -455,8 +461,7 @@ def composed_from(
     held = [c for c in comparisons if c.id in results]
     none = [c.id for c in comparisons if c.id not in results]
     return (data.get("missing") or []) == none and all(
-        (data.get("moments") or {}).get(c.id)
-        == checkpoints._moment_json(results[c.id].moment)
+        (data.get("moments") or {}).get(c.id) == results[c.id].moment.to_json()
         and (data.get("entries") or {}).get(c.id) == results[c.id].entry
         and (data.get("fingerprints") or {}).get(c.id)
         == results[c.id].data.get("fingerprints", {}).get(c.id)
@@ -478,6 +483,7 @@ def compose_run(
     cost: float,
     skipped: Iterable[Skip] = (),
     compared: Iterable[str] = (),
+    echo: bool = True,
 ) -> RunResult:
     """Compose, print and save `run.json` in `folder` from every confirmed
     comparison's latest result, in config order; `build` and `cost` are the
@@ -485,6 +491,9 @@ def compose_run(
     compose like the rest. Compiles Cube's measure only; no query bills. Only
     the comparisons in `compared` (this process compared them) refuse when
     Cube cannot compile their measure; the rest compose their older cells.
+    A result's formula check (`latest.add_formula_check`) files its cells
+    only when it checked that very result. `echo` False saves without
+    printing.
 
     Raises:
         Refusal: Two decisions claim one item (`decisions.apply`).
@@ -502,8 +511,18 @@ def compose_run(
     gaps, gaps_unknown = _gaps(comparisons)
     skipped = list(skipped)
     now = set(compared)
+    checks = {
+        cid: cells
+        for cid, held in results.items()
+        if (cells := _formula_cells(held)) is not None
+    }
     cell_diffs, formula_cells = _cell_diffs(
-        cfg, comparisons, sides, cube, frozenset(c.id for c in comparisons) - now
+        cfg,
+        comparisons,
+        sides,
+        cube,
+        frozenset(c.id for c in comparisons) - now,
+        checks,
     )
     try:
         applied = decisions.apply(
@@ -571,15 +590,61 @@ def compose_run(
         skipped=[dataclasses.asdict(s) for s in skipped],
     )
     text = report.render_local(result) + "\n" + _extra_sections(sides.cells)
-    print(text)
+    if echo:
+        print(text)
     saved = report.save_local(result, text, root=cache_root)
-    checkpoints._write_text(
-        saved.with_name("run.json"),
-        json.dumps(dataclasses.asdict(result), default=_json_default, indent=1),
-    )
+    checkpoints.write_text(saved.with_name("run.json"), _run_json(result))
     checkpoints.finish(folder)
-    print(f"Saved {saved}")
+    if echo:
+        print(f"Saved {saved}")
     return result
+
+
+def _formula_cells(held: latest.Latest) -> set[tuple[str, str]] | None:
+    """The cells the result's formula check files as formula, or None when it
+    has no check of that very result, read as `sort` reads it to reuse it
+    (`sort._stored_check`): a check that cannot be read counts as none."""
+    check = sort._stored_check(held)
+    return None if check is None else set(check.formula)
+
+
+def recompose(
+    cfg: ViewConfig, cache_root: Path, run: RunResult, run_json: Path, *, cube: Cube
+) -> RunResult:
+    """Compose the saved run again from the same latest results, quietly.
+
+    For a formula check just kept beside them: the run keeps its moment,
+    host, caveats, cost and skips, and compares nothing.
+
+    Raises:
+        Refusal: `run_json` is not composed from exactly the latest results,
+            so composing would replace the run with another; or two
+            decisions claim one item (`decisions.apply`).
+    """
+    confirmed = [c for c in cfg.comparisons if c.confirmed]
+    results_dir = latest.folder(cache_root / cfg.view, cfg.fact)
+    if not composed_from(
+        json.loads(run_json.read_text()),
+        confirmed,
+        latest.read_all(results_dir, cfg.fact),
+    ):
+        # Not `formula.NOT_COMPOSED`: `formula` imports this module.
+        raise Refusal("the run is not composed from the latest results")
+    return compose_run(
+        cfg,
+        confirmed,
+        results_dir,
+        cube=cube,
+        cube_host=run.cube_host,
+        totals=run.totals,
+        cache_root=cache_root,
+        build=run.moment,
+        folder=run_json.parent,
+        cost=run.cost_usd,
+        skipped=[Skip(**s) for s in run.skipped],
+        compared=(),
+        echo=False,
+    )
 
 
 NOT_COMPARED = "not compared yet"
@@ -621,6 +686,18 @@ def _diff_cells(sides: Sides, formula: set[Cell]) -> list[dict]:
     ]
 
 
+def _run_json(result: RunResult) -> str:
+    """`run.json`'s text. A cell difference's `matched_only` is left out at 0,
+    so a run no formula check filed a cell in saves as it did before the
+    check; `_cell_diff` reads it back as 0."""
+    data = dataclasses.asdict(result)
+    applied = data["applied"]
+    for diff in [*applied["open_cells"], *(d for _, d in applied["quiet_cells"])]:
+        if not diff["matched_only"]:
+            del diff["matched_only"]
+    return json.dumps(data, default=_json_default, indent=1)
+
+
 def _json_default(value: Any) -> Any:
     if isinstance(value, (datetime, date)):
         return value.isoformat()
@@ -644,19 +721,11 @@ def _cell_diff(data: dict) -> CellDiff:
     )
 
 
-def _build(data: dict) -> Build:
-    return Build(
-        datetime.fromisoformat(data["start"]),
-        datetime.fromisoformat(data["end"]),
-        data["job_id"],
-    )
-
-
 def _run_from_json(data: dict) -> RunResult:
     applied = data["applied"]
     return RunResult(
         view=data["view"],
-        moment=_build(data["moment"]),
+        moment=Build.from_json(data["moment"]),
         measures=[MeasureResult(**m) for m in data["measures"]],
         applied=Applied(
             open=[group_from_json(g) for g in applied["open"]],
@@ -695,7 +764,7 @@ def _run_from_json(data: dict) -> RunResult:
         cell_sql_usd=data.get("cell_sql_usd", {}),
         cube_host=data.get("cube_host", ""),
         fact=data.get("fact", ""),
-        moments={k: _build(v) for k, v in data.get("moments", {}).items()},
+        moments={k: Build.from_json(v) for k, v in data.get("moments", {}).items()},
         entries=data.get("entries", {}),
         missing=data.get("missing", []),
         skipped=data.get("skipped", []),
@@ -719,8 +788,8 @@ def _saved_run(cfg: ViewConfig, cache_root: Path) -> tuple[dict, Path]:
 
     The latest run is the `run.json` of the fact the command was given
     (`--fact-dataset` names a dev build's) written last, whatever moment it
-    read. A run saved before runs recorded their fact is no fact's run, as in
-    `last_run`: it never stands in for one.
+    read; of 2 written at once, the later-named folder's. A run saved before
+    runs recorded their fact is no fact's run: it never stands in for one.
 
     Raises:
         Refusal: The view has no saved run of `cfg.fact`; the message names
@@ -729,7 +798,7 @@ def _saved_run(cfg: ViewConfig, cache_root: Path) -> tuple[dict, Path]:
     """
     saved = sorted(
         (cache_root / cfg.view).glob("*/run.json"),
-        key=lambda p: p.stat().st_mtime,
+        key=lambda p: (p.stat().st_mtime, p),
         reverse=True,
     )
     other, legacy = None, None
@@ -890,8 +959,9 @@ def reapply(cfg: ViewConfig, cache_root: Path) -> RunResult:
     at = old_text.find("\n## Cells\n")
     tail = old_text[at + 1 :] if at != -1 else ""
     text = report.render_local(result) + ("\n" + tail if tail else "")
-    report.save_local(result, text, root=cache_root).with_name("run.json").write_text(
-        json.dumps(dataclasses.asdict(result), default=_json_default, indent=1)
+    checkpoints.write_text(
+        report.save_local(result, text, root=cache_root).with_name("run.json"),
+        _run_json(result),
     )
     return result
 

@@ -496,6 +496,40 @@ def test_a_formula_question_shows_both_definitions_and_masks_its_count():
     assert report.defined_comparisons([q], "enrollment_view") == {"enrollment"}
 
 
+def test_review_question_says_its_sheet_is_on_no_published_dashboard():
+    d = _formula("formula-1", "enrollment", "owner picks codes")
+    run = _run(applied=Applied(quiet_cells=[(d, _formula_diff("enrollment", 40))]))
+
+    body = render_review_issue(
+        "Registrar", [run], unpublished={"enrollment_view": {"enrollment"}}
+    )
+    assert "`enrollment`'s sheet is on no published dashboard" in body
+    other = render_review_issue(
+        "Registrar", [run], unpublished={"enrollment_view": {"other"}}
+    )
+    assert "no published dashboard" not in other
+
+
+def test_group_and_cause_questions_say_their_sheet_is_on_no_published_dashboard():
+    # A domain-owner row group on `enrollment`.
+    group = render_review_issue(
+        "Registrar", [_run()], unpublished={"enrollment_view": {"enrollment"}}
+    )
+    (line,) = [x for x in group.splitlines() if "Q1." in x]
+    assert line.endswith(" Note: `enrollment`'s sheet is on no published dashboard.")
+
+    run = _run(applied=Applied())
+    causes = _cause_asks(["Team filter was set by hand"])
+    cause = render_review_issue(
+        "Registrar",
+        [run],
+        causes=causes,
+        unpublished={"enrollment_view": {"cmp-1"}},
+    )
+    (line,) = [x for x in cause.splitlines() if "Q1." in x]
+    assert line.endswith(" Note: `cmp-1`'s sheet is on no published dashboard.")
+
+
 def test_a_formula_decision_reads_as_such_locally():
     d = _formula("formula-1", "enrollment", "owner picks codes")
     text = render_local(_run(applied=Applied(quiet_cells=[(d, TARDY_DIFF)])))
@@ -1018,6 +1052,61 @@ def _left_in_investigate(run, evidence):
 
 def _still(run, loaded, waiting=None):
     return report.still_with_analyst(sort.unsettled(run, loaded), waiting or {})
+
+
+def test_still_with_the_analyst_lists_formulas_not_compared_masked():
+    lines = report.still_with_analyst(
+        [], {}, {"v": {"c1": {"no rows both sides hold": 3}}}
+    )
+
+    assert lines == [
+        "`c1` in `v`: formulas not compared: no rows both sides hold; "
+        "<10 cells closed by coverage only"
+    ]
+
+
+def test_still_with_the_analyst_sorts_formulas_not_compared():
+    lines = report.still_with_analyst(
+        [], {}, {"v": {"c2": {"b": 12, "a": 1}, "c1": {"z": 10}}}
+    )
+
+    assert [line.split(":")[0] for line in lines] == ["`c1` in `v`"] + [
+        "`c2` in `v`"
+    ] * 2
+    assert lines[1].endswith("a; <10 cells closed by coverage only")
+    assert lines[2].endswith("b; 12 cells closed by coverage only")
+
+
+def test_formulas_not_compared_reads_the_key_or_nothing():
+    assert sort.formulas_not_compared({}) == {}
+    assert sort.formulas_not_compared({"formulas_not_compared": "x"}) == {}
+    assert (
+        sort.formulas_not_compared({"formulas_not_compared": {"c": {"r": "x"}}}) == {}
+    )
+    loaded = {"formulas_not_compared": {"c": {"r": 2}}}
+    assert sort.formulas_not_compared(loaded) == {"c": {"r": 2}}
+    for n in (0, -3):
+        held = {"formulas_not_compared": {"c": {"r": n}, "d": {"r": 2}}}
+        assert sort.formulas_not_compared(held) == {"d": {"r": 2}}, n
+
+
+def test_still_with_the_analyst_redacts_a_long_digit_run_in_a_reason():
+    lines = report.still_with_analyst(
+        [], {}, {"v": {"c1": {"dry run failed for student 1234567": 12}}}
+    )
+
+    assert lines == [
+        "`c1` in `v`: formulas not compared: dry run failed for student "
+        "<redacted>; 12 cells closed by coverage only"
+    ]
+
+
+def test_formula_checked_tells_an_empty_key_from_a_missing_one():
+    # Empty: the check left nothing uncompared. Missing: no check ran.
+    # Malformed: fail closed, as if none ran.
+    assert sort.formula_checked({"formulas_not_compared": {}})
+    assert not sort.formula_checked({})
+    assert not sort.formula_checked({"formulas_not_compared": "x"})
 
 
 def test_review_posts_ready_questions_and_lists_unsettled_items():

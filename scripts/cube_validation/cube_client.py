@@ -5,6 +5,7 @@ validation run honest. Stdlib only; auth mirrors `src/cube/mcp/server.py`.
 from __future__ import annotations
 
 import base64
+import copy
 import hashlib
 import hmac
 import json
@@ -163,6 +164,11 @@ class Cube:
         self._fetch = fetch
         self._sleep = sleep
         self._clock = clock
+        # What `compiled` and `meta` answered, so one run asks Cube once per
+        # query. Kept on the instance, never across clients or runs; an error
+        # is never kept, so it is asked again.
+        self._compiled: dict[str, Compiled] = {}
+        self._meta: dict | None = None
 
     def _call(self, method: str, path: str, body: dict | None = None) -> Any:
         deadline = self._clock() + TIMEOUT_SECONDS
@@ -190,15 +196,20 @@ class Cube:
             CubeError: Cube could not compile the query.
         """
         q = urllib.parse.quote(json.dumps(_utc(query)))
-        out = self._call("GET", f"/sql?query={q}")
-        sql = out["sql"]
+        if q not in self._compiled:
+            out = self._call("GET", f"/sql?query={q}")
+            sql = out["sql"]
 
-        if sql.get("error"):
-            raise CubeError(f"Cube GET /sql: {sql['error']}")
+            if sql.get("error"):
+                raise CubeError(f"Cube GET /sql: {sql['error']}")
 
-        text, params = sql["sql"]
+            text, params = sql["sql"]
+            self._compiled[q] = Compiled(
+                text, list(params), list(sql.get("preAggregations") or [])
+            )
 
-        return Compiled(text, list(params), list(sql.get("preAggregations") or []))
+        # A copy, so a caller that edits its lists never edits the kept one.
+        return copy.deepcopy(self._compiled[q])
 
     def load(self, query: dict) -> list[dict]:
         """Run `query` and return its rows."""
@@ -208,7 +219,13 @@ class Cube:
 
     def meta(self) -> dict:
         """Return Cube's `/meta` response: every cube and view this viewer sees."""
-        return self._call("GET", "/meta")
+        meta = self._meta
+        if meta is None:
+            # Any 200 reply is kept as returned, only a raised error is not:
+            # a run reads /meta once, so a bad reply costs a re-run, never a stale one.
+            meta = self._meta = self._call("GET", "/meta")
+
+        return copy.deepcopy(meta)
 
 
 @dataclass(frozen=True)
@@ -218,7 +235,6 @@ class MemberDoc:
     name: str
     title: str
     description: str
-    ai_context: str
     kind: str  # measure, dimension or segment
 
 
@@ -240,7 +256,6 @@ def member_docs(meta: dict, view: str) -> dict[str, MemberDoc]:
                     name=name,
                     title=m.get("title") or "",
                     description=m.get("description") or "",
-                    ai_context=(m.get("meta") or {}).get("ai_context") or "",
                     kind=kind,
                 )
 
@@ -372,8 +387,10 @@ def refuse_unless_safe(
     """
     if compiled.pre_aggregations:
         raise CubeRefusal(
-            "Cube served this from a pre-aggregation, which is stored data "
-            "rather than the fact the view reads."
+            "Cube served this from a pre-aggregation, stored data rather than "
+            "the fact the view reads; add a Cube-only `scope` on a never-null "
+            "member the rollup does not carry, such as the fact's primary key, "
+            "with `operator: set`"
         )
 
     facts = {f"{ds}.{name}".lower() for ds, name in _FACT_REF.findall(compiled.sql)}

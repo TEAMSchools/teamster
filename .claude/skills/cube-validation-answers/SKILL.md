@@ -68,28 +68,34 @@ validation files or runs the validator, and neither does this session.
    4. What the validator found (`evidence`) and why it is the owner's call.
       Evidence that "differing cells hold no unmatched row" is a formula
       difference: both sides hold the same rows and compute the number
-      differently, so ask which calculation is right.
+      differently, so ask which calculation is right. A formula question the
+      owner answered before can come back under new decision ids: the validator
+      found more such cells, which the earlier answer never saw, so tell the
+      owner that before asking it.
    5. The owner's checks, one per `hand_checks` entry. The dashboard: the sheet
       (`sheet` in `workbook`), every filter to set there (`filters`), the cell
       to read (`dims`, or the total), and the number to expect (`dashboard`)
       beside Cube's (`cube`). `<10` on a rate or average is a whole value under
-      10, such as a rate of 0 or 1 (0% or 100%), masked by rule. A cause
-      question has at most 1 example: a cell where at least `cause_students` (10
-      or more) students' rows have that cause; with `mixed` true, say it holds
-      other causes' rows too. Without one, never offer a cell of your own for a
-      cause: its words could single out a student there. Then each side's SQL
-      (`dashboard_sql`, `cube_sql`) in a fenced `sql` block to paste into the
-      BigQuery console, with its dry-run price (`dashboard_usd`, `cube_usd`): it
-      is pinned to the run's moment and returns only that cell. When they are
-      null, `sql_left_out` gives their lengths: too long for the issue, so the
-      owner checks Cube with the `reproduce` Cube query, or asks the analyst for
-      the SQL. Tableau shows its last refresh, so a small difference may not
-      match there. An entry with `none` lists the `comparisons` with no group
-      cell to show: offer to find an example under the owner's access, in this
-      chat. For a cause question, then its `reproduce`, which keeps working
-      after the pinned SQL expires: each `cube` entry's `query` for the owner to
-      run with the Cube connector (Cube applies their access) and compare with
-      the dashboard number in the hand check of the same `comparison`; each
+      10, such as a rate of 0 or 1 (0% or 100%), masked by rule. `<masked>` on
+      both numbers means two whole numbers that differ by less than 10: their
+      gap would post a small count of the cell's students, so the owner reads
+      both on the dashboard and through the SQL. A cause question has at most 1
+      example: a cell where at least `cause_students` (10 or more) students'
+      rows have that cause; with `mixed` true, say it holds other causes' rows
+      too. Without one, never offer a cell of your own for a cause: its words
+      could single out a student there. Then each side's SQL (`dashboard_sql`,
+      `cube_sql`) in a fenced `sql` block to paste into the BigQuery console,
+      with its dry-run price (`dashboard_usd`, `cube_usd`): it is pinned to the
+      run's moment and returns only that cell. When they are null,
+      `sql_left_out` gives their lengths: too long for the issue, so the owner
+      checks Cube with the `reproduce` Cube query, or asks the analyst for the
+      SQL. Tableau shows its last refresh, so a small difference may not match
+      there. An entry with `none` lists the `comparisons` with no group cell to
+      show: offer to find an example under the owner's access, in this chat. For
+      a cause question, then its `reproduce`, which keeps working after the
+      pinned SQL expires: each `cube` entry's `query` for the owner to run with
+      the Cube connector (Cube applies their access) and compare with the
+      dashboard number in the hand check of the same `comparison`; each
       `queries` entry's `sql` to paste into BigQuery, labeled today's data whose
       counts drift from the run; and each `explanations` entry's file
       (`<blob>/<path>`, or `path` when `blob` is null), with its count query

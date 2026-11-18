@@ -40,9 +40,7 @@ from google.api_core.exceptions import GoogleAPIError
 from sqlglot.errors import SqlglotError
 
 from . import pipeline, reconcile
-from .bq import CostCapError, Warehouse
-from .bq import failure_reason as _reason
-from .bq import job_failure as _failure
+from .bq import CostCapError, Warehouse, failure_reason, job_failure
 from .config import Comparison, ViewConfig
 from .cube_client import Cube, network_schools
 from .moment import Build, changed_between
@@ -411,8 +409,7 @@ class _Side:
         )
 
     def query(self, variants, exclude, combine: bool, include=()) -> str:
-        if self.comparison.rows is None:
-            raise pipeline.Refusal(f"comparison {self.comparison.id!r} has no rows")
+        rows = pipeline.rows_of(self.comparison)
         return reconcile.trace_sql(
             pipeline.wrap_cube(
                 self.sides.cube_rows_sql,
@@ -422,7 +419,7 @@ class _Side:
                 None,
             ),
             self.sides.dashboard.sql,
-            self.comparison.rows,
+            rows,
             pipeline.group_dims(self.comparison),
             pipeline.filter_flags(self.comparison),
             bucket=self.bucket,
@@ -499,10 +496,10 @@ class _Runner:
         try:
             usd = _priced(self.wh, queries)
         except GoogleAPIError as exc:
-            note = f"{what}: the dry run failed ({_failure(exc)})"
+            note = f"{what}: the dry run failed ({job_failure(exc)})"
             print(f"Trace dry run failed, {note}")
             self.failures.append(note)
-            raise ModelFailed(note, _reason(exc)) from exc
+            raise ModelFailed(note, failure_reason(exc)) from exc
         self.wh.refuse_past_caps(usd)
         self.meter.total += usd
         print(
@@ -519,10 +516,10 @@ class _Runner:
                 # A neutralized step can fail only at run time (a cast, a
                 # date overflow). Its message can quote a row's values, so
                 # only the job and the reason are kept.
-                note = f"{what}: {_failure(exc)}"
+                note = f"{what}: {job_failure(exc)}"
                 print(f"Trace query failed, {note}")
                 self.failures.append(note)
-                self.why = _reason(exc)
+                self.why = failure_reason(exc)
                 return None
         return out
 
@@ -774,7 +771,7 @@ class _Bucket:
             ready, _dry_runs(self.wh, [c for _, _, c in ready]), strict=True
         ):
             if isinstance(got, GoogleAPIError):
-                self._skip(ref.name, _reason(got))
+                self._skip(ref.name, failure_reason(got))
                 continue
             found.append(child)
         self.kids[id(frame)] = found
@@ -1425,7 +1422,7 @@ def trace_run(
                 raise errors[0]
             usd += sum(g for g in got if not isinstance(g, GoogleAPIError))
         except GoogleAPIError as exc:
-            reason = f"level 0: the dry run failed ({_failure(exc)})"
+            reason = f"level 0: the dry run failed ({job_failure(exc)})"
             print(f"Trace {b.runner.label} stopped: {reason}")
             out |= b.stop(reason)
             continue

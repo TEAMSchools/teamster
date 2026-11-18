@@ -22,9 +22,9 @@ results.
 dlt/
   sources-illuminate.yml               # DnA + public + standards + codes sources
   sources-illuminate-repositories.yml  # one source table per loaded repository
-  staging/            27 models  — one per DnA/public/standards/codes table
+  staging/               one model per DnA/public/standards/codes table
   staging/repositories/  one model per staged repository
-  intermediate/       11 models
+  intermediate/
 ```
 
 Source prefixes in `staging/`: `codes__`, `dna_assessments__`,

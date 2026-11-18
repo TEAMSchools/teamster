@@ -34,7 +34,7 @@ formatting. The rules below are where we add to or differ from that guide.
 ### Rules
 
 Common remedy for S3, S8, S9, and S10: derive the expression as a named column
-upstream, then reference the plain column. A value derived from 1 source column
+upstream, then reference the plain column. A value derived from 1 source row
 goes in the staging model that reads it (S9); anything else goes in an upstream
 CTE.
 
@@ -128,15 +128,18 @@ Aggregates passed as direct arguments do not count.
 
 #### S9. Cast and derive at the point of entry, once, with an alias
 
-Cast, round, trim, or parse a source column in the staging model that first
-reads it, as a named column. Never nest `cast()` inside another function.
+Cast, round, trim, parse, decode, or correct a source value in the staging model
+that first reads it, as a named column. This holds when the value reads several
+columns of the same source row. Never nest `cast()` inside another function.
 
 - Why: 1 typed or derived column downstream that every consumer joins and
   filters on; an unaliased `cast()` is named `f0_` by BigQuery.
 - Good: `cast(student_id as string) as student_id` and
   `round(gpa__c, 2) as gpa_rounded` in staging.
 - Bad: `date(cast(entry_ts as timestamp))` in a mart; a CTE in an intermediate
-  that only rounds a staging column so a join can match on it.
+  that only rounds a staging column so a join can match on it; a tier or
+  category label mapped from a score in staging (a reporting rule goes in an
+  `int_`).
 - Enforced by: review.
 
 #### S10. `where` and `on` hold only plain comparisons
@@ -313,6 +316,11 @@ validation/profiling goes through BigQuery MCP, not `dbt show`.
   precedent to extend. Carve-out: TODOs, tracking-issue refs, and migration
   plumbing stay inline at the derivation site — a defect belongs in the code,
   not the metadata.
+- S9: a fix for a value the source system stored wrong (a form submitted under
+  the wrong type, a known bad code) is source cleanup and goes in `stg_`, even
+  when it reads 2 columns of the row. A rule about what a value means for
+  reporting (a cut score, a tier, a category label) is business logic and goes
+  in an `int_`.
 - S9: the matching alias on a function-wrapped expression
   (`cast(col as type) as col`) is NOT an AL09 self-alias; it's the repo norm.
   Unaliased, a contracted / explicitly-projected `select` gets `f0_` and fails.
@@ -386,10 +394,8 @@ validation/profiling goes through BigQuery MCP, not `dbt show`.
 
 ## `select *` and UNION branches
 
-- No `select *` in the final `select` of `rpt_`, mart, or view models, union
-  wrappers excepted (A9). Staging and other table models may still end in a
-  star, so the `select *,` and `select * except` staging patterns below stand.
-  Get the authoritative column list via `INFORMATION_SCHEMA.COLUMNS`:
+- A9 bans a final `select *` in `rpt_`/mart/view models; staging may still end
+  in a star. Get the authoritative column list via `INFORMATION_SCHEMA.COLUMNS`:
 
   ```sql
   select column_name
@@ -399,13 +405,7 @@ validation/profiling goes through BigQuery MCP, not `dbt show`.
   ```
 
 - S17: `select *` inside UNION ALL CTEs also trips CV03 — sqlfluff requires a
-  trailing comma after the last column, but `select *` has nothing to trail. In
-  a VIEW model, enumerating is also what lets an upstream column add reach the
-  view at all: BigQuery fixes a view's column list when the view is created, and
-  Dagster rebuilds a view only on `code_version_changed`, which hashes the
-  model's raw SQL. A `select *` view never picks up a column an upstream adds,
-  because its own raw SQL never changes. Enumerating makes the column add an
-  edit to the view's own SQL, so it recompiles on deploy.
+  trailing comma after the last column, but `select *` has nothing to trail.
 - A standalone `select *` takes a trailing comma (`select *,`) to satisfy
   sqlfluff CV03 (e.g. `stg_overgrad__schools.sql`; a `source` CTE) — distinct
   from the UNION-ALL case above, which must enumerate columns.
@@ -510,9 +510,8 @@ partition key. That packs the whole row into a struct, inflates the input
 shuffle, and pushes the aggregate past BigQuery's single-round-shuffle threshold
 — so the plan gains `Repartition` stages that a window function never emits.
 
-Do not re-derive this: the ranked form was faster at every size measured, and
-the ~1M-row threshold below is interpolated, not a measured inflection point
-(evidence: #5252). Below it the saving doesn't repay the extra CTE.
+Do not re-derive this; the ~1M-row threshold below is approximate. Below it the
+saving doesn't repay the extra CTE.
 
 The default stays `dbt_utils.deduplicate()` — it is one call, and `qualify` is
 banned (S1), so the window form always costs an extra CTE plus an `rn` column.
