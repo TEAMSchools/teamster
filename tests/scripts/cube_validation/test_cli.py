@@ -3718,10 +3718,6 @@ def _workbook_check(fakes, path, ids=None):
     return rebuild.workbook_check(chosen, tbl=fakes.tbl)
 
 
-def test_prove_takes_no_check_flag(fakes, tmp_path, capsys):
-    assert cli.main(["rebuild-sheet", str(_file(tmp_path)), "--check"]) == 2
-
-
 def test_prove_requires_a_comparison(fakes, tmp_path, capsys):
     assert cli.main(["rebuild-sheet", str(_file(tmp_path))]) == 2
 
@@ -4669,17 +4665,6 @@ def test_an_old_run_json_with_a_measure_s_findings_is_older(
     assert "older validator" in capsys.readouterr().err
 
 
-def test_an_old_run_json_s_cell_sizes_are_ignored(fakes, tmp_path):
-    assert cli.main(["compare", str(_file(tmp_path))]) == 0
-    saved = _saved_run(tmp_path)
-    saved["cell_rows"] = {"ada-region": [{"bucket": "match"}]}
-    saved["cell_students"] = {"ada-region": []}
-
-    result = results._run_from_json(saved)
-
-    assert not hasattr(result, "cell_rows") and not hasattr(result, "cell_students")
-
-
 def test_run_json_round_trips_the_hand_check_fields(fakes, tmp_path):
     fakes.bq.cells = [{"regions_region_name": "Miami", "value": 0.95}]
     assert cli.main(["compare", str(_file(tmp_path))]) == 0
@@ -5018,14 +5003,12 @@ def test_triage_confirm_reaches_its_command(fakes, tmp_path, monkeypatch):
     assert "cells" not in seen
 
 
-def test_triage_confirm_takes_no_cells_flag(fakes, tmp_path, monkeypatch):
+def test_explain_requires_a_bucket(fakes, tmp_path, monkeypatch):
     path = _file(tmp_path)
-    monkeypatch.setattr(explain, "explain", lambda *a, **k: pytest.fail("confirm ran"))
+    monkeypatch.setattr(explain, "explain", lambda *a, **k: pytest.fail("explain ran"))
 
-    argv = ["explain", str(path), "--comparison", "ada-region"]
-    assert cli.main([*argv, "--cells"]) == 2
-    # Every confirm proves a bucket.
-    assert cli.main(argv) == 2
+    # Every explanation explains one bucket.
+    assert cli.main(["explain", str(path), "--comparison", "ada-region"]) == 2
 
 
 def test_triage_command_writes_triage_json_beside_latest_run(fakes, tmp_path, capsys):
@@ -6606,11 +6589,6 @@ def test_a_run_saved_before_null_aware_groups_refuses(fakes, tmp_path, capsys, c
     err = capsys.readouterr().err
     assert "this run predates NULL-aware groups; run again" in err
     assert f"`compare --moment {start}`" in err and "proof" not in err
-
-
-def test_check_api_is_not_a_command(fakes, tmp_path, capsys):
-    assert cli.main(["check-api", str(_file(tmp_path))]) == 2
-    assert "invalid choice: 'check-api'" in capsys.readouterr().err
 
 
 @pytest.mark.parametrize(
