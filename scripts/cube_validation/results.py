@@ -611,15 +611,10 @@ def compose_run(
 
 def _formula_cells(held: latest.Latest) -> set[tuple[str, str]] | None:
     """The cells the result's formula check files as formula, or None when it
-    has no check of that very result. A check that cannot be read counts as
-    none, so it never stops a compose."""
-    check = held.data.get("formula_check")
-    if not isinstance(check, dict) or check.get("fingerprint") != held.fingerprint:
-        return None
-    try:
-        return {(cut, key) for cut, key in check.get("formula", [])}
-    except (TypeError, ValueError):
-        return None
+    has no check of that very result, read as `sort` reads it to reuse it
+    (`sort._stored_check`): a check that cannot be read counts as none."""
+    check = sort._stored_check(held)
+    return None if check is None else set(check.formula)
 
 
 def recompose(

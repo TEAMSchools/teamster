@@ -827,6 +827,10 @@ def label(items: list[dict], checks: dict[str, Check]) -> dict[str, dict[str, in
     """
     by_id = {i["id"]: i for i in items}
     out: dict[str, dict[str, int]] = {}
+
+    def line(why: str, n: str) -> str:
+        return f"{NOT_COMPARED}: {why} ({n} cells closed by coverage only)"
+
     for cid, check in checks.items():
         counts = {why: len(c) for why, c in check.not_compared.items() if c}
         if not counts:
@@ -835,10 +839,6 @@ def label(items: list[dict], checks: dict[str, Check]) -> dict[str, dict[str, in
         item = by_id.get(f"{cid}:cells")
         if item is None:
             continue
-
-        def line(why: str, n: str) -> str:
-            return f"{NOT_COMPARED}: {why} ({n} cells closed by coverage only)"
-
         evidence = item.get("evidence") or []
         posted = item.get("evidence_posted") or evidence
         item["evidence"] = [*(line(w, str(n)) for w, n in counts.items()), *evidence]

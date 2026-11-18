@@ -5225,7 +5225,18 @@ def test_sort_prices_the_formula_check_with_the_explanations(
     fakes, tmp_path, capsys, monkeypatch
 ):
     path = _miami_differs(fakes, tmp_path)
-    fakes.bq.cost = lambda sql: 1.0 if FORMULA_QUERY in sql else 0.0
+    # A stored explanation of the Miami group, priced at $2 against the
+    # formula check's $4, so only the two together pass a $5 cap.
+    explained = path.parent / "explanations" / "v" / "ada-region__dashboard_only.sql"
+    explained.parent.mkdir(parents=True, exist_ok=True)
+    explained.write_text(
+        "-- cause C1 = dashboard: the sheet drops them\n"
+        "SELECT u.__row, CASE WHEN TRUE THEN 'C1' ELSE 'UNEXPLAINED' END AS cause\n"
+        "FROM {unmatched} AS u\n"
+    )
+    fakes.bq.cost = lambda sql: (
+        1.0 if FORMULA_QUERY in sql else 2.0 if "AS cause" in sql else 0.0
+    )
     stored = explain.run_stored
     priced = []
 
@@ -5237,30 +5248,26 @@ def test_sort_prices_the_formula_check_with_the_explanations(
     since = len(fakes.bq.log)
     capsys.readouterr()
 
-    capped = ["--max-usd", "3", "--max-usd-per-day", "50"]
+    def capped(usd):
+        return ["--max-usd", usd, "--max-usd-per-day", "50"]
 
     # One cap refusal covers the explanations and the formula check.
-    assert cli.main(["sort", str(path), "--no-trace", *capped]) == 1
+    assert cli.main(["sort", str(path), "--no-trace", *capped("5")]) == 1
     out, err = capsys.readouterr()
     assert "Formula check: 4 queries, $4.00 (dry run)." in out
-    assert "these queries ($4.00) would pass the $3.00 cap" in err
+    assert "Explanations: 1 to run, $2.00 (dry run)" in out
+    assert "these queries ($6.00) would pass the $5.00 cap" in err
     assert priced == [pytest.approx(4.0)]
     # With explanations off, the check alone is still capped up front.
     assert (
-        cli.main(["sort", str(path), "--no-trace", "--no-explanations", *capped]) == 1
+        cli.main(["sort", str(path), "--no-trace", "--no-explanations", *capped("3")])
+        == 1
     )
     assert "these queries ($4.00) would pass the $3.00 cap" in capsys.readouterr().err
     assert _formula_runs(fakes.bq, since) == []
 
-    argv = [
-        "sort",
-        str(path),
-        "--no-trace",
-        "--max-usd",
-        "10",
-        "--max-usd-per-day",
-        "50",
-    ]
+    # Under the same $5 cap the check alone runs: only the sum passed it.
+    argv = ["sort", str(path), "--no-trace", "--no-explanations", *capped("5")]
     assert cli.main(argv) == 0
     assert len(_formula_runs(fakes.bq, since)) == 4
 
@@ -5315,7 +5322,8 @@ def test_sort_reuses_a_stored_check_without_spending(fakes, tmp_path):
     assert cli.main(["sort", str(path), "--no-trace"]) == 0
 
     assert not [sql for _, sql in fakes.bq.log[since:] if FORMULA_QUERY in sql]
-    assert _triage(tmp_path)["formulas_not_compared"] == {}
+    loaded = _triage(tmp_path)
+    assert loaded["formulas_not_compared"] == {} and loaded["stale"] == {}
 
 
 def test_sort_runs_a_stored_check_with_uncompared_cells_again(fakes, tmp_path):
@@ -5340,8 +5348,15 @@ def test_sort_runs_a_stored_check_with_uncompared_cells_again(fakes, tmp_path):
     assert _triage(tmp_path)["formulas_not_compared"] == {}
 
 
-def test_sort_keeps_its_checks_labelled_when_composing_again_crashes(
-    fakes, tmp_path, capsys, monkeypatch
+@pytest.mark.parametrize(
+    "error",
+    [
+        RuntimeError("Cube timed out"),
+        pipeline.Refusal("the run is not composed from the latest results"),
+    ],
+)
+def test_sort_keeps_its_checks_labelled_when_composing_again_fails(
+    fakes, tmp_path, capsys, monkeypatch, error
 ):
     _miami_differs(fakes, tmp_path)
     path = _with_decision(_saved_fingerprints(tmp_path), tmp_path, call="fix_cube")
@@ -5353,17 +5368,66 @@ def test_sort_keeps_its_checks_labelled_when_composing_again_crashes(
                  {"regions_region_name": "Miami", "value": 0.95}],
     }  # fmt: skip
 
-    def crashed(*a, **k):
-        raise RuntimeError("Cube timed out")
+    def failed(*a, **k):
+        raise error
 
-    monkeypatch.setattr(results, "recompose", crashed)
+    monkeypatch.setattr(results, "recompose", failed)
 
     assert cli.main(["sort", str(path), "--no-trace"]) == 0
 
-    assert "Cube timed out" in capsys.readouterr().out
+    assert str(error) in capsys.readouterr().out
     assert _triage(tmp_path)["formulas_not_compared"] == {
         "ada-region": {NOT_COMPOSED: 2}
     }
+    # The run still files the cells as a cell set; the check that ran stays
+    # beside its result, for the next compose to file.
+    after = json.loads(_latest_run(tmp_path).read_text())
+    assert {c["kind"] for c in after["diff_cells"]} == {"cells"}
+    held = latest.folder(tmp_path / "cache" / "v", "kipptaf_marts.fct_f")
+    check = latest.read_all(held, "kipptaf_marts.fct_f")["ada-region"].data[
+        "formula_check"
+    ]
+    assert len(check["formula"]) == 2 and check["not_compared"] == {}
+
+
+def test_sort_labels_a_run_not_composed_from_the_latest_results_unpriced(
+    fakes, tmp_path
+):
+    path = _miami_differs(fakes, tmp_path)
+    # As a compare stopped after keeping a newer result, before composing.
+    held = latest.folder(tmp_path / "cache" / "v", "kipptaf_marts.fct_f")
+    file = latest._file(held, "ada-region")
+    kept = json.loads(file.read_text())
+    file.write_text(json.dumps({**kept, "entry": "a newer entry"}))
+    since = len(fakes.bq.log)
+
+    assert cli.main(["sort", str(path), "--no-trace"]) == 0
+
+    loaded = _triage(tmp_path)
+    assert loaded["formulas_not_compared"] == {"ada-region": {NOT_COMPOSED: 2}}
+    # Neither priced nor run: a check of this run would be filed by a compose
+    # that replaces it.
+    assert not [sql for _, sql in fakes.bq.log[since:] if FORMULA_QUERY in sql]
+    assert (
+        "formula_check"
+        not in latest.read_all(held, "kipptaf_marts.fct_f")["ada-region"].data
+    )
+
+
+def test_a_formula_dry_run_bigquery_refuses_leaves_its_cells_to_coverage(
+    fakes, tmp_path, capsys
+):
+    path = _miami_differs(fakes, tmp_path)
+    _bigquery_refuses(fakes, "__matched", dry=True)
+
+    assert cli.main(["sort", str(path), "--no-trace"]) == 0
+
+    why = "BigQuery refused it (job ?, invalidQuery); sort again"
+    loaded = _triage(tmp_path)
+    assert loaded["stale"] == {}
+    assert loaded["formulas_not_compared"] == {"ada-region": {why: 2}}
+    assert _formula_runs(fakes.bq) == []
+    assert "12345" not in json.dumps(loaded) and "12345" not in capsys.readouterr().out
 
 
 def test_sort_comparison_checks_only_the_comparisons_named(fakes, tmp_path):

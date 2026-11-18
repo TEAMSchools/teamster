@@ -25,6 +25,7 @@ from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from google.api_core.exceptions import GoogleAPIError
 
@@ -49,6 +50,11 @@ from .report import (
     run_stamp,
 )
 from .timetravel import PROJECT
+
+if TYPE_CHECKING:
+    # `formula` is imported where it is used: it imports `explain`, which
+    # imports this module.
+    from .formula import Check, Job
 
 # The piles, in the order the analyst's batch shows them. Only a `cause` item
 # carries an explained cause; an `investigate` item has none yet.
@@ -1633,8 +1639,13 @@ def sort_run(
     return found
 
 
-def _stored_check(held: latest.Latest):
-    """The formula check kept beside a result, when it checked that very result."""
+def _stored_check(held: latest.Latest) -> Check | None:
+    """The formula check kept beside a result, when it checked that very result.
+
+    The one reading of a kept check, for `sort` to reuse it and for
+    `results.compose_run` to file its cells. A check that cannot be read
+    whole counts as none, so it never stops a sort or a compose.
+    """
     from . import formula
 
     data = held.data.get("formula_check")
@@ -1642,7 +1653,7 @@ def _stored_check(held: latest.Latest):
         return None
     try:
         return formula.Check.from_json(data)
-    except (KeyError, TypeError, ValueError):
+    except (AttributeError, KeyError, TypeError, ValueError):
         return None
 
 
@@ -1657,7 +1668,7 @@ def _formula_jobs(
     wh: Warehouse,
     cube: Cube,
     prepared: trace.Prepared,
-) -> tuple[dict, list, float]:
+) -> tuple[dict[str, Check], list[Job], float]:
     """Plan and price the formula check of each comparison that can take one.
 
     Returns:
@@ -1738,8 +1749,8 @@ def _run_formula_jobs(
     run: RunResult,
     run_json: Path,
     cache_root: Path,
-    checks: dict,
-    jobs: list,
+    checks: dict[str, Check],
+    jobs: list[Job],
     *,
     wh: Warehouse,
     cube: Cube,

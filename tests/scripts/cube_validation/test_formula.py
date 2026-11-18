@@ -1123,6 +1123,10 @@ def test_compose_ignores_a_check_of_another_result(tmp_path):
         {"fingerprint": "fp1", "formula": [["{}"]]},
         {"fingerprint": "fp1", "formula": 3},
         ["fp1"],
+        # Its cells read, but not the rest: `sort` could not reuse it, so a
+        # compose does not file it either.
+        {**_checked(), "not_compared": []},
+        {**_checked(), "coverage": None},
     ],
 )
 def test_compose_ignores_a_malformed_check(tmp_path, check):
@@ -1324,6 +1328,24 @@ def test_plan_says_cube_refused_when_cube_refuses_its_sql(duck, offline, monkeyp
     check, _ = _plan(duck, _plan_run())
 
     assert check.not_compared == {formula.CUBE_REFUSED: [REF]}
+
+
+def test_plan_says_unbuilt_on_an_error_no_reason_names(
+    duck, offline, monkeypatch, capsys
+):
+    def broken(query, rows=False):
+        raise RuntimeError("a bug in the SQL builder")
+
+    monkeypatch.setattr(offline, "cube_sql", broken)
+
+    check, wh = _plan(duck, _plan_run())
+
+    assert check.not_compared == {formula.UNBUILT: [REF]}
+    assert check.formula == [] and check.coverage == [] and wh.ran == []
+    assert (
+        "Formula check of mastery not built: "
+        "RuntimeError('a bug in the SQL builder')" in capsys.readouterr().out
+    )
 
 
 def _job():
