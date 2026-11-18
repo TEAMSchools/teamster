@@ -397,3 +397,223 @@ while the rest of the work goes on.
 - This replaces the anti-goal "a formula difference closes as `deliberate`
   without the owner seeing it" only in wording: unsettled items are now shown to
   the owner, never decided for them.
+
+## Revision 2026-11-18: after the fresh DDI run
+
+The first live run of the reshaped validator, a fresh DDI Suite validation
+(#6415), posted 13 comments on PR #6402 holding 15 findings. 12 are confirmed in
+the code. The owner chose to fix the bugs and add 3 of the proposals in this PR,
+with the core fix done properly rather than disclosed. The faster trace is
+#6437, out of scope here.
+
+### Intent and why
+
+The validator promised that a differing cell closes only on proven rows. On the
+3 goal comparisons, the dashboard and Cube compute the goal differently. That
+difference creates no unmatched row; it only moves the cell's number. Every
+differing cell also held unmatched rows from other causes, so no cell was ever
+filed as a formula difference, and once those row causes were decided, every
+cell closed. Both safety nets in _Design_ section 2 failed: no cell was free of
+row causes, and decided causes come back every run. It surfaced only because the
+owner already knew the goals were wrong. A validator that can close a wrong cell
+this way cannot be trusted, so the fix comes before merge.
+
+### Goals
+
+1. A cell whose number still differs once every unmatched row is left out is a
+   formula difference, whether or not it also holds row causes.
+2. When that cannot be checked, the cell says so, and the owner sees it.
+3. The 9 confirmed bugs are fixed as verified below, each with a test.
+4. Only worksheets people can open are validated, unless a comparison opts in.
+5. Filter values that cannot identify a person are shown.
+6. An explanation is written once per dashboard model and cause, not once per
+   comparison.
+
+### Anti-goals
+
+- A cell closes, or is called a formula difference, on a guess.
+- A student or staff value reaches GitHub through any new line.
+- The formula check spends without being priced and capped first.
+
+### Approaches (the formula check)
+
+- **Recompute each differing cell on matched rows only (chosen).** Both sides'
+  numbers are recomputed with every unmatched row left out. A remaining gap is
+  the formula. Exact for any measure, additive or not, because both sides see
+  the same rows.
+- **Disclose only.** Label cells closed by coverage alone as "formulas not
+  compared" and always ask the formula question when `definitions:` differ.
+  Rejected as the fix: it discloses the gap but never detects it. It survives as
+  the fallback below.
+- **Put the formula's per-row part in `rows.values`.** For the goal, pair the
+  dashboard's goal column with Cube's, so a goal difference shows as
+  `value_differs` rows. Rejected as the fix: it depends on the analyst thinking
+  of it for every formula. It stays available as ordinary configuration.
+
+### Design
+
+#### 1. The formula check (in `sort`)
+
+- **Which cells:** every differing cell of a comparison with `rows` that
+  coverage can place (not unplaceable) and that has at least one group in it. A
+  cell with no group is already a formula difference.
+- **Dashboard side:** the comparison's sheet query over its `{rows}` with every
+  unmatched grain key left out (an anti-join against the comparison's saved
+  unmatched rows in `cube_validation_scratch`, both sides' unmatched rows, every
+  bucket), grouped by the comparison's dims and cut, at the comparison's own
+  moment.
+- **Cube side:** Cube's compiled SQL for the cell query, with the fact reference
+  rewritten to the fact minus the same unmatched grain keys, read as of the
+  comparison's moment. This works only when each grain column maps to a column
+  on the fact.
+- **Verdict per cell:** if the two recomputed values still differ at the
+  comparison's `decimals`, the cell joins the comparison's `<id>:formula` item,
+  with its row groups still listed. If they agree, coverage decides the cell as
+  today.
+- **When the Cube side cannot be rewritten** (a grain column is an expression,
+  not a fact column, or the rewrite is refused), the cell closes by coverage as
+  today but is labeled "formulas not compared: <why>". `ask-owner` lists it
+  under "Still with the analyst". Never silent.
+- **Where and when:** in `sort`, after stored explanations re-run, because the
+  saved rows exist then. Its queries are priced in `sort`'s up-front total and
+  capped. One query per side per affected comparison, not per cell.
+- **Results:** the formula item's evidence names the cells, masked like every
+  other count. The formula decision (`formula: true`) covers these cells too.
+- **Runbook:** explain that a formula difference can sit under row causes, and
+  that "formulas not compared" means the check could not run.
+
+**Precise rules (from the builder check):**
+
+- **Matched rows means the rows the reconcile matched, not "everything minus the
+  unmatched".** Both sides keep only grain keys that the reconcile saw on both
+  sides with equal values: a semi-join on the reconcile's own row sets (the
+  dashboard's after `rows.dashboard_scope`, `rows.reduce` and cuts; Cube's after
+  `scope`), minus the saved unmatched keys. Rows the reconcile never saw, such
+  as out-of-scope or non-latest daily rows, are never in either side, so they
+  can never be read as a formula difference. It rebuilds the reconcile's row
+  sets inside the query at the comparison's moment rather than storing matched
+  keys.
+- **Self-check first.** Each side's rewritten query is also run with nothing
+  removed. If it does not reproduce the run's own value for the cell at
+  `decimals`, the cell is "formulas not compared: the rewrite does not reproduce
+  the run's cells". This catches a missed fact reference or a wrongly wrapped
+  sheet query. It doubles the queries; they are priced like the rest.
+- **Which tables the Cube side filters:** every table Cube's SQL reads (the
+  view's `fact` and any `also_facts`) that carries every grain column. A table
+  without the grain columns, such as a goals table at school and grade grain, is
+  a lookup and is left as is. If no table Cube reads carries the grain columns,
+  the cells are "formulas not compared".
+- **Empty sides:** a cell with no matched rows on either side is "formulas not
+  compared: no rows both sides hold". Matched rows exist on both sides by
+  definition otherwise.
+- **Every other failure is the same fallback, with its reason and next step:**
+  saved rows gone or past time travel ("compare it again"), a BigQuery or Cube
+  error (job id and reason code only), a Cube side that cannot be rewritten.
+  None refuses `sort`, makes the comparison stale, or blocks `ask-owner`.
+- **What "formulas not compared" means for the result:** the cell set closes by
+  coverage as before. A measure with differing cells is never "validated" in any
+  case, so the verdict does not change. The label is a disclosure, listed under
+  "Still with the analyst"; no decision clears it, and re-running `sort` after
+  its cause is fixed replaces it.
+- **Pricing and scope:** the formula check's queries join the explanations'
+  up-front batch in `sort`, so one refusal comes before anything runs. Under
+  `sort --comparison`, it runs only for the comparisons named.
+
+#### 2. Bugs (each with a test)
+
+- **`read-sheet` and the COUNTD caption:** add `distinct count` to
+  `read_sheet._AGG_PREFIX`, so `sheet_field: Distinct count of <field>` is
+  found.
+- **A comparison opening with a YAML merge key:** `config.write_rebuild_check`
+  (and the decision writer) find a comparison by an `id:` line anywhere in its
+  list item, allowing a trailing comment. `rebuild-sheet` finds the item before
+  the export, so an unwritable file refuses before any spend.
+- **Text measures:** `read-sheet` and `rebuild-sheet` refuse a text measure up
+  front: "text measures are not compared; compare the numeric measure it is
+  built from". The number-format message no longer fires on letters. Full text
+  comparison is not built (_Calls_ below).
+- **Blank cells:** `tableau.match_export` skips an export-only cell whose value
+  is blank and a sheet-query-only cell whose value is NULL, and prints how many
+  it skipped. A blank on one side with a value on the other still fails.
+- **`*` total rows:** `rebuild._export_cells` treats `*` like `All` in the
+  total-row check, with the same guard (only when the sheet query has no real
+  `*` member), only for dims on rows or columns, and counts them in
+  `totals_skipped`.
+- **Dual-axis sheets:** `rebuild._export_cells` drops a repeated export row when
+  it matches another on every column except table calcs and other measure
+  columns. Two marks that differ in any other column still fail as "more than 1
+  export row", so the `split_rows` signal survives.
+- **Non-null filters:** `find_field.restricts` treats a quantitative filter with
+  `included-values` of `non-null` or `null` as restricting and says "non-null
+  values only". `read-sheet` points at `dashboard_filters` with `operator: set`.
+  A rebuild check written before the fix may list the field outside
+  `restricting_filters`; the runbook says to re-run `rebuild-sheet` for it.
+- **A `dims_differ` explanation:** `explain.unmatched_sql` carries `__moved` and
+  `__d_<col>` per dim. The runbook and docstring say `__d_<col>` is NULL unless
+  that column differs, so an explanation reads `COALESCE(u.__d_x, u.x)` for the
+  dashboard's value.
+- **Pre-aggregation refusal:** the refusal names the remedy (a Cube-only `scope`
+  on a never-null member the rollup does not carry, such as the fact's primary
+  key, `operator: set`), and no skip line ends in a doubled period. The runbook
+  says the same.
+
+#### 3. Published worksheets only
+
+- A worksheet is published when it sits on a dashboard in the workbook's layout
+  (a dashboard zone) or Tableau Server lists it as its own view.
+- `find-field` and `read-sheet` mark any other worksheet "not on a published
+  dashboard". `rebuild-sheet` refuses it. `compare` skips it with that reason.
+- A comparison opts in with `unpublished: true`. Its owner question then says
+  the sheet is on no published dashboard.
+
+#### 4. Safe filter values
+
+- The explicit allowlist (`find_field.SHOWN_FILTER_FIELDS`) stays the rule;
+  anything not on it stays hidden. It gains `response_type`, `module_type` and
+  `is_normed_scope`.
+- For an allowlisted field, `find-field` and `read-sheet` show the chosen
+  values, a quantitative filter's bounds, and its include or exclude mode.
+- A calculated-field filter is shown only when every column it reads is
+  allowlisted.
+
+#### 5. Shared explanations and the cause-first method
+
+- An explanation is shared across every comparison on the same `dashboard_view`
+  whose `rows` grain and values match, whatever their `filters`, `defaults`,
+  `dashboard_columns`, `scope` and `cuts`.
+- Each comparison runs it on its own unmatched rows, with its own check that
+  every row gets exactly one label. A row it does not cover is `UNEXPLAINED`.
+- `explain` prints "Also <comparison>" for each it ran on; the explanation file
+  does not list them.
+- Runbook: find a cause once, on the comparison that shows it most clearly, then
+  let it run on every comparison of that model; work comparison by comparison
+  only for what is left.
+
+### Proving it live (owner's decision)
+
+No live spend is part of this build. After it lands, the #6415 session merges
+the updated #6402 branch into its validation branch and re-runs `sort`; the 3
+goal comparisons should come out as formula differences. That spend is approved
+there.
+
+### Calls made in this revision (owner to check)
+
+- Text measures are refused, not compared. The DDI text measure is validated
+  through the numeric measure it is built from.
+- The pre-aggregation remedy is named, not applied: `compare` does not add the
+  scope by itself.
+- The formula check runs in `sort`, not `compare`.
+- The formula check's precise rules above: the semi-join on the reconcile's own
+  row sets, the self-check, which tables Cube's side filters, empty sides, one
+  fallback for every failure, no change to the verdict, and pricing in the
+  explanations' batch.
+- A calculated-field filter's values show only when every column it reads is
+  allowlisted.
+
+### Left to the builder
+
+- How the Cube-side rewrite finds and replaces the fact reference in compiled
+  SQL, and how it detects a grain column that is not a fact column.
+- The exact wording of the new labels and refusals.
+- Whether "published" reads Tableau Server's views list at `find-field` time or
+  only at `rebuild-sheet` time.
