@@ -152,9 +152,9 @@ alum, for the Career Team to reconcile.
 `rpt_tableau__kfwd_career_launch_survey` is a full join of the alumni roster and
 the survey responses, so it holds 3 kinds of row:
 
-- an alum with a response: one row per alum, per response, per graduated
-  postsecondary enrollment;
-- an alum with no response: the survey columns are empty;
+- an alum's `rn_graduated = 1` row: one row per matched response, or 1 row with
+  empty survey columns if they have none;
+- an alum's other graduated enrollments: 1 row each, with empty survey columns;
 - a response with no alum: `contact_id` is empty and `is_unmatched_response` is
   true.
 
@@ -164,10 +164,17 @@ an alum with several responses or several degrees counts more than once, and
 unmatched responses count as alumni. The filters also drop some alumni who have
 no response; see _Known issues_.
 
+A response can match more than one alum, for example when 2 alumni share an
+email in Salesforce. Per-alum counts are unaffected, but a count of responses
+taken from the extract can count such a response twice.
+
 ### Reads
 
-- **Population:** Salesforce alumni with status HSG or TAF whose cohort is the
-  current academic year or earlier.
+- **Population:** alumni on `int_kippadb__roster` with status HSG or TAF whose
+  cohort is the current academic year or earlier. That roster starts from KIPP
+  school enrollment records (grades 8 to 12) and joins Salesforce on the school
+  student number, so a Salesforce contact with no matching school record is not
+  on it. It leaves out Miami for now.
 - **Graduated enrollments:** each postsecondary enrollment with status
   `Graduated`. `rn_graduated = 1` marks the earliest by end date. An alum with
   no graduated enrollment gets `rn_graduated = 1` on their single row.
@@ -234,9 +241,10 @@ What the order means:
 - A job at $50,000 or more is a Strong Launch, full-time or part-time, as long
   as it meets the benefits check below.
 - Benefits count only for Google Form v2, the only survey that asked about them.
-  A v2 respondent at $50,000 or more without benefits drops to the degree rules.
-  An Alchemer or v1 respondent with the same job is a Strong Launch. The rule
-  keys on the survey version of the current response, not the cohort.
+  A v2 respondent at $50,000 or more without benefits, or who skipped the
+  benefits question, drops to the degree rules. An Alchemer or v1 respondent
+  with the same job is a Strong Launch. The rule keys on the survey version of
+  the current response, not the cohort.
 - For a Bachelor's graduate, Part-Quality means $50,000 or more without benefits
   on v2. A Bachelor's graduate under $50,000 is Not Strong Launch.
 - For Associate's and Certificate graduates, Part-Quality means pay between the
@@ -248,7 +256,8 @@ What the order means:
 ## Readiness scoring
 
 `int_surveys__kfwd_career_launch_assessments` scores each assessment, one row
-per Career Conversation:
+per `assessment_id`. Counselors record one assessment per conversation, but
+nothing in the data links an assessment to a CC1 to CC5 note in Salesforce.
 
 1. Each indicator level takes its points from the Rubric tab. The tab is keyed
    on indicator and level, such as `career_ready_3`.
@@ -263,14 +272,14 @@ per Career Conversation:
 What that means for a reader:
 
 - A missing level, a level outside 1 to 4, or a key missing from the Rubric tab
-  scores 0 points. Check `has_all_levels` before reading a low score as a weak
-  alum.
+  adds 0 to `launch_score`; that indicator's `*_points` column is empty. Check
+  `has_all_levels` before reading a low score as a weak alum.
 - An alum with no current college GPA scores 0 GPA points.
 - The score uses today's GPA, not the GPA at the time of the conversation, so a
-  past assessment's score changes when the GPA does. The app shows the same
-  score.
-- The rubric, bands, and stages are read live, so a change on the sheet rescores
-  every past assessment.
+  past assessment's score changes when the GPA does. The app reads the same
+  Rubric tab.
+- A change on the Rubric, Stages, or GPA Bands tab rescores every past
+  assessment once that tab's staging table rebuilds.
 
 ## KIPP Forward Career Launch app
 
@@ -298,8 +307,8 @@ not opted out of national or regional contact:
 
 - their Salesforce contact owner or postsecondary advisor is listed on the
   Caseloads tab, whatever their cohort;
-- their KIPP high school class is 4 to 6 years past graduation: the
-  `current_academic_year` variable minus 3, 4, or 5;
+- they are in their 4th to 6th school year after high school: their KIPP high
+  school class is the `current_academic_year` variable minus 3, 4, or 5;
 - they are in the newest class, equal to `current_academic_year`, and their
   advising provider is not KIPP NYC (the Collab).
 
@@ -328,7 +337,7 @@ Other columns the app reads:
 ### Outputs
 
 `stg_google_appsheet__kfwd_career_conversations__assessments` stages the
-assessments, one row per Career Conversation, and
+assessments, one row per assessment, and
 `int_surveys__kfwd_career_launch_assessments` scores them. The Tableau extract
 shows each alum's latest assessment.
 
@@ -339,9 +348,11 @@ The Tableau extract also reads the checklist and notes from the older
 ### Who runs it and when
 
 Counselors, at any time. The roster the app reads is a view, so it reflects the
-Salesforce and survey tables as of their last build. An assessment's
-`contact_id` comes from the app's link to the roster. An assessment with a blank
-or unmatched `contact_id` never reaches the dashboard.
+Salesforce and survey tables as of their last build. A new assessment reaches
+the dashboard after its staging table rebuilds and the workbook's next extract
+refresh. An assessment's `contact_id` comes from the app's link to the roster.
+An assessment with a blank or unmatched `contact_id` never reaches the
+dashboard.
 
 ## Manual Uploads
 
@@ -356,15 +367,16 @@ The Manual Uploads template has 9 columns: Contact ID, Email, Cell Phone,
 Education Level, Post Grad Plan, Salary, Job Satisfaction, Company, and
 Benefits.
 
+Enter Salary in the survey's format, with a dollar sign, such as "$50,000 -
+$54,999". A salary with no dollar sign leaves `annual_income_clean` empty, so
+the alum reads as Not Strong Launch.
+
 ### Steps
 
 1. The counselor fills in a copy of the template tab, one row per alum.
 2. The data team copies the rows into the sheet that dbt reads.
-3. If the alum already has a row there, the data team replaces that row. A
-   second row with the same Contact ID fails the staging model's uniqueness
-   test, but the duplicate still reaches the extract: the staging table builds
-   before its test runs, and everything downstream is a view. Both rows share
-   one `response_id`, so the extract merges their answers.
+3. If the alum already has a row there, the data team replaces that row instead
+   of adding a second one; see _Known issues_.
 
 ### Outputs
 
@@ -391,6 +403,10 @@ over.
   the reconciliation form.
 - `base_alchemer__survey_results` and `int_surveys__response_identifiers` —
   Alchemer answers and respondent IDs.
+- `int_surveys__kfwd_career_launch_responses` — every survey source stacked into
+  one long table, one row per response and question. Both extracts read it.
+- `int_surveys__kfwd_career_launch_reconciliation` — the reconciliation form,
+  one row per survey response, latest submission only.
 - `int_surveys__kfwd_career_launch_contacts` — one row per Salesforce contact:
   current college GPA, GPA band and points, ECC, and the roster flags. Reads
   `base_kippadb__contact` and `int_kippadb__enrollment_pivot`.
@@ -406,10 +422,7 @@ over.
 
 - **Manual Uploads template** — counselors fill in a copy. The data team copies
   the rows to the sheet dbt reads.
-- **Manual Uploads sheet** — the sheet dbt reads. Until real uploads start, it
-  holds the template's example row. That row uses a real alum's Contact ID, so
-  it counts as that alum's current response. Delete it before the first real
-  upload.
+- **Manual Uploads sheet** — the sheet dbt reads.
 - **Reconciliation Google Form** — 3 questions: survey response ID, Salesforce
   contact ID, and Reconcile or Exclude. The latest submission for a response
   wins.
@@ -444,33 +457,12 @@ over.
 
 ## Known issues, need to fix
 
-- **The extract's uniqueness test checks the wrong grain.** The test on
-  `contact_id` and `response_id` warns because an alum with several graduated
-  enrollments has several rows with no response. Those rows are expected, and
-  none survive the dashboard filters. A few more groups repeat a real response;
-  they come from the reconciliation join in the next issue. To see it, group the
-  extract by `contact_id` and `response_id` with `count(*) > 1`, then split by
-  whether `response_id` is null. Tracked in #3818. Fix: add the enrollment to
-  the test's columns, or scope the test to `rn_graduated = 1`, and fix the
-  reconciliation join.
-- **Both extracts repeat an alum who was reconciled more than once.** Each
-  `roster` CTE joins every reconciliation row for a contact. In the Tableau
-  extract, only one of those reconciled responses lands on the
-  `rn_graduated = 1` row, so the others never match the alum. To see it, count
-  `contact_id` values in `rpt_appsheet__kfwd_career_launch_survey` with more
-  than 1 row, and compare with contacts that have more than 1 row in
-  `int_surveys__kfwd_career_launch_reconciliation`. Tracked in #3818.
 - **The dashboard filters drop alumni with 2 or more degrees and no response.**
-  For these alumni, every row ties on `rn_respondent`, so it picks an arbitrary
-  row, often one with `rn_graduated > 1`. No row passes both filters, and the
-  alum vanishes from the No Survey count. To see it, count alumni in the extract
-  with no row where `rn_respondent = 1` and `rn_graduated = 1`. Fix: add
-  `rn_graduated` to the `rn_respondent` ordering. Tracked in #5894.
-- **The AppSheet survey count does not match the Tableau extract.** It counts
-  responses marked `Exclude`, and it does not match on Salesforce ID. Compare
-  `survey_response_count` with the count of matched responses per alum in the
-  Tableau extract. Fix: use the same matching and exclusion as the Tableau
-  extract. Tracked in #3818.
+  For these alumni, every row ties on `rn_respondent`, and the pick lands on a
+  row with `rn_graduated > 1`. No row passes both filters, and the alum vanishes
+  from the No Survey count. To see it, count alumni in the extract with no row
+  where `rn_respondent = 1` and `rn_graduated = 1`. Fix: add `rn_graduated` to
+  the `rn_respondent` ordering. Tracked in #5894.
 - **Manual Uploads benefits do not count.** The rule checks benefits only for
   `Google Form v2`, so an upload at $50,000 or more is a Strong Launch without
   benefits: a looser bar than v2. Uploads also store benefits as `true` or
@@ -480,11 +472,21 @@ over.
   `rn_respondent` ranks them first. KFwd wants the most recent record to win, so
   a survey taken after an upload should replace it. To see it, count alumni in
   the extract whose `Bulk Add` row has `rn_respondent = 1` and who also have a
-  survey response; none do yet, because no real uploads have happened. Tracked
-  in #5709.
-- **The 2.00 to 2.49 GPA band is labeled "2.00-2.50".** Run
-  `rg -n "2\.00-2\.50" src/dbt`. The same label sits in 8 models across the KFwd
-  extracts, not only this family. Tracked in #5707.
+  newer survey response. No alum is affected yet, because real uploads have not
+  started. Tracked in #5709.
+- **The Manual Uploads sheet holds the template's example row.** It names a
+  Contact ID, so it counts as that alum's current response. Delete it before the
+  first real upload. To see it, count the rows in
+  `stg_google_sheets__kippfwd__career_launch_bulk_add`.
+- **A duplicate Manual Upload still reaches the extract.** A second row with the
+  same Contact ID fails the staging model's uniqueness test, but the staging
+  table builds before its test runs, and everything downstream is a view. Both
+  rows share one `response_id`, so the extract merges their answers. To see it,
+  check that test's result.
+- **The 2.00 to 2.49 high school GPA band (`hs_gpa_bands`) is labeled
+  "2.00-2.50".** It is unrelated to the GPA Bands tab. Run
+  `rg -n "2\.00-2\.50" src/dbt`. The same label sits in several models across
+  the KFwd extracts, not only this family. Tracked in #5707.
 
 ## Yearly upkeep
 

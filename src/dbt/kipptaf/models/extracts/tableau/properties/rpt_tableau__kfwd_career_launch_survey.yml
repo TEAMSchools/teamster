@@ -214,31 +214,32 @@ models:
           The alumnus's Salesforce College Program records, separated by
           semicolons, each as the organization name followed by its opportunity
           dates in parentheses when present. Leaves out records marked Not
-          Matched or Wait-listed. Null when there are none.
+          Matched or Wait-listed and records with no application status. Null
+          when there are none.
         config:
           meta:
             contains_pii: true
       - name: is_basta
         data_type: boolean
         description:
-          True when the alumnus has a Project BASTA College Program record not
-          marked Not Matched or Wait-listed.
+          True when the alumnus has a Project BASTA College Program record that
+          college_programs includes.
         config:
           meta:
             contains_pii: true
       - name: is_braven
         data_type: boolean
         description:
-          True when the alumnus has a Braven College Program record not marked
-          Not Matched or Wait-listed.
+          True when the alumnus has a Braven College Program record that
+          college_programs includes.
         config:
           meta:
             contains_pii: true
       - name: is_backrs
         data_type: boolean
         description:
-          True when the alumnus has a Backrs College Program record not marked
-          Not Matched or Wait-listed.
+          True when the alumnus has a Backrs College Program record that
+          college_programs includes.
         config:
           meta:
             contains_pii: true
@@ -246,8 +247,8 @@ models:
         data_type: boolean
         description:
           True when the alumnus has a College Program record with KIPP New
-          Jersey - Camden or KIPP New Jersey - Newark not marked Not Matched or
-          Wait-listed.
+          Jersey - Camden or KIPP New Jersey - Newark that college_programs
+          includes.
         config:
           meta:
             contains_pii: true
@@ -534,8 +535,8 @@ models:
       - name: tier
         data_type: string
         description:
-          Subject of the alumnus's most recent Salesforce contact note titled
-          Tier and a number.
+          Subject of the alumnus's most recent Salesforce contact note whose
+          subject ends in Tier and a number.
         config:
           meta:
             contains_pii: true
