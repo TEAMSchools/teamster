@@ -411,8 +411,7 @@ class _Side:
         )
 
     def query(self, variants, exclude, combine: bool, include=()) -> str:
-        if self.comparison.rows is None:
-            raise pipeline.Refusal(f"comparison {self.comparison.id!r} has no rows")
+        rows = pipeline.rows_of(self.comparison)
         return reconcile.trace_sql(
             pipeline.wrap_cube(
                 self.sides.cube_rows_sql,
@@ -422,7 +421,7 @@ class _Side:
                 None,
             ),
             self.sides.dashboard.sql,
-            self.comparison.rows,
+            rows,
             pipeline.group_dims(self.comparison),
             pipeline.filter_flags(self.comparison),
             bucket=self.bucket,

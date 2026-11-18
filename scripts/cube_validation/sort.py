@@ -23,7 +23,7 @@ import sys
 from collections import Counter
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -34,7 +34,7 @@ from .bq import CostCapError, Warehouse
 from .config import Comparison, Decision, RebuildCheck, ViewConfig, mask_digits
 from .cube_client import Cube, MemberDoc, member_docs, network_schools
 from .find_field import _tokens
-from .moment import Build
+from .moment import Build, utcnow
 from .reconcile import CellDiff, Gap, Group
 from .report import (
     _CELL_WORDS,
@@ -719,7 +719,7 @@ def mark_decided(
 
 def _covers_group(d: Decision, g: Group) -> bool:
     """A `group` decision names `g`, whether or not its SQL still holds."""
-    values = {"" if v is None else str(v) for v in d.group.get("values") or []}
+    values = {decisions._text(v) for v in d.group.get("values") or []}
     return (
         d.comparison == g.comparison_id
         and g.value_of(d.group.get("column") or "") in values
@@ -1545,7 +1545,7 @@ def sort_run(
 
     from . import explain, formula
 
-    ticker = ticker or Ticker(explain._utcnow, explain._utcnow())
+    ticker = ticker or Ticker(utcnow, utcnow())
     prepared = trace.Prepared()
     with wh.budget(max_usd):
         prepared.schools = network_schools(wh)
@@ -1560,7 +1560,7 @@ def sort_run(
             wh=wh,
             cube=cube,
             schools=prepared.schools,
-            now=now or datetime.now(timezone.utc),
+            now=now or utcnow(),
         )
         # A comparison `compare` skipped keeps its older result: say why.
         stale |= {cid: f"{NOT_COMPARED}: {why}" for cid, why in skipped.items()}

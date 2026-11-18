@@ -32,7 +32,6 @@ import json
 import re
 from collections import Counter
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
 from pathlib import Path
 
 import sqlglot
@@ -56,7 +55,7 @@ from . import (
 from .bq import CostCapError, ViewHistoryError, Warehouse
 from .config import Comparison, ViewConfig, explanation_key, id_like, mask_digits
 from .cube_client import Cube, CubeError, CubeRefusal, network_schools
-from .moment import Build, MomentError, pick_moment
+from .moment import Build, MomentError, pick_moment, utcnow
 from .reconcile import Group
 from .report import RunResult, Ticker, mask, shown_counts
 from .timetravel import PROJECT, utc_literal
@@ -413,6 +412,24 @@ def _leaves(node: exp.Expression):
         yield from _leaves(child)
 
 
+def _names_a_row_by_value(tree: exp.Expression, student: set[str]) -> bool:
+    """Whether a comparison in `tree` tests an identifying column against a
+    literal.
+
+    An EXISTS is no comparison: each comparison inside it is tested on its
+    own, as `find_all` reaches it.
+    """
+    for node in tree.find_all(exp.Predicate):
+        if isinstance(node, exp.Exists):
+            continue
+        leaves = list(_leaves(node))
+        if any(
+            isinstance(c, exp.Column) and _identifies(c.name, student) for c in leaves
+        ) and any(isinstance(c, exp.Literal) for c in leaves):
+            return True
+    return False
+
+
 def _scan_text(body: str) -> None:
     """Refuse an ID-like value or an email in a comment or a string literal."""
     try:
@@ -499,17 +516,11 @@ def check_sql(body: str, grain: set[str], student: set[str] = frozenset()) -> se
                 f"the explanation returns {len(names)} column(s) other than __row and "
                 "cause; return exactly __row, cause"
             )
-    for node in tree.find_all(exp.Predicate):
-        if isinstance(node, exp.Exists):
-            continue
-        leaves = list(_leaves(node))
-        if any(
-            isinstance(c, exp.Column) and _identifies(c.name, student) for c in leaves
-        ) and any(isinstance(c, exp.Literal) for c in leaves):
-            raise pipeline.Refusal(
-                "the explanation compares an identifying column with a literal: never "
-                "name a row by its value"
-            )
+    if _names_a_row_by_value(tree, student):
+        raise pipeline.Refusal(
+            "the explanation compares an identifying column with a literal: never "
+            "name a row by its value"
+        )
     literals = {lit.this for lit in tree.find_all(exp.Literal) if lit.is_string}
     if not literals:
         raise pipeline.Refusal(
@@ -610,19 +621,11 @@ def check_reproduce(sql: str, grain: set[str], student: set[str] = frozenset()) 
                 "the reproduce query groups by a grain or identifying column; "
                 "count by school, grade or another column that names no one"
             )
-    for node in tree.find_all(exp.Predicate):
-        # An EXISTS is no comparison: each comparison inside it is tested on
-        # its own, as find_all reaches it.
-        if isinstance(node, exp.Exists):
-            continue
-        leaves = list(_leaves(node))
-        if any(
-            isinstance(c, exp.Column) and _identifies(c.name, student) for c in leaves
-        ) and any(isinstance(c, exp.Literal) for c in leaves):
-            raise pipeline.Refusal(
-                "the reproduce query compares an identifying column with a "
-                "literal: never name a row by its value"
-            )
+    if _names_a_row_by_value(tree, student):
+        raise pipeline.Refusal(
+            "the reproduce query compares an identifying column with a "
+            "literal: never name a row by its value"
+        )
 
 
 def _check_default(value: exp.Expression) -> None:
@@ -701,10 +704,8 @@ def unmatched_sql(
         Cube names (as the side holding the row types it), and `__rn`. A
         `value_differs` row's side reads `both`.
     """
-    if comparison.rows is None:
-        raise pipeline.Refusal(f"comparison {comparison.id!r} has no rows to explain")
+    grain = pipeline.rows_of(comparison, "explain").grain
     dims = pipeline.group_dims(comparison)
-    grain = comparison.rows.grain
     whens = []
     for item_id, g in items:
         nulls = set(g.nulls)
@@ -750,8 +751,7 @@ def bucket_rows_sql(comparison: Comparison, bucket: str, source: str) -> str:
     row both sides hold adds the dashboard's cut flags (`__dcut<j>`): each
     side may file it under another cut.
     """
-    if comparison.rows is None:
-        raise pipeline.Refusal(f"comparison {comparison.id!r} has no rows to explain")
+    grain = pipeline.rows_of(comparison, "explain").grain
     if bucket not in reconcile.UNMATCHED:
         raise pipeline.Refusal(f"{bucket!r} is no bucket a run saves")
     side = "d" if bucket == "dashboard_only" else "c"
@@ -764,7 +764,7 @@ def bucket_rows_sql(comparison: Comparison, bucket: str, source: str) -> str:
         *(p.cube for p in dims),
         *([reconcile._MOVED] if dims else []),
         *(f"__d_{p.cube}" for p in dims),
-        *(f"__g{side}{i} AS {p.cube}" for i, p in enumerate(comparison.rows.grain)),
+        *(f"__g{side}{i} AS {p.cube}" for i, p in enumerate(grain)),
         "__rn",
         *(f"__{side}k{j} AS __cut{j}" for j in range(len(flags))),
         *(
@@ -1059,10 +1059,6 @@ def bigquery_said(exc: GoogleAPIError) -> str:
     return f"{_failure(exc)}: {masked}"
 
 
-def _utcnow() -> datetime:
-    return datetime.now(timezone.utc)
-
-
 def require_saved(
     wh: Warehouse, cfg: ViewConfig, run: RunResult, comparison: Comparison
 ) -> str:
@@ -1103,7 +1099,7 @@ def require_saved(
         return saved.table_sql(table)
     again = f"compare --comparison {comparison.id}"
     try:
-        pick_moment([moment], _utcnow(), None)
+        pick_moment([moment], utcnow(), None)
         step = f"Run `{again} --moment '{moment.end.isoformat()}'` to save them again"
     except MomentError:
         step = (
@@ -1616,11 +1612,8 @@ def run_stored(
                     prepared.schools = network_schools(wh)
                 sides = prepared.row_sides(cfg, comparison, run, wh, cube)
                 table = require_saved(wh, cfg, run, comparison)
-            except _CANNOT_RUN as exc:
-                ran.why = f"explanation {path.name} not run: {exc}"
-                continue
-            except GoogleAPIError as exc:
-                ran.why = f"explanation {path.name} not run ({bigquery_said(exc)})"
+            except (*_CANNOT_RUN, GoogleAPIError) as exc:
+                ran.why = _not_run(path.name, exc)
                 continue
             if done in kept:
                 _from_progress(ran, kept[done])
@@ -1641,11 +1634,8 @@ def run_stored(
                     moved=prepared.moved_at(run.moment_of(comparison.id)),
                     students=True,
                 )
-            except _CANNOT_RUN as exc:
-                ran.why = f"explanation {path.name} not run: {exc}"
-                continue
-            except GoogleAPIError as exc:
-                ran.why = f"explanation {path.name} not run ({bigquery_said(exc)})"
+            except (*_CANNOT_RUN, GoogleAPIError) as exc:
+                ran.why = _not_run(path.name, exc)
                 continue
             todo.append((ran, comparison, sql, literals, done))
 
@@ -1653,11 +1643,7 @@ def run_stored(
     total = 0.0
     for job, price in zip(todo, trace._dry_runs(wh, [t[2] for t in todo]), strict=True):
         if isinstance(price, GoogleAPIError):
-            job[
-                0
-            ].why = (
-                f"explanation {job[0].proof.path.name} not run ({bigquery_said(price)})"
-            )
+            job[0].why = _not_run(job[0].proof.path.name, price)
         else:
             total += price
             ready.append(job)
@@ -1674,7 +1660,7 @@ def run_stored(
             ran.found = outcomes(rows, ran.proof, ran.items, literals)
             ran.students = cause_students(rows, ran.proof, comparison)
         except (pipeline.Refusal, CostCapError) as exc:
-            ran.why = f"explanation {name} not run: {exc}"
+            ran.why = _not_run(name, exc)
         except GoogleAPIError as exc:
             # As `run_explanation` words it, so the evidence reads the same.
             ran.why = (
@@ -1702,6 +1688,14 @@ def run_stored(
 _OUTSIDE = "outside --comparison"
 # What keeps one explanation from running, besides a BigQuery error.
 _CANNOT_RUN = (pipeline.Refusal, CostCapError, ViewHistoryError, CubeError, CubeRefusal)
+
+
+def _not_run(name: str, exc: Exception) -> str:
+    """Why explanation `name` did not run: a BigQuery error in BigQuery's words
+    (`bigquery_said`), anything else as its message says."""
+    if isinstance(exc, GoogleAPIError):
+        return f"explanation {name} not run ({bigquery_said(exc)})"
+    return f"explanation {name} not run: {exc}"
 
 
 def _to_progress(ran: Ran) -> dict:
@@ -1767,10 +1761,8 @@ def _run_one(
             ran.students,
             table=table,
         )
-    except _CANNOT_RUN as exc:
-        ran.why = f"explanation {path.name} not run: {exc}"
-    except GoogleAPIError as exc:
-        ran.why = f"explanation {path.name} not run ({bigquery_said(exc)})"
+    except (*_CANNOT_RUN, GoogleAPIError) as exc:
+        ran.why = _not_run(path.name, exc)
     if ran.why:
         print(ran.why)
     return ran

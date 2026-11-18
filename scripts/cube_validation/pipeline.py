@@ -34,6 +34,7 @@ from .config import (
     WEEK_END_KEY,
     ColumnPair,
     Comparison,
+    RowSpec,
     ViewConfig,
     fingerprint_data,
 )
@@ -54,6 +55,23 @@ from .timetravel import PROJECT, AsOf, as_of, repin, utc_literal
 
 class Refusal(RuntimeError):
     """A command stopped on purpose; the message says why."""
+
+
+def rows_of(comparison: Comparison, to: str = "") -> RowSpec:
+    """The comparison's `rows`, refusing a comparison with none.
+
+    Args:
+        comparison: The comparison.
+        to: What the rows were wanted for, ending the refusal ("explain"
+            refuses "has no rows to explain"); none ends it at "has no rows".
+
+    Raises:
+        Refusal: The comparison has no `rows`.
+    """
+    if comparison.rows is None:
+        why = f" to {to}" if to else ""
+        raise Refusal(f"comparison {comparison.id!r} has no rows{why}")
+    return comparison.rows
 
 
 @dataclasses.dataclass(frozen=True)
@@ -858,8 +876,7 @@ def row_sides(
         Refusal: The comparison has no rows, or either side's SQL (cells and
             rows, expanded as of the moment) differs from what the run ran.
     """
-    if comparison.rows is None:
-        raise Refusal(f"comparison {comparison.id!r} has no rows to trace")
+    rows_of(comparison, "trace")
 
     ex = Expand(cfg, cube, schools, wh)
     cube_at = ex.at(ex.cube_sql(row_query(cfg.view, comparison), rows=True), build.end)

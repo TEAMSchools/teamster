@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Protocol
 
 from .timetravel import PROJECT, utc_literal
@@ -15,6 +15,11 @@ _MARGIN = timedelta(hours=1)
 
 class MomentError(RuntimeError):
     """No usable build to pin the validation to."""
+
+
+def utcnow() -> datetime:
+    """The current time in UTC, the `now` a moment is picked against."""
+    return datetime.now(timezone.utc)
 
 
 @dataclass(frozen=True)

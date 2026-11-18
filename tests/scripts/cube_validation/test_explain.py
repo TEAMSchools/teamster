@@ -267,7 +267,7 @@ def test_a_proof_refuses_saved_rows_labelled_for_another_run(
 def test_a_missing_table_past_time_travel_says_to_start_a_new_run(
     duck, tmp_path, offline, monkeypatch
 ):
-    monkeypatch.setattr(explain, "_utcnow", lambda: BUILD.end + timedelta(days=9))
+    monkeypatch.setattr(explain, "utcnow", lambda: BUILD.end + timedelta(days=9))
 
     with pytest.raises(
         pipeline.Refusal, match="Run `compare --comparison mastery` at a new moment"
@@ -278,7 +278,7 @@ def test_a_missing_table_past_time_travel_says_to_start_a_new_run(
 def test_a_missing_table_within_time_travel_says_to_save_it_again(
     duck, tmp_path, offline, monkeypatch
 ):
-    monkeypatch.setattr(explain, "_utcnow", lambda: BUILD.end + timedelta(hours=2))
+    monkeypatch.setattr(explain, "utcnow", lambda: BUILD.end + timedelta(hours=2))
 
     with pytest.raises(
         pipeline.Refusal,

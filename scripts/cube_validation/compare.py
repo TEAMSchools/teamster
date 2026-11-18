@@ -8,7 +8,7 @@ import functools
 import re
 import uuid
 from collections.abc import Callable, Iterable
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -26,6 +26,7 @@ from .moment import (
     fact_builds,
     fingerprint_sql,
     pick_moment,
+    utcnow,
 )
 from .pipeline import (
     SQL_ERRORS,
@@ -671,10 +672,6 @@ AUTO_RESUME = timedelta(hours=24)
 RESUME_LIMIT = timedelta(days=7)
 
 
-def _utcnow() -> datetime:
-    return datetime.now(timezone.utc)
-
-
 def _run_folder(
     cfg: ViewConfig,
     wh: Warehouse,
@@ -784,7 +781,7 @@ def compare(
     cube_host: str = "",
     resume: bool = False,
     restart: bool = False,
-    clock: Callable[[], datetime] = _utcnow,
+    clock: Callable[[], datetime] = utcnow,
     ticker: report.Ticker | None = None,
     only: list[str] | None = None,
     every: bool = False,

@@ -25,7 +25,7 @@ from sqlglot.errors import SqlglotError
 
 from . import coverage, cube_client, explain, pipeline, reconcile, trace
 from .bq import CostCapError, ViewHistoryError, Warehouse, job_failure
-from .config import Comparison, RowSpec, ViewConfig
+from .config import Comparison, ViewConfig
 from .cube_client import Cube, CubeError, CubeRefusal
 from .moment import Build
 from .report import RunResult, mask
@@ -202,13 +202,6 @@ def verdicts(
     return check
 
 
-def _rows(comparison: Comparison) -> RowSpec:
-    """The comparison's `rows`; the check needs a row grain to match on."""
-    if comparison.rows is None:
-        raise pipeline.Refusal(f"comparison {comparison.id!r} has no rows")
-    return comparison.rows
-
-
 def _keyed(keys: list[str]) -> str:
     """One row's key from its grain keys; NULL when the first, the student, is."""
     fields = ", ".join(f"{k} AS k{i}" for i, k in enumerate(keys))
@@ -261,7 +254,7 @@ def matched_ctes(
     Raises:
         pipeline.Refusal: The comparison has no `rows`.
     """
-    n = len(_rows(comparison).grain)
+    n = len(pipeline.rows_of(comparison).grain)
     args, kwargs = pipeline.reconcile_args(cfg, comparison, sides)
     ctes, _ = reconcile._joined(*args, keys=True, moved=True, **kwargs)
     # `__k*` are already the reconcile's grain keys.
@@ -346,7 +339,7 @@ def dashboard_side_sql(
             reads a row other than through `{rows}` (`_reads_only_rows`).
     """
     if keep:
-        grain = _rows(comparison).grain
+        grain = pipeline.rows_of(comparison).grain
         dates = pipeline.date_cubes(cfg)
         key = key_sql([p.dashboard for p in grain], [p.cube in dates for p in grain])
         rows = (
@@ -595,7 +588,7 @@ def cube_side_sql(
         NotCompared: Cube's SQL cannot be rewritten (`rewrite_cube_sql`).
     """
     dates = pipeline.date_cubes(cfg)
-    grain_dates = [p.cube in dates for p in _rows(comparison).grain]
+    grain_dates = [p.cube in dates for p in pipeline.rows_of(comparison).grain]
     dims = [d.cube for d in comparison.dims]
     parts = []
     for cut in cuts:
@@ -678,7 +671,7 @@ def _job_sql(
     ]
     ctes = matched_ctes(cfg, comparison, sides, table)
     ex = pipeline.Expand(cfg, cube, schools, wh)
-    grain = [p.cube for p in _rows(comparison).grain]
+    grain = [p.cube for p in pipeline.rows_of(comparison).grain]
     grain_table, columns = fact_grain(
         ex.cube_sql(pipeline.row_query(cfg.view, comparison), rows=True),
         cfg.view,
