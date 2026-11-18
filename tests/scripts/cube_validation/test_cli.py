@@ -1147,6 +1147,34 @@ def test_a_changed_second_fact_skips_only_the_comparisons_that_read_it(
     assert latest._file(results, "c2").read_text() == before
 
 
+def test_a_failed_table_scan_skips_only_the_comparisons_that_read_it(
+    fakes, tmp_path, capsys
+):
+    path = _two(tmp_path, _reads_membership, text=ALSO_FACTS_YML)
+    _second_fact_for_membership(fakes)
+    assert cli.main(["compare", str(path)]) == 0
+    results = latest.folder(tmp_path / "cache" / "v", "kipptaf_marts.fct_f")
+    before = latest._file(results, "c2").read_text()
+    fakes.bq.build = LATER
+    fakes.bq.ran.clear()
+    capsys.readouterr()
+    # The scan itself fails, after its dry run priced it.
+    _bigquery_refuses(fakes, "`fct_g` AS t", dry=False)
+
+    assert cli.main(["compare", str(path), "--all"]) == 0
+
+    out = capsys.readouterr().out
+    assert (
+        "Skipping c2: a scan of kipptaf_marts.fct_g failed in BigQuery "
+        "(job ?, invalidQuery); compare it again later."
+    ) in out
+    assert "12345" not in out
+    assert _scripts_for(fakes.bq) == ["c1"]
+    assert latest._file(results, "c2").read_text() == before
+    saved = json.loads(_latest_run(tmp_path).read_text())
+    assert [s["comparison"] for s in saved["skipped"]] == ["c2"]
+
+
 def test_a_plain_run_with_only_a_skipped_comparison_left_compares_nothing(
     fakes, tmp_path, capsys
 ):

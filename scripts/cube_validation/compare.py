@@ -1080,6 +1080,14 @@ def _compare_all(
     shared = sorted({t for p in plans for t in p.shared if t not in known})
     # Each table once, at both ends of the build, whichever checks need it.
     scanned = unique([*cfg.also_facts, *shared, *dims])
+
+    def unscanned(t: str, what: str, exc: GoogleAPIError) -> list[Skip]:
+        """Skip every comparison that reads `t`: unscanned, it cannot be
+        known to have held during the build."""
+        readers = [p.comparison.id for p in plans if t in p.cube_tables | set(p.shared)]
+        readers += [cid for cid, (_, h) in slices.items() if t in h.cube_tables]
+        return [_bigquery_skip(cid, f"{what} {t}", exc) for cid in readers]
+
     scan_usd = 0.0
     for t in list(scanned):
         try:
@@ -1087,16 +1095,8 @@ def _compare_all(
                 wh.estimate(fingerprint_sql(t, ts)) for ts in (build.start, build.end)
             )
         except GoogleAPIError as exc:
-            # Unscanned, so every comparison that reads it is skipped.
             scanned.remove(t)
-            readers = [
-                p.comparison.id for p in plans if t in p.cube_tables | set(p.shared)
-            ]
-            readers += [cid for cid, (_, h) in slices.items() if t in h.cube_tables]
-            skips += [
-                _bigquery_skip(cid, f"the dry run of a scan of {t}", exc)
-                for cid in readers
-            ]
+            skips += unscanned(t, "the dry run of a scan of", exc)
     gone = {s.comparison for s in skips}
     slices = {cid: v for cid, v in slices.items() if cid not in gone}
     priced = [
@@ -1115,13 +1115,23 @@ def _compare_all(
     )
     wh.refuse_past_caps(total)
 
-    changed = set(changed_between(wh, scanned, build.start, build.end))
+    changed: set[str] = set()
+    for t in scanned:
+        try:
+            changed.update(changed_between(wh, [t], build.start, build.end))
+        except GoogleAPIError as exc:
+            skips += unscanned(t, "a scan of", exc)
+    gone = {s.comparison for s in skips}
     skips += _moved_fact_skips(
         cfg,
         build,
         changed,
-        {p.comparison.id: p.cube_tables for p in plans}
-        | {cid: held.cube_tables for cid, (_, held) in slices.items()},
+        {p.comparison.id: p.cube_tables for p in plans if p.comparison.id not in gone}
+        | {
+            cid: held.cube_tables
+            for cid, (_, held) in slices.items()
+            if cid not in gone
+        },
     )
     gone = {s.comparison for s in skips}
     slices = {cid: v for cid, v in slices.items() if cid not in gone}
