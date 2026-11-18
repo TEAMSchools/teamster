@@ -192,9 +192,9 @@ def apply(
     Returns:
         Groups still open or quieted, decisions to reconfirm because the SQL
         changed or the formula check filed more cells (their groups or diff
-        stay open), decisions matching no group, and
-        decisions only some of whose values match a group, with the values
-        that match none. The values that do match stay quiet.
+        stay open), decisions matching no group, and decisions only some of
+        whose values match a group, with the values that match none. The
+        values that do match stay quiet.
 
     Raises:
         ValueError: Two decisions claim the same group, or the same

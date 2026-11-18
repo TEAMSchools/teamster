@@ -822,6 +822,8 @@ def test_a_formula_decision_loads_its_recorded_check_cells(tmp_path):
     [
         (FORMULA_DECISION, "many", "must be a whole number"),
         (FORMULA_DECISION, "'-1'", "must be a whole number"),
+        # A digit `int` cannot read.
+        (FORMULA_DECISION, "'²'", "must be a whole number"),
         (
             FORMULA_DECISION.replace(
                 "formula: true", "group: { column: x, values: ['1'] }"

@@ -731,7 +731,8 @@ def _decision(
             reader.child("fingerprints", fingerprints).fail(
                 MATCHED_ONLY, "belongs to a formula decision"
             )
-        if not str(fingerprints[MATCHED_ONLY]).isdigit():
+        # `isdecimal`, not `isdigit`: `int` refuses a digit such as '²'.
+        if not str(fingerprints[MATCHED_ONLY]).isdecimal():
             reader.child("fingerprints", fingerprints).fail(
                 MATCHED_ONLY, "must be a whole number; `decide` writes it"
             )

@@ -1084,8 +1084,9 @@ def approved_decisions(
     Either kind takes the comparison's `{cube, dashboard}` from the run's
     fingerprints; a formula difference also records, when there are any,
     the cells the formula check filed in it (`fingerprints.matched_only`), so
-    more filed later sends it to re-confirm (`decisions.apply`). A missing cut or filter covers the view, so it takes
-    neither a comparison nor fingerprints. A cell set takes no decision.
+    more filed later sends it to re-confirm (`decisions.apply`). A missing cut
+    or filter covers the view, so it takes neither a comparison nor
+    fingerprints. A cell set takes no decision.
 
     Args:
         approved: `[{"id", "call", "reason", "task", "item", "cause"}]`;
