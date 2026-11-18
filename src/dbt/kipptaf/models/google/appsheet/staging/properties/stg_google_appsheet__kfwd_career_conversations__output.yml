@@ -17,25 +17,49 @@ models:
       - name: notes
         description: Free-text notes from the career conversation.
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: is_resume_score
         description: Whether resume was scored.
         data_type: boolean
+        config:
+          meta:
+            contains_pii: true
       - name: is_linkedin
         description: Whether the alumni's LinkedIn profile was discussed.
         data_type: boolean
+        config:
+          meta:
+            contains_pii: true
       - name: is_mock_interview_or_prep
         description:
           Whether mock interview or interview preparation was discussed.
         data_type: boolean
+        config:
+          meta:
+            contains_pii: true
       - name: is_professional_references_list
         description: Whether the professional references list was discussed.
         data_type: boolean
+        config:
+          meta:
+            contains_pii: true
       - name: is_job_search_template
         description: Whether the job search template was discussed.
         data_type: boolean
+        config:
+          meta:
+            contains_pii: true
       - name: is_cover_letter_template
         description: Whether the cover letter template was discussed.
         data_type: boolean
+        config:
+          meta:
+            contains_pii: true
       - name: is_work_samples
         description: Whether work samples were discussed in the conversation.
         data_type: boolean
+        config:
+          meta:
+            contains_pii: true

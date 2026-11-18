@@ -40,6 +40,9 @@ models:
       - name: ktc_cohort
         data_type: int64
         description: KIPP Through College cohort (high school graduation year).
+        config:
+          meta:
+            contains_pii: true
       - name: primary_email
         data_type: string
         description: Salesforce primary email, lowercased.
@@ -143,6 +146,9 @@ models:
       - name: advising_provider
         data_type: string
         description: Organization advising the alumnus, per Salesforce.
+        config:
+          meta:
+            contains_pii: true
       - name: expected_college_grad_date
         data_type: date
         description: Expected college graduation date from Salesforce.
@@ -154,12 +160,18 @@ models:
         description:
           Number of distinct career launch survey responses matched to the
           alumnus, not counting responses marked Exclude; 0 when none.
+        config:
+          meta:
+            contains_pii: true
       - name: latest_survey_date
         data_type: timestamp
         description:
           Submission time of the alumnus's most recent matched response,
           ignoring responses marked Exclude. Null when none matched, or when the
           only matches are bulk-add rows.
+        config:
+          meta:
+            contains_pii: true
       - name: contact_owner
         data_type: string
         description: Name of the Salesforce contact owner for the alumnus.

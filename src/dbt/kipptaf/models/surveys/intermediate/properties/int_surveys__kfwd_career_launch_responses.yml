@@ -20,6 +20,9 @@ models:
         data_type: timestamp
         description:
           When the respondent submitted the response. Null for bulk-add rows.
+        config:
+          meta:
+            contains_pii: true
       - name: respondent_salesforce_id
         data_type: string
         description:

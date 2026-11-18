@@ -38,56 +38,98 @@ models:
       - name: sf_first_name
         data_type: string
         description: Alumnus first name from Salesforce.
+        config:
+          meta:
+            contains_pii: true
       - name: sf_last_name
         data_type: string
         description: Alumnus last name from Salesforce.
+        config:
+          meta:
+            contains_pii: true
       - name: sf_lastfirst
         data_type: string
         description:
           Alumnus name as Last, First from Salesforce, falling back to the
           PowerSchool student name.
+        config:
+          meta:
+            contains_pii: true
       - name: contact_kipp_ms_graduate
         data_type: boolean
         description:
           Whether the Salesforce contact records the alumnus as a KIPP middle
           school graduate.
+        config:
+          meta:
+            contains_pii: true
       - name: contact_kipp_hs_graduate
         data_type: boolean
         description:
           Whether the Salesforce contact records the alumnus as a KIPP high
           school graduate.
+        config:
+          meta:
+            contains_pii: true
       - name: contact_kipp_hs_class
         data_type: int64
         description: KIPP high school class year on the Salesforce contact.
+        config:
+          meta:
+            contains_pii: true
       - name: college_match_display_gpa
         data_type: numeric
         description:
           College Match Display GPA (high school GPA) from the Salesforce
           contact.
+        config:
+          meta:
+            contains_pii: true
       - name: kipp_region_name
         data_type: string
         description: KIPP region on the Salesforce contact.
+        config:
+          meta:
+            contains_pii: true
       - name: contact_description
         data_type: string
         description: Free-text Description field on the Salesforce contact.
+        config:
+          meta:
+            contains_pii: true
       - name: contact_gender
         data_type: string
         description: Gender on the Salesforce contact.
+        config:
+          meta:
+            contains_pii: true
       - name: contact_ethnicity
         data_type: string
         description: Ethnicity on the Salesforce contact.
+        config:
+          meta:
+            contains_pii: true
       - name: expected_college_grad_date
         data_type: date
         description:
           Expected college graduation date from the Salesforce contact.
+        config:
+          meta:
+            contains_pii: true
       - name: actual_college_grad_date
         data_type: date
         description: Actual college graduation date from the Salesforce contact.
+        config:
+          meta:
+            contains_pii: true
       - name: current_kipp_student
         data_type: string
         description:
           Current KIPP Student value on the Salesforce contact, or 'Missing from
           Salesforce' when blank.
+        config:
+          meta:
+            contains_pii: true
       - name: contact_owner_name
         data_type: string
         description: Name of the Salesforce user who owns the contact.
@@ -96,40 +138,64 @@ models:
         description:
           Degree type of the graduated postsecondary enrollment on this row.
           Null when the alumnus has no graduated enrollment.
+        config:
+          meta:
+            contains_pii: true
       - name: type
         data_type: string
         description:
           Salesforce type of the graduated postsecondary enrollment on this row;
           never High School or Middle School. Null when the alumnus has no
           graduated enrollment.
+        config:
+          meta:
+            contains_pii: true
       - name: start_date
         data_type: date
         description:
           Start date of the graduated postsecondary enrollment on this row.
+        config:
+          meta:
+            contains_pii: true
       - name: actual_end_date
         data_type: date
         description:
           Actual end date of the graduated postsecondary enrollment on this row.
+        config:
+          meta:
+            contains_pii: true
       - name: major
         data_type: string
         description:
           Major of the graduated postsecondary enrollment on this row.
+        config:
+          meta:
+            contains_pii: true
       - name: status
         data_type: string
         description:
           Status of the enrollment on this row — always Graduated, or null when
           the alumnus has no graduated enrollment.
+        config:
+          meta:
+            contains_pii: true
       - name: ecc
         data_type: numeric
         description:
           Adjusted six-year minority graduation rate of the institution of the
           graduated enrollment on this row, from its Salesforce account. Null
           when the alumnus has no graduated enrollment.
+        config:
+          meta:
+            contains_pii: true
       - name: institution
         data_type: string
         description:
           Name of the institution of the graduated enrollment on this row, from
           its Salesforce account.
+        config:
+          meta:
+            contains_pii: true
       - name: enrollment_id
         data_type: string
         description:
@@ -149,51 +215,87 @@ models:
           semicolons, each as the organization name followed by its opportunity
           dates in parentheses when present. Leaves out records marked Not
           Matched or Wait-listed. Null when there are none.
+        config:
+          meta:
+            contains_pii: true
       - name: is_basta
         data_type: boolean
         description:
           True when the alumnus has a Project BASTA College Program record not
           marked Not Matched or Wait-listed.
+        config:
+          meta:
+            contains_pii: true
       - name: is_braven
         data_type: boolean
         description:
           True when the alumnus has a Braven College Program record not marked
           Not Matched or Wait-listed.
+        config:
+          meta:
+            contains_pii: true
       - name: is_backrs
         data_type: boolean
         description:
           True when the alumnus has a Backrs College Program record not marked
           Not Matched or Wait-listed.
+        config:
+          meta:
+            contains_pii: true
       - name: is_kippnj_internship
         data_type: boolean
         description:
           True when the alumnus has a College Program record with KIPP New
           Jersey - Camden or KIPP New Jersey - Newark not marked Not Matched or
           Wait-listed.
+        config:
+          meta:
+            contains_pii: true
       - name: hs_gpa_bands
         data_type: string
         description: >-
           Band of college_match_display_gpa — 3.50+, 3.00-3.49, 2.50-2.99,
           2.00-2.50 (which covers 2.00 to 2.49), or <2.00. Null when there is no
           GPA.
+        config:
+          meta:
+            contains_pii: true
       - name: sf_email
         data_type: string
         description: Salesforce primary email, lowercased.
+        config:
+          meta:
+            contains_pii: true
       - name: sf_secondary_email
         data_type: string
         description: Salesforce secondary email, lowercased.
+        config:
+          meta:
+            contains_pii: true
       - name: expected_grad_date_month
         data_type: int64
         description: Month number of expected_college_grad_date.
+        config:
+          meta:
+            contains_pii: true
       - name: expected_grad_date_year
         data_type: int64
         description: Year of expected_college_grad_date.
+        config:
+          meta:
+            contains_pii: true
       - name: actual_end_date_month
         data_type: int64
         description: Month number of actual_end_date.
+        config:
+          meta:
+            contains_pii: true
       - name: actual_end_date_year
         data_type: int64
         description: Year of actual_end_date.
+        config:
+          meta:
+            contains_pii: true
       - name: rn_graduated
         data_type: int64
         description:
@@ -222,87 +324,165 @@ models:
         description:
           When the response was submitted. Null for Bulk Add rows and rows with
           no response.
+        config:
+          meta:
+            contains_pii: true
       - name: respondent_user_principal_name
         data_type: string
         description:
           Respondent email on the response, lowercased, used to match it to an
           alumnus. Null for Bulk Add rows.
+        config:
+          meta:
+            contains_pii: true
       - name: after_grad
         data_type: string
         description: Answer to the post-graduation plan question.
+        config:
+          meta:
+            contains_pii: true
       - name: alumni_dob
         data_type: string
         description: Date of birth the respondent entered.
+        config:
+          meta:
+            contains_pii: true
       - name: alumni_email
         data_type: string
         description: Email the respondent entered on the survey.
+        config:
+          meta:
+            contains_pii: true
       - name: alumni_phone
         data_type: string
         description: Phone number the respondent entered on the survey.
+        config:
+          meta:
+            contains_pii: true
       - name: cell_number
         data_type: string
         description: Cell phone number the respondent entered on the survey.
+        config:
+          meta:
+            contains_pii: true
       - name: company
         data_type: string
         description: Employer the respondent named.
+        config:
+          meta:
+            contains_pii: true
       - name: complete_program
         data_type: string
         description: Answer to the complete_program survey question.
+        config:
+          meta:
+            contains_pii: true
       - name: debt_amount
         data_type: string
         description: Debt amount the respondent reported.
+        config:
+          meta:
+            contains_pii: true
       - name: debt_binary
         data_type: string
         description: Whether the respondent reported having debt.
+        config:
+          meta:
+            contains_pii: true
       - name: first_name
         data_type: string
         description: First name the respondent entered on the survey.
+        config:
+          meta:
+            contains_pii: true
       - name: grad_school_major
         data_type: string
         description: Graduate school major the respondent reported.
+        config:
+          meta:
+            contains_pii: true
       - name: grad_school_name
         data_type: string
         description: Graduate school the respondent reported.
+        config:
+          meta:
+            contains_pii: true
       - name: highest_level_of_education
         data_type: string
         description: Highest level of education the respondent reported.
+        config:
+          meta:
+            contains_pii: true
       - name: job_sat
         data_type: string
         description: Answer to the job satisfaction question.
+        config:
+          meta:
+            contains_pii: true
       - name: last_name
         data_type: string
         description: Last name the respondent entered on the survey.
+        config:
+          meta:
+            contains_pii: true
       - name: linkedin
         data_type: string
         description: Answer to the linkedin survey question.
+        config:
+          meta:
+            contains_pii: true
       - name: linkedin_link
         data_type: string
         description: LinkedIn profile link the respondent entered.
+        config:
+          meta:
+            contains_pii: true
       - name: not_pursuing_plan
         data_type: string
         description: Answer to the not_pursuing_plan survey question.
+        config:
+          meta:
+            contains_pii: true
       - name: reenrollment
         data_type: string
         description: Answer to the reenrollment survey question.
+        config:
+          meta:
+            contains_pii: true
       - name: role
         data_type: string
         description: Job role the respondent reported.
+        config:
+          meta:
+            contains_pii: true
       - name: satisfied_program
         data_type: string
         description: Answer to the satisfied_program survey question.
+        config:
+          meta:
+            contains_pii: true
       - name: search_focus
         data_type: string
         description: Answer to the search_focus survey question.
+        config:
+          meta:
+            contains_pii: true
       - name: annual_income
         data_type: string
         description:
           Salary answer as entered, from the income question or, when that is
           blank, its alternate version.
+        config:
+          meta:
+            contains_pii: true
       - name: benefits
         data_type: string
         description:
           Benefits answer as entered, from the benefits question or, when that
           is blank, its alternate version.
+        config:
+          meta:
+            contains_pii: true
       - name: annual_income_clean
         data_type: float64
         description: >-
@@ -310,18 +490,27 @@ models:
           ($45,000 - $49,999 gives 45000), the stated amount for an "or more"
           answer, otherwise the first dollar amount. Null when annual_income
           holds no dollar amount.
+        config:
+          meta:
+            contains_pii: true
       - name: season_label_expected
         data_type: string
         description:
           Spring and the year when expected_college_grad_date falls in January
           to June, otherwise Fall and the year. Null when there is no expected
           date.
+        config:
+          meta:
+            contains_pii: true
       - name: season_label
         data_type: string
         description:
           Spring and the year when actual_end_date falls in January to June,
           otherwise Fall and the year. Null when the row has no graduated
           enrollment.
+        config:
+          meta:
+            contains_pii: true
       - name: is_unmatched_response
         data_type: boolean
         description:
@@ -339,15 +528,24 @@ models:
         description:
           PowerSchool abbreviation of the elementary school the alumnus
           graduated from.
+        config:
+          meta:
+            contains_pii: true
       - name: tier
         data_type: string
         description:
           Subject of the alumnus's most recent Salesforce contact note titled
           Tier and a number.
+        config:
+          meta:
+            contains_pii: true
       - name: advising_provider
         data_type: string
         description:
           Organization advising the alumnus, from the Salesforce contact.
+        config:
+          meta:
+            contains_pii: true
       - name: postsec_advisor
         data_type: string
         description:
@@ -369,117 +567,186 @@ models:
         description:
           High school the alumnus graduated from, from their Salesforce contact
           record.
+        config:
+          meta:
+            contains_pii: true
       - name: is_special_education
         data_type: boolean
         description:
           Whether the alumnus has a recorded IEP date, used as a
           special-education indicator.
+        config:
+          meta:
+            contains_pii: true
       - name: middle_school_attended
         data_type: string
         description:
           Middle school the alumnus attended, from their Salesforce contact
           record.
+        config:
+          meta:
+            contains_pii: true
       - name: most_recent_iep_date
         data_type: date
         description:
           Date of the alumnus's most recent IEP on their Salesforce contact
           record.
+        config:
+          meta:
+            contains_pii: true
       - name: ktc_cohort
         data_type: int64
         description:
           KIPP-to-college cohort year for the alumnus, from their Salesforce
           contact record.
+        config:
+          meta:
+            contains_pii: true
       - name: currently_enrolled_school
         data_type: string
         description:
           School the alumnus is currently enrolled in, from their Salesforce
           contact record.
+        config:
+          meta:
+            contains_pii: true
       - name: current_college_cumulative_gpa
         data_type: numeric
         description:
           Current cumulative college GPA, from the alumnus's Salesforce contact
           record.
+        config:
+          meta:
+            contains_pii: true
       - name: primary_phone
         data_type: string
         description: Mobile phone from the alumnus's Salesforce contact record.
+        config:
+          meta:
+            contains_pii: true
       - name: secondary_phone
         data_type: string
         description: Home phone from the alumnus's Salesforce contact record.
+        config:
+          meta:
+            contains_pii: true
       - name: career_conversation_notes
         data_type: string
         description:
           Free-text notes from the alumnus's KFWD career conversation, logged in
           the KFWD AppSheet app. NULL when no conversation is recorded.
+        config:
+          meta:
+            contains_pii: true
       - name: is_resume_score
         data_type: boolean
         description:
           Whether a resume was scored during the KFWD career conversation. False
           when no conversation is recorded.
+        config:
+          meta:
+            contains_pii: true
       - name: is_linkedin
         data_type: boolean
         description:
           Whether the alumnus's LinkedIn profile was discussed during the KFWD
           career conversation. False when no conversation is recorded.
+        config:
+          meta:
+            contains_pii: true
       - name: is_mock_interview_or_prep
         data_type: boolean
         description:
           Whether mock interview or interview preparation was discussed during
           the KFWD career conversation. False when no conversation is recorded.
+        config:
+          meta:
+            contains_pii: true
       - name: is_professional_references_list
         data_type: boolean
         description:
           Whether the professional references list was discussed during the KFWD
           career conversation. False when no conversation is recorded.
+        config:
+          meta:
+            contains_pii: true
       - name: is_job_search_template
         data_type: boolean
         description:
           Whether the job search template was discussed during the KFWD career
           conversation. False when no conversation is recorded.
+        config:
+          meta:
+            contains_pii: true
       - name: is_cover_letter_template
         data_type: boolean
         description:
           Whether the cover letter template was discussed during the KFWD career
           conversation. False when no conversation is recorded.
+        config:
+          meta:
+            contains_pii: true
       - name: is_work_samples
         data_type: boolean
         description:
           Whether work samples were discussed during the KFWD career
           conversation. False when no conversation is recorded.
+        config:
+          meta:
+            contains_pii: true
       - name: cc1_count
         data_type: int64
         description:
           Number of school years (July to June) in which the alumnus has at
           least one CC1 Career Conversation contact note in Salesforce; not the
           number of notes. Zero when none.
+        config:
+          meta:
+            contains_pii: true
       - name: cc2_count
         data_type: int64
         description:
           Number of school years (July to June) in which the alumnus has at
           least one CC2 Career Conversation contact note in Salesforce; not the
           number of notes. Zero when none.
+        config:
+          meta:
+            contains_pii: true
       - name: cc3_count
         data_type: int64
         description:
           Number of school years (July to June) in which the alumnus has at
           least one CC3 Career Conversation contact note in Salesforce; not the
           number of notes. Zero when none.
+        config:
+          meta:
+            contains_pii: true
       - name: cc4_count
         data_type: int64
         description:
           Number of school years (July to June) in which the alumnus has at
           least one CC4 Career Conversation contact note in Salesforce; not the
           number of notes. Zero when none.
+        config:
+          meta:
+            contains_pii: true
       - name: cc5_count
         data_type: int64
         description:
           Number of school years (July to June) in which the alumnus has at
           least one CC5 Career Conversation contact note in Salesforce; not the
           number of notes. Zero when none.
+        config:
+          meta:
+            contains_pii: true
       - name: cc_total_count
         data_type: int64
         description:
           Sum of cc1_count through cc5_count, so it counts step-and-school-year
           pairs with a Career Conversation note, not notes. Zero when none.
+        config:
+          meta:
+            contains_pii: true
       - name: career_conversation_items_complete_count
         data_type: int64
         description:
@@ -488,18 +755,27 @@ models:
           job search template, cover letter template, work samples) marked
           complete for the alumnus in the Career Conversation Tracker AppSheet
           app. Zero when no conversation is recorded.
+        config:
+          meta:
+            contains_pii: true
       - name: is_career_conversation_complete
         data_type: boolean
         description:
           Whether all seven KFWD career conversation checklist items are marked
           complete for the alumnus in the Career Conversation Tracker AppSheet
           app. False when any item is incomplete or no conversation is recorded.
+        config:
+          meta:
+            contains_pii: true
       - name: last_ccr_date
         data_type: date
         description:
           Contact note date of the alumnus's most recent Career Conversation
           (CC1 through CC5) record in Salesforce, across all academic years.
           NULL when no Career Conversation note is logged.
+        config:
+          meta:
+            contains_pii: true
       - name: launch_assessed_at
         data_type: datetime
         description: >-
