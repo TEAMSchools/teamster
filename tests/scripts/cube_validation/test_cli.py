@@ -3354,6 +3354,27 @@ def test_prove_unhides_a_dashboard_only_sheet_on_the_copy(fakes, tmp_path, capsy
     assert "hidden=" not in fakes.tbl.edited
 
 
+def test_rebuild_sheet_prints_the_blank_cells_it_skipped(fakes, tmp_path, capsys):
+    # Camden is blank in the export and absent from the sheet query.
+    fakes.tbl.exports = [
+        [
+            {"Region": "Newark", "Rate": "0.9123", "Count": "12"},
+            {"Region": "Camden", "Rate": "", "Count": ""},
+        ]
+        for _ in range(2)
+    ]
+    path = _file(tmp_path, YML.replace(REBUILD_CHECK, "    rebuild_check: null\n"))
+    argv = ["rebuild-sheet", str(path), "--comparison", "ada-region"]
+
+    assert cli.main(argv) == 0, capsys.readouterr().err
+
+    assert (
+        "Skipped 2 blank cells (blank in the export, NULL in the sheet query)"
+        in capsys.readouterr().out
+    )
+    assert load_view_config(path).comparisons[0].rebuild_check.cells == 2
+
+
 def test_prove_reads_aliases_back_and_skips_total_rows(fakes, tmp_path, capsys):
     region = "<column caption='Region' datatype='string' name='[region]' role='dimension' type='nominal' />"
     fakes.tbl.twb = fakes.tbl.twb.replace(

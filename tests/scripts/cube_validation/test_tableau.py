@@ -1432,15 +1432,80 @@ def test_export_cells_keeps_two_marks_that_differ_in_another_column():
         {"School": "A", "v": "1", "Teacher": "X"},
         {"School": "A", "v": "1", "Teacher": "Y"},
     ]
+    comparison = _comparison(dims=[ColumnPair(dashboard="school", cube="school")])
     cells, _, _ = rebuild._export_cells(
-        _rebuild_comparison(),
+        comparison,
         rows,
         {"School": "school"},
         "v",
         [],
         [],
         shelf_dims={"school"},
-        ignored={"Rank"},
+        ignored=set(),
     )
 
     assert len(cells) == 2
+    # Teacher splits the mark but no dim carries it, so the match refuses the
+    # pair rather than compare either row.
+    proof = match_export(
+        comparison, cells, [{"school": "A", "value": 1}], twb_xml=_twb(), now=NOW
+    )
+    assert not proof.matched
+    assert proof.failures == ["school=A: more than 1 export row"]
+
+
+_SHELF_TWB = """<?xml version='1.0' encoding='utf-8' ?>
+<workbook>
+  <worksheets>
+    <worksheet name='S'>
+      <table>
+        <view>
+          <datasource-dependencies datasource='federated.x'>
+            <column caption='Campus' name='[school]' role='dimension' />
+            <column caption='Grade' name='[grade_level]' role='dimension' />
+          </datasource-dependencies>
+        </view>
+        <rows>[federated.x].[none:school:nk]</rows>
+        <cols />
+      </table>
+    </worksheet>
+  </worksheets>
+</workbook>
+"""
+
+
+def test_shelf_dims_matches_a_dim_by_its_column_caption_alone():
+    comparison = Comparison(
+        id="c",
+        measure="m",
+        dims=[
+            ColumnPair(dashboard="school", cube="school"),
+            ColumnPair(dashboard="grade_level", cube="grade_level"),
+        ],
+    )
+    # The shelf shows `Campus`; only the column list ties it to `school`.
+    columns = [
+        ET.fromstring("<column caption='Campus' name='[school]' role='dimension' />"),
+        ET.fromstring(
+            "<column caption='Grade' name='[grade_level]' role='dimension' />"
+        ),
+    ]
+
+    assert rebuild._shelf_dims(comparison, _SHELF_TWB, "S", columns) == {"school"}
+    assert rebuild._shelf_dims(comparison, _SHELF_TWB, "S", []) == set()
+
+
+def test_ignored_headers_matches_an_aggregate_caption_across_its_spellings():
+    columns = [
+        ET.fromstring(
+            "<column caption='AVG(x)' name='[Calculation_1]' role='measure' />"
+        ),
+        ET.fromstring("<column caption='Rate' name='[rate]' role='measure' />"),
+    ]
+    headers = ["School", "Rate", "Avg. x", "Teacher"]
+
+    ignored = rebuild._ignored_headers(
+        headers, {"School": "school"}, "Rate", columns, []
+    )
+
+    assert ignored == {"Avg. x"}
