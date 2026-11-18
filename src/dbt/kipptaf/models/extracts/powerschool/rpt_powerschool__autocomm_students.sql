@@ -38,6 +38,7 @@ with
             and grade_level != 99
     ),
 
+    -- 1 row per stint: any current plan in force today sets the flag
     active_504_plans as (
         select student_enrollment_key, _dbt_source_project,
         from {{ ref("dim_student_504_status") }}
@@ -45,12 +46,11 @@ with
             is_current_plan
             and effective_date_start_key <= current_date('{{ var("local_timezone") }}')
             and effective_date_end_key >= current_date('{{ var("local_timezone") }}')
+        group by student_enrollment_key, _dbt_source_project
     ),
 
     edplan_504_regions as (
-        select _dbt_source_project, count(*) as n_active_504_plans,
-        from active_504_plans
-        group by _dbt_source_project
+        select _dbt_source_project, from active_504_plans group by _dbt_source_project
     )
 
 select
@@ -110,7 +110,7 @@ select
         -- Newark is the only region with an EdPlan 504 report
         when se._dbt_source_project != 'kippnewark'
         then null
-        when coalesce(er.n_active_504_plans, 0) = 0
+        when er._dbt_source_project is null
         then if(se.is_504, 1, 0)
         when se.enroll_status != 0
         then if(se.is_504, 1, 0)

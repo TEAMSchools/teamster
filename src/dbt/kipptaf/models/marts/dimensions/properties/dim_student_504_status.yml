@@ -28,6 +28,18 @@ models:
         data_tests:
           - unique
 
+      - name: is_current_plan
+        data_type: boolean
+        description:
+          True when the span comes from the student's Currently Valid 504 plan,
+          false when it comes from a previous plan. A previous plan's span ends
+          no later than the day before the next plan starts.
+        config:
+          meta:
+            contains_pii: true
+        data_tests:
+          - not_null
+
       - name: effective_date_start_key
         data_type: date
         description:
@@ -39,8 +51,6 @@ models:
             foreign_key:
               to: ref('dim_dates')
               to_columns: [date_key]
-        data_tests:
-          - not_null
 
       - name: effective_date_end_key
         data_type: date
@@ -54,20 +64,6 @@ models:
             foreign_key:
               to: ref('dim_dates')
               to_columns: [date_key]
-        data_tests:
-          - not_null
-
-      - name: is_current_plan
-        data_type: boolean
-        description:
-          True when the span comes from the student's Currently Valid 504 plan,
-          false when it comes from a previous plan. A previous plan's span ends
-          no later than the day before the next plan starts.
-        config:
-          meta:
-            contains_pii: true
-        data_tests:
-          - not_null
 
       - name: _dbt_source_project
         data_type: string

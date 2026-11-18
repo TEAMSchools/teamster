@@ -162,12 +162,13 @@ models:
           The NJ state 504 field, PID_504_TF, for Newark only, null elsewhere. A
           currently enrolled student gets 1 when today falls inside a current
           EdPlan 504 plan's span on their stint, and 0 otherwise. A withdrawn
-          student gets their PowerSchool value back, which can be the value
-          PowerSchool copied at withdrawal rather than the live one. So does
-          every Newark student on a night with no current plan in force, because
-          a blank AutoComm cell clears the field. A partial EdPlan file that
-          still holds some active plans is not caught; enrolled students missing
-          from it get 0 until the next full file.
+          student gets their PowerSchool value back, or 0 when PowerSchool has
+          none, and the value can be the one PowerSchool copied at withdrawal
+          rather than the live one. So does every Newark student on a night with
+          no current plan in force, because a blank AutoComm cell clears the
+          field. A partial EdPlan file that still holds some active plans is not
+          caught; enrolled students missing from it get 0 until the next full
+          file.
         config:
           meta:
             contains_pii: true
@@ -178,9 +179,10 @@ unit_tests:
       Currently enrolled Newark students get 1 when today falls inside a current
       504 plan's span on their stint, and 0 otherwise, including when the only
       span covering today is a previous plan or the current plan starts after
-      today. Withdrawn Newark students get their current PowerSchool value back,
-      and 0 when PowerSchool has none. Other regions get null. A span for a
-      student who is not in the file adds no row.
+      today. A student with 2 current spans covering today gets 1 row. Withdrawn
+      Newark students get their current PowerSchool value back, and 0 when
+      PowerSchool has none. Other regions get null. A span for a student who is
+      not in the file adds no row.
     model: rpt_powerschool__autocomm_students
     overrides:
       vars:
@@ -293,6 +295,9 @@ unit_tests:
             true as is_current_plan,
             date_sub(current_date('America/New_York'), interval 30 day) as effective_date_start_key,
             date_add(current_date('America/New_York'), interval 30 day) as effective_date_end_key
+          union all select
+            to_hex(md5(concat('2001', '-', 'kippnewark', '-', '2026', '-', '2026-09-01'))), 'kippnewark', true,
+            date_sub(current_date('America/New_York'), interval 10 day), date_add(current_date('America/New_York'), interval 60 day)
           union all select
             to_hex(md5(concat('2004', '-', 'kippnewark', '-', '2026', '-', '2026-09-01'))), 'kippnewark', true,
             date_sub(current_date('America/New_York'), interval 30 day), date_add(current_date('America/New_York'), interval 30 day)
