@@ -1311,6 +1311,9 @@ def _number(value: Any) -> float | None:
     if _THOUSANDS.fullmatch(body):
         body = body.replace(",", "")
     if not _PLAIN_NUMBER.fullmatch(body):
+        # Any value with no digit reads as text, so a "Null" or "N/A" cell in
+        # a number measure refuses as a text measure too. That fails closed:
+        # the check stops rather than guess a number for the cell.
         if not any(c.isdigit() for c in body):
             raise ValueError(f"export value {text!r} is text; {TEXT_MEASURE}")
         raise ValueError(
