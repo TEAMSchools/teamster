@@ -1269,6 +1269,90 @@ def test_find_comparison_raises_when_no_item_matches(tmp_path):
         find_comparison(path, "goal")
 
 
+@pytest.mark.parametrize(
+    "old, new",
+    [
+        (
+            "  - <<: *roster\n    id: goal  # the goal sheet\n    measure: m\n",
+            "  - {id: goal, measure: m}\n",
+        ),
+        (
+            "comparisons:\n  - <<: *roster\n    id: goal  # the goal sheet\n"
+            "    measure: m\n",
+            "comparisons: [{id: goal, measure: m}]\n",
+        ),
+    ],
+    ids=["flow mapping", "flow list"],
+)
+def test_find_comparison_names_a_flow_written_comparison(tmp_path, old, new):
+    path = _write(tmp_path, MERGED.replace(old, new))
+
+    for edit in (
+        lambda: find_comparison(path, "goal"),
+        lambda: write_rebuild_check(path, "goal", {"fingerprint": "f"}),
+    ):
+        with pytest.raises(ConfigError) as exc:
+            edit()
+        assert str(exc.value) == (
+            f"{path}: comparisons: 'goal' cannot be edited by line; write it "
+            "as a block list (`- id: ...` items)"
+        )
+
+
+@pytest.mark.parametrize(
+    "id_line", ['  - id: "goal"', "  - id: 'goal'", "  - id: goal  # the goal sheet"]
+)
+def test_comparison_item_reads_a_quoted_or_commented_id(id_line):
+    lines = ["comparisons:", "  - id: other", id_line, "    measure: m"]
+
+    assert comparison_item(lines, "goal") == (2, 4, 4)
+
+
+def test_comparison_item_reads_a_block_list_at_indent_0():
+    lines = [
+        "comparisons:",
+        "- id: other",
+        "  measure: m",
+        "- id: goal",
+        "  measure: m",
+        "decisions: []",
+    ]
+
+    assert comparison_item(lines, "goal") == (3, 5, 2)
+
+
+def test_comparison_item_takes_the_first_of_two_items_with_one_id():
+    lines = [
+        "comparisons:",
+        "  - id: goal",
+        "    measure: first",
+        "  - id: goal",
+        "    measure: second",
+    ]
+
+    assert comparison_item(lines, "goal") == (1, 3, 4)
+
+
+def test_write_rebuild_check_inserts_before_trailing_blanks_and_comments(tmp_path):
+    text = (
+        "view: v\nfact: d.t\ncomparisons:\n"
+        "  - id: goal\n    measure: m\n\n  # the next one\n"
+        "  - id: other\n    measure: m\n\n# the end\n"
+    )
+    path = _write(tmp_path, text)
+
+    write_rebuild_check(path, "goal", {"fingerprint": "f"})
+    write_rebuild_check(path, "other", {"fingerprint": "g"})
+
+    assert path.read_text() == (
+        "view: v\nfact: d.t\ncomparisons:\n"
+        "  - id: goal\n    measure: m\n    rebuild_check:\n      fingerprint: f\n"
+        "\n  # the next one\n"
+        "  - id: other\n    measure: m\n    rebuild_check:\n      fingerprint: g\n"
+        "\n# the end\n"
+    )
+
+
 def test_write_decision_replaces_a_decision_whose_id_is_not_its_first_key(tmp_path):
     path = _write(
         tmp_path,

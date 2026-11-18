@@ -929,17 +929,42 @@ def comparison_item(
     return _list_item(lines, head, end, comparison_id)
 
 
+def _editable_comparison(
+    path: Path, lines: list[str], comparison_id: str
+) -> tuple[int, int, int]:
+    """`comparison_item`, or the reason a line edit cannot reach the comparison.
+
+    Raises:
+        ConfigError: The comparison is written as a flow mapping or inside a
+            flow list, so no `- id:` line carries it; or no comparison has
+            that id.
+    """
+    found = comparison_item(lines, comparison_id)
+    if found is not None:
+        return found
+    try:
+        comparisons = (yaml.safe_load("\n".join(lines)) or {}).get("comparisons")
+    except (yaml.YAMLError, AttributeError):
+        comparisons = None
+    if isinstance(comparisons, list) and any(
+        isinstance(c, dict) and c.get("id") == comparison_id for c in comparisons
+    ):
+        raise ConfigError(
+            f"{path}: comparisons: {comparison_id!r} cannot be edited by line; "
+            "write it as a block list (`- id: ...` items)"
+        )
+    raise ConfigError(f"{path}: comparisons: no comparison with id {comparison_id!r}")
+
+
 def find_comparison(path: Path, comparison_id: str) -> None:
     """Check that a line edit can find a comparison's item.
 
     Raises:
         ConfigError: No block item of `comparisons:` carries that id, so
-            `write_rebuild_check` could not write it.
+            `write_rebuild_check` could not write it. The message says when
+            the comparison exists but is written in flow style.
     """
-    if comparison_item(Path(path).read_text().splitlines(), comparison_id) is None:
-        raise ConfigError(
-            f"{path}: comparisons: no comparison with id {comparison_id!r}"
-        )
+    _editable_comparison(path, Path(path).read_text().splitlines(), comparison_id)
 
 
 def write_rebuild_check(path: Path, comparison_id: str, check: dict[str, Any]) -> None:
@@ -957,17 +982,13 @@ def write_rebuild_check(path: Path, comparison_id: str, check: dict[str, Any]) -
             `restricting_filters`).
 
     Raises:
-        ConfigError: No comparison has that id.
+        ConfigError: No comparison has that id, or it is written in flow
+            style (see `find_comparison`).
     """
     path = Path(path)
     lines = path.read_text().splitlines()
 
-    found = comparison_item(lines, comparison_id)
-    if found is None:
-        raise ConfigError(
-            f"{path}: comparisons: no comparison with id {comparison_id!r}"
-        )
-    start, end, key_indent = found
+    start, end, key_indent = _editable_comparison(path, lines, comparison_id)
 
     check_at = next(
         (

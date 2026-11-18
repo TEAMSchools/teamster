@@ -3283,7 +3283,9 @@ def test_rebuild_sheet_refuses_an_unwritable_comparison_before_any_export(
     argv = ["rebuild-sheet", str(path), "--comparison", "ada-region"]
 
     assert cli.main(argv) == 1
-    assert "no comparison with id 'ada-region'" in capsys.readouterr().err
+    assert (
+        "comparisons: 'ada-region' cannot be edited by line; write it as a block list"
+    ) in capsys.readouterr().err
     assert not getattr(fakes.tbl, "captures", 0)
 
 
