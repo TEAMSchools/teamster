@@ -18,13 +18,13 @@ from typing import Any
 
 import sqlglot
 from sqlglot import exp
-from sqlglot.errors import ParseError, TokenError
+from sqlglot.errors import SqlglotError
 
 from . import cube_client, pipeline, reconcile
 from .bq import Warehouse
 from .config import Comparison, RowSpec, ViewConfig
 from .moment import Build
-from .timetravel import PROJECT, repin
+from .timetravel import _NOT_ALIAS, PROJECT, repin
 
 # A cell the check could not recompute closes by coverage under this label,
 # followed by one of the reasons below.
@@ -222,7 +222,7 @@ def fact_grain(
     """
     try:
         tree = sqlglot.parse_one(compiled_rows_sql, read="bigquery")
-    except (ParseError, TokenError) as exc:
+    except SqlglotError as exc:
         raise NotCompared("Cube's SQL could not be parsed") from exc
     sources: dict[str, exp.Expr] = {}
     projections: dict[str, exp.Expr] = {}
@@ -299,7 +299,8 @@ def rewrite_cube_sql(
         The rewritten SQL.
 
     Raises:
-        NotCompared: A table is not read, or is read with no alias.
+        NotCompared: A table is not read, is read with no alias, or is read in
+            a form the rewrite cannot place.
     """
     predicate = (
         # trunk-ignore(bandit/B608): the grain columns are Cube's own fact columns
@@ -308,15 +309,25 @@ def rewrite_cube_sql(
         else "TRUE"
     )
     for t in pipeline.unique(tables):
+        ref = re.escape(f"`{PROJECT}.{t}`")
+        # `as_of` keeps a dbt reference's alias as written, `AS` or not; a
+        # clause keyword such as FOR is never an alias.
         pattern = re.compile(
-            re.escape(f"`{PROJECT}.{t}`")
-            + r"(?P<alias>\s+AS\s+`?\w+`?)?\s+FOR SYSTEM_TIME AS OF TIMESTAMP "
-            + r"'(?P<at>[^']+)'",
+            ref
+            + r"(?P<alias>\s+AS\s+`?\w+`?|\s+(?!(?:"
+            + _NOT_ALIAS
+            + r")\b)`?\w+`?)?\s+FOR SYSTEM_TIME AS OF TIMESTAMP '(?P<at>[^']+)'",
             re.IGNORECASE,
         )
         found = list(pattern.finditer(sql))
-        if not found:
+        reads = len(re.findall(ref, sql, re.IGNORECASE))
+        if not reads:
             raise NotCompared(f"Cube's SQL does not read {t}")
+        if reads != len(found):
+            # A reference left unwrapped would read every row on one side only.
+            raise NotCompared(
+                f"Cube's SQL reads {t} in a form the rewrite does not know"
+            )
         if any(m["alias"] is None for m in found):
             # Cube's columns name the table, which a subquery would hide.
             raise NotCompared(f"Cube's SQL reads {t} with no alias")

@@ -594,6 +594,34 @@ def test_rewrite_refuses_a_reference_with_no_alias():
         formula.rewrite_cube_sql(PINNED, ["m.other"], ["lea"], [False], keep=True)
 
 
+def test_rewrite_wraps_a_bare_alias_as_it_wraps_an_as_alias():
+    # `as_of` keeps a dbt reference's alias as written, with no `AS`.
+    bare = PINNED.replace(" AS `f2`", " f2")
+
+    sql = formula.rewrite_cube_sql(bare, ["m.fct"], ["lea"], [False], keep=False)
+
+    assert sql.count("`teamster-332318.m.fct`") == 2
+    assert (
+        f"(SELECT * FROM `teamster-332318.m.fct` FOR SYSTEM_TIME AS OF TIMESTAMP "
+        f"'{END}' WHERE TRUE) AS `f`"
+    ) in sql
+    assert (
+        f"(SELECT * FROM `teamster-332318.m.fct` FOR SYSTEM_TIME AS OF TIMESTAMP "
+        f"'{START}' WHERE TRUE) f2"
+    ) in sql
+
+
+def test_rewrite_refuses_a_reference_it_cannot_place():
+    # The second read of the fact has no moment, so the pattern misses it.
+    unplaced = PINNED + "\nJOIN `teamster-332318.m.fct` AS `f3` ON TRUE"
+
+    with pytest.raises(
+        formula.NotCompared,
+        match="Cube's SQL reads m.fct in a form the rewrite does not know",
+    ):
+        formula.rewrite_cube_sql(unplaced, ["m.fct"], ["lea"], [False], keep=True)
+
+
 class _Ex:
     """`pipeline.Expand` over a toy Cube: `AVG(score_c)` from `cube_t` by the
     query's dims, under its equals filters, expanded as of a moment."""
