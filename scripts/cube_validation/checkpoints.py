@@ -47,13 +47,18 @@ def write_json(path: Path, data: dict) -> None:
 def write_text(path: Path, text: str) -> None:
     """Replace `path` whole, so a stop mid-write keeps the last whole file.
 
-    Writes a temp file in the folder (made if missing), then `os.replace`s it.
+    Writes a temp file in the folder (made if missing), then `os.replace`s it;
+    a failed write removes the temp file.
     """
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.")
-    with os.fdopen(fd, "w") as f:
-        f.write(text)
-    os.replace(tmp, path)
+    try:
+        with os.fdopen(fd, "w") as f:
+            f.write(text)
+        os.replace(tmp, path)
+    except BaseException:
+        Path(tmp).unlink(missing_ok=True)
+        raise
 
 
 def _read_state(folder: Path) -> dict | None:
