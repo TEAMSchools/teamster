@@ -117,21 +117,21 @@ refuses when the view's only run read another fact.
    `sheet_field` before the first rebuild.
 
    Then `read-sheet <file> --twb <path> --sheet <sheet>` reads the chosen sheet
-   offline (it needs `members.json` from `members`, and prints no filter or
-   parameter value): each shelf field and its Cube member, table calcs and what
-   they run along, every filter's kind (context, code group, relative date,
-   parameter-driven) and whether other sheets share it through `filter-group`,
-   the parameters the sheet reads, and whether `sheet_field` is on the sheet. It
-   refuses a text measure (compare the numeric measure it is built from) and
-   marks a sheet on no published dashboard (step 3, `unpublished`). It shows a
-   filter's values only when the allowlist permits. A filter on a field that is
-   never null needs `dashboard_filters` with `operator: set`. It skips and
-   counts blank cells, `*` total rows and dual-axis repeats. Use it instead of
-   reading the workbook XML by hand. Without `--sheet` it checks every
-   comparison's sheet, and names a comparison whose cells cannot be covered
-   ("Cells cannot be covered: <why>", step 6). `--twb` is required, since
-   `read-sheet` never signs in to Tableau: download the workbook once through
-   the runner, with this in place of its `cli.main` call, and reuse that file:
+   offline (it needs `members.json` from `members`, and prints no parameter
+   value and a filter's values only for a field on the allowlist): each shelf
+   field and its Cube member, table calcs and what they run along, every
+   filter's kind (context, code group, relative date, parameter-driven) and
+   whether other sheets share it through `filter-group`, the parameters the
+   sheet reads, and whether `sheet_field` is on the sheet. It refuses a text
+   measure (compare the numeric measure it is built from) and marks a sheet on
+   no published dashboard (step 3, `unpublished`). A sheet filter that keeps
+   non-null values only is marked: it needs a `dashboard_filters` entry with
+   `operator: set`. Use it instead of reading the workbook XML by hand. Without
+   `--sheet` it checks every comparison's sheet, and names a comparison whose
+   cells cannot be covered ("Cells cannot be covered: <why>", step 6). `--twb`
+   is required, since `read-sheet` never signs in to Tableau: download the
+   workbook once through the runner, with this in place of its `cli.main` call,
+   and reuse that file:
 
    ```python
    import pathlib
@@ -212,9 +212,10 @@ refuses when the view's only run read another fact.
 4. Run `read-sheet <file> --twb <path>` again and settle its "Before
    rebuild-sheet" list with the analyst; rebuild only when it reads "nothing
    blocks" or each item left is a decision the analyst made. `rebuild-sheet`
-   refuses a text measure and an unpublished sheet the same way. A rebuild check
-   written for a non-null filter without `dashboard_filters` and `operator: set`
-   needs `rebuild-sheet` again once they are added.
+   refuses a text measure and an unpublished sheet the same way. It skips blank
+   cells, `*` total rows and dual-axis repeats, and prints each skipped count.
+   If a sheet keeps non-null values only and its rebuild check was written
+   before the `dashboard_filters` entry existed, run `rebuild-sheet` again.
    `rebuild-sheet <file> --comparison <id>` exports the sheet from a `TEMP-CB`
    copy and writes `rebuild_check` (with `matched_at` and
    `sheet_query_fingerprint`) when the sheet query reproduces every cell at
@@ -245,20 +246,20 @@ refuses when the view's only run read another fact.
      lacks, a workbook changed since its rebuild check or one Tableau errs on,
      SQL that cannot be built today or at the run's moment, a sheet on no
      published dashboard without `unpublished: true`, a pre-aggregation refusal
-     (a Cube-only `scope` on a never-null member such as the fact's primary key:
-     use `operator: set` in `dashboard_filters` instead), or a dry run that
-     fails. A republished workbook whose sheet formulas and filters and
-     datasource connection and filters are unchanged is kept, and said so. After
-     the price, it also skips a comparison whose Cube SQL reads an `also_facts`
-     table, or whose 2 sides' rows read a table, that changed during the build,
-     and one whose query fails in BigQuery (its spend stays counted). A BigQuery
-     reason names the job id and reason code, never BigQuery's message: look the
-     job up for the message. A failed dry run has no job (`job ?`): run that dry
-     run again by hand to see the message. A skipped comparison keeps its
-     previous result. Fix what each reason names (most say to run
-     `rebuild-sheet` again). Of BigQuery errors in a comparison's own dry run or
-     queries, only a cap stops the run; `compare` refuses when every comparison
-     is skipped.
+     (Cube answered from a pre-aggregation: add a Cube-only `scope` on a
+     never-null member the rollup does not carry, such as the fact's primary
+     key, with `operator: set`), or a dry run that fails. A republished workbook
+     whose sheet formulas and filters and datasource connection and filters are
+     unchanged is kept, and said so. After the price, it also skips a comparison
+     whose Cube SQL reads an `also_facts` table, or whose 2 sides' rows read a
+     table, that changed during the build, and one whose query fails in BigQuery
+     (its spend stays counted). A BigQuery reason names the job id and reason
+     code, never BigQuery's message: look the job up for the message. A failed
+     dry run has no job (`job ?`): run that dry run again by hand to see the
+     message. A skipped comparison keeps its previous result. Fix what each
+     reason names (most say to run `rebuild-sheet` again). Of BigQuery errors in
+     a comparison's own dry run or queries, only a cap stops the run; `compare`
+     refuses when every comparison is skipped.
    - It names each comparison it will compare and why: `never compared`,
      `its entry or rebuild check changed`, `Cube's SQL changed` or
      `the dashboard SQL changed` (the sheet query or the dbt views it reads). A
@@ -493,18 +494,18 @@ refuses when the view's only run read another fact.
       the flag, the missing key).
 
    Comparisons that differ only in `dims`, `measure` or what shapes their cells
-   (same `dashboard_view`, same `rows` grain and values, and the same `filters`,
-   `defaults`, `cuts`, `scope` and `dashboard_filters`) usually reconcile the
-   same rows. Explain one of them: its explanation also runs on the others'
-   groups of that bucket, in `explain` (printed as "Also <comparison>: N of M
-   items explained.") and in every `sort`, unless one has an explanation file of
-   its own, which then wins, even when it fails. Each comparison runs it on its
-   own rows, so a dim whose join drops or repeats rows shows as a refusal there.
-   A shared explanation reads only `__row`, `side` and the grain: a group-by
-   column one sibling lacks fails there. Delete a duplicate file to share. Work
-   cause-first: explain a cause once, on the comparison that shows it most
-   clearly, let it run on every comparison of that model, then work comparison
-   by comparison on what is left.
+   (same `dashboard_view` and same `rows` grain and values; `filters`,
+   `defaults`, `cuts`, `scope`, `dashboard_filters` and `dashboard_columns` may
+   differ) usually reconcile the same rows. Explain one of them: its explanation
+   also runs on the others' groups of that bucket, in `explain` (printed as
+   "Also <comparison>: N of M items explained.") and in every `sort`, unless one
+   has an explanation file of its own, which then wins, even when it fails. Each
+   comparison runs it on its own rows, so a dim whose join drops or repeats rows
+   shows as a refusal there. A shared explanation reads only `__row`, `side` and
+   the grain: a group-by column one sibling lacks fails there. Delete a
+   duplicate file to share. Work cause-first: explain a cause once, on the
+   comparison that shows it most clearly, let it run on every comparison of that
+   model, then work comparison by comparison on what is left.
 
    Every `sort` re-runs every stored explanation on the new run's rows first
    (`--no-explanations` skips them), then traces only what no explanation
