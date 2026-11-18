@@ -57,4 +57,19 @@ def duck():
             names = [d[0] for d in cur.description]
             return [dict(zip(names, r, strict=True)) for r in cur.fetchall()]
 
+        def script(self, statements: list[str]) -> list[dict]:
+            """Run `statements` as `Warehouse.script` does and return the last
+            one's rows. Its temp tables end with it, as a BigQuery script's do,
+            so a test can run the same script twice."""
+            try:
+                for statement in statements[:-1]:
+                    self.rows(statement)
+                return self.rows(statements[-1])
+            finally:
+                temp = con.execute(
+                    "SELECT table_name FROM duckdb_tables() WHERE temporary"
+                ).fetchall()
+                for (name,) in temp:
+                    con.execute(f'DROP TABLE temp."{name}"')
+
     return Duck()

@@ -1321,7 +1321,9 @@ def test_a_row_with_no_cube_value_keys_to_its_group_and_counts_in_each_side_s_ce
     cuts = [("c.grade = '5'", "d.grade = '5'"), ("c.grade = '6'", "d.grade = '6'")]
     labels = [label for label, _, _ in pipeline.cut_flags(BY_GRADE)]
     (group,) = reconcile.groups_from(
-        "mastery", duck.rows(reconcile.reconcile_sql(*sides, cuts=cuts)), labels
+        "mastery",
+        duck.script(reconcile.reconcile_script(*sides, cuts=cuts, table="counted_t")),
+        labels,
     )
     duck.rows(
         "CREATE TABLE saved_t AS " + reconcile.unmatched_rows_sql(*sides, cuts=cuts)

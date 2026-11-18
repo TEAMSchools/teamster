@@ -228,73 +228,6 @@ def _grain_keys(grain: list[str]) -> list[str]:
     return [_key(grain[0]), *(_grain_key(g) for g in grain[1:])]
 
 
-def reconcile_sql(
-    cube_rows_sql: str,
-    dashboard_rows_sql: str,
-    rows: RowSpec,
-    group_by: list[ColumnPair],
-    filters: Sequence[tuple[str, str]] = (),
-    cuts: Sequence[tuple[str, str]] = (),
-) -> str:
-    """Build the query that classifies every row as match, differs or one-sided.
-
-    Rows are joined on the grain plus a per-grain duplicate number. The cube
-    source names its columns by each pair's `cube` name and the dashboard
-    source by its `dashboard` name. Numeric grain keys join across types (1,
-    1.0 and '1'); anything else joins as text. A NULL in the first grain
-    column, the student, never matches. A NULL in a later grain column
-    matches a NULL on the other side and nothing else, the empty string
-    included.
-    Temporal grains are not normalized: callers must emit date grains as DATE
-    on both sides. Value and group-by pairs read a date and a midnight
-    timestamp of the same day as equal.
-
-    Args:
-        cube_rows_sql: SELECT returning the grain, value and group-by columns
-            under their `cube` names.
-        dashboard_rows_sql: The same, under their `dashboard` names.
-        rows: The grain and value column pairs.
-        group_by: Columns to break counts out by; each is named by its `cube`
-            name in the result and read from Cube's side when Cube holds the
-            row, else the dashboard's (`_label`). The 2 sides file a row in
-            the same cell when their values key alike as the cells do
-            (`_cell_key`), so case counts and TRUE is not 1.
-        filters: For each dashboard-only filter, the dashboard rows' boolean
-            column that says it keeps a row, and the label to name it by. A row
-            one drops that Cube has reads `dashboard_filtered`, with the label
-            in `__filter`; one Cube lacks too is a match.
-        cuts: Per cut, the predicate that keeps its rows on the Cube side and
-            on the dashboard side (over `c.` and `d.` columns), so each side's
-            rows are also counted per cut (`__s_k<j>_c_rows`, ...).
-
-    A row both sides hold with the same values that the 2 sides file in
-    different cells, by a group-by column or by a cut, reads `dims_differ`.
-    Its group columns are Cube's, and `__moved` with a `__d_<column>` per
-    group-by column gives the dashboard's; a `value_differs` row the 2 sides
-    file in different cells carries them too. Its rows per cut and side say
-    which cut each side files it under.
-
-    Returns:
-        One query returning `bucket`, each group-by column, `n_rows`,
-        `n_students` (distinct values of the first grain pair), and per side
-        (`c`, `d`) its rows, over every cut (`__s_c_rows`) and per cut
-        (`__s_k<j>_c_rows`). The dashboard side counts only the rows its
-        filters keep, so a `dashboard_filtered` row adds to Cube's side
-        alone. No grain or value column is returned.
-    """
-    ctes, group_names = _joined(
-        cube_rows_sql,
-        dashboard_rows_sql,
-        rows,
-        group_by,
-        filters,
-        extra=_cut_extras(cuts, filters),
-        moved=True,
-        cuts=cuts,
-    )
-    return ctes + "\n" + _outer_sql(group_names, filters, cuts, "joined")
-
-
 def _outer_sql(
     group_names: list[str],
     filters: Sequence[tuple[str, str]],
@@ -399,21 +332,59 @@ def reconcile_script(
     labels: dict[str, str] | None = None,
     expire_days: int | None = None,
 ) -> list[str]:
-    """The reconcile as 3 statements of one job: it saves the unmatched rows to
-    `table` and returns `reconcile_sql`'s counts.
+    """The reconcile as 3 statements of one job: it classifies every row as
+    match, differs or one-sided, saves the unmatched rows to `table`, and
+    returns counts.
 
-    The rows are joined once, into a temp table both later statements read, so
-    saving them costs no second scan of either side.
+    Rows are joined on the grain plus a per-grain duplicate number, once, into
+    a temp table both later statements read, so saving them costs no second
+    scan of either side. The cube source names its columns by each pair's
+    `cube` name and the dashboard source by its `dashboard` name. Numeric
+    grain keys join across types (1, 1.0 and '1'); anything else joins as
+    text. A NULL in the first grain column, the student, never matches. A
+    NULL in a later grain column matches a NULL on the other side and nothing
+    else, the empty string included.
+    Temporal grains are not normalized: callers must emit date grains as DATE
+    on both sides. Value and group-by pairs read a date and a midnight
+    timestamp of the same day as equal.
+
+    A row both sides hold with the same values that the 2 sides file in
+    different cells, by a group-by column or by a cut, reads `dims_differ`.
+    Its group columns are Cube's, and `__moved` with a `__d_<column>` per
+    group-by column gives the dashboard's; a `value_differs` row the 2 sides
+    file in different cells carries them too. Its rows per cut and side say
+    which cut each side files it under.
 
     Args:
+        cube_rows_sql: SELECT returning the grain, value and group-by columns
+            under their `cube` names.
+        dashboard_rows_sql: The same, under their `dashboard` names.
+        rows: The grain and value column pairs.
+        group_by: Columns to break counts out by; each is named by its `cube`
+            name in the result and read from Cube's side when Cube holds the
+            row, else the dashboard's (`_label`). The 2 sides file a row in
+            the same cell when their values key alike as the cells do
+            (`_cell_key`), so case counts and TRUE is not 1.
+        filters: For each dashboard-only filter, the dashboard rows' boolean
+            column that says it keeps a row, and the label to name it by. A row
+            one drops that Cube has reads `dashboard_filtered`, with the label
+            in `__filter`; one Cube lacks too is a match.
+        cuts: Per cut, the predicate that keeps its rows on the Cube side and
+            on the dashboard side (over `c.` and `d.` columns), so each side's
+            rows are also counted per cut (`__s_k<j>_c_rows`, ...).
         table: The saved table, as SQL names it; replaced if it exists.
         labels: The table's labels; each value must be one BigQuery takes.
         expire_days: Days until the table expires on its own.
 
     Returns:
         The statements: the join into `__joined`, the saved table
-        (`_saved_select`'s rows), and the counts, with `reconcile_sql`'s
-        columns and its `-- outer` marker.
+        (`_saved_select`'s rows), and the counts after their `-- outer`
+        marker. The counts return `bucket`, each group-by column, `n_rows`,
+        `n_students` (distinct values of the first grain pair), and per side
+        (`c`, `d`) its rows, over every cut (`__s_c_rows`) and per cut
+        (`__s_k<j>_c_rows`). The dashboard side counts only the rows its
+        filters keep, so a `dashboard_filtered` row adds to Cube's side
+        alone. No grain or value column is returned.
 
     Raises:
         ValueError: A label value BigQuery would not take.
@@ -487,14 +458,15 @@ def _joined(
     moved: bool = False,
     cuts: Sequence[tuple[str, str]] = (),
 ) -> tuple[str, list[str]]:
-    """The `c`, `d` and `joined` CTEs of `reconcile_sql`, and the group columns.
+    """The `c`, `d` and `joined` CTEs of the reconcile, and the group columns.
 
-    With `keys`, `joined` also carries each one-sided row's grain keys
-    (`__k0`, ...) and duplicate number (`__rn`), for `trace_sql`. `extra`
-    adds select expressions over `c` and `d` to `joined`. With `moved`, the
-    group columns add the dashboard's cell of a row both sides hold in
-    different cells (`__moved`, `__d_<column>`). `cuts` are `reconcile_sql`'s:
-    a row the 2 sides keep under different cuts is `dims_differ` too.
+    The arguments before `keys` are `reconcile_script`'s. With `keys`,
+    `joined` also carries each one-sided row's grain keys (`__k0`, ...) and
+    duplicate number (`__rn`), for `trace_sql`. `extra` adds select
+    expressions over `c` and `d` to `joined`. With `moved`, the group columns
+    add the dashboard's cell of a row both sides hold in different cells
+    (`__moved`, `__d_<column>`). `cuts` are `reconcile_script`'s: a row the 2
+    sides keep under different cuts is `dims_differ` too.
     """
     cube_grain = [p.cube for p in rows.grain]
     dash_grain = [p.dashboard for p in rows.grain]
@@ -645,8 +617,8 @@ def trace_sql(
 ) -> str:
     """Build the query that counts which relaxed variants recover each unmatched row.
 
-    The unmatched rows are rebuilt inside the query exactly as `reconcile_sql`
-    finds them, so no row leaves BigQuery: the result has the group columns,
+    The unmatched rows are rebuilt inside the query exactly as
+    `reconcile_script` finds them, so no row leaves BigQuery: the result has the group columns,
     a step id and a count, nothing else. A variant recovers a row when it
     returns the row's grain (by the reconcile's keys and NULL rules). A row
     whose grain the other side holds more than once (duplicate number past
@@ -656,8 +628,8 @@ def trace_sql(
         cube_rows_sql: The Cube rows the run reconciled.
         dashboard_rows_sql: The dashboard rows the run reconciled.
         rows: The grain and value column pairs.
-        group_by: The group-by columns, as `reconcile_sql` takes them.
-        filters: The dashboard-only filter flags, as `reconcile_sql` takes
+        group_by: The group-by columns, as `reconcile_script` takes them.
+        filters: The dashboard-only filter flags, as `reconcile_script` takes
             them, so the rows bucket as the run's did.
         bucket: `cube_only` or `dashboard_only`: the rows to trace.
         side: The side the variants rewrite: `dashboard` (for Cube-only
@@ -676,7 +648,7 @@ def trace_sql(
             recovers. False counts each step's rows separately, plus every
             row in play under `NONE`. Both count, under `DUPLICATE`, the rows
             left out for a duplicate grain.
-        cuts: The cut predicates, as `reconcile_sql` takes them, so a key's
+        cuts: The cut predicates, as `reconcile_script` takes them, so a key's
             rows pair cut by cut as the run's did.
 
     Returns:
@@ -799,7 +771,8 @@ def many_ids(step_id: str) -> list[str]:
 def groups_from(
     comparison_id: str, result_rows: list[dict], cut_labels: Sequence[str] = ()
 ) -> list[Group]:
-    """Turn `reconcile_sql` result rows into groups, leaving out the matches.
+    """Turn the reconcile's counts (`reconcile_script`'s last statement) into
+    groups, leaving out the matches.
 
     Args:
         comparison_id: The comparison the rows belong to.
