@@ -6,6 +6,8 @@ import yaml
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.config import (
     ConfigError,
+    comparison_item,
+    find_comparison,
     load_view_config,
     mask_digits,
     with_fact_dataset,
@@ -974,11 +976,18 @@ def test_write_decision_restores_file_when_result_does_not_load(tmp_path):
     assert path.read_text() == EXAMPLE
 
 
-def test_write_decision_refuses_an_id_it_cannot_find_by_its_line(tmp_path):
-    # `id` is not the item's first key, so a line edit could not replace it.
+def test_write_decision_refuses_a_flow_mapping_item_it_cannot_find_by_its_line(
+    tmp_path,
+):
     text = EXAMPLE.replace(
         "  - id: example\n    comparison: ada-y1-region\n",
-        "  - comparison: ada-y1-region\n    id: example\n",
+        "  - {id: example, comparison: ada-y1-region, call: deliberate, reason: r}\n",
+    )
+    text = text.replace(
+        '    group: { column: grade_level, values: ["9"] }\n'
+        "    call: deliberate\n    reason: counted differently\n"
+        '    task: ""\n    fingerprints: { cube: abc, dashboard: def }\n',
+        "",
     )
     path = _write(tmp_path, text)
 
@@ -1200,3 +1209,75 @@ def test_an_old_decision_proof_fingerprint_is_refused_with_its_new_name(tmp_path
     assert str(exc.value) == (
         f"{path}: decisions[1].fingerprints.proof: renamed; write it as explanation"
     )
+
+
+MERGED = """\
+view: v
+fact: d.t
+shared:
+  roster: &roster
+    workbook: wb
+comparisons:
+  - <<: *roster
+    id: goal  # the goal sheet
+    measure: m
+decisions:
+  - id: goal
+    comparison: goal
+    call: deliberate
+    reason: r
+    formula: true
+"""
+
+
+def test_write_rebuild_check_finds_a_comparison_that_opens_with_a_merge_key(tmp_path):
+    path = _write(tmp_path, MERGED)
+
+    write_rebuild_check(
+        path, "goal", {"fingerprint": "f", "cells": 1, "matched_at": "t"}
+    )
+
+    c = load_view_config(path).comparisons[0]
+    assert c.rebuild_check.fingerprint == "f" and c.workbook == "wb"
+
+
+def test_comparison_item_ignores_a_decision_with_the_same_id():
+    lines = MERGED.splitlines()
+
+    start, end, key_indent = comparison_item(lines, "goal")
+
+    assert lines[start] == "  - <<: *roster"
+    assert lines[end] == "decisions:"
+    assert key_indent == 4
+    assert comparison_item(lines, "missing") is None
+
+
+def test_find_comparison_raises_when_no_item_matches(tmp_path):
+    path = _write(
+        tmp_path,
+        MERGED.replace(
+            "  - <<: *roster\n    id: goal  # the goal sheet\n    measure: m\n",
+            "  - {id: other}\n",
+        ),
+    )
+
+    with pytest.raises(ConfigError, match="no comparison with id 'goal'"):
+        find_comparison(path, "goal")
+
+
+def test_write_decision_replaces_a_decision_whose_id_is_not_its_first_key(tmp_path):
+    path = _write(
+        tmp_path,
+        MERGED.replace(
+            "  - id: goal\n    comparison: goal\n",
+            "  - comparison: goal\n    id: goal\n",
+        ),
+    )
+
+    write_decision(
+        path,
+        {"id": "goal", "comparison": "goal", "call": "deliberate", "reason": "new"},
+    )
+
+    (d,) = load_view_config(path).decisions
+    assert (d.call, d.reason) == ("deliberate", "new")

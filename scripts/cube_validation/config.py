@@ -828,6 +828,104 @@ def load_view_config(path: Path) -> ViewConfig:
     )
 
 
+def _indent(line: str) -> int:
+    return len(line) - len(line.lstrip())
+
+
+def _list_item(
+    lines: list[str], head: int, end: int, item_id: str
+) -> tuple[int, int, int] | None:
+    """Find the block-list item whose `id:` line is `item_id`.
+
+    The `id:` may be the item's first line (`- id: x`) or any later line at the
+    item's key indent, as when a `<<: *anchor` merge key comes first.
+
+    Args:
+        lines: The file's lines.
+        head: Index of the block's key line.
+        end: Index after the block's last line.
+        item_id: The id to find.
+
+    Returns:
+        The item's first line, the line after it, and its key indent; or
+        None when no item matches. Trailing blank lines and comments at or
+        below the item's indent belong to what follows, not to the item.
+    """
+    item_indent = next(
+        (
+            _indent(lines[i])
+            for i in range(head + 1, end)
+            if re.match(r"\s*- ", lines[i])
+        ),
+        None,
+    )
+    if item_indent is None:
+        return None
+    key_indent = item_indent + 2
+    marker = re.compile(rf"\s{{{item_indent}}}- ")
+    wanted = re.compile(
+        rf"(?:\s{{{item_indent}}}- |\s{{{key_indent}}})id:\s*['\"]?"
+        rf"{re.escape(item_id)}['\"]?\s*(?:#.*)?"
+    )
+    starts = [i for i in range(head + 1, end) if marker.match(lines[i])]
+    for n, start in enumerate(starts):
+        stop = starts[n + 1] if n + 1 < len(starts) else end
+        for i in range(start + 1, stop):
+            if (
+                lines[i].strip()
+                and not _is_comment(lines[i])
+                and _indent(lines[i]) < key_indent
+            ):
+                stop = i
+                break
+        if any(wanted.fullmatch(lines[i]) for i in range(start, stop)):
+            while stop > start + 1 and (
+                not lines[stop - 1].strip()
+                or (
+                    _is_comment(lines[stop - 1])
+                    and _indent(lines[stop - 1]) <= item_indent
+                )
+            ):
+                stop -= 1
+            return start, stop, key_indent
+    return None
+
+
+def comparison_item(
+    lines: list[str], comparison_id: str
+) -> tuple[int, int, int] | None:
+    """Find a comparison's item in the top-level `comparisons:` block.
+
+    Returns:
+        The item's first line, the line after it, and its key indent; or
+        None when the block is missing, is not a block list, or holds no item
+        with that id. Decisions are never searched.
+    """
+    head = next(
+        (i for i, line in enumerate(lines) if re.match(r"comparisons\s*:", line)), None
+    )
+    if head is None:
+        return None
+    end = next(
+        (i for i in range(head + 1, len(lines)) if re.match(r"[^\s#-]", lines[i])),
+        len(lines),
+    )
+    return _list_item(lines, head, end, comparison_id)
+
+
+def find_comparison(path: Path, comparison_id: str) -> None:
+    """Check that a line edit can find a comparison's item.
+
+    Raises:
+        ConfigError: No block item of `comparisons:` carries that id, so
+            `write_rebuild_check` could not write it.
+    """
+    if comparison_item(Path(path).read_text().splitlines(), comparison_id) is None:
+        raise ConfigError(
+            f"{path}: comparisons: no comparison with id {comparison_id!r}"
+        )
+
+
 def write_rebuild_check(path: Path, comparison_id: str, check: dict[str, Any]) -> None:
     """Rewrite one comparison's `rebuild_check:` key, leaving the rest of the
     file as is.
@@ -848,31 +946,12 @@ def write_rebuild_check(path: Path, comparison_id: str, check: dict[str, Any]) -
     path = Path(path)
     lines = path.read_text().splitlines()
 
-    start = next(
-        (
-            i
-            for i, line in enumerate(lines)
-            if re.fullmatch(
-                rf"\s*- id:\s*['\"]?{re.escape(comparison_id)}['\"]?\s*", line
-            )
-        ),
-        None,
-    )
-    if start is None:
+    found = comparison_item(lines, comparison_id)
+    if found is None:
         raise ConfigError(
             f"{path}: comparisons: no comparison with id {comparison_id!r}"
         )
-
-    item_indent = len(lines[start]) - len(lines[start].lstrip())
-    key_indent = item_indent + 2
-
-    # The comparison ends at the next line indented at or below its `- ` marker.
-    end = len(lines)
-    for i in range(start + 1, len(lines)):
-        line = lines[i]
-        if line.strip() and len(line) - len(line.lstrip()) <= item_indent:
-            end = i
-            break
+    start, end, key_indent = found
 
     check_at = next(
         (
@@ -992,8 +1071,8 @@ def write_decision(path: Path, decision: dict[str, Any]) -> None:
         ConfigError: The file does not load afterwards, or does not hold the
             values asked for (the original text is restored either way);
             `decisions:` is not a block list (see `_decisions_block`); or a
-            decision with that id exists but its item does not start with
-            `- id: <id>`, so a line edit cannot find it.
+            decision with that id exists but no block item carries an `id:`
+            line for it (a flow mapping), so a line edit cannot find it.
     """
     path = Path(path)
     decision_id = decision.get("id")
@@ -1014,22 +1093,12 @@ def write_decision(path: Path, decision: dict[str, Any]) -> None:
     block = yaml.safe_dump([decision], default_flow_style=None, sort_keys=False)
     new = [" " * indent + line for line in block.splitlines()]
 
-    start = next(
-        (
-            i
-            for i in range(head + 1, end)
-            if re.fullmatch(
-                rf"\s{{{indent}}}- id:\s*['\"]?{re.escape(decision_id)}['\"]?\s*(#.*)?",
-                lines[i],
-            )
-        ),
-        None,
-    )
-    if start is None:
+    found = _list_item(lines, head, end, decision_id)
+    if found is None:
         if any(d.id == decision_id for d in load_view_config(path).decisions):
             raise ConfigError(
-                f"{path}: decisions: {decision_id!r} does not start with "
-                f"`- id: {decision_id}`; edit it by hand"
+                f"{path}: decisions: {decision_id!r} is written as a flow "
+                "mapping, so a line edit cannot find it; edit it by hand"
             )
         # Append after the block's last item line, before trailing blanks and
         # column-0 comments that lead into the next key.
@@ -1040,27 +1109,7 @@ def write_decision(path: Path, decision: dict[str, Any]) -> None:
             insert -= 1
         lines[insert:insert] = new
     else:
-        # The item ends at the next key or item indented at or below its `- `
-        # marker. A comment there may sit between the item's own keys, so it
-        # ends nothing; one that trails the item leads into what follows.
-        stop = next(
-            (
-                i
-                for i in range(start + 1, end)
-                if lines[i].strip()
-                and not _is_comment(lines[i])
-                and len(lines[i]) - len(lines[i].lstrip()) <= indent
-            ),
-            end,
-        )
-        while stop > start + 1 and (
-            not lines[stop - 1].strip()
-            or (
-                _is_comment(lines[stop - 1])
-                and len(lines[stop - 1]) - len(lines[stop - 1].lstrip()) <= indent
-            )
-        ):
-            stop -= 1
+        start, stop, _ = found
         lines[start:stop] = new
 
     replace_text(path, "\n".join(lines) + "\n")

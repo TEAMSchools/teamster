@@ -21,7 +21,13 @@ import tableauserverclient as TSC
 from . import find_field as finder
 from . import read_sheet, tableau
 from .bq import Warehouse
-from .config import Comparison, ViewConfig, write_rebuild_check
+from .config import (
+    Comparison,
+    ConfigError,
+    ViewConfig,
+    find_comparison,
+    write_rebuild_check,
+)
 from .cube_client import Cube
 from .moment import WINDOW
 from .pipeline import (
@@ -546,6 +552,10 @@ def rebuild_sheet(
     """
     comparison = _comparison_by_id(cfg, path, comparison_id)
     _require(comparison, "workbook", "sheet", "dashboard_view", "decimals")
+    try:
+        find_comparison(path, comparison.id)
+    except ConfigError as exc:
+        raise Refusal(str(exc)) from exc
     twb, shaped, columns, exportable, browser, snap = _capture(
         comparison, tbl, captures
     )

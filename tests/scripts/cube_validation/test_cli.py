@@ -3074,6 +3074,24 @@ def test_rebuild_sheet_refuses_a_text_measure_before_any_export(
     assert not getattr(fakes.tbl, "captures", 0)
 
 
+def test_rebuild_sheet_refuses_an_unwritable_comparison_before_any_export(
+    fakes, tmp_path, capsys
+):
+    head = YML.split("comparisons:\n", 1)[0]
+    flow = (
+        "comparisons: [{id: ada-region, measure: avg_daily_attendance, "
+        "workbook: wb-1, sheet: Rate by Region, "
+        "dashboard_view: kipptaf_tableau.rpt_d, decimals: 3}]\n"
+    )
+    # Loads through the config loader, but no line edit can find the item.
+    path = _file(tmp_path, head + flow)
+    argv = ["rebuild-sheet", str(path), "--comparison", "ada-region"]
+
+    assert cli.main(argv) == 1
+    assert "no comparison with id 'ada-region'" in capsys.readouterr().err
+    assert not getattr(fakes.tbl, "captures", 0)
+
+
 def test_prove_unhides_a_dashboard_only_sheet_on_the_copy(fakes, tmp_path, capsys):
     fakes.tbl.twb = fakes.tbl.twb.replace(
         "<window class='worksheet' name='Rate by Region'>",
