@@ -7,7 +7,8 @@ minus every saved unmatched key: the grain keys the run's own `joined` files
 unmatched duplicate, a row a dashboard filter drops) and any key the run saved
 as unmatched. Rows the reconcile never saw, such as out-of-scope or non-latest
 daily rows, are never matched, so they can never read as a formula difference.
-The module is pure: it builds SQL and runs nothing.
+The SQL builders and `verdicts` are pure; `plan` looks up what the SQL needs
+and `run_job` runs it, for `sort`.
 """
 
 from __future__ import annotations
@@ -18,13 +19,16 @@ from dataclasses import dataclass, field
 from typing import Any
 
 import sqlglot
+from google.api_core.exceptions import GoogleAPIError
 from sqlglot import exp
 from sqlglot.errors import SqlglotError
 
-from . import cube_client, pipeline, reconcile
-from .bq import Warehouse
+from . import coverage, cube_client, explain, pipeline, reconcile, trace
+from .bq import CostCapError, ViewHistoryError, Warehouse, job_failure
 from .config import Comparison, RowSpec, ViewConfig
+from .cube_client import Cube, CubeError, CubeRefusal
 from .moment import Build
+from .report import RunResult, mask
 from .timetravel import _NOT_ALIAS, PROJECT, repin
 
 # A cell the check could not recompute closes by coverage under this label,
@@ -37,6 +41,17 @@ SQL_MOVED = "its SQL changed since the run; compare it again"
 CUBE_REFUSED = "Cube refused its SQL; sort again"
 NOT_COMPOSED = "the run is not composed from the latest results; compare it again"
 OUTSIDE = "not run: outside --comparison; sort it"
+CAPPED = "a cap stopped it; sort again with a higher --max-usd"
+# An error no reason above names, from code that builds the check's SQL.
+UNBUILT = "its SQL could not be built; see the terminal"
+# The reasons a check that ran its queries can give; any other is a failure.
+_RAN = (REWRITE_DIFFERS, NO_ROWS)
+
+
+def bigquery_refused(exc: GoogleAPIError) -> str:
+    """The reason for a BigQuery error: its job and reason code only, since its
+    message can quote a value."""
+    return f"BigQuery refused it ({job_failure(exc)}); sort again"
 
 
 class NotCompared(Exception):
@@ -96,15 +111,19 @@ class Check:
         )
 
 
-def _values(rows: list[dict], names: list[str]) -> dict[tuple, float | None]:
+def _values(
+    rows: list[dict], names: list[str]
+) -> tuple[dict[tuple, float | None], set[tuple]]:
     """Each row's `value` by its cut and its dims under `names`, keyed as
-    `compare._cells` keys a cut's cells."""
-    return {
-        (r["__cut"], tuple(pipeline.value_key(r[n]) for n in names)): (
-            None if r["value"] is None else float(r["value"])
-        )
-        for r in rows
-    }
+    `compare._cells` keys a cut's cells, and the keys more than 1 row holds."""
+    values: dict[tuple, float | None] = {}
+    repeated: set[tuple] = set()
+    for r in rows:
+        key = (r["__cut"], tuple(pipeline.value_key(r[n]) for n in names))
+        if key in values:
+            repeated.add(key)
+        values[key] = None if r["value"] is None else float(r["value"])
+    return values, repeated
 
 
 def verdicts(
@@ -118,10 +137,11 @@ def verdicts(
 ) -> Check:
     """Decide each differing cell from both sides' recomputed values.
 
-    In order: a self-check that does not reproduce the run's value for the
-    cell, on either side, is `REWRITE_DIFFERS`; no matched value on either
-    side is `NO_ROWS`; values that agree at the comparison's `decimals` leave
-    the cell to coverage; else the cell differs by its formula.
+    In order: a cell any of the 4 results holds more than 1 row for, or a
+    self-check that does not reproduce the run's value for the cell, on either
+    side, is `REWRITE_DIFFERS`; no matched value on either side is `NO_ROWS`;
+    values that agree at the comparison's `decimals` leave the cell to
+    coverage; else the cell differs by its formula.
 
     Args:
         comparison: The comparison checked.
@@ -138,15 +158,17 @@ def verdicts(
     decimals = comparison.decimals or 0
     on_dash = [d.dashboard for d in comparison.dims]
     on_cube = [d.cube for d in comparison.dims]
-    sides = {
+    read = {
         "dashboard": (_values(dash, on_dash), _values(dash_self, on_dash)),
         "cube": (_values(cube, on_cube), _values(cube_self, on_cube)),
     }
+    sides = {side: (kept[0], whole[0]) for side, (kept, whole) in read.items()}
+    repeated = set().union(*(k[1] | w[1] for k, w in read.values()))
     check = Check(comparison.id, fingerprint)
     for cell in cells:
         ref = (cell["cut"], cell["key"])
         at = (cell["cut"], tuple(pipeline.value_key(v) for _, v in cell["dims"]))
-        if any(
+        if at in repeated or any(
             reconcile.cell_verdict(whole.get(at), cell[side], decimals) != "pass"
             for side, (_, whole) in sides.items()
         ):
@@ -499,7 +521,14 @@ def cube_side_sql(
         measure as `value`.
 
     Raises:
-        pipeline.Refusal: The comparison has no `rows`.
+        pipeline.Refusal: The comparison has no `rows`, or Cube's SQL cannot
+            be read as of the build end (`pipeline.checked_as_of`).
+        CubeRefusal: Cube's compiled SQL fails `refuse_unless_safe`.
+        CubeError: Cube answered the compile with an HTTP error.
+        ViewHistoryError: A view's definition at the moment is not on record.
+        GoogleAPIError: A lookup the expansion makes, such as a view's
+            history, failed in BigQuery.
+        CostCapError: That lookup would pass a cap.
         NotCompared: Cube's SQL cannot be rewritten (`rewrite_cube_sql`).
     """
     dates = pipeline.date_cubes(cfg)
@@ -517,3 +546,242 @@ def cube_side_sql(
         # trunk-ignore(bandit/B608): the label is literal-escaped and the SQL the tool's own
         parts.append(f"SELECT {label} AS __cut, * FROM (\n{cells}\n)")
     return "\nUNION ALL\n".join(parts)
+
+
+# --- the check in `sort` --------------------------------------------------------
+
+
+@dataclass
+class Job:
+    """One comparison's formula check, planned and ready to price and run.
+
+    `sql` holds the 4 queries by name: `dashboard` and `cube` read matched
+    rows only, `dashboard_self` and `cube_self` every row (the self-check).
+    """
+
+    comparison: str
+    fingerprint: str
+    cells: list[dict]
+    sql: dict[str, str]
+
+
+def checkable_cells(run: RunResult, comparison: Comparison) -> list[dict]:
+    """The comparison's differing cells the check can recompute.
+
+    Each is a `kind: cells` entry of `run.diff_cells` that coverage places
+    (`coverage.placed`) with at least 1 group, open or closed by a decision.
+    A cell with no group in it is already a formula difference.
+    """
+    groups = [*run.applied.open, *(g for _, g in run.applied.quiet)]
+    return [
+        c
+        for c in run.diff_cells
+        if c["comparison"] == comparison.id
+        and c.get("kind", "cells") == "cells"
+        and coverage.placed(c, groups, comparison)
+    ]
+
+
+def not_compared(
+    comparison: str, fingerprint: str, cells: list[dict], why: str
+) -> Check:
+    """A check that recomputed nothing: every cell left to coverage for `why`."""
+    return Check(
+        comparison,
+        fingerprint,
+        not_compared={why: [(c["cut"], c["key"]) for c in cells]},
+    )
+
+
+def _job_sql(
+    cfg: ViewConfig,
+    comparison: Comparison,
+    cells: list[dict],
+    build: Build,
+    *,
+    wh: Warehouse,
+    cube: Cube,
+    schools: set[str],
+    sides: pipeline.RowSides,
+    table: str,
+) -> dict[str, str]:
+    """The check's 4 queries over the cuts `cells` sit in, as `Job.sql` holds them."""
+    held = {c["cut"] for c in cells}
+    cuts = [
+        c for c in pipeline.comparison_cuts(comparison) if pipeline.cut_label(c) in held
+    ]
+    ctes = matched_ctes(cfg, comparison, sides, table)
+    ex = pipeline.Expand(cfg, cube, schools, wh)
+    grain = [p.cube for p in _rows(comparison).grain]
+    _, columns = fact_grain(
+        ex.cube_sql(pipeline.row_query(cfg.view, comparison), rows=True),
+        cfg.view,
+        grain,
+    )
+    compiled = "\n".join(
+        ex.cube_sql(pipeline.cell_query(cfg.view, comparison, cut)) for cut in cuts
+    )
+    tables = filtered_tables(
+        cube_read_tables(cfg, compiled),
+        columns,
+        lambda t: wh.columns(*t.split(".", 1)),
+    )
+
+    def dash(keep: bool) -> str:
+        return dashboard_side_sql(cfg, comparison, cuts, build, wh, keep=keep)
+
+    def cubes(keep: bool) -> str:
+        return cube_side_sql(
+            cfg, comparison, cuts, build,
+            ex=ex, sides=sides, tables=tables, columns=columns, keep=keep,
+        )  # fmt: skip
+
+    def matched(body: str) -> str:
+        # trunk-ignore(bandit/B608): both parts are the tool's own SQL
+        return f"{ctes}\nSELECT * FROM (\n{body}\n)"
+
+    return {
+        "dashboard": matched(dash(True)),
+        "cube": matched(cubes(True)),
+        "dashboard_self": dash(False),
+        "cube_self": cubes(False),
+    }
+
+
+def plan(
+    cfg: ViewConfig,
+    run: RunResult,
+    comparison: Comparison,
+    *,
+    fingerprint: str,
+    wh: Warehouse,
+    cube: Cube,
+    prepared: trace.Prepared,
+) -> Job | Check | None:
+    """Build the comparison's formula check, or why it cannot be built.
+
+    Reads the run's row SQL (`prepared.row_sides`), its saved rows
+    (`explain.require_saved`), Cube's compiled SQL and the fact's columns;
+    no priced query runs. Never raises: every failure is a check whose cells
+    are all left to coverage under one reason. The run's SQL no longer
+    building as it did, or the moment no longer readable, is `SQL_MOVED`;
+    the saved rows gone or of another run, `SAVED_GONE`; Cube's refusal or
+    error, `CUBE_REFUSED`; a Cube side the rewrite cannot place, its own
+    reason (`NotCompared`); a BigQuery error, its job and reason code; a cap,
+    `CAPPED`; anything else, `UNBUILT`, with the error printed.
+
+    BigQuery reads a table at 1 moment per query, so a sheet query whose
+    template joins a table the Cube row SQL inside `matched_ctes` reads at
+    the other moment is refused when it runs: that lands as a BigQuery
+    error in `run_job`, never a crash.
+
+    Args:
+        cfg: The view's config.
+        run: The run the check reads, as `sort` composed it.
+        comparison: A confirmed comparison of the run.
+        fingerprint: Its latest result's `checkpoint_fingerprint`, which the
+            check is kept under.
+        wh: The warehouse, for view history, saved labels and columns.
+        cube: Cube, for the compiled SQL.
+        prepared: What the triage fetched once; its row SQL is reused.
+
+    Returns:
+        None when no cell can be checked (`checkable_cells`); a `Job` holding
+        the 4 queries; else the fallback check.
+    """
+    cells = checkable_cells(run, comparison)
+    if not cells:
+        return None
+    # What a `Refusal` means depends on the step that raised it.
+    refused = SQL_MOVED
+    try:
+        sides = prepared.row_sides(cfg, comparison, run, wh, cube)
+        refused = SAVED_GONE
+        table = explain.require_saved(wh, cfg, run, comparison)
+        refused = SQL_MOVED
+        sql = _job_sql(
+            cfg, comparison, cells, run.moment_of(comparison.id),
+            wh=wh, cube=cube, schools=prepared.schools or set(), sides=sides,
+            table=table,
+        )  # fmt: skip
+    except NotCompared as exc:
+        why = str(exc)
+    except pipeline.Refusal:
+        why = refused
+    except (CubeRefusal, CubeError):
+        why = CUBE_REFUSED
+    except ViewHistoryError:
+        why = SQL_MOVED
+    except GoogleAPIError as exc:
+        why = bigquery_refused(exc)
+    except CostCapError:
+        why = CAPPED
+    except Exception as exc:  # noqa: BLE001 - the check never stops `sort`
+        print(f"Formula check of {comparison.id} not built: {exc!r}")
+        why = UNBUILT
+    else:
+        return Job(comparison.id, fingerprint, cells, sql)
+    return not_compared(comparison.id, fingerprint, cells, why)
+
+
+def run_job(job: Job, comparison: Comparison, wh: Warehouse) -> Check:
+    """Run a planned check's 4 queries and decide its cells (`verdicts`).
+
+    Call inside `wh.budget`, after its dry runs are priced. Never raises: a
+    BigQuery error leaves every cell to coverage under its job and reason
+    code, a cap under `CAPPED`, and rows that do not carry the comparison's
+    dims under `REWRITE_DIFFERS`.
+    """
+    try:
+        got = {k: wh.rows(sql, timeout_s=trace.TIMEOUT_S) for k, sql in job.sql.items()}
+    except GoogleAPIError as exc:
+        return not_compared(job.comparison, job.fingerprint, job.cells,
+                            bigquery_refused(exc))  # fmt: skip
+    except CostCapError:
+        return not_compared(job.comparison, job.fingerprint, job.cells, CAPPED)
+    try:
+        return verdicts(
+            comparison, job.fingerprint, job.cells,
+            got["dashboard"], got["cube"], got["dashboard_self"], got["cube_self"],
+        )  # fmt: skip
+    except (KeyError, TypeError, ValueError):
+        return not_compared(job.comparison, job.fingerprint, job.cells,
+                            REWRITE_DIFFERS)  # fmt: skip
+
+
+def ran(check: Check) -> bool:
+    """Whether the check ran its queries, so it can be kept for the next sort."""
+    return all(why in _RAN for why in check.not_compared)
+
+
+def label(items: list[dict], checks: dict[str, Check]) -> dict[str, dict[str, int]]:
+    """Disclose, on each comparison's cell set, the cells the check left to coverage.
+
+    Prepends one line per reason to the `<id>:cells` item's evidence, its count
+    exact locally and masked (`mask`) in `evidence_posted`. Names no cell.
+
+    Returns:
+        Per comparison with any, each reason's cell count, for `triage.json`.
+    """
+    by_id = {i["id"]: i for i in items}
+    out: dict[str, dict[str, int]] = {}
+    for cid, check in checks.items():
+        counts = {why: len(c) for why, c in check.not_compared.items() if c}
+        if not counts:
+            continue
+        out[cid] = counts
+        item = by_id.get(f"{cid}:cells")
+        if item is None:
+            continue
+
+        def line(why: str, n: str) -> str:
+            return f"{NOT_COMPARED}: {why} ({n} cells closed by coverage only)"
+
+        evidence = item.get("evidence") or []
+        posted = item.get("evidence_posted") or evidence
+        item["evidence"] = [*(line(w, str(n)) for w, n in counts.items()), *evidence]
+        item["evidence_posted"] = [
+            *(line(w, mask(n)) for w, n in counts.items()),
+            *posted,
+        ]
+    return out

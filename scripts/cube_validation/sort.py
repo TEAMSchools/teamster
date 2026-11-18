@@ -26,6 +26,8 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
+from google.api_core.exceptions import GoogleAPIError
+
 from . import decisions, latest, pipeline, results, trace
 from .bq import CostCapError, Warehouse
 from .config import Comparison, Decision, RebuildCheck, ViewConfig, mask_digits
@@ -1412,6 +1414,19 @@ def sort_run(
     row groups are traced or printed; `triage.json` still holds every item,
     the others' from their kept explanation outcomes.
 
+    Each confirmed comparison with `rows` that is not stale also gets the
+    formula check (`formula.plan`): its differing cells holding row groups are
+    recomputed on the rows both sides matched. Its 4 queries per comparison
+    are dry-run and priced with the explanations, so one cap refusal comes
+    before either runs. A check is kept beside its comparison's latest result
+    (`latest.add_formula_check`) and reused while that result stands; a cell
+    still differing there joins the comparison's formula item once the run is
+    composed again (`results.recompose`). Outside `comparisons`, a comparison
+    with no kept check is not checked. A check that cannot run, for any
+    reason, never refuses the sort or makes the comparison stale: its cells
+    stay with coverage, and the cell set's evidence says why
+    (`formula.label`), as does `triage.json` under `formulas_not_compared`.
+
     `ticker` (a new one by default) prints a progress line after each
     explanation runs and after each level of the trace.
 
@@ -1420,8 +1435,8 @@ def sort_run(
             `results.latest_run`), its SQL changed since the run, the
             manifest lacks compiled SQL the trace needs, or a comparison asked
             for is not in the view.
-        CostCapError: The value checks, the explanations together, or the trace
-            would pass a cap.
+        CostCapError: The value checks, the explanations and the formula
+            check together, or the trace would pass a cap.
     """
     wanted = set(comparisons) if comparisons else None
     if wanted and (unknown := wanted - {c.id for c in cfg.comparisons}):
@@ -1443,7 +1458,7 @@ def sort_run(
             # The trace's paid work is kept: the batch is still written.
             return f"not checked: {exc}"
 
-    from . import explain
+    from . import explain, formula
 
     ticker = ticker or Ticker(explain._utcnow, explain._utcnow())
     prepared = trace.Prepared()
@@ -1477,6 +1492,12 @@ def sort_run(
                 prepared=prepared,
                 skip=_groups_of(run, set(stale)),
             )
+        checks, jobs, usd = _formula_jobs(
+            cfg, run, run_json, cache_root, stale, wanted,
+            wh=wh, cube=cube, prepared=prepared,
+        )  # fmt: skip
+        if explanations is None and usd:
+            wh.refuse_past_caps(usd)
         # Explanations first: they are the only path to `cause`, so a trace that
         # hits a cap never un-explains an item, and nothing they explain is
         # traced.
@@ -1495,11 +1516,16 @@ def sort_run(
                 progress_dir=run_json.parent,
                 comparisons=wanted,
                 ticker=ticker,
+                also_usd=usd,
             )
             if explanations is not None
             else [],
             cfg,
         )
+        run = _run_formula_jobs(
+            cfg, run, run_json, cache_root, checks, jobs, wh=wh, cube=cube,
+            ticker=ticker,
+        )  # fmt: skip
         traced = (
             trace.trace_run(
                 cfg,
@@ -1525,6 +1551,7 @@ def sort_run(
         if explanations is not None:
             explain.apply_runs(run, items, ran, cfg, kept)
             items.sort(key=lambda i: SUGGESTIONS.index(i["suggestion"]))
+        unchecked = formula.label(items, checks)
         mark_decided(run, items, cfg.decisions, note=True)
         found = [_from_json(i) for i in items]
 
@@ -1545,6 +1572,9 @@ def sort_run(
                 "cause_students": kept.get("cause_students", {}),
                 # Each comparison whose latest result is missing or stale.
                 "stale": stale,
+                # Per comparison, the cells the formula check left to coverage,
+                # counted per reason (`formula.label`).
+                "formulas_not_compared": unchecked,
             },
             indent=1,
         )
@@ -1560,6 +1590,157 @@ def sort_run(
     print("\n".join(batch_lines(run, shown)))
     print(f"Saved {out}")
     return found
+
+
+def _stored_check(held: latest.Latest):
+    """The formula check kept beside a result, when it checked that very result."""
+    from . import formula
+
+    data = held.data.get("formula_check")
+    if not isinstance(data, dict) or data.get("fingerprint") != held.fingerprint:
+        return None
+    try:
+        return formula.Check.from_json(data)
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
+def _formula_jobs(
+    cfg: ViewConfig,
+    run: RunResult,
+    run_json: Path,
+    cache_root: Path,
+    stale: dict[str, str],
+    wanted: set[str] | None,
+    *,
+    wh: Warehouse,
+    cube: Cube,
+    prepared: trace.Prepared,
+) -> tuple[dict, list, float]:
+    """Plan and price the formula check of each comparison that can take one.
+
+    Returns:
+        The checks already decided, by comparison (kept ones reused, and
+        every fallback); the jobs to run, each dry-run without error; and
+        their summed dry-run price.
+    """
+    from . import formula
+
+    confirmed = [c for c in cfg.comparisons if c.confirmed]
+    held = latest.read_all(latest.folder(cache_root / cfg.view, cfg.fact), cfg.fact)
+    composed = results.composed_from(json.loads(run_json.read_text()), confirmed, held)
+    checks: dict[str, formula.Check] = {}
+    jobs: list[formula.Job] = []
+    for c in confirmed:
+        if c.rows is None or c.id in stale:
+            continue
+        if not composed or c.id not in held:
+            # The check would be kept beside results the run was not composed
+            # from, and filed by a compose that would replace the run.
+            if cells := formula.checkable_cells(run, c):
+                checks[c.id] = formula.not_compared(
+                    c.id, "", cells, formula.NOT_COMPOSED
+                )
+            continue
+        fingerprint = held[c.id].fingerprint
+        if (kept := _stored_check(held[c.id])) is not None:
+            checks[c.id] = kept
+            continue
+        if wanted and c.id not in wanted:
+            if cells := formula.checkable_cells(run, c):
+                checks[c.id] = formula.not_compared(
+                    c.id, fingerprint, cells, formula.OUTSIDE
+                )
+            continue
+        planned = formula.plan(
+            cfg, run, c, fingerprint=fingerprint, wh=wh, cube=cube, prepared=prepared
+        )
+        if isinstance(planned, formula.Job):
+            jobs.append(planned)
+        elif planned is not None:
+            checks[c.id] = planned
+    prices = trace._dry_runs(wh, [sql for j in jobs for sql in j.sql.values()])
+    ready: list[formula.Job] = []
+    usd = 0.0
+    for job in jobs:
+        mine, prices = prices[: len(job.sql)], prices[len(job.sql) :]
+        if failed := [p for p in mine if isinstance(p, GoogleAPIError)]:
+            checks[job.comparison] = formula.not_compared(
+                job.comparison, job.fingerprint, job.cells,
+                formula.bigquery_refused(failed[0]),
+            )  # fmt: skip
+            continue
+        usd += sum(p for p in mine if not isinstance(p, GoogleAPIError))
+        ready.append(job)
+    if ready:
+        n = sum(len(j.sql) for j in ready)
+        print(f"Formula check: {n} queries, ${usd:.2f} (dry run).")
+    return checks, ready, usd
+
+
+def _run_formula_jobs(
+    cfg: ViewConfig,
+    run: RunResult,
+    run_json: Path,
+    cache_root: Path,
+    checks: dict,
+    jobs: list,
+    *,
+    wh: Warehouse,
+    cube: Cube,
+    ticker: Ticker,
+) -> RunResult:
+    """Run the priced formula checks into `checks`, keep each that ran, and
+    compose the run again when a check files a cell the run does not.
+
+    Returns:
+        The run, composed again when a check filed a formula cell; else as
+        given. When composing refuses, the run is kept and each check just
+        run, or not yet filed, reads `formula.NOT_COMPOSED`; the kept checks
+        stay for the next compose.
+    """
+    from . import formula
+
+    by_id = {c.id: c for c in cfg.comparisons}
+    results_dir = latest.folder(cache_root / cfg.view, cfg.fact)
+    just_ran: set[str] = set()
+    for job in jobs:
+        check = formula.run_job(job, by_id[job.comparison], wh)
+        ticker.say("sort formula", job.comparison, wh.spent)
+        checks[job.comparison] = check
+        if formula.ran(check):
+            latest.add_formula_check(results_dir, job.comparison, check.to_json())
+            just_ran.add(job.comparison)
+    filed = {
+        (c["comparison"], c["cut"], c["key"])
+        for c in run.diff_cells
+        if c.get("kind") == "formula"
+    }
+    unfiled = {
+        cid
+        for cid, check in checks.items()
+        if any((cid, cut, key) not in filed for cut, key in check.formula)
+    }
+    if not unfiled:
+        return run
+    try:
+        return results.recompose(cfg, cache_root, run, run_json, cube=cube)
+    except pipeline.Refusal as exc:
+        print(f"Formula check: its cells are not filed: {exc}.")
+        for cid in just_ran | unfiled:
+            check = checks[cid]
+            cells = [
+                {"cut": cut, "key": key}
+                for cut, key in [
+                    *check.formula,
+                    *check.coverage,
+                    *(c for cs in check.not_compared.values() for c in cs),
+                ]
+            ]
+            checks[cid] = formula.not_compared(
+                cid, check.fingerprint, cells, formula.NOT_COMPOSED
+            )
+        return run
 
 
 def _groups_of(run: RunResult, comparisons: set[str]) -> set[tuple]:

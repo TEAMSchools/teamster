@@ -1,6 +1,8 @@
 from dataclasses import replace
 from datetime import datetime, timezone
 
+import pytest
+
 # trunk-ignore(pyright/reportAttributeAccessIssue): conftest.py registers cube_validation
 from cube_validation import latest, pipeline
 
@@ -99,3 +101,41 @@ def test_a_result_of_another_fact_is_not_read(tmp_path, capsys):
 
     assert latest.read_all(folder, "kipptaf_marts.fct_g") == {}
     assert set(latest.read_all(folder, "kipptaf_marts.fct_f")) == {"c1"}
+
+
+def _check(comparison="c1"):
+    return {"comparison": comparison, "fingerprint": "f", "formula": [],
+            "coverage": [], "not_compared": {}, "lines": []}  # fmt: skip
+
+
+def test_a_formula_check_is_kept_beside_its_result(tmp_path):
+    folder = latest.folder(tmp_path / "v", "kipptaf_marts.fct_f")
+    latest.write(folder, "c1", latest.Latest(BUILD, "f", "e", "t", {"cells": []}))
+
+    latest.add_formula_check(folder, "c1", _check())
+
+    assert latest.read_all(folder, "")["c1"].data == {
+        "cells": [],
+        "formula_check": _check(),
+    }
+
+
+def test_a_formula_check_with_no_result_is_dropped(tmp_path):
+    # The next `compare` writes a fresh result, which no older check fits.
+    folder = latest.folder(tmp_path / "v", "kipptaf_marts.fct_f")
+
+    latest.add_formula_check(folder, "c1", _check())
+
+    assert not folder.exists() or not list(folder.glob("*.json"))
+
+
+def test_a_formula_check_of_another_comparison_is_refused(tmp_path):
+    folder = latest.folder(tmp_path / "v", "kipptaf_marts.fct_f")
+    latest.write(folder, "c1", latest.Latest(BUILD, "f", "e", "t", {}))
+    (path,) = folder.glob("*.json")
+    before = path.read_text()
+
+    with pytest.raises(ValueError, match="checks c2, not c1"):
+        latest.add_formula_check(folder, "c1", _check("c2"))
+
+    assert path.read_text() == before

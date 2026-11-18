@@ -41,11 +41,17 @@ from cube_validation.config import ColumnPair, Comparison, load_view_config
 from cube_validation.cube_client import Compiled, CubeError
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+from cube_validation.formula import NOT_COMPARED, OUTSIDE
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+from cube_validation.saved import SCRATCH_DATASET
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.tableau import Snapshot, formula_fingerprint
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.timetravel import utc_literal
-from google.api_core.exceptions import BadRequest
+from google.api_core.exceptions import BadRequest, NotFound
 
 FIXTURES = Path(__file__).parent / "fixtures"
 REAL_TABLEAU_SESSION = cli.tableau_session
@@ -140,16 +146,36 @@ class FakeBigQuery:
         ]
         self.views: dict[str, str] = {}
         self.build = (START, END)
+        # Each table's columns, by name, for `Warehouse.columns`.
+        self.schemas: dict[str, list[str]] = {"fct_f": list(FACT_COLUMNS)}
+        # Each saved table's labels, by dotted id, as the save script set them.
+        self.saved: dict[str, dict[str, str]] = {}
+        # The formula check's 4 queries' rows, by `Job.sql` key, without
+        # `__cut`. A missing self-check answers as the run's own cells did;
+        # a missing matched side, as the dashboard's cells, so by default the
+        # sides agree on matched rows and coverage decides.
+        self.formula: dict[str, list[dict]] = {}
 
     def get_table(self, ref):
+        if ref in self.saved:
+            return SimpleNamespace(
+                table_type="TABLE", view_query=None, modified=END,
+                labels=self.saved[ref], schema=[],
+            )  # fmt: skip
+        if f".{SCRATCH_DATASET}." in ref:
+            raise NotFound(f"Not found: Table {ref}")
         name = ref.rsplit(".", 1)[-1]
+        schema = [SimpleNamespace(name=c) for c in self.schemas.get(name, [])]
         if name in self.views:
             return SimpleNamespace(
                 table_type="VIEW",
                 view_query=self.views[name],
                 modified=START - timedelta(days=2),
+                schema=schema,
             )
-        return SimpleNamespace(table_type="TABLE", view_query=None, modified=START)
+        return SimpleNamespace(
+            table_type="TABLE", view_query=None, modified=START, schema=schema
+        )
 
     def query(self, sql, job_config=None):
         nbytes = int(self.cost(sql) / 6.25 * TIB)
@@ -170,12 +196,16 @@ class FakeBigQuery:
             return SimpleNamespace(total_bytes_processed=0, result=refuse)
         self.ran.append(sql)
         self.log.append(("run", sql))
+        for table, pairs in _SAVED_TABLE.findall(sql):
+            self.saved[table.replace("`", "")] = dict(_LABEL.findall(pairs))
         rows = self.answer(sql)
         return SimpleNamespace(
             total_bytes_processed=nbytes, total_bytes_billed=nbytes, result=lambda: rows
         )
 
     def answer(self, sql):
+        if cuts := _FORMULA_CUT.findall(sql):
+            return self._formula(sql, cuts)
         if "JOBS_BY_PROJECT" in sql:
             start, end = self.build
             return [{"job_id": "job-1", "start_time": start, "end_time": end}]
@@ -199,6 +229,36 @@ class FakeBigQuery:
         if "AS value" in sql and "rpt_d" in sql:
             return self.sheet_query
         return []
+
+    def _formula(self, sql, cuts):
+        """One of the formula check's queries: its rows per cut it computes."""
+        # Only the dashboard's side reads the sheet's view past the cut tag.
+        side = "dashboard" if "rpt_d" in sql.split("AS __cut", 1)[1] else "cube"
+        key = side if "__matched" in sql else f"{side}_self"
+        if key in self.formula:
+            rows = self.formula[key]
+        elif side == "dashboard":
+            rows = self.sheet_query
+        elif key == "cube":
+            rows = [{"regions_region_name": r["region"], "value": r["value"]}
+                    for r in self.sheet_query]  # fmt: skip
+        else:
+            rows = self.cells or [{"regions_region_name": "Newark", "value": 0.91234}]
+        return [{"__cut": cut.replace("\\'", "'"), **r} for cut in cuts for r in rows]
+
+
+# The fact's columns, as `Warehouse.columns` reads its schema.
+FACT_COLUMNS = (
+    "lea_student_identifier", "attendance_date", "attendance_value",
+    "membership_value", "regions_region_name", "dates_academic_year", "is_present",
+)  # fmt: skip
+# A save script's table and its labels (`reconcile.reconcile_script`).
+_SAVED_TABLE = re.compile(
+    r"CREATE OR REPLACE TABLE (\S+)\nOPTIONS\([^\n]*?labels = \[([^\]]*)\]"
+)
+_LABEL = re.compile(r"\('([^']*)', '([^']*)'\)")
+# A formula check query's cut tags (`formula.dashboard_side_sql`, `cube_side_sql`).
+_FORMULA_CUT = re.compile(r"SELECT '((?:[^'\\]|\\.)*)' AS __cut, \* FROM")
 
 
 class FakeCube:
@@ -4944,6 +5004,177 @@ def test_a_value_check_past_the_cap_still_writes_the_batch(
     items = json.loads((saved.parent / "triage.json").read_text())["items"]
     (gap,) = [i for i in items if i["kind"] == "gap"]
     assert any(e.startswith("school_level: not checked:") for e in gap["evidence"])
+
+
+def _miami_differs(fakes, tmp_path, path=None):
+    """Compare a run whose Miami cells differ, each holding the dashboard-only
+    Miami group, while Newark passes."""
+    fakes.bq.sheet_query = [{"region": "Newark", "value": 0.9123},
+                            {"region": "Miami", "value": 0.5}]  # fmt: skip
+    fakes.bq.cells = [{"regions_region_name": "Newark", "value": 0.91234},
+                      {"regions_region_name": "Miami", "value": 0.95}]  # fmt: skip
+    path = path or _file(tmp_path)
+    assert cli.main(["compare", str(path)]) == 0
+    return path
+
+
+# A formula check query: each cut's tag (`formula.dashboard_side_sql`).
+FORMULA_QUERY = "AS __cut, * FROM"
+
+
+def _formula_runs(bq, since=0):
+    return [
+        sql for kind, sql in bq.log[since:] if kind == "run" and FORMULA_QUERY in sql
+    ]
+
+
+def _triage(tmp_path):
+    return json.loads((_latest_run(tmp_path).parent / "triage.json").read_text())
+
+
+def test_sort_prices_the_formula_check_with_the_explanations(
+    fakes, tmp_path, capsys, monkeypatch
+):
+    path = _miami_differs(fakes, tmp_path)
+    fakes.bq.cost = lambda sql: 1.0 if FORMULA_QUERY in sql else 0.0
+    stored = explain.run_stored
+    priced = []
+
+    def run_stored(*a, also_usd=0.0, **k):
+        priced.append(also_usd)
+        return stored(*a, also_usd=also_usd, **k)
+
+    monkeypatch.setattr(explain, "run_stored", run_stored)
+    since = len(fakes.bq.log)
+    capsys.readouterr()
+
+    capped = ["--max-usd", "3", "--max-usd-per-day", "50"]
+
+    # One cap refusal covers the explanations and the formula check.
+    assert cli.main(["sort", str(path), "--no-trace", *capped]) == 1
+    out, err = capsys.readouterr()
+    assert "Formula check: 4 queries, $4.00 (dry run)." in out
+    assert "these queries ($4.00) would pass the $3.00 cap" in err
+    assert priced == [pytest.approx(4.0)]
+    # With explanations off, the check alone is still capped up front.
+    assert (
+        cli.main(["sort", str(path), "--no-trace", "--no-explanations", *capped]) == 1
+    )
+    assert "these queries ($4.00) would pass the $3.00 cap" in capsys.readouterr().err
+    assert _formula_runs(fakes.bq, since) == []
+
+    argv = [
+        "sort",
+        str(path),
+        "--no-trace",
+        "--max-usd",
+        "10",
+        "--max-usd-per-day",
+        "50",
+    ]
+    assert cli.main(argv) == 0
+    assert len(_formula_runs(fakes.bq, since)) == 4
+
+
+def test_sort_files_a_decided_cell_whose_formulas_differ_as_formula(fakes, tmp_path):
+    # The DDI goal shape: each Miami cell holds a row group a decision closes,
+    # so coverage alone would close the cells; but on matched rows the 2 sides
+    # still differ, so the cells differ by their formulas.
+    _miami_differs(fakes, tmp_path)
+    path = _with_decision(_saved_fingerprints(tmp_path), tmp_path, call="fix_cube")
+    assert cli.main(["reapply", str(path)]) == 0
+    before = json.loads(_latest_run(tmp_path).read_text())
+    assert before["applied"]["open"] == [] and before["applied"]["quiet"]
+    assert {c["kind"] for c in before["diff_cells"]} == {"cells"}
+    fakes.bq.formula = {
+        "dashboard": [{"region": "Newark", "value": 0.9123},
+                      {"region": "Miami", "value": 0.6}],
+        "cube": [{"regions_region_name": "Newark", "value": 0.91234},
+                 {"regions_region_name": "Miami", "value": 0.95}],
+    }  # fmt: skip
+
+    items = _sorted_items(path, tmp_path)
+
+    assert "ada-region:cells" not in items
+    item = items["ada-region:formula"]
+    assert (item["suggestion"], item["proof"]["kind"]) == ("cause", "formula")
+    assert item["cause"][0]["label"] == sort.MATCHED_LABEL
+    assert item["evidence_posted"][0] == (
+        f"<10 {sort.MATCHED_LABEL}: with their unmatched rows left out, the 2 sides "
+        "still differ"
+    )
+    assert "Miami" not in json.dumps(item["evidence_posted"])
+    after = json.loads(_latest_run(tmp_path).read_text())
+    assert {c["kind"] for c in after["diff_cells"]} == {"formula"}
+    (diff,) = after["applied"]["open_cells"]
+    assert (diff["kind"], diff["matched_only"]) == ("formula", 2)
+    assert _triage(tmp_path)["formulas_not_compared"] == {}
+
+
+def test_sort_reuses_a_stored_check_without_spending(fakes, tmp_path):
+    path = _miami_differs(fakes, tmp_path)
+    assert cli.main(["sort", str(path), "--no-trace"]) == 0
+    assert len(_formula_runs(fakes.bq)) == 4
+    held = latest.folder(tmp_path / "cache" / "v", "kipptaf_marts.fct_f")
+    check = latest.read_all(held, "kipptaf_marts.fct_f")["ada-region"].data[
+        "formula_check"
+    ]
+    # The sides agree on matched rows: coverage decides.
+    assert len(check["coverage"]) == 2 and check["formula"] == []
+    since = len(fakes.bq.log)
+
+    assert cli.main(["sort", str(path), "--no-trace"]) == 0
+
+    assert not [sql for _, sql in fakes.bq.log[since:] if FORMULA_QUERY in sql]
+    assert _triage(tmp_path)["formulas_not_compared"] == {}
+
+
+def test_sort_comparison_checks_only_the_comparisons_named(fakes, tmp_path):
+    path = _miami_differs(fakes, tmp_path, _four(tmp_path))
+    since = len(fakes.bq.log)
+
+    argv = ["sort", str(path), "--no-trace", "--comparison", "ada-region-2"]
+    assert cli.main(argv) == 0
+
+    assert len(_formula_runs(fakes.bq, since)) == 4
+    loaded = _triage(tmp_path)
+    assert loaded["formulas_not_compared"] == {
+        f"ada-region-{i}": {OUTSIDE: 2} for i in (1, 3, 4)
+    }
+    items = {i["id"]: i for i in loaded["items"]}
+    assert items["ada-region-1:cells"]["evidence"][0] == (
+        f"formulas not compared: {OUTSIDE} (2 cells closed by coverage only)"
+    )
+    assert items["ada-region-1:cells"]["evidence_posted"][0] == (
+        f"formulas not compared: {OUTSIDE} (<10 cells closed by coverage only)"
+    )
+    # Checked: the sides agree on matched rows, so coverage decides.
+    assert not items["ada-region-2:cells"]["evidence"][0].startswith(NOT_COMPARED)
+
+
+def test_a_failed_check_neither_refuses_sort_nor_makes_the_comparison_stale(
+    fakes, tmp_path, capsys
+):
+    path = _miami_differs(fakes, tmp_path)
+    _bigquery_refuses(fakes, "__matched", dry=False)
+
+    assert cli.main(["sort", str(path), "--no-trace"]) == 0
+
+    why = "BigQuery refused it (job ?, invalidQuery); sort again"
+    loaded = _triage(tmp_path)
+    assert loaded["stale"] == {}
+    assert loaded["formulas_not_compared"] == {"ada-region": {why: 2}}
+    cells = {i["id"]: i for i in loaded["items"]}["ada-region:cells"]
+    assert cells["evidence_posted"][0] == (
+        f"formulas not compared: {why} (<10 cells closed by coverage only)"
+    )
+    assert "12345" not in json.dumps(loaded) and "12345" not in capsys.readouterr().out
+    # Nothing ran to keep: the next sort tries again.
+    held = latest.folder(tmp_path / "cache" / "v", "kipptaf_marts.fct_f")
+    assert (
+        "formula_check"
+        not in latest.read_all(held, "kipptaf_marts.fct_f")["ada-region"].data
+    )
 
 
 # --- add-decisions and record-answers ----------------------------------------

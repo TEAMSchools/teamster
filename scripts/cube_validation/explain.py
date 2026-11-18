@@ -18,11 +18,11 @@ value), the grain under its Cube names, and `__rn` (the row's duplicate number
 on its grain). It returns exactly `__row, cause`, one row per unmatched row. The
 tool counts: its own outer query joins the explanation back to `{unmatched}` and
 returns only item keys, cause literals and counts, refusing a row the explanation
-drops or repeats and a cause that is no string literal of the explanation. Every `sort`
-re-runs every stored explanation on the current run's rows; an item whose rows an
-explanation fully explains (no `UNEXPLAINED` row) goes to `cause`. A cell set goes
-to `cause` when every group with a row in each differing cell is in `cause` or
-closed by a decision (`coverage`).
+drops or repeats and a cause that is no string literal of the explanation. Every
+`sort` re-runs every stored explanation on the current run's rows; an item whose
+rows an explanation fully explains (no `UNEXPLAINED` row) goes to `cause`. A cell
+set goes to `cause` when every group with a row in each differing cell is in
+`cause` or closed by a decision (`coverage`).
 """
 
 from __future__ import annotations
@@ -709,8 +709,9 @@ def unmatched_sql(
         the group-by columns as text, `__moved` (the row sits in another cell
         on each side), and `__d_<column>` per group-by column (NULL unless that
         column differs between the sides, so an explanation reads
-        `COALESCE(u.__d_x, u.x)` for the dashboard's value), the grain under its Cube names (as the side holding the row
-        types it), and `__rn`. A `value_differs` row's side reads `both`.
+        `COALESCE(u.__d_x, u.x)` for the dashboard's value), the grain under its
+        Cube names (as the side holding the row types it), and `__rn`. A
+        `value_differs` row's side reads `both`.
     """
     if comparison.rows is None:
         raise pipeline.Refusal(f"comparison {comparison.id!r} has no rows to explain")
@@ -1558,30 +1559,34 @@ def run_stored(
     progress_dir: Path | None = None,
     comparisons: set[str] | None = None,
     ticker: Ticker | None = None,
+    also_usd: float = 0.0,
 ) -> list[Ran]:
     """Run every stored explanation of the view on the run's saved rows. Call inside
     `wh.budget`.
 
     An explanation also runs on each comparison that reads the same model at the
-    same row grain and has no explanation of its own for the bucket (`siblings`). Each pair's outcome
-    is kept in `progress_dir` (`explain_progress`) as it finishes, and a later triage
-    reuses one whose explanation and open items still match, once the comparison's
-    SQL still matches the run (`pipeline.row_sides`, compile only) and its
-    saved rows still carry the run's labels (`require_saved`).
-    The rest are priced together first, and a total over a cap refuses
-    before any runs; then they run one at a time. An explanation that cannot run (a
-    failed check, its saved rows gone, a BigQuery or Cube error, its SQL no
-    longer the run's) keeps why and moves nothing; the rest still run.
+    same row grain and has no explanation of its own for the bucket (`siblings`).
+    Each pair's outcome is kept in `progress_dir` (`explain_progress`) as it
+    finishes, and a later triage reuses one whose explanation and open items
+    still match, once the comparison's SQL still matches the run
+    (`pipeline.row_sides`, compile only) and its saved rows still carry the
+    run's labels (`require_saved`). The rest are priced together first, and a
+    total over a cap refuses before any runs; then they run one at a time. An
+    explanation that cannot run (a failed check, its saved rows gone, a BigQuery
+    or Cube error, its SQL no longer the run's) keeps why and moves nothing; the
+    rest still run.
 
     Args:
         progress_dir: Where finished outcomes are kept; None keeps none.
         comparisons: Run only these comparisons' explanations; another's outcome is
             reused when kept, else it reads "not run: outside --comparison".
         ticker: Prints a progress line after each explanation runs.
+        also_usd: The dry-run price of other queries the caller runs after
+            these, such as the formula check's, so one cap refusal covers both.
 
     Raises:
-        CostCapError: The explanations to run, together, would pass the run's or the
-            day's cap.
+        CostCapError: The explanations to run and `also_usd`, together, would
+            pass the run's or the day's cap.
     """
     by_id = {c.id: c for c in cfg.comparisons}
     prepared = prepared or trace.Prepared()
@@ -1668,7 +1673,7 @@ def run_stored(
             f"Explanations: {len(ready)} to run, ${total:.2f} (dry run); {reused} "
             f"reused from {explain_progress.FILE}."
         )
-    wh.refuse_past_caps(total)
+    wh.refuse_past_caps(total + also_usd)
     for ran, comparison, sql, literals, done in ready:
         name = ran.proof.path.name
         try:

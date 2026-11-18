@@ -9,7 +9,16 @@ import pytest
 from cube_validation import cli, compare, formula, latest, pipeline, report, results
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+from cube_validation.bq import JOB_ID, CostCapError
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.config import ColumnPair, Comparison, RowSpec, ViewConfig
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+from cube_validation.cube_client import CubeRefusal
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+from cube_validation.decisions import Applied
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.moment import Build
@@ -18,9 +27,19 @@ from cube_validation.moment import Build
 from cube_validation.reconcile import Group
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+from cube_validation.report import RunResult
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+from cube_validation.saved import labels, table_id, table_sql
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.timetravel import AsOf, TableInfo, as_of, utc_literal
 
-from .test_explain import SIDES
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+from cube_validation.trace import TIMEOUT_S, Prepared
+from google.api_core.exceptions import BadRequest
+
+from .test_explain import SIDES, Wh
 
 
 @pytest.fixture(autouse=True)
@@ -818,6 +837,64 @@ def test_verdicts_say_no_rows_when_both_sides_are_empty():
     assert check.formula == [] and check.coverage == []
 
 
+def test_verdicts_say_the_rewrite_differs_when_cube_s_self_check_misses():
+    check = _verdicts(
+        [_cell()],
+        [_dash("{}", "X", 0.7)],
+        [_cube("{}", "X", 0.4)],
+        cube_self=[_cube("{}", "X", 0.45)],
+    )
+
+    assert check.not_compared == {formula.REWRITE_DIFFERS: [("{}", "abbreviation=X")]}
+
+
+def test_verdicts_put_a_self_check_miss_before_no_rows():
+    check = _verdicts([_cell()], [], [], cube_self=[_cube("{}", "X", 0.45)])
+
+    assert check.not_compared == {formula.REWRITE_DIFFERS: [("{}", "abbreviation=X")]}
+
+
+def test_verdicts_file_a_value_on_one_side_only_as_formula():
+    check = _verdicts([_cell()], [], [_cube("{}", "X", 0.4)])
+
+    assert check.formula == [("{}", "abbreviation=X")]
+    assert check.coverage == [] and check.not_compared == {}
+
+
+def test_verdicts_key_a_raw_dim_as_the_cell_keys_it():
+    # The rows hold the day raw; the cell holds it as `value_key` text.
+    day = date(2026, 10, 1)
+    ref = ("{}", f"abbreviation={day}")
+    cell = {
+        **_cell(),
+        "key": ref[1],
+        "dims": [["abbreviation", pipeline.value_key(day)]],
+    }
+
+    check = formula.verdicts(
+        DECIMALS,
+        "fp",
+        [cell],
+        [{"__cut": "{}", "school": day, "value": 0.7}],
+        [{"__cut": "{}", "abbreviation": datetime(2026, 10, 1), "value": 0.4}],
+        [{"__cut": "{}", "school": day, "value": 0.6}],
+        [{"__cut": "{}", "abbreviation": datetime(2026, 10, 1), "value": 0.5}],
+    )
+
+    assert check.formula == [ref]
+
+
+def test_verdicts_say_the_rewrite_differs_on_a_repeated_cell():
+    # 2 rows for one cell: neither is the cell's value.
+    check = _verdicts(
+        [_cell()], [_dash("{}", "X", 0.7), _dash("{}", "X", 0.4)],
+        [_cube("{}", "X", 0.4)],
+    )  # fmt: skip
+
+    assert check.not_compared == {formula.REWRITE_DIFFERS: [("{}", "abbreviation=X")]}
+    assert check.formula == [] and check.coverage == []
+
+
 # --- filing checked cells -------------------------------------------------------
 
 FILED = replace(COMPARISON, confirmed=True)
@@ -915,6 +992,24 @@ def test_compose_ignores_a_check_of_another_result(tmp_path):
     assert "matched_only" not in plain_json.read_text()
 
 
+@pytest.mark.parametrize(
+    "check",
+    [
+        {"fingerprint": "fp1"},
+        {"fingerprint": "fp1", "formula": [["{}"]]},
+        {"fingerprint": "fp1", "formula": 3},
+        ["fp1"],
+    ],
+)
+def test_compose_ignores_a_malformed_check(tmp_path, check):
+    cache = tmp_path / "cache"
+
+    run, _ = _compose(cache, _keep_result(cache, check))
+
+    [diff] = run.applied.open_cells
+    assert diff.kind == "cells" and diff.matched_only == 0
+
+
 def test_recompose_refuses_when_the_latest_results_moved_on(tmp_path):
     cache = tmp_path / "cache"
     held = _keep_result(cache)
@@ -934,3 +1029,219 @@ def test_recompose_refuses_when_the_latest_results_moved_on(tmp_path):
         pipeline.Refusal, match="the run is not composed from the latest results"
     ):
         results.recompose(FILED_CFG, cache, run, run_json, cube=_MeasureCube())
+
+
+# --- planning and running the check in `sort` ---------------------------------
+
+PLANNED = replace(SIDE, confirmed=True, decimals=2)
+PLAN_CFG = replace(CFG, fact="m.cube_t", comparisons=[PLANNED])
+FPS = {"mastery": {"cube": "c", "dashboard": "d"}}
+# The dashboard alone holds 3 and Cube alone holds 4, which moves Cube's cell
+# to 0.8; on matched rows 1 and 2, both sides read 0.75.
+PLAN_DASH = [(1, "a", 0.5, "X", "N", True, D1), (2, "a", 1.0, "X", "N", True, D1),
+             (3, "a", 0.0, "X", "N", True, D1)]  # fmt: skip
+PLAN_CUBE = [(1, "a", 0.5, "X", "N"), (2, "a", 1.0, "X", "N"), (4, "a", 0.9, "X", "N")]
+REF = ("{}", "abbreviation=X")
+
+
+class _RowsEx(_Ex):
+    """`_Ex` that also compiles the comparison's ungrouped rows, `lea` as
+    `lea` reads."""
+
+    lea = "`c`.lea"
+
+    def cube_sql(self, query, rows=False):
+        if not rows:
+            return super().cube_sql(query)
+        columns = [m.split(".", 1)[1] for m in query["dimensions"]]
+        select = ", ".join(
+            f"{self.lea if c == 'lea' else f'`c`.{c}'} `v__{c}`" for c in columns
+        )
+        return f"SELECT {select} FROM m.cube_t AS `c`"
+
+
+class _PlanWh(Wh):
+    """`Wh` that knows the toy fact's columns."""
+
+    def columns(self, dataset, name):
+        return {"lea", "aid", "score_c", "abbreviation", "region_c"}
+
+
+@pytest.fixture
+def offline(monkeypatch):
+    """Cube and the run's row SQL, compiled over the toy tables."""
+    ex = _RowsEx()
+    monkeypatch.setattr(pipeline, "Expand", lambda *a, **k: ex)
+    monkeypatch.setattr(
+        pipeline, "row_sides", lambda cfg, comparison, **k: _side_sides(cfg, comparison)
+    )
+    return ex
+
+
+def _plan_run():
+    """A run whose one differing cell holds a dashboard-only group."""
+    group = Group(
+        "mastery", (("abbreviation", "X"),), "dashboard_only", 1, 1,
+        cut_rows=(("{}", 0, 1),),
+    )  # fmt: skip
+    return RunResult(
+        view="v",
+        moment=BUILD,
+        measures=[],
+        applied=Applied(open=[group]),
+        diff_cells=[_cell(dashboard=0.5, cube=0.8)],
+        fingerprints=FPS,
+    )
+
+
+def _plan(duck, run, *, labelled=True):
+    """`plan` over the toy tables, the run's rows saved as `compare` saves them."""
+    _side_tables(duck, PLAN_DASH, PLAN_CUBE)
+    wh = _PlanWh(duck)
+    table = table_id("v", BUILD, "mastery")
+    duck.rows("DROP TABLE IF EXISTS __joined")
+    sides = _side_sides(PLAN_CFG, PLANNED)
+    for statement in compare.save_script(
+        PLAN_CFG, PLANNED, sides, table_sql(table), None
+    ):
+        duck.rows(statement)
+    if labelled:
+        wh.labels[table] = labels(
+            "v",
+            BUILD,
+            "mastery",
+            pipeline.checkpoint_fingerprint(PLANNED, FPS["mastery"]),
+        )
+    got = formula.plan(
+        PLAN_CFG,
+        run,
+        PLANNED,
+        fingerprint="fp",
+        wh=wh,
+        cube=None,
+        prepared=Prepared(schools=set()),
+    )
+    return got, wh
+
+
+def test_plan_builds_four_priced_queries(duck, offline):
+    run = _plan_run()
+
+    job, wh = _plan(duck, run)
+
+    assert isinstance(job, formula.Job)
+    assert (job.comparison, job.fingerprint) == ("mastery", "fp")
+    assert job.cells == run.diff_cells
+    assert set(job.sql) == {"dashboard", "cube", "dashboard_self", "cube_self"}
+    assert all("__matched" in job.sql[k] for k in ("dashboard", "cube"))
+    assert all("__matched" not in job.sql[k] for k in ("dashboard_self", "cube_self"))
+    check = formula.run_job(job, PLANNED, wh)
+    assert [sql for sql, _ in wh.ran] == list(job.sql.values())
+    assert all(timeout == TIMEOUT_S for _, timeout in wh.ran)
+    # Both sides read 0.75 on matched rows: the rows explain the cell.
+    assert check.coverage == [REF] and check.not_compared == {}
+
+
+def test_plan_has_nothing_to_check_without_a_cell_holding_a_group(duck, offline):
+    run = replace(_plan_run(), applied=Applied())
+
+    assert _plan(duck, run)[0] is None
+
+
+def test_plan_says_compare_again_when_the_saved_rows_are_gone(duck, offline):
+    check, _ = _plan(duck, _plan_run(), labelled=False)
+
+    assert isinstance(check, formula.Check)
+    assert check.not_compared == {formula.SAVED_GONE: [REF]}
+    assert check.formula == [] and check.coverage == []
+
+
+def test_plan_falls_back_when_the_grain_is_an_expression(duck, offline):
+    offline.lea = "CAST(`c`.lea AS INT64)"
+
+    check, _ = _plan(duck, _plan_run())
+
+    assert check.not_compared == {
+        "grain column lea is an expression, not a fact column": [REF]
+    }
+
+
+def test_plan_says_cube_refused_when_cube_refuses_its_sql(duck, offline, monkeypatch):
+    def refused(query, rows=False):
+        raise CubeRefusal("the compiled query reads another fact")
+
+    monkeypatch.setattr(offline, "cube_sql", refused)
+
+    check, _ = _plan(duck, _plan_run())
+
+    assert check.not_compared == {formula.CUBE_REFUSED: [REF]}
+
+
+def _job():
+    return formula.Job(
+        "mastery",
+        "fp",
+        [_cell()],
+        {"dashboard": "q1", "cube": "q2", "dashboard_self": "q3", "cube_self": "q4"},
+    )
+
+
+def test_run_job_falls_back_on_a_bigquery_error_with_its_job_only():
+    class Refusing:
+        def rows(self, sql, timeout_s=None):
+            exc = BadRequest(
+                "No matching signature for value 'Student 12345'",
+                errors=[{"reason": "invalidQuery"}],
+            )
+            setattr(exc, JOB_ID, "job-9")
+            raise exc
+
+    class Capped:
+        def rows(self, sql, timeout_s=None):
+            raise CostCapError("spent $5.00, over the $5.00 cap")
+
+    check = formula.run_job(_job(), DECIMALS, Refusing())
+
+    why = "BigQuery refused it (job job-9, invalidQuery); sort again"
+    assert check.not_compared == {why: [REF]}
+    assert "12345" not in json.dumps(check.to_json())
+    assert formula.run_job(_job(), DECIMALS, Capped()).not_compared == {
+        "a cap stopped it; sort again with a higher --max-usd": [REF]
+    }
+
+
+def test_label_discloses_unchecked_cells_masked():
+    items = [
+        {"id": "mastery:cells", "evidence": ["covered"],
+         "evidence_posted": ["covered, posted"]},
+        {"id": "mastery:formula", "evidence": ["f"], "evidence_posted": ["f"]},
+    ]  # fmt: skip
+    gone = [("{}", f"abbreviation=S{i}") for i in range(3)]
+    empty = [("{}", f"abbreviation=T{i}") for i in range(12)]
+    checks = {
+        "mastery": formula.Check(
+            "mastery",
+            "fp",
+            coverage=[REF],
+            not_compared={formula.SAVED_GONE: gone, formula.NO_ROWS: empty},
+        ),
+        "other": formula.Check("other", "fp", coverage=[REF]),
+    }
+
+    counts = formula.label(items, checks)
+
+    assert counts == {"mastery": {formula.SAVED_GONE: 3, formula.NO_ROWS: 12}}
+    cells, other = items
+    shut = "cells closed by coverage only"
+    assert cells["evidence"] == [
+        f"formulas not compared: {formula.SAVED_GONE} (3 {shut})",
+        f"formulas not compared: {formula.NO_ROWS} (12 {shut})",
+        "covered",
+    ]
+    assert cells["evidence_posted"] == [
+        f"formulas not compared: {formula.SAVED_GONE} (<10 {shut})",
+        f"formulas not compared: {formula.NO_ROWS} (12 {shut})",
+        "covered, posted",
+    ]
+    assert other["evidence"] == ["f"]
+    assert "S1" not in json.dumps(items) and "T1" not in json.dumps(items)

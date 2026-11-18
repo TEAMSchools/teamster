@@ -521,10 +521,9 @@ def compose_run(
     skipped = list(skipped)
     now = set(compared)
     checks = {
-        cid: {(cut, key) for cut, key in check["formula"]}
+        cid: cells
         for cid, held in results.items()
-        if (check := held.data.get("formula_check"))
-        and check.get("fingerprint") == held.fingerprint
+        if (cells := _formula_cells(held)) is not None
     }
     cell_diffs, formula_cells = _cell_diffs(
         cfg,
@@ -608,6 +607,19 @@ def compose_run(
     if echo:
         print(f"Saved {saved}")
     return result
+
+
+def _formula_cells(held: latest.Latest) -> set[tuple[str, str]] | None:
+    """The cells the result's formula check files as formula, or None when it
+    has no check of that very result. A check that cannot be read counts as
+    none, so it never stops a compose."""
+    check = held.data.get("formula_check")
+    if not isinstance(check, dict) or check.get("fingerprint") != held.fingerprint:
+        return None
+    try:
+        return {(cut, key) for cut, key in check.get("formula", [])}
+    except (TypeError, ValueError):
+        return None
 
 
 def recompose(

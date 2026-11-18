@@ -90,10 +90,20 @@ def add_formula_check(results: Path, comparison_id: str, check: dict) -> None:
     latest result in `results` (`folder`), replacing any earlier one.
 
     The check names the result it checked by fingerprint, so a newer result
-    written over this file drops it, and one kept elsewhere never counts.
+    written over this file drops it, and one kept elsewhere never counts. With
+    no result to keep it beside, it is dropped: the next `compare` writes a
+    result no older check fits.
+
+    Raises:
+        ValueError: The check is of another comparison.
     """
+    if (other := check.get("comparison")) != comparison_id:
+        raise ValueError(f"the formula check checks {other}, not {comparison_id}")
     path = _file(results, comparison_id)
-    data = json.loads(path.read_text())
+    try:
+        data = json.loads(path.read_text())
+    except FileNotFoundError:
+        return
     data["data"]["formula_check"] = check
     checkpoints._write_json(path, data)
 
