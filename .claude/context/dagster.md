@@ -41,14 +41,13 @@ opaque token.
   compare its code version with a sibling district built from the same package
   model. On a mismatch, launch the asset once with
   `mcp__dagster-plus__launch_asset_run`.
-- **Schedule/sensor-launched runs report no asset selection**; recover it from
-  the `ASSET_MATERIALIZATION_PLANNED` events on page 1 of
-  `mcp__dagster-plus__get_run_logs` (`.claude/context/dagster-plus.md`). A
-  `step_key` converts `__` → `/` (`kipptaf__tableau__ops_dashboard` →
-  `kipptaf/tableau/ops_dashboard`). Cross-check with
-  `get_asset_partition_statuses`, or `mcp__dagster-plus__get_assets` for a whole
-  prefix, before declaring a backfill complete — failure-triage groupings keyed
-  on `assetSelection` silently drop these.
+- **Schedule/sensor-launched runs report no asset selection**; recover it per
+  `.claude/context/dagster-plus.md`. A `step_key` converts `__` → `/`
+  (`kipptaf__tableau__ops_dashboard` → `kipptaf/tableau/ops_dashboard`).
+  Cross-check with `get_asset_partition_statuses`, or
+  `mcp__dagster-plus__get_assets` for a whole prefix, before declaring a
+  backfill complete — failure-triage groupings keyed on `assetSelection`
+  silently drop these.
 - `mcp__dagster-plus__list_runs` caps at `limit=100`; paginate via `cursor`,
   which is the last run's id, for incident triage exceeding 100 runs.
 - A running backfill's `get_backfill` `status` can read `REQUESTED` with empty
@@ -87,8 +86,7 @@ A step failure's real exception is the **bottom of the error chain**: page
 `STEP_FAILURE`, then walk `error.cause`, nested one level per link. The
 top-level `DagsterExecutionStepExecutionError` and the day2 collector's
 `errorClass`/`errorDetail` only show the wrapper — read the chain bottom before
-theorizing about cause (e.g. ADP "Code error" was a transient gateway 404, not
-rate-limiting).
+theorizing about cause.
 
 Exception — a `dbt build` step failure has a null `cause`; the parsed dbt errors
 (compilation error, failing model, log path) are already in the top-level
@@ -125,18 +123,17 @@ wait — no `step_execution_timeout` knob exists. When a run hits `max_runtime`
 having done little work, suspect step-pod `FailedScheduling`, not slow code or
 upstream APIs.
 
-Concurrency-**pool**-blocked runs stay QUEUED, not STARTED (run blocking is the
-Dagster >=1.10 default; repo is 1.13), so pool queue-wait does NOT burn
-`dagster/max_runtime` (it counts from STARTED). With `k8s_job_executor` (all
-locations) each step runs in its own pod (compute is `pid 1`) and a resource's
-`setup_for_execution` runs there only after the op's pool slot is claimed — so a
-pooled resource's short-lived token/session is not aged by queue-wait. Size a
-pooled asset's `max_runtime` for its own run, not for waiting behind siblings.
+Concurrency-**pool**-blocked runs stay QUEUED, not STARTED, so pool queue-wait
+does NOT burn `dagster/max_runtime` (it counts from STARTED). With
+`k8s_job_executor` (all locations) each step runs in its own pod (compute is
+`pid 1`) and a resource's `setup_for_execution` runs there only after the op's
+pool slot is claimed — so a pooled resource's short-lived token/session is not
+aged by queue-wait. Size a pooled asset's `max_runtime` for its own run, not for
+waiting behind siblings.
 
 GKE Autopilot top-of-hour fan-out is the dominant cause of step-pod scheduling
-latency. `FailedScheduling` events trace to "Insufficient cpu/memory" (3-9 min
-waits) while nodes provision. Image pull is ~2s on cached nodes — don't chase
-image slimming.
+latency. `FailedScheduling` events trace to "Insufficient cpu/memory" while
+nodes provision — don't chase image slimming.
 
 ## Dagster Cloud GraphQL (direct, not via MCP)
 
@@ -145,19 +142,13 @@ Host is `kipptaf.dagster.cloud/<deployment>/graphql` (org is `kipptaf`).
 field is `success` (not `successful`). `assetMaterializations`
 `beforeTimestampMillis` / `afterTimestampMillis` are `String`, not `Float` —
 pass quoted numeric strings or the request fails with "type 'Float' used in
-position expecting type 'String'".
+position expecting type 'String'". GraphQL `creationTime/startTime/endTime` are
+float seconds; a run-log event `timestamp` is a millisecond string.
 
 Claude cannot authenticate direct GraphQL calls — the token comes from `op read`
 (hook-blocked). Hand queries to the user to run in the Dagster+ UI GraphQL
 playground; the MCP's fixed field selections omit some fields (e.g.
 `materializationFailureType` on `FailedToMaterializeEvent`).
-
-## Run logs
-
-For run-internal timelines (steps, engine events, failures), use
-`mcp__dagster-plus__get_run_logs` — its events are canonical and structured.
-Note the unit mismatch: GraphQL `creationTime/startTime/endTime` are float
-seconds; the event `timestamp` is a millisecond string.
 
 ## MCP launcher
 
@@ -171,4 +162,6 @@ That launcher holds the only copy of the `DAGSTER_CLOUD_API_TOKEN` 1Password
 reference, and both Dagster servers get their credentials from it. When
 something else needs the token, source it with `--no-exec` — which populates the
 variables and skips starting the server — instead of adding a second reference.
-`scripts/dagster-plus-mcp-headers.sh` is the working example.
+`scripts/dagster-plus-mcp-headers.sh` is the working example. This is for
+scripts and MCP configs only: the launcher calls `op read`, which the hooks
+block in Claude's Bash, so the GraphQL note above still holds for Claude.

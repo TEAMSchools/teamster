@@ -15,6 +15,7 @@ _SINCE_LAST_HANDLED = (
 def _build_dbt_condition(
     *extra_triggers: AutomationCondition,
     requested_reset_triggers: AutomationCondition | None = None,
+    allow_missing_deps: bool = False,
 ) -> AutomationCondition:
     """Build a dbt automation condition with the shared structure.
 
@@ -55,6 +56,11 @@ def _build_dbt_condition(
       reads the new data.
     - A manual materialization does not clear a pending trigger, so one
       extra run follows it.
+
+    ``allow_missing_deps`` drops the ``any_deps_missing`` guard. An
+    unpartitioned model over a daily-partitioned dep otherwise freezes for
+    good on one never-materialized partition. Use it only where each dep
+    partition is a full snapshot, so a gap loses a day, not records.
     """
     triggers: AutomationCondition = AutomationCondition.newly_missing()
     for trigger in extra_triggers:
@@ -70,10 +76,14 @@ def _build_dbt_condition(
             AutomationCondition.newly_requested()
         )
 
+    condition = AutomationCondition.in_latest_time_window() & handled
+    if not allow_missing_deps:
+        condition = condition & ~AutomationCondition.any_deps_missing().ignore(
+            _EXTERNAL_SOURCE_SELECTION
+        )
+
     return (
-        AutomationCondition.in_latest_time_window()
-        & handled
-        & ~AutomationCondition.any_deps_missing().ignore(_EXTERNAL_SOURCE_SELECTION)
+        condition
         & ~AutomationCondition.any_deps_in_progress()
         & ~AutomationCondition.in_progress()
     )
@@ -225,7 +235,9 @@ def dbt_union_relations_automation_condition() -> AutomationCondition:
     )
 
 
-def dbt_table_automation_condition() -> AutomationCondition:
+def dbt_table_automation_condition(
+    allow_missing_deps: bool = False,
+) -> AutomationCondition:
     """Automation condition for dbt TABLE models.
 
     Tables store physical data and must re-materialize when upstream changes.
@@ -239,16 +251,23 @@ def dbt_table_automation_condition() -> AutomationCondition:
     only, so an upstream update that lands mid-run triggers one more run.
     any_deps_updated ignores updates from runs that also targeted this
     asset, so a single run that builds the chain does not re-fire it.
+
+    Args:
+        allow_missing_deps: Drop the missing-deps guard (see
+            ``_build_dbt_condition``).
     """
     return _build_dbt_condition(
         requested_reset_triggers=_build_any_ancestor_updated(
             view_selection=_VIEW_SELECTION
-        )
+        ),
+        allow_missing_deps=allow_missing_deps,
     )
 
 
 def dbt_cron_automation_condition(
-    cron_schedule: str, cron_timezone: str | None = None
+    cron_schedule: str,
+    cron_timezone: str | None = None,
+    allow_missing_deps: bool = False,
 ) -> AutomationCondition:
     """Automation condition for expensive dbt TABLE models on a cron cadence.
 
@@ -272,12 +291,16 @@ def dbt_cron_automation_condition(
     A None cron_timezone falls back to Dagster's cron_tick_passed default
     (UTC). The dbt translator passes its code location's LOCAL_TIMEZONE, so
     dbt models get local ticks without hardcoding a zone here.
+
+    ``allow_missing_deps`` drops the missing-deps guard (see
+    ``_build_dbt_condition``).
     """
     return _build_dbt_condition(
         requested_reset_triggers=AutomationCondition.cron_tick_passed(
             cron_schedule=cron_schedule,
             cron_timezone=cron_timezone or "UTC",
-        )
+        ),
+        allow_missing_deps=allow_missing_deps,
     )
 
 

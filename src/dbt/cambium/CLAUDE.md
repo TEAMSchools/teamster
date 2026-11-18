@@ -17,13 +17,13 @@ Couchdrop folder, one Dagster folder asset (`njsla`) reads them, and
 recently modified file.
 
 Column names are snake_case because Cambium ships spaced CSV headers, where
-Pearson shipped camel case. Only 11 of 225 column names overlap with
-`stg_pearson__njgpa`; the two are unrelated schemas over the same assessment.
-The `stg_cambium__*` models keep Cambium's names: they cast types, apply the
-summative and attempted filter, and derive `test_date`, nothing more. The
-mapping into the shared NJ-assessment shape (neutral names plus the aligned
-reporting columns) is `int_cambium__all_assessments`, which each district builds
-and kipptaf reads via `source()`. The `cambium_state_assessment_relations` var
-lists the staging models it unions; a district that disables one overrides the
-var (see kipppaterson). A column kipptaf needs from Cambium must first be added
-here, and reaches kipptaf only after the district prod rebuild.
+Pearson shipped camel case. Its schema is unrelated to `stg_pearson__njgpa`,
+even for the same assessment. The `stg_cambium__*` models keep Cambium's names:
+they cast types, apply the summative and attempted filter, and derive
+`test_date`, nothing more. The mapping into the shared NJ-assessment shape
+(neutral names plus the aligned reporting columns) is
+`int_cambium__all_assessments`, which each district builds and kipptaf reads via
+`source()`. The `cambium_state_assessment_relations` var lists the staging
+models it unions; a district that disables one overrides the var (see
+kipppaterson). A column kipptaf needs from Cambium must first be added here, and
+reaches kipptaf only after the district prod rebuild.

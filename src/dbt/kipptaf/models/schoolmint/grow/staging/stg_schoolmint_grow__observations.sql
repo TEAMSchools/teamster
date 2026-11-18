@@ -26,7 +26,6 @@ with
             dd.observationtag1 as observation_tag_1,
             dd.observationtag2 as observation_tag_2,
             dd.observationtag3 as observation_tag_3,
-            dd.observationtype as observation_type,
             dd.privatenotes1 as private_notes_1,
             dd.privatenotes2 as private_notes_2,
             dd.privatenotes3 as private_notes_3,
@@ -95,6 +94,14 @@ with
             cast(dd.observeduntil as timestamp) as observed_until,
             cast(dd.signedat as timestamp) as signed_at,
             cast(dd.viewedbyteacher as timestamp) as viewed_by_teacher,
+
+            -- Teacher Reflection form; why it is overridden is in the YAML
+            if(
+                dd.rubric._id = '6ac50be3653174d35c5025c4',
+                -- Performance Management: Teacher Reflection
+                '667d84c657cfd7001154b630',
+                dd.observationtype
+            ) as observation_type,
 
             date(
                 cast(dd.observedat as timestamp), '{{ var("local_timezone") }}'

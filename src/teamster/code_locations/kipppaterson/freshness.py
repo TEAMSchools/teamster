@@ -3,6 +3,9 @@ from datetime import timedelta
 from dagster import AssetKey, FreshnessPolicy
 
 from teamster.code_locations.kipppaterson import LOCAL_TIMEZONE
+from teamster.libraries.edplan.freshness import (
+    STAGING_FRESHNESS_POLICY as EDPLAN_STAGING_FRESHNESS_POLICY,
+)
 from teamster.libraries.finalsite.api.assets import CONTACTS_STAGING_FRESHNESS_POLICY
 
 titan_policy = FreshnessPolicy.cron(
@@ -17,4 +20,7 @@ policies: dict[AssetKey, FreshnessPolicy] = {
     AssetKey(
         ["kipppaterson", "finalsite", "stg_finalsite__contacts"]
     ): CONTACTS_STAGING_FRESHNESS_POLICY,
+    AssetKey(
+        ["kipppaterson", "edplan", "stg_edplan__njsmart_powerschool"]
+    ): EDPLAN_STAGING_FRESHNESS_POLICY,
 }
