@@ -163,7 +163,6 @@ def test_sheet_lines_flag_relative_dates_code_groups_and_shared_filters():
         in text
     )
     assert "- School: regular; keeps all\n" in text
-    # A filter's chosen values never print.
     # Discipline is off the allowlist; Academic Year is on it.
     assert "ELA" not in text and "shows 2026" in text
 
@@ -513,6 +512,62 @@ def test_read_sheet_refuses_a_text_sheet_field():
         read_sheet.text_measure(facts, "Status")
         == f"sheet_field 'Status': {tableau.TEXT_MEASURE}"
     )
+
+
+def test_text_measure_refuses_a_text_field_whose_caption_starts_with_count():
+    facts = read_sheet.Sheet(
+        [], [], [], [], {"Count Type": {"count type"}},
+        text_values=frozenset({"count type"}),
+    )  # fmt: skip
+    assert (
+        read_sheet.text_measure(facts, "Count Type")
+        == f"sheet_field 'Count Type': {tableau.TEXT_MEASURE}"
+    )
+    status = read_sheet.Sheet(
+        [], [], [], [], {"ATTR(Status)": {"status"}},
+        text_values=frozenset({"status"}),
+    )  # fmt: skip
+    for counted in ("COUNTD(Status)", "CNT(Status)", "Distinct count of Status",
+                    "Count of Status"):  # fmt: skip
+        assert read_sheet.text_measure(status, counted) is None, counted
+
+
+STATUS_TWB = (
+    "<workbook><worksheets><worksheet name='S'><table><view>"
+    "<datasource-dependencies datasource='f'>"
+    "<column caption='Status' datatype='string' name='[status]' role='dimension' />"
+    "</datasource-dependencies></view>"
+    "<rows>{rows}</rows>"
+    "</table></worksheet></worksheets></workbook>"
+)
+
+
+def test_text_measure_without_sheet_field_counts_a_count_as_a_number():
+    both = read_sheet.read_sheet(
+        STATUS_TWB.format(rows="([f].[attr:status:nk] + [f].[ctd:status:qk])"), "S"
+    )
+    assert set(both.values) == {"Status", "COUNTD(Status)"}
+    assert read_sheet.text_measure(both, None) is None
+
+    attr = read_sheet.read_sheet(STATUS_TWB.format(rows="[f].[attr:status:nk]"), "S")
+    assert read_sheet.text_measure(attr, None) == (
+        f"the sheet's measure: {tableau.TEXT_MEASURE}"
+    )
+
+
+def test_sheet_lines_say_an_allowlisted_null_mode_once():
+    non_null = (
+        "<filter class='quantitative' column='[federated.0pf].[none:grade_level:qk]' "
+        "included-values='non-null'/>\n          "
+    )
+    facts = read_sheet.read_sheet(TWB.replace(_ANCHOR, non_null + _ANCHOR), "Grid")
+    (grade,) = [f for f in facts.filters if f.name == "grade_level"]
+    assert grade.shown == "non-null values only"
+
+    text = "\n".join(read_sheet._sheet_lines("w.twb", "Grid", facts))
+
+    assert "- Grade Level: regular; non-null values only\n" in text
+    assert "shows non-null" not in text
 
 
 def test_read_sheet_does_not_point_a_null_filter_at_the_not_null_operator():

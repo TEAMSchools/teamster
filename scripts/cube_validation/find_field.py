@@ -381,46 +381,57 @@ def _ref_caption(m: re.Match, caption: dict[str, str]) -> str | None:
     return f"{agg}({name})" if agg else None
 
 
+def calc_chain(name: str, formulas: dict[str, str]) -> list[str]:
+    """`name` and every calculation it reads, through other calculations, each
+    once, in the order reached.
+
+    Every bracketed name a calculation holds is followed, including one inside
+    a parameter ref, so a check over the chain reads too much rather than too
+    little.
+
+    Args:
+        name: The field's bare name.
+        formulas: Each calculation's formula by bare name.
+    """
+    seen: list[str] = []
+    todo = [name]
+    while todo:
+        current = todo.pop()
+        if current in seen:
+            continue
+        seen.append(current)
+        todo += [
+            r for r in _BRACKETED.findall(formulas.get(current, "")) if r in formulas
+        ]
+    return seen
+
+
 def columns_read(name: str, formulas: dict[str, str]) -> tuple[str, ...]:
     """The datasource columns `name` reads through calculations, parameters left
     out; `name` itself when it is no calculation.
     """
     if name not in formulas:
         return (name,)
-    seen: list[str] = []
-    todo = [name]
-    columns: list[str] = []
-    while todo:
-        current = todo.pop()
-        if current in seen:
-            continue
-        seen.append(current)
-        formula = _PARAMETER_REF.sub("", formulas.get(current, ""))
-        for ref in _BRACKETED.findall(formula):
-            if ref in formulas:
-                todo.append(ref)
-            else:
-                columns.append(ref)
-    return tuple(dict.fromkeys(columns))
+    return tuple(
+        dict.fromkeys(
+            ref
+            for current in calc_chain(name, formulas)
+            for ref in _BRACKETED.findall(
+                _PARAMETER_REF.sub("", formulas.get(current, ""))
+            )
+            if ref not in formulas
+        )
+    )
 
 
 def _chain_unresolvable(name: str, formulas: dict[str, str]) -> bool:
-    seen, todo = set(), [name]
-    while todo:
-        current = todo.pop()
-        if current in seen:
-            continue
-        seen.add(current)
-        formula = formulas.get(current, "")
-        # `]]` escapes a `]` in a name, which `_BRACKETED` would cut short.
-        if (
-            USER_FUNCTION.search(formula)
-            or _PASS_THROUGH.search(formula)
-            or "]]" in formula
-        ):
-            return True
-        todo += [r for r in _BRACKETED.findall(formula) if r in formulas]
-    return False
+    # `]]` escapes a `]` in a name, which `_BRACKETED` would cut short.
+    return any(
+        USER_FUNCTION.search(formula)
+        or _PASS_THROUGH.search(formula)
+        or "]]" in formula
+        for formula in (formulas.get(n, "") for n in calc_chain(name, formulas))
+    )
 
 
 def _level_field(level: str | None) -> str | None:

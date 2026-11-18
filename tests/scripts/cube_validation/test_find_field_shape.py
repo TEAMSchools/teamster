@@ -6,6 +6,7 @@ from cube_validation.find_field import (
     Calc,
     aggregated_fields,
     bins,
+    calc_chain,
     calculated_fields,
     columns_read,
     explain_bins,
@@ -127,6 +128,26 @@ def test_a_non_null_quantitative_filter_restricts():
 def test_sheet_shape_says_non_null_values_only():
     shape = sheet_shape(_one_filter_twb(NON_NULL), "S")
     assert shape.filters == ["score: non-null values only (narrows the sheet)"]
+
+
+def test_sheet_shape_shows_an_allowlisted_range_and_says_it_narrows():
+    ranged = (
+        "<filter class='quantitative' column='[ds].[none:grade_level:qk]'>"
+        "<min>5</min><max>8</max></filter>"
+    )
+    shape = sheet_shape(_one_filter_twb(ranged), "S")
+    assert shape.filters == ["grade_level: from 5 to 8 (narrows the sheet)"]
+
+
+def test_calc_chain_walks_every_calculation_once_in_reach_order():
+    formulas = {
+        "a": "[b] + [c] + [col_1]",
+        "b": "[c] + [Parameters].[p]",
+        "c": "[a] + [col_2]",
+    }
+    assert calc_chain("a", formulas) == ["a", "c", "b"]
+    assert calc_chain("col_1", formulas) == ["col_1"]
+    assert columns_read("a", formulas) == ("col_1", "col_2")
 
 
 def test_text_values_names_a_string_attr_but_not_its_countd():

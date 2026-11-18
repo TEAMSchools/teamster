@@ -37,8 +37,10 @@ _AGG_PREFIX = re.compile(
 )
 _AGG_CALL = re.compile(r"^\w+\((.*)\)$")
 # A count of a string field is a number: `COUNTD(x)`, `Distinct count of x`.
+# Only a whole aggregate call or the export's `count of` prefix counts, so a
+# text field captioned `Count Type` is still text.
 _COUNT_FIELD = re.compile(
-    r"^\s*(?:(?:count|countd|cnt|cntd)\(|(?:distinct\s+count|count|countd)\b)",
+    r"^\s*(?:(?:count|countd|cnt|cntd)\(.*\)\s*$|(?:distinct\s+)?count\s+of\s)",
     re.IGNORECASE,
 )
 _ENCODINGS = {"lod": "detail"}
@@ -163,19 +165,7 @@ def read_sheet(twb_xml: str, sheet: str) -> Sheet:
                 )
 
     def reads(name: str) -> list[str]:
-        """`name` and every calculation it reads, through other calculations."""
-        seen, todo = [], [name]
-        while todo:
-            current = todo.pop()
-            if current in seen:
-                continue
-            seen.append(current)
-            todo += [
-                r
-                for r in _BRACKETED.findall(formulas.get(current, ""))
-                if r in formulas
-            ]
-        return seen
+        return finder.calc_chain(name, formulas)
 
     def readable(formula: str) -> str:
         return _plain(_BRACKETED.sub(lambda m: f"[{caption.get(m[1], m[1])}]", formula))
@@ -504,11 +494,19 @@ def text_measure(facts: Sheet, sheet_field: str | None) -> str | None:
         # shows as `attr` shares its name.
         if _COUNT_FIELD.match(sheet_field):
             return None
-        if _export_name(sheet_field) in facts.text_values:
+        # Read as written too: `_export_name` strips a leading `Count ` as an
+        # aggregate, which would miss a text field captioned `Count Type`.
+        named = {sheet_field.strip().lower(), _export_name(sheet_field)}
+        if named & facts.text_values:
             return f"sheet_field {sheet_field!r}: {tableau.TEXT_MEASURE}"
         return None
-    names = [n for names in facts.values.values() for n in names]
-    if names and all(n in facts.text_values for n in names):
+    # A count shares its field's export name but is a number, so the sheet's
+    # measure is text only when every value it shows is text and no count.
+    texts = [
+        not _COUNT_FIELD.match(shown) and all(n in facts.text_values for n in names)
+        for shown, names in facts.values.items()
+    ]
+    if texts and all(texts):
         return f"the sheet's measure: {tableau.TEXT_MEASURE}"
     return None
 
@@ -575,7 +573,8 @@ def _sheet_lines(label: str, sheet: str, facts: Sheet) -> list[str]:
                 f"; shared through filter-group {f.group} with {len(f.shared_with)} "
                 f"other sheets ({names})"
             )
-        if f.restricting and f.shown:
+        # A null mode's shown text repeats the state already on the line.
+        if f.restricting and f.shown and not f.null_mode:
             line += f"; shows {f.shown}"
         lines.append(line)
     if not facts.filters:
