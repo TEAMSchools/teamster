@@ -7,16 +7,15 @@ models:
       into one Bulk Add response. To update an alum's answers, replace their
       existing row; a second row for the same contact fails the uniqueness test.
       The source declares every column as text, so BigQuery does not turn Yes
-      and No answers into booleans. Blank rows in the sheet's range are dropped.
+      and No answers into booleans. Rows with no Contact ID are dropped, which
+      clears blank rows in the sheet's range; a row with answers but no Contact
+      ID is listed by the rows_missing_contact_id test.
     columns:
       - name: contact_id
         description: Salesforce contact id of the alum.
         data_type: string
         data_tests:
           - unique:
-              config:
-                severity: error
-          - not_null:
               config:
                 severity: error
       - name: email
