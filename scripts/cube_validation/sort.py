@@ -287,7 +287,7 @@ def formulas_not_compared(loaded: dict) -> dict[str, dict[str, int]]:
     """Per comparison, the cells the formula check left to coverage, by reason.
 
     Read from the triage's `formulas_not_compared`, not from item evidence,
-    which `explain --confirm` can rewrite. A triage without the key, or with a
+    which `explain` can rewrite. A triage without the key, or with a
     malformed one, gives `{}`; `formula_checked` tells that from a check that
     left nothing uncompared. A comparison whose counts are not all positive
     whole numbers is left out.

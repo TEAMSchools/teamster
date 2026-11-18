@@ -7,7 +7,7 @@ filters and queries, cells, the SQL fingerprints and checkpoint slices, the row
 sides, the skip and refusal types, and `find-field`. The dashboard side is read
 as of a fact build's start and Cube as of its end. Every BigQuery query runs
 inside `Warehouse.budget`, and only aggregates come back: row-level
-comparisons run inside BigQuery through `reconcile.reconcile_sql`.
+comparisons run inside BigQuery through `reconcile.reconcile_script`.
 """
 
 from __future__ import annotations

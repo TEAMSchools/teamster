@@ -201,8 +201,9 @@ class Warehouse:
     def estimate(self, sql: str) -> float:
         """Return the USD cost of `sql` from a dry run, counted against no cap.
 
-        For a query someone else runs outside the validator; `price` is the
-        one that counts.
+        The price a command sums before it runs anything, to refuse the total
+        up front (`refuse_past_caps`); each query then counts what it bills
+        (`rows`). `price` instead counts the dry run's cost as spent.
         """
         config = bigquery.QueryJobConfig(dry_run=True, use_query_cache=False)
         job = self._client.query(sql, job_config=config)

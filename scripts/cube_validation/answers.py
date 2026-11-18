@@ -354,12 +354,10 @@ def _covers(d: Decision, stub: dict) -> bool:
 
 
 def _cause_evidence(asks: list[tuple[str, CauseAsk]]) -> list[str]:
-    """A cause question's evidence: its words, each part's counts, the leads.
+    """A cause question's evidence: its words and the leads.
 
-    The counts are the bullet's own, each comparison's share of its groups'
-    rows, so the issue never shows 2 totals whose difference is another
-    cause's. The leads name the model docs on each comparison, never a member
-    description.
+    No counts: the question's `counts` (the bullet's own) carry them. The
+    leads name the model docs on each comparison, never a member description.
     """
     d = asks[0][1].decision
     return [

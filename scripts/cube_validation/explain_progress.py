@@ -1,4 +1,4 @@
-"""A triage's finished explanations, so a stopped triage skips them when run again.
+"""A sort's finished explanations, so a stopped sort skips them when run again.
 
 `triage-progress.json` sits in the run folder beside `run.json`. Each finished
 explanation's outcome is kept under a key of what it ran on: the explanation, the

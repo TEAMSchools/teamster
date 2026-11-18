@@ -828,7 +828,6 @@ def compare(
         CostCapError: The priced queries would pass `max_usd` or the day's
             cap.
         MomentError: No usable build in the 7-day window.
-        CubeRefusal: Cube's SQL would not match a raw rebuild.
     """
     if resume and requested is not None:
         raise Refusal("`--moment` picks the moment itself; drop `--resume`")

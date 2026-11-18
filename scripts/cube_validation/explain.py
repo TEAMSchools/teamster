@@ -698,8 +698,8 @@ def unmatched_sql(
     """Every unmatched row of the bucket, as the run's reconcile found them.
 
     Args:
-        source: The comparison's saved rows (`require_saved`), or the same rows
-            inline as a parenthesized query (`pipeline.inline_unmatched`).
+        source: The comparison's saved rows, as SQL names the table
+            (`require_saved`).
 
     Returns:
         A `WITH` holding the bucket's rows as `__f` (`bucket_rows_sql`), and the

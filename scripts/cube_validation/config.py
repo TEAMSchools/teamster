@@ -996,10 +996,8 @@ def write_rebuild_check(path: Path, comparison_id: str, check: dict[str, Any]) -
     Args:
         path: The validation file.
         comparison_id: The `id` of the comparison to update.
-        check: The new rebuild check (`fingerprint`, `cells`, `matched_at`,
-            `workbook_updated_at`, `sheet_query_fingerprint`, `cuts`,
-            `totals_skipped`, `missing_cuts`, `missing_filters`,
-            `restricting_filters`).
+        check: The new rebuild check, as `rebuild.rebuild_sheet` builds it;
+            `RebuildCheck` holds the keys the loader reads back.
 
     Raises:
         ConfigError: No comparison has that id, or it is written in flow

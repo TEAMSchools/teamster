@@ -1,8 +1,9 @@
 """Compare dashboard rows with Cube rows, and single cells.
 
-`reconcile_sql` builds one BigQuery query that joins the two row sources on the
-grain and returns counts only, so student-level rows never leave the warehouse.
-The module is pure: it builds and reads strings and runs nothing.
+`reconcile_script` builds one BigQuery job that joins the two row sources on
+the grain, saves the unmatched rows to a scratch table, and returns counts
+only, so student-level rows never leave the warehouse. The module is pure: it
+builds and reads strings and runs nothing.
 """
 
 from __future__ import annotations
