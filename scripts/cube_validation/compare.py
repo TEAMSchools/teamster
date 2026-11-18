@@ -58,7 +58,12 @@ from .pipeline import (
     value_key,
     wrap_cube,
 )
-from .rebuild import TABLEAU_ANSWERED, missing_members, workbook_check
+from .rebuild import (
+    TABLEAU_ANSWERED,
+    missing_members,
+    unpublished_sheets,
+    workbook_check,
+)
 from .report import RunResult
 from .results import (
     ENTRY_CHANGED,
@@ -564,8 +569,9 @@ def _early_skips(
     A comparison is skipped when it lacks a key a run needs (`_NEEDED`), it
     has no rebuild check, its sheet query changed since the check, it maps a
     member Cube's `/meta` lacks (`missing_members`), or its workbook changed
-    since the check or Tableau errs on it (`workbook_check`). Each check reads
-    only the comparisons no earlier check skipped.
+    since the check or Tableau errs on it (`workbook_check`), or its sheet is
+    on no published dashboard (`unpublished_sheets`). Each check reads only
+    the comparisons no earlier check skipped.
     """
     skips: list[Skip] = []
 
@@ -609,6 +615,8 @@ def _early_skips(
                 else "workbook changed since its rebuild check"
             )
             skips.append(Skip(c.id, f"{what}: {'; '.join(lines)}"))
+    for cid, why in unpublished_sheets(left(), tbl=tbl).items():
+        skips.append(Skip(cid, why))
     return skips
 
 

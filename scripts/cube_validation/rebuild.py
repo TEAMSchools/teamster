@@ -879,3 +879,51 @@ def workbook_check(
                 f"{comparison.id}: republished {updated.isoformat()}, sheet unchanged"
             )
     return stale
+
+
+def unpublished_sheets(
+    comparisons: list[Comparison], *, tbl: tableau.Tableau
+) -> dict[str, str]:
+    """Name the comparisons whose sheet no published dashboard shows.
+
+    A comparison with `unpublished: true` is never listed. A workbook is
+    downloaded once, and only when one of its comparisons' check does not
+    record that the sheet is published, or the workbook was published after
+    the check.
+
+    Args:
+        comparisons: The comparisons to check.
+        tbl: Tableau, for each workbook's publish time and file.
+
+    Returns:
+        Each such comparison's id and why it is skipped; a workbook Tableau
+        errs on reads `TABLEAU_ANSWERED` and its error.
+    """
+    skipped: dict[str, str] = {}
+    twbs: dict[str, str] = {}
+    for comparison in comparisons:
+        proof = comparison.rebuild_check
+        if comparison.unpublished or not comparison.workbook or proof is None:
+            continue
+        luid = comparison.workbook
+        try:
+            if luid not in twbs:
+                at = proof.workbook_updated_at
+                if (
+                    proof.published is True
+                    and at
+                    and tbl.workbook_updated(luid) <= datetime.fromisoformat(at)
+                ):
+                    continue
+                twbs[luid] = tbl.download_twb(luid)
+        except TSC.ServerResponseError as exc:
+            skipped[comparison.id] = (
+                f"the workbook could not be checked: {TABLEAU_ANSWERED} "
+                f"{exc.code} {exc.summary}"
+            )
+            continue
+        if (comparison.sheet or "") not in tableau.published_sheets(twbs[luid]):
+            skipped[comparison.id] = (
+                f"{tableau.NOT_PUBLISHED}; set unpublished: true to compare it anyway"
+            )
+    return skipped

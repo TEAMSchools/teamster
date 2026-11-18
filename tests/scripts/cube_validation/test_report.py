@@ -496,6 +496,20 @@ def test_a_formula_question_shows_both_definitions_and_masks_its_count():
     assert report.defined_comparisons([q], "enrollment_view") == {"enrollment"}
 
 
+def test_review_question_says_its_sheet_is_on_no_published_dashboard():
+    d = _formula("formula-1", "enrollment", "owner picks codes")
+    run = _run(applied=Applied(quiet_cells=[(d, _formula_diff("enrollment", 40))]))
+
+    body = render_review_issue(
+        "Registrar", [run], unpublished={"enrollment_view": {"enrollment"}}
+    )
+    assert "`enrollment`'s sheet is on no published dashboard" in body
+    other = render_review_issue(
+        "Registrar", [run], unpublished={"enrollment_view": {"other"}}
+    )
+    assert "no published dashboard" not in other
+
+
 def test_a_formula_decision_reads_as_such_locally():
     d = _formula("formula-1", "enrollment", "owner picks codes")
     text = render_local(_run(applied=Applied(quiet_cells=[(d, TARDY_DIFF)])))

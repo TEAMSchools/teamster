@@ -157,6 +157,17 @@ def test_published_sheets_reads_dashboard_zones_and_visible_windows():
     assert published_sheets(PUBLISHED) == {"A", "B"}
 
 
+def test_published_sheets_counts_a_sheet_a_story_point_captures():
+    story = PUBLISHED.replace(
+        "</dashboards>",
+        "<dashboard name='Tour' type='storyboard'><zones><zone id='9' />"
+        "<story-points><story-point captured-sheet='C' id='1' />"
+        "</story-points></zones></dashboard></dashboards>",
+    )
+    # C: hidden and in no zone, but a story point shows it.
+    assert published_sheets(story) == {"A", "B", "C"}
+
+
 def test_displayed_decimals_cases():
     assert displayed_decimals("p0.0%") == 3
     assert displayed_decimals("p0%") == 2

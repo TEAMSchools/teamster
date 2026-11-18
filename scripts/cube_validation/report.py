@@ -1125,6 +1125,7 @@ def render_review_issue(
     decided: dict[str, list[CauseAsk]] | None = None,
     json_link: str | None = None,
     still: list[str] | None = None,
+    unpublished: dict[str, set[str]] | None = None,
 ) -> str:
     """Render the issue body asking a domain owner to judge open items.
 
@@ -1149,6 +1150,8 @@ def render_review_issue(
             `questions`); the body links it instead of carrying the block.
         still: What is not settled yet (`still_with_analyst`), listed after
             the questions under its own heading and never asked.
+        unpublished: Per view, the comparisons that opted in to a sheet on no
+            published dashboard; a question naming one ends with a note.
 
     Returns:
         Markdown in the feature-request structure. Every count is masked and
@@ -1171,6 +1174,16 @@ def render_review_issue(
     question_lines = [
         f"Q{n}. {_ended('; '.join(question_parts(q)))} "
         f"Reason: {_with_task(question_reason(q), q['task'])}"
+        + "".join(
+            f" Note: `{cid}`'s sheet is on no published dashboard."
+            for cid in sorted(
+                {
+                    cid
+                    for view, ids in (unpublished or {}).items()
+                    for cid in defined_comparisons([q], view) & ids
+                }
+            )
+        )
         for n, q in enumerate(asked, start=1)
     ]
     also = also_decided(runs, decided)

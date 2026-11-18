@@ -227,9 +227,10 @@ def published_sheets(twb_xml: str) -> set[str]:
     """The worksheets a viewer of the published workbook can see.
 
     A sheet is seen when a dashboard holds it in a zone (zones nest; every
-    level counts), or when its own window is not hidden. A hidden window
-    publishes no view, so a hidden sheet in no dashboard is a working sheet
-    no viewer sees.
+    level counts), when a story point captures it (`captured-sheet`), or
+    when its own window is not hidden. A hidden window publishes no view, so
+    a hidden sheet in no dashboard or story is a working sheet no viewer
+    sees.
     """
     # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
     root = ET.fromstring(twb_xml)
@@ -243,7 +244,8 @@ def published_sheets(twb_xml: str) -> set[str]:
         for window in root.iter("window")
         if window.get("class") == "worksheet" and window.get("hidden") != "true"
     }
-    return (zoned | shown) - {""}
+    captured = {point.get("captured-sheet") or "" for point in root.iter("story-point")}
+    return (zoned | shown | captured) - {""}
 
 
 def expose_sheet(twb_xml: str, sheet: str) -> str:

@@ -106,8 +106,20 @@ def ask_owner(
     link = None
     if json_file is not None:
         link = _review_file(Path(json_file), report.posted_json(questions))
+    unpublished = {
+        cfg.view: {c.id for c in cfg.comparisons if c.unpublished} for cfg in configs
+    }
     body = report.render_review_issue(
-        domain, runs, definitions, questions, causes, comments, decided, link, still
+        domain,
+        runs,
+        definitions,
+        questions,
+        causes,
+        comments,
+        decided,
+        link,
+        still,
+        unpublished,
     )
     if len(body) > BODY_WARN_CHARS:
         # stderr, so the warning never lands in the issue body.

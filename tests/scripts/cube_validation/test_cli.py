@@ -289,6 +289,7 @@ class FakeTableau:
         self.refresh = NOW - timedelta(hours=2)
 
     def download_twb(self, luid):
+        self.downloads = getattr(self, "downloads", 0) + 1
         return self.twb
 
     def workbook_updated(self, luid):
@@ -909,6 +910,60 @@ def test_a_changed_workbook_skips_only_its_comparisons(fakes, tmp_path, capsys):
     assert "the sheet's formulas or filters changed; re-run `rebuild-sheet`." in out
     assert out.index("Skipping c2") < out.index("(dry run)")
     assert _scripts_for(fakes.bq) == ["c1"]
+
+
+def test_compare_skips_a_sheet_on_no_published_dashboard(fakes, tmp_path, capsys):
+    _hide_rate_by_region(fakes.tbl)
+
+    assert cli.main(["compare", str(_two(tmp_path))]) == 1
+
+    out = capsys.readouterr().out
+    assert (
+        "Skipping c1: not on a published dashboard; set unpublished: true to "
+        "compare it anyway"
+    ) in out
+    assert _scripts_for(fakes.bq) == []
+
+
+def test_compare_downloads_no_workbook_for_a_check_that_recorded_published(
+    fakes, tmp_path, capsys
+):
+    proof = REBUILD_CHECK + "      published: true\n"
+    path = _two(tmp_path, text=YML.replace(REBUILD_CHECK, proof))
+
+    assert cli.main(["compare", str(path)]) == 0
+
+    assert not getattr(fakes.tbl, "downloads", 0)
+    assert _scripts_for(fakes.bq) == ["c1", "c2"]
+
+
+def test_compare_checks_again_after_a_republish(fakes, tmp_path, capsys):
+    path = _republished(fakes, tmp_path)
+    path.write_text(
+        path.read_text().replace(
+            "      sheet_query_fingerprint",
+            "      published: true\n      sheet_query_fingerprint",
+        )
+    )
+    _hide_rate_by_region(fakes.tbl)
+
+    assert cli.main(["compare", str(path)]) == 1
+
+    assert fakes.tbl.downloads
+    assert "not on a published dashboard" in capsys.readouterr().out
+    assert _scripts_for(fakes.bq) == []
+
+
+def test_compare_runs_an_opted_in_unpublished_sheet(fakes, tmp_path, capsys):
+    _hide_rate_by_region(fakes.tbl)
+    text = YML.replace(
+        "    sheet_field: Rate\n", "    sheet_field: Rate\n    unpublished: true\n"
+    )
+
+    assert cli.main(["compare", str(_two(tmp_path, text=text))]) == 0
+
+    assert "not on a published dashboard" not in capsys.readouterr().out
+    assert _scripts_for(fakes.bq) == ["c1", "c2"]
 
 
 def test_a_changed_second_fact_skips_only_the_comparisons_that_read_it(
