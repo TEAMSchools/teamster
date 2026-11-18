@@ -359,12 +359,14 @@ refuses when the view's only run read another fact.
    and reused, unpriced, while its result stands, including one whose cells read
    `no rows both sides hold` or
    `the rewrite does not reproduce the run's cells`: it runs again (and is
-   priced again) only after the result changes (`compare` again) or after a
-   validator update, so a cause outside both clears on the next `compare`. If
-   that re-run cannot run, the kept verdicts stand. Any other reason (a cap, a
-   BigQuery or Cube error) is never kept: fix it and `sort` again. `decide` and
-   `ask-owner` refuse a triage written before the formula check existed; `sort`
-   again.
+   priced again) only after the comparison is compared again (a new result) or
+   after a validator update that changes the check, so a cause in the data or
+   the config clears on the next `compare`. If that re-run cannot run, the kept
+   verdicts stand and `sort` prints
+   `Formula check of <id>: kept the stored check; this run fell back: <why>`.
+   Any other reason (a cap, a BigQuery or Cube error) is never kept: fix it and
+   `sort` again. `decide` and `ask-owner` refuse a triage written before the
+   formula check existed; `sort` again.
 
    The trace leads. `sort` relaxes each step of the other side's SQL (WHERE and
    HAVING conjuncts, INNER JOINs, required LEFT JOINs, down 5 dbt models) and

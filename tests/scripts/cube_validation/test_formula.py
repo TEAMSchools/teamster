@@ -585,7 +585,7 @@ def test_fact_grain_refuses_a_table_with_no_dataset():
 
     with pytest.raises(
         formula.NotCompared,
-        match="grain column student sits on a table with no dataset",
+        match="grain column student sits on a CTE or a table with no dataset",
     ):
         formula.fact_grain(sql, "v", ["student"])
 

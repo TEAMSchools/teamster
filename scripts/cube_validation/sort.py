@@ -1466,8 +1466,8 @@ def sort_run(
     are dry-run and priced with the explanations, so one cap refusal comes
     before either runs. A check is kept beside its comparison's latest result
     (`latest.add_formula_check`) and reused while that result stands, unless
-    it left cells uncompared and is of an older `formula.CHECK_VERSION`: that
-    one runs again, and if it then cannot run, its kept verdicts stand. A
+    it is of an older `formula.CHECK_VERSION`: that one runs again, and if it
+    then cannot run, its kept verdicts stand. A
     cell still differing there joins the comparison's formula item once the
     run is composed again (`results.recompose`). Outside `comparisons`, a
     kept check is reused as it is and a comparison with none is not checked.
@@ -1673,10 +1673,9 @@ def _formula_jobs(
 ) -> tuple[dict[str, Check], list[Job], float]:
     """Plan and price the formula check of each comparison that can take one.
 
-    A kept check of the latest result is reused when it left no cell
-    uncompared, when it is of this `formula.CHECK_VERSION`, or outside
-    `wanted`; any other is run again, and when that one falls back the kept
-    check's verdicts stand.
+    A kept check of the latest result is reused when it is of this
+    `formula.CHECK_VERSION`, or outside `wanted`; any other is run again, and
+    when that one falls back the kept check's verdicts stand.
 
     Returns:
         The checks already decided, by comparison (kept ones reused, and
@@ -1703,13 +1702,11 @@ def _formula_jobs(
             continue
         fingerprint = held[c.id].fingerprint
         outside = bool(wanted) and c.id not in wanted
-        # A kept check of this version would leave the same cells uncompared
-        # while its result stands, so only a validator update runs it again
-        # (a new result drops it); outside --comparison it stays as it is.
+        # A kept check of this version would decide its cells the same while
+        # its result stands, so only a validator update runs it again (a new
+        # result drops it); outside --comparison it stays as it is.
         if (kept := _stored_check(held[c.id])) is not None and (
-            outside
-            or not any(kept.not_compared.values())
-            or kept.version == formula.CHECK_VERSION
+            outside or kept.version == formula.CHECK_VERSION
         ):
             checks[c.id] = kept
             continue
@@ -1726,8 +1723,7 @@ def _formula_jobs(
             planned.stored = kept
             jobs.append(planned)
         elif planned is not None:
-            # A fallback; a kept check run again keeps its verdicts instead.
-            checks[c.id] = planned if kept is None else kept
+            checks[c.id] = _fallen_back(kept, planned)
     ready: list[formula.Job] = []
     usd = 0.0
     for job in jobs:
@@ -1738,14 +1734,14 @@ def _formula_jobs(
         except Exception as exc:  # noqa: BLE001 - the check never stops `sort`
             print(f"Formula check of {job.comparison} not priced: {exc!r}")
             checks[job.comparison] = _fallen_back(
-                job, formula.not_compared(
+                job.stored, formula.not_compared(
                     job.comparison, job.fingerprint, job.cells, formula.RUN_FAILED
                 ),
             )  # fmt: skip
             continue
         if failed := [p for p in mine if isinstance(p, GoogleAPIError)]:
             checks[job.comparison] = _fallen_back(
-                job, formula.not_compared(
+                job.stored, formula.not_compared(
                     job.comparison, job.fingerprint, job.cells,
                     formula.bigquery_refused(failed[0]),
                 ),
@@ -1759,11 +1755,19 @@ def _formula_jobs(
     return checks, ready, usd
 
 
-def _fallen_back(job: Job, check: Check) -> Check:
-    """`check`, a fallback of `job`, unless `job` runs a kept check again:
-    then the kept check's verdicts stand, so no cell it decided reads as not
-    compared. Neither is kept anew."""
-    return check if job.stored is None else job.stored
+def _fallen_back(stored: Check | None, check: Check) -> Check:
+    """`check`, a fallback, unless it runs `stored`, a kept check, again: then
+    the kept check's verdicts stand, so no cell it decided reads as not
+    compared, and a line names the fallback's reasons (fixed text, no value).
+    Neither is kept anew."""
+    if stored is None:
+        return check
+    why = "; ".join(check.not_compared)
+    print(
+        f"Formula check of {check.comparison}: kept the stored check; this run "
+        f"fell back: {why}"
+    )
+    return stored
 
 
 def _run_formula_jobs(
@@ -1799,7 +1803,7 @@ def _run_formula_jobs(
             latest.add_formula_check(results_dir, job.comparison, check.to_json())
             just_ran.add(job.comparison)
         else:
-            check = _fallen_back(job, check)
+            check = _fallen_back(job.stored, check)
         checks[job.comparison] = check
     filed = {
         (c["comparison"], c["cut"], c["key"])

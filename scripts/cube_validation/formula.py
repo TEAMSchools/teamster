@@ -50,9 +50,11 @@ RUN_FAILED = "its queries failed (see the terminal); sort again"
 # The reasons a check that ran its queries can give; any other is a failure.
 _RAN = (REWRITE_DIFFERS, NO_ROWS)
 # The check's code version, kept with each check. Bump it whenever the check's
-# SQL or its verdicts change: `sort` runs again a kept check of an older
-# version that left cells uncompared, and reuses one of this version, which
-# would leave them the same, until its comparison is compared again.
+# SQL or its verdicts change. `sort` reuses a kept check of the latest result
+# only while its version is this one, whatever cells it left uncompared, so
+# nothing is spent again until the comparison is compared again; a bump runs
+# every kept check again, so a fix to its formula or coverage verdicts takes
+# effect.
 CHECK_VERSION = 1
 
 
@@ -433,7 +435,10 @@ def fact_grain(
         if not isinstance(source, exp.Table):
             raise NotCompared(f"grain column {m} is read from a subquery, not a fact")
         if not source.db:
-            raise NotCompared(f"grain column {m} sits on a table with no dataset")
+            # A CTE reads as a table with no dataset too.
+            raise NotCompared(
+                f"grain column {m} sits on a CTE or a table with no dataset"
+            )
         tables.add(f"{source.db}.{source.name}")
         columns.append(column.name)
     if len(tables) > 1:

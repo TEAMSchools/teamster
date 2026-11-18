@@ -5346,22 +5346,23 @@ def _older(check: dict, version) -> dict:
     return older if version is None else {**older, "version": version}
 
 
-@pytest.mark.parametrize("version", [None, 0])
-def test_sort_runs_an_older_stored_check_with_uncompared_cells_again(
-    fakes, tmp_path, version
-):
+@pytest.mark.parametrize(
+    ("version", "uncompared"), [(None, True), (0, True), (None, False), (0, False)]
+)
+def test_sort_runs_an_older_stored_check_again(fakes, tmp_path, version, uncompared):
     path = _miami_differs(fakes, tmp_path)
     assert cli.main(["sort", str(path), "--no-trace"]) == 0
     check = _stored_formula_check(tmp_path)
-    # As a check that found no matched rows would be kept, by an older
-    # validator.
-    no_rows = {**check, "coverage": [], "not_compared": {NO_ROWS: check["coverage"]}}
-    _keep_formula_check(tmp_path, _older(no_rows, version))
+    # As an older validator kept it: one that found no matched rows, or one
+    # that decided every cell, whose verdicts the update may change.
+    if uncompared:
+        check = {**check, "coverage": [], "not_compared": {NO_ROWS: check["coverage"]}}
+    _keep_formula_check(tmp_path, _older(check, version))
     since = len(fakes.bq.log)
 
     assert cli.main(["sort", str(path), "--no-trace"]) == 0
 
-    # The validator updated, the check runs again and its label goes.
+    # The validator updated, the check runs again and any label goes.
     assert len(_formula_runs(fakes.bq, since)) == 4
     assert _triage(tmp_path)["formulas_not_compared"] == {}
     assert _stored_formula_check(tmp_path)["version"] == formula.CHECK_VERSION
@@ -5390,7 +5391,7 @@ def test_sort_reuses_a_stored_check_with_uncompared_cells_of_this_version(
 
 @pytest.mark.parametrize("falls", ["plan", "dry run", "run"])
 def test_a_re_run_that_falls_back_keeps_the_stored_check_s_verdicts(
-    fakes, tmp_path, monkeypatch, falls
+    fakes, tmp_path, capsys, monkeypatch, falls
 ):
     _miami_differs(fakes, tmp_path)
     path = _with_decision(_saved_fingerprints(tmp_path), tmp_path, call="fix_cube")
@@ -5431,9 +5432,21 @@ def test_a_re_run_that_falls_back_keeps_the_stored_check_s_verdicts(
         )
     else:
         _bigquery_refuses(fakes, "__matched", dry=falls == "dry run")
+    capsys.readouterr()
 
     assert cli.main(["sort", str(path), "--no-trace"]) == 0
 
+    why = (
+        formula.SAVED_GONE
+        if falls == "plan"
+        else "BigQuery refused it (job ?, invalidQuery); sort again"
+    )
+    out = capsys.readouterr().out
+    assert (
+        f"Formula check of ada-region: kept the stored check; this run fell back: "
+        f"{why}\n"
+    ) in out
+    assert "12345" not in out
     loaded = _triage(tmp_path)
     assert loaded["formulas_not_compared"] == {"ada-region": {NO_ROWS: 1}}
     after = json.loads(_latest_run(tmp_path).read_text())
