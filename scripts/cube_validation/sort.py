@@ -597,7 +597,7 @@ def cause_key(side: str, label: str) -> str:
 
 
 def cause_decision(
-    recorded: list[Decision], comparison: str, side: str, label: str
+    recorded: Iterable[Decision], comparison: str, side: str, label: str
 ) -> Decision | None:
     """The cause decision on `label` at `side` of `comparison`, if any."""
     words = mask_digits(label)

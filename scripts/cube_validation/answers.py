@@ -22,11 +22,20 @@ from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any
 
-from .config import _TASK, CALLS, MATCHED_ONLY, Decision, ViewConfig, mask_digits
+from . import coverage, explain, pipeline, sort
+from .config import (
+    _TASK,
+    CALLS,
+    MATCHED_ONLY,
+    SEPARATED_DIGITS,
+    Decision,
+    ViewConfig,
+    mask_digits,
+)
 from .cube_client import _literal
 from .decisions import cause_state
+from .pipeline import Refusal
 from .report import (
-    _SEPARATED_DIGITS,
     MASK_BELOW,
     CauseAsk,
     RunResult,
@@ -115,13 +124,10 @@ def cell_causes(
     Returns:
         `[(cell, {cause: students})]` in `run.diff_cells` order.
     """
-    from . import coverage, pipeline
-    from . import sort as sort_mod
-
     spec = next((c for c in cfg.comparisons if c.id == comparison), None)
     by_key = {
         item.get("key"): frozenset(
-            sort_mod.cause_key(c.get("side", ""), c.get("label") or "")
+            sort.cause_key(c.get("side", ""), c.get("label") or "")
             for c in item.get("cause") or []
         )
         or frozenset({""})
@@ -130,7 +136,7 @@ def cell_causes(
     }
     groups = [
         (key, g)
-        for key, g in sort_mod._groups_by_key(run).items()
+        for key, g in sort._groups_by_key(run).items()
         if g.comparison_id == comparison
     ]
     counted: dict[tuple, dict[str, int]] = {}
@@ -404,8 +410,6 @@ def _check_json(view: str, check: HandCheck) -> dict:
 
 def _cube_query(cfg: ViewConfig, check: HandCheck) -> dict:
     """The example cell as a Cube `load` query: its cut, with its dims pinned."""
-    from . import pipeline
-
     comparison = next(c for c in cfg.comparisons if c.id == check.comparison)
     query = pipeline.cell_query(cfg.view, comparison, json.loads(check.cut or "{}"))
     query["filters"] = query["filters"] + [
@@ -441,8 +445,6 @@ def reproduce_json(
         at the run's moment until `expires`, the `after` commands once that
         has passed, and the explanation file's `path` and branch `url`.
     """
-    from . import explain
-
     cid = ask.decision.comparison
     check = hand_check(run, cfg, cid, now, _ask_cause(ask), cells)
     cube = None
@@ -458,7 +460,7 @@ def reproduce_json(
         stored = (source.base / path) if source else None
         try:
             proof = explain.read_explanation(stored) if stored else None
-        except (OSError, explain.pipeline.Refusal):
+        except (OSError, Refusal):
             proof = None
         proofs.append(
             {
@@ -488,8 +490,6 @@ def _checked_reproduce(cfg: ViewConfig, proof, bucket: str) -> str | None:
     unchecked.
     A query that fails the check is left out, as if the explanation had none.
     """
-    from . import explain
-
     sql = proof.reproduce.get(bucket) if proof else None
     comparison = next(
         (c for c in cfg.comparisons if proof and c.id == proof.comparison), None
@@ -500,17 +500,15 @@ def _checked_reproduce(cfg: ViewConfig, proof, bucket: str) -> str | None:
         explain.check_reproduce(
             sql, explain.grain_names(comparison), explain.identifying(comparison)
         )
-    except explain.pipeline.Refusal:
+    except Refusal:
         return None
     return sql
 
 
 def _ask_cause(ask: CauseAsk) -> str:
     """A cause question's cause, as `cell_causes` names it."""
-    from . import sort as sort_mod
-
     cause = ask.decision.cause
-    return sort_mod.cause_key(cause.get("side", ""), cause.get("label") or "")
+    return sort.cause_key(cause.get("side", ""), cause.get("label") or "")
 
 
 def _rank(check: HandCheck) -> tuple:
@@ -810,7 +808,7 @@ _CITED_DATES = (
 NOTE_REFUSALS = (
     ("an email address", re.compile(r"\S+@\S+\.\w+"), 0),
     ("a run of 5 or more digits", re.compile(r"\d{5,}"), 0),
-    ("a number of 7 or more digits", _SEPARATED_DIGITS, 7),
+    ("a number of 7 or more digits", SEPARATED_DIGITS, 7),
     ("5 or more digits joined by spaces or dashes", re.compile(r"\d[\d\s-]*\d"), 5),
 )
 
@@ -999,19 +997,7 @@ def answer_changes(
     return out
 
 
-_STUB_KEYS = ("comparison", "group", "formula", "missing_cut", "missing_filter")
-
-
-def _is_cause_item(item: dict) -> bool:
-    """An explained row group, which cause decisions decide (`sort.decidable`)."""
-    proof = item.get("proof") or {}
-    return (
-        item.get("kind") == "group"
-        and item.get("suggestion") == "cause"
-        and bool(item.get("cause"))
-        and proof.get("kind") in ("query", "reconcile")
-        and bool(proof.get("fingerprint"))
-    )
+_STUB_KEYS = ("comparison", "formula", "missing_cut", "missing_filter")
 
 
 def _file_cause(d: Decision) -> dict:
@@ -1035,7 +1021,7 @@ def _explanations_by_cause(items: list[dict]) -> dict[tuple, set[str]]:
     """Each cause's explanation files across the triage's explained row groups."""
     out: dict[tuple, set[str]] = {}
     for item in items:
-        if _is_cause_item(item):
+        if sort.decidable(item):
             for c in item["cause"]:
                 key = (
                     item["comparison"],
@@ -1159,12 +1145,12 @@ def approved_decisions(
                 "decision, since `sort` closes it once every group in its cells "
                 "is decided"
             )
-        if item.get("kind") == "group" and not _is_cause_item(item):
+        if item.get("kind") == "group" and not sort.decidable(item):
             raise AnswerError(
                 f"{where}: item {item_id!r} is a row group no explanation decides; a "
                 "row group is decided only on an explained cause"
             )
-        if not _is_cause_item(item):
+        if not sort.decidable(item):
             if (item_id, "") in seen:
                 raise AnswerError(f"{where}: item {item_id!r} is approved twice")
             seen.add((item_id, ""))
@@ -1217,16 +1203,7 @@ def approved_decisions(
                 )
             target = decided.get(key)
             if target is None:
-                found = next(
-                    (
-                        d
-                        for d in existing
-                        if d.cause
-                        and (d.comparison, d.cause.get("side"), d.cause.get("label"))
-                        == key
-                    ),
-                    None,
-                )
+                found = sort.cause_decision(existing, comparison, side, label)
                 if found is not None:
                     target = decided[key] = _file_cause(found)
                     state = cause_state(found, proof, fp)

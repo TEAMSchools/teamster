@@ -650,7 +650,7 @@ def test_note_refusal_lets_dates_and_small_numbers_through(note):
 
 SORTED = {
     "items": [
-        {"id": "ada:region=Miami", "stub": {"comparison": "ada",
+        {"id": "ada:region=Miami", "kind": "group", "stub": {"comparison": "ada",
          "group": {"column": "regions_region_name", "values": ["Miami"]}}},
         {"id": "cut:Team", "stub": {"missing_cut": "Team"}},
         {"id": "ada:cells", "kind": "cells",
@@ -664,25 +664,14 @@ FPS = {"ada": {"cube": "c1", "dashboard": "d1"}}
 
 def test_approved_decisions_take_the_stub_and_the_run_fingerprints():
     approved = [
-        {"id": "miami", "call": "fix_cube", "reason": "r1", "task": "#1",
-         "item": "ada:region=Miami"},
         {"id": "team", "call": "deliberate", "reason": "r2", "task": "",
          "item": "cut:Team"},
         {"id": "formula", "call": "domain_owner", "reason": "r3",
          "item": "ada:formula"},
     ]  # fmt: skip
 
-    miami, team, formula = approved_decisions(approved, SORTED, FPS)
+    team, formula = approved_decisions(approved, SORTED, FPS)
 
-    assert miami == {
-        "id": "miami",
-        "comparison": "ada",
-        "group": {"column": "regions_region_name", "values": ["Miami"]},
-        "call": "fix_cube",
-        "reason": "r1",
-        "task": "#1",
-        "fingerprints": {"cube": "c1", "dashboard": "d1"},
-    }
     assert team == {"id": "team", "missing_cut": "Team", "call": "deliberate",
                     "reason": "r2"}  # fmt: skip
     assert formula == {"id": "formula", "comparison": "ada", "formula": True,
@@ -743,6 +732,11 @@ def test_a_missing_filter_in_cause_is_decided_across_the_view():
     [
         ({"id": "x", "call": "deliberate", "reason": "r", "item": "nope"}, "nope"),
         ({"id": "x", "call": "deliberate", "item": "cut:Team"}, "reason"),
+        # A row group as `sort` writes it: decided only on an explained cause.
+        (
+            {"id": "x", "call": "fix_cube", "reason": "r", "item": "ada:region=Miami"},
+            "a row group no explanation decides",
+        ),
     ],
 )
 def test_approved_decisions_refuse(entry, match):
