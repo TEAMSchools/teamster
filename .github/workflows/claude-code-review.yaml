@@ -177,11 +177,13 @@ jobs:
             even if some checks are still incomplete.
 
             Tools: read files, plugin skills included, with the Read, Grep and
-            Glob tools, never with cat, head, tail or wc. Bash runs only the git
-            commands listed in this job's allowed tools, one command per call,
-            never chained with ;, && or a pipe; anything else is denied. A
-            denied tool call is final, and no one can approve it: switch to an
-            allowed tool and keep reviewing. Never stop to wait for approval.
+            Glob tools, never with cat, head, tail or wc. Bash runs only git
+            diff, git log, git show, git rev-parse and git merge-base, one
+            command per call, never chained with ;, && or a pipe; anything else
+            is denied. Size a large diff with `git diff --stat
+            origin/main...HEAD` on its own. A denied tool call is final, and no
+            one can approve it: switch to an allowed tool and keep reviewing.
+            Never stop to wait for approval.
           allowed_bots: dbt-cloud
           include_fix_links: false
           use_sticky_comment: true
@@ -195,7 +197,9 @@ jobs:
           # the worst case: run-claude-sdk.ts breaks on the first result, so a
           # background subagent is orphaned and the run reports success having
           # posted nothing. Not gated by --allowedTools, so denying them
-          # explicitly is the only guard.
+          # explicitly is the only guard. The prompt's "Tools" paragraph names
+          # the allowed git commands, since the model cannot see this list:
+          # change both together.
           claude_args: >-
             --model claude-opus-5-5 --effort medium --allowedTools
             "Skill,Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(git
