@@ -182,19 +182,6 @@ def compose(
     return "\n".join([*header, *block]) + "\n\n" + body.strip() + "\n"
 
 
-def split_block(text: str) -> tuple[dict[str, tuple[str, str]], str]:
-    """An explanation's leading `-- cause` block and the SQL after it.
-
-    The lint opt-outs, blank lines and `-- reproduce` blocks above or inside
-    the block are skipped (`split_explanation` reads those too).
-
-    Raises:
-        pipeline.Refusal: A line of the block names no side or no words.
-    """
-    causes, _, body = split_explanation(text)
-    return causes, body
-
-
 def split_explanation(
     text: str,
 ) -> tuple[dict[str, tuple[str, str]], dict[str, str], str]:
@@ -1127,7 +1114,6 @@ def require_saved(
 
 def explanation_sql(
     wh: Warehouse,
-    cfg: ViewConfig,
     comparison: Comparison,
     sides: pipeline.RowSides,
     proof: Explanation,
@@ -1177,7 +1163,6 @@ def explanation_sql(
 
 def run_explanation(
     wh: Warehouse,
-    cfg: ViewConfig,
     comparison: Comparison,
     sides: pipeline.RowSides,
     proof: Explanation,
@@ -1204,7 +1189,6 @@ def run_explanation(
     """
     sql, literals = explanation_sql(
         wh,
-        cfg,
         comparison,
         sides,
         proof,
@@ -1647,7 +1631,6 @@ def run_stored(
             try:
                 sql, literals = explanation_sql(
                     wh,
-                    cfg,
                     comparison,
                     sides,
                     proof,
@@ -1774,7 +1757,6 @@ def _run_one(
         table = require_saved(wh, cfg, run, comparison)
         ran.found = run_explanation(
             wh,
-            cfg,
             comparison,
             prepared.row_sides(cfg, comparison, run, wh, cube),
             proof,
@@ -1967,7 +1949,6 @@ def explain(
         students: list[dict] = []
         found = run_explanation(
             wh,
-            cfg,
             target,
             prepared.row_sides(cfg, target, run, wh, cube),
             proof,

@@ -11,7 +11,6 @@ import hashlib
 import re
 from typing import TYPE_CHECKING
 
-from .reconcile import UNMATCHED
 from .report import run_stamp
 from .timetravel import PROJECT
 
@@ -23,8 +22,6 @@ if TYPE_CHECKING:
 SCRATCH_DATASET = "cube_validation_scratch"
 # Each saved table also expires on its own, whatever the dataset's default.
 SAVED_DAYS = 14
-# The reconcile buckets a saved table holds: every bucket but `match`.
-SAVED_BUCKETS = UNMATCHED
 
 # BigQuery takes at most 63 characters in a label value.
 _LABEL_MAX = 63

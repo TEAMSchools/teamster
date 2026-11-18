@@ -784,7 +784,7 @@ def test_a_proof_file_opts_out_of_trunk_and_keeps_its_bucket_map():
         "-- trunk-ignore-all(sqlfluff)\n-- fmt: off\n"
         f"-- cause C1 = dashboard: {CAUSES['C1'][1]}\n"
     )
-    assert explain.split_block(text) == (CAUSES, EXPLANATION.strip())
+    assert explain.split_explanation(text) == (CAUSES, {}, EXPLANATION.strip())
 
 
 def test_a_formatting_only_edit_keeps_the_fingerprint(tmp_path):
@@ -1211,7 +1211,7 @@ def test_a_proof_counts_each_cause_s_students_per_cell_and_cut(duck, tmp_path, o
     students: list[dict] = []
 
     found = explain.run_explanation(
-        wh, CFG, COMPARISON, SIDES, proof, [("G1", _group(3))], BUILD, {},
+        wh, COMPARISON, SIDES, proof, [("G1", _group(3))], BUILD, {},
         students, table=explain.require_saved(wh, CFG, run, COMPARISON),
     )  # fmt: skip
 
@@ -1428,7 +1428,7 @@ def test_compose_opts_out_of_banned_syntax_only_when_the_proof_uses_it():
     picked = explain.compose(causes, "select * from {unmatched} qualify true")
     assert "sql-banned-syntax" not in plain
     assert "sql-banned-syntax" in picked
-    assert explain.split_block(picked)[0] == causes
+    assert explain.split_explanation(picked)[0] == causes
 
 
 # --- one explanation per row population --------------------------------------
@@ -1624,7 +1624,6 @@ def test_a_reproduce_query_rides_in_the_header_and_not_the_fingerprint():
     assert "-- reproduce C1:\n--  SELECT f.school, COUNT(*) AS n_rows\n" in text
     causes, reproduce, body = explain.split_explanation(text)
     assert (causes, reproduce, body) == (CAUSES, {"C1": REPRODUCE}, EXPLANATION.strip())
-    assert explain.split_block(text) == (CAUSES, EXPLANATION.strip())
     assert explain.fingerprint(causes, body) == explain.fingerprint(CAUSES, EXPLANATION)
 
 
