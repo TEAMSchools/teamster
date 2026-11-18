@@ -117,11 +117,6 @@ def same_sql(found: list[Member]) -> list[list[Member]]:
     ]
 
 
-def same_name(found: list[Member], name: str) -> list[Member]:
-    """Every member named `name` (the part after the cube) on any cube."""
-    return [m for m in found if m.name.split(".", 1)[1] == name]
-
-
 @dataclass(frozen=True)
 class FieldUse:
     """One workbook field and every worksheet that uses it.

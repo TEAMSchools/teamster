@@ -6,7 +6,7 @@ import json
 import re
 import subprocess
 import sys
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 
 from . import answers, report, sort
@@ -21,10 +21,11 @@ def ask_owner(
     configs: list[ViewConfig],
     domain: str,
     cache_root: Path,
-    now: datetime | None = None,
-    view_files: list[Path] | None = None,
-    comments: list[str] | None = None,
-    json_file: Path | None = None,
+    *,
+    now: datetime,
+    view_files: list[Path],
+    comments: list[str],
+    json_file: Path,
 ) -> str:
     """Return the review-issue body from each view's latest saved run.
 
@@ -43,26 +44,26 @@ def ask_owner(
         domain: The domain whose owner reviews.
         cache_root: The run cache.
         now: The current time, to say whether a hand check's pinned SQL still
-            runs; defaults to the clock.
+            runs.
         view_files: Each config's validation file, in order: stored explanation
             paths are relative to its directory.
-        comments: Given, receives the follow-up comments a long body's
-            Reproduce blocks move to (`report.render_review_issue`).
-        json_file: Given, the questions JSON is written there (`reviews/`
-            beside the validation file) and the body links it at the commit
-            that holds it, instead of carrying it.
+        comments: Receives the follow-up comments a long body's Reproduce
+            blocks move to (`report.render_review_issue`).
+        json_file: Where the questions JSON is written (`reviews/` beside the
+            validation file); the body links it at the commit that holds it,
+            instead of carrying it.
 
     Raises:
         Refusal: A view has no usable saved run (see `latest_run`), or its
             triage is missing, stale, unreadable, or has a cause decision and
-            a `group` decision disagreeing (see `sort.checked_sort`). With
-            `json_file`: the file is new or changed, or its commit is not
-            pushed (it is written; commit and push it, then review again).
+            a `group` decision disagreeing (see `sort.checked_sort`). Or
+            `json_file` is new or changed, or its commit is not pushed (it is
+            written; commit and push it, then review again).
     """
     saved = [latest_run(cfg, cache_root) for cfg in configs]
     runs = [run for run, _ in saved]
     # Stored explanation paths are relative to each validation file's directory.
-    bases = [f.parent for f in view_files] if view_files else [None] * len(configs)
+    bases = [f.parent for f in view_files]
     proven = {
         run.view: sort.checked_sort(run, run_json, cfg.decisions, base)
         for (run, run_json), cfg, base in zip(saved, configs, bases, strict=True)
@@ -89,14 +90,14 @@ def ask_owner(
     }
     sources = {
         cfg.view: explanation_source(f)
-        for cfg, f in zip(configs, view_files or [], strict=False)
+        for cfg, f in zip(configs, view_files, strict=True)
     }
     questions = answers.questions_json(
         runs,
         configs,
         definitions,
         found,
-        now or datetime.now(timezone.utc),
+        now,
         causes,
         sources,
     )
@@ -105,9 +106,7 @@ def ask_owner(
         run.view: sort.cause_asks(run, proven[run.view], cfg.decisions, owner=False)
         for run, cfg in zip(runs, configs, strict=True)
     }
-    link = None
-    if json_file is not None:
-        link = _review_file(Path(json_file), report.posted_json(questions))
+    link = _review_file(Path(json_file), report.posted_json(questions))
     unpublished = {
         cfg.view: {c.id for c in cfg.comparisons if c.unpublished} for cfg in configs
     }

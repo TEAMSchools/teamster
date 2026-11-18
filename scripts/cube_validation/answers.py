@@ -45,10 +45,6 @@ from .report import (
 # BigQuery keeps table history this long, so an as-of query stops working then.
 TIME_TRAVEL_DAYS = 7
 
-NO_REPRODUCE = (
-    "no count query yet: the explanation has no `-- reproduce {bucket}:` block for it"
-)
-
 
 @dataclass(frozen=True)
 class ExplanationSource:

@@ -158,17 +158,6 @@ def test_same_sql_groups_different_names_on_views_over_one_fact():
     ]
 
 
-def test_same_name_finds_count_students_on_every_cube():
-    found = builder.members(_students())
-
-    hits = builder.same_name(found, "count_students")
-
-    assert sorted(m.cube for m in hits) == ["a", "b", "c", "d"]
-    assert len({m.fact for m in hits}) == 4
-    assert len({m.sql for m in hits}) == 4
-    assert builder.same_name(found, "nope") == []
-
-
 def test_members_command_writes_json_and_prints_groups(monkeypatch, tmp_path, capsys):
     cube = MetaCube(
         [_cube("a", ["m", "bad"]), _cube("b", ["n"])],
