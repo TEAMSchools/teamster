@@ -100,6 +100,10 @@ class Warehouse:
 
         return TableInfo("TABLE", None)
 
+    def columns(self, dataset: str, name: str) -> set[str]:
+        """Return the field names of `dataset.name`'s schema; no query runs."""
+        return {f.name for f in self._get_table(dataset, name).schema}
+
     def view_sql_as_of(self, dataset: str, name: str, ts: datetime) -> str:
         """Return the SQL body of view `dataset.name` as it stood at `ts`.
 

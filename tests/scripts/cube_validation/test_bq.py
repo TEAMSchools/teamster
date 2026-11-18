@@ -527,3 +527,11 @@ def test_saved_labels_read_a_table_and_none_for_a_missing_one():
             raise NotFound(ref)
 
     assert Warehouse(client=Gone()).saved_labels("p.d.t") is None
+
+
+def test_columns_reads_the_schema_without_a_query():
+    schema = [SimpleNamespace(name="student_number"), SimpleNamespace(name="day")]
+    client = FakeClient(SimpleNamespace(schema=schema))
+
+    assert Warehouse(client=client).columns("ds", "t") == {"student_number", "day"}
+    assert client.queries == []

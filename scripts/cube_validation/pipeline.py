@@ -365,8 +365,9 @@ def dashboard_scoped_rows_sql(cfg: ViewConfig, comparison: Comparison) -> str:
     view is kept, so the sheet query can read them in place of the view.
     """
     seen = _row_dates(cfg, comparison)
-    # The view's own columns: a date column is read as its DATE, as the
-    # reconcile's row SQL selects it, and each filter is read inline.
+    # Every column is selected raw, so the sheet query's own `DATE(day) AS day`
+    # reads the same input; only the partition keys read a date column as its
+    # DATE, as the reconcile's row SQL keys it. Each filter is read inline.
     return _rows_sql(
         comparison,
         "*",

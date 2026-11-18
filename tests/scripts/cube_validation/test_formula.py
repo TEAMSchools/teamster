@@ -14,7 +14,7 @@ from cube_validation.config import ColumnPair, Comparison, RowSpec, ViewConfig
 from cube_validation.moment import Build
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation.timetravel import AsOf, TableInfo, utc_literal
+from cube_validation.timetravel import AsOf, TableInfo, as_of, utc_literal
 
 from .test_explain import SIDES
 
@@ -167,6 +167,15 @@ def test_matched_keys_leave_out_a_saved_dashboard_only_key_the_rebuild_misses(du
     assert _matched(duck) == [1]
 
 
+def test_matched_ctes_refuse_a_comparison_with_no_rows():
+    comparison = replace(COMPARISON, rows=None)
+
+    with pytest.raises(pipeline.Refusal, match="has no rows"):
+        formula.matched_ctes(
+            replace(CFG, comparisons=[comparison]), comparison, VALUED, SAVED
+        )
+
+
 def test_key_sql_reads_a_timestamp_and_its_date_alike(duck):
     assert duck.rows(
         f"SELECT {formula.key_sql(['t'], [True])} = "
@@ -261,9 +270,9 @@ def _side_sides(cfg, comparison) -> pipeline.RowSides:
     )
 
 
-def _recomputed(duck, comparison=SIDE) -> dict[tuple[str, str], float]:
+def _recomputed(duck, comparison=SIDE, cfg=CFG) -> dict[tuple[str, str], float]:
     """The dashboard side on matched rows, as `sort` runs it, by (cut, school)."""
-    cfg = replace(CFG, comparisons=[comparison])
+    cfg = replace(cfg, comparisons=[comparison])
     sides = _side_sides(cfg, comparison)
     _save(duck, cfg, sides)
     body = formula.dashboard_side_sql(
@@ -337,6 +346,61 @@ def test_dashboard_side_leaves_out_rows_outside_dashboard_scope(duck):
     assert _recomputed(duck, comparison) == {("{}", "X"): 0.75}
 
 
+def test_dashboard_side_leaves_out_a_key_with_two_latest_rows(duck):
+    # 1's two rows tie as the latest, so the reconcile sees both: it matches
+    # one and files the other an unmatched duplicate, and the dashboard side
+    # reads neither.
+    comparison = replace(
+        SIDE, rows=replace(SIDE.rows, reduce={"rule": "latest", "by": "updated"})
+    )
+    _side_tables(
+        duck,
+        [(1, "a", 1.0, "X", "N", True, D2), (1, "a", 1.0, "X", "N", True, D2),
+         (2, "a", 0.25, "X", "N", True, D2)],
+        [(1, "a", 1.0, "X", "N"), (2, "a", 0.25, "X", "N")],
+    )  # fmt: skip
+
+    assert _recomputed(duck, comparison) == {("{}", "X"): 0.25}
+
+
+# A daily grain: `day` is a TIMESTAMP on both sides and the view's time
+# dimension, so the reconcile keys it by its DATE.
+DAILY = replace(
+    SIDE,
+    rows=RowSpec(
+        grain=[ColumnPair("student", "lea"), ColumnPair("day", "day_c")],
+        values=[ColumnPair("score", "score_c")],
+    ),
+)
+DAILY_CFG = replace(CFG, time_dimension="day_c")
+T1 = datetime(2026, 10, 1, 8, 30)
+
+
+def _daily_tables(duck, dash_rows, cube_rows):
+    """Dashboard rows (student, day, score, school) and Cube rows (lea, day_c,
+    score_c, abbreviation), `day` a TIMESTAMP on both."""
+    duck.table(
+        "dash_t", "student BIGINT, day TIMESTAMP, score DOUBLE, school VARCHAR",
+        dash_rows,
+    )  # fmt: skip
+    duck.table(
+        "cube_t",
+        "lea BIGINT, day_c TIMESTAMP, score_c DOUBLE, abbreviation VARCHAR",
+        cube_rows,
+    )
+
+
+def test_dashboard_side_keys_a_timestamp_grain_as_a_date(duck):
+    # 1 and 2 match; the dashboard alone holds 3 and Cube alone holds 4.
+    _daily_tables(
+        duck,
+        [(1, T1, 0.5, "X"), (2, T1, 1.0, "X"), (3, T1, 0.0, "X")],
+        [(1, T1, 0.5, "X"), (2, T1, 1.0, "X"), (4, T1, 0.0, "X")],
+    )
+
+    assert _recomputed(duck, DAILY, DAILY_CFG) == {("{}", "X"): 0.75}
+
+
 REGION = replace(
     SIDE,
     filters={"Region": ColumnPair("region", "region_c")},
@@ -392,3 +456,239 @@ def test_dashboard_self_check_reproduces_the_sheet_query(duck):
     assert f"FOR SYSTEM_TIME AS OF TIMESTAMP '{utc_literal(BUILD.start)}'" in sql
     assert len(expected) == 5
     assert rows(duck.rows(sql)) == rows(expected)
+
+
+# --- the Cube side ------------------------------------------------------------
+
+
+def test_fact_grain_maps_each_member_to_its_fact_column():
+    sql = (
+        "SELECT `f`.student_number `v__student`, `f`.item_id `v__item` "
+        "FROM kipptaf_marts.fct_x AS `f`"
+    )
+
+    assert formula.fact_grain(sql, "v", ["student", "item"]) == (
+        "kipptaf_marts.fct_x",
+        ["student_number", "item_id"],
+    )
+
+
+def test_fact_grain_refuses_an_expression():
+    sql = (
+        "SELECT CAST(`f`.a AS STRING) `v__student`, `f`.item_id `v__item` "
+        "FROM kipptaf_marts.fct_x AS `f`"
+    )
+
+    with pytest.raises(
+        formula.NotCompared, match="grain column student is an expression"
+    ):
+        formula.fact_grain(sql, "v", ["student", "item"])
+
+
+def test_fact_grain_refuses_a_subquery_alias():
+    sql = (
+        "SELECT `s`.student_number `v__student`, `s`.item_id `v__item` "
+        "FROM (SELECT * FROM kipptaf_marts.fct_x) AS `s`"
+    )
+
+    with pytest.raises(
+        formula.NotCompared, match="grain column student is an expression"
+    ):
+        formula.fact_grain(sql, "v", ["student", "item"])
+
+
+def test_fact_grain_refuses_grain_columns_on_two_tables():
+    sql = (
+        "SELECT `f`.student_number `v__student`, `g`.item_id `v__item` "
+        "FROM kipptaf_marts.fct_x AS `f` "
+        "LEFT JOIN kipptaf_marts.fct_y AS `g` ON `g`.k = `f`.k"
+    )
+
+    with pytest.raises(formula.NotCompared, match="more than one table"):
+        formula.fact_grain(sql, "v", ["student", "item"])
+
+
+def test_fact_grain_refuses_sql_it_cannot_parse():
+    with pytest.raises(formula.NotCompared, match="Cube's SQL could not be parsed"):
+        formula.fact_grain("SELECT `f.a FROM (", "v", ["student"])
+
+
+def test_cube_read_tables_are_the_fact_and_the_also_facts_cube_reads():
+    cfg = replace(
+        CFG,
+        fact="kipptaf_marts.fct_x",
+        also_facts=["kipptaf_marts.fct_goals", "kipptaf_marts.fct_other"],
+    )
+    sql = (
+        "SELECT 1 FROM kipptaf_marts.fct_x AS `f` "
+        "LEFT JOIN KIPPTAF_MARTS.fct_goals AS `g` ON TRUE"
+    )
+
+    assert formula.cube_read_tables(cfg, sql) == [
+        "kipptaf_marts.fct_x",
+        "kipptaf_marts.fct_goals",
+    ]
+
+
+def test_filtered_tables_skips_a_goals_lookup():
+    cols = {"m.fct": {"student_number", "item_id"}, "m.fct_goals": {"school", "grade"}}
+    assert formula.filtered_tables(
+        ["m.fct", "m.fct_goals"], ["student_number", "item_id"], cols.__getitem__
+    ) == ["m.fct"]
+
+    with pytest.raises(formula.NotCompared, match="no table Cube reads carries"):
+        formula.filtered_tables(["m.fct_goals"], ["student_number"], cols.__getitem__)
+
+
+END, START = utc_literal(BUILD.end), utc_literal(BUILD.start)
+# Cube's SQL as `as_of` leaves it: the fact read twice, at two moments, and a
+# goals lookup.
+PINNED = (
+    f"SELECT `f`.lea `v__lea` FROM `teamster-332318.m.fct` AS `f` "
+    f"FOR SYSTEM_TIME AS OF TIMESTAMP '{END}'\n"
+    "LEFT JOIN `teamster-332318.m.fct_goals` AS `g` "
+    f"FOR SYSTEM_TIME AS OF TIMESTAMP '{END}' ON TRUE\n"
+    "WHERE `f`.k IN (SELECT k FROM `teamster-332318.m.fct` AS `f2` "
+    f"FOR SYSTEM_TIME AS OF TIMESTAMP '{START}')"
+)
+
+
+def test_rewrite_wraps_every_reference_of_each_table():
+    def wrapped(alias, at, predicate):
+        return (
+            f"(SELECT * FROM `teamster-332318.m.fct` "
+            f"FOR SYSTEM_TIME AS OF TIMESTAMP '{at}' WHERE {predicate}) AS `{alias}`"
+        )
+
+    def expected(predicate):
+        return PINNED.replace(
+            f"`teamster-332318.m.fct` AS `f` FOR SYSTEM_TIME AS OF TIMESTAMP '{END}'",
+            wrapped("f", END, predicate),
+        ).replace(
+            f"`teamster-332318.m.fct` AS `f2` "
+            f"FOR SYSTEM_TIME AS OF TIMESTAMP '{START}'",
+            wrapped("f2", START, predicate),
+        )
+
+    key = formula.key_sql(["lea", "day"], [False, True])
+    kept = formula.rewrite_cube_sql(
+        PINNED, ["m.fct"], ["lea", "day"], [False, True], keep=True
+    )
+    whole = formula.rewrite_cube_sql(
+        PINNED, ["m.fct"], ["lea", "day"], [False, True], keep=False
+    )
+
+    assert kept == expected(f"{key} IN (SELECT __key FROM __matched)")
+    assert whole == expected("TRUE")
+    assert "`teamster-332318.m.fct_goals` AS `g`" in kept
+
+
+def test_rewrite_refuses_a_reference_with_no_alias():
+    bare = PINNED.replace(" AS `f2`", "")
+
+    with pytest.raises(
+        formula.NotCompared, match="Cube's SQL reads m.fct with no alias"
+    ):
+        formula.rewrite_cube_sql(bare, ["m.fct"], ["lea"], [False], keep=True)
+    with pytest.raises(formula.NotCompared, match="Cube's SQL does not read m.other"):
+        formula.rewrite_cube_sql(PINNED, ["m.other"], ["lea"], [False], keep=True)
+
+
+class _Ex:
+    """`pipeline.Expand` over a toy Cube: `AVG(score_c)` from `cube_t` by the
+    query's dims, under its equals filters, expanded as of a moment."""
+
+    def cube_sql(self, query, rows=False):
+        dims = [m.split(".", 1)[1] for m in query["dimensions"]]
+        where = " AND ".join(
+            f"`c`.{f['member'].split('.', 1)[1]} = {pipeline.lit(f['values'][0])}"
+            for f in query["filters"]
+        )
+        select = ", ".join(
+            [*(f"`c`.{d} `v__{d}`" for d in dims), "AVG(`c`.score_c) `v__pct`"]
+        )
+        group = ", ".join(str(i + 1) for i in range(len(dims)))
+        return f"SELECT {select} FROM m.cube_t AS `c` WHERE {where or 'TRUE'}" + (
+            f" GROUP BY {group}" if group else ""
+        )
+
+    def at(self, sql, ts):
+        return as_of(sql, ts, _Catalog())
+
+
+def _cube_cells(duck, comparison=SIDE, cfg=CFG, *, keep=True, shared=frozenset()):
+    """The Cube side as `sort` runs it, by (cut, school), and its SQL; the
+    dashboard's row SQL reads `shared`."""
+    cfg = replace(cfg, comparisons=[comparison])
+    sides = _side_sides(cfg, comparison)
+    sides = replace(sides, dashboard=replace(sides.dashboard, tables=shared))
+    _save(duck, cfg, sides)
+    body = formula.cube_side_sql(
+        cfg,
+        comparison,
+        pipeline.comparison_cuts(comparison),
+        BUILD,
+        ex=_Ex(),
+        sides=sides,
+        tables=["m.cube_t"],
+        columns=[p.cube for p in comparison.rows.grain],
+        keep=keep,
+    )
+    sql = body
+    if keep:
+        ctes = formula.matched_ctes(cfg, comparison, sides, SAVED)
+        sql = f"{ctes}\nSELECT * FROM (\n{body}\n)"
+    cells = {(r["__cut"], r["abbreviation"]): r["value"] for r in duck.rows(sql)}
+    return cells, body
+
+
+def test_cube_side_recomputes_on_matched_rows_and_self_checks(duck):
+    # 1 and 2 match; the dashboard alone holds 3 and Cube alone holds 4.
+    _side_tables(
+        duck,
+        [(1, "a", 0.5, "X", "Miami", True, D1), (2, "a", 1.0, "X", "N", True, D1),
+         (3, "a", 0.0, "X", "Miami", True, D1)],
+        [(1, "a", 0.5, "X", "Miami"), (2, "a", 1.0, "X", "N"),
+         (4, "a", 0.0, "X", "Miami")],
+    )  # fmt: skip
+    miami = '{"Region": "Miami"}'
+    ex = _Ex()
+    run = {
+        (pipeline.cut_label(cut), r["abbreviation"]): r["value"]
+        for cut in pipeline.comparison_cuts(REGION)
+        for r in duck.rows(
+            pipeline.wrap_cube(
+                ex.at(
+                    ex.cube_sql(pipeline.cell_query("v", REGION, cut)), BUILD.end
+                ).sql,
+                "v",
+                ["abbreviation"],
+                set(),
+                "pct",
+            )
+        )
+    }
+
+    kept, sql = _cube_cells(duck, REGION)
+    whole, _ = _cube_cells(duck, REGION, keep=False)
+    _, shared = _cube_cells(duck, REGION, shared=frozenset({"m.cube_t"}))
+
+    assert run == {("{}", "X"): 0.5, (miami, "X"): 0.25}
+    assert whole == run
+    assert kept == {("{}", "X"): 0.75, (miami, "X"): 0.5}
+    assert f"TIMESTAMP '{END}'" in sql
+    # A table the dashboard's rows also read is read at the build start.
+    assert f"TIMESTAMP '{START}'" in shared and END not in shared
+
+
+def test_cube_side_keys_a_timestamp_grain_as_a_date(duck):
+    # 1 and 2 match; the dashboard alone holds 3 and Cube alone holds 4.
+    _daily_tables(
+        duck,
+        [(1, T1, 0.5, "X"), (2, T1, 1.0, "X"), (3, T1, 0.0, "X")],
+        [(1, T1, 0.5, "X"), (2, T1, 1.0, "X"), (4, T1, 0.0, "X")],
+    )
+
+    kept, _ = _cube_cells(duck, DAILY, DAILY_CFG)
+
+    assert kept == {("{}", "X"): 0.75}

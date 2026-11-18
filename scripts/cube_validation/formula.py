@@ -12,12 +12,19 @@ The module is pure: it builds SQL and runs nothing.
 
 from __future__ import annotations
 
+import re
+from collections.abc import Callable
 from typing import Any
 
-from . import pipeline, reconcile
+import sqlglot
+from sqlglot import exp
+from sqlglot.errors import ParseError, TokenError
+
+from . import cube_client, pipeline, reconcile
 from .bq import Warehouse
 from .config import Comparison, RowSpec, ViewConfig
 from .moment import Build
+from .timetravel import PROJECT, repin
 
 # A cell the check could not recompute closes by coverage under this label,
 # followed by one of the reasons below.
@@ -93,9 +100,9 @@ def matched_ctes(
     Raises:
         pipeline.Refusal: The comparison has no `rows`.
     """
+    n = len(_rows(comparison).grain)
     args, kwargs = pipeline.reconcile_args(cfg, comparison, sides)
     ctes, _ = reconcile._joined(*args, keys=True, moved=True, **kwargs)
-    n = len(_rows(comparison).grain)
     # `__k*` are already the reconcile's grain keys.
     joined_key = _keyed([f"__k{i}" for i in range(n)])
     # The saved grain is typed as the reconcile typed it, as `__k*` were, so
@@ -172,4 +179,207 @@ def dashboard_side_sql(
         label = pipeline.lit(pipeline.cut_label(cut))
         # trunk-ignore(bandit/B608): the label is literal-escaped and the SQL the tool's own
         parts.append(f"SELECT {label} AS __cut, * FROM (\n{at.sql}\n)")
+    return "\nUNION ALL\n".join(parts)
+
+
+def cube_read_tables(cfg: ViewConfig, compiled_sql: str) -> list[str]:
+    """The facts Cube's cell SQL reads: `cfg.fact` and each of `cfg.also_facts`
+    the SQL names.
+
+    Args:
+        cfg: The view's config.
+        compiled_sql: Cube's compiled SQL for a cell query.
+
+    Returns:
+        `dataset.table` names as the config spells them, `cfg.fact` first.
+    """
+    found = {
+        f"{ds}.{name}".lower()
+        for ds, name in cube_client._FACT_REF.findall(compiled_sql)
+    }
+    return [cfg.fact, *(f for f in cfg.also_facts if f.lower() in found)]
+
+
+def fact_grain(
+    compiled_rows_sql: str, view: str, grain: list[str]
+) -> tuple[str, list[str]]:
+    """The table Cube's row SQL reads the grain from, and its column per member.
+
+    Only a plain column of a table in the outermost SELECT's `FROM` or `JOIN`
+    counts: the Cube side filters that table by those columns.
+
+    Args:
+        compiled_rows_sql: Cube's compiled SQL for the comparison's rows.
+        view: The Cube view, whose members Cube selects as `<view>__<member>`.
+        grain: The grain's Cube members, the student first.
+
+    Returns:
+        The `dataset.table` and, per member in order, its column there.
+
+    Raises:
+        NotCompared: The SQL cannot be parsed, a member is not a plain column
+            of a table, or the members sit on more than one table.
+    """
+    try:
+        tree = sqlglot.parse_one(compiled_rows_sql, read="bigquery")
+    except (ParseError, TokenError) as exc:
+        raise NotCompared("Cube's SQL could not be parsed") from exc
+    sources: dict[str, exp.Expr] = {}
+    projections: dict[str, exp.Expr] = {}
+    if isinstance(tree, exp.Select):
+        start = tree.args.get("from_")
+        reads = [start.this] if start else []
+        reads += [j.this for j in tree.args.get("joins") or []]
+        sources = {s.alias_or_name: s for s in reads}
+        projections = {p.alias_or_name: p.unalias() for p in tree.expressions}
+    tables: set[str] = set()
+    columns: list[str] = []
+    for m in grain:
+        column = projections.get(f"{view}__{m}")
+        source = sources.get(column.table) if isinstance(column, exp.Column) else None
+        # A subquery, a table with no dataset or a missing member is no fact.
+        if (
+            not isinstance(column, exp.Column)
+            or not isinstance(source, exp.Table)
+            or not source.db
+        ):
+            raise NotCompared(f"grain column {m} is an expression, not a fact column")
+        tables.add(f"{source.db}.{source.name}")
+        columns.append(column.name)
+    if len(tables) > 1:
+        raise NotCompared("the grain columns sit on more than one table")
+    return tables.pop(), columns
+
+
+def filtered_tables(
+    read: list[str], columns: list[str], columns_of: Callable[[str], set[str]]
+) -> list[str]:
+    """The tables Cube reads that carry every grain column.
+
+    A table without them, such as a goals table at school and grade grain, is
+    a lookup the matched rows cannot filter, so it is read as is.
+
+    Args:
+        read: The `dataset.table` names Cube's SQL reads (`cube_read_tables`).
+        columns: The grain's columns on the fact (`fact_grain`).
+        columns_of: A table's column names, by its `dataset.table`.
+
+    Returns:
+        The tables of `read`, in order, that carry every grain column.
+
+    Raises:
+        NotCompared: No table of `read` carries them.
+    """
+    # BigQuery column names ignore case.
+    need = {c.lower() for c in columns}
+    kept = [t for t in read if need <= {c.lower() for c in columns_of(t)}]
+    if not kept:
+        raise NotCompared("no table Cube reads carries the grain columns")
+    return kept
+
+
+def rewrite_cube_sql(
+    sql: str, tables: list[str], columns: list[str], dates: list[bool], *, keep: bool
+) -> str:
+    """Read each table of `tables` in Cube's pinned SQL through a filter.
+
+    Every reference keeps its own moment and alias, so the SQL around it reads
+    the filtered rows under the same name.
+
+    Args:
+        sql: Cube's SQL as `timetravel.as_of` and `repin` leave it.
+        tables: The `dataset.table` names to filter (`filtered_tables`).
+        columns: The grain's columns on each of them.
+        dates: Per column, whether it is a date grain.
+        keep: True keeps only the rows whose key `__matched` holds, so the
+            caller prefixes `matched_ctes`. False keeps every row, for the
+            self-check that the rewrite reproduces the run's cells.
+
+    Returns:
+        The rewritten SQL.
+
+    Raises:
+        NotCompared: A table is not read, or is read with no alias.
+    """
+    predicate = (
+        # trunk-ignore(bandit/B608): the grain columns are Cube's own fact columns
+        f"{key_sql(columns, dates)} IN (SELECT __key FROM __matched)"
+        if keep
+        else "TRUE"
+    )
+    for t in pipeline.unique(tables):
+        pattern = re.compile(
+            re.escape(f"`{PROJECT}.{t}`")
+            + r"(?P<alias>\s+AS\s+`?\w+`?)?\s+FOR SYSTEM_TIME AS OF TIMESTAMP "
+            + r"'(?P<at>[^']+)'",
+            re.IGNORECASE,
+        )
+        found = list(pattern.finditer(sql))
+        if not found:
+            raise NotCompared(f"Cube's SQL does not read {t}")
+        if any(m["alias"] is None for m in found):
+            # Cube's columns name the table, which a subquery would hide.
+            raise NotCompared(f"Cube's SQL reads {t} with no alias")
+        sql = pattern.sub(
+            lambda m, t=t: (
+                # trunk-ignore(bandit/B608): the table is the config's own and the timestamp Cube's pinned literal
+                f"(SELECT * FROM `{PROJECT}.{t}` FOR SYSTEM_TIME AS OF TIMESTAMP "
+                f"'{m['at']}' WHERE {predicate}){m['alias']}"
+            ),
+            sql,
+        )
+    return sql
+
+
+def cube_side_sql(
+    cfg: ViewConfig,
+    comparison: Comparison,
+    cuts: list[dict[str, Any]],
+    build: Build,
+    *,
+    ex: pipeline.Expand,
+    sides: pipeline.RowSides,
+    tables: list[str],
+    columns: list[str],
+    keep: bool,
+) -> str:
+    """Cube's cells per cut, from its compiled cell SQL as of the build end.
+
+    A table the dashboard's rows also read is read at the build start, as the
+    run's Cube rows read it, so one query reads each table at one moment.
+
+    Args:
+        cfg: The view's config.
+        comparison: A comparison with `rows`.
+        cuts: The cuts to compute, each tagged `__cut` with its label.
+        build: The run's moment.
+        ex: Compiles and expands the comparison's Cube SQL.
+        sides: The row SQL the run reconciled for it.
+        tables: The tables to filter (`filtered_tables`).
+        columns: The grain's columns on them (`fact_grain`).
+        keep: True reads only the matched rows, so the caller prefixes
+            `matched_ctes`; False reads every row, for the self-check.
+
+    Returns:
+        A `UNION ALL` of one SELECT per cut, Cube's members by name and the
+        measure as `value`.
+
+    Raises:
+        pipeline.Refusal: The comparison has no `rows`.
+        NotCompared: Cube's SQL cannot be rewritten (`rewrite_cube_sql`).
+    """
+    dates = pipeline.date_cubes(cfg)
+    grain_dates = [p.cube in dates for p in _rows(comparison).grain]
+    dims = [d.cube for d in comparison.dims]
+    parts = []
+    for cut in cuts:
+        query = pipeline.cell_query(cfg.view, comparison, cut)
+        at = ex.at(ex.cube_sql(query), build.end)
+        shared = sorted(at.tables & sides.dashboard.tables)
+        sql = repin(at.sql, shared, build.end, build.start)
+        sql = rewrite_cube_sql(sql, tables, columns, grain_dates, keep=keep)
+        cells = pipeline.wrap_cube(sql, cfg.view, dims, dates, comparison.measure)
+        label = pipeline.lit(pipeline.cut_label(cut))
+        # trunk-ignore(bandit/B608): the label is literal-escaped and the SQL the tool's own
+        parts.append(f"SELECT {label} AS __cut, * FROM (\n{cells}\n)")
     return "\nUNION ALL\n".join(parts)
