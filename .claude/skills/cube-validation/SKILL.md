@@ -369,8 +369,8 @@ refuses when the view's only run read another fact.
    verdicts stand and `sort` prints
    `Formula check of <id>: kept the stored check; this run fell back: <why>`.
    Any other reason (a cap, a BigQuery or Cube error) is never kept: fix it and
-   `sort` again. `decide` and `ask-owner` refuse a triage written before the
-   formula check existed; `sort` again.
+   `sort` again. `explain`, `decide` and `ask-owner` refuse a triage written
+   before the formula check existed; `sort` again.
 
    The trace leads. `sort` relaxes each step of the other side's SQL (WHERE and
    HAVING conjuncts, INNER JOINs, required LEFT JOINs, down 5 dbt models) and
