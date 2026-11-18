@@ -385,9 +385,11 @@ def calc_chain(name: str, formulas: dict[str, str]) -> list[str]:
     """`name` and every calculation it reads, through other calculations, each
     once, in the order reached.
 
-    Every bracketed name a calculation holds is followed, including one inside
-    a parameter ref, so a check over the chain reads too much rather than too
-    little.
+    Every bracketed name in `formulas` is followed, including one inside a
+    parameter ref when a calculation shares its name. A check that refuses on
+    what it finds (`_chain_unresolvable`) wants that reach; `columns_read`
+    passes formulas with parameter refs removed, since a column it names can
+    let a filter's values print.
 
     Args:
         name: The field's bare name.
@@ -412,13 +414,13 @@ def columns_read(name: str, formulas: dict[str, str]) -> tuple[str, ...]:
     """
     if name not in formulas:
         return (name,)
+    # A parameter's name can match a calculation's; never follow it there.
+    bare = {k: _PARAMETER_REF.sub("", v) for k, v in formulas.items()}
     return tuple(
         dict.fromkeys(
             ref
-            for current in calc_chain(name, formulas)
-            for ref in _BRACKETED.findall(
-                _PARAMETER_REF.sub("", formulas.get(current, ""))
-            )
+            for current in calc_chain(name, bare)
+            for ref in _BRACKETED.findall(bare.get(current, ""))
             if ref not in formulas
         )
     )

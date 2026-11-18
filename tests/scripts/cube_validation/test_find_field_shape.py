@@ -206,6 +206,25 @@ def test_shown_values_gives_a_quantitative_filter_s_bounds_and_mode():
     assert shown_values(non_null, "is_normed_scope", {}) == "non-null values only"
 
 
+# A calc that reads only a parameter, and a calc that shares the parameter's name.
+PARAMETER_TWIN = {
+    "Calc_A": "[Parameters].[Parameter 1]",
+    "Parameter 1": "[grade_level] + 0",
+}
+
+
+def test_columns_read_does_not_follow_a_parameter_into_a_same_named_calc():
+    assert columns_read("Calc_A", PARAMETER_TWIN) == ()
+
+
+def test_shown_values_hides_a_parameter_calc_whose_name_a_calc_shares():
+    el = _filter(
+        "none:Calc_A:nk",
+        "<groupfilter function='member' level='[Calc_A]' member='&quot;Student A&quot;' />",
+    )
+    assert shown_values(el, "Calc_A", PARAMETER_TWIN) is None
+
+
 def test_shown_values_hides_a_field_off_the_allowlist():
     el = _filter(
         "none:student_number:ok",
