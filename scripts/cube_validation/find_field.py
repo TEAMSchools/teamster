@@ -89,6 +89,9 @@ SHOWN_FILTER_FIELDS = frozenset(
     }
 )
 _BRACKETED = re.compile(r"\[([^\[\]]+)\]")
+# A calculation that hands its arguments to the database or an external script
+# returns values the bracketed columns do not account for.
+_PASS_THROUGH = re.compile(r"\b(RAWSQL\w*|SCRIPT_\w+)\s*\(", re.IGNORECASE)
 _PARAMETER_REF = re.compile(r"\[Parameters\]\.\[[^\[\]]+\]")
 
 
@@ -393,7 +396,7 @@ def columns_read(name: str, formulas: dict[str, str]) -> tuple[str, ...]:
     return tuple(dict.fromkeys(columns))
 
 
-def _chain_reads_viewer(name: str, formulas: dict[str, str]) -> bool:
+def _chain_unresolvable(name: str, formulas: dict[str, str]) -> bool:
     seen, todo = set(), [name]
     while todo:
         current = todo.pop()
@@ -401,7 +404,7 @@ def _chain_reads_viewer(name: str, formulas: dict[str, str]) -> bool:
             continue
         seen.add(current)
         formula = formulas.get(current, "")
-        if USER_FUNCTION.search(formula):
+        if USER_FUNCTION.search(formula) or _PASS_THROUGH.search(formula):
             return True
         todo += [r for r in _BRACKETED.findall(formula) if r in formulas]
     return False
@@ -414,12 +417,13 @@ def shown_values(
 
     Values print only when the field, or every column a calculation reads, is in
     `SHOWN_FILTER_FIELDS`. A calculation whose columns cannot be worked out, or
-    that reads the viewer's identity, stays hidden.
+    that reads the viewer's identity or passes columns to RAWSQL or a script, stays
+    hidden.
     """
     columns = columns_read(field_name, formulas)
     if not columns or not all(c in SHOWN_FILTER_FIELDS for c in columns):
         return None
-    if field_name in formulas and _chain_reads_viewer(field_name, formulas):
+    if field_name in formulas and _chain_unresolvable(field_name, formulas):
         return None
     if filter_el.get("class") == "quantitative":
         if mode := null_mode(filter_el):

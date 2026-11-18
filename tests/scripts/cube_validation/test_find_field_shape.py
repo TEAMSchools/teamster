@@ -217,3 +217,21 @@ def test_columns_read_follows_calcs_and_skips_parameters():
     formulas = {"A": "[B] + [x] + [Parameters].[P]", "B": "[y]"}
     assert columns_read("A", formulas) == ("x", "y")
     assert columns_read("plain", formulas) == ("plain",)
+
+
+def test_a_pass_through_calc_hides_its_values_even_over_allowlisted_columns():
+    formulas = {
+        "Calculation_1": "RAWSQL_STR('student_name || %1', [region])",
+        "Calculation_2": "script_str('return _arg1', [region])",
+        "Calculation_3": "[Calculation_1] = 'x'",
+        "Calculation_4": "RAWSQLAGG_REAL('SUM(%1)', [region])",
+    }
+
+    def calc(name):
+        return _filter(
+            f"none:{name}:nk",
+            f"<groupfilter function='member' level='[{name}]' member='true' />",
+        )
+
+    for name in formulas:
+        assert shown_values(calc(name), name, formulas) is None
