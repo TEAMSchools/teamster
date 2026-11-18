@@ -595,16 +595,17 @@ refuses when the view's only run read another fact.
    where they go. Write the approved items, owner items included, to
    `approved.json` in the session scratchpad: a JSON list of
    `{"id", "call", "reason", "task", "item", "cause"}`, where `item` is the
-   sorted item id, `id` a new decision id not already in the file, `task` empty
-   for `deliberate` and `domain_owner`, and `cause` the cause's words, needed
-   only on an item with several causes: give such an item one entry per cause,
-   each with its own call. Map items, items in `investigate` and cell sets are
-   not in it. Then `decide <file> <approved.json>`: an explained row group (a
-   stored explanation's, or a sheet filter's) becomes one `cause:` decision per
-   cause that has none yet, never a `group:` decision; a cause already decided
-   keeps its decision, so give every entry on one cause the same call. An item
-   is decided once every one of its causes is; approving it again changes
-   nothing. A formula item becomes a `formula: true` decision, which records in
+   sorted item id, `id` a new decision id not already in the file and never one
+   a deleted decision used, `task` empty for `deliberate` and `domain_owner`,
+   and `cause` the cause's words, needed only on an item with several causes:
+   give such an item one entry per cause, each with its own call. Map items,
+   items in `investigate` and cell sets are not in it. Then
+   `decide <file> <approved.json>`: an explained row group (a stored
+   explanation's, or a sheet filter's) becomes one `cause:` decision per cause
+   that has none yet, never a `group:` decision; a cause already decided keeps
+   its decision, so give every entry on one cause the same call. An item is
+   decided once every one of its causes is; approving it again changes nothing.
+   A formula item becomes a `formula: true` decision, which records in
    `fingerprints.matched_only` how many cells the formula check had filed in it
    (no key when none); other items take their key fields from the stub.
    Fingerprints come from the latest run and the explanation. Items still in
@@ -637,24 +638,26 @@ refuses when the view's only run read another fact.
    `fingerprints.matched_only` (absent reads as 0). When the check files more,
    the decision goes to re-confirm and the formula item opens again, since the
    new cells were never put to whoever answered: delete the decision, `reapply`
-   and `sort`, then `decide` the item again, which records the new count. Never
-   raise the count by hand. The loader refuses a `cells:` decision and every
-   renamed key, naming what to write instead. Never hand-write a `group:`
-   decision for an item `sort` holds in `investigate`: `decide` and `ask-owner`
-   refuse while one closes such an item. An explained cause takes
-   `cause: {side, label}` in place of `group`, `label` being the explanation's
-   words with each ID-shaped number written `<n>`, and `fingerprints` adds
-   `explanation`, the explanation's. It names no group: each `sort` re-runs the
-   explanations and marks an item `decided` when every one of its causes has a
-   decision that still holds, so a run never closes one. A decision whose SQL or
-   explanation changed decides nothing until re-approved through `decide`, never
-   by pasting new fingerprints; one the owner answered (`answer:`) is never
-   re-approved: delete it to ask again. `decide` writes these; do not hand-write
-   one. A cause decision and a `group` decision on one group with different
-   calls refuse, in `decide`, `reapply` and `ask-owner`, even after the `group`
-   decision closed the group. That check reads the closed groups the latest
-   `sort` classified, so run `sort --no-trace` after `explain` saves a new
-   explanation and before the next `decide`.
+   and `sort`, then `decide` the item again under a new decision id, never the
+   deleted one's, which records the new count. The owner's session skips a
+   question whose decision ids an earlier answers comment named, so a reused id
+   never reaches the owner. Never raise the count by hand. The loader refuses a
+   `cells:` decision and every renamed key, naming what to write instead. Never
+   hand-write a `group:` decision for an item `sort` holds in `investigate`:
+   `decide` and `ask-owner` refuse while one closes such an item. An explained
+   cause takes `cause: {side, label}` in place of `group`, `label` being the
+   explanation's words with each ID-shaped number written `<n>`, and
+   `fingerprints` adds `explanation`, the explanation's. It names no group: each
+   `sort` re-runs the explanations and marks an item `decided` when every one of
+   its causes has a decision that still holds, so a run never closes one. A
+   decision whose SQL or explanation changed decides nothing until re-approved
+   through `decide`, never by pasting new fingerprints; one the owner answered
+   (`answer:`) is never re-approved: delete it to ask again. `decide` writes
+   these; do not hand-write one. A cause decision and a `group` decision on one
+   group with different calls refuse, in `decide`, `reapply` and `ask-owner`,
+   even after the `group` decision closed the group. That check reads the closed
+   groups the latest `sort` classified, so run `sort --no-trace` after `explain`
+   saves a new explanation and before the next `decide`.
 
 8. `ask-owner <files> --domain <domain>` prints the validation issue's body: the
    numbered questions ready for the owner, each with the owner's hand checks,

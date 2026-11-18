@@ -5397,7 +5397,8 @@ def test_a_formula_decision_is_asked_again_once_the_check_files_more_cells(
     assert applied["quiet_cells"] == []
     assert [d["kind"] for d in applied["open_cells"]] == ["formula"]
 
-    # As the runbook says: delete it and decide the item again.
+    # As the runbook says: delete it and decide the item again under a new
+    # id, so the owner's session does not skip it as answered.
     path.write_text(text)
     with_it = load_view_config(path)
     lines = text.splitlines()
@@ -5417,8 +5418,12 @@ def test_a_formula_decision_is_asked_again_once_the_check_files_more_cells(
     ]
     assert cli.main(["reapply", str(path)]) == 0
     assert "ada-region:formula" in _sorted_items(path, tmp_path)
-    assert cli.main(["decide", str(path), str(approved)]) == 0
+    again = _approved(tmp_path, [{"id": "which-rate-2", "call": "domain_owner",
+                                  "reason": "Which rate is right?",
+                                  "item": "ada-region:formula"}])  # fmt: skip
+    assert cli.main(["decide", str(path), str(again)]) == 0
     (decision,) = [d for d in load_view_config(path).decisions if d.formula]
+    assert decision.id == "which-rate-2"
     assert decision.fingerprints["matched_only"] == "2"
 
 

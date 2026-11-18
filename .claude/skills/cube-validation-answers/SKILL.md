@@ -68,10 +68,10 @@ validation files or runs the validator, and neither does this session.
    4. What the validator found (`evidence`) and why it is the owner's call.
       Evidence that "differing cells hold no unmatched row" is a formula
       difference: both sides hold the same rows and compute the number
-      differently, so ask which calculation is right. A formula question can
-      come back after the owner answered it: the validator found more cells that
-      differ on rows both sides hold, which the earlier answer never saw. Ask it
-      again rather than skipping it as answered.
+      differently, so ask which calculation is right. A formula question the
+      owner answered before can come back under new decision ids: the validator
+      found more such cells, which the earlier answer never saw, so tell the
+      owner that before asking it.
    5. The owner's checks, one per `hand_checks` entry. The dashboard: the sheet
       (`sheet` in `workbook`), every filter to set there (`filters`), the cell
       to read (`dims`, or the total), and the number to expect (`dashboard`)
