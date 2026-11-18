@@ -114,6 +114,43 @@ def test_queries_default_to_utc_and_keep_an_explicit_zone():
     assert seen[1]["timezone"] == "America/New_York"
 
 
+def test_compiled_and_meta_are_asked_once_per_client():
+    calls = []
+
+    def fetch(method, url, headers, body=None):
+        calls.append(url)
+        if url.endswith("/meta"):
+            return {"cubes": [{"name": "v"}]}
+        return {"sql": {"sql": ["SELECT ?", ["a"]]}}
+
+    cube = Cube("https://c/api", "s", "x@y", fetch=fetch)
+    first = cube.compiled({"measures": ["m"]})
+    first.params.append("edited")
+
+    assert cube.compiled({"measures": ["m"]}) == Compiled("SELECT ?", ["a"], [])
+    cube.compiled({"measures": ["other"]})
+    cube.meta()["cubes"].clear()
+    assert cube.meta() == {"cubes": [{"name": "v"}]}
+    assert len(calls) == 3
+    # Another client asks Cube again.
+    Cube("https://c/api", "s", "x@y", fetch=fetch).compiled({"measures": ["m"]})
+    assert len(calls) == 4
+
+
+def test_a_compile_error_is_asked_again():
+    answers = iter(
+        [
+            {"sql": {"error": "no member m"}},
+            {"sql": {"sql": ["SELECT 1", []]}},
+        ]
+    )
+    cube = Cube("https://c/api", "s", "x@y", fetch=lambda *a, **k: next(answers))
+
+    with pytest.raises(CubeError, match="no member m"):
+        cube.compiled({"measures": ["m"]})
+    assert cube.compiled({"measures": ["m"]}) == Compiled("SELECT 1", [], [])
+
+
 def test_bind_escapes_quotes():
     assert bind(Compiled("x = ?", ["O'Neil"], [])) == "x = 'O\\'Neil'"
 
