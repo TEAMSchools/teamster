@@ -198,33 +198,25 @@ def fingerprint_data(comparison: Comparison) -> dict:
     return data
 
 
-# The keys that decide which rows a comparison reconciles and which of them
-# match; `dims` only group the rows, and the rest shape the cells.
-_POPULATION = (
-    "dashboard_view",
-    "rows",
-    "filters",
-    "defaults",
-    "cuts",
-    "scope",
-    "dashboard_filters",
-    "dashboard_columns",
-)
+def explanation_key(comparison: Comparison) -> str | None:
+    """A key shared by the comparisons that read one model at one row grain, or None.
 
-
-def row_population(comparison: Comparison) -> str | None:
-    """A key shared by the comparisons that reconcile the same rows, or None.
-
-    Comparisons with the same key usually hold the same unmatched rows,
-    grouped by their own `dims`, so one explanation can classify them all. A
-    dim from another cube adds a join that can drop or repeat rows; an
-    explanation run on each comparison's own rows refuses then, as for any
-    explanation.
+    Comparisons with the same key can share one stored explanation, which each
+    runs on its own saved rows: filters, defaults, cuts, scope and dashboard
+    columns change which rows a comparison holds, not the model's logic that
+    explains them. A comparison without `rows` has no key.
     """
     if comparison.rows is None:
         return None
-    data = asdict(comparison)
-    return json.dumps([data[k] for k in _POPULATION], sort_keys=True, default=str)
+    return json.dumps(
+        [
+            comparison.dashboard_view,
+            [(p.cube, p.dashboard) for p in comparison.rows.grain],
+            list(comparison.rows.values),
+        ],
+        sort_keys=True,
+        default=str,
+    )
 
 
 @dataclass(frozen=True)

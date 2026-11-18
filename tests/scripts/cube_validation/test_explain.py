@@ -1416,16 +1416,80 @@ SIBLING = Comparison(
 CFG2 = ViewConfig(view="v", fact="m.fct", comparisons=[COMPARISON, SIBLING])
 
 
-def test_comparisons_that_differ_only_in_dims_share_a_row_population():
+def test_comparisons_on_one_model_and_grain_share_an_explanation():
+    other = replace(
+        COMPARISON,
+        id="b",
+        dims=[ColumnPair("region", "region")],
+        filters={"grade": ["5"]},
+        defaults={"year": "2026"},
+        scope=[{"school": ["X"]}],
+        cuts=[{}],
+        dashboard_columns={"x": "1"},
+    )
 
-    by_region = replace(COMPARISON, id="r", dims=[ColumnPair("region", "region")])
-    narrower = replace(COMPARISON, id="n", scope=[{"school": ["X"]}])
+    key = explain.explanation_key(COMPARISON)
+    assert key is not None and explain.explanation_key(other) == key
+    cfg = ViewConfig("v", "m.fct", [COMPARISON, other])
+    assert explain.siblings(cfg, COMPARISON) == [other]
 
-    key = explain.row_population(COMPARISON)
-    assert key is not None and explain.row_population(by_region) == key
-    assert explain.row_population(narrower) != key
-    assert explain.row_population(replace(COMPARISON, rows=None)) is None
-    assert explain.siblings(CFG2, COMPARISON) == [SIBLING]
+
+def test_another_grain_or_model_does_not_share():
+    key = explain.explanation_key(COMPARISON)
+    other_values = replace(
+        COMPARISON, id="v", rows=replace(ROWS, values=[ColumnPair("x", "y")])
+    )
+    other_grain = replace(
+        COMPARISON, id="g", rows=replace(ROWS, grain=[ColumnPair("student", "lea")])
+    )
+    other_model = replace(COMPARISON, id="m", dashboard_view="other")
+
+    for c in (other_values, other_grain, other_model):
+        assert explain.explanation_key(c) != key
+    cfg = ViewConfig("v", "m.fct", [COMPARISON, other_values, other_grain, other_model])
+    assert explain.siblings(cfg, COMPARISON) == []
+    assert explain.explanation_key(replace(COMPARISON, rows=None)) is None
+
+
+def test_a_shared_explanation_runs_on_each_comparison_s_own_rows(
+    duck, tmp_path, monkeypatch, offline
+):
+    # The sibling reads another filter's rows: Cube also holds student 9, whom
+    # the explanation's join to the dashboard cannot place.
+    _tables(duck)
+    duck.table(
+        "cube_t2",
+        "lea BIGINT, aid VARCHAR, abbreviation VARCHAR",
+        [*CUBE_ROWS, (9, "z", "X")],
+    )
+    cube2 = CUBE.replace("cube_t", "cube_t2")
+    sides2 = replace(
+        SIDES,
+        cube=AsOf(cube2, frozenset({"m.cube_t2"}), frozenset()),
+        cube_rows_sql=cube2,
+    )
+    monkeypatch.setattr(
+        pipeline,
+        "row_sides",
+        lambda cfg, c, **k: sides2 if c.id == "mastery-b" else SIDES,
+    )
+    sibling = replace(SIBLING, filters={"grade": ["5"]})
+    cfg = ViewConfig("v", "m.fct", [COMPARISON, sibling])
+    run = _run(
+        [_group(3), Group("mastery-b", (("abbreviation", "X"),), "cube_only", 4, 4)]
+    )
+    directory, _ = _explanation(tmp_path)
+    wh = Wh(duck)
+    _save(duck, wh, run, cfg)
+
+    ran = explain.run_stored(cfg, run, directory, wh=wh, cube=None)
+
+    (own,) = [r for r in ran if r.items[0][1].comparison_id == "mastery"]
+    (shared,) = [r for r in ran if r.items[0][1].comparison_id == "mastery-b"]
+    assert all(o.explained for o in own.found.values())
+    assert shared.found is not None
+    assert [o.unexplained for o in shared.found.values()] == [1]
+    assert not any(o.explained for o in shared.found.values())
 
 
 def _items2(run):
@@ -1495,9 +1559,7 @@ def test_confirm_also_proves_the_comparisons_with_the_same_rows(
 
     items = json.loads(path.read_text())["items"]
     assert {i["suggestion"] for i in items} == {"cause"}
-    assert (
-        "Also mastery-b (same rows): 1 of 1 items explained." in capsys.readouterr().out
-    )
+    assert "Also mastery-b: 1 of 1 items explained." in capsys.readouterr().out
     proofs = tmp_path / "validation" / "explanations" / "v"
     assert [p.name for p in proofs.iterdir()] == ["mastery__cube_only.sql"]
 
@@ -2018,15 +2080,40 @@ def test_the_explanations_folder_sits_beside_the_validation_file(tmp_path):
     assert found == tmp_path / "explanations" / "v"
 
 
-def test_unmatched_carries_moved_and_the_dashboard_cell(duck, tmp_path, offline):
-    _tables(duck)
-    run = _run([_group(3, bucket="dims_differ")])
-    wh = _saved_wh(duck, run)
-    table = explain.require_saved(wh, CFG, run, COMPARISON)
-    ctes, select = explain.unmatched_sql(COMPARISON, "dims_differ", [], table)
+def test_unmatched_carries_moved_and_the_dashboard_cell(duck):
+    # Row 1 sits in school X for Cube and Y for the dashboard; row 2 in X on both.
+    duck.table(
+        "saved_t",
+        "bucket VARCHAR, __row BIGINT, abbreviation VARCHAR, __moved BOOLEAN, "
+        "__d_abbreviation VARCHAR, __gc0 BIGINT, __gc1 VARCHAR, __gd0 BIGINT, "
+        "__gd1 VARCHAR, __rn BIGINT, __ck0 BOOLEAN, __dk0 BOOLEAN",
+        [("dims_differ", 1, "X", True, "Y", 1, "a", 1, "a", 1, True, True),
+         ("dims_differ", 2, "X", False, None, 2, "b", 2, "b", 1, True, True)],
+    )  # fmt: skip
+    ctes, select = explain.unmatched_sql(COMPARISON, "dims_differ", [], "saved_t")
     assert "__moved" in select and "__d_abbreviation" in select
+
     rows = duck.rows(
-        f"{ctes}\nSELECT COALESCE(u.__d_abbreviation, u.abbreviation) AS d "
-        f"FROM ({select}) AS u"
+        f"{ctes}\nSELECT u.__row AS r, u.__moved AS moved, "
+        "COALESCE(u.__d_abbreviation, u.abbreviation) AS d "
+        f"FROM ({select}) AS u ORDER BY u.__row"
     )
-    assert isinstance(rows, list)
+
+    assert [(r["r"], bool(r["moved"]), r["d"]) for r in rows] == [
+        (1, True, "Y"),
+        (2, False, "X"),
+    ]
+
+
+def test_unmatched_without_group_by_dims_has_no_moved_or_dashboard_cell(duck):
+    ungrouped = replace(COMPARISON, dims=[])
+    duck.table(
+        "saved_t",
+        "bucket VARCHAR, __row BIGINT, __gc0 BIGINT, __gc1 VARCHAR, __gd0 BIGINT, "
+        "__gd1 VARCHAR, __rn BIGINT, __ck0 BOOLEAN, __dk0 BOOLEAN",
+        [("cube_only", 1, 1, "a", 1, "a", 1, True, True)],
+    )  # fmt: skip
+
+    _, select = explain.unmatched_sql(ungrouped, "cube_only", [], "saved_t")
+
+    assert "__moved" not in select and "__d_" not in select

@@ -11,15 +11,14 @@ comment block that maps each bucket to its side and plain words:
 
 The query reads the run's unmatched rows of its comparison and bucket through
 the placeholder `{unmatched}`, which the tool fills from the run's reconcile:
-`__row` (a row id), `item_key`, `side`, the group-by columns, with group-by
-columns `__moved` and `__d_<column>` (the dashboard's value of a column that
-differs between the sides, else NULL: read `COALESCE(u.__d_x, u.x)` for the
-dashboard's cell), the grain under its Cube names, and `__rn` (the row's
-duplicate number on its grain). It
-returns exactly `__row, cause`, one row per unmatched row. The tool counts:
-its own outer query joins the explanation back to `{unmatched}` and returns only
-item keys, cause literals and counts, refusing a row the explanation drops or
-repeats and a cause that is no string literal of the explanation. Every `sort`
+`__row` (a row id), `item_key`, `side`, the group-by columns, `__moved`, and
+`__d_<column>` per group-by column (NULL unless that column differs between the
+sides, so an explanation reads `COALESCE(u.__d_x, u.x)` for the dashboard's
+value), the grain under its Cube names, and `__rn` (the row's duplicate number
+on its grain). It returns exactly `__row, cause`, one row per unmatched row. The
+tool counts: its own outer query joins the explanation back to `{unmatched}` and
+returns only item keys, cause literals and counts, refusing a row the explanation
+drops or repeats and a cause that is no string literal of the explanation. Every `sort`
 re-runs every stored explanation on the current run's rows; an item whose rows an
 explanation fully explains (no `UNEXPLAINED` row) goes to `cause`. A cell set goes
 to `cause` when every group with a row in each differing cell is in `cause` or
@@ -54,7 +53,7 @@ from . import (
     trace,
 )
 from .bq import CostCapError, ViewHistoryError, Warehouse
-from .config import Comparison, ViewConfig, id_like, mask_digits, row_population
+from .config import Comparison, ViewConfig, explanation_key, id_like, mask_digits
 from .cube_client import Cube, CubeError, CubeRefusal, network_schools
 from .moment import Build, MomentError, pick_moment
 from .reconcile import Group
@@ -707,11 +706,10 @@ def unmatched_sql(
         SELECT that returns `__row` (a row id from the grain keys and the
         duplicate number), `item_key` (the triage item id of the row's group,
         NULL for a row no open group holds), `side` (the side holding the row),
-        the group-by columns as text, with group-by columns `__moved` (the row
-        sits in another cell on each side) and `__d_<column>` per column (the
-        dashboard's value, NULL unless that column differs between the sides,
-        so an explanation reads `COALESCE(u.__d_x, u.x)` for the dashboard's
-        cell), the grain under its Cube names (as the side holding the row
+        the group-by columns as text, `__moved` (the row sits in another cell
+        on each side), and `__d_<column>` per group-by column (NULL unless that
+        column differs between the sides, so an explanation reads
+        `COALESCE(u.__d_x, u.x)` for the dashboard's value), the grain under its Cube names (as the side holding the row
         types it), and `__rn`. A `value_differs` row's side reads `both`.
     """
     if comparison.rows is None:
@@ -1523,12 +1521,13 @@ class Ran:
 
 
 def siblings(cfg: ViewConfig, comparison: Comparison) -> list[Comparison]:
-    """The other comparisons that reconcile the same rows (`row_population`)."""
-    key = row_population(comparison)
+    """The other comparisons that read the same model at the same row grain
+    (`explanation_key`)."""
+    key = explanation_key(comparison)
     return [
         c
         for c in cfg.comparisons
-        if key is not None and c.id != comparison.id and row_population(c) == key
+        if key is not None and c.id != comparison.id and explanation_key(c) == key
     ]
 
 
@@ -1563,8 +1562,8 @@ def run_stored(
     """Run every stored explanation of the view on the run's saved rows. Call inside
     `wh.budget`.
 
-    An explanation also runs on each comparison that reconciles the same rows and
-    has no explanation of its own for the bucket (`siblings`). Each pair's outcome
+    An explanation also runs on each comparison that reads the same model at the
+    same row grain and has no explanation of its own for the bucket (`siblings`). Each pair's outcome
     is kept in `progress_dir` (`explain_progress`) as it finishes, and a later triage
     reuses one whose explanation and open items still match, once the comparison's
     SQL still matches the run (`pipeline.row_sides`, compile only) and its
@@ -1964,8 +1963,8 @@ def explain(
             students,
             table=require_saved(wh, cfg, run, target),
         )
-        # The comparisons holding the same rows: the explanation classifies theirs
-        # too, unless one has its own. A refusal there keeps this explanation.
+        # The comparisons on the same model and grain: the explanation classifies
+        # theirs too, unless one has its own. A refusal there keeps this explanation.
         shared = [
             r
             for c in _shared(cfg, stored.parent, proof, target)
@@ -1990,7 +1989,7 @@ def explain(
             print(f"Also {sibling}: not run; see above.")
             continue
         n = sum(1 for o in r.found.values() if o.explained)
-        print(f"Also {sibling} (same rows): {n} of {len(r.found)} items explained.")
+        print(f"Also {sibling}: {n} of {len(r.found)} items explained.")
         reported |= set(r.found)
     _report(all_items, wanted or reported)
     for item_id, open_cells in left.items():

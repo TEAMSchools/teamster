@@ -3723,14 +3723,14 @@ def test_dashboard_columns_reach_every_dashboard_read(tmp_path):
     assert derived in pipeline.sheet_query(cfg, comparison, {})
 
 
-def test_dashboard_columns_change_the_row_population(tmp_path):
+def test_dashboard_columns_do_not_change_the_explanation_key(tmp_path):
     # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-    from cube_validation.config import row_population
+    from cube_validation.config import explanation_key
 
     plain = load_view_config(_file(tmp_path, YML)).comparisons[0]
     computed = load_view_config(_file(tmp_path, COMPUTED)).comparisons[0]
 
-    assert row_population(plain) != row_population(computed)
+    assert explanation_key(plain) == explanation_key(computed)
 
 
 # --- run: missing cuts and filters ----------------------------------------------
