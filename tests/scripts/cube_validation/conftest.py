@@ -23,6 +23,7 @@ if "cube_validation" not in sys.modules:
 @pytest.fixture(autouse=True)
 def _cache_in_tmp(monkeypatch, tmp_path):
     """Keep every test off the analyst's own cache and spend ledger."""
+    # trunk-ignore(pyright/reportAttributeAccessIssue): registered above, at import
     from cube_validation import cli, report
 
     monkeypatch.setattr(cli, "cache_root", lambda: tmp_path / "cache")
