@@ -981,15 +981,66 @@ def test_a_changed_workbook_skips_only_its_comparisons(fakes, tmp_path, capsys):
 
 def test_compare_skips_a_sheet_on_no_published_dashboard(fakes, tmp_path, capsys):
     _hide_rate_by_region(fakes.tbl)
+    # c2's sheet shows in its own window, so it publishes.
+    fakes.tbl.twb = fakes.tbl.twb.replace(
+        "  </windows>",
+        "    <window class='worksheet' name='Rate Copy' />\n  </windows>",
+    )
+    path = _two(
+        tmp_path, lambda e: e.replace("sheet: Rate by Region", "sheet: Rate Copy")
+    )
 
-    assert cli.main(["compare", str(_two(tmp_path))]) == 1
+    assert cli.main(["compare", str(path)]) == 0
 
     out = capsys.readouterr().out
     assert (
         "Skipping c1: not on a published dashboard; set unpublished: true to "
         "compare it anyway"
     ) in out
-    assert _scripts_for(fakes.bq) == []
+    assert "Skipping c2" not in out
+    assert _scripts_for(fakes.bq) == ["c2"]
+
+
+def test_compare_downloads_a_republished_workbook_once(fakes, tmp_path, capsys):
+    path = _republished(fakes, tmp_path)
+    head, rest = path.read_text().split("  - id: ada-region\n", 1)
+    path.write_text(head + f"  - id: c1\n{rest}" + f"  - id: c2\n{rest}")
+
+    assert cli.main(["compare", str(path)]) == 0, capsys.readouterr().err
+
+    # Both checks read the one republished file.
+    assert fakes.tbl.downloads == 1
+    assert _scripts_for(fakes.bq) == ["c1", "c2"]
+
+
+def test_compare_asks_tableau_once_for_a_workbook_that_errs(
+    fakes, tmp_path, monkeypatch, capsys
+):
+    asked = []
+
+    def answer(luid):
+        asked.append(luid)
+        raise TSC.ServerResponseError("404", "Resource Not Found", "gone")
+
+    monkeypatch.setattr(fakes.tbl, "workbook_updated", answer)
+
+    assert cli.main(["compare", str(_two(tmp_path))]) == 1
+
+    out = capsys.readouterr().out
+    for cid in ("c1", "c2"):
+        assert (
+            f"Skipping {cid}: the workbook could not be checked: Tableau answered "
+            "404 Resource Not Found"
+        ) in out
+    assert asked == ["wb-1"]
+
+
+def test_unpublished_sheets_leaves_a_comparison_with_no_sheet_alone(fakes, tmp_path):
+    path = _file(tmp_path, YML.replace("    sheet: Rate by Region\n", ""))
+    (c,) = load_view_config(path).comparisons
+    assert c.sheet is None and c.rebuild_check is not None
+
+    assert rebuild.unpublished_sheets([c], tbl=fakes.tbl) == {}
 
 
 def test_compare_downloads_no_workbook_for_a_check_that_recorded_published(

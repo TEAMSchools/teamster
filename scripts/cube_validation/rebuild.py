@@ -782,12 +782,65 @@ def _print_failures(
         print(f"  Full list: {path}")
 
 
+class WorkbookCache:
+    """Each workbook's publish time and file, asked of Tableau once.
+
+    Share one across `workbook_check` and `unpublished_sheets` so a compare
+    run downloads a republished workbook once. A Tableau error is kept as
+    well, so later comparisons on that workbook read it without asking again.
+    """
+
+    def __init__(self, tbl: tableau.Tableau) -> None:
+        self.tbl = tbl
+        self._updated: dict[str, datetime | TSC.ServerResponseError] = {}
+        self._twbs: dict[str, str | TSC.ServerResponseError] = {}
+
+    def updated(self, luid: str) -> datetime:
+        """The workbook's publish time.
+
+        Raises:
+            TSC.ServerResponseError: Tableau erred on this workbook, now or
+                on an earlier ask.
+        """
+        if luid not in self._updated:
+            try:
+                self._updated[luid] = self.tbl.workbook_updated(luid)
+            except TSC.ServerResponseError as exc:
+                self._updated[luid] = exc
+        got = self._updated[luid]
+        if isinstance(got, TSC.ServerResponseError):
+            raise got
+        return got
+
+    def twb(self, luid: str) -> str:
+        """The workbook's XML.
+
+        Raises:
+            TSC.ServerResponseError: Tableau erred on this workbook's download,
+                now or on an earlier ask.
+        """
+        if luid not in self._twbs:
+            try:
+                self._twbs[luid] = self.tbl.download_twb(luid)
+            except TSC.ServerResponseError as exc:
+                self._twbs[luid] = exc
+        got = self._twbs[luid]
+        if isinstance(got, TSC.ServerResponseError):
+            raise got
+        return got
+
+    def downloaded(self, luid: str) -> bool:
+        """True when the workbook's XML is already in hand."""
+        return isinstance(self._twbs.get(luid), str)
+
+
 def workbook_check(
     cfg: ViewConfig,
     comparisons: list[Comparison],
     *,
     tbl: tableau.Tableau,
     cube: Cube,
+    workbooks: WorkbookCache | None = None,
 ) -> list[str]:
     """List the comparisons whose sheet or Cube members changed since their
     rebuild check.
@@ -806,18 +859,20 @@ def workbook_check(
         comparisons: The comparisons to check.
         tbl: Tableau, for each workbook's publish time and file.
         cube: Cube, for its `/meta` members.
+        workbooks: The run's shared workbook cache; a new one on `tbl` when
+            omitted.
 
     Returns:
         One line per problem, each starting with its comparison's id and
         ending in what to do.
     """
+    workbooks = WorkbookCache(tbl) if workbooks is None else workbooks
     proven = [c for c in comparisons if c.rebuild_check is not None]
     stale = [
         f"{line}, which Cube's model no longer has; fix the mapping and re-run "
         "`rebuild-sheet`"
         for line in missing_members(cfg, proven, cube.meta())
     ]
-    twbs: dict[str, str] = {}
     for comparison in comparisons:
         if not comparison.workbook:
             continue
@@ -826,10 +881,11 @@ def workbook_check(
             stale.append(f"{comparison.id}: no rebuild check")
             continue
         try:
-            updated = tbl.workbook_updated(comparison.workbook)
-            if comparison.workbook not in twbs and proof.workbook_updated_at:
-                if updated > datetime.fromisoformat(proof.workbook_updated_at):
-                    twbs[comparison.workbook] = tbl.download_twb(comparison.workbook)
+            updated = workbooks.updated(comparison.workbook)
+            republished = bool(proof.workbook_updated_at) and updated > (
+                datetime.fromisoformat(proof.workbook_updated_at or "")
+            )
+            twb = workbooks.twb(comparison.workbook) if republished else ""
         except TSC.ServerResponseError as exc:
             # One workbook's error is its comparisons' alone.
             stale.append(
@@ -849,7 +905,7 @@ def workbook_check(
             f"workbook published {updated.isoformat()}, after the rebuild check's "
             f"{proof.workbook_updated_at}"
         )
-        twb, sheet = twbs[comparison.workbook], comparison.sheet or ""
+        sheet = comparison.sheet or ""
         try:
             formulas = tableau.formula_fingerprint(twb, sheet)
             sources = tableau.source_fingerprint(twb, sheet)
@@ -882,47 +938,57 @@ def workbook_check(
 
 
 def unpublished_sheets(
-    comparisons: list[Comparison], *, tbl: tableau.Tableau
+    comparisons: list[Comparison],
+    *,
+    tbl: tableau.Tableau,
+    workbooks: WorkbookCache | None = None,
 ) -> dict[str, str]:
     """Name the comparisons whose sheet no published dashboard shows.
 
-    A comparison with `unpublished: true` is never listed. A workbook is
-    downloaded once, and only when one of its comparisons' check does not
-    record that the sheet is published, or the workbook was published after
-    the check.
+    A comparison with `unpublished: true` or no `sheet` is never listed. A
+    workbook is downloaded once, and only when one of its comparisons' check
+    does not record that the sheet is published, or the workbook was
+    published after the check.
 
     Args:
         comparisons: The comparisons to check.
         tbl: Tableau, for each workbook's publish time and file.
+        workbooks: The run's shared workbook cache; a new one on `tbl` when
+            omitted.
 
     Returns:
         Each such comparison's id and why it is skipped; a workbook Tableau
         errs on reads `TABLEAU_ANSWERED` and its error.
     """
+    workbooks = WorkbookCache(tbl) if workbooks is None else workbooks
     skipped: dict[str, str] = {}
-    twbs: dict[str, str] = {}
     for comparison in comparisons:
         proof = comparison.rebuild_check
-        if comparison.unpublished or not comparison.workbook or proof is None:
+        if (
+            comparison.unpublished
+            or not comparison.workbook
+            or not comparison.sheet
+            or proof is None
+        ):
             continue
         luid = comparison.workbook
         try:
-            if luid not in twbs:
+            if not workbooks.downloaded(luid):
                 at = proof.workbook_updated_at
                 if (
                     proof.published is True
                     and at
-                    and tbl.workbook_updated(luid) <= datetime.fromisoformat(at)
+                    and workbooks.updated(luid) <= datetime.fromisoformat(at)
                 ):
                     continue
-                twbs[luid] = tbl.download_twb(luid)
+            twb = workbooks.twb(luid)
         except TSC.ServerResponseError as exc:
             skipped[comparison.id] = (
                 f"the workbook could not be checked: {TABLEAU_ANSWERED} "
                 f"{exc.code} {exc.summary}"
             )
             continue
-        if (comparison.sheet or "") not in tableau.published_sheets(twbs[luid]):
+        if comparison.sheet not in tableau.published_sheets(twb):
             skipped[comparison.id] = (
                 f"{tableau.NOT_PUBLISHED}; set unpublished: true to compare it anyway"
             )

@@ -60,6 +60,7 @@ from .pipeline import (
 )
 from .rebuild import (
     TABLEAU_ANSWERED,
+    WorkbookCache,
     missing_members,
     unpublished_sheets,
     workbook_check,
@@ -604,7 +605,8 @@ def _early_skips(
                 )
             )
     remaining = left()
-    stale = workbook_check(cfg, remaining, tbl=tbl, cube=cube)
+    workbooks = WorkbookCache(tbl)
+    stale = workbook_check(cfg, remaining, tbl=tbl, cube=cube, workbooks=workbooks)
     for c in remaining:
         if lines := [
             s.removeprefix(f"{c.id}: ") for s in stale if s.startswith(f"{c.id}: ")
@@ -615,7 +617,7 @@ def _early_skips(
                 else "workbook changed since its rebuild check"
             )
             skips.append(Skip(c.id, f"{what}: {'; '.join(lines)}"))
-    for cid, why in unpublished_sheets(left(), tbl=tbl).items():
+    for cid, why in unpublished_sheets(left(), tbl=tbl, workbooks=workbooks).items():
         skips.append(Skip(cid, why))
     return skips
 

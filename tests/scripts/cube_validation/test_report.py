@@ -510,6 +510,26 @@ def test_review_question_says_its_sheet_is_on_no_published_dashboard():
     assert "no published dashboard" not in other
 
 
+def test_group_and_cause_questions_say_their_sheet_is_on_no_published_dashboard():
+    # A domain-owner row group on `enrollment`.
+    group = render_review_issue(
+        "Registrar", [_run()], unpublished={"enrollment_view": {"enrollment"}}
+    )
+    (line,) = [x for x in group.splitlines() if "Q1." in x]
+    assert line.endswith(" Note: `enrollment`'s sheet is on no published dashboard.")
+
+    run = _run(applied=Applied())
+    causes = _cause_asks(["Team filter was set by hand"])
+    cause = render_review_issue(
+        "Registrar",
+        [run],
+        causes=causes,
+        unpublished={"enrollment_view": {"cmp-1"}},
+    )
+    (line,) = [x for x in cause.splitlines() if "Q1." in x]
+    assert line.endswith(" Note: `cmp-1`'s sheet is on no published dashboard.")
+
+
 def test_a_formula_decision_reads_as_such_locally():
     d = _formula("formula-1", "enrollment", "owner picks codes")
     text = render_local(_run(applied=Applied(quiet_cells=[(d, TARDY_DIFF)])))
