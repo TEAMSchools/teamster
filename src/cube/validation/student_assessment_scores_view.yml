@@ -1312,406 +1312,306 @@ comparisons:
         IEP Status: iep_status
         School Level: school_level
 decisions:
-  - {
-      id: ddi-001,
-      missing_filter: "# Students Complete - Assessment ID",
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-002,
-      missing_filter: Administered At,
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-003,
-      missing_filter: C 504 Status,
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-004,
-      missing_filter: Cohort,
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-005,
-      missing_filter: Course Teacher Name,
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-006,
-      missing_filter: Dashboard View Filter,
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-007,
-      missing_filter: Dibels Most Recent Composite,
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-008,
-      missing_filter: Discipline,
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-009,
-      missing_filter: Exclude Future Assessments,
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-010,
-      missing_filter: Grade Level,
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-011,
-      missing_filter: Grade/Subject,
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-012,
-      missing_filter: Head Of School,
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-013,
-      missing_filter: IEP Status,
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-014,
-      missing_filter: Is Foundations,
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-015,
-      missing_filter: Is Mastery Int - Custom,
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-016,
-      missing_filter: Is Replacement,
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-017,
-      missing_filter: Lastfirst,
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-018,
-      missing_filter: Lep Status,
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-019,
-      missing_filter: Ml Status,
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-020,
-      missing_filter: Module Code,
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-021,
-      missing_filter: Module Type,
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-022,
-      missing_filter: NJ Tutoring,
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-023,
-      missing_filter: Region,
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-024,
-      missing_filter: Response Type,
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-025,
-      missing_filter: School,
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-026,
-      missing_filter: School Level,
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-027,
-      missing_filter: School Level (School),
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-028,
-      missing_filter: Schoolid,
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-029,
-      missing_filter: Scope,
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-030,
-      missing_filter: Select Chart Type,
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-031,
-      missing_filter: Standard,
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-032,
-      missing_filter: Standard Domain,
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-033,
-      missing_filter: Student Tier,
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-034,
-      missing_filter: Subject Area,
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-035,
-      missing_filter: Subject Area (group),
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-036,
-      missing_filter: Teacher Name,
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-037,
-      missing_filter: Team,
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-038,
-      missing_filter: Term,
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-039,
-      missing_filter: Territory,
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-040,
-      missing_filter: Title,
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-041,
-      missing_filter: View by - O3 Standards,
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-042,
-      missing_filter: Week Start Monday,
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-043,
-      missing_filter: Week of,
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-044,
-      missing_filter: dibels_most_recent_composite,
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-045,
-      missing_filter: gifted_and_talented,
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-046,
-      missing_filter: head_of_school,
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-047,
-      missing_filter: is_low_25_fl,
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-048,
-      missing_filter: is_sipps,
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-049,
-      missing_filter: nj_student_tier,
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
-  - {
-      id: ddi-050,
-      missing_filter: state_test_proficiency,
-      call: deliberate,
-      reason:
-        "The sheet's filter keeps every value, so it changes no number in the
-        compared cells.",
-    }
+  - id: ddi-001
+    missing_filter: "# Students Complete - Assessment ID"
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-002
+    missing_filter: Administered At
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-003
+    missing_filter: C 504 Status
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-004
+    missing_filter: Cohort
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-005
+    missing_filter: Course Teacher Name
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-006
+    missing_filter: Dashboard View Filter
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-007
+    missing_filter: Dibels Most Recent Composite
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-008
+    missing_filter: Discipline
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-009
+    missing_filter: Exclude Future Assessments
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-010
+    missing_filter: Grade Level
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-011
+    missing_filter: Grade/Subject
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-012
+    missing_filter: Head Of School
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-013
+    missing_filter: IEP Status
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-014
+    missing_filter: Is Foundations
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-015
+    missing_filter: Is Mastery Int - Custom
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-016
+    missing_filter: Is Replacement
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-017
+    missing_filter: Lastfirst
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-018
+    missing_filter: Lep Status
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-019
+    missing_filter: Ml Status
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-020
+    missing_filter: Module Code
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-021
+    missing_filter: Module Type
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-022
+    missing_filter: NJ Tutoring
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-023
+    missing_filter: Region
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-024
+    missing_filter: Response Type
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-025
+    missing_filter: School
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-026
+    missing_filter: School Level
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-027
+    missing_filter: School Level (School)
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-028
+    missing_filter: Schoolid
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-029
+    missing_filter: Scope
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-030
+    missing_filter: Select Chart Type
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-031
+    missing_filter: Standard
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-032
+    missing_filter: Standard Domain
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-033
+    missing_filter: Student Tier
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-034
+    missing_filter: Subject Area
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-035
+    missing_filter: Subject Area (group)
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-036
+    missing_filter: Teacher Name
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-037
+    missing_filter: Team
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-038
+    missing_filter: Term
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-039
+    missing_filter: Territory
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-040
+    missing_filter: Title
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-041
+    missing_filter: View by - O3 Standards
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-042
+    missing_filter: Week Start Monday
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-043
+    missing_filter: Week of
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-044
+    missing_filter: dibels_most_recent_composite
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-045
+    missing_filter: gifted_and_talented
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-046
+    missing_filter: head_of_school
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-047
+    missing_filter: is_low_25_fl
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-048
+    missing_filter: is_sipps
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-049
+    missing_filter: nj_student_tier
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
+  - id: ddi-050
+    missing_filter: state_test_proficiency
+    call: deliberate
+    reason:
+      The sheet's filter keeps every value, so it changes no number in the
+      compared cells.
   - id: ddi-051
     comparison: grade_goal_distance__grid_grade
     cause: { side: dashboard, label: sheet filter is_mastery_int }
@@ -1754,14 +1654,12 @@ decisions:
         dashboard: 7f7454e8d2e84f1205c60a762c38c5fbc9b21ffe1e5e3ac5db035cccb78b2572,
         explanation: 69df2e1acf0d08dc8a2ccb8ff6707534f2eaf6fa28557d806527e930eb2fcafb,
       }
-  - {
-      id: ddi-054,
-      missing_filter: "% Completion",
-      call: domain_owner,
-      reason:
-        "The completion sheet hides module groups under 75% completion; Cube
-        shows every group. Which completion rate is the KPI?",
-    }
+  - id: ddi-054
+    missing_filter: "% Completion"
+    call: domain_owner
+    reason:
+      The completion sheet hides module groups under 75% completion; Cube shows
+      every group. Which completion rate is the KPI?
   - id: ddi-055
     comparison: pct_taken__assessments_over_time
     formula: true
