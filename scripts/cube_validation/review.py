@@ -32,7 +32,9 @@ def ask_owner(
     and to cause decisions by the causes the sort explained. What is ready is
     asked; what is not settled yet (items still in `investigate`, and
     comparisons missing, stale or skipped, `sort.comparisons_waiting`) is
-    listed under "Still with the analyst" and never asked.
+    counted under "Still with the analyst" and never asked; the items one by
+    one go to a file beside the questions JSON (`still_file`), linked the
+    same way.
     Nothing is posted; a question with no triage evidence, a decision waiting
     to be re-confirmed (asked again only once decided again), and a body near
     GitHub's cap are named on stderr.
@@ -55,8 +57,9 @@ def ask_owner(
         Refusal: A view has no usable saved run (see `latest_run`), or its
             triage is missing, stale, unreadable, or has a cause decision and
             a `group` decision disagreeing (see `sort.checked_sort`). Or
-            `json_file` is new or changed, or its commit is not pushed (it is
-            written; commit and push it, then review again).
+            `json_file` or the open items' file is new or changed, or its
+            commit is not pushed (each is written; commit and push them, then
+            review again).
     """
     saved = [latest_run(cfg, cache_root) for cfg in configs]
     runs = [run for run, _ in saved]
@@ -67,8 +70,9 @@ def ask_owner(
         for (run, run_json), cfg, base in zip(saved, configs, bases, strict=True)
     }
     found = {view: sort.posted_sort(loaded) for view, loaded in proven.items()}
+    unsettled = [u for run in runs for u in sort.unsettled(run, found[run.view])]
     still = report.still_with_analyst(
-        [u for run in runs for u in sort.unsettled(run, found[run.view])],
+        unsettled,
         {
             run.view: sort.comparisons_waiting(cfg, run, proven[run.view])
             for run, cfg in zip(runs, configs, strict=True)
@@ -104,7 +108,13 @@ def ask_owner(
         run.view: sort.cause_asks(run, proven[run.view], cfg.decisions, owner=False)
         for run, cfg in zip(runs, configs, strict=True)
     }
-    link = _review_file(json_file, report.posted_json(questions))
+    files: list[tuple[Path, list[dict] | str]] = [
+        (json_file, report.posted_json(questions))
+    ]
+    if unsettled:
+        detail = report.unsettled_detail(unsettled, json_file.stem)
+        files.append((still_file(json_file), detail))
+    link, *still_link = _review_files(files)
     unpublished = {
         cfg.view: {c.id for c in cfg.comparisons if c.unpublished} for cfg in configs
     }
@@ -119,6 +129,7 @@ def ask_owner(
         link,
         still,
         unpublished,
+        still_link[0] if still_link else None,
     )
     if len(body) > report.BODY_WARN_CHARS:
         # stderr, so the warning never lands in the issue body.
@@ -161,26 +172,55 @@ def review_file(view_files: list[Path], configs: list[ViewConfig], domain: str) 
     return Path(view_files[0]).parent / "reviews" / f"{name}.json"
 
 
+def still_file(json_file: Path) -> Path:
+    """Where the open items are listed one by one: beside the questions JSON,
+    named for it (`reviews/<view>-still-with-analyst.md`)."""
+    return json_file.with_name(f"{json_file.stem}-still-with-analyst.md")
+
+
 def _slug(text: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-") or "review"
 
 
-def _review_file(path: Path, data: list[dict]) -> str:
-    """The questions JSON's link at the commit that holds it.
-
-    Compared by content, so the commit hook's formatting is no change.
+def _review_files(files: list[tuple[Path, list[dict] | str]]) -> list[str]:
+    """Each file's link (`_review_file`), in order.
 
     Raises:
-        Refusal: The file was new or held other questions (now written), or
+        Refusal: Any file was written or is not pushed; every file is
+            written first, so one commit takes them all.
+    """
+    links, refused = [], []
+    for path, data in files:
+        try:
+            links.append(_review_file(path, data))
+        except Refusal as exc:
+            refused.append(str(exc))
+    if refused:
+        raise Refusal("; ".join(refused))
+    return links
+
+
+def _review_file(path: Path, data: list[dict] | str) -> str:
+    """A posted review file's link at the commit that holds it.
+
+    `data` is the questions JSON, compared by content, or a Markdown text,
+    compared with its whitespace collapsed; so the commit hook's formatting
+    is no change.
+
+    Raises:
+        Refusal: The file was new or held other content (now written), or
             it is not committed and pushed as it stands.
     """
     try:
-        held = json.loads(path.read_text())
+        text = path.read_text()
+        held = text.split() if isinstance(data, str) else json.loads(text)
     except (OSError, ValueError):
         held = None
-    if held != data:
+    if held != (data.split() if isinstance(data, str) else data):
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(data, indent=2) + "\n")
+        path.write_text(
+            data if isinstance(data, str) else json.dumps(data, indent=2) + "\n"
+        )
         raise Refusal(
             f"wrote {path}: commit and push it, then run `ask-owner` again; the "
             "issue links it at that commit"

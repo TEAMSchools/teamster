@@ -544,8 +544,8 @@ refuses when the view's only run read another fact.
    hold SQL only: no values, no names. A formatting-only edit to one re-opens
    nothing.
    - Investigate: no explained cause yet. It is never asked as a question:
-     `ask-owner` lists it under "Still with the analyst", with its masked count
-     and the trace's lead.
+     `ask-owner` counts it under "Still with the analyst" and lists it, with its
+     masked count and the trace's lead, in the open items' file (step 8).
    - Map under `filters:`: a `same values: map it under filters:` verdict. Once
      the analyst approves the batch, map the field under the comparison's
      `filters:` instead of recording a decision, then run `rebuild-sheet` again
@@ -666,23 +666,27 @@ refuses when the view's only run read another fact.
 8. `ask-owner <files> --domain <domain>` prints the validation issue's body: the
    numbered questions ready for the owner, each with the owner's hand checks,
    and a link to the questions JSON the owner's session reads. Items still in
-   `investigate`, and comparisons never compared, stale or skipped, are listed
-   under "Still with the analyst" with masked counts and the trace's lead (its
-   count and scope only), so the owner can say if one looks familiar. They are
-   not questions, and `record-answers` never reads them. A decision waiting to
-   be re-confirmed is no question either: `ask-owner` names those decisions on
+   `investigate` are counted under "Still with the analyst", one line per
+   comparison and bucket (masked counts of items, rows and cells), and
+   comparisons never compared, stale or skipped are listed there. The items one
+   by one, with the trace's lead (its count and scope only), go to
+   `reviews/<view>-still-with-analyst.md` beside the JSON, which the section
+   links; it is posted, so it is masked, and an item under 10 rows or cells is
+   counted, not listed. The owner can say if one looks familiar. They are not
+   questions, and `record-answers` never reads them. A decision waiting to be
+   re-confirmed is no question either: `ask-owner` names those decisions on
    stderr, with their count and ids, and points to `To re-confirm` in the view's
    result; re-decide each as step 7 says, then render again. Each comparison's
    moment shows in the issue; a question's moment is the earliest of its
    comparisons'. It runs twice. The first run writes the JSON to
    `reviews/<view>.json` beside the validation file (`reviews/<domain>.json`
-   across views) and stops: commit it as a validation-file change and push. The
-   next run links it at that commit and prints the body; it stops again whenever
-   the questions changed or the file is not pushed as it stands. The JSON is
-   masked like the body: read it before committing, as git keeps it. A hand
-   check leaves out pinned SQL over 20,000 characters a side, giving its
-   lengths. A cause question's example cell needs 10+ of the cause's own
-   students in that cell and cut, as the explanations counted them: each
+   across views), and the open items' file beside it, and stops: commit both as
+   a validation-file change and push. The next run links them at that commit and
+   prints the body; it stops again whenever either changed or is not pushed as
+   it stands. Both are masked like the body: read them before committing, as git
+   keeps them. A hand check leaves out pinned SQL over 20,000 characters a side,
+   giving its lengths. A cause question's example cell needs 10+ of the cause's
+   own students in that cell and cut, as the explanations counted them: each
    explanation's counting query also counts distinct students per cause, cell
    and cut, and `sort` and `explain` keep the counts in `triage.json`
    (`cause_students`). A formula question's example is a formula cell. Each

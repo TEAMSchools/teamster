@@ -405,9 +405,9 @@ def fakes(monkeypatch, tmp_path):
     monkeypatch.setattr(cli, "cache_root", lambda: tmp_path / "cache")
 
     def linked(path, data):
-        """The review JSON written and linked as if committed and pushed."""
+        """A review file written and linked as if committed and pushed."""
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(data, indent=2))
+        path.write_text(data if isinstance(data, str) else json.dumps(data, indent=2))
         return f"https://github.com/o/r/blob/abc/{path.name}"
 
     monkeypatch.setattr(review, "_review_file", linked)
@@ -1852,11 +1852,15 @@ def test_review_posts_the_masked_lead_of_an_item_with_the_analyst(
 
     body = capsys.readouterr().out
     section = body.split("## Still with the analyst", 1)[1].split("## Proposed")[0]
-    assert "- `ada-region` in `v`: `j` (group); lead: relaxing a step in main " in (
+    assert "- `ada-region` in `v` (group): <10 open items\n" in section
+    # The items one by one go to a file beside the review JSON, linked.
+    detail = tmp_path / "reviews" / "v-still-with-analyst.md"
+    assert f"[{detail.name}](https://github.com/o/r/blob/abc/{detail.name})" in (
         section
     )
-    assert "brings back <10 of 30 rows" in section
-    assert "3 of 30" not in body and "region = " not in section
+    text = detail.read_text()
+    assert "- `j`; lead: relaxing a step in main brings back <10 of 30 rows\n" in text
+    assert "3 of 30" not in body + text and "region = " not in text
 
 
 def test_ask_owner_lists_formulas_not_compared_and_record_answers_ignores_them(
@@ -3218,8 +3222,9 @@ def test_review_lists_items_in_investigate_still_with_the_analyst(
 
     body = capsys.readouterr().out
     section = body.split("## Still with the analyst", 1)[1].split("## Proposed")[0]
-    assert "`j` (group); no lead yet" in section
-    assert "`k` (group); no lead yet" in section
+    assert "- `ada-region` in `v` (group): <10 open items\n" in section
+    text = (tmp_path / "reviews" / "v-still-with-analyst.md").read_text()
+    assert "- `j`; no lead yet\n- `k`; no lead yet\n" in text
     assert "Q1." in body.split("## Still with the analyst", 1)[0]
 
 

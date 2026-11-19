@@ -731,6 +731,97 @@ def _posted_why(why: str) -> str:
     return _safe_reason(why, [])
 
 
+@dataclass(frozen=True)
+class _Bucket:
+    """One comparison's open items of one bucket or kind, with each item's
+    count and the bucket's totals masked together (`suppress`), so the
+    listed counts never give away the ones left out."""
+
+    head: str
+    items: list[tuple[Unsettled, str | None]]
+    totals: list[str]
+
+
+def _buckets(items: list[Unsettled]) -> list[_Bucket]:
+    by: dict[tuple[str, str, str], list[Unsettled]] = {}
+    for u in items:
+        by.setdefault((u.view, u.comparison, u.what), []).append(u)
+    out = []
+    for (view, comparison, what), us in by.items():
+        shown: dict[int, str] = {}
+        totals = []
+        for word in ("rows", "cells"):
+            counted = [(i, getattr(u, word)) for i, u in enumerate(us)]
+            counted = [(i, n) for i, n in counted if n is not None]
+            if not counted:
+                continue
+            total, texts = suppress(sum(n for _, n in counted), [n for _, n in counted])
+            totals.append(f"{total} {word}")
+            shown.update(
+                {
+                    i: f"{text} {word}"
+                    for (i, _), text in zip(counted, texts, strict=True)
+                }
+            )
+        out.append(
+            _Bucket(
+                f"`{comparison}` in `{view}` ({what})",
+                [(u, shown.get(i)) for i, u in enumerate(us)],
+                totals,
+            )
+        )
+    return out
+
+
+def _small(u: Unsettled) -> bool:
+    """An item under `MASK_BELOW` rows or cells, counted but never listed."""
+    return any(n is not None and n < MASK_BELOW for n in (u.rows, u.cells))
+
+
+def unsettled_detail(items: list[Unsettled], name: str) -> str:
+    """The file beside the review JSON that lists the open items one by one.
+
+    It is posted (the issue links it), so it is masked like the issue: per
+    comparison and bucket, each item of `MASK_BELOW` or more rows or cells
+    with its triage id, its count as `still_with_analyst`'s total masks it,
+    and the trace's lead (its steps' scopes and counts, `_posted_lead`) or
+    `no lead yet`; items under `MASK_BELOW` are counted, never listed. No
+    stub value and no SQL.
+
+    Args:
+        items: The items in `investigate` (`sort.unsettled`).
+        name: What the review covers (its view, or its domain across views).
+    """
+    out = [
+        f"# Still with the analyst: `{_clean(name)}`",
+        "",
+        "The open items behind the review issue's counts, not explained yet. "
+        f"Counts under {MASK_BELOW} show as `{mask(0)}`; an item under "
+        f"{MASK_BELOW} rows or cells is counted, not listed.",
+    ]
+    for bucket in _buckets(items):
+        out += ["", f"## {bucket.head}", ""]
+        for u, count in bucket.items:
+            if _small(u):
+                continue
+            lead = (
+                _safe_reason(_posted_lead(u.lead), list(u.hidden))
+                if u.lead
+                else "no lead yet"
+            )
+            out.append(
+                "- "
+                + ", ".join([f"`{_clean(u.item)}`", *([count] if count else [])])
+                + f"; {lead}"
+            )
+        if small := sum(1 for u, _ in bucket.items if _small(u)):
+            out.append(
+                f"- Under {MASK_BELOW} rows or cells each, counted not listed: "
+                f"{mask(small)} items."
+            )
+    return "\n".join(out) + "\n"
+
+
 def still_with_analyst(
     items: list[Unsettled],
     waiting: dict[str, dict[str, str]],
@@ -738,32 +829,20 @@ def still_with_analyst(
 ) -> list[str]:
     """The review's lines for what is not settled yet, never asked as questions.
 
-    One line per item in `investigate`: its comparison, triage id, bucket or
-    kind, masked row or cell count, and the trace's lead (its steps' scopes
-    and counts, `_posted_lead`) or `no lead yet`.
-    Then one line per comparison in `waiting` (per view, id to why: missing,
-    stale or skipped, `sort.comparisons_waiting`). No stub value and no SQL.
-    Then, given `unchecked` (per view, comparison and reason, the cells the
-    formula check left to coverage, `sort.formulas_not_compared`), one
-    masked line per comparison and reason, sorted.
+    One line per comparison and bucket (or kind) of the items in
+    `investigate`: the masked count of items and their masked row and cell
+    totals. The items one by one go to `unsettled_detail`'s file, since a
+    view can hold thousands. Then one line per comparison in `waiting` (per
+    view, id to why: missing, stale or skipped, `sort.comparisons_waiting`).
+    No stub value and no SQL. Then, given `unchecked` (per view, comparison
+    and reason, the cells the formula check left to coverage,
+    `sort.formulas_not_compared`), one masked line per comparison and
+    reason, sorted.
     """
-    out = []
-    for u in items:
-        counts = [
-            f"{mask(n)} {word}"
-            for n, word in ((u.rows, "rows"), (u.cells, "cells"))
-            if n is not None
-        ]
-        lead = (
-            _safe_reason(_posted_lead(u.lead), list(u.hidden))
-            if u.lead
-            else "no lead yet"
-        )
-        out.append(
-            f"`{u.comparison}` in `{u.view}`: "
-            + ", ".join([f"`{_clean(u.item)}` ({u.what})", *counts])
-            + f"; {lead}"
-        )
+    out = [
+        f"{b.head}: " + ", ".join([f"{mask(len(b.items))} open items", *b.totals])
+        for b in _buckets(items)
+    ]
     out += [
         f"`{cid}` in `{view}`: {_posted_why(why)}"
         for view, whys in waiting.items()
@@ -1138,6 +1217,7 @@ def render_review_issue(
     json_link: str | None = None,
     still: list[str] | None = None,
     unpublished: dict[str, set[str]] | None = None,
+    still_link: str | None = None,
 ) -> str:
     """Render the issue body asking a domain owner to judge open items.
 
@@ -1164,6 +1244,8 @@ def render_review_issue(
             the questions under its own heading and never asked.
         unpublished: Per view, the comparisons that opted in to a sheet on no
             published dashboard; a question naming one ends with a note.
+        still_link: Where `unsettled_detail`'s file is committed; the "Still
+            with the analyst" section links it.
 
     Returns:
         Markdown in the feature-request structure. Every count is masked and
@@ -1226,6 +1308,7 @@ def render_review_issue(
             domain, question_lines, definition_lines, check_lines,
             asked_ids, kinds, shown, also, moved=moved if blocks else 0,
             json_link=json_link, moment_lines=moment_lines, still=still,
+            still_link=still_link,
         )  # fmt: skip
         return body, _comment_chunks(blocks, moved) if moved and blocks else []
 
@@ -1343,10 +1426,19 @@ def _review_body(
     json_link: str | None = None,
     moment_lines: list[str] | None = None,
     still: list[str] | None = None,
+    still_link: str | None = None,
 ) -> str:
     """The review body from its rendered parts; `moved` says the Reproduce
     blocks follow in comments (2: the hand checks too); `questions` is the
     JSON to post, without the `explain` commands, which are the analyst's."""
+    link_lines = (
+        [
+            f"Each open item, masked: [{still_link.rsplit('/', 1)[-1]}]({still_link}).",
+            "",
+        ]
+        if still_link
+        else []
+    )
     ids = sorted(set(asked_ids))
     n = len(question_lines)
     plural = "question" if n == 1 else "questions"
@@ -1367,6 +1459,7 @@ def _review_body(
             "These differences are not explained yet, so they are not questions. "
             "If one looks familiar, say so in a comment.",
             "",
+            *link_lines,
         ] + _bullets(still)
     if also:
         out += [

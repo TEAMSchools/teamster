@@ -1420,6 +1420,36 @@ def test_the_review_file_is_linked_only_once_committed_and_pushed(tmp_path):
         review_mod._review_file(path, [{"id": "Q2"}])
 
 
+def test_a_text_review_file_ignores_rewrapping_and_sits_beside_the_json(tmp_path):
+    path = review_mod.still_file(tmp_path / "reviews" / "v.json")
+    assert path == tmp_path / "reviews" / "v-still-with-analyst.md"
+    text = "# Still\n\n- `a`, 40 rows; no lead yet\n"
+
+    with pytest.raises(pipeline_mod.Refusal, match="wrote .*commit and push it"):
+        review_mod._review_file(path, text)
+    assert path.read_text() == text
+    # The formatter's rewrapping is no change: only the commit check refuses.
+    path.write_text("# Still\n\n- `a`, 40 rows;\n  no lead yet\n")
+    with pytest.raises(pipeline_mod.Refusal, match="not committed and pushed"):
+        review_mod._review_file(path, text)
+    with pytest.raises(pipeline_mod.Refusal, match="wrote"):
+        review_mod._review_file(path, text.replace("40", "41"))
+
+
+def test_review_files_writes_each_changed_file_before_refusing(tmp_path):
+    reviews = tmp_path / "reviews"
+    files = [(reviews / "v.json", [{"id": "Q1"}]),
+             (reviews / "v-still-with-analyst.md", "# Still\n")]  # fmt: skip
+
+    with pytest.raises(pipeline_mod.Refusal) as exc:
+        review_mod._review_files(files)
+
+    assert str(reviews / "v.json") in str(exc.value)
+    assert str(reviews / "v-still-with-analyst.md") in str(exc.value)
+    assert json.loads((reviews / "v.json").read_text()) == [{"id": "Q1"}]
+    assert (reviews / "v-still-with-analyst.md").read_text() == "# Still\n"
+
+
 def test_a_review_across_views_is_named_for_its_domain(tmp_path):
     cfgs = [ViewConfig(view=v, fact="d.t", comparisons=[]) for v in ("a", "b")]
     path = review_mod.review_file([tmp_path / "a.yml"], cfgs, "Data & Analytics")

@@ -1054,6 +1054,87 @@ def _still(run, loaded, waiting=None):
     return report.still_with_analyst(sort.unsettled(run, loaded), waiting or {})
 
 
+def _detail(run, loaded):
+    """The per-item file's lines that list items (`- `)."""
+    text = report.unsettled_detail(sort.unsettled(run, loaded), "enrollment_view")
+    return [line[2:] for line in text.splitlines() if line.startswith("- ")]
+
+
+def _open(comparison, what, rows=None, cells=None, item=None, lead=""):
+    return report.Unsettled(
+        "v", comparison, item or f"{comparison}:{what}:{rows or cells}", what,
+        rows=rows, cells=cells, lead=lead,
+    )  # fmt: skip
+
+
+SPREAD = [
+    _open("c1", "value_differs", rows=40, item="c1:a"),
+    _open("c1", "value_differs", rows=12, item="c1:b"),
+    _open("c1", "value_differs", rows=3, item="c1:c"),
+    _open("c1", "cube_only", rows=5, item="c1:d"),
+    _open("c2", "value", cells=30, item="c2:cells"),
+    _open("c2", "group", item="c2:gone"),
+]
+
+
+def test_still_with_the_analyst_counts_open_items_per_comparison_and_bucket():
+    lines = report.still_with_analyst(SPREAD, {"v": {"c3": "never compared"}})
+
+    # The total and its parts are masked together (`suppress`), so the file's
+    # listed counts never give away the small ones.
+    assert lines == [
+        "`c1` in `v` (value_differs): <10 open items, 55 rows",
+        "`c1` in `v` (cube_only): <10 open items, <10 rows",
+        "`c2` in `v` (value): <10 open items, 30 cells",
+        "`c2` in `v` (group): <10 open items",
+        "`c3` in `v`: never compared",
+    ]
+
+
+def test_unsettled_detail_lists_items_of_10_or_more_and_counts_the_rest():
+    text = report.unsettled_detail(SPREAD, "v")
+
+    assert text.startswith("# Still with the analyst: `v`\n\n")
+    assert (
+        "## `c1` in `v` (value_differs)\n\n"
+        "- `c1:a`, 40 rows; no lead yet\n"
+        "- `c1:b`, masked rows; no lead yet\n"
+        "- Under 10 rows or cells each, counted not listed: <10 items.\n"
+    ) in text
+    assert (
+        "## `c1` in `v` (cube_only)\n\n"
+        "- Under 10 rows or cells each, counted not listed: <10 items.\n"
+    ) in text
+    assert "- `c2:cells`, 30 cells; no lead yet\n" in text
+    assert "- `c2:gone`; no lead yet\n" in text
+    assert "c1:c" not in text and "c1:d" not in text
+    assert "3 rows" not in text and "5 rows" not in text and "12" not in text
+
+
+def test_a_review_with_over_1000_open_groups_stays_under_the_cap():
+    items = [
+        _open(f"c{i % 4}", ("cube_only", "dashboard_only")[i % 2], rows=i % 25 + 1,
+              item=f"c{i % 4}:region=<redacted>:{i}",
+              lead="lead: relaxing main: x = 1 brings back <10 of 40 rows")
+        for i in range(2_600)
+    ]  # fmt: skip
+    run = _run()
+
+    body = render_review_issue(
+        "Registrar", [run], still=report.still_with_analyst(items, {}),
+        still_link="https://github.com/o/r/blob/abc/v-still-with-analyst.md",
+    )  # fmt: skip
+
+    assert len(body) <= report.BODY_WARN_CHARS
+    section = body.split("## Still with the analyst\n", 1)[1].split("Also decided")[0]
+    assert "[v-still-with-analyst.md](https://github.com/o/r/blob/abc/" in section
+    assert "`c0` in `v` (cube_only): 650 open items, " in section
+    detail = report.unsettled_detail(items, "v")
+    listed = [line for line in detail.splitlines() if line.startswith("- `")]
+    assert listed and all(", <10 rows" not in line for line in listed)
+    assert len(listed) < len(items)
+
+
 def test_still_with_the_analyst_lists_formulas_not_compared_masked():
     lines = report.still_with_analyst(
         [], {}, {"v": {"c1": {"no rows both sides hold": 3}}}
@@ -1123,27 +1204,32 @@ def test_review_posts_ready_questions_and_lists_unsettled_items():
     section = section.split("Also decided")[0]
     assert "not explained yet" in section and "comment" in section
     assert (
-        "- `enrollment` in `enrollment_view`: `enrollment:grade_level=9` "
-        "(value_differs), 40 rows; lead: relaxing a step in main brings back 30 "
-        "of 40 rows"
+        "- `enrollment` in `enrollment_view` (value_differs): <10 open items, 40 rows\n"
     ) in section
     assert "school_id" not in body
     assert "- `seats` in `enrollment_view`: never compared" in section
     assert body.index("## Still with the analyst") < body.index("Also decided")
     assert "SELECT" not in section
+    assert _detail(run, _left_in_investigate(run, lead)) == [
+        "`enrollment:grade_level=9`, 40 rows; lead: relaxing a step in main brings "
+        "back 30 of 40 rows"
+    ]
 
 
 def test_unsettled_counts_under_10_are_masked():
     small = Group("enrollment", (("region", "Paterson"),), "cube_only", 7, 3)
     run = _run(applied=Applied(open=[small]))
 
-    still = _still(run, _left_in_investigate(run, "not traced (`sort --no-trace`)"))
+    loaded = _left_in_investigate(run, "not traced (`sort --no-trace`)")
 
-    (line,) = still
-    assert line == (
-        "`enrollment` in `enrollment_view`: `enrollment:region=<redacted>` "
-        "(cube_only), <10 rows; no lead yet"
+    (line,) = _still(run, loaded)
+    assert (
+        line
+        == "`enrollment` in `enrollment_view` (cube_only): <10 open items, <10 rows"
     )
+    assert _detail(run, loaded) == [
+        "Under 10 rows or cells each, counted not listed: <10 items."
+    ]
 
 
 def test_unsettled_cells_and_reasons_are_posted_without_their_detail():
@@ -1166,8 +1252,7 @@ def test_unsettled_cells_and_reasons_are_posted_without_their_detail():
     still = _still(run, loaded, waiting)
 
     assert still == [
-        "`enrollment` in `enrollment_view`: `enrollment:cells` (cells), <10 cells; "
-        "no lead yet",
+        "`enrollment` in `enrollment_view` (cells): <10 open items, <10 cells",
         "`seats` in `enrollment_view`: its SQL cannot be built today",
     ]
 
@@ -1198,7 +1283,7 @@ def test_a_posted_lead_names_each_step_s_scope_never_its_sql():
         "t AS t ON a = b brings back <10 of 40 rows"
     )
 
-    (line,) = _still(run, _left_in_investigate(run, lead))
+    (line,) = _detail(run, _left_in_investigate(run, lead))
 
     assert line.endswith(
         "; lead: relaxing a step in enrolled, kipptaf_int.int_e/main brings back "
