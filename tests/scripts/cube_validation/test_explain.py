@@ -1740,6 +1740,33 @@ def test_a_shared_explanation_reading_a_column_the_sibling_lacks_is_skipped(
     assert [k for k, _ in wh.log].count("rows") == 3
 
 
+def test_two_files_on_one_comparison_keep_both_files_cause_students(tmp_path):
+    run = _three_run()
+    third = run.applied.open[2]
+
+    def ran(name, cause, n):
+        proof = explain.Explanation(
+            tmp_path / name, "mastery", "cube_only", NEVER, NOTHING, {}
+        )
+        counts = [{"cause": cause, "cut": "all", "dims": [], "n": n,
+                   "bucket": "cube_only"}]  # fmt: skip
+        return explain.Ran(proof, [("G3", third)], found={}, students=counts)
+
+    loaded: dict = {}
+    runs = [
+        ran("a.sql", "dashboard:older year", 40),
+        ran("b.sql", "dashboard:vendor", 12),
+    ]
+
+    explain.apply_runs(run, [], runs, CFG3, loaded)
+
+    kept = loaded["cause_students"]["mastery-c"]
+    assert sorted((e["cause"], e["n"]) for e in kept) == [
+        ("dashboard:older year", 40),
+        ("dashboard:vendor", 12),
+    ]
+
+
 def test_missing_columns_reads_the_unmatched_alias_and_bare_columns():
     assert explain.missing_columns(BY_SCHOOL, THIRD) == ["abbreviation"]
     assert explain.missing_columns(BY_SCHOOL, SIBLING) == []

@@ -1935,13 +1935,20 @@ def apply_runs(
     """
     by_id = {item["id"]: item for item in items}
     reached: dict[str, list[tuple[Ran, Outcome | None]]] = {}
+    # Every file's counts for one comparison and bucket go in at once:
+    # `keep_students` replaces what an earlier call left for that bucket.
+    students: dict[tuple[str, str], list[dict]] = {}
     for r in runs:
-        if r.found is not None and loaded is not None:
-            keep_students(loaded, _comparison_of(r), r.proof.bucket, r.students)
+        if r.found is not None:
+            key = (_comparison_of(r), r.proof.bucket)
+            students.setdefault(key, []).extend(r.students)
         for item_id, _ in r.items:
             outcome = None if r.found is None else r.found.get(item_id)
             if item_id in by_id and (r.found is None or outcome is not None):
                 reached.setdefault(item_id, []).append((r, outcome))
+    if loaded is not None:
+        for (comparison, bucket), found in students.items():
+            keep_students(loaded, comparison, bucket, found)
     for item_id, pairs in reached.items():
         _apply_item(by_id[item_id], pairs)
     link_cells(run, items, cfg=cfg)
