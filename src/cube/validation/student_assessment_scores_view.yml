@@ -2771,3 +2771,23 @@ decisions:
       }
     answer: domain_owner
     task: "#6415"
+  - id: ddi-101
+    comparison: count_assessments__standards_over_time
+    all_groups: true
+    call: deliberate
+    reason:
+      The owner called Standards Over Time an old sheet; its differences are not
+      chased.
+    fingerprints:
+      cube: 694a7b48f1967f9c8b8ab6405498e152a94be9a71df225e19eb9a44758c70116
+      dashboard: d20c3d0471980267e2dee42d46dcef1acd228bd0caddf059963ff5560d2ce9a8
+  - id: ddi-102
+    comparison: avg_percent_correct__standards_over_time
+    all_groups: true
+    call: deliberate
+    reason:
+      The owner called Standards Over Time an old sheet; its differences are not
+      chased.
+    fingerprints:
+      cube: ac07afef574d02b13e8ee651ce33f139d3d8b21f849883a48f215d64074ca000
+      dashboard: 57ce8d7e414643fc0b28287b93c29144991261bbea36e2d23013ea0b1132395e
