@@ -164,6 +164,12 @@ def _text(value: object) -> str:
     return "" if value is None else str(value)
 
 
+def _names(d: Decision, g: Group) -> bool:
+    """A `group` decision's column holds one of its values in `g`."""
+    values = {_text(v) for v in d.group.get("values") or []}
+    return g.value_of(d.group.get("column") or "") in values
+
+
 def _gap_of(decision: Decision) -> tuple[str, str] | None:
     if decision.missing_cut:
         return "cut", decision.missing_cut
@@ -203,8 +209,9 @@ def apply(
         values that do match stay quiet.
 
     A comparison decision (`all_groups`) quiets, while both fingerprints
-    hold, every group of its comparison no `group` decision quiets; with
-    none left it is no longer needed.
+    hold, every group of its comparison no `group` decision names, stale or
+    not (a stale one's groups stay open until it is re-confirmed); with none
+    left it is no longer needed.
 
     Raises:
         ValueError: Two decisions claim the same group, the same
@@ -334,10 +341,19 @@ def apply(
         ):
             applied.reconfirm.append(decision)
             continue
+        # A group a `group` decision names stays that decision's, stale or
+        # not: open until it is re-confirmed, never this decision's call.
+        named = [
+            d
+            for d in decisions
+            if d.group and not d.cause and d.comparison == decision.comparison
+        ]
         matched = [
             i
             for i, g in enumerate(groups)
-            if g.comparison_id == decision.comparison and i not in claimed
+            if g.comparison_id == decision.comparison
+            and i not in claimed
+            and not any(_names(d, g) for d in named)
         ]
         if not matched:
             applied.no_longer_needed.append(decision)

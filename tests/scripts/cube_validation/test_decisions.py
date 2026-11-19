@@ -452,6 +452,19 @@ def test_a_comparison_decision_leaves_a_group_decision_s_groups_to_it():
         assert applied.open == []
 
 
+def test_a_comparison_decision_leaves_a_stale_group_decision_s_groups_open():
+    newark, camden = _group("Newark"), _group("Camden")
+    stale = _decision(fingerprints={**FP, "cube": "old"})
+    whole = _whole()
+
+    applied = apply([stale, whole], [newark, camden], {"enrollment": FP})
+
+    # Newark waits for its own decision's re-confirmation, never this one.
+    assert applied.reconfirm == [stale]
+    assert applied.quiet == [(whole, camden)]
+    assert applied.open == [newark]
+
+
 def test_a_comparison_decision_never_quiets_cells():
     applied = apply([_whole()], [], {"enrollment": FP}, cell_diffs=[DIFF, FORMULA])
 
