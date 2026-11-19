@@ -36,6 +36,7 @@ from .timetravel import _NOT_ALIAS, PROJECT, closing_paren, repin
 NOT_COMPARED = "formulas not compared"
 REWRITE_DIFFERS = "the rewrite does not reproduce the run's cells"
 NO_ROWS = "no rows both sides hold"
+FANS_OUT = "a join on the grain's path repeats the fact's rows"
 SAVED_GONE = "its saved rows are gone or of another run; compare it again"
 SQL_MOVED = "its SQL changed since the run; compare it again"
 CUBE_REFUSED = "Cube refused its SQL; sort again"
@@ -48,7 +49,7 @@ UNBUILT = "its SQL could not be built (see the terminal); sort again"
 # such as expired credentials.
 RUN_FAILED = "its queries failed (see the terminal); sort again"
 # The reasons a check that ran its queries can give; any other is a failure.
-_RAN = (REWRITE_DIFFERS, NO_ROWS)
+_RAN = (REWRITE_DIFFERS, NO_ROWS, FANS_OUT)
 # The check's code version, kept with each check. Bump it whenever the check's
 # SQL or its verdicts change. `sort` reuses a kept check of the latest result
 # only while its version is this one, whatever cells it left uncompared, so
@@ -656,7 +657,7 @@ def _pinned_read(pinned_sql: str, hop: Hop) -> str:
     return found[0]
 
 
-def path_joins(grain: Grain, pinned_rows_sql: str) -> str:
+def path_joins(grain: Grain, pinned_rows_sql: str, *, left: bool = False) -> str:
     """The joins of `grain`'s path as SQL, each table read as `pinned_rows_sql`
     reads it.
 
@@ -664,6 +665,7 @@ def path_joins(grain: Grain, pinned_rows_sql: str) -> str:
         grain: A `Grain` with `hops` (`fact_grain`).
         pinned_rows_sql: Cube's row SQL as `as_of` and `repin` leave it for the
             run's Cube rows, so each table keeps that moment.
+        left: Write every hop as a LEFT JOIN, whatever Cube's kind.
 
     Returns:
         One `<kind> <table> ON <on>` per hop, in Cube's order.
@@ -673,8 +675,67 @@ def path_joins(grain: Grain, pinned_rows_sql: str) -> str:
             know.
     """
     return "\n".join(
-        f"{hop.kind} {_pinned_read(pinned_rows_sql, hop)} ON {hop.on}"
+        f"{'LEFT JOIN' if left else hop.kind} "
+        f"{_pinned_read(pinned_rows_sql, hop)} ON {hop.on}"
         for hop in grain.hops
+    )
+
+
+def _read_pattern(table: str) -> re.Pattern[str]:
+    """A read of `table` (`dataset.table`) in pinned SQL: the reference, its
+    alias if any, and its moment."""
+    ref = re.escape(f"`{PROJECT}.{table}`")
+    # `as_of` keeps a dbt reference's alias as written, `AS` or not; a clause
+    # keyword such as FOR is never an alias. The table is matched ignoring
+    # case, as `cube_read_tables` finds it, but written back as Cube's SQL
+    # spells it: BigQuery's dataset and table names keep case.
+    return re.compile(
+        f"(?P<ref>{ref})"
+        + r"(?P<alias>\s+AS\s+`?\w+`?|\s+(?!(?:"
+        + _NOT_ALIAS
+        + r")\b)`?\w+`?)?\s+FOR SYSTEM_TIME AS OF TIMESTAMP '(?P<at>[^']+)'",
+        re.IGNORECASE,
+    )
+
+
+def fanout_sql(pinned_cells: list[str], grain: Grain, pinned_rows_sql: str) -> str:
+    """Per moment the cells read the fact at, its row count alone and through
+    the path's joins.
+
+    Every hop is a LEFT JOIN here, so each fact row comes out at least once
+    and the counts are equal only when no join repeats a row; Cube's own
+    INNER join could otherwise drop one row and hide another's repeat. The
+    self-check alone misses a repeat a measure such as a distinct count does
+    not move, and a repeated row can carry an unmatched key into the matched
+    rows.
+
+    Args:
+        pinned_cells: Cube's cell SQL per cut, as `cube_side_sql` pins it.
+        grain: A `Grain` with `hops`.
+        pinned_rows_sql: The run's Cube row SQL (`sides.cube_rows_sql`).
+
+    Returns:
+        One row per moment, `__joined` and `__fact`.
+
+    Raises:
+        NotCompared: The cells do not read the fact, or a hop's table is read
+            in a form `_pinned_read` does not know.
+    """
+    joins = path_joins(grain, pinned_rows_sql, left=True)
+    pattern = _read_pattern(grain.table)
+    fact = f"`{grain.alias}`"
+    reads = pipeline.unique(
+        f"{m['ref']} AS {fact} FOR SYSTEM_TIME AS OF TIMESTAMP '{m['at']}'"
+        for sql in pinned_cells
+        for m in pattern.finditer(sql)
+    )
+    if not reads:
+        raise NotCompared(f"Cube's SQL does not read {grain.table}")
+    return "\nUNION ALL\n".join(
+        # trunk-ignore(bandit/B608): the tables, joins and timestamps are Cube's own, as the run read them
+        f"SELECT (SELECT COUNT(*) FROM {r}\n{joins}) AS __joined, "
+        f"(SELECT COUNT(*) FROM {r}) AS __fact"
+        for r in reads
     )
 
 
@@ -694,7 +755,7 @@ def rewrite_cube_sql(
     reads the fact's own columns from the fact joined, through Cube's joins,
     to every table the grain sits on, and is filtered by the grain's key
     over those tables; a join that repeats a fact row repeats it in the
-    self-check too, which then no longer reproduces the run's cells.
+    self-check too, and `fanout_sql` catches the repeat a measure hides.
 
     Args:
         sql: Cube's SQL as `timetravel.as_of` and `repin` leave it.
@@ -738,20 +799,9 @@ def rewrite_cube_sql(
         )
 
     for t in pipeline.unique(tables):
-        ref = re.escape(f"`{PROJECT}.{t}`")
-        # `as_of` keeps a dbt reference's alias as written, `AS` or not; a
-        # clause keyword such as FOR is never an alias. The table is matched
-        # ignoring case, as `cube_read_tables` finds it, but written back as
-        # Cube's SQL spells it: BigQuery's dataset and table names keep case.
-        pattern = re.compile(
-            f"(?P<ref>{ref})"
-            + r"(?P<alias>\s+AS\s+`?\w+`?|\s+(?!(?:"
-            + _NOT_ALIAS
-            + r")\b)`?\w+`?)?\s+FOR SYSTEM_TIME AS OF TIMESTAMP '(?P<at>[^']+)'",
-            re.IGNORECASE,
-        )
+        pattern = _read_pattern(t)
         found = list(pattern.finditer(sql))
-        reads = len(re.findall(ref, sql, re.IGNORECASE))
+        reads = len(re.findall(re.escape(f"`{PROJECT}.{t}`"), sql, re.IGNORECASE))
         if not reads:
             raise NotCompared(f"Cube's SQL does not read {t}")
         if reads != len(found):
@@ -824,10 +874,7 @@ def cube_side_sql(
     path = Path(grain, path_joins(grain, sides.cube_rows_sql)) if grain.hops else None
     parts = []
     for cut in cuts:
-        query = pipeline.cell_query(cfg.view, comparison, cut)
-        at = ex.at(ex.cube_sql(query), build.end)
-        shared = sorted(at.tables & sides.dashboard.tables)
-        sql = repin(at.sql, shared, build.end, build.start)
+        sql = _pinned_cell(cfg, comparison, cut, build, ex=ex, sides=sides)
         sql = rewrite_cube_sql(
             sql, tables, grain.columns, grain_dates, keep=keep, path=path
         )
@@ -838,6 +885,38 @@ def cube_side_sql(
     return "\nUNION ALL\n".join(parts)
 
 
+def _pinned_cell(
+    cfg: ViewConfig,
+    comparison: Comparison,
+    cut: dict[str, Any],
+    build: Build,
+    *,
+    ex: pipeline.Expand,
+    sides: pipeline.RowSides,
+) -> str:
+    """Cube's cell SQL for `cut` as of the build end, a table the dashboard's
+    rows also read moved to the build start, as the run's Cube rows read it."""
+    at = ex.at(ex.cube_sql(pipeline.cell_query(cfg.view, comparison, cut)), build.end)
+    shared = sorted(at.tables & sides.dashboard.tables)
+    return repin(at.sql, shared, build.end, build.start)
+
+
+def cube_fanout_sql(
+    cfg: ViewConfig,
+    comparison: Comparison,
+    cuts: list[dict[str, Any]],
+    build: Build,
+    *,
+    ex: pipeline.Expand,
+    sides: pipeline.RowSides,
+    grain: Grain,
+) -> str:
+    """The fan-out guard (`fanout_sql`) over the cells' own reads of the fact,
+    for a grain with `hops`; it raises what `cube_side_sql` raises."""
+    cells = [_pinned_cell(cfg, comparison, c, build, ex=ex, sides=sides) for c in cuts]
+    return fanout_sql(cells, grain, sides.cube_rows_sql)
+
+
 # --- the check in `sort` --------------------------------------------------------
 
 
@@ -845,9 +924,10 @@ def cube_side_sql(
 class Job:
     """One comparison's formula check, planned and ready to price and run.
 
-    `sql` holds the 4 queries by name: `dashboard` and `cube` read matched
-    rows only, `dashboard_self` and `cube_self` every row (the self-check).
-    `stored` is the kept check of the same result this one runs again, if
+    `sql` holds the queries by name: `dashboard` and `cube` read matched
+    rows only, `dashboard_self` and `cube_self` every row (the self-check),
+    and, for a grain off the fact, `cube_fanout` the fan-out guard
+    (`fanout_sql`). `stored` is the kept check of the same result this one runs again, if
     any: when this one cannot run, its verdicts stand.
     """
 
@@ -946,12 +1026,17 @@ def _job_sql(
         # trunk-ignore(bandit/B608): both parts are the tool's own SQL
         return f"{ctes}\nSELECT * FROM (\n{body}\n)"
 
-    return {
+    sql = {
         "dashboard": matched(dash(True)),
         "cube": matched(cubes(True)),
         "dashboard_self": dash(False),
         "cube_self": cubes(False),
     }
+    if grain.hops:
+        sql["cube_fanout"] = cube_fanout_sql(
+            cfg, comparison, cuts, build, ex=ex, sides=sides, grain=grain
+        )
+    return sql
 
 
 def plan(
@@ -1034,13 +1119,14 @@ def plan(
 
 
 def run_job(job: Job, comparison: Comparison, wh: Warehouse) -> Check:
-    """Run a planned check's 4 queries and decide its cells (`verdicts`).
+    """Run a planned check's queries and decide its cells (`verdicts`).
 
     Call inside `wh.budget`, after its dry runs are priced. Never raises: a
     BigQuery error leaves every cell to coverage under its job and reason
     code, a cap under `CAPPED`, any other error (expired credentials, say)
-    under `RUN_FAILED` with the error printed, and rows that do not carry the
-    comparison's dims under `REWRITE_DIFFERS`.
+    under `RUN_FAILED` with the error printed, a fan-out guard whose counts
+    differ under `FANS_OUT`, and rows that do not carry the comparison's dims
+    under `REWRITE_DIFFERS`.
     """
     try:
         got = {k: wh.rows(sql, timeout_s=trace.TIMEOUT_S) for k, sql in job.sql.items()}
@@ -1053,6 +1139,9 @@ def run_job(job: Job, comparison: Comparison, wh: Warehouse) -> Check:
         print(f"Formula check of {job.comparison} not run: {exc!r}")
         return not_compared(job.comparison, job.fingerprint, job.cells, RUN_FAILED)
     try:
+        if any(r["__joined"] != r["__fact"] for r in got.get("cube_fanout", [])):
+            return not_compared(job.comparison, job.fingerprint, job.cells,
+                                FANS_OUT)  # fmt: skip
         return verdicts(
             comparison, job.fingerprint, job.cells,
             got["dashboard"], got["cube"], got["dashboard_self"], got["cube_self"],

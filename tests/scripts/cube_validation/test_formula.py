@@ -1118,7 +1118,17 @@ class _JoinCatalog:
 
 class _JoinEx:
     """`pipeline.Expand` over the toy DDI: the rows through every join, the
-    cells `AVG(score)` by the query's dims from the fact and the dates dim."""
+    cells `measure` by the query's dims from `cells_from` (the fact and the
+    dates dim unless set)."""
+
+    measure = "AVG(`scores`.score)"
+    cells_from = (
+        "FROM  m.fct_s  AS `scores`\n"
+        "LEFT JOIN  m.dim_dates  AS `dates` ON `dates`.date_key = `scores`.date_key"
+    )
+
+    def __init__(self, **kw):
+        self.__dict__.update(kw)
 
     def cube_sql(self, query, rows=False):
         members = [m.split(".", 1)[1] for m in query["dimensions"]]
@@ -1131,10 +1141,8 @@ class _JoinEx:
         )
         group = ", ".join(str(i + 1) for i in range(len(members)))
         return (
-            f"SELECT {', '.join([*select, 'AVG(`scores`.score) `v__pct`'])} "
-            "FROM  m.fct_s  AS `scores`\n"
-            "LEFT JOIN  m.dim_dates  AS `dates` ON `dates`.date_key = `scores`.date_key\n"
-            f"WHERE {where or 'TRUE'} GROUP BY {group}"
+            f"SELECT {', '.join([*select, f'{self.measure} `v__pct`'])} "
+            f"{self.cells_from}\nWHERE {where or 'TRUE'} GROUP BY {group}"
         )
 
     def at(self, sql, ts):
@@ -1180,14 +1188,15 @@ def _joined_sides(cfg, comparison, shared) -> pipeline.RowSides:
 
 
 def _joined_cells(
-    duck, comparison=JOINED, cfg=JOINED_CFG, *, keep=True, shared=frozenset()
-):
+    duck, comparison=JOINED, cfg=JOINED_CFG, *, keep=True, shared=frozenset(),
+    ex=None,
+):  # fmt: skip
     """The Cube side as `sort` runs it over the toy DDI, by (cut, school),
     and the whole query."""
     cfg = replace(cfg, comparisons=[comparison])
     sides = _joined_sides(cfg, comparison, shared)
     _save(duck, cfg, sides)
-    ex = _JoinEx()
+    ex = ex or _JoinEx()
     grain = formula.fact_grain(
         ex.cube_sql(pipeline.row_query("v", comparison), rows=True),
         "v",
@@ -1206,9 +1215,9 @@ def _joined_cells(
     return cells, sql
 
 
-def _joined_run(duck, comparison=JOINED) -> dict:
+def _joined_run(duck, comparison=JOINED, ex=None) -> dict:
     """The run's own Cube cells: Cube's cell SQL as compiled, by (cut, school)."""
-    ex = _JoinEx()
+    ex = ex or _JoinEx()
     return {
         (pipeline.cut_label(cut), r["abbreviation"]): r["value"]
         for cut in pipeline.comparison_cuts(comparison)
@@ -1806,19 +1815,20 @@ def test_plan_falls_back_when_the_grain_is_an_expression(duck, offline):
     }
 
 
-def test_plan_follows_cube_s_joins_and_leaves_row_causes_to_coverage(duck, monkeypatch):
-    # The toy DDI: each side's cell moves by rows the other lacks (0.425 and
-    # 0.52); on matched rows, keyed through Cube's joins, both read 0.75.
+def _joined_plan(duck, monkeypatch, cube, ex=None, students=STUDENTS):
+    """`plan` and `run_job` over the toy DDI, the run's rows saved as
+    `compare` saves them; the run's cell reads 0.425 on the dashboard and
+    `cube` on Cube."""
     planned = replace(JOINED, confirmed=True, decimals=2)
     cfg = replace(JOINED_CFG, comparisons=[planned])
-    ex = _JoinEx()
+    ex = ex or _JoinEx()
     monkeypatch.setattr(pipeline, "Expand", lambda *a, **k: ex)
     monkeypatch.setattr(
         pipeline,
         "row_sides",
         lambda cfg, comparison, **k: _joined_sides(cfg, comparison, frozenset()),
     )
-    _joined_tables(duck)
+    _joined_tables(duck, students=students)
     wh = _PlanWh(duck)
     table = table_id("v", BUILD, "mastery")
     duck.rows("DROP TABLE IF EXISTS __joined")
@@ -1828,17 +1838,42 @@ def test_plan_follows_cube_s_joins_and_leaves_row_causes_to_coverage(duck, monke
     wh.labels[table] = labels(
         "v", BUILD, "mastery", pipeline.checkpoint_fingerprint(planned, FPS["mastery"])
     )
-    run = replace(_plan_run(), diff_cells=[_cell(dashboard=0.425, cube=0.52)])
+    run = replace(_plan_run(), diff_cells=[_cell(dashboard=0.425, cube=cube)])
 
     job = formula.plan(
         cfg, run, planned, fingerprint="fp", wh=wh, cube=None,
         prepared=Prepared(schools=set()),
     )  # fmt: skip
-    check = formula.run_job(job, planned, wh)
-
     assert isinstance(job, formula.Job)
+    return job, formula.run_job(job, planned, wh)
+
+
+def test_plan_follows_cube_s_joins_and_leaves_row_causes_to_coverage(duck, monkeypatch):
+    # The toy DDI: each side's cell moves by rows the other lacks (0.425 and
+    # 0.52); on matched rows, keyed through Cube's joins, both read 0.75.
+    job, check = _joined_plan(duck, monkeypatch, 0.52)
+
     assert "LEFT JOIN `teamster-332318.m.dim_students` AS `students`" in job.sql["cube"]
+    # The fan-out guard is priced and run with the rest.
+    assert set(job.sql) == {
+        "dashboard", "cube", "dashboard_self", "cube_self", "cube_fanout",
+    }  # fmt: skip
     assert check.coverage == [REF] and check.not_compared == {}
+
+
+def test_plan_refuses_a_join_that_repeats_fact_rows_a_measure_hides(duck, monkeypatch):
+    # Student 2's key sits twice in the students dim. A distinct count does
+    # not move when score 2 repeats, so the self-check reproduces the run's
+    # cell; the row counts tell the repeat.
+    ex = _JoinEx(measure="COUNT(DISTINCT `scores`.score)")
+
+    job, check = _joined_plan(
+        duck, monkeypatch, 5, ex=ex, students=[*STUDENTS, (32, 2)]
+    )
+
+    assert [r["value"] for r in duck.rows(job.sql["cube_self"])] == [5]
+    assert check.not_compared == {formula.FANS_OUT: [REF]}
+    assert formula.ran(check)
 
 
 def test_plan_says_cube_refused_when_cube_refuses_its_sql(duck, offline, monkeypatch):

@@ -1496,7 +1496,7 @@ def sort_run(
 
     Each confirmed comparison with `rows` that is not stale also gets the
     formula check (`formula.plan`): its differing cells holding row groups are
-    recomputed on the rows both sides matched. Its 4 queries per comparison
+    recomputed on the rows both sides matched. Its queries (`formula.Job`)
     are dry-run and priced with the explanations, so one cap refusal comes
     before either runs. A check is kept beside its comparison's latest result
     (`latest.add_formula_check`) and reused while that result stands, unless
