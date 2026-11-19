@@ -636,9 +636,10 @@ comparison, plus 7 smaller gaps. The owner decided each in conversation.
    equality joins from the fact refuses, with its reason.
 2. **A sibling runs every sibling's explanation.** When several comparisons on
    one dashboard model and grain have their own explanation for a bucket, a
-   comparison without its own runs all of them, and a row is explained when any
-   of them explains it. An explanation that reads a column a comparison lacks is
-   skipped there, with one line saying so, not run to a BigQuery error.
+   comparison without its own runs all of them, and a row group counts as
+   explained when any one of them explains all its rows. An explanation that
+   reads a column a comparison lacks is skipped there, with one line saying so,
+   not run to a BigQuery error.
 3. **A whole comparison can be decided.** A comparison-level `deliberate`
    decision, with a reason, closes every open row group of its comparison while
    its SQL fingerprints hold. It is written by `decide`, never by hand, and the
