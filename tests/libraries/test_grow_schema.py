@@ -1,11 +1,14 @@
 import io
 
 import fastavro
+import pytest
 
 from teamster.code_locations.kipptaf.level_data.grow.schema import ASSET_SCHEMA
 
 
-def test_meetingtype_checkbox_additional_field_writes():
+@pytest.mark.parametrize("schema_key", ["generic-tags/meetingtypes", "meetings"])
+@pytest.mark.parametrize("content", [[], ["v"]])
+def test_checkbox_additional_field_writes(schema_key, content):
     # Grow sends a checkbox field's content as a list, with its options alongside
     record = {
         "_id": "a",
@@ -13,7 +16,7 @@ def test_meetingtype_checkbox_additional_field_writes():
             {
                 "_id": "b",
                 "type": "checkbox",
-                "content": [],
+                "content": content,
                 "checkboxOptions": [{"value": "v", "label": "l", "description": ""}],
             }
         ],
@@ -21,6 +24,6 @@ def test_meetingtype_checkbox_additional_field_writes():
 
     fastavro.writer(
         fo=io.BytesIO(),
-        schema=fastavro.parse_schema(ASSET_SCHEMA["generic-tags/meetingtypes"]),
+        schema=fastavro.parse_schema(ASSET_SCHEMA[schema_key]),
         records=[record],
     )
