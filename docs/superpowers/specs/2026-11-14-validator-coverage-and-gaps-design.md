@@ -617,3 +617,42 @@ there.
 - The exact wording of the new labels and refusals.
 - Whether "published" reads Tableau Server's views list at `find-field` time or
   only at `rebuild-sheet` time.
+
+## Revision 2026-11-19: after the DDI re-run
+
+The DDI re-run (#6415) on the fixed validator found the formula check ran on no
+comparison, plus 7 smaller gaps. The owner decided each in conversation.
+
+### Decisions
+
+1. **The formula check follows Cube's joins.** A grain member that sits on a
+   joined dimension (DDI's student and assessment-administration members sit 3
+   and 1 `LEFT JOIN`s from the scores fact) no longer refuses. Cube's side
+   replaces the fact reference with a subquery that joins the fact to every
+   table on the path to each grain member, using Cube's own join conditions
+   copied from the compiled SQL, and keeps the fact rows whose grain key is
+   matched. The self-check runs the same subquery with `TRUE`, so a join that
+   repeats fact rows fails the self-check. A path that is not a chain of
+   equality joins from the fact refuses, with its reason.
+2. **A sibling runs every sibling's explanation.** When several comparisons on
+   one dashboard model and grain have their own explanation for a bucket, a
+   comparison without its own runs all of them, and a row is explained when any
+   of them explains it. An explanation that reads a column a comparison lacks is
+   skipped there, with one line saying so, not run to a BigQuery error.
+3. **A whole comparison can be decided.** A comparison-level `deliberate`
+   decision, with a reason, closes every open row group of its comparison while
+   its SQL fingerprints hold. It is written by `decide`, never by hand, and the
+   owner's review lists it.
+
+### Bugs fixed with them
+
+- "Published" reads the workbook's published views from Tableau Server: a sheet
+  is published when it is a view, or a zone on a dashboard that is a view. The
+  `.twb` alone cannot say which sheets were published.
+- `read-sheet` accepts a `dashboard_filters` `set` entry on any column a
+  non-null calc filter reads.
+- `decide` writes decisions as block items, and the line writers find an inline
+  (flow-style) item too.
+- `ask-owner` shows "Still with the analyst" as counts per comparison and
+  bucket; the per-group list moves to a file beside the review JSON, and masked
+  groups are counted, not listed.
