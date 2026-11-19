@@ -1019,7 +1019,10 @@ def write_rebuild_check(path: Path, comparison_id: str, check: dict[str, Any]) -
     file as is.
 
     The edit is line-based so comments and layout elsewhere survive. A
-    comparison written as a flow mapping is rewritten as a block item.
+    comparison written as a flow mapping is rewritten as a block item from
+    the values it loads with, so a comment inside it (the formatter's
+    wrapped flow mapping can hold one) is dropped; the file must then load,
+    or it is restored.
 
     Args:
         path: The validation file.
@@ -1029,10 +1032,12 @@ def write_rebuild_check(path: Path, comparison_id: str, check: dict[str, Any]) -
 
     Raises:
         ConfigError: No comparison has that id, or it sits inside a flow list
-            (see `find_comparison`).
+            (see `find_comparison`); or a flow comparison rewritten does not
+            load (the original text is restored).
     """
     path = Path(path)
-    lines = path.read_text().splitlines()
+    original = path.read_text()
+    lines = original.splitlines()
 
     start, end, key_indent = _editable_comparison(path, lines, comparison_id)
     flow = _flow_item(lines, start, end)
@@ -1045,7 +1050,16 @@ def write_rebuild_check(path: Path, comparison_id: str, check: dict[str, Any]) -
         lines[start:end] = [
             " " * (key_indent - 2) + line for line in block.splitlines()
         ]
-        path.write_text("\n".join(lines) + "\n")
+        replace_text(path, "\n".join(lines) + "\n")
+        try:
+            load_view_config(path)
+        except BaseException as exc:
+            replace_text(path, original)
+            if isinstance(exc, ConfigError):
+                raise ConfigError(
+                    f"{exc} (not written; the file is unchanged)"
+                ) from exc
+            raise
         return
 
     check_at = next(
@@ -1157,8 +1171,8 @@ def write_decision(path: Path, decision: dict[str, Any]) -> None:
     The edit is line-based like `write_rebuild_check`, so comments and layout outside
     that item survive. The item is written in block style, so the next line
     edit finds its `id:` line; a flow-style item written before is found too
-    and replaced in block style. Values YAML would rewrite (`9.50`, `010`,
-    `no`) are written quoted.
+    and replaced in block style, dropping any comment inside it. Values YAML
+    would rewrite (`9.50`, `010`, `no`) are written quoted.
 
     Args:
         path: The validation file.

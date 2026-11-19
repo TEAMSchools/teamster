@@ -1362,6 +1362,19 @@ def test_write_rebuild_check_rewrites_a_flow_mapping_comparison_as_block(tmp_pat
     assert "  - id: goal\n    measure: m\n    rebuild_check:\n" in path.read_text()
 
 
+def test_write_rebuild_check_restores_a_flow_comparison_that_does_not_load(tmp_path):
+    text = MERGED.replace(
+        "  - <<: *roster\n    id: goal  # the goal sheet\n    measure: m\n",
+        "  - {id: goal, measure: m}\n",
+    )
+    path = _write(tmp_path, text)
+
+    with pytest.raises(ConfigError, match=r"proven_at.*the file is unchanged"):
+        write_rebuild_check(path, "goal", {"fingerprint": "f", "proven_at": "t"})
+
+    assert path.read_text() == text
+
+
 def test_find_comparison_names_a_flow_list_of_comparisons(tmp_path):
     old = "comparisons:\n  - <<: *roster\n    id: goal  # the goal sheet\n    measure: m\n"
     path = _write(
