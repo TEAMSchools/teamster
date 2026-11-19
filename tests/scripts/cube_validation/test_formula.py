@@ -519,6 +519,8 @@ def test_dashboard_side_reads_a_template_through_rows_on_matched_rows(duck):
 
 # --- the Cube side ------------------------------------------------------------
 
+FACT_X = ["kipptaf_marts.fct_x"]
+
 
 def test_fact_grain_maps_each_member_to_its_fact_column():
     sql = (
@@ -526,10 +528,25 @@ def test_fact_grain_maps_each_member_to_its_fact_column():
         "FROM kipptaf_marts.fct_x AS `f`"
     )
 
-    assert formula.fact_grain(sql, "v", ["student", "item"]) == (
-        "kipptaf_marts.fct_x",
-        ["student_number", "item_id"],
+    grain = formula.fact_grain(sql, "v", ["student", "item"], FACT_X)
+
+    assert (grain.table, grain.alias, grain.hops) == ("kipptaf_marts.fct_x", "f", ())
+    assert grain.columns == ["student_number", "item_id"]
+
+
+def test_fact_grain_reads_a_grain_on_an_also_facts_table_as_today():
+    sql = (
+        "SELECT `g`.student_number `v__student` FROM kipptaf_marts.fct_x AS `f` "
+        "LEFT JOIN kipptaf_marts.fct_goals AS `g` ON `g`.k = `f`.k"
     )
+
+    grain = formula.fact_grain(
+        sql, "v", ["student"], [*FACT_X, "KIPPTAF_MARTS.fct_goals"]
+    )
+
+    assert (grain.table, grain.alias, grain.hops) == (
+        "kipptaf_marts.fct_goals", "g", (),
+    )  # fmt: skip
 
 
 def test_fact_grain_refuses_an_expression():
@@ -541,7 +558,7 @@ def test_fact_grain_refuses_an_expression():
     with pytest.raises(
         formula.NotCompared, match="grain column student is an expression"
     ):
-        formula.fact_grain(sql, "v", ["student", "item"])
+        formula.fact_grain(sql, "v", ["student", "item"], FACT_X)
 
 
 def test_fact_grain_refuses_a_subquery_alias():
@@ -553,7 +570,7 @@ def test_fact_grain_refuses_a_subquery_alias():
     with pytest.raises(
         formula.NotCompared, match="grain column student is read from a subquery"
     ):
-        formula.fact_grain(sql, "v", ["student", "item"])
+        formula.fact_grain(sql, "v", ["student", "item"], FACT_X)
 
 
 def test_fact_grain_refuses_a_member_missing_from_the_select():
@@ -562,14 +579,14 @@ def test_fact_grain_refuses_a_member_missing_from_the_select():
     with pytest.raises(
         formula.NotCompared, match="grain member student is not in Cube's row SQL"
     ):
-        formula.fact_grain(sql, "v", ["student", "item"])
+        formula.fact_grain(sql, "v", ["student", "item"], FACT_X)
 
 
 def test_fact_grain_refuses_sql_that_is_no_single_select():
     sql = "SELECT 1 `v__student` UNION ALL SELECT 2 `v__student`"
 
     with pytest.raises(formula.NotCompared, match="is not a single SELECT"):
-        formula.fact_grain(sql, "v", ["student"])
+        formula.fact_grain(sql, "v", ["student"], FACT_X)
 
 
 def test_fact_grain_refuses_a_table_with_no_dataset():
@@ -579,7 +596,7 @@ def test_fact_grain_refuses_a_table_with_no_dataset():
         formula.NotCompared,
         match="grain column student sits on a CTE or a table with no dataset",
     ):
-        formula.fact_grain(sql, "v", ["student"])
+        formula.fact_grain(sql, "v", ["student"], FACT_X)
 
 
 def test_fact_grain_refuses_a_column_of_no_table_it_reads():
@@ -589,23 +606,184 @@ def test_fact_grain_refuses_a_column_of_no_table_it_reads():
         formula.NotCompared,
         match="grain column student names no table of the outer FROM",
     ):
-        formula.fact_grain(sql, "v", ["student"])
+        formula.fact_grain(sql, "v", ["student"], FACT_X)
 
 
-def test_fact_grain_refuses_grain_columns_on_two_tables():
-    sql = (
-        "SELECT `f`.student_number `v__student`, `g`.item_id `v__item` "
-        "FROM kipptaf_marts.fct_x AS `f` "
-        "LEFT JOIN kipptaf_marts.fct_y AS `g` ON `g`.k = `f`.k"
+# Cube's row SQL as it compiles a DDI query: the student 3 joins from the
+# fact, the assessment 1, the response type on the fact, and a dates dim the
+# grain does not need.
+JOINED_ROWS = (
+    "SELECT `students`.lea `v__student`, `admins`.aid `v__item`, "
+    "`scores`.rtype `v__rtype`, `dates`.day `v__day` "
+    "FROM  kipptaf_marts.fct_s  AS `scores`\n"
+    "LEFT JOIN  kipptaf_marts.dim_sections  AS `sections` "
+    "ON `sections`.section_key = `scores`.section_key\n"
+    "LEFT JOIN  kipptaf_marts.dim_enrollments  AS `enrollments` "
+    "ON `enrollments`.enrollment_key = `sections`.enrollment_key\n"
+    "LEFT JOIN  kipptaf_marts.dim_students  AS `students` "
+    "ON `students`.student_key = `enrollments`.student_key\n"
+    "LEFT JOIN  kipptaf_marts.dim_admins  AS `admins` "
+    "ON `admins`.admin_key = `scores`.admin_key AND `admins`.year = `scores`.year\n"
+    "LEFT JOIN  kipptaf_marts.dim_dates  AS `dates` "
+    "ON `dates`.date_key = `scores`.date_key"
+)
+JOINED_FACTS = ["kipptaf_marts.fct_s"]
+
+
+def test_fact_grain_follows_cube_s_joins_from_the_fact():
+    grain = formula.fact_grain(
+        JOINED_ROWS, "v", ["student", "item", "rtype"], JOINED_FACTS
     )
 
-    with pytest.raises(formula.NotCompared, match="more than one table"):
-        formula.fact_grain(sql, "v", ["student", "item"])
+    assert (grain.table, grain.alias) == ("kipptaf_marts.fct_s", "scores")
+    assert grain.keys == (
+        ("students", "lea"), ("admins", "aid"), ("scores", "rtype"),
+    )  # fmt: skip
+    # Each join on a grain member's path, in Cube's order; `dates` is on none.
+    assert grain.hops == (
+        formula.Hop("sections", "kipptaf_marts.dim_sections", "LEFT JOIN",
+                    "`sections`.`section_key` = `scores`.`section_key`"),
+        formula.Hop("enrollments", "kipptaf_marts.dim_enrollments", "LEFT JOIN",
+                    "`enrollments`.`enrollment_key` = `sections`.`enrollment_key`"),
+        formula.Hop("students", "kipptaf_marts.dim_students", "LEFT JOIN",
+                    "`students`.`student_key` = `enrollments`.`student_key`"),
+        formula.Hop("admins", "kipptaf_marts.dim_admins", "LEFT JOIN",
+                    "`admins`.`admin_key` = `scores`.`admin_key` "
+                    "AND `admins`.`year` = `scores`.`year`"),
+    )  # fmt: skip
+
+
+def test_fact_grain_follows_the_joins_to_a_grain_on_one_dim():
+    grain = formula.fact_grain(JOINED_ROWS, "v", ["student"], JOINED_FACTS)
+
+    assert grain.keys == (("students", "lea"),)
+    assert [h.alias for h in grain.hops] == ["sections", "enrollments", "students"]
+
+
+def test_fact_grain_keeps_an_inner_join_on_the_path():
+    sql = JOINED_ROWS.replace(
+        "LEFT JOIN  kipptaf_marts.dim_admins", "INNER JOIN kipptaf_marts.dim_admins"
+    )
+
+    grain = formula.fact_grain(sql, "v", ["item"], JOINED_FACTS)
+
+    assert [(h.alias, h.kind) for h in grain.hops] == [("admins", "INNER JOIN")]
+
+
+@pytest.mark.parametrize(
+    ("on", "why"),
+    [
+        ("`admins`.admin_key = `scores`.admin_key OR `admins`.k = `scores`.k",
+         "is not on an equality of columns"),
+        ("`admins`.admin_key >= `scores`.admin_key",
+         "is not on an equality of columns"),
+        ("CAST(`admins`.admin_key AS STRING) = `scores`.admin_key",
+         "is not on an equality of columns"),
+        ("`admins`.admin_key = 1", "is not on an equality of columns"),
+        ("TRUE", "is not on an equality of columns"),
+        ("`admins`.admin_key = `scores`.admin_key AND `admins`.k = `dates`.k",
+         "does not compare it with exactly one table before it"),
+        ("`admins`.admin_key = `admins`.other_key",
+         "does not compare it with exactly one table before it"),
+    ],
+)  # fmt: skip
+def test_fact_grain_refuses_a_path_join_on_anything_but_column_equalities(on, why):
+    sql = JOINED_ROWS.replace(
+        "ON `admins`.admin_key = `scores`.admin_key AND `admins`.year = `scores`.year",
+        f"ON {on}",
+    )
+
+    with pytest.raises(
+        formula.NotCompared, match=f"the join to admins on the grain's path {why}"
+    ):
+        formula.fact_grain(sql, "v", ["item"], JOINED_FACTS)
+
+
+@pytest.mark.parametrize("join", ["RIGHT JOIN", "FULL JOIN", "CROSS JOIN", "USING"])
+def test_fact_grain_refuses_a_path_join_of_another_kind(join):
+    on = "ON `admins`.admin_key = `scores`.admin_key AND `admins`.year = `scores`.year"
+    sql = {
+        "CROSS JOIN": JOINED_ROWS.replace(
+            f"LEFT JOIN  kipptaf_marts.dim_admins  AS `admins` {on}",
+            "CROSS JOIN kipptaf_marts.dim_admins AS `admins`",
+        ),
+        "USING": JOINED_ROWS.replace(on, "USING (admin_key)"),
+    }.get(
+        join,
+        JOINED_ROWS.replace("LEFT JOIN  kipptaf_marts.dim_admins", f"{join} "
+                            "kipptaf_marts.dim_admins"),
+    )  # fmt: skip
+    why = {"USING": "is not on an equality of columns"}.get(
+        join, "is not a LEFT or INNER join"
+    )
+
+    with pytest.raises(
+        formula.NotCompared, match=f"the join to admins on the grain's path {why}"
+    ):
+        formula.fact_grain(sql, "v", ["item"], JOINED_FACTS)
+
+
+def test_fact_grain_refuses_a_grain_no_join_from_the_fact_reaches():
+    # The goals table is read first and the fact joined to it, so no chain of
+    # joins leads from the fact to the goals.
+    sql = (
+        "SELECT `goals`.school `v__student`, `f`.item_id `v__item` "
+        "FROM kipptaf_marts.fct_goals AS `goals` "
+        "LEFT JOIN kipptaf_marts.fct_x AS `f` ON `f`.school = `goals`.school"
+    )
+
+    with pytest.raises(
+        formula.NotCompared,
+        match="grain member student sits on goals, which no chain of joins from "
+        "the fact reaches",
+    ):
+        formula.fact_grain(
+            sql, "v", ["student", "item"],
+            ["kipptaf_marts.fct_x", "kipptaf_marts.fct_goals"],
+        )  # fmt: skip
+
+
+def test_fact_grain_refuses_a_path_when_the_fact_is_not_read():
+    with pytest.raises(
+        formula.NotCompared,
+        match="the grain sits off the fact, and Cube's row SQL does not read the "
+        "fact kipptaf_marts.fct_other",
+    ):
+        formula.fact_grain(JOINED_ROWS, "v", ["student"], ["kipptaf_marts.fct_other"])
+
+
+def test_fact_grain_refuses_a_path_when_the_fact_is_read_twice():
+    # Which read of the fact the path starts at would be a guess.
+    sql = JOINED_ROWS.replace(
+        "kipptaf_marts.dim_sections  AS `sections`",
+        "kipptaf_marts.fct_s  AS `sections`",
+    )
+
+    with pytest.raises(
+        formula.NotCompared,
+        match="the grain sits off the fact, and Cube's row SQL does not read the "
+        "fact kipptaf_marts.fct_s once",
+    ):
+        formula.fact_grain(sql, "v", ["student"], JOINED_FACTS)
+
+
+def test_fact_grain_refuses_a_path_through_a_subquery():
+    sql = JOINED_ROWS.replace(
+        "kipptaf_marts.dim_sections  AS `sections`",
+        "(SELECT * FROM kipptaf_marts.dim_sections)  AS `sections`",
+    )
+
+    with pytest.raises(
+        formula.NotCompared,
+        match="the join to sections on the grain's path reads a subquery or a "
+        "table with no dataset",
+    ):
+        formula.fact_grain(sql, "v", ["student"], JOINED_FACTS)
 
 
 def test_fact_grain_refuses_sql_it_cannot_parse():
     with pytest.raises(formula.NotCompared, match="Cube's SQL could not be parsed"):
-        formula.fact_grain("SELECT `f.a FROM (", "v", ["student"])
+        formula.fact_grain("SELECT `f.a FROM (", "v", ["student"], FACT_X)
 
 
 def test_cube_read_tables_are_the_fact_and_the_also_facts_cube_reads():
@@ -1314,10 +1492,7 @@ def test_plan_falls_back_when_the_grain_sits_on_a_joined_table(
 
     check, _ = _plan(duck, _plan_run())
 
-    assert check.not_compared == {
-        "the grain columns sit on m.dim_students, which Cube's filtered tables "
-        "do not include": [REF]
-    }
+    assert check.not_compared == {"the grain columns sit on more than one table": [REF]}
 
 
 def test_plan_says_cube_refused_when_cube_refuses_its_sql(duck, offline, monkeypatch):

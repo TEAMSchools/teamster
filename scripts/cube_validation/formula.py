@@ -382,26 +382,114 @@ def cube_read_tables(cfg: ViewConfig, compiled_sql: str) -> list[str]:
     return [cfg.fact, *(f for f in cfg.also_facts if f.lower() in found)]
 
 
+@dataclass(frozen=True)
+class Hop:
+    """One of Cube's joins on the grain's path: `kind` (`LEFT JOIN` or
+    `INNER JOIN`) to `table` (`dataset.table` as Cube's SQL spells it) as
+    `alias`, `on` an AND of column equalities with 1 table before it."""
+
+    alias: str
+    table: str
+    kind: str
+    on: str
+
+
+@dataclass(frozen=True)
+class Grain:
+    """Where Cube's row SQL reads a comparison's grain.
+
+    `keys` holds each member's (alias, column), in grain order. With no
+    `hops`, every column sits on `table`, read as `alias`, which is a fact.
+    Otherwise `table` is the view's fact, read as `alias`, and `hops` are
+    Cube's joins from it to every other alias `keys` names, in Cube's order.
+    """
+
+    table: str
+    alias: str
+    keys: tuple[tuple[str, str], ...]
+    hops: tuple[Hop, ...] = ()
+
+    @property
+    def columns(self) -> list[str]:
+        """Each member's column, in grain order."""
+        return [column for _, column in self.keys]
+
+
+def _path_join(alias: str, join: exp.Join) -> tuple[str, Hop]:
+    """The table before `alias` on the grain's path, and the hop to `alias`.
+
+    Raises:
+        NotCompared: The join is no LEFT or INNER join of a table with a
+            dataset, on an AND of column equalities between `alias` and 1
+            table before it.
+    """
+    where = f"the join to {alias} on the grain's path"
+    kinds = {("LEFT", ""): "LEFT JOIN", ("LEFT", "OUTER"): "LEFT JOIN",
+             ("", ""): "INNER JOIN", ("", "INNER"): "INNER JOIN"}  # fmt: skip
+    kind = kinds.get((join.side.upper(), join.kind.upper()))
+    if kind is None or join.method:
+        raise NotCompared(f"{where} is not a LEFT or INNER join")
+    target = join.this
+    if not isinstance(target, exp.Table) or not target.db:
+        raise NotCompared(f"{where} reads a subquery or a table with no dataset")
+    on = join.args.get("on")
+    if on is None or join.args.get("using"):
+        raise NotCompared(f"{where} is not on an equality of columns")
+    on = on.unnest()
+    parts = list(on.flatten()) if isinstance(on, exp.And) else [on]
+    pairs: list[tuple[exp.Column, exp.Column]] = []
+    for part in parts:
+        part = part.unnest()
+        if not (
+            isinstance(part, exp.EQ)
+            and isinstance(part.left, exp.Column)
+            and isinstance(part.right, exp.Column)
+            and part.left.table
+            and part.right.table
+        ):
+            raise NotCompared(f"{where} is not on an equality of columns")
+        pairs.append((part.left, part.right))
+    before = {c.table for pair in pairs for c in pair} - {alias}
+    if len(before) != 1 or any(
+        {a.table, b.table} != {alias, *before} for a, b in pairs
+    ):
+        raise NotCompared(
+            f"{where} does not compare it with exactly one table before it"
+        )
+    text = " AND ".join(
+        f"`{a.table}`.`{a.name}` = `{b.table}`.`{b.name}`" for a, b in pairs
+    )
+    return before.pop(), Hop(alias, f"{target.db}.{target.name}", kind, text)
+
+
 def fact_grain(
-    compiled_rows_sql: str, view: str, grain: list[str]
-) -> tuple[str, list[str]]:
-    """The table Cube's row SQL reads the grain from, and its column per member.
+    compiled_rows_sql: str, view: str, grain: list[str], facts: list[str]
+) -> Grain:
+    """Where Cube's row SQL reads the grain: its column per member, and the
+    joins that carry each one to the fact.
 
     Only a plain column of a table in the outermost SELECT's `FROM` or `JOIN`
-    counts: the Cube side filters that table by those columns.
+    counts. When every member sits on one table of `facts`, that table is the
+    grain's and the Cube side filters it as is. Otherwise each member's table
+    must be reached from the view's fact through Cube's own joins, each a
+    LEFT or INNER join on column equalities with the table before it: the
+    Cube side then keys the fact's rows through those joins, never by a
+    column of another table that only shares a name.
 
     Args:
         compiled_rows_sql: Cube's compiled SQL for the comparison's rows.
         view: The Cube view, whose members Cube selects as `<view>__<member>`.
         grain: The grain's Cube members, the student first.
+        facts: The view's fact, then its `also_facts`, as `dataset.table`.
 
     Returns:
-        The `dataset.table` and, per member in order, its column there.
+        The grain's `Grain`.
 
     Raises:
-        NotCompared: The SQL cannot be parsed or is no single SELECT, or a
-            member is missing from it, is not a plain column of a table with a
-            dataset, or sits on another table than the rest.
+        NotCompared: The SQL cannot be parsed or is no single SELECT; a
+            member is missing from it or is not a plain column of a table with
+            a dataset; or the grain sits off one fact and the fact is not read
+            once, or a member's table is not reached from it that way.
     """
     try:
         tree = sqlglot.parse_one(compiled_rows_sql, read="bigquery")
@@ -411,11 +499,11 @@ def fact_grain(
         raise NotCompared("Cube's row SQL is not a single SELECT")
     start = tree.args.get("from_")
     reads = [start.this] if start else []
-    reads += [j.this for j in tree.args.get("joins") or []]
+    joins = tree.args.get("joins") or []
+    reads += [j.this for j in joins]
     sources = {s.alias_or_name: s for s in reads}
     projections = {p.alias_or_name: p.unalias() for p in tree.expressions}
-    tables: set[str] = set()
-    columns: list[str] = []
+    keys: list[tuple[str, str]] = []
     for m in grain:
         column = projections.get(f"{view}__{m}")
         if column is None:
@@ -432,11 +520,50 @@ def fact_grain(
             raise NotCompared(
                 f"grain column {m} sits on a CTE or a table with no dataset"
             )
-        tables.add(f"{source.db}.{source.name}")
-        columns.append(column.name)
-    if len(tables) > 1:
-        raise NotCompared("the grain columns sit on more than one table")
-    return tables.pop(), columns
+        keys.append((column.table, column.name))
+
+    def table_of(alias: str) -> str:
+        source = sources[alias]
+        return f"{source.db}.{source.name}"
+
+    on = {alias for alias, _ in keys}
+    if len(on) == 1 and table_of(next(iter(on))).lower() in {f.lower() for f in facts}:
+        alias = next(iter(on))
+        return Grain(table_of(alias), alias, tuple(keys))
+    fact = facts[0]
+    starts = [
+        s.alias_or_name
+        for s in reads
+        if isinstance(s, exp.Table) and f"{s.db}.{s.name}".lower() == fact.lower()
+    ]
+    if len(sources) != len(reads):
+        # One alias per table read, so each join names the table it means.
+        raise NotCompared("Cube's row SQL reads 2 tables under one alias")
+    if len(starts) != 1:
+        raise NotCompared(
+            "the grain sits off the fact, and Cube's row SQL does not read the "
+            f"fact {fact}" + (" once" if starts else "")
+        )
+    root = starts[0]
+    by_alias = {j.this.alias_or_name: j for j in joins}
+    hops: dict[str, Hop] = {}
+    for m, (alias, _) in zip(grain, keys, strict=True):
+        at, seen = alias, set()
+        while at != root and at not in hops:
+            if at in seen or at not in by_alias:
+                raise NotCompared(
+                    f"grain member {m} sits on {alias}, which no chain of joins "
+                    "from the fact reaches"
+                )
+            seen.add(at)
+            before, hops[at] = _path_join(at, by_alias[at])
+            at = before
+    return Grain(
+        table_of(root),
+        root,
+        tuple(keys),
+        tuple(hops[a] for a in by_alias if a in hops),
+    )
 
 
 def filtered_tables(
@@ -671,12 +798,16 @@ def _job_sql(
     ]
     ctes = matched_ctes(cfg, comparison, sides, table)
     ex = pipeline.Expand(cfg, cube, schools, wh)
-    grain = [p.cube for p in pipeline.rows_of(comparison).grain]
-    grain_table, columns = fact_grain(
+    members = [p.cube for p in pipeline.rows_of(comparison).grain]
+    grain = fact_grain(
         ex.cube_sql(pipeline.row_query(cfg.view, comparison), rows=True),
         cfg.view,
-        grain,
+        members,
+        [cfg.fact, *cfg.also_facts],
     )
+    if grain.hops:
+        raise NotCompared("the grain columns sit on more than one table")
+    grain_table, columns = grain.table, grain.columns
     compiled = "\n".join(
         ex.cube_sql(pipeline.cell_query(cfg.view, comparison, cut)) for cut in cuts
     )
