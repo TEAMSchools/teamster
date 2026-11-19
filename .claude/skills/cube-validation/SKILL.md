@@ -516,15 +516,21 @@ refuses when the view's only run read another fact.
    (same `dashboard_view` and same `rows` grain and values; `filters`,
    `defaults`, `cuts`, `scope`, `dashboard_filters` and `dashboard_columns` may
    differ) usually reconcile the same rows. Explain one of them: its explanation
-   also runs on the others' groups of that bucket, in `explain` (printed as
-   "Also <comparison>: N of M items explained.") and in every `sort`, unless one
-   has an explanation file of its own, which then wins, even when it fails. Each
-   comparison runs it on its own rows, so a dim whose join drops or repeats rows
-   shows as a refusal there. A shared explanation reads only `__row`, `side` and
-   the grain: a group-by column one sibling lacks fails there. Delete a
-   duplicate file to share. Work cause-first: explain a cause once, on the
-   comparison that shows it most clearly, let it run on every comparison of that
-   model, then work comparison by comparison on what is left.
+   also runs on the others' groups of that bucket, in `explain` and in every
+   `sort`, unless one has an explanation file of its own, which then wins, even
+   when it fails. A comparison with no file of its own runs every sibling's file
+   for that bucket, and a row group is explained when any of them explains it;
+   `explain` prints "Also <comparison>: N of M items explained (<file>: n,
+   ...)." with each file's count when several ran, after pricing them all with
+   its own query under one cap check. Each comparison runs them on its own rows,
+   never taking another comparison's result, so a dim whose join drops or
+   repeats rows shows as a refusal there. A shared explanation that reads a
+   column a sibling's `{unmatched}` lacks (a group-by column, say) is skipped
+   there before anything is priced, with one line: "Explanation <file> skipped
+   on <comparison>: it reads <column>, which <comparison>'s {unmatched} lacks."
+   Delete a duplicate file to share. Work cause-first: explain a cause once, on
+   the comparison that shows it most clearly, let it run on every comparison of
+   that model, then work comparison by comparison on what is left.
 
    Every `sort` re-runs every stored explanation on the new run's rows first
    (`--no-explanations` skips them), then traces only what no explanation

@@ -1610,6 +1610,185 @@ def test_a_sibling_s_own_failing_proof_shows_its_refusal(duck, tmp_path, offline
     )
 
 
+# --- every sibling's explanation ------------------------------------------------
+
+# Explains nothing: every row is UNEXPLAINED.
+NOTHING = """
+SELECT u.__row,
+  CASE WHEN u.side = 'nowhere' THEN 'C1' ELSE 'UNEXPLAINED' END AS cause
+FROM {unmatched} AS u
+"""
+# Reads a group-by column a comparison with no dims lacks.
+BY_SCHOOL = """
+SELECT u.__row,
+  CASE WHEN u.abbreviation = 'nowhere' THEN 'C1' ELSE 'UNEXPLAINED' END AS cause
+FROM {unmatched} AS u
+"""
+NEVER = {"C1": ("cube", "a cause no row has")}
+THIRD = Comparison(id="mastery-c", measure="pct3", dims=[], rows=ROWS)
+CFG3 = ViewConfig(view="v", fact="m.fct", comparisons=[COMPARISON, SIBLING, THIRD])
+
+
+def _three_run():
+    return _run(
+        [
+            _group(3),
+            Group("mastery-b", (("abbreviation", "X"),), "cube_only", 3, 3),
+            Group("mastery-c", (), "cube_only", 3, 3),
+        ]
+    )
+
+
+def _own(directory, comparison, body, causes):
+    explain.explanation_path(directory, comparison, "cube_only").write_text(
+        explain.compose(causes, body)
+    )
+
+
+class Logged(Wh):
+    """`Wh` that logs each dry run, cap check and query in order."""
+
+    def __init__(self, duck):
+        super().__init__(duck)
+        self.log: list[tuple[str, float | None]] = []
+
+    def estimate(self, sql):
+        self.log.append(("estimate", None))
+        return super().estimate(sql)
+
+    def refuse_past_caps(self, usd):
+        self.log.append(("caps", usd))
+
+    def rows(self, sql, timeout_s=None):
+        self.log.append(("rows", None))
+        return super().rows(sql, timeout_s)
+
+
+def test_a_sibling_runs_every_sibling_s_explanation_and_any_one_explains_it(
+    duck, tmp_path, offline
+):
+    # mastery's file explains nothing and sorts after mastery-b's, which
+    # explains every row: the last one run must not undo the first.
+    _tables(duck)
+    run = _three_run()
+    items = [sort._as_json(s) for s in sort.suggest(CFG3, run, {}, traces={})]
+    directory, _ = _explanation(tmp_path, NOTHING, NEVER)
+    _own(directory, "mastery-b", EXPLANATION, CAUSES)
+    wh = Wh(duck)
+
+    _save(duck, wh, run, CFG3)
+    ran = explain.run_stored(CFG3, run, directory, wh=wh, cube=None)
+    explain.apply_runs(run, items, ran, CFG3)
+
+    on_third = [r for r in ran if r.items[0][1].comparison_id == "mastery-c"]
+    assert sorted(r.proof.path.name for r in on_third) == [
+        "mastery-b__cube_only.sql",
+        "mastery__cube_only.sql",
+    ]
+    by = {i["comparison"]: i for i in items}
+    assert by["mastery-c"]["suggestion"] == "cause"
+    assert by["mastery-c"]["proof"]["path"].endswith("mastery-b__cube_only.sql")
+    # Each keeps its own result: never closed on another comparison's.
+    assert by["mastery"]["suggestion"] == "investigate"
+    assert by["mastery-b"]["suggestion"] == "cause"
+
+
+def test_a_row_group_no_explanation_explains_keeps_every_explanation_s_line(
+    duck, tmp_path, offline
+):
+    _tables(duck)
+    run = _three_run()
+    items = [sort._as_json(s) for s in sort.suggest(CFG3, run, {}, traces={})]
+    directory, _ = _explanation(tmp_path, NOTHING, NEVER)
+    _own(directory, "mastery-b", NOTHING, NEVER)
+
+    _stored(run, items, directory, Wh(duck), cfg=CFG3)
+
+    third = next(i for i in items if i["comparison"] == "mastery-c")
+    assert third["suggestion"] == "investigate"
+    named = [line.split(" ")[1] for line in third["evidence_posted"][:2]]
+    assert sorted(named) == ["mastery-b__cube_only.sql", "mastery__cube_only.sql"]
+
+
+def test_a_shared_explanation_reading_a_column_the_sibling_lacks_is_skipped(
+    duck, tmp_path, offline, capsys
+):
+    _tables(duck)
+    run = _three_run()
+    directory, _ = _explanation(tmp_path)
+    _own(directory, "mastery-b", BY_SCHOOL, NEVER)
+    wh = Logged(duck)
+    _save(duck, wh, run, CFG3)
+
+    ran = explain.run_stored(CFG3, run, directory, wh=wh, cube=None)
+
+    out = capsys.readouterr().out
+    assert (
+        "Explanation mastery-b__cube_only.sql skipped on mastery-c: it reads "
+        "abbreviation, which mastery-c's {unmatched} lacks.\n"
+    ) in out
+    assert out.count("skipped") == 1 and "not run" not in out
+    pairs = sorted((r.proof.path.name, r.items[0][1].comparison_id) for r in ran)
+    assert pairs == [
+        ("mastery-b__cube_only.sql", "mastery-b"),
+        ("mastery__cube_only.sql", "mastery"),
+        ("mastery__cube_only.sql", "mastery-c"),
+    ]
+    assert all(r.why == "" for r in ran)
+    # Decided before any query: 3 dry runs and 3 queries, none for the skip.
+    assert [k for k, _ in wh.log].count("estimate") == 3
+    assert [k for k, _ in wh.log].count("rows") == 3
+
+
+def test_missing_columns_reads_the_unmatched_alias_and_bare_columns():
+    assert explain.missing_columns(BY_SCHOOL, THIRD) == ["abbreviation"]
+    assert explain.missing_columns(BY_SCHOOL, SIBLING) == []
+    assert explain.missing_columns(EXPLANATION, THIRD) == []
+    bare = "SELECT __row, CASE WHEN abbreviation = 'x' THEN 'C1' ELSE 'UNEXPLAINED' END AS cause FROM {unmatched}"
+    assert explain.missing_columns(bare, THIRD) == ["abbreviation"]
+    # A join's columns are the other table's.
+    assert (
+        explain.missing_columns(EXPLANATION.replace("f.ok1", "f.mastery"), THIRD) == []
+    )
+
+
+def test_explain_runs_every_sibling_s_explanation_on_a_sharing_one_priced_first(
+    duck, tmp_path, monkeypatch, offline, capsys
+):
+    _tables(duck)
+    run = _three_run()
+    path = _saved(tmp_path, monkeypatch, run)
+    loaded = json.loads(path.read_text())
+    loaded["items"] = [sort._as_json(s) for s in sort.suggest(CFG3, run, {}, traces={})]
+    path.write_text(json.dumps(loaded))
+    directory = tmp_path / "validation" / "explanations" / "v"
+    directory.mkdir(parents=True)
+    _own(directory, "mastery-b", NOTHING, NEVER)
+    draft = tmp_path / "draft.sql"
+    draft.write_text(EXPLANATION)
+    wh = Logged(duck)
+    _save(duck, wh, run, CFG3)
+
+    explain.explain(
+        CFG3, tmp_path / "validation" / "v.yml", wh=wh, cube=None, max_usd=1.0,
+        cache_root=tmp_path, comparison="mastery", bucket="cube_only", sql=draft,
+        causes=[f"{b}={side}:{words}" for b, (side, words) in CAUSES.items()],
+    )  # fmt: skip
+
+    kinds = [k for k, _ in wh.log]
+    # The target and both explanations on mastery-c: priced, capped, then run.
+    assert kinds == ["estimate"] * 3 + ["caps"] + ["rows"] * 3
+    assert wh.log[3] == ("caps", pytest.approx(0.03))
+    out = capsys.readouterr().out
+    assert (
+        "Also mastery-c: 1 of 1 items explained (mastery__cube_only.sql: 1, "
+        "mastery-b__cube_only.sql: 0)." in out
+    )
+    by = {i["comparison"]: i for i in json.loads(path.read_text())["items"]}
+    assert by["mastery-c"]["suggestion"] == "cause"
+    assert by["mastery-c"]["proof"]["path"].endswith("mastery__cube_only.sql")
+
+
 # --- reproduce queries ---------------------------------------------------------------
 
 REPRODUCE = """SELECT f.school, COUNT(*) AS n_rows
