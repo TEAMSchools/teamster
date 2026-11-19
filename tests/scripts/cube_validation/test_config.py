@@ -806,7 +806,8 @@ def test_formula_and_group_are_exclusive(tmp_path):
     )
     with pytest.raises(
         ConfigError,
-        match="set only one of group, missing_cut, missing_filter, formula and cause",
+        match="set only one of group, missing_cut, missing_filter, formula, cause "
+        "and all_groups",
     ):
         load_view_config(_write(tmp_path, EXAMPLE + both))
 
@@ -843,6 +844,70 @@ def test_formula_must_be_true(tmp_path):
     text = EXAMPLE + FORMULA_DECISION.replace("formula: true", "formula: false")
     with pytest.raises(ConfigError, match=r"formula: must be true"):
         load_view_config(_write(tmp_path, text))
+
+
+COMPARISON_DECISION = """\
+  - id: old-sheet
+    comparison: ada-y1-region
+    all_groups: true
+    call: deliberate
+    reason: an old sheet no one reads
+    fingerprints:
+      cube: abc
+      dashboard: def
+"""
+
+
+def test_a_comparison_decision_loads(tmp_path):
+    text = EXAMPLE + COMPARISON_DECISION
+    (*_, d) = load_view_config(_write(tmp_path, text)).decisions
+    assert (d.id, d.comparison, d.all_groups) == ("old-sheet", "ada-y1-region", True)
+    assert d.group == {} and not d.formula
+    assert d.fingerprints == {"cube": "abc", "dashboard": "def"}
+
+
+@pytest.mark.parametrize(
+    ("old", "new", "match"),
+    [
+        ("call: deliberate", "call: domain_owner",
+         r"call: a comparison decision \(all_groups\) is deliberate"),
+        ("call: deliberate", "call: fix_cube\n    task: '#1'",
+         r"call: a comparison decision \(all_groups\) is deliberate"),
+        ("reason: an old sheet no one reads", "reason: '  '",
+         r"reason: a comparison decision \(all_groups\) needs a reason"),
+        ("      cube: abc\n", "",
+         r"fingerprints\.cube: is required; `decide` writes it"),
+        ("    fingerprints:\n      cube: abc\n      dashboard: def\n", "",
+         r"fingerprints\.cube: is required; `decide` writes it"),
+        ("all_groups: true", "all_groups: false", r"all_groups: must be true"),
+        ("    comparison: ada-y1-region\n", "", r"comparison: is required"),
+        ("all_groups: true", "all_groups: true\n    formula: true",
+         "set only one of"),
+    ],
+)  # fmt: skip
+def test_a_bad_comparison_decision_is_refused(tmp_path, old, new, match):
+    assert old in COMPARISON_DECISION
+    text = EXAMPLE + COMPARISON_DECISION.replace(old, new)
+    with pytest.raises(ConfigError, match=match):
+        load_view_config(_write(tmp_path, text))
+
+
+def test_write_decision_writes_a_comparison_decision_in_block_style(tmp_path):
+    path = _write(tmp_path, EXAMPLE)
+    decision = {
+        "id": "old-sheet",
+        "comparison": "ada-y1-region",
+        "all_groups": True,
+        "call": "deliberate",
+        "reason": "an old sheet no one reads",
+        "fingerprints": {"cube": "abc", "dashboard": "def"},
+    }
+
+    write_decision(path, decision)
+
+    assert COMPARISON_DECISION in path.read_text()
+    (*_, d) = load_view_config(path).decisions
+    assert d.all_groups and d.id == "old-sheet"
 
 
 def test_parameters_load_as_text(tmp_path):

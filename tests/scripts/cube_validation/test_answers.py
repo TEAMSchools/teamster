@@ -782,6 +782,68 @@ def test_approved_decisions_refuse_a_comparison_the_run_has_no_fingerprints_for(
         approved_decisions([entry], SORTED, {})
 
 
+WHOLE = {"id": "old", "comparison": "ada", "call": "deliberate",
+         "reason": "an old sheet no one reads"}  # fmt: skip
+# A row group still in `investigate`: a comparison decision may close it.
+UNEXPLAINED = {
+    "items": [
+        {"id": "ada:g1", "kind": "group", "comparison": "ada",
+         "suggestion": "investigate", "stub": {"comparison": "ada"}},
+        *SORTED["items"],
+    ]
+}  # fmt: skip
+
+
+def test_approved_decisions_decide_a_whole_comparison():
+    (decision,) = approved_decisions([WHOLE], UNEXPLAINED, FPS)
+
+    assert decision == {"id": "old", "comparison": "ada", "all_groups": True,
+                        "call": "deliberate", "reason": "an old sheet no one reads",
+                        "fingerprints": FPS["ada"]}  # fmt: skip
+
+
+def test_approved_decisions_re_approve_a_comparison_decision_on_new_sql():
+    was = Decision("old", "ada", "deliberate", "before", all_groups=True,
+                   fingerprints={"cube": "c0", "dashboard": "d0"})  # fmt: skip
+
+    (decision,) = approved_decisions([WHOLE], UNEXPLAINED, FPS, existing=[was])
+
+    assert decision["fingerprints"] == FPS["ada"]
+    assert decision["reason"] == "an old sheet no one reads"
+
+    # Under another id it would be a second claim on the comparison.
+    with pytest.raises(AnswerError, match="'old' already decides every open row"):
+        approved_decisions([{**WHOLE, "id": "new"}], UNEXPLAINED, FPS, existing=[was])
+
+
+@pytest.mark.parametrize(
+    "entry, triage, match",
+    [
+        ({**WHOLE, "call": "domain_owner"}, UNEXPLAINED,
+         "a comparison decision is deliberate"),
+        ({**WHOLE, "call": "fix_cube", "task": "#1"}, UNEXPLAINED,
+         "a comparison decision is deliberate"),
+        ({**WHOLE, "reason": "  "}, UNEXPLAINED, "`reason` must be non-empty"),
+        ({k: v for k, v in WHOLE.items() if k != "reason"}, UNEXPLAINED, "reason"),
+        ({**WHOLE, "item": "ada:g1"}, UNEXPLAINED, "either `item` or `comparison`"),
+        ({**WHOLE, "comparison": "nope"}, UNEXPLAINED, "no fingerprints for 'nope'"),
+        # No open row group of the comparison to close.
+        (WHOLE, {"items": [i for i in SORTED["items"] if i.get("kind") != "group"]},
+         "the sort lists no open row group of 'ada'"),
+    ],
+)  # fmt: skip
+def test_approved_decisions_refuse_a_bad_comparison_decision(entry, triage, match):
+    with pytest.raises(AnswerError, match=match):
+        approved_decisions([entry], triage, {**FPS, "nope": {}})
+
+
+def test_approved_decisions_refuse_a_taken_id_for_a_comparison_decision():
+    taken = Decision("old", "ada", "deliberate", "r", {"column": "x", "values": ["1"]})
+
+    with pytest.raises(AnswerError, match="decisions already has 'old'"):
+        approved_decisions([WHOLE], UNEXPLAINED, FPS, existing=[taken])
+
+
 def test_parse_answers_reads_a_crlf_comment():
     body = _body([{"question": "Q1", "decisions": ["a"], "call": "deliberate",
                    "note": "n"}]).replace("\n", "\r\n")  # fmt: skip

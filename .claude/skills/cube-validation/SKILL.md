@@ -636,6 +636,23 @@ refuses when the view's only run read another fact.
    the saved run offline, so `ask-owner` reads it with no new `compare`. After a
    hand edit to `decisions:`, `reapply <file>` does the same.
 
+   When the analyst decides a whole comparison is not worth explaining (the
+   owner calls the sheet old, or its remaining groups are known noise), approve
+   `{"id", "comparison": "<comparison id>", "call": "deliberate", "reason"}` in
+   place of an `item`. `decide` writes an `all_groups: true` decision with both
+   SQL fingerprints. It closes every open row group of that comparison, those
+   still in `investigate` too, while the fingerprints hold, and leaves a `group`
+   decision's groups to it. It closes no cells: a formula difference still
+   files, and a cell set closes only by coverage as for any closed group. Use it
+   only on the analyst's word, never to clear `investigate` faster: the
+   comparison's unexplained groups leave "Still with the analyst". Only
+   `deliberate` is taken; to ask for a fix or the owner's call, explain and
+   decide the causes. A changed SQL sends it to re-confirm like any decision:
+   approve the same entry under the same id. One per comparison; a cause
+   decision with another call on one of its groups refuses as with a `group`
+   decision. Never hand-write one; the loader refuses one that is not
+   `deliberate`, has no reason or lacks a fingerprint.
+
    Before `ask-owner`, give the file a top-level `tasks:` block,
    `{cube_fix: <the domain's Cube-fix issue>, dashboard_fix: <its Asana dashboard-fix task>}`:
    `record-answers` takes a `fix_cube` or `fix_dashboard` answer's task from it
@@ -720,8 +737,11 @@ refuses when the view's only run read another fact.
    one line per call, reason and task, so a cause and the missing sheet filter
    behind it, decided alike, print once: what it covers, the call, the reason
    and the task, masked like the questions and kept out of the JSON, so
-   `record-answers` never reads one as an answer. Each cause question also gets
-   a folded Reproduce block: each example cell as a Cube `load` query for Claude
+   `record-answers` never reads one as an answer. A comparison decision lists
+   there as "every open row group of `<comparison>`" with its buckets and only
+   masked counts (row groups, rows, and students of the largest group, each
+   `<10` under 10), never a group's values. Each cause question also gets a
+   folded Reproduce block: each example cell as a Cube `load` query for Claude
    chat's Cube connector, each distinct `-- reproduce` count query once
    (numbered only when there are several, so "1" never reads as a count; labeled
    today's data), then per explanation file a branch link and the `explain` that

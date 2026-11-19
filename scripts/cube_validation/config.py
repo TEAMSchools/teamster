@@ -252,6 +252,10 @@ class Decision:
     # The call the owner answered a cause decision with; set by
     # `record-answers`, so `ask-owner` asks it no more.
     answer: str = ""
+    # Covers every row group of its comparison no `group` decision closes,
+    # explained or not, in place of `group`; never cells. Only `deliberate`,
+    # and only `decide` writes it.
+    all_groups: bool = False
 
 
 @dataclass(frozen=True)
@@ -700,13 +704,19 @@ def _decision(
     formula = reader.get("formula", bool, default=False)
     if "formula" in reader.data and not formula:
         reader.fail("formula", "must be true; delete the key otherwise")
-    keys = ("group", "missing_cut", "missing_filter", "formula", "cause")
+    all_groups = reader.get("all_groups", bool, default=False)
+    if "all_groups" in reader.data and not all_groups:
+        reader.fail("all_groups", "must be true; delete the key otherwise")
+    keys = ("group", "missing_cut", "missing_filter", "formula", "cause", "all_groups")
     named = [k for k in keys if reader.data.get(k)]
     if len(named) > 1:
         reader.fail(
             named[1],
-            "set only one of group, missing_cut, missing_filter, formula and cause",
+            "set only one of group, missing_cut, missing_filter, formula, cause and "
+            "all_groups",
         )
+    if all_groups:
+        _comparison_decision(reader, call)
     if missing_cut or missing_filter:
         # A sheet field Cube lacks is missing from the view, not one comparison.
         for key in ("comparison", "fingerprints"):
@@ -755,7 +765,25 @@ def _decision(
         cause=cause,
         formula=formula,
         answer=answer,
+        all_groups=all_groups,
     )
+
+
+def _comparison_decision(reader: _Reader, call: str) -> None:
+    """Check a comparison decision (`all_groups`): deliberate, with a reason
+    and both SQL fingerprints, as `decide` writes it."""
+    if call != "deliberate":
+        reader.fail(
+            "call",
+            f"a comparison decision (all_groups) is deliberate; got {call!r}. "
+            "Decide a cause instead to ask for a fix or the owner",
+        )
+    if not str(reader.data.get("reason") or "").strip():
+        reader.fail("reason", "a comparison decision (all_groups) needs a reason")
+    fingerprints = reader.get("fingerprints", dict, default={})
+    for side in ("cube", "dashboard"):
+        if not fingerprints.get(side):
+            reader.fail(f"fingerprints.{side}", "is required; `decide` writes it")
 
 
 def _cause(reader: _Reader) -> None:
@@ -1161,6 +1189,7 @@ def _holds(d: Decision, asked: dict[str, Any]) -> bool:
         and d.missing_filter == asked.get("missing_filter", "")
         and d.cause == asked.get("cause", {})
         and d.answer == asked.get("answer", "")
+        and d.all_groups == asked.get("all_groups", False)
         and d.fingerprints == asked.get("fingerprints", {})
     )
 

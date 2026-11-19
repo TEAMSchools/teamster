@@ -45,10 +45,14 @@ validation files or runs the validator, and neither does this session.
    `expires` follows from it. A section "Still with the analyst" in the issue
    counts differences not explained yet per comparison, links a file listing
    them one by one, and lists comparisons never compared, stale or skipped: they
-   are not questions, so never ask them or answer them in the comment. Read its
-   comments too: skip a question an earlier answers comment of the owner's
-   already covers, unless they want to change it, and then send them to the
-   analyst.
+   are not questions, so never ask them or answer them in the comment. Neither
+   is "Also decided (no answer needed)": the analyst's own calls. A line there
+   reading "every open row group of `<comparison>`" means the analyst decided
+   that whole comparison's remaining differences are intended (`deliberate`),
+   with the reason given. If the owner disagrees, send them to the analyst
+   rather than answering it in the comment. Read its comments too: skip a
+   question an earlier answers comment of the owner's already covers, unless
+   they want to change it, and then send them to the analyst.
 2. Say how many questions there are. A question with `expired: true` has pinned
    SQL that no longer runs: the owner can answer without the checks, check a
    cause through its `reproduce` entries (which never expire), or wait for the

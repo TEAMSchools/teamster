@@ -452,14 +452,15 @@ def checked_sort(
             open item the triage did not see,
             an item sits in a pile this validator does not sort into (a triage
             from an older validator), a `cause` item has no cause, a decision
-            closes an item in `investigate`, a row group or cell set in
+            other than a comparison decision closes an item in `investigate`,
+            a row group or cell set in
             `cause` rests on no explanation, an explanation an item rests on
             changed since, or a cause decision and a `group` decision disagree on
             one group.
 
     Returns:
         The triage as `triage.json` holds it, with `unsettled`: its items
-        still in `investigate`.
+        still in `investigate` that no decision closed.
     """
     view = run.view
     found, loaded = load_sort(run, run_json)
@@ -477,13 +478,14 @@ def checked_sort(
             f"{view}: {bare} `cause` item{'' if bare == 1 else 's'} "
             f"{'has' if bare == 1 else 'have'} no cause; re-run `sort`"
         )
-    # A decision written by hand must not close what no one explained.
+    # A decision written by hand must not close what no one explained; a
+    # comparison decision, which `decide` writes, closes it on purpose.
     closed = {
         _open_key(src): d for d, src in [*run.applied.quiet, *run.applied.quiet_cells]
     }
     for i in items:
         d = closed.get(i.get("key", ""))
-        if d is not None and i["suggestion"] == "investigate":
+        if d is not None and i["suggestion"] == "investigate" and not d.all_groups:
             raise pipeline.Refusal(
                 f"{view}: decision {d.id!r} closes item {i['id']!r}, which the "
                 "sort holds in `investigate`; delete the decision and run `explain` "
@@ -513,21 +515,28 @@ def checked_sort(
             mark_decided(run, _closed(loaded), recorded, refuse=True)
         except pipeline.Refusal as exc:
             raise pipeline.Refusal(f"{view}: {exc}") from exc
-    loaded["unsettled"] = [i for i in items if i["suggestion"] == "investigate"]
+    loaded["unsettled"] = [
+        i
+        for i in items
+        if i["suggestion"] == "investigate" and i.get("key", "") not in closed
+    ]
     return loaded
 
 
 def unsettled(run: RunResult, loaded: dict) -> list[Unsettled]:
-    """The triage's items still in `investigate`, as `ask-owner` lists them.
+    """The triage's items still in `investigate` and open, as `ask-owner`
+    lists them; one a comparison decision closed since is decided.
 
     Each is matched to the run's open item by its `_open_key` for its bucket
     and counts; one the run no longer holds keeps its kind and no count. Read
     `loaded` through `posted_sort`, so a lead's counts are masked.
     """
     sources = {_open_key(src): src for _, src in _entries(run)}
+    # A comparison decision closes groups still in `investigate`.
+    closed = {_open_key(g) for _, g in run.applied.quiet}
     out = []
     for item in loaded.get("items", []):
-        if item.get("suggestion") != "investigate":
+        if item.get("suggestion") != "investigate" or item.get("key") in closed:
             continue
         source = sources.get(item.get("key", ""))
         lead = next((e for e in item.get("evidence", []) if e.startswith("lead: ")), "")
@@ -666,7 +675,8 @@ def mark_decided(
 
     A holding cause decision on a group a `group` decision also covers,
     stale or not, is redundant when their calls agree and refused when they
-    differ.
+    differ; so is one on a group of a comparison decision's comparison that
+    no `group` decision covers.
 
     Args:
         run: The run the items come from.
@@ -682,7 +692,7 @@ def mark_decided(
         pipeline.Refusal: With `refuse`, a disagreement.
     """
     groups = {**_quiet_by_key(run), **_groups_by_key(run)}
-    by_group = [d for d in recorded if d.group and not d.cause]
+    by_group = [d for d in recorded if (d.group or d.all_groups) and not d.cause]
     for item in items:
         if not decidable(item):
             continue
@@ -704,6 +714,9 @@ def mark_decided(
         item["decided"] = all(found.values())
         g = groups.get(item.get("key", ""))
         covering = [o for o in by_group if g is not None and _covers_group(o, g)]
+        # A comparison decision leaves a group decision's groups to it.
+        if any(not o.all_groups for o in covering):
+            covering = [o for o in covering if not o.all_groups]
         for other in covering:
             for d in held:
                 if d.call == other.call:
@@ -711,9 +724,13 @@ def mark_decided(
                     continue
                 # A closed group's id is a hash: name it by the closing
                 # decision's column, never by its values.
+                how = (
+                    "as a whole comparison"
+                    if other.all_groups
+                    else f"by {other.group.get('column')!r}"
+                )
                 where = (
-                    f"a group of {item['comparison']!r} that {other.id!r} "
-                    f"closes by {other.group.get('column')!r}"
+                    f"a group of {item['comparison']!r} that {other.id!r} closes {how}"
                     if item.get("closed")
                     else f"item {item['id']!r}"
                 )
@@ -738,7 +755,10 @@ def mark_decided(
 
 
 def _covers_group(d: Decision, g: Group) -> bool:
-    """A `group` decision names `g`, whether or not its SQL still holds."""
+    """A `group` decision names `g`, or a comparison decision is on its
+    comparison, whether or not its SQL still holds."""
+    if d.all_groups:
+        return d.comparison == g.comparison_id
     values = {decisions._text(v) for v in d.group.get("values") or []}
     return (
         d.comparison == g.comparison_id

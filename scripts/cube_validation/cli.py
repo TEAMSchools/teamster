@@ -366,7 +366,9 @@ def _parser() -> argparse.ArgumentParser:
     p.add_argument(
         "approved",
         type=Path,
-        help='JSON list of {"id", "call", "reason", "task", "item", "cause"}',
+        help='JSON list of {"id", "call", "reason", "task", "item", "cause"}, or '
+        '{"id", "comparison", "call": "deliberate", "reason"} to close every '
+        "open row group of a comparison",
     )
 
     p = sub.add_parser(
@@ -688,7 +690,9 @@ def _decide(cfg: ViewConfig, path: Path, approved_path: Path) -> int:
     Stubs and explained causes come from the sort beside the latest run and
     fingerprints from that run; a cause already decided keeps its decision
     (see `answers.approved_decisions`). Items still in `investigate` wait;
-    the batch may not decide one. Refuses while that sort is stale
+    the batch may not decide one, save through a comparison decision, which
+    closes every open row group of its comparison. Refuses while that sort is
+    stale
     (`sort.checked_sort`), on an approved item still in `investigate`, or
     when a cause decision would disagree with a `group` decision on one
     group. The whole batch is written or none of it.

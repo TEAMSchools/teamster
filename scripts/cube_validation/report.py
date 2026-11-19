@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import re
+from collections import Counter
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -221,6 +222,8 @@ def _decision_line(d: Decision) -> str:
         return f"`{d.id}` (missing {kind} `{name}`, {d.call}): {d.reason}"
     if d.formula:
         return f"`{d.id}` ({d.comparison} formula, {d.call}): {d.reason}"
+    if d.all_groups:
+        return f"`{d.id}` ({d.comparison} every open row group, {d.call}): {d.reason}"
     return f"`{d.id}` ({d.comparison}, {d.call}): {d.reason}"
 
 
@@ -323,8 +326,16 @@ def render_local(run: RunResult) -> str:
         out += [f"  - {cause}" for cause in diff.causes]
 
     out += ["", "## Decisions", "", "Applied:"]
+    # A comparison decision closes many groups; it is listed once, with how
+    # many (masked: this report may be posted).
+    closes = Counter(d.id for d, _ in run.applied.quiet if d.all_groups)
+    whole = {d.id: d for d, _ in run.applied.quiet if d.all_groups}
     out += _bullets(
-        [_decision_line(d) for d, _ in run.applied.quiet]
+        [
+            f"{_decision_line(d)} ({mask(closes[i])} row groups)"
+            for i, d in whole.items()
+        ]
+        + [_decision_line(d) for d, _ in run.applied.quiet if not d.all_groups]
         # A cause decision quiets many groups; it is listed once.
         # The latest triage says which groups a cause decision decides.
         + [_decision_line(d) for d in run.applied.causes]
@@ -627,6 +638,35 @@ def _group_part(
         f"{where} in {', '.join(sorted(per_comparison))} of "
         f"`{view}` ({', '.join(sorted({g.bucket for g in groups}))}): "
         f"{len(groups)} row {plural}, {count(rows)} rows, {who}"
+    ), hidden
+
+
+def _comparison_part(view: str, groups: list[Group]) -> tuple[str, list]:
+    """What a comparison decision closes, for the review, and the values its
+    reason must lose.
+
+    It names no group's values, and every count is masked (`mask`): the
+    groups, their rows, and the students of the largest group, the count
+    surely there. None of them is a total posted beside a hidden part.
+    A reason loses every identifier column's values and a reviewed column's
+    value no group with 10 or more students holds.
+    """
+    (cid,) = {g.comparison_id for g in groups}
+    students = max(g.n_students for g in groups)
+    per_value: dict[tuple[str, str], int] = {}
+    hidden = []
+    for g in groups:
+        for c, v in g.dims:
+            if _is_identifier(c):
+                hidden.append(v)
+            else:
+                per_value[c, v] = max(per_value.get((c, v), 0), g.n_students)
+    hidden += [v for (_, v), n in per_value.items() if n < MASK_BELOW]
+    buckets = ", ".join(sorted({g.bucket for g in groups}))
+    return (
+        f"every open row group of `{cid}` in `{view}` ({buckets}): "
+        f"{mask(len(groups))} row groups, {mask(sum(g.n_rows for g in groups))} "
+        f"rows, at least {mask(students)} students"
     ), hidden
 
 
@@ -1039,8 +1079,9 @@ def also_decided(
     """One line per decision the analyst made that the owner only sees.
 
     Every call but `domain_owner`, masked like the questions: what it covers
-    (a cause once across its comparisons, else the question's part), the call,
-    the reason and the task. `decided` is per view, `sort.cause_asks` for
+    (a cause once across its comparisons, a comparison decision's closed
+    groups as masked counts (`_comparison_part`), else the question's part),
+    the call, the reason and the task. `decided` is per view, `sort.cause_asks` for
     those calls. Never part of the questions JSON, so `record-answers` cannot
     take one for an answer.
     """
@@ -1058,10 +1099,19 @@ def also_decided(
             key = ("cause", d.cause.get("side"), d.cause.get("label"), d.call,
                    d.reason, d.task)  # fmt: skip
             add(key, _cause_head(ask), [(run.view, d.comparison)], d, hidden)
-        for decisions, groups in _by_reason(run.applied.quiet, owner=False):
+        by_group = [(d, g) for d, g in run.applied.quiet if not d.all_groups]
+        for decisions, groups in _by_reason(by_group, owner=False):
             part, hidden = _group_part(run.view, decisions, groups)
             d = decisions[0]
             add(("group", run.view, part, d.call), part, [], d, hidden)
+        # A comparison decision is always deliberate: listed, never asked.
+        whole: dict[str, tuple[Decision, list[Group]]] = {}
+        for d, g in run.applied.quiet:
+            if d.all_groups:
+                whole.setdefault(d.id, (d, []))[1].append(g)
+        for d, groups in whole.values():
+            part, hidden = _comparison_part(run.view, groups)
+            add(("comparison", run.view, d.id), part, [], d, hidden)
         for decisions, diffs in _by_reason(run.applied.quiet_cells, owner=False):
             part = (
                 f"{', '.join(f'`{c.comparison_id}`' for c in diffs)} in "

@@ -6257,6 +6257,91 @@ def test_reapply_refuses_a_hand_edit_making_a_cause_disagree_with_a_closed_group
     assert "Miami" not in err
 
 
+WHOLE_ENTRY = {"id": "old-sheet", "comparison": "ada-region", "call": "deliberate",
+               "reason": "an old sheet no one reads"}  # fmt: skip
+
+
+def test_decide_closes_a_whole_comparison_and_ask_owner_lists_it(
+    fakes, tmp_path, capsys
+):
+    path = _file(tmp_path)
+    assert cli.main(["compare", str(path)]) == 0
+    # The comparison's only row group is still in `investigate`.
+    _write_sorted_everywhere(tmp_path, [_sorted_item("e", "investigate")])
+
+    assert cli.main(["decide", str(path), str(_approved(tmp_path, [WHOLE_ENTRY]))]) == 0
+
+    (d,) = load_view_config(path).decisions
+    assert (d.id, d.comparison, d.all_groups, d.call) == (
+        "old-sheet", "ada-region", True, "deliberate"
+    )  # fmt: skip
+    assert "  - id: old-sheet\n    comparison: ada-region\n    all_groups: true\n" in (
+        path.read_text()
+    )
+    run, _ = results.latest_run(load_view_config(path), tmp_path / "cache")
+    assert run.applied.open == []
+    assert [x.id for x, _ in run.applied.quiet] == ["old-sheet"]
+    # The run report lists it once, with how many groups it closed, masked.
+    assert (
+        "- `old-sheet` (ada-region every open row group, deliberate): an old sheet "
+        "no one reads (<10 row groups)\n"
+    ) in report.render_local(run)
+    capsys.readouterr()
+
+    # The closed group is no longer with the analyst, and the owner sees the
+    # decision with masked counts only.
+    assert cli.main(["ask-owner", str(path), "--domain", "Registrar"]) == 0
+
+    body = capsys.readouterr().out
+    line = next(x for x in body.splitlines() if "every open row group" in x)
+    # The group count is under 10, so it is masked; the 30 rows and the
+    # largest group's 12 students are not.
+    assert line.startswith(
+        "- every open row group of `ada-region` in `v` (dashboard_only): "
+        "<10 row groups, 30 rows, at least 12 students: an intended difference"
+    )
+    assert line.endswith("Reason: an old sheet no one reads.")
+    assert MIAMI not in body
+
+
+def test_decide_refuses_a_whole_comparison_disagreeing_with_a_cause_decision(
+    fakes, tmp_path, capsys
+):
+    path = _file(tmp_path)
+    assert cli.main(["compare", str(path)]) == 0
+    _write_sorted_everywhere(tmp_path, [_sorted_item("e")])
+    cause = {"id": "cause", "call": "fix_cube", "reason": "r", "task": "#6150",
+             "item": MIAMI}  # fmt: skip
+    assert cli.main(["decide", str(path), str(_approved(tmp_path, [cause]))]) == 0
+    before = path.read_text()
+    capsys.readouterr()
+
+    assert cli.main(["decide", str(path), str(_approved(tmp_path, [WHOLE_ENTRY]))]) == 1
+
+    err = capsys.readouterr().err
+    assert "'old-sheet' (deliberate) and 'cause' (fix_cube) disagree" in err
+    assert path.read_text() == before
+
+
+def test_a_hand_group_decision_on_an_unexplained_group_still_refuses(
+    fakes, tmp_path, capsys
+):
+    # Only a comparison decision may close a group no one explained.
+    assert cli.main(["compare", str(_file(tmp_path))]) == 0
+    path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
+    assert cli.main(["reapply", str(path)]) == 0
+    (run_json,) = (tmp_path / "cache" / "v").glob("*/run.json")
+    run = results._run_from_json(json.loads(run_json.read_text()))
+    ((_, miami),) = run.applied.quiet
+    item = {**_sorted_item("e", "investigate"), "key": sort._open_key(miami)}
+    _write_sorted(run_json, [item])
+    capsys.readouterr()
+
+    assert cli.main(["ask-owner", str(path), "--domain", "Registrar"]) == 1
+
+    assert "which the sort holds in `investigate`" in capsys.readouterr().err
+
+
 def test_add_decisions_refuses_a_view_never_triaged(fakes, tmp_path, capsys):
     path = _file(tmp_path)
     assert cli.main(["compare", str(path)]) == 0
@@ -6879,6 +6964,7 @@ def test_decide_help_names_every_key_an_approved_entry_takes(capsys):
 
     help_text = " ".join(capsys.readouterr().out.split())
     assert '{"id", "call", "reason", "task", "item", "cause"}' in help_text
+    assert '{"id", "comparison", "call": "deliberate", "reason"}' in help_text
 
 
 def test_skip_lines_never_end_in_a_doubled_period(capsys):
