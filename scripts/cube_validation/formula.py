@@ -497,7 +497,8 @@ def fact_grain(
         NotCompared: The SQL cannot be parsed or is no single SELECT; a
             member is missing from it or is not a plain column of a table with
             a dataset; or the grain sits off one fact and the fact is not read
-            once, or a member's table is not reached from it that way.
+            once, or a member's table is not reached from it that way, or
+            the path joins one of the `also_facts`.
     """
     try:
         tree = sqlglot.parse_one(compiled_rows_sql, read="bigquery")
@@ -565,6 +566,13 @@ def fact_grain(
                 )
             seen.add(at)
             before, hops[at] = _path_join(at, by_alias[at])
+            if hops[at].table.lower() in {f.lower() for f in facts[1:]}:
+                # The rewrite filters the fact alone; another fact on the
+                # path would be read whole.
+                raise NotCompared(
+                    f"the join to {at} on the grain's path reads "
+                    f"{hops[at].table}, one of the view's also_facts"
+                )
             at = before
     return Grain(
         table_of(root),

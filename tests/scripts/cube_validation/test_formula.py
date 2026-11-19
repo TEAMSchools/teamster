@@ -768,6 +768,20 @@ def test_fact_grain_refuses_a_path_when_the_fact_is_read_twice():
         formula.fact_grain(sql, "v", ["student"], JOINED_FACTS)
 
 
+def test_fact_grain_refuses_a_path_through_an_also_facts_table():
+    # Another fact on the path is read as is, so its own rows would move the
+    # key the fact is filtered by.
+    with pytest.raises(
+        formula.NotCompared,
+        match="the join to enrollments on the grain's path reads "
+        "kipptaf_marts.dim_enrollments, one of the view's also_facts",
+    ):
+        formula.fact_grain(
+            JOINED_ROWS, "v", ["student"],
+            [*JOINED_FACTS, "KIPPTAF_MARTS.dim_enrollments"],
+        )  # fmt: skip
+
+
 def test_fact_grain_refuses_a_path_through_a_subquery():
     sql = JOINED_ROWS.replace(
         "kipptaf_marts.dim_sections  AS `sections`",
