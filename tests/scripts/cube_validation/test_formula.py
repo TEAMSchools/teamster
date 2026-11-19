@@ -1,4 +1,5 @@
 import json
+import re
 from dataclasses import replace
 from datetime import date, datetime, timezone
 from types import SimpleNamespace
@@ -33,7 +34,7 @@ from cube_validation.report import RunResult
 from cube_validation.saved import labels, table_id, table_sql
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation.timetravel import AsOf, TableInfo, as_of, utc_literal
+from cube_validation.timetravel import AsOf, TableInfo, as_of, repin, utc_literal
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.trace import TIMEOUT_S, Prepared
@@ -976,7 +977,9 @@ def _cube_cells(duck, comparison=SIDE, cfg=CFG, *, keep=True, shared=frozenset()
         ex=_Ex(),
         sides=sides,
         tables=["m.cube_t"],
-        columns=[p.cube for p in comparison.rows.grain],
+        grain=formula.Grain(
+            "m.cube_t", "c", tuple(("c", p.cube) for p in comparison.rows.grain)
+        ),
         keep=keep,
     )
     sql = body
@@ -1037,6 +1040,291 @@ def test_cube_side_keys_a_timestamp_grain_as_a_date(duck):
     kept, _ = _cube_cells(duck, DAILY, DAILY_CFG)
 
     assert kept == {("{}", "X"): 0.75}
+
+
+# --- the Cube side through Cube's joins ---------------------------------------
+
+# A toy DDI: the student 3 joins from the scores fact (the middle one a view,
+# as on DDI), the item and its day 1 join away, the response type on the
+# fact, and a dates dim on no member's path.
+_JOINS = (
+    "LEFT JOIN  m.dim_sections  AS `sections` "
+    "ON `sections`.section_key = `scores`.section_key\n"
+    "LEFT JOIN  m.dim_enrollments  AS `enrollments` "
+    "ON `enrollments`.enrollment_key = `sections`.enrollment_key\n"
+    "LEFT JOIN  m.dim_students  AS `students` "
+    "ON `students`.student_key = `enrollments`.student_key\n"
+    "LEFT JOIN  m.dim_admins  AS `admins` "
+    "ON `admins`.admin_key = `scores`.admin_key\n"
+    "LEFT JOIN  m.dim_dates  AS `dates` ON `dates`.date_key = `scores`.date_key"
+)
+# Cube's expression for each member.
+_MEMBER = {
+    "lea": "`students`.lea", "aid": "`admins`.aid", "day": "`admins`.day",
+    "rtype": "`scores`.rtype", "score_c": "`scores`.score",
+    "abbreviation": "`scores`.school",
+}  # fmt: skip
+JOINED = Comparison(
+    id="mastery",
+    measure="pct",
+    dashboard_view="d.dash_j",
+    sheet_query="AVG(score)",
+    dims=[ColumnPair("school", "abbreviation")],
+    rows=RowSpec(
+        grain=[
+            ColumnPair("student", "lea"),
+            ColumnPair("item", "aid"),
+            ColumnPair("rtype", "rtype"),
+        ],
+        values=[ColumnPair("score", "score_c")],
+    ),  # fmt: skip
+)
+JOINED_CFG = ViewConfig(view="v", fact="m.fct_s", comparisons=[JOINED])
+# Scores (section, admin, date, response type, score, school): 1 and 2
+# match; Cube alone holds 4; 5 sits on another item on each side; the last
+# score's section is unknown, so its student is NULL and it never matches.
+SCORES = [(11, 41, 1, "r", 0.5, "X"), (12, 41, 1, "r", 1.0, "X"),
+          (14, 41, 1, "r", 0.0, "X"), (15, 42, 1, "r", 0.2, "X"),
+          (99, 41, 1, "r", 0.9, "X")]  # fmt: skip
+STUDENTS = [(31, 1), (32, 2), (34, 4), (35, 5)]
+DASH_J = [(1, "a", "r", 0.5, "X", T1), (2, "a", "r", 1.0, "X", T1),
+          (3, "a", "r", 0.0, "X", T1), (5, "a", "r", 0.2, "X", T1)]  # fmt: skip
+
+
+class _JoinCatalog:
+    """`dim_enrollments` a view over `enroll_base`; every other relation a
+    table."""
+
+    def table(self, dataset, name):
+        return TableInfo("VIEW" if name == "dim_enrollments" else "TABLE")
+
+    def view_sql_as_of(self, dataset, name, ts):
+        return "select * from `teamster-332318`.`m`.`enroll_base`"
+
+
+class _JoinEx:
+    """`pipeline.Expand` over the toy DDI: the rows through every join, the
+    cells `AVG(score)` by the query's dims from the fact and the dates dim."""
+
+    def cube_sql(self, query, rows=False):
+        members = [m.split(".", 1)[1] for m in query["dimensions"]]
+        select = [f"{_MEMBER[m]} `v__{m}`" for m in members]
+        if rows:
+            return f"SELECT {', '.join(select)} FROM  m.fct_s  AS `scores`\n{_JOINS}"
+        where = " AND ".join(
+            f"{_MEMBER[f['member'].split('.', 1)[1]]} = {pipeline.lit(f['values'][0])}"
+            for f in query["filters"]
+        )
+        group = ", ".join(str(i + 1) for i in range(len(members)))
+        return (
+            f"SELECT {', '.join([*select, 'AVG(`scores`.score) `v__pct`'])} "
+            "FROM  m.fct_s  AS `scores`\n"
+            "LEFT JOIN  m.dim_dates  AS `dates` ON `dates`.date_key = `scores`.date_key\n"
+            f"WHERE {where or 'TRUE'} GROUP BY {group}"
+        )
+
+    def at(self, sql, ts):
+        return as_of(sql, ts, _JoinCatalog())
+
+
+def _joined_tables(duck, scores=SCORES, students=STUDENTS, dash=DASH_J):
+    duck.table(
+        "fct_s",
+        "section_key BIGINT, admin_key BIGINT, date_key BIGINT, rtype VARCHAR, "
+        "score DOUBLE, school VARCHAR",
+        scores,
+    )
+    duck.table("dim_sections", "section_key BIGINT, enrollment_key BIGINT",
+               [(11, 21), (12, 22), (14, 24), (15, 25)])  # fmt: skip
+    duck.table("enroll_base", "enrollment_key BIGINT, student_key BIGINT",
+               [(21, 31), (22, 32), (24, 34), (25, 35)])  # fmt: skip
+    duck.table("dim_students", "student_key BIGINT, lea BIGINT", students)
+    duck.table("dim_admins", "admin_key BIGINT, aid VARCHAR, day TIMESTAMP",
+               [(41, "a", T1), (42, "b", T1)])  # fmt: skip
+    duck.table("dim_dates", "date_key BIGINT", [(1,)])
+    duck.table(
+        "dash_j",
+        "student BIGINT, item VARCHAR, rtype VARCHAR, score DOUBLE, school VARCHAR, "
+        "day TIMESTAMP",
+        dash,
+    )
+
+
+def _joined_sides(cfg, comparison, shared) -> pipeline.RowSides:
+    """The row SQL `compare` reconciles over the toy DDI, pinned as
+    `pipeline.row_sides` pins it; the dashboard's rows read `shared`."""
+    ex = _JoinEx()
+    cube = ex.at(ex.cube_sql(pipeline.row_query("v", comparison), rows=True), BUILD.end)
+    return pipeline.RowSides(
+        cube=cube,
+        dashboard=AsOf(pipeline.dashboard_rows_sql(cfg, comparison), shared,
+                       frozenset()),
+        cube_rows_sql=repin(cube.sql, sorted(cube.tables & shared), BUILD.end,
+                            BUILD.start),
+        columns=pipeline.unique(p.cube for p in pipeline.row_pairs(comparison)),
+    )  # fmt: skip
+
+
+def _joined_cells(
+    duck, comparison=JOINED, cfg=JOINED_CFG, *, keep=True, shared=frozenset()
+):
+    """The Cube side as `sort` runs it over the toy DDI, by (cut, school),
+    and the whole query."""
+    cfg = replace(cfg, comparisons=[comparison])
+    sides = _joined_sides(cfg, comparison, shared)
+    _save(duck, cfg, sides)
+    ex = _JoinEx()
+    grain = formula.fact_grain(
+        ex.cube_sql(pipeline.row_query("v", comparison), rows=True),
+        "v",
+        [p.cube for p in comparison.rows.grain],
+        [cfg.fact],
+    )
+    body = formula.cube_side_sql(
+        cfg, comparison, pipeline.comparison_cuts(comparison), BUILD,
+        ex=ex, sides=sides, tables=[grain.table], grain=grain, keep=keep,
+    )  # fmt: skip
+    sql = body
+    if keep:
+        ctes = formula.matched_ctes(cfg, comparison, sides, SAVED)
+        sql = f"{ctes}\nSELECT * FROM (\n{body}\n)"
+    cells = {(r["__cut"], r["abbreviation"]): r["value"] for r in duck.rows(sql)}
+    return cells, sql
+
+
+def _joined_run(duck, comparison=JOINED) -> dict:
+    """The run's own Cube cells: Cube's cell SQL as compiled, by (cut, school)."""
+    ex = _JoinEx()
+    return {
+        (pipeline.cut_label(cut), r["abbreviation"]): r["value"]
+        for cut in pipeline.comparison_cuts(comparison)
+        for r in duck.rows(
+            pipeline.wrap_cube(
+                ex.at(
+                    ex.cube_sql(pipeline.cell_query("v", comparison, cut)), BUILD.end
+                ).sql,
+                "v",
+                ["abbreviation"],
+                set(),
+                "pct",
+            )  # fmt: skip
+        )
+    }
+
+
+def _moments(sql) -> dict[str, set[str]]:
+    """Each table's moments in `sql`, by `dataset.table`."""
+    found: dict[str, set[str]] = {}
+    for table, at in re.findall(
+        r"`teamster-332318\.(\w+\.\w+)`(?:\s+AS\s+`?\w+`?)?\s+"
+        r"FOR SYSTEM_TIME AS OF TIMESTAMP '([^']+)'",
+        sql,
+        re.IGNORECASE,
+    ):
+        found.setdefault(table, set()).add(at)
+    return found
+
+
+def test_cube_side_follows_cube_s_joins_to_matched_rows(duck):
+    _joined_tables(duck)
+    cfg = replace(JOINED_CFG, comparisons=[JOINED])
+    sides = _joined_sides(cfg, JOINED, frozenset())
+
+    run = _joined_run(duck)
+    kept, sql = _joined_cells(duck)
+    whole, _ = _joined_cells(duck, keep=False)
+    dash = duck.rows(
+        formula.matched_ctes(cfg, JOINED, sides, SAVED) + "\nSELECT * FROM (\n"
+        + formula.dashboard_side_sql(cfg, JOINED, [{}], BUILD, _Catalog(), keep=True)
+        + "\n)"
+    )  # fmt: skip
+
+    # The run's cell holds every score, the unknown student's included.
+    assert run == {("{}", "X"): pytest.approx(0.52)}
+    assert whole == run
+    # Matched rows are 1 and 2 only, keyed through 3 joins and 1.
+    assert kept == {("{}", "X"): pytest.approx(0.75)}
+    assert [r["value"] for r in dash] == [pytest.approx(0.75)]
+    assert "LEFT JOIN `teamster-332318.m.dim_students` AS `students`" in sql
+    # Cube's own cell SQL joins no grain table, so only the subquery does.
+    assert sql.count("`teamster-332318.m.dim_students`") == 2
+    # The view on the path is read through its own SQL, as the run read it.
+    assert "dim_enrollments" not in sql and "enroll_base" in sql
+
+
+def test_cube_side_through_joins_reads_each_table_at_one_moment(duck):
+    _joined_tables(duck)
+    shared = frozenset({"m.dim_students", "m.fct_s"})
+
+    kept, sql = _joined_cells(duck, shared=shared)
+
+    moments = _moments(sql)
+    assert all(len(at) == 1 for at in moments.values()), moments
+    assert moments["m.dim_students"] == {START}
+    assert moments["m.fct_s"] == {START}
+    assert moments["m.dim_sections"] == moments["m.enroll_base"] == {END}
+    assert kept == {("{}", "X"): pytest.approx(0.75)}
+
+
+def test_cube_self_check_through_a_join_that_repeats_a_student_differs(duck):
+    # Student 2's key sits twice in the students dim, so the subquery repeats
+    # score 2 where Cube's cell SQL, which never joins the students, does not.
+    _joined_tables(duck, students=[*STUDENTS, (32, 2)])
+
+    run = _joined_run(duck)
+    whole, _ = _joined_cells(duck, keep=False)
+    kept, _ = _joined_cells(duck)
+    check = _verdicts(
+        [_cell(dashboard=0.425, cube=run[("{}", "X")])],
+        [_dash("{}", "X", 0.75)],
+        [_cube("{}", "X", kept[("{}", "X")])],
+        cube_self=[_cube("{}", "X", whole[("{}", "X")])],
+    )
+
+    assert whole != run
+    assert check.not_compared == {formula.REWRITE_DIFFERS: [REF]}
+
+
+def test_cube_side_keys_a_date_grain_on_a_joined_dim_as_a_date(duck):
+    # The item's day is a TIMESTAMP 1 join from the fact; the reconcile keys
+    # it by its DATE, so the subquery must too.
+    daily = replace(
+        JOINED,
+        rows=RowSpec(
+            grain=[ColumnPair("student", "lea"), ColumnPair("day", "day")],
+            values=[ColumnPair("score", "score_c")],
+        ),
+    )
+    _joined_tables(duck)
+
+    kept, _ = _joined_cells(duck, daily, replace(JOINED_CFG, time_dimension="day"))
+
+    # 1, 2 and 5 match by student and day; 5's item differs, but the item
+    # is no grain member here.
+    assert kept == {("{}", "X"): pytest.approx((0.5 + 1.0 + 0.2) / 3)}
+
+
+def test_path_joins_refuse_a_table_on_the_path_read_live():
+    # An external table is read live, with no moment: the rewrite cannot
+    # place it as the run read it, so it refuses rather than guess.
+    grain = formula.fact_grain(
+        f"SELECT `admins`.aid `v__item` FROM  m.fct_s  AS `scores`\n{_JOINS}",
+        "v",
+        ["item"],
+        ["m.fct_s"],
+    )
+    pinned = (
+        f"SELECT `admins`.aid `v__item` FROM `teamster-332318.m.fct_s` AS `scores` "
+        f"FOR SYSTEM_TIME AS OF TIMESTAMP '{END}'\n"
+        "LEFT JOIN  m.dim_admins  AS `admins` "
+        "ON `admins`.admin_key = `scores`.admin_key"
+    )
+
+    with pytest.raises(
+        formula.NotCompared,
+        match="Cube's SQL reads m.dim_admins in a form the rewrite does not know",
+    ):
+        formula.path_joins(grain, pinned)
 
 
 # --- verdicts -----------------------------------------------------------------
@@ -1473,26 +1761,39 @@ def test_plan_falls_back_when_the_grain_is_an_expression(duck, offline):
     }
 
 
-def test_plan_falls_back_when_the_grain_sits_on_a_joined_table(
-    duck, offline, monkeypatch
-):
-    # The joined table's `lea` may mean something else than the fact's own
-    # `lea`, so filtering the fact by it would be a guess.
-    compiled = offline.cube_sql
+def test_plan_follows_cube_s_joins_and_leaves_row_causes_to_coverage(duck, monkeypatch):
+    # The toy DDI: each side's cell moves by rows the other lacks (0.425 and
+    # 0.52); on matched rows, keyed through Cube's joins, both read 0.75.
+    planned = replace(JOINED, confirmed=True, decimals=2)
+    cfg = replace(JOINED_CFG, comparisons=[planned])
+    ex = _JoinEx()
+    monkeypatch.setattr(pipeline, "Expand", lambda *a, **k: ex)
+    monkeypatch.setattr(
+        pipeline,
+        "row_sides",
+        lambda cfg, comparison, **k: _joined_sides(cfg, comparison, frozenset()),
+    )
+    _joined_tables(duck)
+    wh = _PlanWh(duck)
+    table = table_id("v", BUILD, "mastery")
+    duck.rows("DROP TABLE IF EXISTS __joined")
+    sides = _joined_sides(cfg, planned, frozenset())
+    for statement in compare.save_script(cfg, planned, sides, table_sql(table), None):
+        duck.rows(statement)
+    wh.labels[table] = labels(
+        "v", BUILD, "mastery", pipeline.checkpoint_fingerprint(planned, FPS["mastery"])
+    )
+    run = replace(_plan_run(), diff_cells=[_cell(dashboard=0.425, cube=0.52)])
 
-    def joined(query, rows=False):
-        if not rows:
-            return compiled(query)
-        return (
-            "SELECT `s`.lea `v__lea`, `s`.aid `v__aid` FROM m.cube_t AS `c` "
-            "LEFT JOIN m.dim_students AS `s` ON `s`.k = `c`.k"
-        )
+    job = formula.plan(
+        cfg, run, planned, fingerprint="fp", wh=wh, cube=None,
+        prepared=Prepared(schools=set()),
+    )  # fmt: skip
+    check = formula.run_job(job, planned, wh)
 
-    monkeypatch.setattr(offline, "cube_sql", joined)
-
-    check, _ = _plan(duck, _plan_run())
-
-    assert check.not_compared == {"the grain columns sit on more than one table": [REF]}
+    assert isinstance(job, formula.Job)
+    assert "LEFT JOIN `teamster-332318.m.dim_students` AS `students`" in job.sql["cube"]
+    assert check.coverage == [REF] and check.not_compared == {}
 
 
 def test_plan_says_cube_refused_when_cube_refuses_its_sql(duck, offline, monkeypatch):
