@@ -1,28 +1,77 @@
 models:
   - name: stg_google_sheets__kippfwd__career_launch_bulk_add
+    description: >-
+      Career Launch survey answers that KIPP Forward counselors enter for alumni
+      who have not filled in the survey, one row per alum, from the Manual
+      Uploads sheet. int_surveys__kfwd_career_launch_responses unpivots each row
+      into one Bulk Add response. To update an alum's answers, replace their
+      existing row; a second row for the same contact fails the uniqueness test.
+      The source declares every column as text, so BigQuery does not turn Yes
+      and No answers into booleans. Rows with no Contact ID are dropped, which
+      clears blank rows in the sheet's range; a row with answers but no Contact
+      ID is listed by the rows_missing_contact_id test.
     columns:
       - name: contact_id
+        description: Salesforce contact id of the alum.
         data_type: string
         data_tests:
           - unique:
               config:
                 severity: error
-          - not_null:
-              config:
-                severity: error
       - name: email
+        description: Alum's email address. Reported as the alumni_email answer.
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: cell_phone
+        description: >-
+          Alum's cell phone number. Reported as the cell_number answer.
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: education_level
+        description: >-
+          Alum's highest level of education. Reported as the
+          highest_level_of_education answer.
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: post_grad_plan
+        description: >-
+          What the alum is doing after graduation. Reported as the after_grad
+          answer.
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: salary
+        description: Alum's annual income. Reported as the annual_income answer.
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: job_satisfaction
+        description: >-
+          Alum's job satisfaction, as entered on the sheet. Reported as the
+          job_sat answer.
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: company
+        description: Alum's employer. Reported as the company answer.
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: benefits
+        description: >-
+          Alum's answer about job benefits, as entered on the sheet (Yes or No,
+          the same values Google Form v2 uses). Reported as the benefits answer.
         data_type: string
+        config:
+          meta:
+            contains_pii: true

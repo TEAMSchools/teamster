@@ -296,6 +296,22 @@ data_tests:
             name: stg_google_sheets__people__locations
 
   # TODO(#5558): runbook
+  - name: stg_google_sheets__kippfwd__career_launch_bulk_add__rows_missing_contact_id
+    description: >-
+      Lists rows on the KIPP Forward Career Launch Manual Uploads Google Sheet
+      that have answers but no Contact ID. The staging model drops rows with no
+      Contact ID, so these answers never reach the Career Launch dashboard. To
+      fix, the data team adds the alum's Salesforce Contact ID to the row.
+    config:
+      tags:
+        - google_sheet
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: stg_google_sheets__kippfwd__career_launch_bulk_add
+
+  # TODO(#5558): runbook
   - name: stg_google_sheets__assessments__academic_goals__sheet_duplicates
     description: >-
       Lists keys that appear on more than one row of the academic goals Google
