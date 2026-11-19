@@ -479,7 +479,9 @@ def checked_sort(
             f"{'has' if bare == 1 else 'have'} no cause; re-run `sort`"
         )
     # A decision written by hand must not close what no one explained; a
-    # comparison decision, which `decide` writes, closes it on purpose.
+    # comparison decision, which `decide` writes, closes it on purpose. A
+    # hand-written comparison decision would pass here too: the runbook
+    # forbids one, and nothing here can tell who wrote it.
     closed = {
         _open_key(src): d for d, src in [*run.applied.quiet, *run.applied.quiet_cells]
     }

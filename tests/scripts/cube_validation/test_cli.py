@@ -3691,6 +3691,29 @@ def test_rebuild_sheet_refuses_a_shown_sheet_the_server_does_not_publish(
     assert not getattr(fakes.tbl, "captures", 0)
 
 
+def test_rebuild_sheet_asks_a_workbook_s_views_once_per_run(
+    fakes, tmp_path, monkeypatch, capsys
+):
+    path = _two(tmp_path, text=NO_REBUILD_CHECK)
+    argv = ["rebuild-sheet", str(path), "--comparison", "c1", "--comparison", "c2"]
+
+    assert cli.main(argv) == 0, capsys.readouterr().err
+    assert fakes.tbl.view_asks == ["wb-1"]
+
+    # An error is kept too: each comparison is refused, Tableau asked once.
+    asked = []
+
+    def answer(luid):
+        asked.append(luid)
+        raise TSC.ServerResponseError("404", "Resource Not Found", "gone")
+
+    monkeypatch.setattr(fakes.tbl, "view_names", answer)
+    assert cli.main(argv) == 1
+    err = capsys.readouterr().err
+    assert err.count("Tableau answered 404 Resource Not Found") == 2
+    assert asked == ["wb-1"]
+
+
 def test_rebuild_sheet_refuses_when_tableau_errs_on_the_views(
     fakes, tmp_path, monkeypatch, capsys
 ):
@@ -6281,10 +6304,11 @@ def test_decide_closes_a_whole_comparison_and_ask_owner_lists_it(
     run, _ = results.latest_run(load_view_config(path), tmp_path / "cache")
     assert run.applied.open == []
     assert [x.id for x, _ in run.applied.quiet] == ["old-sheet"]
-    # The run report lists it once, with how many groups it closed, masked.
+    # The run report (terminal and local cache) lists it once, with how many
+    # groups it closed, exactly.
     assert (
         "- `old-sheet` (ada-region every open row group, deliberate): an old sheet "
-        "no one reads (<10 row groups)\n"
+        "no one reads (1 row group)\n"
     ) in report.render_local(run)
     capsys.readouterr()
 

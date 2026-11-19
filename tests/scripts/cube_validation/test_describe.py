@@ -62,6 +62,18 @@ def test_a_cause_decided_deliberate_drafts_one_line_per_measure():
     )
 
 
+def test_a_comparison_decision_drafts_no_cube_text():
+    whole = Decision("w", "mastery-school", "deliberate", "an old sheet",
+                     all_groups=True)  # fmt: skip
+
+    # Its groups were left unexplained, not explained as intended.
+    assert describe.notes(_cfg(whole)) == []
+    (note,) = describe.notes(
+        _cfg(whole, _cause("d1", "mastery-school", "the dashboard drops WPP"))
+    )
+    assert [ids for _, _, ids in note.lines] == [["d1"]]
+
+
 def test_a_missing_filter_reads_under_every_measure_and_values_stay_out():
     cfg = _cfg(
         Decision(

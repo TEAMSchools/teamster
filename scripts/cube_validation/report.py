@@ -326,13 +326,13 @@ def render_local(run: RunResult) -> str:
         out += [f"  - {cause}" for cause in diff.causes]
 
     out += ["", "## Decisions", "", "Applied:"]
-    # A comparison decision closes many groups; it is listed once, with how
-    # many (masked: this report may be posted).
+    # A comparison decision closes many groups; it is listed once, with how many.
     closes = Counter(d.id for d, _ in run.applied.quiet if d.all_groups)
     whole = {d.id: d for d, _ in run.applied.quiet if d.all_groups}
     out += _bullets(
         [
-            f"{_decision_line(d)} ({mask(closes[i])} row groups)"
+            f"{_decision_line(d)} ({closes[i]} row "
+            f"{'group' if closes[i] == 1 else 'groups'})"
             for i, d in whole.items()
         ]
         + [_decision_line(d) for d, _ in run.applied.quiet if not d.all_groups]

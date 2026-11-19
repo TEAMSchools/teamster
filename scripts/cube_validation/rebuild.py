@@ -482,10 +482,11 @@ def _comparison_by_id(cfg: ViewConfig, path: Path, comparison_id: str) -> Compar
 def _capture(
     comparison: Comparison,
     tbl: tableau.Tableau,
-    captures: dict[tuple, tableau.Snapshot] | None,
+    captures: dict[tuple, Any] | None,
 ) -> tuple[str, str, list[ET.Element], list[dict], list[dict], tableau.Snapshot, bool]:
     """Export a comparison's sheet once per workbook, sheet, cuts, parameter
-    values and reshape.
+    values and reshape. `captures` also keeps each workbook's views (or
+    Tableau's error on them) under `("views", luid)`, so a run asks once.
 
     Returns:
         The workbook XML, the same with the sheet reshaped (`shelves`), the
@@ -499,7 +500,16 @@ def _capture(
     _require(comparison, "workbook", "sheet")
     workbook, sheet = comparison.workbook or "", comparison.sheet or ""
     twb = tbl.download_twb(workbook)
-    published = sheet in tableau.published_sheets(twb, tbl.view_names(workbook))
+    captures = {} if captures is None else captures
+    if ("views", workbook) not in captures:
+        try:
+            captures["views", workbook] = tbl.view_names(workbook)
+        except TSC.ServerResponseError as exc:
+            captures["views", workbook] = exc
+    views = captures["views", workbook]
+    if isinstance(views, TSC.ServerResponseError):
+        raise views
+    published = sheet in tableau.published_sheets(twb, views)
     if not comparison.unpublished and not published:
         raise Refusal(
             f"comparison {comparison.id!r}: sheet {sheet!r} is "
@@ -523,7 +533,6 @@ def _capture(
     exportable, browser = tableau.split_cuts(comparison_cuts(comparison), twb)
     if not exportable:
         raise Refusal(f"comparison {comparison.id!r} has no cut a REST export can take")
-    captures = {} if captures is None else captures
 
     def edit(x: str) -> str:
         # The reshape goes first, so the format drop sees any column it copied.
@@ -554,7 +563,7 @@ def rebuild_sheet_headers(
     comparison_id: str,
     *,
     tbl: tableau.Tableau,
-    captures: dict[tuple, tableau.Snapshot] | None = None,
+    captures: dict[tuple, Any] | None = None,
 ) -> None:
     """Print each exported cut's column headers, and the fields a long export
     names, without probing or writing anything. A reshaped comparison first
@@ -591,7 +600,7 @@ def rebuild_sheet(
     tbl: tableau.Tableau,
     now: datetime,
     max_usd: float,
-    captures: dict[tuple, tableau.Snapshot] | None = None,
+    captures: dict[tuple, Any] | None = None,
     failures_dir: Path | None = None,
 ) -> tableau.RebuildResult:
     """Rebuild a comparison's sheet in SQL, match it to the sheet's export, and
@@ -599,8 +608,8 @@ def rebuild_sheet(
 
     Failures and browser cuts print to the terminal only: a count per reason
     and a few samples, with the full list in `failures_dir` when given.
-    `captures` keeps each sheet's export across calls, so comparisons on one
-    sheet and cuts share a capture.
+    `captures` keeps each sheet's export and each workbook's views across
+    calls, so comparisons on one sheet and cuts share a capture.
 
     Raises:
         Refusal: The comparison is unknown or incomplete, an exportable cut
