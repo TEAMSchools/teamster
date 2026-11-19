@@ -26,11 +26,11 @@
     ],
     "counts": [
       "cause `the dashboard reads only Illuminate and Focus assessments; Cube's view also holds i-Ready, DIBELS, STAR and state test scores` on the dashboard side",
-      "`pct_proficient__dki_grid` (cube_only): 1227 row groups, 30161 rows",
-      "`grade_goal_distance__grid_grade` (cube_only): 297 row groups, 30161 rows",
-      "`school_goal_distance__lines_all` (cube_only): 226 row groups, 30077 rows",
-      "`region_goal_distance__lines_all` (cube_only): 47 row groups, 29701 rows",
-      "`pct_students_at_level__dki_bars` (cube_only): 315 row groups, 30161 rows"
+      "`pct_proficient__dki_grid` (cube_only): 10+ row groups, 10+ rows",
+      "`grade_goal_distance__grid_grade` (cube_only): 10+ row groups, 10+ rows",
+      "`school_goal_distance__lines_all` (cube_only): 10+ row groups, 10+ rows",
+      "`region_goal_distance__lines_all` (cube_only): 10+ row groups, 10+ rows",
+      "`pct_students_at_level__dki_bars` (cube_only): 10+ row groups, 10+ rows"
     ],
     "hand_checks": [
       {
@@ -125,12 +125,12 @@
     ],
     "counts": [
       "cause `the student is in an out-of-district placement (not co.is_out_of_district)` on the dashboard side",
-      "`pct_proficient__dki_grid` (cube_only): <10 row group, <10 rows",
+      "`pct_proficient__dki_grid` (cube_only): <10 row groups, <10 rows",
       "`pct_proficient__dki_standards_grid` (cube_only): <10 row groups, <10 rows",
-      "`grade_goal_distance__grid_grade` (cube_only): <10 row group, <10 rows",
-      "`school_goal_distance__lines_all` (cube_only): <10 row group, <10 rows",
-      "`region_goal_distance__lines_all` (cube_only): <10 row group, <10 rows",
-      "`pct_students_at_level__dki_bars` (cube_only): <10 row group, <10 rows",
+      "`grade_goal_distance__grid_grade` (cube_only): <10 row groups, <10 rows",
+      "`school_goal_distance__lines_all` (cube_only): <10 row groups, <10 rows",
+      "`region_goal_distance__lines_all` (cube_only): <10 row groups, <10 rows",
+      "`pct_students_at_level__dki_bars` (cube_only): <10 row groups, <10 rows",
       "`pct_students_at_level__dki_standards_bars` (cube_only): <10 row groups, <10 rows"
     ],
     "hand_checks": [
@@ -202,7 +202,7 @@
   {
     "id": "Q3",
     "reason": "Where rows match, the 2 sides still compute the percent of students at each level differently. Which formula is right?",
-    "decisions": ["ddi-056", "ddi-057"],
+    "decisions": ["ddi-104", "ddi-105"],
     "views": ["student_assessment_scores_view"],
     "definitions": {
       "dashboard": [
@@ -216,10 +216,12 @@
     },
     "evidence": [
       "79 differing cells hold no unmatched row: every row in them matched on both sides",
-      "3437 differing cells hold no unmatched row: every row in them matched on both sides"
+      "10 differing cells differ on matched rows: with their unmatched rows left out, the 2 sides still differ",
+      "3437 differing cells hold no unmatched row: every row in them matched on both sides",
+      "227 differing cells differ on matched rows: with their unmatched rows left out, the 2 sides still differ"
     ],
     "counts": [
-      "`pct_students_at_level__dki_bars`, `pct_students_at_level__dki_standards_bars` in `student_assessment_scores_view`: 3516 cells differ while every row in them matches; which definition is right?"
+      "`pct_students_at_level__dki_bars`, `pct_students_at_level__dki_standards_bars` in `student_assessment_scores_view`: 10+ cells differ while every row in them matches; which definition is right?"
     ],
     "hand_checks": [
       {
