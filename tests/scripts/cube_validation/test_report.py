@@ -895,6 +895,30 @@ def test_suppress_bounds_a_total_beside_any_hidden_part():
     assert report.shown_counts(11, [10, 1], posted=False) == ("11", ["10", "1"])
 
 
+@pytest.mark.parametrize(
+    "groups, bound, who",
+    [
+        # One row per student: an exact 11 students would pin the 11 rows.
+        ([("c", "A", 11, 11)], True, "10+ rows, 10+ students"),
+        ([("c", "A", 11, 4)], True, "10+ rows, <10 students"),
+        ([("c", "A", 11, 11), ("c", "B", 12, 12)], True,
+         "10+ rows, at least 10+ students"),
+        ([("c", "A", 11, 11), ("d", "A", 12, 12)], True,
+         "10+ rows, at least 10+ students in one comparison"),
+        ([("c", "A", 11, 11)], False, "11 rows, 11 students"),
+    ],
+)  # fmt: skip
+def test_a_bounded_group_part_bounds_its_students_too(groups, bound, who):
+    decision = Decision("d", "c", "domain_owner", "r", {"column": "school",
+                        "values": ["A", "B"]})  # fmt: skip
+    found = [Group(cid, (("school", v),), "cube_only", rows, students)
+             for cid, v, rows, students in groups]  # fmt: skip
+
+    part, _ = report._group_part("v", [decision], found, bound)
+
+    assert part.endswith(who)
+
+
 def test_a_lead_posts_its_counts_only_when_its_total_is_exact():
     lead = "lead: relaxing scores: a = 1 brings back {} of {} rows"
     items = [

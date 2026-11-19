@@ -567,7 +567,8 @@ def _group_part(
     """The row-group part of a question, and the values its reason must lose.
 
     With `bound`, the groups' posted evidence carries a hidden count, so
-    their row total reads as a bound (`bounded`), never exact beside it.
+    their row total and student count read as bounds (`bounded`), never
+    exact beside it.
 
     The decision's column shows each value only for a reviewed column, and only
     when one of that value's groups holds 10 or more students. A reason loses whatever
@@ -611,17 +612,19 @@ def _group_part(
         if str(v) not in shown
     ]
     plural = "group" if len(groups) == 1 else "groups"
+    # Rows are at least students, and equal them at one row per student, so a
+    # bounded row total takes a bounded student count too.
+    count = bounded if bound else mask
     if len(groups) == 1:
-        who = f"{mask(students)} students"
+        who = f"{count(students)} students"
     elif len(per_comparison) == 1:
-        who = f"at least {mask(students)} students"
+        who = f"at least {count(students)} students"
     else:
-        who = f"at least {mask(students)} students in one comparison"
+        who = f"at least {count(students)} students in one comparison"
     return (
         f"{where} in {', '.join(sorted(per_comparison))} of "
         f"`{view}` ({', '.join(sorted({g.bucket for g in groups}))}): "
-        f"{len(groups)} row {plural}, {bounded(rows) if bound else mask(rows)} rows, "
-        f"{who}"
+        f"{len(groups)} row {plural}, {count(rows)} rows, {who}"
     ), hidden
 
 
