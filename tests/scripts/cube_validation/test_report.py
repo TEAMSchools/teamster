@@ -1155,7 +1155,9 @@ def test_the_issue_and_the_file_never_give_away_the_small_items_by_subtraction(
     detail = report.unsettled_detail(items, "v")
 
     (line,) = [x for x in body.splitlines() if x.startswith("- `c1` in `v`")]
-    count = re.match(r"- `c1` in `v` \(cube_only\): (\S+) open items", line)[1]
+    head = re.match(r"- `c1` in `v` \(cube_only\): (\S+) open items, (\S+) rows", line)
+    assert head is not None
+    count, rows = head[1], head[2]
     listed = [x for x in detail.splitlines() if x.startswith("- `c1:")]
     assert len(listed) == 12 and not any("small" in x for x in listed)
     # The issue's item count is no exact total a reader could subtract the
@@ -1165,7 +1167,6 @@ def test_the_issue_and_the_file_never_give_away_the_small_items_by_subtraction(
     assert all(int(n) >= 10 for n in stated)
     assert f" {small} items" not in body + detail
     # The rows: the total less the listed exact counts leaves a masked part.
-    rows = re.search(r"open items, (\S+) rows", line)[1]
     exact = [int(m) for m in re.findall(r", (\d+) rows;", detail)]
     if rows.isdigit():
         assert re.search(r", masked rows;", detail)
