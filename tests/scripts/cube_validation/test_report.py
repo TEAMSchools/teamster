@@ -919,6 +919,15 @@ def test_a_bounded_group_part_bounds_its_students_too(groups, bound, who):
     assert part.endswith(who)
 
 
+def test_a_review_refuses_questions_json_that_does_not_match_its_questions():
+    run = _run()
+    asked = report._questions([run])
+    assert asked
+
+    with pytest.raises(ValueError, match="questions JSON"):
+        render_review_issue("Registrar", [run], questions=[])
+
+
 def test_a_lead_posts_its_counts_only_when_its_total_is_exact():
     lead = "lead: relaxing scores: a = 1 brings back {} of {} rows"
     items = [

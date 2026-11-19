@@ -1148,19 +1148,26 @@ def test_other_calls_show_once_each_as_also_decided_never_as_questions():
 def test_pinned_sql_too_long_to_post_is_left_out_before_anything_else(monkeypatch):
     from cube_validation import report as report_mod
 
+    # One owner question, so the JSON below matches the questions the run asks.
+    run = _run([])
+    run.applied = Applied(quiet=[(
+        Decision("d", "enrollment", "domain_owner", REASON,
+                 {"column": "region", "values": ["Newark"]}),
+        Group("enrollment", (("region", "Newark"),), "value_differs", 40, 12),
+    )])  # fmt: skip
     questions = [
-        {"id": "Q1", "hand_checks": [{
+        {"id": "Q1", "counts": ["a part"], "hand_checks": [{
             "view": "v", "comparison": "c", "cut": "{}", "dims": [],
             "dashboard": "1", "cube": "2", "dashboard_sql": "S" * 5000,
             "cube_sql": "T" * 7000, "dashboard_usd": 0.01, "cube_usd": 0.01,
             "expires": "2026-11-06", "expired": False, "workbook": "w",
             "sheet": "s", "filters": {}, "mixed": False}]},
     ]  # fmt: skip
-    full = render_review_issue("Registrar", [_run([])], DEFS, questions, None, [])
+    full = render_review_issue("Registrar", [run], DEFS, questions, None, [])
     monkeypatch.setattr(report_mod, "BODY_WARN_CHARS", len(full) - 1000)
     comments: list[str] = []
 
-    body = render_review_issue("Registrar", [_run([])], DEFS, questions, None, comments)
+    body = render_review_issue("Registrar", [run], DEFS, questions, None, comments)
 
     assert "S" * 5000 not in body and comments == []
     assert "The pinned BigQuery SQL is left out (5,000 and 7,000 characters" in body

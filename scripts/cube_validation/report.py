@@ -1338,10 +1338,17 @@ def render_review_issue(
                     f"Cube: {definition_text(sides['cube'])}."
                 )
     # The JSON's counts when given: they bound a group's rows beside hidden
-    # evidence, which only the triage it was built from can tell.
+    # evidence, which only the triage it was built from can tell. Matched by
+    # position, so a JSON of other questions refuses rather than post counts
+    # it never bounded.
+    if questions is not None and len(questions) != len(asked):
+        raise ValueError(
+            f"the questions JSON holds {len(questions)} questions, the runs ask "
+            f"{len(asked)}; build both from the same runs"
+        )
     counts = (
         [q["counts"] for q in questions]
-        if questions is not None and len(questions) == len(asked)
+        if questions is not None
         else [question_parts(q) for q in asked]
     )
     # Numbered like the JSON's question ids, so a hand check names its bullet.
