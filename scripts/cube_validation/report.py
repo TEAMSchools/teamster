@@ -739,7 +739,9 @@ def _posted_why(why: str) -> str:
 class _Bucket:
     """One comparison's open items of one bucket or kind, with each item's
     count and the bucket's totals masked together (`suppress`), so the
-    listed counts never give away the ones left out."""
+    listed counts never give away the ones left out. A total is exact only
+    when every part of it is posted exact; beside any hidden part it reads
+    `10+` (or `<10` under `MASK_BELOW`)."""
 
     head: str
     items: list[tuple[Unsettled, str | None]]
@@ -783,7 +785,12 @@ def _buckets(items: list[Unsettled]) -> list[_Bucket]:
             counted = [(i, n) for i, n in counted if n is not None]
             if not counted:
                 continue
-            total, texts = suppress(sum(n for _, n in counted), [n for _, n in counted])
+            whole = sum(n for _, n in counted)
+            total, texts = suppress(whole, [n for _, n in counted])
+            if not all(t.isdigit() for t in texts):
+                # A floor per hidden part (10 per masked listed item, 1 per
+                # small one) can pin them all against an exact total.
+                total = f"{MASK_BELOW}+" if whole >= MASK_BELOW else mask(whole)
             totals.append(f"{total} {word}")
             shown.update(
                 {
@@ -827,7 +834,8 @@ def unsettled_detail(items: list[Unsettled], name: str) -> str:
         f"# Still with the analyst: `{_clean(name)}`",
         "",
         "The open items behind the review issue's counts, not explained yet. "
-        f"Counts under {MASK_BELOW} show as `{mask(0)}`; an item under "
+        f"Row and cell counts under {MASK_BELOW} show as `{mask(0)}`, and a "
+        "total beside a hidden count as a bound; an item under "
         f"{MASK_BELOW} rows or cells is not listed.",
     ]
     for bucket in _buckets(items):
@@ -1489,7 +1497,7 @@ def _review_body(
         "",
         f"The {domain} team owns the rule behind {n} {plural} in the Cube validation.",
         "Cube and the dashboard disagree on them.",
-        f"Counts under {MASK_BELOW} show as `{mask(0)}`, and identifiers of students and staff are hidden.",
+        f"Row, cell and student counts under {MASK_BELOW} show as `{mask(0)}`, and identifiers of students and staff are hidden.",
         "",
     ]
     out += _bullets(question_lines, "Nothing needs review.")

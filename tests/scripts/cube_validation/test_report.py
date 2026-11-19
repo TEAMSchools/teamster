@@ -799,8 +799,8 @@ def test_one_reason_across_files_is_one_bullet():
 def test_review_footnote_names_students_and_staff():
     body = render_review_issue("Registrar", [_run()])
     assert (
-        "Counts under 10 show as `<10`, and identifiers of students and staff "
-        "are hidden." in body
+        "Row, cell and student counts under 10 show as `<10`, and identifiers of "
+        "students and staff are hidden." in body
     )
 
 
@@ -1086,7 +1086,7 @@ def test_still_with_the_analyst_counts_open_items_per_comparison_and_bucket():
     # listed counts never give away the small ones.
     assert lines == [
         "`c1` in `v` (value_differs): 2 listed items, plus fewer than 10 under 10 "
-        "rows or cells, 55 rows",
+        "rows or cells, 10+ rows",
         "`c1` in `v` (cube_only): 0 listed items, plus fewer than 10 under 10 rows "
         "or cells, <10 rows",
         "`c2` in `v` (value): 1 listed item, 30 cells",
@@ -1195,6 +1195,41 @@ def test_the_issue_and_the_file_never_give_away_the_small_items_by_subtraction(
     ]
     if head[3].isdigit():
         assert int(head[3]) - sum(exact) != small_rows
+
+
+@pytest.mark.parametrize(
+    "word, listed, small, total",
+    [
+        # 61 less the exact 50 leaves 11 = 10 + 1: the floors pin both.
+        ("rows", [10, 50], [1], "10+ rows"),
+        ("rows", [10, 50], [1] * 10, "10+ rows"),
+        ("cells", [10, 40], [1], "10+ cells"),
+        ("rows", [14, 50], [3], "10+ rows"),
+        ("rows", [], [2, 3], "<10 rows"),
+        # Every part posted exact: the total is exact too.
+        ("rows", [20, 50], [], "70 rows"),
+        ("cells", [12], [], "12 cells"),
+    ],
+)
+def test_no_exact_total_is_posted_beside_a_hidden_count(word, listed, small, total):
+    what = "value" if word == "cells" else "cube_only"
+    items = [
+        _open("c1", what, item=f"c1:l{i}", **{word: n}) for i, n in enumerate(listed)
+    ]
+    items += [
+        _open("c1", what, item=f"c1:s{i}", **{word: n}) for i, n in enumerate(small)
+    ]
+
+    (line,) = report.still_with_analyst(items, {})
+    detail = report.unsettled_detail(items, "v")
+
+    assert line.endswith(f", {total}")
+    hidden = small or "masked" in detail
+    if hidden:
+        assert not re.search(rf", \d+ {word}$", line)
+        assert str(sum(listed) + sum(small)) not in line + detail
+    else:
+        assert all(f", {n} {word};" in detail for n in listed)
 
 
 def test_an_exact_count_of_small_items_is_stated_once_it_is_10_or_more():
