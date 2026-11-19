@@ -902,9 +902,12 @@ def test_suppress_bounds_a_total_beside_any_hidden_part():
         ([("c", "A", 11, 11)], True, "10+ rows, 10+ students"),
         ([("c", "A", 11, 4)], True, "10+ rows, <10 students"),
         ([("c", "A", 11, 11), ("c", "B", 12, 12)], True,
-         "10+ rows, at least 10+ students"),
+         "10+ rows, at least 10 students"),
         ([("c", "A", 11, 11), ("d", "A", 12, 12)], True,
-         "10+ rows, at least 10+ students in one comparison"),
+         "10+ rows, at least 10 students in one comparison"),
+        # Under 10 the bound reads like the mask, as in the unbounded wording.
+        ([("c", "A", 11, 4), ("c", "B", 12, 3)], True,
+         "10+ rows, at least <10 students"),
         ([("c", "A", 11, 11)], False, "11 rows, 11 students"),
     ],
 )  # fmt: skip

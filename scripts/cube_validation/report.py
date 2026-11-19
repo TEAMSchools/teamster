@@ -617,10 +617,12 @@ def _group_part(
     count = bounded if bound else mask
     if len(groups) == 1:
         who = f"{count(students)} students"
-    elif len(per_comparison) == 1:
-        who = f"at least {count(students)} students"
     else:
-        who = f"at least {count(students)} students in one comparison"
+        # "at least" already bounds it: the bound's own `+` would say it twice.
+        least = count(students).removesuffix("+")
+        who = f"at least {least} students"
+        if len(per_comparison) > 1:
+            who += " in one comparison"
     return (
         f"{where} in {', '.join(sorted(per_comparison))} of "
         f"`{view}` ({', '.join(sorted({g.bucket for g in groups}))}): "
