@@ -689,47 +689,48 @@ refuses when the view's only run read another fact.
    issue; a question's moment is the earliest of its comparisons'. It runs
    twice. The first run writes the JSON to `reviews/<view>.json` beside the
    validation file (`reviews/<domain>.json` across views), and the open items'
-   file beside it, and stops: commit both as a validation-file change and push.
-   The next run links them at that commit and prints the body; it stops again
-   whenever either changed or is not pushed as it stands. Both are masked like
-   the body: read them before committing, as git keeps them. A hand check leaves
-   out pinned SQL over 20,000 characters a side, giving its lengths. A cause
-   question's example cell needs 10+ of the cause's own students in that cell
-   and cut, as the explanations counted them: each explanation's counting query
-   also counts distinct students per cause, cell and cut, and `sort` and
-   `explain` keep the counts in `triage.json` (`cause_students`). A formula
-   question's example is a formula cell. Each unanswered `domain_owner` cause is
-   one question, across the comparisons it is explained on, with its words, per
-   comparison the count of groups it decides and of the rows its explanation
-   attributes to it, and the model-doc leads; the owner's answer records onto
-   every decision it lists. Every other call (`deliberate`, a `fix_`) is listed
-   under "Also decided (no answer needed)", one line per call, reason and task,
-   so a cause and the missing sheet filter behind it, decided alike, print once:
-   what it covers, the call, the reason and the task, masked like the questions
-   and kept out of the JSON, so `record-answers` never reads one as an answer.
-   Each cause question also gets a folded Reproduce block: each example cell as
-   a Cube `load` query for Claude chat's Cube connector, each distinct
-   `-- reproduce` count query once (numbered only when there are several, so "1"
-   never reads as a count; labeled today's data), then per explanation file a
-   branch link and the `explain` that re-explains it at the run's moment, and
-   the `compare --all` plus `sort` after time travel ends. Commit and push the
-   explanations before posting, or the link finds nothing. When the checks and
-   Reproduce blocks would take the body past GitHub's 65,536-character cap, they
-   move out of it into numbered comment files that stderr names: post the issue,
-   then each file as a comment, in order (the linked JSON holds everything the
-   owner's session reads). stderr names any question with no sort evidence:
-   `sort` that view and render again before posting. The footnote promises that
-   identifiers of students and staff are hidden, which holds only if no reason
-   or definition names a person: read them first. Show the draft to the analyst,
-   then post it with `mcp__github__issue_write`, titled "Validate <dashboard> in
-   Cube", using the repo's issue template. That issue is the validation's hub.
-   Then write `task: "#<issue>"` into each decision stderr lists; filling in a
-   task needs no new `compare`. As more items settle, render `ask-owner` again
-   and update the issue body. Tell the analyst the owner answers in their own
-   Claude Code session by saying "walk me through issue #N" (the
-   `cube-validation-answers` skill). When that session reports the pinned SQL
-   expired, `compare --all`, `sort`, render `ask-owner` again, and update the
-   issue body.
+   file beside it (rewritten to "Nothing is with the analyst." when an earlier
+   one exists and nothing is open), and stops: commit both as a validation-file
+   change and push. The next run links them at that commit and prints the body;
+   it stops again whenever either changed or is not pushed as it stands. Both
+   are masked like the body: read them before committing, as git keeps them. A
+   hand check leaves out pinned SQL over 20,000 characters a side, giving its
+   lengths. A cause question's example cell needs 10+ of the cause's own
+   students in that cell and cut, as the explanations counted them: each
+   explanation's counting query also counts distinct students per cause, cell
+   and cut, and `sort` and `explain` keep the counts in `triage.json`
+   (`cause_students`). A formula question's example is a formula cell. Each
+   unanswered `domain_owner` cause is one question, across the comparisons it is
+   explained on, with its words, per comparison the count of groups it decides
+   and of the rows its explanation attributes to it, and the model-doc leads;
+   the owner's answer records onto every decision it lists. Every other call
+   (`deliberate`, a `fix_`) is listed under "Also decided (no answer needed)",
+   one line per call, reason and task, so a cause and the missing sheet filter
+   behind it, decided alike, print once: what it covers, the call, the reason
+   and the task, masked like the questions and kept out of the JSON, so
+   `record-answers` never reads one as an answer. Each cause question also gets
+   a folded Reproduce block: each example cell as a Cube `load` query for Claude
+   chat's Cube connector, each distinct `-- reproduce` count query once
+   (numbered only when there are several, so "1" never reads as a count; labeled
+   today's data), then per explanation file a branch link and the `explain` that
+   re-explains it at the run's moment, and the `compare --all` plus `sort` after
+   time travel ends. Commit and push the explanations before posting, or the
+   link finds nothing. When the checks and Reproduce blocks would take the body
+   past GitHub's 65,536-character cap, they move out of it into numbered comment
+   files that stderr names: post the issue, then each file as a comment, in
+   order (the linked JSON holds everything the owner's session reads). stderr
+   names any question with no sort evidence: `sort` that view and render again
+   before posting. The footnote promises that identifiers of students and staff
+   are hidden, which holds only if no reason or definition names a person: read
+   them first. Show the draft to the analyst, then post it with
+   `mcp__github__issue_write`, titled "Validate <dashboard> in Cube", using the
+   repo's issue template. That issue is the validation's hub. Then write
+   `task: "#<issue>"` into each decision stderr lists; filling in a task needs
+   no new `compare`. As more items settle, render `ask-owner` again and update
+   the issue body. Tell the analyst the owner answers in their own Claude Code
+   session by saying "walk me through issue #N" (the `cube-validation-answers`
+   skill). When that session reports the pinned SQL expired, `compare --all`,
+   `sort`, render `ask-owner` again, and update the issue body.
 9. On "pick up the answers on #N", read only the comment the analyst names; if
    they name none, ask which, never take the latest. Save its body to a file in
    the session scratchpad and show the analyst its author's login. Check its

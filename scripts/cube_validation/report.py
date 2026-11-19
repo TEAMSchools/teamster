@@ -860,6 +860,13 @@ def unsettled_detail(items: list[Unsettled], name: str) -> str:
     return "\n".join(out) + "\n"
 
 
+def nothing_unsettled(name: str) -> str:
+    """`unsettled_detail`'s file when no item is open: one line saying so."""
+    return (
+        f"# Still with the analyst: `{_clean(name)}`\n\nNothing is with the analyst.\n"
+    )
+
+
 def still_with_analyst(
     items: list[Unsettled],
     waiting: dict[str, dict[str, str]],

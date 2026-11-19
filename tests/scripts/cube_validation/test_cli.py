@@ -3203,6 +3203,31 @@ def test_review_refuses_a_view_never_triaged(fakes, tmp_path, capsys):
     assert captured.out == ""
 
 
+@pytest.mark.parametrize("stale", [True, False])
+def test_ask_owner_leaves_no_stale_open_items_file_when_nothing_is_open(
+    fakes, tmp_path, capsys, stale
+):
+    path = _file(tmp_path)
+    assert cli.main(["compare", str(path)]) == 0
+    _write_sorted_everywhere(tmp_path, [_sorted_item("e")])
+    old = tmp_path / "reviews" / "v-still-with-analyst.md"
+    if stale:
+        old.parent.mkdir(parents=True, exist_ok=True)
+        old.write_text("# Still with the analyst: `v`\n\n- `x`, 40 rows; no lead yet\n")
+    capsys.readouterr()
+
+    assert cli.main(["ask-owner", str(path), "--domain", "Registrar"]) == 0
+
+    body = capsys.readouterr().out
+    assert old.name not in body
+    if stale:
+        assert old.read_text() == (
+            "# Still with the analyst: `v`\n\nNothing is with the analyst.\n"
+        )
+    else:
+        assert not old.exists()
+
+
 def test_review_lists_items_in_investigate_still_with_the_analyst(
     fakes, tmp_path, capsys
 ):

@@ -114,7 +114,12 @@ def ask_owner(
     if unsettled:
         detail = report.unsettled_detail(unsettled, json_file.stem)
         files.append((still_file(json_file), detail))
-    link, *still_link = _review_files(files)
+    elif still_file(json_file).exists():
+        # An earlier review's list would stay committed with nothing linking
+        # it; it says so instead, in the same commit as the JSON.
+        files.append((still_file(json_file), report.nothing_unsettled(json_file.stem)))
+    link, *more = _review_files(files)
+    still_link = more if unsettled else []
     unpublished = {
         cfg.view: {c.id for c in cfg.comparisons if c.unpublished} for cfg in configs
     }
