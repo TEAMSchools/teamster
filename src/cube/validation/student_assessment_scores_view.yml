@@ -3,6 +3,12 @@ fact: kipptaf_marts.fct_assessment_scores_enrollment_scoped
 # Weeks are the only date on any compared sheet; rows cast this to DATE on both sides.
 time_dimension: school_week_start_date
 
+# Where a fix_cube or fix_dashboard answer's task points: the Cube-fix issue and
+# the DDI Suite's dashboard-fix task in Asana.
+tasks:
+  cube_fix: "#6417"
+  dashboard_fix: https://app.asana.com/0/0/1220348719767537
+
 # Each comparison opens with `- id:`: write_rebuild_check finds a comparison by
 # that line, so a comparison that opens with its `<<:` merge cannot be written.
 shared:
@@ -1305,3 +1311,1349 @@ comparisons:
         Term: term
         IEP Status: iep_status
         School Level: school_level
+decisions:
+  - {
+      id: ddi-001,
+      missing_filter: "# Students Complete - Assessment ID",
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-002,
+      missing_filter: Administered At,
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-003,
+      missing_filter: C 504 Status,
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-004,
+      missing_filter: Cohort,
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-005,
+      missing_filter: Course Teacher Name,
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-006,
+      missing_filter: Dashboard View Filter,
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-007,
+      missing_filter: Dibels Most Recent Composite,
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-008,
+      missing_filter: Discipline,
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-009,
+      missing_filter: Exclude Future Assessments,
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-010,
+      missing_filter: Grade Level,
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-011,
+      missing_filter: Grade/Subject,
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-012,
+      missing_filter: Head Of School,
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-013,
+      missing_filter: IEP Status,
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-014,
+      missing_filter: Is Foundations,
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-015,
+      missing_filter: Is Mastery Int - Custom,
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-016,
+      missing_filter: Is Replacement,
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-017,
+      missing_filter: Lastfirst,
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-018,
+      missing_filter: Lep Status,
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-019,
+      missing_filter: Ml Status,
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-020,
+      missing_filter: Module Code,
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-021,
+      missing_filter: Module Type,
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-022,
+      missing_filter: NJ Tutoring,
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-023,
+      missing_filter: Region,
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-024,
+      missing_filter: Response Type,
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-025,
+      missing_filter: School,
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-026,
+      missing_filter: School Level,
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-027,
+      missing_filter: School Level (School),
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-028,
+      missing_filter: Schoolid,
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-029,
+      missing_filter: Scope,
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-030,
+      missing_filter: Select Chart Type,
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-031,
+      missing_filter: Standard,
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-032,
+      missing_filter: Standard Domain,
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-033,
+      missing_filter: Student Tier,
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-034,
+      missing_filter: Subject Area,
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-035,
+      missing_filter: Subject Area (group),
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-036,
+      missing_filter: Teacher Name,
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-037,
+      missing_filter: Team,
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-038,
+      missing_filter: Term,
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-039,
+      missing_filter: Territory,
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-040,
+      missing_filter: Title,
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-041,
+      missing_filter: View by - O3 Standards,
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-042,
+      missing_filter: Week Start Monday,
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-043,
+      missing_filter: Week of,
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-044,
+      missing_filter: dibels_most_recent_composite,
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-045,
+      missing_filter: gifted_and_talented,
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-046,
+      missing_filter: head_of_school,
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-047,
+      missing_filter: is_low_25_fl,
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-048,
+      missing_filter: is_sipps,
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-049,
+      missing_filter: nj_student_tier,
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - {
+      id: ddi-050,
+      missing_filter: state_test_proficiency,
+      call: deliberate,
+      reason:
+        "The sheet's filter keeps every value, so it changes no number in the
+        compared cells.",
+    }
+  - id: ddi-051
+    comparison: grade_goal_distance__grid_grade
+    cause: { side: dashboard, label: sheet filter is_mastery_int }
+    call: domain_owner
+    reason:
+      The goal sheets keep only rows with a mastery score; Cube's goal measures
+      also take goals from unscored rows. Should unscored assessments count
+      toward goal distance?
+    fingerprints:
+      {
+        cube: 4a525e3865590de20adc45f8a374c9cab5272da64c06258ea4cadc48304dca4e,
+        dashboard: 46ea75ad0ab01f600573f2875e32aedb7d94f1fd88e2a0145958b1de24f892ce,
+        explanation: 69df2e1acf0d08dc8a2ccb8ff6707534f2eaf6fa28557d806527e930eb2fcafb,
+      }
+  - id: ddi-052
+    comparison: school_goal_distance__lines_all
+    cause: { side: dashboard, label: sheet filter is_mastery_int }
+    call: domain_owner
+    reason:
+      The goal sheets keep only rows with a mastery score; Cube's goal measures
+      also take goals from unscored rows. Should unscored assessments count
+      toward goal distance?
+    fingerprints:
+      {
+        cube: 62cc738d1616ebd052253643d0553fa906ae6c7f54d8ced699a60c1dc0864f94,
+        dashboard: ae914d7ed85230c7c528c2cdfa266e5dddd65f6ad79df95c080f0a35b0285664,
+        explanation: 69df2e1acf0d08dc8a2ccb8ff6707534f2eaf6fa28557d806527e930eb2fcafb,
+      }
+  - id: ddi-053
+    comparison: region_goal_distance__lines_all
+    cause: { side: dashboard, label: sheet filter is_mastery_int }
+    call: domain_owner
+    reason:
+      The goal sheets keep only rows with a mastery score; Cube's goal measures
+      also take goals from unscored rows. Should unscored assessments count
+      toward goal distance?
+    fingerprints:
+      {
+        cube: ca01c96cc0614c1f5891af3a91373162b90a910fe1f98331db00908b96825fed,
+        dashboard: 7f7454e8d2e84f1205c60a762c38c5fbc9b21ffe1e5e3ac5db035cccb78b2572,
+        explanation: 69df2e1acf0d08dc8a2ccb8ff6707534f2eaf6fa28557d806527e930eb2fcafb,
+      }
+  - {
+      id: ddi-054,
+      missing_filter: "% Completion",
+      call: domain_owner,
+      reason:
+        "The completion sheet hides module groups under 75% completion; Cube
+        shows every group. Which completion rate is the KPI?",
+    }
+  - id: ddi-055
+    comparison: pct_taken__assessments_over_time
+    formula: true
+    call: domain_owner
+    reason:
+      Where rows match, the dashboard averages completion across school, subject
+      and replacement groups, while Cube pools assessments taken over assigned.
+      Which completion rate is the KPI?
+    fingerprints:
+      {
+        cube: 11cc3cdd00795835a2b246a2befaf842b5c0b8bb8b6388d51706ef91396d3b5a,
+        dashboard: 12892dfd5eb39545b7325e119050ce14daf905612c7e5456029b62ab45b148cd,
+      }
+  - id: ddi-056
+    comparison: pct_students_at_level__dki_bars
+    formula: true
+    call: domain_owner
+    reason:
+      Where rows match, the 2 sides still compute the percent of students at
+      each level differently. Which formula is right?
+    fingerprints:
+      {
+        cube: c67def6e5df305c30f2dc8475bbf92f68a810b2e7093e9d0c9863b54f59434a9,
+        dashboard: 8e62ccde46f50f682ea9f420f20b251895600b2b47f819e0a7cb2d286ffb5da9,
+      }
+  - id: ddi-057
+    comparison: pct_students_at_level__dki_standards_bars
+    formula: true
+    call: domain_owner
+    reason:
+      Where rows match, the 2 sides still compute the percent of students at
+      each level differently. Which formula is right?
+    fingerprints:
+      {
+        cube: 7d360cc79f30d506f02012dc6bd7ea1ba0ee575d62961a0e03cc0c324b6b0a44,
+        dashboard: 065d0590b16edbb677420cb3fd90b51ba0cc0392155576b02d3c5a980e9bfc08,
+      }
+  - id: ddi-058
+    comparison: pct_proficient__dki_grid
+    cause:
+      {
+        side: dashboard,
+        label:
+          "the dashboard reads only Illuminate and Focus assessments; Cube's
+          view also holds i-Ready, DIBELS, STAR and state test scores",
+      }
+    call: domain_owner
+    reason:
+      Cube's view also holds i-Ready, DIBELS, STAR and state test scores; the
+      DDI Suite reads only Illuminate and Focus assessments. Should this view's
+      DDI measures include the vendor and state scores?
+    fingerprints:
+      {
+        cube: 7e37d48c7200c2ae9b2e874b0bef88ccb3a36439c77fc0a0f7c106ae7b7a671e,
+        dashboard: 3a4c42f66acd6e9382b94e790766eab19dff496da3b5f981467407d0629ee2df,
+        explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
+      }
+  - id: ddi-059
+    comparison: pct_proficient__dki_grid
+    cause:
+      {
+        side: dashboard,
+        label:
+          no enrollment week in the score's region and year covers the
+          assessment date (the responses join to
+          int_extracts__student_enrollments_weeks),
+      }
+    call: domain_owner
+    reason:
+      The dashboard keeps a score only when an enrollment week in the score's
+      region and year covers the assessment date; Cube uses the section
+      enrollment instead. Which enrollment rule decides whether a score counts?
+    fingerprints:
+      {
+        cube: 7e37d48c7200c2ae9b2e874b0bef88ccb3a36439c77fc0a0f7c106ae7b7a671e,
+        dashboard: 3a4c42f66acd6e9382b94e790766eab19dff496da3b5f981467407d0629ee2df,
+        explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
+      }
+  - id: ddi-060
+    comparison: pct_proficient__dki_grid
+    cause:
+      {
+        side: dashboard,
+        label:
+          the student was not enrolled on the week's Sunday
+          (co.is_enrolled_week_end),
+      }
+    call: domain_owner
+    reason:
+      The dashboard keeps a score only when the student was enrolled on the
+      week's Sunday; Cube uses the section enrollment instead. Which enrollment
+      rule decides whether a score counts?
+    fingerprints:
+      {
+        cube: 7e37d48c7200c2ae9b2e874b0bef88ccb3a36439c77fc0a0f7c106ae7b7a671e,
+        dashboard: 3a4c42f66acd6e9382b94e790766eab19dff496da3b5f981467407d0629ee2df,
+        explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
+      }
+  - id: ddi-061
+    comparison: pct_proficient__dki_grid
+    cause:
+      {
+        side: dashboard,
+        label: the dashboard drops WPP modules (r.module_type != 'WPP'),
+      }
+    call: domain_owner
+    reason:
+      The dashboard drops WPP modules with a filter marked temporary; Cube keeps
+      them. Should WPP modules count?
+    fingerprints:
+      {
+        cube: 7e37d48c7200c2ae9b2e874b0bef88ccb3a36439c77fc0a0f7c106ae7b7a671e,
+        dashboard: 3a4c42f66acd6e9382b94e790766eab19dff496da3b5f981467407d0629ee2df,
+        explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
+      }
+  - id: ddi-062
+    comparison: pct_proficient__dki_grid
+    cause:
+      {
+        side: dashboard,
+        label:
+          the student is in an out-of-district placement (not
+          co.is_out_of_district),
+      }
+    call: domain_owner
+    reason:
+      The dashboard drops students in an out-of-district placement; Cube keeps
+      their scores when they resolve to a section. Which enrollment rule decides
+      whether a score counts?
+    fingerprints:
+      {
+        cube: 7e37d48c7200c2ae9b2e874b0bef88ccb3a36439c77fc0a0f7c106ae7b7a671e,
+        dashboard: 3a4c42f66acd6e9382b94e790766eab19dff496da3b5f981467407d0629ee2df,
+        explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
+      }
+  - id: ddi-063
+    comparison: pct_proficient__dki_grid
+    cause:
+      {
+        side: cube,
+        label:
+          Cube keeps a score only when it resolves to a section enrollment
+          (inner join to int_assessments__resolved_section_enrollments); the
+          dashboard needs only the student's year enrollment,
+      }
+    call: domain_owner
+    reason:
+      Cube keeps a score only when it resolves to a section enrollment; the
+      dashboard needs only the student's year or week enrollment. Which
+      enrollment rule decides whether a score counts?
+    fingerprints:
+      {
+        cube: 7e37d48c7200c2ae9b2e874b0bef88ccb3a36439c77fc0a0f7c106ae7b7a671e,
+        dashboard: 3a4c42f66acd6e9382b94e790766eab19dff496da3b5f981467407d0629ee2df,
+        explanation: 2e047da162dc7df95edd6ab3d931bf233c5957ca5cf7b2e736b0348882e77a0b,
+      }
+  - id: ddi-064
+    comparison: pct_proficient__dki_standards_grid
+    cause:
+      {
+        side: dashboard,
+        label:
+          the student was not enrolled on the week's Sunday
+          (co.is_enrolled_week_end),
+      }
+    call: domain_owner
+    reason:
+      The dashboard keeps a score only when the student was enrolled on the
+      week's Sunday; Cube uses the section enrollment instead. Which enrollment
+      rule decides whether a score counts?
+    fingerprints:
+      {
+        cube: 8388048ba9c0d765791e878a5bea341b622138dbe107aa824bd841b1dccbd704,
+        dashboard: 14adb3f5320b7a0553812c221db658b5493221f71eb649e1e78751580f82e5f4,
+        explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
+      }
+  - id: ddi-065
+    comparison: pct_proficient__dki_standards_grid
+    cause:
+      {
+        side: dashboard,
+        label: the dashboard drops WPP modules (r.module_type != 'WPP'),
+      }
+    call: domain_owner
+    reason:
+      The dashboard drops WPP modules with a filter marked temporary; Cube keeps
+      them. Should WPP modules count?
+    fingerprints:
+      {
+        cube: 8388048ba9c0d765791e878a5bea341b622138dbe107aa824bd841b1dccbd704,
+        dashboard: 14adb3f5320b7a0553812c221db658b5493221f71eb649e1e78751580f82e5f4,
+        explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
+      }
+  - id: ddi-066
+    comparison: pct_proficient__dki_standards_grid
+    cause:
+      {
+        side: dashboard,
+        label:
+          no enrollment week in the score's region and year covers the
+          assessment date (the responses join to
+          int_extracts__student_enrollments_weeks),
+      }
+    call: domain_owner
+    reason:
+      The dashboard keeps a score only when an enrollment week in the score's
+      region and year covers the assessment date; Cube uses the section
+      enrollment instead. Which enrollment rule decides whether a score counts?
+    fingerprints:
+      {
+        cube: 8388048ba9c0d765791e878a5bea341b622138dbe107aa824bd841b1dccbd704,
+        dashboard: 14adb3f5320b7a0553812c221db658b5493221f71eb649e1e78751580f82e5f4,
+        explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
+      }
+  - id: ddi-067
+    comparison: pct_proficient__dki_standards_grid
+    cause:
+      {
+        side: dashboard,
+        label:
+          the student is in an out-of-district placement (not
+          co.is_out_of_district),
+      }
+    call: domain_owner
+    reason:
+      The dashboard drops students in an out-of-district placement; Cube keeps
+      their scores when they resolve to a section. Which enrollment rule decides
+      whether a score counts?
+    fingerprints:
+      {
+        cube: 8388048ba9c0d765791e878a5bea341b622138dbe107aa824bd841b1dccbd704,
+        dashboard: 14adb3f5320b7a0553812c221db658b5493221f71eb649e1e78751580f82e5f4,
+        explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
+      }
+  - id: ddi-068
+    comparison: pct_proficient__dki_standards_grid
+    cause:
+      {
+        side: cube,
+        label:
+          Cube keeps a score only when it resolves to a section enrollment
+          (inner join to int_assessments__resolved_section_enrollments); the
+          dashboard needs only the student's year enrollment,
+      }
+    call: domain_owner
+    reason:
+      Cube keeps a score only when it resolves to a section enrollment; the
+      dashboard needs only the student's year or week enrollment. Which
+      enrollment rule decides whether a score counts?
+    fingerprints:
+      {
+        cube: 8388048ba9c0d765791e878a5bea341b622138dbe107aa824bd841b1dccbd704,
+        dashboard: 14adb3f5320b7a0553812c221db658b5493221f71eb649e1e78751580f82e5f4,
+        explanation: 2e047da162dc7df95edd6ab3d931bf233c5957ca5cf7b2e736b0348882e77a0b,
+      }
+  - id: ddi-069
+    comparison: grade_goal_distance__grid_grade
+    cause:
+      {
+        side: dashboard,
+        label:
+          "the dashboard reads only Illuminate and Focus assessments; Cube's
+          view also holds i-Ready, DIBELS, STAR and state test scores",
+      }
+    call: domain_owner
+    reason:
+      Cube's view also holds i-Ready, DIBELS, STAR and state test scores; the
+      DDI Suite reads only Illuminate and Focus assessments. Should this view's
+      DDI measures include the vendor and state scores?
+    fingerprints:
+      {
+        cube: 4a525e3865590de20adc45f8a374c9cab5272da64c06258ea4cadc48304dca4e,
+        dashboard: 46ea75ad0ab01f600573f2875e32aedb7d94f1fd88e2a0145958b1de24f892ce,
+        explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
+      }
+  - id: ddi-070
+    comparison: grade_goal_distance__grid_grade
+    cause:
+      {
+        side: dashboard,
+        label:
+          no enrollment week in the score's region and year covers the
+          assessment date (the responses join to
+          int_extracts__student_enrollments_weeks),
+      }
+    call: domain_owner
+    reason:
+      The dashboard keeps a score only when an enrollment week in the score's
+      region and year covers the assessment date; Cube uses the section
+      enrollment instead. Which enrollment rule decides whether a score counts?
+    fingerprints:
+      {
+        cube: 4a525e3865590de20adc45f8a374c9cab5272da64c06258ea4cadc48304dca4e,
+        dashboard: 46ea75ad0ab01f600573f2875e32aedb7d94f1fd88e2a0145958b1de24f892ce,
+        explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
+      }
+  - id: ddi-071
+    comparison: grade_goal_distance__grid_grade
+    cause:
+      {
+        side: dashboard,
+        label:
+          the student was not enrolled on the week's Sunday
+          (co.is_enrolled_week_end),
+      }
+    call: domain_owner
+    reason:
+      The dashboard keeps a score only when the student was enrolled on the
+      week's Sunday; Cube uses the section enrollment instead. Which enrollment
+      rule decides whether a score counts?
+    fingerprints:
+      {
+        cube: 4a525e3865590de20adc45f8a374c9cab5272da64c06258ea4cadc48304dca4e,
+        dashboard: 46ea75ad0ab01f600573f2875e32aedb7d94f1fd88e2a0145958b1de24f892ce,
+        explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
+      }
+  - id: ddi-072
+    comparison: grade_goal_distance__grid_grade
+    cause:
+      {
+        side: dashboard,
+        label: the dashboard drops WPP modules (r.module_type != 'WPP'),
+      }
+    call: domain_owner
+    reason:
+      The dashboard drops WPP modules with a filter marked temporary; Cube keeps
+      them. Should WPP modules count?
+    fingerprints:
+      {
+        cube: 4a525e3865590de20adc45f8a374c9cab5272da64c06258ea4cadc48304dca4e,
+        dashboard: 46ea75ad0ab01f600573f2875e32aedb7d94f1fd88e2a0145958b1de24f892ce,
+        explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
+      }
+  - id: ddi-073
+    comparison: grade_goal_distance__grid_grade
+    cause:
+      {
+        side: dashboard,
+        label:
+          the student is in an out-of-district placement (not
+          co.is_out_of_district),
+      }
+    call: domain_owner
+    reason:
+      The dashboard drops students in an out-of-district placement; Cube keeps
+      their scores when they resolve to a section. Which enrollment rule decides
+      whether a score counts?
+    fingerprints:
+      {
+        cube: 4a525e3865590de20adc45f8a374c9cab5272da64c06258ea4cadc48304dca4e,
+        dashboard: 46ea75ad0ab01f600573f2875e32aedb7d94f1fd88e2a0145958b1de24f892ce,
+        explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
+      }
+  - id: ddi-074
+    comparison: grade_goal_distance__grid_grade
+    cause:
+      {
+        side: cube,
+        label:
+          Cube keeps a score only when it resolves to a section enrollment
+          (inner join to int_assessments__resolved_section_enrollments); the
+          dashboard needs only the student's year enrollment,
+      }
+    call: domain_owner
+    reason:
+      Cube keeps a score only when it resolves to a section enrollment; the
+      dashboard needs only the student's year or week enrollment. Which
+      enrollment rule decides whether a score counts?
+    fingerprints:
+      {
+        cube: 4a525e3865590de20adc45f8a374c9cab5272da64c06258ea4cadc48304dca4e,
+        dashboard: 46ea75ad0ab01f600573f2875e32aedb7d94f1fd88e2a0145958b1de24f892ce,
+        explanation: 2e047da162dc7df95edd6ab3d931bf233c5957ca5cf7b2e736b0348882e77a0b,
+      }
+  - id: ddi-075
+    comparison: school_goal_distance__lines_all
+    cause:
+      {
+        side: dashboard,
+        label:
+          "the dashboard reads only Illuminate and Focus assessments; Cube's
+          view also holds i-Ready, DIBELS, STAR and state test scores",
+      }
+    call: domain_owner
+    reason:
+      Cube's view also holds i-Ready, DIBELS, STAR and state test scores; the
+      DDI Suite reads only Illuminate and Focus assessments. Should this view's
+      DDI measures include the vendor and state scores?
+    fingerprints:
+      {
+        cube: 62cc738d1616ebd052253643d0553fa906ae6c7f54d8ced699a60c1dc0864f94,
+        dashboard: ae914d7ed85230c7c528c2cdfa266e5dddd65f6ad79df95c080f0a35b0285664,
+        explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
+      }
+  - id: ddi-076
+    comparison: school_goal_distance__lines_all
+    cause:
+      {
+        side: dashboard,
+        label:
+          no enrollment week in the score's region and year covers the
+          assessment date (the responses join to
+          int_extracts__student_enrollments_weeks),
+      }
+    call: domain_owner
+    reason:
+      The dashboard keeps a score only when an enrollment week in the score's
+      region and year covers the assessment date; Cube uses the section
+      enrollment instead. Which enrollment rule decides whether a score counts?
+    fingerprints:
+      {
+        cube: 62cc738d1616ebd052253643d0553fa906ae6c7f54d8ced699a60c1dc0864f94,
+        dashboard: ae914d7ed85230c7c528c2cdfa266e5dddd65f6ad79df95c080f0a35b0285664,
+        explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
+      }
+  - id: ddi-077
+    comparison: school_goal_distance__lines_all
+    cause:
+      {
+        side: dashboard,
+        label:
+          the student was not enrolled on the week's Sunday
+          (co.is_enrolled_week_end),
+      }
+    call: domain_owner
+    reason:
+      The dashboard keeps a score only when the student was enrolled on the
+      week's Sunday; Cube uses the section enrollment instead. Which enrollment
+      rule decides whether a score counts?
+    fingerprints:
+      {
+        cube: 62cc738d1616ebd052253643d0553fa906ae6c7f54d8ced699a60c1dc0864f94,
+        dashboard: ae914d7ed85230c7c528c2cdfa266e5dddd65f6ad79df95c080f0a35b0285664,
+        explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
+      }
+  - id: ddi-078
+    comparison: school_goal_distance__lines_all
+    cause:
+      {
+        side: dashboard,
+        label: the dashboard drops WPP modules (r.module_type != 'WPP'),
+      }
+    call: domain_owner
+    reason:
+      The dashboard drops WPP modules with a filter marked temporary; Cube keeps
+      them. Should WPP modules count?
+    fingerprints:
+      {
+        cube: 62cc738d1616ebd052253643d0553fa906ae6c7f54d8ced699a60c1dc0864f94,
+        dashboard: ae914d7ed85230c7c528c2cdfa266e5dddd65f6ad79df95c080f0a35b0285664,
+        explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
+      }
+  - id: ddi-079
+    comparison: school_goal_distance__lines_all
+    cause:
+      {
+        side: dashboard,
+        label:
+          the student is in an out-of-district placement (not
+          co.is_out_of_district),
+      }
+    call: domain_owner
+    reason:
+      The dashboard drops students in an out-of-district placement; Cube keeps
+      their scores when they resolve to a section. Which enrollment rule decides
+      whether a score counts?
+    fingerprints:
+      {
+        cube: 62cc738d1616ebd052253643d0553fa906ae6c7f54d8ced699a60c1dc0864f94,
+        dashboard: ae914d7ed85230c7c528c2cdfa266e5dddd65f6ad79df95c080f0a35b0285664,
+        explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
+      }
+  - id: ddi-080
+    comparison: school_goal_distance__lines_all
+    cause:
+      {
+        side: cube,
+        label:
+          Cube keeps a score only when it resolves to a section enrollment
+          (inner join to int_assessments__resolved_section_enrollments); the
+          dashboard needs only the student's year enrollment,
+      }
+    call: domain_owner
+    reason:
+      Cube keeps a score only when it resolves to a section enrollment; the
+      dashboard needs only the student's year or week enrollment. Which
+      enrollment rule decides whether a score counts?
+    fingerprints:
+      {
+        cube: 62cc738d1616ebd052253643d0553fa906ae6c7f54d8ced699a60c1dc0864f94,
+        dashboard: ae914d7ed85230c7c528c2cdfa266e5dddd65f6ad79df95c080f0a35b0285664,
+        explanation: 2e047da162dc7df95edd6ab3d931bf233c5957ca5cf7b2e736b0348882e77a0b,
+      }
+  - id: ddi-081
+    comparison: region_goal_distance__lines_all
+    cause:
+      {
+        side: dashboard,
+        label:
+          "the dashboard reads only Illuminate and Focus assessments; Cube's
+          view also holds i-Ready, DIBELS, STAR and state test scores",
+      }
+    call: domain_owner
+    reason:
+      Cube's view also holds i-Ready, DIBELS, STAR and state test scores; the
+      DDI Suite reads only Illuminate and Focus assessments. Should this view's
+      DDI measures include the vendor and state scores?
+    fingerprints:
+      {
+        cube: ca01c96cc0614c1f5891af3a91373162b90a910fe1f98331db00908b96825fed,
+        dashboard: 7f7454e8d2e84f1205c60a762c38c5fbc9b21ffe1e5e3ac5db035cccb78b2572,
+        explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
+      }
+  - id: ddi-082
+    comparison: region_goal_distance__lines_all
+    cause:
+      {
+        side: dashboard,
+        label:
+          no enrollment week in the score's region and year covers the
+          assessment date (the responses join to
+          int_extracts__student_enrollments_weeks),
+      }
+    call: domain_owner
+    reason:
+      The dashboard keeps a score only when an enrollment week in the score's
+      region and year covers the assessment date; Cube uses the section
+      enrollment instead. Which enrollment rule decides whether a score counts?
+    fingerprints:
+      {
+        cube: ca01c96cc0614c1f5891af3a91373162b90a910fe1f98331db00908b96825fed,
+        dashboard: 7f7454e8d2e84f1205c60a762c38c5fbc9b21ffe1e5e3ac5db035cccb78b2572,
+        explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
+      }
+  - id: ddi-083
+    comparison: region_goal_distance__lines_all
+    cause:
+      {
+        side: dashboard,
+        label:
+          the student was not enrolled on the week's Sunday
+          (co.is_enrolled_week_end),
+      }
+    call: domain_owner
+    reason:
+      The dashboard keeps a score only when the student was enrolled on the
+      week's Sunday; Cube uses the section enrollment instead. Which enrollment
+      rule decides whether a score counts?
+    fingerprints:
+      {
+        cube: ca01c96cc0614c1f5891af3a91373162b90a910fe1f98331db00908b96825fed,
+        dashboard: 7f7454e8d2e84f1205c60a762c38c5fbc9b21ffe1e5e3ac5db035cccb78b2572,
+        explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
+      }
+  - id: ddi-084
+    comparison: region_goal_distance__lines_all
+    cause:
+      {
+        side: dashboard,
+        label: the dashboard drops WPP modules (r.module_type != 'WPP'),
+      }
+    call: domain_owner
+    reason:
+      The dashboard drops WPP modules with a filter marked temporary; Cube keeps
+      them. Should WPP modules count?
+    fingerprints:
+      {
+        cube: ca01c96cc0614c1f5891af3a91373162b90a910fe1f98331db00908b96825fed,
+        dashboard: 7f7454e8d2e84f1205c60a762c38c5fbc9b21ffe1e5e3ac5db035cccb78b2572,
+        explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
+      }
+  - id: ddi-085
+    comparison: region_goal_distance__lines_all
+    cause:
+      {
+        side: dashboard,
+        label:
+          the student is in an out-of-district placement (not
+          co.is_out_of_district),
+      }
+    call: domain_owner
+    reason:
+      The dashboard drops students in an out-of-district placement; Cube keeps
+      their scores when they resolve to a section. Which enrollment rule decides
+      whether a score counts?
+    fingerprints:
+      {
+        cube: ca01c96cc0614c1f5891af3a91373162b90a910fe1f98331db00908b96825fed,
+        dashboard: 7f7454e8d2e84f1205c60a762c38c5fbc9b21ffe1e5e3ac5db035cccb78b2572,
+        explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
+      }
+  - id: ddi-086
+    comparison: region_goal_distance__lines_all
+    cause:
+      {
+        side: cube,
+        label:
+          Cube keeps a score only when it resolves to a section enrollment
+          (inner join to int_assessments__resolved_section_enrollments); the
+          dashboard needs only the student's year enrollment,
+      }
+    call: domain_owner
+    reason:
+      Cube keeps a score only when it resolves to a section enrollment; the
+      dashboard needs only the student's year or week enrollment. Which
+      enrollment rule decides whether a score counts?
+    fingerprints:
+      {
+        cube: ca01c96cc0614c1f5891af3a91373162b90a910fe1f98331db00908b96825fed,
+        dashboard: 7f7454e8d2e84f1205c60a762c38c5fbc9b21ffe1e5e3ac5db035cccb78b2572,
+        explanation: 2e047da162dc7df95edd6ab3d931bf233c5957ca5cf7b2e736b0348882e77a0b,
+      }
+  - id: ddi-087
+    comparison: pct_taken__assessments_over_time
+    cause:
+      {
+        side: cube,
+        label:
+          Cube keeps a score only when it resolves to a section enrollment
+          (inner join to int_assessments__resolved_section_enrollments); the
+          dashboard needs only the student's year enrollment,
+      }
+    call: domain_owner
+    reason:
+      Cube keeps a score only when it resolves to a section enrollment; the
+      dashboard needs only the student's year or week enrollment. Which
+      enrollment rule decides whether a score counts?
+    fingerprints:
+      {
+        cube: 11cc3cdd00795835a2b246a2befaf842b5c0b8bb8b6388d51706ef91396d3b5a,
+        dashboard: 12892dfd5eb39545b7325e119050ce14daf905612c7e5456029b62ab45b148cd,
+        explanation: 2e047da162dc7df95edd6ab3d931bf233c5957ca5cf7b2e736b0348882e77a0b,
+      }
+  - id: ddi-088
+    comparison: pct_students_at_level__dki_bars
+    cause:
+      {
+        side: dashboard,
+        label:
+          the student was not enrolled on the week's Sunday
+          (co.is_enrolled_week_end),
+      }
+    call: domain_owner
+    reason:
+      The dashboard keeps a score only when the student was enrolled on the
+      week's Sunday; Cube uses the section enrollment instead. Which enrollment
+      rule decides whether a score counts?
+    fingerprints:
+      {
+        cube: c67def6e5df305c30f2dc8475bbf92f68a810b2e7093e9d0c9863b54f59434a9,
+        dashboard: 8e62ccde46f50f682ea9f420f20b251895600b2b47f819e0a7cb2d286ffb5da9,
+        explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
+      }
+  - id: ddi-089
+    comparison: pct_students_at_level__dki_bars
+    cause:
+      {
+        side: dashboard,
+        label:
+          "the dashboard reads only Illuminate and Focus assessments; Cube's
+          view also holds i-Ready, DIBELS, STAR and state test scores",
+      }
+    call: domain_owner
+    reason:
+      Cube's view also holds i-Ready, DIBELS, STAR and state test scores; the
+      DDI Suite reads only Illuminate and Focus assessments. Should this view's
+      DDI measures include the vendor and state scores?
+    fingerprints:
+      {
+        cube: c67def6e5df305c30f2dc8475bbf92f68a810b2e7093e9d0c9863b54f59434a9,
+        dashboard: 8e62ccde46f50f682ea9f420f20b251895600b2b47f819e0a7cb2d286ffb5da9,
+        explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
+      }
+  - id: ddi-090
+    comparison: pct_students_at_level__dki_bars
+    cause:
+      {
+        side: dashboard,
+        label:
+          the student is in an out-of-district placement (not
+          co.is_out_of_district),
+      }
+    call: domain_owner
+    reason:
+      The dashboard drops students in an out-of-district placement; Cube keeps
+      their scores when they resolve to a section. Which enrollment rule decides
+      whether a score counts?
+    fingerprints:
+      {
+        cube: c67def6e5df305c30f2dc8475bbf92f68a810b2e7093e9d0c9863b54f59434a9,
+        dashboard: 8e62ccde46f50f682ea9f420f20b251895600b2b47f819e0a7cb2d286ffb5da9,
+        explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
+      }
+  - id: ddi-091
+    comparison: pct_students_at_level__dki_bars
+    cause:
+      {
+        side: dashboard,
+        label:
+          no enrollment week in the score's region and year covers the
+          assessment date (the responses join to
+          int_extracts__student_enrollments_weeks),
+      }
+    call: domain_owner
+    reason:
+      The dashboard keeps a score only when an enrollment week in the score's
+      region and year covers the assessment date; Cube uses the section
+      enrollment instead. Which enrollment rule decides whether a score counts?
+    fingerprints:
+      {
+        cube: c67def6e5df305c30f2dc8475bbf92f68a810b2e7093e9d0c9863b54f59434a9,
+        dashboard: 8e62ccde46f50f682ea9f420f20b251895600b2b47f819e0a7cb2d286ffb5da9,
+        explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
+      }
+  - id: ddi-092
+    comparison: pct_students_at_level__dki_bars
+    cause:
+      {
+        side: dashboard,
+        label: the dashboard drops WPP modules (r.module_type != 'WPP'),
+      }
+    call: domain_owner
+    reason:
+      The dashboard drops WPP modules with a filter marked temporary; Cube keeps
+      them. Should WPP modules count?
+    fingerprints:
+      {
+        cube: c67def6e5df305c30f2dc8475bbf92f68a810b2e7093e9d0c9863b54f59434a9,
+        dashboard: 8e62ccde46f50f682ea9f420f20b251895600b2b47f819e0a7cb2d286ffb5da9,
+        explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
+      }
+  - id: ddi-093
+    comparison: pct_students_at_level__dki_bars
+    cause:
+      {
+        side: cube,
+        label:
+          Cube keeps a score only when it resolves to a section enrollment
+          (inner join to int_assessments__resolved_section_enrollments); the
+          dashboard needs only the student's year enrollment,
+      }
+    call: domain_owner
+    reason:
+      Cube keeps a score only when it resolves to a section enrollment; the
+      dashboard needs only the student's year or week enrollment. Which
+      enrollment rule decides whether a score counts?
+    fingerprints:
+      {
+        cube: c67def6e5df305c30f2dc8475bbf92f68a810b2e7093e9d0c9863b54f59434a9,
+        dashboard: 8e62ccde46f50f682ea9f420f20b251895600b2b47f819e0a7cb2d286ffb5da9,
+        explanation: 2e047da162dc7df95edd6ab3d931bf233c5957ca5cf7b2e736b0348882e77a0b,
+      }
+  - id: ddi-094
+    comparison: pct_students_at_level__dki_bars
+    cause:
+      {
+        side: dashboard,
+        label:
+          "the dashboard groups band numbers into 3 levels by fixed numbers
+          (ES/MS 1-2 Below, 3 Approaching, 4-5 At/Above; HS 1 Below, 2
+          Approaching, 3-5 At/Above; other numbers stay as themselves); Cube
+          sets mastery_level relative to each band set's mastery band",
+      }
+    call: domain_owner
+    reason:
+      The dashboard groups band numbers into 3 levels by fixed numbers; Cube
+      sets mastery_level relative to each band set's mastery band. Which
+      band-to-level rule is right?
+    fingerprints:
+      {
+        cube: c67def6e5df305c30f2dc8475bbf92f68a810b2e7093e9d0c9863b54f59434a9,
+        dashboard: 8e62ccde46f50f682ea9f420f20b251895600b2b47f819e0a7cb2d286ffb5da9,
+        explanation: abc4f85d38c0225e4efe9b7e65989181718f834a504756e02abaee4e8bd94295,
+      }
+  - id: ddi-095
+    comparison: pct_students_at_level__dki_standards_bars
+    cause:
+      {
+        side: dashboard,
+        label:
+          the student was not enrolled on the week's Sunday
+          (co.is_enrolled_week_end),
+      }
+    call: domain_owner
+    reason:
+      The dashboard keeps a score only when the student was enrolled on the
+      week's Sunday; Cube uses the section enrollment instead. Which enrollment
+      rule decides whether a score counts?
+    fingerprints:
+      {
+        cube: 7d360cc79f30d506f02012dc6bd7ea1ba0ee575d62961a0e03cc0c324b6b0a44,
+        dashboard: 065d0590b16edbb677420cb3fd90b51ba0cc0392155576b02d3c5a980e9bfc08,
+        explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
+      }
+  - id: ddi-096
+    comparison: pct_students_at_level__dki_standards_bars
+    cause:
+      {
+        side: dashboard,
+        label:
+          the student is in an out-of-district placement (not
+          co.is_out_of_district),
+      }
+    call: domain_owner
+    reason:
+      The dashboard drops students in an out-of-district placement; Cube keeps
+      their scores when they resolve to a section. Which enrollment rule decides
+      whether a score counts?
+    fingerprints:
+      {
+        cube: 7d360cc79f30d506f02012dc6bd7ea1ba0ee575d62961a0e03cc0c324b6b0a44,
+        dashboard: 065d0590b16edbb677420cb3fd90b51ba0cc0392155576b02d3c5a980e9bfc08,
+        explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
+      }
+  - id: ddi-097
+    comparison: pct_students_at_level__dki_standards_bars
+    cause:
+      {
+        side: dashboard,
+        label:
+          no enrollment week in the score's region and year covers the
+          assessment date (the responses join to
+          int_extracts__student_enrollments_weeks),
+      }
+    call: domain_owner
+    reason:
+      The dashboard keeps a score only when an enrollment week in the score's
+      region and year covers the assessment date; Cube uses the section
+      enrollment instead. Which enrollment rule decides whether a score counts?
+    fingerprints:
+      {
+        cube: 7d360cc79f30d506f02012dc6bd7ea1ba0ee575d62961a0e03cc0c324b6b0a44,
+        dashboard: 065d0590b16edbb677420cb3fd90b51ba0cc0392155576b02d3c5a980e9bfc08,
+        explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
+      }
+  - id: ddi-098
+    comparison: pct_students_at_level__dki_standards_bars
+    cause:
+      {
+        side: dashboard,
+        label: the dashboard drops WPP modules (r.module_type != 'WPP'),
+      }
+    call: domain_owner
+    reason:
+      The dashboard drops WPP modules with a filter marked temporary; Cube keeps
+      them. Should WPP modules count?
+    fingerprints:
+      {
+        cube: 7d360cc79f30d506f02012dc6bd7ea1ba0ee575d62961a0e03cc0c324b6b0a44,
+        dashboard: 065d0590b16edbb677420cb3fd90b51ba0cc0392155576b02d3c5a980e9bfc08,
+        explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
+      }
+  - id: ddi-099
+    comparison: pct_students_at_level__dki_standards_bars
+    cause:
+      {
+        side: cube,
+        label:
+          Cube keeps a score only when it resolves to a section enrollment
+          (inner join to int_assessments__resolved_section_enrollments); the
+          dashboard needs only the student's year enrollment,
+      }
+    call: domain_owner
+    reason:
+      Cube keeps a score only when it resolves to a section enrollment; the
+      dashboard needs only the student's year or week enrollment. Which
+      enrollment rule decides whether a score counts?
+    fingerprints:
+      {
+        cube: 7d360cc79f30d506f02012dc6bd7ea1ba0ee575d62961a0e03cc0c324b6b0a44,
+        dashboard: 065d0590b16edbb677420cb3fd90b51ba0cc0392155576b02d3c5a980e9bfc08,
+        explanation: 2e047da162dc7df95edd6ab3d931bf233c5957ca5cf7b2e736b0348882e77a0b,
+      }
+  - id: ddi-100
+    comparison: pct_students_at_level__dki_standards_bars
+    cause:
+      {
+        side: dashboard,
+        label:
+          "the dashboard groups band numbers into 3 levels by fixed numbers
+          (ES/MS 1-2 Below, 3 Approaching, 4-5 At/Above; HS 1 Below, 2
+          Approaching, 3-5 At/Above; other numbers stay as themselves); Cube
+          sets mastery_level relative to each band set's mastery band",
+      }
+    call: domain_owner
+    reason:
+      The dashboard groups band numbers into 3 levels by fixed numbers; Cube
+      sets mastery_level relative to each band set's mastery band. Which
+      band-to-level rule is right?
+    fingerprints:
+      {
+        cube: 7d360cc79f30d506f02012dc6bd7ea1ba0ee575d62961a0e03cc0c324b6b0a44,
+        dashboard: 065d0590b16edbb677420cb3fd90b51ba0cc0392155576b02d3c5a980e9bfc08,
+        explanation: abc4f85d38c0225e4efe9b7e65989181718f834a504756e02abaee4e8bd94295,
+      }
