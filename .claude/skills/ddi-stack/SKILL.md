@@ -1,20 +1,20 @@
 ---
 name: ddi-stack
-description:
+description: >-
   Use when any question or task touches the DDI stack (Illuminate internal
   assessments) or its lineage. Triggers: the DDI Suite, DKI view/deck/dashboard,
   Module Dashboard, Assessment Dashboard, Mastery by Classroom, "buckets" (DDI
   tiers), an assessment missing from a dashboard or report card, two worksheets
   disagreeing, AppSheet tagging or an "already tagged" error, an assessment in
-  the wrong school year, the DeansList mod extracts or mod
-  audit sheet, sight words, the NJ DDI tier roster, the yearly DDI rollover or
-  course-crosswalk audit, Illuminate rows in the assessment Cube, or work on
-  rpt_tableau__assessment_dashboard, rpt_tableau__ddi_dashboard,
-  rpt_tableau__assessment_entry_audit, rpt_tableau__sight_words_dashboard,
-  rpt_deanslist__mod_assessment / __mod_standards / __mod_standards_domains /
-  __sight_words, rpt_gsheets__ddi_tier_roster, rpt_gsheets__deanslist_mod_audit,
+  the wrong school year, a DDI goal or a goal change, the Module Goal Rules tab,
+  the DeansList mod extracts or mod audit sheet, sight words, the NJ DDI tier
+  roster, the DDI rollover or course-crosswalk audit, Illuminate rows in the
+  assessment Cube, or work on rpt_tableau__assessment_dashboard,
+  rpt_tableau__ddi_dashboard, rpt_tableau__assessment_entry_audit,
+  rpt_tableau__sight_words_dashboard, rpt_deanslist__mod_* / __sight_words,
+  rpt_gsheets__ddi_tier_roster / __deanslist_mod_audit,
   rpt_appsheet__assessments, int_assessments__response_rollup / __scaffold /
-  __assessments_members, or int_illuminate__* models.
+  __assessments_members / __module_goal_rules, or int_illuminate__* models.
 ---
 
 # DDI stack
@@ -25,9 +25,10 @@ reference doc:
 For a question about what a number or term MEANS, read the doc's Terms section
 and stop at the "Where the data comes from" heading; the tag-driven scope rule
 and the two `is_replacement` meanings are not recoverable from one model's SQL.
-For a routed task below, go straight to its reference file — each carries the
-facts and cadences its procedure needs, so the doc is a deep dive, not a
-prerequisite.
+If the question is where a goal value comes from, read
+[goals.md](references/goals.md) instead. For a routed task below, go straight to
+its reference file — each carries the facts and cadences its procedure needs, so
+the doc is a deep dive, not a prerequisite.
 
 ## Rules for every task
 
@@ -59,6 +60,7 @@ prerequisite.
 | Tagging questions; what an AppSheet field controls; what happens after a tag fix; canonical grouping   | [tagging.md](references/tagging.md)               |
 | "Already tagged" but missing from the app; Illuminate shows this year, the warehouse last year         | [item-bank-year.md](references/item-bank-year.md) |
 | Report-card scores wrong or missing; verifying a published feed average                                | [report-cards.md](references/report-cards.md)     |
+| Where a goal comes from; changing a goal; Module Goal Rules or `QA Goal` edits                         | [goals.md](references/goals.md)                   |
 | New-year rollover; refresh schedule; course-crosswalk audit                                            | [rollover.md](references/rollover.md)             |
 | QA after new data or a refactor; dated prod baselines                                                  | [qa.md](references/qa.md)                         |
 
@@ -72,6 +74,7 @@ prerequisite.
 | Module Dashboard vs DKI View disagree        | Denominators: not-taken rows, grade-level vs course population — [triage.md](references/triage.md)   |
 | Newark rows linked to a Miami assessment     | Florida copy tagged with a region besides Miami — [tagging.md](references/tagging.md)                |
 | Assessment filed under last school year      | Item Bank copy kept the source's `academic_year` — [item-bank-year.md](references/item-bank-year.md) |
+| Goal shows the plain lookup value            | Its Module Goal Rules row is malformed or overlaps another — [goals.md](references/goals.md)         |
 | Honors/second section missing; wrong teacher | One section per subject pick, or a PowerSchool course assignment                                     |
 | Blank workbook / login failure               | Tableau licensing or permissions — not data                                                          |
 
