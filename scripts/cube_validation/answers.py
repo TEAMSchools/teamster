@@ -42,6 +42,7 @@ from .report import (
     _is_identifier,
     _questions,
     _safe_reason,
+    bounded,
     defined_comparisons,
     definition_text,
     mask,
@@ -386,7 +387,9 @@ def _check_json(view: str, check: HandCheck) -> dict:
     """A hand check as JSON, its two numbers masked like the issue's counts.
 
     Two whole numbers that differ by under 10 both read `<masked>`: their
-    difference would post a small count of the cell's students.
+    difference would post a small count of the cell's students. The cause's
+    students post as a bound: for a measure that counts students, the two
+    numbers less an exact cause count would post the other causes' students.
     """
     dashboard, cube = _shown_number(check.dashboard), _shown_number(check.cube)
     d, c = check.dashboard, check.cube
@@ -404,6 +407,9 @@ def _check_json(view: str, check: HandCheck) -> dict:
         "dims": [list(pair) for pair in check.dims],
         "dashboard": dashboard,
         "cube": cube,
+        "cause_students": (
+            None if check.cause_students is None else bounded(check.cause_students)
+        ),
         "expires": check.expires.isoformat(),
     }
 
@@ -613,7 +619,7 @@ def questions_json(
         One dict per question in the issue's order: `id` (`Q1`, ...),
         `reason`, `decisions` (ids), `views`, `definitions` (`dashboard` and
         `cube`, one `<comparison> in <view>: <text>` line each), `evidence`,
-        `counts` (the masked parts of its bullet), `hand_checks` (one per
+        `counts` (the bounded parts of its bullet), `hand_checks` (one per
         comparison and kind with an example cell, and per view 1 `none` entry listing
         the `comparisons` without one, to find an example locally; a cause
         question, one rule, has 1 example across its comparisons, or the
@@ -638,6 +644,16 @@ def questions_json(
             )
         return held[view, cid]
 
+    def covered(view: str, decisions) -> list[dict]:
+        # An item still in `investigate` is with the analyst, never evidence.
+        return [
+            item
+            for d in decisions
+            for item in triage.get(view, {}).get("items", [])
+            if item.get("suggestion") != "investigate"
+            and _covers(d, item.get("stub") or {})
+        ]
+
     out = []
     for n, q in enumerate(_questions(runs, causes), start=1):
         views = list(dict.fromkeys(view for view, _ in q["decisions"]))
@@ -652,14 +668,7 @@ def questions_json(
                             f"`{cid}` in `{view}`: {definition_text(sides[side])}"
                         )
 
-        # An item still in `investigate` is with the analyst, never evidence.
-        items = [
-            item
-            for view, d in q["decisions"]
-            for item in triage.get(view, {}).get("items", [])
-            if item.get("suggestion") != "investigate"
-            and _covers(d, item.get("stub") or {})
-        ]
+        items = [item for view, d in q["decisions"] for item in covered(view, [d])]
         lines = [line for item in items for line in item.get("evidence", [])]
         if "asks" in q:
             lines = _cause_evidence(q["asks"])
@@ -1036,6 +1045,78 @@ def _explanations_by_cause(items: list[dict]) -> dict[tuple, set[str]]:
     return out
 
 
+def _comparison_decision(
+    entry: dict,
+    where: str,
+    decision_id: str,
+    triage: dict,
+    fingerprints: dict[str, dict[str, str]],
+    existing: list[Decision] | tuple[Decision, ...],
+    batch: list[dict],
+) -> dict:
+    """An approved `{id, comparison, call, reason}` entry as a comparison
+    decision (`all_groups`), which closes every open row group of the
+    comparison, explained or not. The file's comparison decision on it is
+    re-approved under its own id on the run's fingerprints.
+
+    Raises:
+        AnswerError: The entry also names an item, its call is not
+            `deliberate`, its reason is empty or carries what
+            `NOTE_REFUSALS` keeps out, the run has no fingerprints for the
+            comparison, the triage lists no open row group of it, the id is
+            another decision's, or the comparison already has a comparison
+            decision under another id or in this batch.
+    """
+    if "item" in entry:
+        raise AnswerError(f"{where}: name either `item` or `comparison`, not both")
+    comparison = _text(entry, "comparison", where)
+    call = _text(entry, "call", where)
+    if call != "deliberate":
+        raise AnswerError(
+            f"{where}: a comparison decision is deliberate, not {call}; to ask "
+            "for a fix or the owner, explain and decide the causes instead"
+        )
+    reason = _text(entry, "reason", where)
+    if what := note_refusal(reason):
+        raise AnswerError(f"{where}: the reason has {what}; reword it")
+    task = _text(entry, "task", where, required=False)
+    fp = fingerprints.get(comparison) or {}
+    if not (fp.get("cube") and fp.get("dashboard")):
+        raise AnswerError(f"{where}: the run has no fingerprints for {comparison!r}")
+    if not any(
+        item.get("kind") == "group"
+        and (item.get("comparison") or (item.get("stub") or {}).get("comparison"))
+        == comparison
+        for item in triage.get("items", [])
+    ):
+        raise AnswerError(
+            f"{where}: the sort lists no open row group of {comparison!r} to close"
+        )
+    if any(d.get("all_groups") and d["comparison"] == comparison for d in batch):
+        raise AnswerError(f"{where}: {comparison!r} is approved twice")
+    was = next(
+        (d for d in existing if d.all_groups and d.comparison == comparison), None
+    )
+    if was is not None and was.id != decision_id:
+        raise AnswerError(
+            f"{where}: {was.id!r} already decides every open row group of "
+            f"{comparison!r}; approve it under that id to re-approve it"
+        )
+    if was is None and any(d.id == decision_id for d in existing):
+        raise AnswerError(
+            f"{where}: decisions already has {decision_id!r}; pick a new id"
+        )
+    return {
+        "id": decision_id,
+        "comparison": comparison,
+        "all_groups": True,
+        "call": call,
+        "reason": reason,
+        **({"task": task} if task else {}),
+        "fingerprints": {"cube": fp["cube"], "dashboard": fp["dashboard"]},
+    }
+
+
 def approved_decisions(
     approved: list,
     triage: dict,
@@ -1066,10 +1147,15 @@ def approved_decisions(
     or filter covers the view, so it takes neither a comparison nor
     fingerprints. A cell set takes no decision.
 
+    An entry naming a `comparison` in place of an `item` is a comparison
+    decision (`_comparison_decision`): `deliberate` only, it closes every
+    open row group of the comparison, those still in `investigate` too.
+
     Args:
         approved: `[{"id", "call", "reason", "task", "item", "cause"}]`;
             `item` is a triage item id, `task` may be empty, and `cause` (the
-            cause's words) is needed only on an item with several causes.
+            cause's words) is needed only on an item with several causes. Or
+            `{"id", "comparison", "call": "deliberate", "reason"}`.
         triage: The view's `triage.json`, marked by `sort.mark_decided`.
         fingerprints: The latest run's fingerprints per comparison id.
         existing: The file's decisions.
@@ -1107,6 +1193,13 @@ def approved_decisions(
         if decision_id in ids:
             raise AnswerError(f"{where}: id {decision_id!r} repeats")
         ids.add(decision_id)
+        if "comparison" in entry:
+            out.append(
+                _comparison_decision(
+                    entry, where, decision_id, triage, fingerprints, existing, out
+                )
+            )
+            continue
         item_id = _text(entry, "item", where)
         if item_id not in items:
             raise AnswerError(f"{where}: the sort lists no item {item_id!r}")

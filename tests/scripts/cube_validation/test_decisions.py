@@ -414,3 +414,99 @@ def test_group_and_cause_decisions_coexist_in_apply():
 
     assert [d.id for d, _ in applied.quiet] == ["d1"]
     assert [d.id for d in applied.causes] == ["c1"]
+
+
+# --- comparison-level decisions ----------------------------------------------
+
+
+def _whole(id="w1", comparison="enrollment", fingerprints=None):
+    return Decision(
+        id, comparison, "deliberate", "an old sheet", all_groups=True,
+        fingerprints=dict(FP) if fingerprints is None else fingerprints,
+    )  # fmt: skip
+
+
+def test_a_comparison_decision_closes_every_open_group_of_its_comparison():
+    newark, camden = _group("Newark"), _group("Camden")
+    other = _group("Newark", comparison_id="attendance")
+    d = _whole()
+
+    applied = apply([d], [newark, camden, other], {"enrollment": FP})
+
+    assert applied.quiet == [(d, newark), (d, camden)]
+    assert applied.open == [other]
+    assert applied.reconfirm == applied.no_longer_needed == []
+
+
+def test_a_comparison_decision_leaves_a_group_decision_s_groups_to_it():
+    newark, camden = _group("Newark"), _group("Camden")
+    by_group, whole = _decision(), _whole()
+
+    # In either order: the group decision keeps its group, no double claim.
+    for recorded in ([by_group, whole], [whole, by_group]):
+        applied = apply(recorded, [newark, camden], {"enrollment": FP})
+        assert sorted((d.id, g.dims) for d, g in applied.quiet) == [
+            ("d1", newark.dims),
+            ("w1", camden.dims),
+        ]
+        assert applied.open == []
+
+
+def test_a_comparison_decision_leaves_a_stale_group_decision_s_groups_open():
+    newark, camden = _group("Newark"), _group("Camden")
+    stale = _decision(fingerprints={**FP, "cube": "old"})
+    whole = _whole()
+
+    applied = apply([stale, whole], [newark, camden], {"enrollment": FP})
+
+    # Newark waits for its own decision's re-confirmation, never this one.
+    assert applied.reconfirm == [stale]
+    assert applied.quiet == [(whole, camden)]
+    assert applied.open == [newark]
+
+
+def test_a_comparison_decision_never_quiets_cells():
+    applied = apply([_whole()], [], {"enrollment": FP}, cell_diffs=[DIFF, FORMULA])
+
+    assert applied.open_cells == [DIFF, FORMULA] and applied.quiet_cells == []
+    # Nothing open to close: it is no longer needed.
+    assert applied.no_longer_needed == [_whole()]
+
+
+def test_a_comparison_decision_reconfirms_when_sql_changed():
+    stale = _whole(fingerprints={**FP, "dashboard": "old"})
+    group = _group()
+
+    applied = apply([stale], [group], {"enrollment": FP})
+
+    assert applied.reconfirm == [stale]
+    assert applied.open == [group] and applied.quiet == []
+
+
+def test_two_comparison_decisions_on_one_comparison_refuse():
+    with pytest.raises(ValueError, match="both claim every open row group"):
+        apply([_whole(), _whole("w2")], [_group()], {"enrollment": FP})
+
+
+def test_comparison_decisions_leave_the_decisions_fingerprint_unchanged():
+    # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+    from cube_validation.decisions import decisions_fingerprint
+
+    recorded = [
+        Decision("g", "enrollment", "deliberate", "known",
+                 {"column": "region", "values": ["Newark"]}, fingerprints=dict(FP)),
+        Decision("f", "enrollment", "domain_owner", "which formula?", formula=True,
+                 fingerprints=dict(FP)),
+        Decision("c", "enrollment", "deliberate", "known",
+                 cause={"side": "cube", "label": "x"},
+                 fingerprints={**FP, "explanation": "p1"}),
+        Decision("m", "", "deliberate", "known", missing_filter="School"),
+    ]  # fmt: skip
+
+    # The digest of these decisions before comparison decisions existed.
+    assert decisions_fingerprint(recorded) == (
+        "5464f8110d229d0b1b340ea6b4cd8c7b34865836d65a7e2e032a053eaf88f3f1"
+    )
+    assert decisions_fingerprint([*recorded, _whole()]) != decisions_fingerprint(
+        recorded
+    )

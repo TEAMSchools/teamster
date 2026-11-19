@@ -27,8 +27,10 @@ these files never reach the semantic layer.
 - Row-level output stays local. Never paste rows into an issue, a comment or a
   commit. The terminal and local files (`triage.json`, the cache) show exact
   counts. Text bound for GitHub or a commit (the review issue, decision YAML,
-  the result you post) shows counts under 10 as `<10`, and hides any count that
-  would give one away; mask a terminal count the same way before posting it.
+  the result you post) shows row, cell and student counts under 10 as `<10`, and
+  hides any count that would give one away: a total beside a hidden part reads
+  `10+` (`<10` under 10), never exact. Mask a terminal count the same way before
+  posting it.
 - Nothing committed names a person or holds an email. Pass `--email` (a
   network-grant address) or set `CUBE_VALIDATION_EMAIL`.
 - **Check every decision reason for a student's or staff member's name before
@@ -127,15 +129,17 @@ refuses when the view's only run read another fact.
    filter's kind (context, code group, relative date, parameter-driven) and
    whether other sheets share it through `filter-group`, the parameters the
    sheet reads, and whether `sheet_field` is on the sheet. It refuses a text
-   measure (compare the numeric measure it is built from) and marks a sheet on
-   no published dashboard (step 3, `unpublished`). A sheet filter that keeps
-   non-null values only is marked: it needs a `dashboard_filters` entry with
-   `operator: set`. Use it instead of reading the workbook XML by hand. Without
-   `--sheet` it checks every comparison's sheet, and names a comparison whose
-   cells cannot be covered ("Cells cannot be covered: <why>", step 6). `--twb`
-   is required, since `read-sheet` never signs in to Tableau: download the
-   workbook once through the runner, with this in place of its `cli.main` call,
-   and reuse that file:
+   measure (compare the numeric measure it is built from). Its header reads
+   `published: not checked`: only Tableau Server's views list says which sheets
+   are published, and `read-sheet` never signs in (step 3, `unpublished`). A
+   sheet filter that keeps non-null values only is marked: it needs a
+   `dashboard_filters` entry with `operator: set` on its column, or, for a
+   workbook calc, on any datasource column the calc reads. Use it instead of
+   reading the workbook XML by hand. Without `--sheet` it checks every
+   comparison's sheet, and names a comparison whose cells cannot be covered
+   ("Cells cannot be covered: <why>", step 6). `--twb` is required, since
+   `read-sheet` never signs in to Tableau: download the workbook once through
+   the runner, with this in place of its `cli.main` call, and reuse that file:
 
    ```python
    import pathlib
@@ -152,10 +156,14 @@ refuses when the view's only run read another fact.
    `config.py`. Give every comparison `rows`: without it, or when a cell dim is
    part of the row grain rather than a column the row groups split by, its
    differing cells cannot be covered and stay open. Optional keys:
-   - `unpublished: true`: compare a sheet that is on no published dashboard.
-     Without it, `read-sheet` and `rebuild-sheet` refuse that sheet and
+   - `unpublished: true`: compare a sheet the server does not publish. A sheet
+     is published when it is one of the workbook's views on Tableau Server, or a
+     zone on a dashboard (or a story) that is one; a visible window in the
+     `.twb` does not count, since the publish dialog's choice is not saved in
+     it. Without the key, `rebuild-sheet` refuses an unpublished sheet and
      `compare` skips it
      (`... not on a published dashboard; set unpublished: true to compare it anyway`).
+     `find-field` marks one too; with `--twb` it says published is not checked.
    - `sheet_field`: the field to compare, by its exported caption. In a long
      export (`Measure Names` / `Measure Values` columns) it is a `Measure Names`
      value; otherwise a column header. Required when the export has more than
@@ -216,10 +224,11 @@ refuses when the view's only run read another fact.
 4. Run `read-sheet <file> --twb <path>` again and settle its "Before
    rebuild-sheet" list with the analyst; rebuild only when it reads "nothing
    blocks" or each item left is a decision the analyst made. `rebuild-sheet`
-   refuses a text measure and an unpublished sheet the same way. It skips blank
-   cells, `*` total rows and dual-axis repeats; it prints how many total rows
-   and blank cells it skipped, but not how many repeats. If a sheet keeps
-   non-null values only and its rebuild check was written before the
+   refuses a text measure the same way, and a sheet the server does not publish
+   (step 3); a Tableau error on the views list refuses that comparison alone. It
+   skips blank cells, `*` total rows and dual-axis repeats; it prints how many
+   total rows and blank cells it skipped, but not how many repeats. If a sheet
+   keeps non-null values only and its rebuild check was written before the
    `dashboard_filters` entry existed, run `rebuild-sheet` again.
    `rebuild-sheet <file> --comparison <id>` exports the sheet from a `TEMP-CB`
    copy and writes `rebuild_check` (with `matched_at` and
@@ -249,8 +258,9 @@ refuses when the view's only run read another fact.
      compares the rest: a missing `dashboard_view` or `decimals`, no rebuild
      check, a sheet query changed since its rebuild check, a member Cube's model
      lacks, a workbook changed since its rebuild check or one Tableau errs on,
-     SQL that cannot be built today or at the run's moment, a sheet on no
-     published dashboard without `unpublished: true`, a pre-aggregation refusal
+     SQL that cannot be built today or at the run's moment, a sheet the server's
+     views do not publish (asked every run; the check's recorded `published`
+     does not decide) without `unpublished: true`, a pre-aggregation refusal
      (Cube answered from a pre-aggregation: add a Cube-only `scope` on a
      never-null member the rollup does not carry, such as the fact's primary
      key, with `operator: set`), or a dry run that fails. A republished workbook
@@ -373,7 +383,8 @@ refuses when the view's only run read another fact.
    `Formula check of <id>: kept the stored check; this run fell back: <why>`.
    Any other reason (a cap, a BigQuery or Cube error) is never kept: fix it and
    `sort` again. `explain`, `decide` and `ask-owner` refuse a triage written
-   before the formula check existed; `sort` again.
+   before the formula check existed, or one whose posted evidence was masked by
+   an older rule (it lacks the current `posted_version`); `sort` again.
 
    The trace leads. `sort` relaxes each step of the other side's SQL (WHERE and
    HAVING conjuncts, INNER JOINs, required LEFT JOINs, down 5 dbt models) and
@@ -515,15 +526,22 @@ refuses when the view's only run read another fact.
    (same `dashboard_view` and same `rows` grain and values; `filters`,
    `defaults`, `cuts`, `scope`, `dashboard_filters` and `dashboard_columns` may
    differ) usually reconcile the same rows. Explain one of them: its explanation
-   also runs on the others' groups of that bucket, in `explain` (printed as
-   "Also <comparison>: N of M items explained.") and in every `sort`, unless one
-   has an explanation file of its own, which then wins, even when it fails. Each
-   comparison runs it on its own rows, so a dim whose join drops or repeats rows
-   shows as a refusal there. A shared explanation reads only `__row`, `side` and
-   the grain: a group-by column one sibling lacks fails there. Delete a
-   duplicate file to share. Work cause-first: explain a cause once, on the
-   comparison that shows it most clearly, let it run on every comparison of that
-   model, then work comparison by comparison on what is left.
+   also runs on the others' groups of that bucket, in `explain` and in every
+   `sort`, unless one has an explanation file of its own, which then wins, even
+   when it fails. A comparison with no file of its own runs every sibling's file
+   for that bucket, and a row group counts as explained when any one of them
+   explains all its rows (a group whose rows 2 files split stays in
+   `investigate`); `explain` prints "Also <comparison>: N of M items explained
+   (<file>: n, ...)." with each file's count when several ran, after pricing
+   them all with its own query under one cap check. Each comparison runs them on
+   its own rows, never taking another comparison's result, so a dim whose join
+   drops or repeats rows shows as a refusal there. A shared explanation that
+   reads a column a sibling's `{unmatched}` lacks (a group-by column, say) is
+   skipped there before anything is priced, with one line: "Explanation <file>
+   skipped on <comparison>: it reads <column>, which <comparison>'s {unmatched}
+   lacks." Delete a duplicate file to share. Work cause-first: explain a cause
+   once, on the comparison that shows it most clearly, let it run on every
+   comparison of that model, then work comparison by comparison on what is left.
 
    Every `sort` re-runs every stored explanation on the new run's rows first
    (`--no-explanations` skips them), then traces only what no explanation
@@ -543,8 +561,8 @@ refuses when the view's only run read another fact.
    hold SQL only: no values, no names. A formatting-only edit to one re-opens
    nothing.
    - Investigate: no explained cause yet. It is never asked as a question:
-     `ask-owner` lists it under "Still with the analyst", with its masked count
-     and the trace's lead.
+     `ask-owner` counts it under "Still with the analyst" and lists it, with its
+     masked count and the trace's lead, in the open items' file (step 8).
    - Map under `filters:`: a `same values: map it under filters:` verdict. Once
      the analyst approves the batch, map the field under the comparison's
      `filters:` instead of recording a decision, then run `rebuild-sheet` again
@@ -618,6 +636,25 @@ refuses when the view's only run read another fact.
    the saved run offline, so `ask-owner` reads it with no new `compare`. After a
    hand edit to `decisions:`, `reapply <file>` does the same.
 
+   When the analyst decides a whole comparison is not worth explaining (the
+   owner calls the sheet old, or its remaining groups are known noise), approve
+   `{"id", "comparison": "<comparison id>", "call": "deliberate", "reason"}` in
+   place of an `item`. `decide` writes an `all_groups: true` decision with both
+   SQL fingerprints. It closes every open row group of that comparison, those
+   still in `investigate` too, while the fingerprints hold, and those new data
+   adds later while the SQL is unchanged. It leaves every group a `group`
+   decision names to that decision, stale or not: a stale one's groups stay open
+   until it is re-confirmed. It closes no cells: a formula difference still
+   files, and a cell set closes only by coverage as for any closed group. Use it
+   only on the analyst's word, never to clear `investigate` faster: the
+   comparison's unexplained groups leave "Still with the analyst". Only
+   `deliberate` is taken; to ask for a fix or the owner's call, explain and
+   decide the causes. A changed SQL sends it to re-confirm like any decision:
+   approve the same entry under the same id. One per comparison; a cause
+   decision with another call on one of its groups refuses as with a `group`
+   decision. Never hand-write one; the loader refuses one that is not
+   `deliberate`, has no reason or lacks a fingerprint.
+
    Before `ask-owner`, give the file a top-level `tasks:` block,
    `{cube_fix: <the domain's Cube-fix issue>, dashboard_fix: <its Asana dashboard-fix task>}`:
    `record-answers` takes a `fix_cube` or `fix_dashboard` answer's task from it
@@ -665,21 +702,30 @@ refuses when the view's only run read another fact.
 8. `ask-owner <files> --domain <domain>` prints the validation issue's body: the
    numbered questions ready for the owner, each with the owner's hand checks,
    and a link to the questions JSON the owner's session reads. Items still in
-   `investigate`, and comparisons never compared, stale or skipped, are listed
-   under "Still with the analyst" with masked counts and the trace's lead (its
-   count and scope only), so the owner can say if one looks familiar. They are
-   not questions, and `record-answers` never reads them. A decision waiting to
-   be re-confirmed is no question either: `ask-owner` names those decisions on
-   stderr, with their count and ids, and points to `To re-confirm` in the view's
-   result; re-decide each as step 7 says, then render again. Each comparison's
-   moment shows in the issue; a question's moment is the earliest of its
-   comparisons'. It runs twice. The first run writes the JSON to
-   `reviews/<view>.json` beside the validation file (`reviews/<domain>.json`
-   across views) and stops: commit it as a validation-file change and push. The
-   next run links it at that commit and prints the body; it stops again whenever
-   the questions changed or the file is not pushed as it stands. The JSON is
-   masked like the body: read it before committing, as git keeps it. A hand
-   check leaves out pinned SQL over 20,000 characters a side, giving its
+   `investigate` are counted under "Still with the analyst", one line per
+   comparison and bucket (the items listed, those left out, and row and cell
+   totals, exact only when every part is posted exact, else `10+`, or `<10`
+   under 10), and comparisons never compared, stale or skipped are listed there.
+   The items one by one, with the trace's lead (its scope, and its counts only
+   beside an exact count), go to `reviews/<view>-still-with-analyst.md` beside
+   the JSON, which the section links; it is posted, so it is masked, and an item
+   under 10 rows or cells is not listed. The file and the section give the
+   number left out only when it is 10 or more, else "fewer than 10", and never a
+   total of all items, so no count in one and the other pins a masked number.
+   The owner can say if one looks familiar. They are not questions, and
+   `record-answers` never reads them. A decision waiting to be re-confirmed is
+   no question either: `ask-owner` names those decisions on stderr, with their
+   count and ids, and points to `To re-confirm` in the view's result; re-decide
+   each as step 7 says, then render again. Each comparison's moment shows in the
+   issue; a question's moment is the earliest of its comparisons'. It runs
+   twice. The first run writes the JSON to `reviews/<view>.json` beside the
+   validation file (`reviews/<domain>.json` across views), and the open items'
+   file beside it (rewritten to "Nothing is with the analyst." when an earlier
+   one exists and nothing is open), and stops: commit both as a validation-file
+   change and push. The next run links them at that commit and prints the body;
+   it stops again whenever either changed or is not pushed as it stands. Both
+   are masked like the body: read them before committing, as git keeps them. A
+   hand check leaves out pinned SQL over 20,000 characters a side, giving its
    lengths. A cause question's example cell needs 10+ of the cause's own
    students in that cell and cut, as the explanations counted them: each
    explanation's counting query also counts distinct students per cause, cell
@@ -688,28 +734,36 @@ refuses when the view's only run read another fact.
    unanswered `domain_owner` cause is one question, across the comparisons it is
    explained on, with its words, per comparison the count of groups it decides
    and of the rows its explanation attributes to it, and the model-doc leads;
-   the owner's answer records onto every decision it lists. Every other call
+   the owner's answer records onto every decision it lists. Every count a
+   question posts, in the issue and in the JSON's `counts`, is a bound (`10+`,
+   or `<10` under 10, "row groups" even for 1): its row groups, rows, students
+   of the largest group, and a formula question's cells. An earlier review's
+   "Still with the analyst" file may have listed the same groups with the small
+   ones withheld, and an exact count less the ones it posted would pin them.
+   Hand checks still show their example cell's values. Every other call
    (`deliberate`, a `fix_`) is listed under "Also decided (no answer needed)",
    one line per call, reason and task, so a cause and the missing sheet filter
    behind it, decided alike, print once: what it covers, the call, the reason
-   and the task, masked like the questions and kept out of the JSON, so
-   `record-answers` never reads one as an answer. Each cause question also gets
-   a folded Reproduce block: each example cell as a Cube `load` query for Claude
-   chat's Cube connector, each distinct `-- reproduce` count query once
-   (numbered only when there are several, so "1" never reads as a count; labeled
-   today's data), then per explanation file a branch link and the `explain` that
-   re-explains it at the run's moment, and the `compare --all` plus `sort` after
-   time travel ends. Commit and push the explanations before posting, or the
-   link finds nothing. When the checks and Reproduce blocks would take the body
-   past GitHub's 65,536-character cap, they move out of it into numbered comment
-   files that stderr names: post the issue, then each file as a comment, in
-   order (the linked JSON holds everything the owner's session reads). stderr
-   names any question with no sort evidence: `sort` that view and render again
-   before posting. The footnote promises that identifiers of students and staff
-   are hidden, which holds only if no reason or definition names a person: read
-   them first. Show the draft to the analyst, then post it with
-   `mcp__github__issue_write`, titled "Validate <dashboard> in Cube", using the
-   repo's issue template. That issue is the validation's hub. Then write
+   and the task, bounded like the questions and kept out of the JSON, so
+   `record-answers` never reads one as an answer. A comparison decision lists
+   there as "every open row group of `<comparison>`" with its buckets, and a
+   `group` decision with its column, never a group's values. Each cause question
+   also gets a folded Reproduce block: each example cell as a Cube `load` query
+   for Claude chat's Cube connector, each distinct `-- reproduce` count query
+   once (numbered only when there are several, so "1" never reads as a count;
+   labeled today's data), then per explanation file a branch link and the
+   `explain` that re-explains it at the run's moment, and the `compare --all`
+   plus `sort` after time travel ends. Commit and push the explanations before
+   posting, or the link finds nothing. When the checks and Reproduce blocks
+   would take the body past GitHub's 65,536-character cap, they move out of it
+   into numbered comment files that stderr names: post the issue, then each file
+   as a comment, in order (the linked JSON holds everything the owner's session
+   reads). stderr names any question with no sort evidence: `sort` that view and
+   render again before posting. The footnote promises that identifiers of
+   students and staff are hidden, which holds only if no reason or definition
+   names a person: read them first. Show the draft to the analyst, then post it
+   with `mcp__github__issue_write`, titled "Validate <dashboard> in Cube", using
+   the repo's issue template. That issue is the validation's hub. Then write
    `task: "#<issue>"` into each decision stderr lists; filling in a task needs
    no new `compare`. As more items settle, render `ask-owner` again and update
    the issue body. Tell the analyst the owner answers in their own Claude Code
@@ -725,10 +779,11 @@ refuses when the view's only run read another fact.
    show the analyst the printed changes, and on their confirmation run it again
    with `--yes`. It re-applies the decisions to each file's saved run offline; a
    file it prints as "not re-applied" needs `compare`. A refusal refuses the
-   whole comment: tell the analyst why and ask the owner for a corrected
-   comment; never edit the saved body to make it pass. The validation issue
-   closes when every question has a decision, every fix has its issue, PR or
-   Asana task, and nothing is left with the analyst.
+   whole comment (stdout ends `Nothing written.`; the reason is on stderr): tell
+   the analyst why and ask the owner for a corrected comment; never edit the
+   saved body to make it pass. The validation issue closes when every question
+   has a decision, every fix has its issue, PR or Asana task, and nothing is
+   left with the analyst.
 10. Tell Cube's users why a number differs on purpose. Run `describe <files>`
     (no credentials, writes nothing): per measure, every `deliberate` decision
     (the analyst's, or an owner's answer) as what differs and its reason, and a

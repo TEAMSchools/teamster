@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import re
+from collections import Counter
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -146,13 +147,18 @@ SUPPRESSED = "masked"
 def suppress(total: int, parts: list[int]) -> tuple[str, list[str]]:
     """Mask a total and its parts so no small part can be worked out.
 
-    Each part under `MASK_BELOW` reads `<10`. The total minus the shown parts
-    gives the masked parts' sum, so the masked parts must hold `MASK_BELOW` or
-    more together and include at least one `masked` part with no upper bound:
-    `<10` parts alone are pinned by their sum (18 over two `<10` parts is 9
-    and 9). Until both hold, the next-smallest shown part reads `masked` too.
-    When no part is left to mask, the total reads `masked`, or `<10` when it
-    is under `MASK_BELOW`.
+    Each part under `MASK_BELOW` reads `<10`. The masked parts must hold
+    `MASK_BELOW` or more together and include at least one `masked` part with
+    no upper bound: `<10` parts alone are pinned by their sum (18 over two
+    `<10` parts is 9 and 9). Until both hold, the next-smallest shown part
+    reads `masked` too.
+
+    The total is exact only when every part is: beside any hidden part it
+    reads `10+` (`<10` under `MASK_BELOW`). A `masked` part is at least
+    `MASK_BELOW` and a `<10` part at least 1, so an exact total less the
+    shown parts can equal those floors and pin every hidden one (11 beside
+    `masked` and `<10` is 10 and 1). Every posted total built from masked
+    parts goes through here (`shown_counts`), so none can.
 
     Returns:
         The total's text and each part's, in order.
@@ -172,9 +178,15 @@ def suppress(total: int, parts: list[int]) -> tuple[str, list[str]]:
         mask(n) if i in hidden else SUPPRESSED if i in extra else str(n)
         for i, n in enumerate(parts)
     ]
-    if hidden and not extra and total >= MASK_BELOW:
-        return SUPPRESSED, texts
+    if hidden:
+        return bounded(total), texts
     return mask(total), texts
+
+
+def bounded(n: int) -> str:
+    """A count posted as a bound: `10+`, or `<10` under `MASK_BELOW`. For a
+    total beside a hidden part, and every count an owner question posts."""
+    return f"{MASK_BELOW}+" if n >= MASK_BELOW else mask(n)
 
 
 def shown_counts(total: int, parts: list[int], posted: bool) -> tuple[str, list[str]]:
@@ -206,6 +218,8 @@ def _decision_line(d: Decision) -> str:
         return f"`{d.id}` (missing {kind} `{name}`, {d.call}): {d.reason}"
     if d.formula:
         return f"`{d.id}` ({d.comparison} formula, {d.call}): {d.reason}"
+    if d.all_groups:
+        return f"`{d.id}` ({d.comparison} every open row group, {d.call}): {d.reason}"
     return f"`{d.id}` ({d.comparison}, {d.call}): {d.reason}"
 
 
@@ -308,8 +322,16 @@ def render_local(run: RunResult) -> str:
         out += [f"  - {cause}" for cause in diff.causes]
 
     out += ["", "## Decisions", "", "Applied:"]
+    # A comparison decision closes many groups; it is listed once, with how many.
+    closes = Counter(d.id for d, _ in run.applied.quiet if d.all_groups)
+    whole = {d.id: d for d, _ in run.applied.quiet if d.all_groups}
     out += _bullets(
-        [_decision_line(d) for d, _ in run.applied.quiet]
+        [
+            f"{_decision_line(d)} ({closes[i]} row "
+            f"{'group' if closes[i] == 1 else 'groups'})"
+            for i, d in whole.items()
+        ]
+        + [_decision_line(d) for d, _ in run.applied.quiet if not d.all_groups]
         # A cause decision quiets many groups; it is listed once.
         # The latest triage says which groups a cause decision decides.
         + [_decision_line(d) for d in run.applied.causes]
@@ -551,6 +573,12 @@ def _group_part(
 ) -> tuple[str, list]:
     """The row-group part of a question, and the values its reason must lose.
 
+    Every count is a bound (`bounded`: `10+`, or `<10` under 10): the groups,
+    their rows and the students of the largest group. An earlier review may
+    have listed these groups in its "Still with the analyst" file with the
+    small ones and the bucket's total withheld, and an exact count here, less
+    the counts that file posted, would pin them.
+
     The decision's column shows each value only for a reviewed column, and only
     when one of that value's groups holds 10 or more students. A reason loses whatever
     the bullet hides: any other column's values, and each hidden value of the
@@ -592,17 +620,51 @@ def _group_part(
         for v in [*found, *(v for d in decisions for v in d.group.get("values", []))]
         if str(v) not in shown
     ]
-    plural = "group" if len(groups) == 1 else "groups"
     if len(groups) == 1:
-        who = f"{mask(students)} students"
-    elif len(per_comparison) == 1:
-        who = f"at least {mask(students)} students"
+        who = f"{bounded(students)} students"
     else:
-        who = f"at least {mask(students)} students in one comparison"
+        # "at least" already bounds it: the bound's own `+` would say it twice.
+        least = bounded(students).removesuffix("+")
+        who = f"at least {least} students"
+        if len(per_comparison) > 1:
+            who += " in one comparison"
     return (
         f"{where} in {', '.join(sorted(per_comparison))} of "
         f"`{view}` ({', '.join(sorted({g.bucket for g in groups}))}): "
-        f"{len(groups)} row {plural}, {mask(rows)} rows, {who}"
+        f"{bounded(len(groups))} row groups, {bounded(rows)} rows, {who}"
+    ), hidden
+
+
+def _comparison_part(view: str, groups: list[Group]) -> tuple[str, list]:
+    """What a comparison decision closes, for the review, and the values its
+    reason must lose.
+
+    It names no group's values, and every count is a bound (`bounded`,
+    `10+` or `<10`): the groups, their rows, and the students of the
+    largest group, the count surely there. An earlier review listed these
+    groups in its "Still with the analyst" file, with the small ones and a
+    bucket's total withheld; an exact count here, less the counts it
+    posted, would pin them. A reason loses every identifier column's values
+    and a reviewed column's value no group with 10 or more students holds.
+    """
+    (cid,) = {g.comparison_id for g in groups}
+    students = max(g.n_students for g in groups)
+    per_value: dict[tuple[str, str], int] = {}
+    hidden = []
+    for g in groups:
+        for c, v in g.dims:
+            if _is_identifier(c):
+                hidden.append(v)
+            else:
+                per_value[c, v] = max(per_value.get((c, v), 0), g.n_students)
+    hidden += [v for (_, v), n in per_value.items() if n < MASK_BELOW]
+    buckets = ", ".join(sorted({g.bucket for g in groups}))
+    # "at least" already bounds it: the bound's own `+` would say it twice.
+    least = bounded(students).removesuffix("+")
+    return (
+        f"every open row group of `{cid}` in `{view}` ({buckets}): "
+        f"{bounded(len(groups))} row groups, "
+        f"{bounded(sum(g.n_rows for g in groups))} rows, at least {least} students"
     ), hidden
 
 
@@ -635,16 +697,16 @@ def _cause_part(view: str, ask: CauseAsk) -> tuple[str, list]:
 
     It names the comparison, never a group's values. Its row count is the
     cause's own share, so no two posted totals differ by another cause's rows.
+    Both counts are bounds, as in `_group_part`.
     """
     d, groups = ask.decision, ask.groups
-    plural = "group" if len(groups) == 1 else "groups"
     hidden = [
         v for g in groups for c, v in g.dims if _shown_value(g, c, v) == "<redacted>"
     ]
     return (
         f"`{d.comparison}` in `{view}` "
         f"({', '.join(sorted({g.bucket for g in groups}))}): "
-        f"{mask(len(groups))} row {plural}, {mask(ask.rows)} rows"
+        f"{bounded(len(groups))} row groups, {bounded(ask.rows)} rows"
     ), hidden
 
 
@@ -710,14 +772,20 @@ _LEAD = re.compile(
 _SCOPE = re.compile(r"(?:^| / )([^\s:/][^\s:]*): ")
 
 
-def _posted_lead(lead: str) -> str:
-    """A trace lead as the issue shows it: each step's scope and the counts,
-    never the step's SQL. The full lead stays in the local triage."""
+def _posted_lead(lead: str, counts: bool = True) -> str:
+    """A trace lead as the issue shows it: each step's scope and, with
+    `counts`, the counts; never the step's SQL. The full lead stays in the
+    local triage. Its `of M rows` is the item's row count, so a lead beside
+    a count that is not posted exact must leave `counts` out; and one whose
+    `M` is bounded (`suppress`: a part is hidden) leaves them out always,
+    since the item's own exact count would pin its parts."""
     found = _LEAD.match(lead)
     if found is None:
         return "a trace lead; ask the analyst"
     scopes = list(dict.fromkeys(_SCOPE.findall(found["label"])))
     where = f" in {', '.join(scopes)}" if scopes else ""
+    if not counts or not (found["n"].isdigit() and found["of"].isdigit()):
+        return f"lead: relaxing a step{where}"
     return (
         f"lead: relaxing a step{where} brings back {found['n']} of {found['of']} rows"
     )
@@ -731,6 +799,140 @@ def _posted_why(why: str) -> str:
     return _safe_reason(why, [])
 
 
+@dataclass(frozen=True)
+class _Bucket:
+    """One comparison's open items of one bucket or kind, with each item's
+    count and the bucket's totals masked together (`suppress`), so the
+    listed counts never give away the ones left out. A total is exact only
+    when every part of it is posted exact (`suppress`)."""
+
+    head: str
+    items: list[tuple[Unsettled, str | None]]
+    totals: list[str]
+
+    @property
+    def small(self) -> int:
+        """How many items `unsettled_detail` leaves out (`_small`)."""
+        return sum(1 for u, _ in self.items if _small(u))
+
+    @property
+    def count(self) -> str:
+        """The issue's count of the bucket's items, saying no more than the
+        linked file does.
+
+        It gives the items the file lists (anyone can count those lines) and
+        the items it leaves out as the file states them: their number at
+        `MASK_BELOW` or more, else only that there are fewer than
+        `MASK_BELOW`. It never gives a total of all items, which less the
+        listed lines would pin a masked number.
+        """
+        listed = len(self.items) - self.small
+        out = f"{listed} listed item{'' if listed == 1 else 's'}"
+        if self.small >= MASK_BELOW:
+            out += f", plus {self.small} under {MASK_BELOW} rows or cells"
+        elif self.small:
+            out += f", plus fewer than {MASK_BELOW} under {MASK_BELOW} rows or cells"
+        return out
+
+
+def _buckets(items: list[Unsettled]) -> list[_Bucket]:
+    by: dict[tuple[str, str, str], list[Unsettled]] = {}
+    for u in items:
+        by.setdefault((u.view, u.comparison, u.what), []).append(u)
+    out = []
+    for (view, comparison, what), us in by.items():
+        shown: dict[int, str] = {}
+        totals = []
+        for word in ("rows", "cells"):
+            counted = [(i, getattr(u, word)) for i, u in enumerate(us)]
+            counted = [(i, n) for i, n in counted if n is not None]
+            if not counted:
+                continue
+            total, texts = suppress(sum(n for _, n in counted), [n for _, n in counted])
+            totals.append(f"{total} {word}")
+            shown.update(
+                {
+                    i: f"{text} {word}"
+                    for (i, _), text in zip(counted, texts, strict=True)
+                }
+            )
+        out.append(
+            _Bucket(
+                f"`{comparison}` in `{view}` ({what})",
+                [(u, shown.get(i)) for i, u in enumerate(us)],
+                totals,
+            )
+        )
+    return out
+
+
+def _small(u: Unsettled) -> bool:
+    """An item under `MASK_BELOW` rows or cells, counted but never listed."""
+    return any(n is not None and n < MASK_BELOW for n in (u.rows, u.cells))
+
+
+def unsettled_detail(items: list[Unsettled], name: str) -> str:
+    """The file beside the review JSON that lists the open items one by one.
+
+    It is posted (the issue links it), so it is masked like the issue: per
+    comparison and bucket, each item of `MASK_BELOW` or more rows or cells
+    with its triage id, its count as `still_with_analyst`'s total masks it,
+    and the trace's lead (`_posted_lead`: its steps' scopes, and its counts
+    only beside an exact count, since a lead's `of M rows` is the item's
+    count) or `no lead yet`. Items under `MASK_BELOW` rows or cells are
+    never listed; their number is stated only when it is `MASK_BELOW` or
+    more, and the issue says no more (`_Bucket.count`), so no count here and
+    there gives away a masked one. No stub value and no SQL.
+
+    Args:
+        items: The items in `investigate` (`sort.unsettled`).
+        name: What the review covers (its view, or its domain across views).
+    """
+    out = [
+        f"# Still with the analyst: `{_clean(name)}`",
+        "",
+        "The open items behind the review issue's counts, not explained yet. "
+        f"Row and cell counts under {MASK_BELOW} show as `{mask(0)}`, and a "
+        "total beside a hidden count as a bound; an item under "
+        f"{MASK_BELOW} rows or cells is not listed.",
+    ]
+    for bucket in _buckets(items):
+        out += ["", f"## {bucket.head}", ""]
+        for u, count in bucket.items:
+            if _small(u):
+                continue
+            exact = bool(count) and count.split(" ", 1)[0].isdigit()
+            lead = (
+                _safe_reason(_posted_lead(u.lead, counts=exact), list(u.hidden))
+                if u.lead
+                else "no lead yet"
+            )
+            out.append(
+                "- "
+                + ", ".join([f"`{_clean(u.item)}`", *([count] if count else [])])
+                + f"; {lead}"
+            )
+        # Stated only when it needs no mask; see `_Bucket.count`.
+        if bucket.small >= MASK_BELOW:
+            out.append(
+                f"- Under {MASK_BELOW} rows or cells each, not listed: "
+                f"{bucket.small} items."
+            )
+        elif bucket.small:
+            out.append(
+                f"- Fewer than {MASK_BELOW} more items, each under {MASK_BELOW} "
+                "rows or cells, are not listed."
+            )
+    return "\n".join(out) + "\n"
+
+
+def nothing_unsettled(name: str) -> str:
+    """`unsettled_detail`'s file when no item is open: one line saying so."""
+    return (
+        f"# Still with the analyst: `{_clean(name)}`\n\nNothing is with the analyst.\n"
+    )
+
+
 def still_with_analyst(
     items: list[Unsettled],
     waiting: dict[str, dict[str, str]],
@@ -738,32 +940,17 @@ def still_with_analyst(
 ) -> list[str]:
     """The review's lines for what is not settled yet, never asked as questions.
 
-    One line per item in `investigate`: its comparison, triage id, bucket or
-    kind, masked row or cell count, and the trace's lead (its steps' scopes
-    and counts, `_posted_lead`) or `no lead yet`.
-    Then one line per comparison in `waiting` (per view, id to why: missing,
-    stale or skipped, `sort.comparisons_waiting`). No stub value and no SQL.
-    Then, given `unchecked` (per view, comparison and reason, the cells the
-    formula check left to coverage, `sort.formulas_not_compared`), one
-    masked line per comparison and reason, sorted.
+    One line per comparison and bucket (or kind) of the items in
+    `investigate`: the items listed and left out, as the file says
+    (`_Bucket.count`), and their masked row and cell totals. The items one by one go to `unsettled_detail`'s file, since a
+    view can hold thousands. Then one line per comparison in `waiting` (per
+    view, id to why: missing, stale or skipped, `sort.comparisons_waiting`).
+    No stub value and no SQL. Then, given `unchecked` (per view, comparison
+    and reason, the cells the formula check left to coverage,
+    `sort.formulas_not_compared`), one masked line per comparison and
+    reason, sorted.
     """
-    out = []
-    for u in items:
-        counts = [
-            f"{mask(n)} {word}"
-            for n, word in ((u.rows, "rows"), (u.cells, "cells"))
-            if n is not None
-        ]
-        lead = (
-            _safe_reason(_posted_lead(u.lead), list(u.hidden))
-            if u.lead
-            else "no lead yet"
-        )
-        out.append(
-            f"`{u.comparison}` in `{u.view}`: "
-            + ", ".join([f"`{_clean(u.item)}` ({u.what})", *counts])
-            + f"; {lead}"
-        )
+    out = [f"{b.head}: " + ", ".join([b.count, *b.totals]) for b in _buckets(items)]
     out += [
         f"`{cid}` in `{view}`: {_posted_why(why)}"
         for view, whys in waiting.items()
@@ -780,7 +967,8 @@ def still_with_analyst(
 
 
 def _questions(
-    runs: list[RunResult], causes: dict[str, list[CauseAsk]] | None = None
+    runs: list[RunResult],
+    causes: dict[str, list[CauseAsk]] | None = None,
 ) -> list[dict]:
     """Group the runs' domain-owner decisions into the review's questions.
 
@@ -788,11 +976,12 @@ def _questions(
     kind and view adds a part to its bullet, and the reason prints once. A
     cause in `causes` (per view, `sort.cause_asks`) is its own question,
     whatever its reason: one per side, words and task, never one per school
-    or comparison, with a part per comparison it covers.
+    or comparison, with a part per comparison it covers. Every count a part
+    posts is a bound (`bounded`), never exact (`_group_part`).
 
     Returns:
         In the order the issue asks them, dicts of `reason`, `task`, `parts`
-        (the masked count text per kind and view; a cause question's per
+        (the bounded count text per kind and view; a cause question's per
         comparison, after its `head`), `kinds`, `hidden` (values
         the reason and any evidence must lose), `decisions` as (view,
         Decision) pairs and `comparisons` as (view, comparison id, kind)
@@ -853,7 +1042,7 @@ def _questions(
                 "formula",
                 decisions,
                 f"{', '.join(f'`{c.comparison_id}`' for c in diffs)} in `{run.view}`: "
-                f"{mask(sum(n for c in diffs for n in c.counts.values()))} cells "
+                f"{bounded(sum(n for c in diffs for n in c.counts.values()))} cells "
                 "differ while every row in them matches; which definition is right?",
                 [],
                 [c.comparison_id for c in diffs],
@@ -885,7 +1074,9 @@ def also_decided(
     """One line per decision the analyst made that the owner only sees.
 
     Every call but `domain_owner`, masked like the questions: what it covers
-    (a cause once across its comparisons, else the question's part), the call,
+    (a cause once across its comparisons, else its row groups with every
+    count a bound, `10+` or `<10`: a comparison decision's by
+    `_comparison_part`, a `group` decision's by `_group_part`), the call,
     the reason and the task. `decided` is per view, `sort.cause_asks` for
     those calls. Never part of the questions JSON, so `record-answers` cannot
     take one for an answer.
@@ -904,10 +1095,19 @@ def also_decided(
             key = ("cause", d.cause.get("side"), d.cause.get("label"), d.call,
                    d.reason, d.task)  # fmt: skip
             add(key, _cause_head(ask), [(run.view, d.comparison)], d, hidden)
-        for decisions, groups in _by_reason(run.applied.quiet, owner=False):
+        by_group = [(d, g) for d, g in run.applied.quiet if not d.all_groups]
+        for decisions, groups in _by_reason(by_group, owner=False):
             part, hidden = _group_part(run.view, decisions, groups)
             d = decisions[0]
             add(("group", run.view, part, d.call), part, [], d, hidden)
+        # A comparison decision is always deliberate: listed, never asked.
+        whole: dict[str, tuple[Decision, list[Group]]] = {}
+        for d, g in run.applied.quiet:
+            if d.all_groups:
+                whole.setdefault(d.id, (d, []))[1].append(g)
+        for d, groups in whole.values():
+            part, hidden = _comparison_part(run.view, groups)
+            add(("comparison", run.view, d.id), part, [], d, hidden)
         for decisions, diffs in _by_reason(run.applied.quiet_cells, owner=False):
             part = (
                 f"{', '.join(f'`{c.comparison_id}`' for c in diffs)} in "
@@ -1020,10 +1220,16 @@ def _hand_check_lines(question_id: str, check: dict) -> list[str]:
         f"{check['dashboard']}, Cube shows {check['cube']}. "
     )
     if check.get("cause_students"):
-        line += (
-            f"At least {check['cause_students']} students' rows in it have "
-            "this cause"
-            + ("; other causes' rows are in it too. " if check.get("mixed") else ". ")
+        students = check["cause_students"]
+        if isinstance(students, int):
+            students = bounded(students)
+        said = (
+            f"{MASK_BELOW} or more"
+            if students == f"{MASK_BELOW}+"
+            else f"Fewer than {MASK_BELOW}"
+        )
+        line += f"{said} students' rows in it have this cause" + (
+            "; other causes' rows are in it too. " if check.get("mixed") else ". "
         )
     if check.get("dashboard_sql") is None:
         pass
@@ -1138,6 +1344,7 @@ def render_review_issue(
     json_link: str | None = None,
     still: list[str] | None = None,
     unpublished: dict[str, set[str]] | None = None,
+    still_link: str | None = None,
 ) -> str:
     """Render the issue body asking a domain owner to judge open items.
 
@@ -1164,6 +1371,8 @@ def render_review_issue(
             the questions under its own heading and never asked.
         unpublished: Per view, the comparisons that opted in to a sheet on no
             published dashboard; a question naming one ends with a note.
+        still_link: Where `unsettled_detail`'s file is committed; the "Still
+            with the analyst" section links it.
 
     Returns:
         Markdown in the feature-request structure. Every count is masked and
@@ -1182,9 +1391,23 @@ def render_review_issue(
                     f"Dashboard: {definition_text(sides['dashboard'])}. "
                     f"Cube: {definition_text(sides['cube'])}."
                 )
+    # The JSON's counts when given: they bound a group's rows beside hidden
+    # evidence, which only the triage it was built from can tell. Matched by
+    # position, so a JSON of other questions refuses rather than post counts
+    # it never bounded.
+    if questions is not None and len(questions) != len(asked):
+        raise ValueError(
+            f"the questions JSON holds {len(questions)} questions, the runs ask "
+            f"{len(asked)}; build both from the same runs"
+        )
+    counts = (
+        [q["counts"] for q in questions]
+        if questions is not None
+        else [question_parts(q) for q in asked]
+    )
     # Numbered like the JSON's question ids, so a hand check names its bullet.
     question_lines = [
-        f"Q{n}. {_ended('; '.join(question_parts(q)))} "
+        f"Q{n}. {_ended('; '.join(counts[n - 1]))} "
         f"Reason: {_with_task(question_reason(q), q['task'])}"
         + "".join(
             f" Note: `{cid}`'s sheet is on no published dashboard."
@@ -1226,6 +1449,7 @@ def render_review_issue(
             domain, question_lines, definition_lines, check_lines,
             asked_ids, kinds, shown, also, moved=moved if blocks else 0,
             json_link=json_link, moment_lines=moment_lines, still=still,
+            still_link=still_link,
         )  # fmt: skip
         return body, _comment_chunks(blocks, moved) if moved and blocks else []
 
@@ -1343,10 +1567,19 @@ def _review_body(
     json_link: str | None = None,
     moment_lines: list[str] | None = None,
     still: list[str] | None = None,
+    still_link: str | None = None,
 ) -> str:
     """The review body from its rendered parts; `moved` says the Reproduce
     blocks follow in comments (2: the hand checks too); `questions` is the
     JSON to post, without the `explain` commands, which are the analyst's."""
+    link_lines = (
+        [
+            f"Each open item, masked: [{still_link.rsplit('/', 1)[-1]}]({still_link}).",
+            "",
+        ]
+        if still_link
+        else []
+    )
     ids = sorted(set(asked_ids))
     n = len(question_lines)
     plural = "question" if n == 1 else "questions"
@@ -1355,7 +1588,7 @@ def _review_body(
         "",
         f"The {domain} team owns the rule behind {n} {plural} in the Cube validation.",
         "Cube and the dashboard disagree on them.",
-        f"Counts under {MASK_BELOW} show as `{mask(0)}`, and identifiers of students and staff are hidden.",
+        f"Row, cell and student counts under {MASK_BELOW} show as `{mask(0)}`, and identifiers of students and staff are hidden.",
         "",
     ]
     out += _bullets(question_lines, "Nothing needs review.")
@@ -1367,6 +1600,7 @@ def _review_body(
             "These differences are not explained yet, so they are not questions. "
             "If one looks familiar, say so in a comment.",
             "",
+            *link_lines,
         ] + _bullets(still)
     if also:
         out += [

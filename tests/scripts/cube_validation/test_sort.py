@@ -389,8 +389,9 @@ def test_a_lead_is_exact_locally_and_masked_for_the_review_issue():
         "lead: relaxing week_end brings back 5 of 40 rows",
     )
     assert s.posted[:2] == (
-        "lead: relaxing wpp brings back masked of 40 rows",
-        "lead: relaxing week_end brings back <10 of 40 rows",
+        # Beside a hidden part the total is a bound, never exact.
+        "lead: relaxing wpp brings back masked of 10+ rows",
+        "lead: relaxing week_end brings back <10 of 10+ rows",
     )
 
 
@@ -784,6 +785,7 @@ import pytest  # noqa: E402
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.config import Decision  # noqa: E402
 from cube_validation.sort import (  # noqa: E402
+    POSTED_VERSION,
     _moment,
     cause_asks,
     checked_sort,
@@ -976,7 +978,8 @@ def _write_run_sorted(tmp_path, run, items):
     run_json.write_text("{}")
     (tmp_path / "triage.json").write_text(json.dumps(
         {"moment": _moment(run), "open": open_keys(run), "items": items,
-         "formulas_not_compared": {}}))  # fmt: skip
+         "formulas_not_compared": {},
+         "posted_version": POSTED_VERSION}))  # fmt: skip
     return run_json
 
 

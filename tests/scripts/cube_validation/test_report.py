@@ -3,6 +3,8 @@ import json
 import re
 from datetime import datetime, timezone
 
+import pytest
+
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation import compare, pipeline, report
 
@@ -165,8 +167,10 @@ def test_local_result_is_not_masked():
 
 def test_review_issue_has_no_raw_small_counts():
     body = render_review_issue("Registrar", [_run()])
-    assert "40 rows, 12 students" in body
-    assert "<10 rows, <10 students" in body
+    # Every count an owner question posts is a bound.
+    assert "<10 row groups, 10+ rows, 10+ students" in body
+    assert "<10 row groups, <10 rows, <10 students" in body
+    assert "40 rows" not in body and "12 students" not in body
     assert "Camden" not in body  # deliberate group, not domain owner
 
 
@@ -479,7 +483,7 @@ def test_a_formula_question_shows_both_definitions_and_masks_its_count():
     body = render_review_issue(
         "Registrar", [run], definitions={"enrollment_view": TARDY_DEFS}
     )
-    assert f"- Q1. `enrollment` in `enrollment_view`: 61 {FORMULA_ASK} Reason:" in body
+    assert f"- Q1. `enrollment` in `enrollment_view`: 10+ {FORMULA_ASK} Reason:" in body
     assert "Reason: owner picks codes" in body
     section = body.split("Definitions side by side", 1)[1]
     assert "Dashboard: codes ET, T" in section and "Cube: codes T%" in section
@@ -564,7 +568,7 @@ def test_review_issue_prints_one_bullet_per_decision():
     bullets = [x for x in body.splitlines() if x.startswith("- Q1. `dashboard_filter`")]
     assert bullets == [
         "- Q1. `dashboard_filter` = `enroll_status` in tardy-roster of `enrollment_view` "
-        "(dashboard_filtered): 13 row groups, 130 rows, at least 10 students. "
+        "(dashboard_filtered): 10+ row groups, 10+ rows, at least 10 students. "
         "Reason: " + ENROLLED_REASON + "."
     ]
 
@@ -653,8 +657,8 @@ def test_review_issue_merges_decisions_that_share_a_reason():
     bullets = [x for x in body.splitlines() if LEFT in x]
     assert bullets == [
         "- Q1. `dashboard_filter` = `enroll_status` in absences-roster, tardy-roster of "
-        "`enrollment_view` (dashboard_filtered): 2 row groups, 400 rows, "
-        "at least 20 students in one comparison. "
+        "`enrollment_view` (dashboard_filtered): <10 row groups, 10+ rows, "
+        "at least 10 students in one comparison. "
         "Reason: " + LEFT
     ]
     fold = body.split("<summary>For Claude</summary>", 1)[1]
@@ -710,7 +714,7 @@ def test_review_issue_merges_missing_fields_and_formula_differences_on_a_reason(
         "Cube has no member for. Reason: " + reason
     ) in body
     assert (
-        f"- Q1. `tardy-roster`, `oss-roster` in `enrollment_view`: 60 {FORMULA_ASK} "
+        f"- Q1. `tardy-roster`, `oss-roster` in `enrollment_view`: 10+ {FORMULA_ASK} "
         "Reason: Codes differ?"
     ) in body
     assert "owns the rule behind 2 questions" in body
@@ -764,8 +768,8 @@ def test_one_reason_across_decision_kinds_is_one_bullet():
     body = render_review_issue("Registrar", [run])
     bullets = [x for x in body.splitlines() if OOD in x]
     assert bullets == [
-        "- Q1. `region` = `Newark` in board of `enrollment_view` (cube_only): 1 row group, "
-        f"400 rows, 40 students; `board` in `enrollment_view`: <10 {FORMULA_ASK} "
+        "- Q1. `region` = `Newark` in board of `enrollment_view` (cube_only): <10 row "
+        f"groups, 10+ rows, 10+ students; `board` in `enrollment_view`: <10 {FORMULA_ASK} "
         "Reason: " + OOD + "."
     ]
     assert "owns the rule behind 1 question" in body
@@ -797,8 +801,8 @@ def test_one_reason_across_files_is_one_bullet():
 def test_review_footnote_names_students_and_staff():
     body = render_review_issue("Registrar", [_run()])
     assert (
-        "Counts under 10 show as `<10`, and identifiers of students and staff "
-        "are hidden." in body
+        "Row, cell and student counts under 10 show as `<10`, and identifiers of "
+        "students and staff are hidden." in body
     )
 
 
@@ -854,15 +858,15 @@ def test_review_issue_ends_with_fenced_json_in_details():
 
 
 def test_suppress_hides_a_lone_small_part_and_its_next_smallest():
-    # 25 = 18 + 7: masking 7 alone leaves it as 25 - 18. With both masked,
-    # the total gives only their sum, which holds 10 or more.
-    assert suppress(25, [18, 7]) == ("25", ["masked", "<10"])
+    # 25 = 18 + 7: masking 7 alone leaves it as 25 - 18. With both masked and
+    # the total bounded, nothing gives either.
+    assert suppress(25, [18, 7]) == ("10+", ["masked", "<10"])
 
 
 def test_suppress_rules():
     assert suppress(40, [20, 20]) == ("40", ["20", "20"])
-    assert suppress(48, [30, 13, 5]) == ("48", ["30", "masked", "<10"])
-    assert suppress(15, [9, 6]) == ("masked", ["<10", "<10"])
+    assert suppress(48, [30, 13, 5]) == ("10+", ["30", "masked", "<10"])
+    assert suppress(15, [9, 6]) == ("10+", ["<10", "<10"])
     assert suppress(5, [5]) == ("<10", ["<10"])
     assert suppress(120, [100, 20]) == ("120", ["100", "20"])
 
@@ -870,18 +874,145 @@ def test_suppress_rules():
 def test_suppress_never_lets_a_sum_pin_the_small_parts():
     # 18 over two `<10` parts is 9 and 9; 48 - 30 leaves 18 for two `<10`
     # parts, the same. A `masked` part, or a hidden total, breaks the pin.
-    assert suppress(18, [9, 9]) == ("masked", ["<10", "<10"])
-    assert suppress(27, [9, 9, 9]) == ("masked", ["<10", "<10", "<10"])
-    assert suppress(48, [30, 9, 9]) == ("48", ["masked", "<10", "<10"])
+    assert suppress(18, [9, 9]) == ("10+", ["<10", "<10"])
+    assert suppress(27, [9, 9, 9]) == ("10+", ["<10", "<10", "<10"])
+    assert suppress(48, [30, 9, 9]) == ("10+", ["masked", "<10", "<10"])
 
 
 def test_suppress_masks_until_the_masked_parts_hold_10_together():
     # Two `<10` parts summing to under 10: the total minus the shown parts
     # would give their sum, so the next-smallest part is masked too.
-    assert suppress(30, [22, 4, 4]) == ("30", ["masked", "<10", "<10"])
-    assert suppress(40, [25, 3, 2]) == ("40", ["masked", "<10", "<10"])
-    assert suppress(50, [30, 11, 5, 4]) == ("50", ["30", "masked", "<10", "<10"])
-    assert suppress(12, [11, 1]) == ("12", ["masked", "<10"])
+    assert suppress(30, [22, 4, 4]) == ("10+", ["masked", "<10", "<10"])
+    assert suppress(40, [25, 3, 2]) == ("10+", ["masked", "<10", "<10"])
+    assert suppress(50, [30, 11, 5, 4]) == ("10+", ["30", "masked", "<10", "<10"])
+
+
+def test_suppress_bounds_a_total_beside_any_hidden_part():
+    # 11 beside `masked` (10 or more) and `<10` (1 or more) pins 10 and 1.
+    assert suppress(11, [10, 1]) == ("10+", ["masked", "<10"])
+    assert suppress(12, [11, 1]) == ("10+", ["masked", "<10"])
+    assert suppress(8, [5, 3]) == ("<10", ["<10", "<10"])
+    # Every part exact: the total stays exact.
+    assert suppress(70, [20, 50]) == ("70", ["20", "50"])
+    assert report.shown_counts(11, [10, 1], posted=False) == ("11", ["10", "1"])
+
+
+@pytest.mark.parametrize(
+    "groups, who",
+    [
+        # One row per student: an exact 11 students would pin the 11 rows.
+        ([("c", "A", 11, 11)], "<10 row groups, 10+ rows, 10+ students"),
+        ([("c", "A", 11, 4)], "<10 row groups, 10+ rows, <10 students"),
+        ([("c", "A", 11, 11), ("c", "B", 12, 12)],
+         "<10 row groups, 10+ rows, at least 10 students"),
+        ([("c", "A", 11, 11), ("d", "A", 12, 12)],
+         "<10 row groups, 10+ rows, at least 10 students in one comparison"),
+        ([("c", "A", 11, 4), ("c", "B", 12, 3)],
+         "<10 row groups, 10+ rows, at least <10 students"),
+        ([("c", "A", 4, 4)], "<10 row groups, <10 rows, <10 students"),
+    ],
+)  # fmt: skip
+def test_a_group_part_posts_every_count_as_a_bound(groups, who):
+    decision = Decision("d", "c", "domain_owner", "r", {"column": "school",
+                        "values": ["A", "B"]})  # fmt: skip
+    found = [Group(cid, (("school", v),), "cube_only", rows, students)
+             for cid, v, rows, students in groups]  # fmt: skip
+
+    part, _ = report._group_part("v", [decision], found)
+
+    assert part.endswith(who)
+
+
+# As an earlier review's "Still with the analyst" file listed them: 40, 25
+# and a masked 10 rows, and "fewer than 10 more" of 1 row each.
+LISTED_EARLIER = [40, 25, 10] + [1] * 9
+
+
+def _earlier_groups():
+    return [Group("cmp", (("school", f"S{i}"),), "cube_only", n, min(n, 10))
+            for i, n in enumerate(LISTED_EARLIER)]  # fmt: skip
+
+
+def test_a_comparison_decision_posts_only_bounds():
+    # Exact 12 groups and 84 rows would give 12 - 3 listed = 9 small items and
+    # 84 - 40 - 25 = 19 = 10 + 9, pinning every count the file withheld.
+    part, _ = report._comparison_part("v", _earlier_groups())
+
+    assert part == (
+        "every open row group of `cmp` in `v` (cube_only): 10+ row groups, "
+        "10+ rows, at least 10 students"
+    )
+    small = [Group("cmp", (("school", "S"),), "cube_only", 4, 2)]
+    assert report._comparison_part("v", small)[0].endswith(
+        "<10 row groups, <10 rows, at least <10 students"
+    )
+
+
+def test_also_decided_bounds_a_group_decision_s_counts():
+    decision = Decision("d", "cmp", "deliberate", "an old rule",
+                        {"column": "school", "values": ["x"]})  # fmt: skip
+    run = dataclasses.replace(
+        _run(), view="v",
+        applied=Applied(quiet=[(decision, g) for g in _earlier_groups()]),
+    )  # fmt: skip
+
+    (line,) = report.also_decided([run])
+
+    assert "10+ row groups, 10+ rows, at least 10 students" in line
+    assert not re.search(r"\b(12|84|19)\b", line)
+
+
+def test_owner_questions_post_only_bounds_beside_an_earlier_listing():
+    # Exact "12 row groups, 84 rows" less the earlier file's 40 and 25 pins
+    # the masked 10 and the 9 one-row items it withheld.
+    groups = _earlier_groups()
+    owner = Decision("d", "cmp", "domain_owner", "which rule?",
+                     {"column": "school", "values": ["x"]})  # fmt: skip
+    group_part, _ = report._group_part("v", [owner], groups)
+    cause = Decision("c", "cmp", "domain_owner", "which rule?",
+                     cause={"side": "cube", "label": "a rule"})  # fmt: skip
+    cause_part, _ = report._cause_part(
+        "v", report.CauseAsk(cause, groups, sum(LISTED_EARLIER))
+    )
+
+    assert group_part.endswith("10+ row groups, 10+ rows, at least 10 students")
+    assert cause_part == "`cmp` in `v` (cube_only): 10+ row groups, 10+ rows"
+    for part in (group_part, cause_part):
+        assert not re.search(r"\b(12|84|19|9)\b", part)
+    # A bound reads plural, even over 1 group.
+    one = [Group("cmp", (("school", "S"),), "cube_only", 4, 2)]
+    assert report._group_part("v", [owner], one)[0].endswith(
+        "<10 row groups, <10 rows, <10 students"
+    )
+    assert report._cause_part("v", report.CauseAsk(cause, one, 4))[0].endswith(
+        "<10 row groups, <10 rows"
+    )
+
+
+def test_a_review_refuses_questions_json_that_does_not_match_its_questions():
+    run = _run()
+    asked = report._questions([run])
+    assert asked
+
+    with pytest.raises(ValueError, match="questions JSON"):
+        render_review_issue("Registrar", [run], questions=[])
+
+
+def test_a_lead_posts_its_counts_only_when_its_total_is_exact():
+    lead = "lead: relaxing scores: a = 1 brings back {} of {} rows"
+    items = [
+        _open("c1", "cube_only", rows=11, item="c1:a",
+              lead=lead.format("masked", "10+")),
+        _open("c1", "cube_only", rows=50, item="c1:b", lead=lead.format(20, 50)),
+    ]  # fmt: skip
+
+    detail = report.unsettled_detail(items, "v")
+
+    # Beside the item's own exact 11, a bounded lead's parts would pin again.
+    assert "- `c1:a`, 11 rows; lead: relaxing a step in scores\n" in detail
+    assert (
+        "- `c1:b`, 50 rows; lead: relaxing a step in scores brings back 20 of 50 rows\n"
+    ) in detail
 
 
 def test_a_hidden_value_is_redacted_only_as_a_whole_value():
@@ -1054,6 +1185,214 @@ def _still(run, loaded, waiting=None):
     return report.still_with_analyst(sort.unsettled(run, loaded), waiting or {})
 
 
+def _detail(run, loaded):
+    """The per-item file's lines that list items (`- `)."""
+    text = report.unsettled_detail(sort.unsettled(run, loaded), "enrollment_view")
+    return [line[2:] for line in text.splitlines() if line.startswith("- ")]
+
+
+def _open(comparison, what, rows=None, cells=None, item=None, lead=""):
+    return report.Unsettled(
+        "v", comparison, item or f"{comparison}:{what}:{rows or cells}", what,
+        rows=rows, cells=cells, lead=lead,
+    )  # fmt: skip
+
+
+SPREAD = [
+    _open("c1", "value_differs", rows=40, item="c1:a"),
+    _open("c1", "value_differs", rows=12, item="c1:b"),
+    _open("c1", "value_differs", rows=3, item="c1:c"),
+    _open("c1", "cube_only", rows=5, item="c1:d"),
+    _open("c2", "value", cells=30, item="c2:cells"),
+    _open("c2", "group", item="c2:gone"),
+]
+
+
+def test_still_with_the_analyst_counts_open_items_per_comparison_and_bucket():
+    lines = report.still_with_analyst(SPREAD, {"v": {"c3": "never compared"}})
+
+    # The total and its parts are masked together (`suppress`), so the file's
+    # listed counts never give away the small ones.
+    assert lines == [
+        "`c1` in `v` (value_differs): 2 listed items, plus fewer than 10 under 10 "
+        "rows or cells, 10+ rows",
+        "`c1` in `v` (cube_only): 0 listed items, plus fewer than 10 under 10 rows "
+        "or cells, <10 rows",
+        "`c2` in `v` (value): 1 listed item, 30 cells",
+        "`c2` in `v` (group): 1 listed item",
+        "`c3` in `v`: never compared",
+    ]
+
+
+def test_unsettled_detail_lists_items_of_10_or_more_and_counts_the_rest():
+    text = report.unsettled_detail(SPREAD, "v")
+
+    assert text.startswith("# Still with the analyst: `v`\n\n")
+    assert (
+        "## `c1` in `v` (value_differs)\n\n"
+        "- `c1:a`, 40 rows; no lead yet\n"
+        "- `c1:b`, masked rows; no lead yet\n"
+        "- Fewer than 10 more items, each under 10 rows or cells, are not listed.\n"
+    ) in text
+    assert (
+        "## `c1` in `v` (cube_only)\n\n"
+        "- Fewer than 10 more items, each under 10 rows or cells, are not listed.\n"
+    ) in text
+    assert "- `c2:cells`, 30 cells; no lead yet\n" in text
+    assert "- `c2:gone`; no lead yet\n" in text
+    assert "c1:c" not in text and "c1:d" not in text
+    assert "3 rows" not in text and "5 rows" not in text and "12" not in text
+
+
+def test_a_review_with_over_1000_open_groups_stays_under_the_cap():
+    items = [
+        _open(f"c{i % 4}", ("cube_only", "dashboard_only")[i % 2], rows=i % 25 + 1,
+              item=f"c{i % 4}:region=<redacted>:{i}",
+              lead="lead: relaxing main: x = 1 brings back <10 of 40 rows")
+        for i in range(2_600)
+    ]  # fmt: skip
+    run = _run()
+
+    body = render_review_issue(
+        "Registrar", [run], still=report.still_with_analyst(items, {}),
+        still_link="https://github.com/o/r/blob/abc/v-still-with-analyst.md",
+    )  # fmt: skip
+
+    assert len(body) <= report.BODY_WARN_CHARS
+    section = body.split("## Still with the analyst\n", 1)[1].split("Also decided")[0]
+    assert "[v-still-with-analyst.md](https://github.com/o/r/blob/abc/" in section
+    assert (
+        "`c0` in `v` (cube_only): 416 listed items, plus 234 under 10 rows or cells, "
+    ) in section
+    detail = report.unsettled_detail(items, "v")
+    listed = [line for line in detail.splitlines() if line.startswith("- `")]
+    assert listed and all(", <10 rows" not in line for line in listed)
+    assert len(listed) < len(items)
+
+
+@pytest.mark.parametrize(
+    "big, small", [(1, 9), (8, 1), (9, 1), (12, 1), (12, 9), (0, 3), (12, 3)]
+)
+def test_the_issue_and_the_file_never_give_away_the_small_items_by_subtraction(
+    big, small
+):
+    # Each listed item carries a lead whose "of M rows" is its exact count.
+    lead = "lead: relaxing main: x = 1 brings back <10 of {} rows"
+    items = [_open("c1", "cube_only", rows=20 + i, item=f"c1:big{i}",
+                   lead=lead.format(20 + i)) for i in range(big)]  # fmt: skip
+    items += [_open("c1", "cube_only", rows=1 + i, item=f"c1:small{i}",
+                    lead=lead.format(1 + i)) for i in range(small)]  # fmt: skip
+    small_rows = sum(1 + i for i in range(small))
+    run = _run()
+
+    body = render_review_issue(
+        "Registrar", [run], still=report.still_with_analyst(items, {}),
+        still_link="https://github.com/o/r/blob/abc/v-still-with-analyst.md",
+    )  # fmt: skip
+    detail = report.unsettled_detail(items, "v")
+
+    (line,) = [x for x in body.splitlines() if x.startswith("- `c1` in `v`")]
+    head = re.fullmatch(
+        r"- `c1` in `v` \(cube_only\): (\d+) listed items?, plus (.+) under 10 rows "
+        r"or cells, (\S+) rows",
+        line,
+    )
+    assert head is not None
+    listed = [x for x in detail.splitlines() if x.startswith("- `c1:")]
+    assert int(head[1]) == len(listed) == big
+    assert not any("small" in x for x in listed)
+    # Neither output bounds the small items beyond "1 to 9": no total of all
+    # items, no count of the small ones.
+    assert head[2] == "fewer than 10"
+    assert (
+        "- Fewer than 10 more items, each under 10 rows or cells, are not listed.\n"
+    ) in detail
+    numbers = re.findall(r"\d+", line.split(":", 1)[1])
+    assert numbers == [str(big), "10", "10", *re.findall(r"\d+", head[3])]
+    assert not re.search(r"\b\d+ items\b", detail)
+    # The rows: a masked item's lead gives no count either, so the total less
+    # every exact count posted leaves a masked part, never the small rows.
+    for x in listed:
+        if "masked rows" in x:
+            assert " of " not in x and "brings back" not in x
+    exact = [int(m) for m in re.findall(r", (\d+) rows;", detail)]
+    exact += [
+        int(m)
+        for x in listed
+        if "masked rows" in x
+        for m in re.findall(r"of (\d+) rows", x)
+    ]
+    if head[3].isdigit():
+        assert int(head[3]) - sum(exact) != small_rows
+
+
+@pytest.mark.parametrize(
+    "word, listed, small, total",
+    [
+        # 61 less the exact 50 leaves 11 = 10 + 1: the floors pin both.
+        ("rows", [10, 50], [1], "10+ rows"),
+        ("rows", [10, 50], [1] * 10, "10+ rows"),
+        ("cells", [10, 40], [1], "10+ cells"),
+        ("rows", [14, 50], [3], "10+ rows"),
+        ("rows", [], [2, 3], "<10 rows"),
+        # Every part posted exact: the total is exact too.
+        ("rows", [20, 50], [], "70 rows"),
+        ("cells", [12], [], "12 cells"),
+    ],
+)
+def test_no_exact_total_is_posted_beside_a_hidden_count(word, listed, small, total):
+    what = "value" if word == "cells" else "cube_only"
+    items = [
+        _open("c1", what, item=f"c1:l{i}", **{word: n}) for i, n in enumerate(listed)
+    ]
+    items += [
+        _open("c1", what, item=f"c1:s{i}", **{word: n}) for i, n in enumerate(small)
+    ]
+
+    (line,) = report.still_with_analyst(items, {})
+    detail = report.unsettled_detail(items, "v")
+
+    assert line.endswith(f", {total}")
+    hidden = small or "masked" in detail
+    if hidden:
+        assert not re.search(rf", \d+ {word}$", line)
+        assert str(sum(listed) + sum(small)) not in line + detail
+    else:
+        assert all(f", {n} {word};" in detail for n in listed)
+
+
+def test_an_exact_count_of_small_items_is_stated_once_it_is_10_or_more():
+    items = [_open("c1", "cube_only", rows=20, item=f"c1:big{i}") for i in range(3)]
+    items += [_open("c1", "cube_only", rows=2, item=f"c1:s{i}") for i in range(11)]
+
+    (line,) = report.still_with_analyst(items, {})
+    detail = report.unsettled_detail(items, "v")
+
+    assert line.startswith(
+        "`c1` in `v` (cube_only): 3 listed items, plus 11 under 10 rows or cells, "
+    )
+    assert "- Under 10 rows or cells each, not listed: 11 items.\n" in detail
+
+
+def test_a_posted_lead_shows_its_counts_only_beside_an_exact_count():
+    lead = "lead: relaxing main: x = 1 brings back <10 of {} rows"
+    items = [
+        _open("c1", "cube_only", rows=20, item="c1:a", lead=lead.format(20)),
+        _open("c1", "cube_only", rows=50, item="c1:b",
+              lead="lead: relaxing main: x = 1 brings back 30 of 50 rows"),
+        _open("c1", "cube_only", rows=3, item="c1:c", lead=lead.format(3)),
+        _open("c1", "group", item="c1:gone", lead=lead.format(30)),
+    ]  # fmt: skip
+
+    detail = report.unsettled_detail(items, "v")
+
+    assert "- `c1:a`, masked rows; lead: relaxing a step in main\n" in detail
+    assert (
+        "- `c1:b`, 50 rows; lead: relaxing a step in main brings back 30 of 50 rows\n"
+    ) in detail
+    assert "- `c1:gone`; lead: relaxing a step in main\n" in detail
+
+
 def test_still_with_the_analyst_lists_formulas_not_compared_masked():
     lines = report.still_with_analyst(
         [], {}, {"v": {"c1": {"no rows both sides hold": 3}}}
@@ -1123,27 +1462,32 @@ def test_review_posts_ready_questions_and_lists_unsettled_items():
     section = section.split("Also decided")[0]
     assert "not explained yet" in section and "comment" in section
     assert (
-        "- `enrollment` in `enrollment_view`: `enrollment:grade_level=9` "
-        "(value_differs), 40 rows; lead: relaxing a step in main brings back 30 "
-        "of 40 rows"
+        "- `enrollment` in `enrollment_view` (value_differs): 1 listed item, 40 rows\n"
     ) in section
     assert "school_id" not in body
     assert "- `seats` in `enrollment_view`: never compared" in section
     assert body.index("## Still with the analyst") < body.index("Also decided")
     assert "SELECT" not in section
+    assert _detail(run, _left_in_investigate(run, lead)) == [
+        "`enrollment:grade_level=9`, 40 rows; lead: relaxing a step in main brings "
+        "back 30 of 40 rows"
+    ]
 
 
 def test_unsettled_counts_under_10_are_masked():
     small = Group("enrollment", (("region", "Paterson"),), "cube_only", 7, 3)
     run = _run(applied=Applied(open=[small]))
 
-    still = _still(run, _left_in_investigate(run, "not traced (`sort --no-trace`)"))
+    loaded = _left_in_investigate(run, "not traced (`sort --no-trace`)")
 
-    (line,) = still
+    (line,) = _still(run, loaded)
     assert line == (
-        "`enrollment` in `enrollment_view`: `enrollment:region=<redacted>` "
-        "(cube_only), <10 rows; no lead yet"
+        "`enrollment` in `enrollment_view` (cube_only): 0 listed items, plus fewer "
+        "than 10 under 10 rows or cells, <10 rows"
     )
+    assert _detail(run, loaded) == [
+        "Fewer than 10 more items, each under 10 rows or cells, are not listed."
+    ]
 
 
 def test_unsettled_cells_and_reasons_are_posted_without_their_detail():
@@ -1166,8 +1510,8 @@ def test_unsettled_cells_and_reasons_are_posted_without_their_detail():
     still = _still(run, loaded, waiting)
 
     assert still == [
-        "`enrollment` in `enrollment_view`: `enrollment:cells` (cells), <10 cells; "
-        "no lead yet",
+        "`enrollment` in `enrollment_view` (cells): 0 listed items, plus fewer than "
+        "10 under 10 rows or cells, <10 cells",
         "`seats` in `enrollment_view`: its SQL cannot be built today",
     ]
 
@@ -1198,12 +1542,10 @@ def test_a_posted_lead_names_each_step_s_scope_never_its_sql():
         "t AS t ON a = b brings back <10 of 40 rows"
     )
 
-    (line,) = _still(run, _left_in_investigate(run, lead))
+    (line,) = _detail(run, _left_in_investigate(run, lead))
 
-    assert line.endswith(
-        "; lead: relaxing a step in enrolled, kipptaf_int.int_e/main brings back "
-        "<10 of 40 rows"
-    )
+    # A hidden step count (`<10`) posts the lead's scope only.
+    assert line.endswith("; lead: relaxing a step in enrolled, kipptaf_int.int_e/main")
     assert "JOIN" not in line and "x / 2" not in line
 
 

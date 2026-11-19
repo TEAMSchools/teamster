@@ -232,7 +232,7 @@ def test_report_ends_each_comparison_with_before_prove():
 
     text = read_sheet.report(cfg, lambda wb: ("w.twb", TWB), MEMBERS)
 
-    assert text.startswith("Grid (w.twb)\n")
+    assert text.startswith(f"Grid (w.twb); {tableau.NOT_CHECKED}\n")
     assert "\n  grid:\n" in text
     assert "\n    Before rebuild-sheet:\n      - Grade/Subject: no Cube member" in text
     assert read_sheet.report(cfg, lambda wb: ("w.twb", TWB), MEMBERS, ["Nope"]) == (
@@ -307,7 +307,8 @@ def test_preflight_command_reads_a_local_workbook(tmp_path, capsys, monkeypatch)
     assert cli.main(["read-sheet", str(view), "--twb", str(twb)]) == 0
 
     out = capsys.readouterr().out
-    assert out.startswith("Grid (w.twb)\n") and "Before rebuild-sheet:" in out
+    assert out.startswith(f"Grid (w.twb); {tableau.NOT_CHECKED}\n")
+    assert "Before rebuild-sheet:" in out
     assert (
         cli.main(["read-sheet", str(view), "--twb", str(twb), "--sheet", "Other"]) == 0
     )
@@ -496,6 +497,47 @@ def test_read_sheet_points_a_non_null_filter_at_dashboard_filters_set():
     assert any("non-null values only" in b and "operator: set" in b for b in before)
 
 
+def _non_null_calc(columns):
+    return read_sheet.SheetFilter(
+        caption="Is Mastery Int - Custom", name="Calculation_1",
+        kinds=("parameter-driven",), restricting=True, formula="", group="",
+        shared_with=(), source="", columns=("Calculation_1", *columns),
+        parameters=("Mastery Level",), null_mode="non-null",
+    )  # fmt: skip
+
+
+@pytest.mark.parametrize(
+    "columns, entries, handled",
+    [
+        (("is_mastery_int", "is_mastery"), [{"dashboard": "is_mastery_int",
+                                             "operator": "set"}], True),
+        (("is_mastery",), [{"dashboard": "is_mastery_int", "operator": "set"}],
+         False),
+        (("is_mastery_int",), [{"dashboard": "is_mastery_int",
+                                "values": ["1"]}], False),
+        (("is_mastery_int",), [], False),
+    ],
+    ids=["set on a column it reads", "set on another column", "not set", "none"],
+)  # fmt: skip
+def test_a_non_null_calc_filter_is_handled_by_a_set_entry_on_a_column_it_reads(
+    columns, entries, handled
+):
+    facts = read_sheet.Sheet([], [], [_non_null_calc(columns)], [], {})
+    out = read_sheet._Checklist([], [])
+
+    read_sheet._filter_lines(out, _comparison(dashboard_filters=entries), facts)
+
+    if handled:
+        assert out.before == []
+        assert (
+            "    - Is Mastery Int - Custom: dashboard_filters operator: set on "
+            "is_mastery_int"
+        ) in out.lines
+    else:
+        (blocking,) = out.before
+        assert "non-null values only" in blocking and "operator: set" in blocking
+
+
 def test_read_sheet_refuses_a_text_sheet_field():
     facts = read_sheet.Sheet(
         [], [], [], [], {"Status": {"status"}}, text_values=frozenset({"status"})
@@ -582,35 +624,18 @@ NOT_PUBLISHED_ITEM = (
 )
 
 
-def test_read_sheet_marks_and_blocks_an_unpublished_sheet():
+def test_read_sheet_says_published_is_not_checked_offline():
     assert UNPUBLISHED != TWB
-    assert read_sheet.read_sheet(TWB, "Grid").published is True
-    assert read_sheet.read_sheet(UNPUBLISHED, "Grid").published is False
-
-    _, before = read_sheet.check("v", UNPUBLISHED, "Grid", _comparison(), MEMBERS)
-    assert NOT_PUBLISHED_ITEM in before
-    _, published = read_sheet.check("v", TWB, "Grid", _comparison(), MEMBERS)
-    assert NOT_PUBLISHED_ITEM not in published
-
     cfg = type("Cfg", (), {"view": "v", "comparisons": [_comparison()]})()
-    text = read_sheet.report(cfg, lambda wb: ("w.twb", UNPUBLISHED), MEMBERS)
-    assert text.startswith("Grid (w.twb); not on a published dashboard\n")
-    assert f"      - {NOT_PUBLISHED_ITEM}" in text
+    # A hidden window or a visible one: the .twb cannot say which sheets the
+    # server publishes, so neither is guessed.
+    for xml in (TWB, UNPUBLISHED):
+        _, before = read_sheet.check("v", xml, "Grid", _comparison(), MEMBERS)
+        assert NOT_PUBLISHED_ITEM not in before
 
-
-def test_read_sheet_reads_published_only_when_asked(monkeypatch):
-    calls = []
-    real = tableau.published_sheets
-    monkeypatch.setattr(
-        tableau, "published_sheets", lambda twb: calls.append(1) or real(twb)
-    )
-
-    facts = read_sheet.read_sheet(UNPUBLISHED, "Grid")
-    read_sheet.text_measure(facts, None)
-    assert calls == []
-
-    assert facts.published is False and facts.published is False
-    assert calls == [1]
+        text = read_sheet.report(cfg, lambda wb, xml=xml: ("w.twb", xml), MEMBERS)
+        assert text.startswith(f"Grid (w.twb); {tableau.NOT_CHECKED}\n")
+        assert "not on a published dashboard" not in text
 
 
 def test_print_sheets_parses_each_workbook_once(monkeypatch, capsys):
@@ -637,8 +662,7 @@ def test_read_sheet_lets_an_opted_in_unpublished_sheet_through():
     assert NOT_PUBLISHED_ITEM not in before
     cfg = type("Cfg", (), {"view": "v", "comparisons": [comparison]})()
     text = read_sheet.report(cfg, lambda wb: ("w.twb", UNPUBLISHED), MEMBERS)
-    # The header still says so: the comparison opted in, the sheet is unchanged.
-    assert text.startswith("Grid (w.twb); not on a published dashboard\n")
+    assert text.startswith(f"Grid (w.twb); {tableau.NOT_CHECKED}\n")
 
 
 def test_read_sheet_shows_an_allowlisted_filter_s_values():

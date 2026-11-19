@@ -776,6 +776,76 @@ def bucket_rows_sql(comparison: Comparison, bucket: str, source: str) -> str:
     return f"SELECT {', '.join(columns)}\nFROM {source}\nWHERE bucket = '{bucket}'"
 
 
+def unmatched_columns(comparison: Comparison) -> set[str]:
+    """The columns `unmatched_sql` gives a comparison's `{unmatched}`, lowercased."""
+    dims = [p.cube for p in pipeline.group_dims(comparison)]
+    grain = [p.cube for p in pipeline.rows_of(comparison, "explain").grain]
+    return {
+        c.lower()
+        for c in [
+            "__row", "item_key", "side", *dims,
+            *([reconcile._MOVED] if dims else []),
+            *(f"__d_{d}" for d in dims), *grain, "__rn",
+        ]
+    }  # fmt: skip
+
+
+def missing_columns(body: str, comparison: Comparison) -> list[str]:
+    """The columns an explanation reads from `{unmatched}` that the comparison's
+    lacks, read from its SQL without running it.
+
+    A column counts as read from `{unmatched}` when it is qualified by the
+    relation's alias (or `__u`), or unqualified in a SELECT whose only FROM or
+    JOIN source (a table, subquery or UNNEST) is `{unmatched}` and is no
+    alias that SELECT projects. SQL that does not parse reads as lacking
+    nothing; `check_sql` refuses it where it runs.
+    """
+    try:
+        tree = sqlglot.parse_one(body.replace(PLACEHOLDER, "__u"), read="bigquery")
+    except SqlglotError:
+        return []
+    have = unmatched_columns(comparison)
+    missing: list[str] = []
+    for select in tree.find_all(exp.Select):
+
+        def own(node, select=select) -> bool:
+            return node.find_ancestor(exp.Select) is select
+
+        start = select.args.get("from_") or select.args.get("from")
+        sources = [
+            *([start.this] if start is not None else []),
+            *(j.this for j in select.args.get("joins") or []),
+        ]
+        aliases = {
+            t.alias_or_name.lower()
+            for t in sources
+            if isinstance(t, exp.Table) and t.name.lower() == "__u"
+        }
+        if not aliases:
+            continue
+        alone = len(sources) == 1
+        projected = {p.alias.lower() for p in select.expressions if p.alias}
+        for column in select.find_all(exp.Column):
+            if not own(column) or isinstance(column.this, exp.Star):
+                continue
+            qualifier, name = column.table.lower(), column.name.lower()
+            reads = qualifier in aliases or (
+                not qualifier and alone and name not in projected
+            )
+            if reads and name not in have and name not in missing:
+                missing.append(name)
+    return sorted(missing)
+
+
+def _skipped_line(name: str, comparison: str, missing: list[str]) -> str:
+    """Why a shared explanation does not run on a comparison: its rows lack a
+    column it reads."""
+    return (
+        f"Explanation {name} skipped on {comparison}: it reads "
+        f"{', '.join(missing)}, which {comparison}'s {PLACEHOLDER} lacks."
+    )
+
+
 def _joined_column(dim: str) -> str:
     """The `joined` column a group's dim reads: a `d:` dim is the dashboard's."""
     if dim.startswith(reconcile.DASH_PREFIX):
@@ -1555,8 +1625,11 @@ def run_stored(
     `wh.budget`.
 
     An explanation also runs on each comparison that reads the same model at the
-    same row grain and has no explanation of its own for the bucket (`siblings`).
-    Each pair's outcome is kept in `progress_dir` (`explain_progress`) as it
+    same row grain and has no explanation of its own for the bucket (`siblings`),
+    so such a comparison runs every sibling's explanation of the bucket
+    (`apply_runs` takes the one that explains each group). One that reads a
+    column the comparison's `{unmatched}` lacks (`missing_columns`) is
+    skipped there with one line, before anything is priced. Each pair's outcome is kept in `progress_dir` (`explain_progress`) as it
     finishes, and a later triage reuses one whose explanation and open items
     still match, once the comparison's SQL still matches the run
     (`pipeline.row_sides`, compile only) and its saved rows still carry the
@@ -1595,6 +1668,11 @@ def run_stored(
         for comparison in [own, *_shared(cfg, directory, proof, own)]:
             items = _bucket_items(run, comparison.id, proof.bucket)
             if not items:
+                continue
+            if comparison is not own and (
+                missing := missing_columns(proof.body, comparison)
+            ):
+                print(_skipped_line(path.name, comparison.id, missing))
                 continue
             ran = Ran(proof, items)
             out.append(ran)
@@ -1654,24 +1732,10 @@ def run_stored(
         )
     wh.refuse_past_caps(total + also_usd)
     for ran, comparison, sql, literals, done in ready:
-        name = ran.proof.path.name
-        try:
-            rows = wh.rows(sql, timeout_s=TIMEOUT_S)
-            ran.found = outcomes(rows, ran.proof, ran.items, literals)
-            ran.students = cause_students(rows, ran.proof, comparison)
-        except (pipeline.Refusal, CostCapError) as exc:
-            ran.why = _not_run(name, exc)
-        except GoogleAPIError as exc:
-            # As `run_explanation` words it, so the evidence reads the same.
-            ran.why = (
-                f"explanation {name} not run: {name}: BigQuery refused it "
-                f"({bigquery_said(exc)})"
-            )
-        else:
-            if progress_dir is not None:
-                explain_progress.save(progress_dir, done, _to_progress(ran))
+        if _run_job(wh, ran, comparison, sql, literals) and progress_dir is not None:
+            explain_progress.save(progress_dir, done, _to_progress(ran))
         if ticker is not None:
-            ticker.say("sort explain", name, wh.spent)
+            ticker.say("sort explain", ran.proof.path.name, wh.spent)
     outside = [r for r in out if r.why.endswith(_OUTSIDE)]
     for ran in out:
         if ran.why and ran not in outside:
@@ -1682,6 +1746,122 @@ def run_stored(
             "--comparison not run (no kept outcome)."
         )
     return out
+
+
+def _run_job(
+    wh: Warehouse, ran: Ran, comparison: Comparison, sql: str, literals: set[str]
+) -> bool:
+    """Run one priced explanation query into `ran`; False, with why, when it
+    cannot run or its outcome fails a check."""
+    name = ran.proof.path.name
+    try:
+        rows = wh.rows(sql, timeout_s=TIMEOUT_S)
+        ran.found = outcomes(rows, ran.proof, ran.items, literals)
+        ran.students = cause_students(rows, ran.proof, comparison)
+    except (pipeline.Refusal, CostCapError) as exc:
+        ran.why = _not_run(name, exc)
+    except GoogleAPIError as exc:
+        # As `run_explanation` words it, so the evidence reads the same.
+        ran.why = (
+            f"explanation {name} not run: {name}: BigQuery refused it "
+            f"({bigquery_said(exc)})"
+        )
+    return not ran.why
+
+
+def _applicable(
+    cfg: ViewConfig,
+    directory: Path,
+    proof: Explanation,
+    target: Comparison,
+    comparison: Comparison,
+) -> list[Explanation]:
+    """The explanations `comparison`, which has none of its own for the bucket,
+    runs: `proof` (the target's, as `explain` is about to save it) and every
+    other sibling's stored one, in the view's order."""
+    out = [proof]
+    for sibling in siblings(cfg, comparison):
+        path = explanation_path(directory, sibling.id, proof.bucket)
+        if sibling.id == target.id or not path.is_file():
+            continue
+        try:
+            out.append(read_explanation(path))
+        except (OSError, pipeline.Refusal) as exc:
+            print(f"Explanation {path.name} skipped: {exc}")
+    return out
+
+
+def _plan_shared(
+    cfg: ViewConfig,
+    run: RunResult,
+    directory: Path,
+    proof: Explanation,
+    target: Comparison,
+    wh: Warehouse,
+    cube: Cube,
+    prepared: trace.Prepared,
+) -> tuple[list[Ran], list[tuple[Ran, Comparison, str, set[str]]]]:
+    """Build, without running, every explanation the comparisons sharing
+    `target`'s rows run for its bucket (`_shared`, `_applicable`).
+
+    Returns:
+        Each run planned, with why for one that cannot run, and the query of
+        each that can. One reading a column the comparison lacks
+        (`missing_columns`) is skipped with one line and planned not at all.
+    """
+    out: list[Ran] = []
+    jobs = []
+    for comparison in _shared(cfg, directory, proof, target):
+        items = _bucket_items(run, comparison.id, proof.bucket)
+        if not items:
+            continue
+        for p in _applicable(cfg, directory, proof, target, comparison):
+            if missing := missing_columns(p.body, comparison):
+                print(_skipped_line(p.path.name, comparison.id, missing))
+                continue
+            ran = Ran(p, items)
+            out.append(ran)
+            moment = run.moment_of(comparison.id)
+            try:
+                sql, literals = explanation_sql(
+                    wh,
+                    comparison,
+                    prepared.row_sides(cfg, comparison, run, wh, cube),
+                    p,
+                    items,
+                    moment,
+                    table=require_saved(wh, cfg, run, comparison),
+                    moved=prepared.moved_at(moment),
+                    students=True,
+                )
+            except (*_CANNOT_RUN, GoogleAPIError) as exc:
+                ran.why = _not_run(p.path.name, exc)
+                continue
+            jobs.append((ran, comparison, sql, literals))
+    return out, jobs
+
+
+def _also_line(comparison: str, runs: list[Ran]) -> tuple[str, set[str]]:
+    """`explain`'s line for a comparison sharing the explanation: how many of
+    its items any explanation explains and, when several ran, how many each
+    did; and the item ids it reports."""
+    items = {item_id for item_id, _ in runs[0].items}
+    if all(r.found is None for r in runs):
+        return f"Also {comparison}: not run; see above.", set()
+    each = []
+    explained: set[str] = set()
+    for r in runs:
+        if r.found is None:
+            each.append(f"{r.proof.path.name}: not run")
+            continue
+        mine = {i for i, o in r.found.items() if o.explained}
+        explained |= mine
+        each.append(f"{r.proof.path.name}: {len(mine)}")
+    tail = f" ({', '.join(each)})" if len(runs) > 1 else ""
+    return (
+        f"Also {comparison}: {len(explained)} of {len(items)} items explained{tail}.",
+        items,
+    )
 
 
 # Why an explanation of a comparison `sort --comparison` left out did not run.
@@ -1731,43 +1911,6 @@ def _from_progress(ran: Ran, kept: dict) -> None:
     ran.students = kept["students"]
 
 
-def _run_one(
-    cfg: ViewConfig,
-    run: RunResult,
-    comparison: Comparison,
-    proof: Explanation,
-    wh: Warehouse,
-    cube: Cube,
-    prepared: trace.Prepared,
-) -> Ran | None:
-    """Run `proof` on one comparison's open groups of its bucket, if any."""
-    path = proof.path
-    bucket_items = _bucket_items(run, comparison.id, proof.bucket)
-    if not bucket_items:
-        return None
-    ran = Ran(proof, bucket_items)
-    try:
-        if prepared.schools is None:
-            prepared.schools = network_schools(wh)
-        table = require_saved(wh, cfg, run, comparison)
-        ran.found = run_explanation(
-            wh,
-            comparison,
-            prepared.row_sides(cfg, comparison, run, wh, cube),
-            proof,
-            bucket_items,
-            run.moment_of(comparison.id),
-            prepared.moved_at(run.moment_of(comparison.id)),
-            ran.students,
-            table=table,
-        )
-    except (*_CANNOT_RUN, GoogleAPIError) as exc:
-        ran.why = _not_run(path.name, exc)
-    if ran.why:
-        print(ran.why)
-    return ran
-
-
 def explained(runs: list[Ran]) -> set[tuple]:
     """The `trace.item_key` of every group an explanation fully explains."""
     return {
@@ -1785,15 +1928,65 @@ def apply_runs(
     cfg: ViewConfig,
     loaded: dict | None = None,
 ) -> None:
-    """Sort the items by the explanations' runs, then link cell sets."""
+    """Sort the items by the explanations' runs, then link cell sets.
+
+    Several explanations can run on one item (a comparison with none of its
+    own runs every sibling's): the item is explained when any of them
+    explains it, by the first in `runs` that does. Otherwise its evidence
+    names each one, with why it did not explain or did not run.
+    """
+    by_id = {item["id"]: item for item in items}
+    reached: dict[str, list[tuple[Ran, Outcome | None]]] = {}
+    # Every file's counts for one comparison and bucket go in at once:
+    # `keep_students` replaces what an earlier call left for that bucket.
+    students: dict[tuple[str, str], list[dict]] = {}
     for r in runs:
-        if r.found is not None and loaded is not None:
-            keep_students(loaded, _comparison_of(r), r.proof.bucket, r.students)
-        if r.found is None:
-            note(items, {i for i, _ in r.items}, r.why, r.proof.path.name)
-        else:
-            apply_outcomes(items, r.proof, r.found)
+        if r.found is not None:
+            key = (_comparison_of(r), r.proof.bucket)
+            students.setdefault(key, []).extend(r.students)
+        for item_id, _ in r.items:
+            outcome = None if r.found is None else r.found.get(item_id)
+            if item_id in by_id and (r.found is None or outcome is not None):
+                reached.setdefault(item_id, []).append((r, outcome))
+    if loaded is not None:
+        for (comparison, bucket), found in students.items():
+            keep_students(loaded, comparison, bucket, found)
+    for item_id, pairs in reached.items():
+        _apply_item(by_id[item_id], pairs)
     link_cells(run, items, cfg=cfg)
+
+
+def _apply_item(item: dict, pairs: list[tuple[Ran, Outcome | None]]) -> None:
+    """Sort one item by the explanations that ran on it (`apply_runs`)."""
+    if winner := next(
+        ((r, o) for r, o in pairs if o is not None and o.explained), None
+    ):
+        r, o = winner
+        apply_outcomes([item], r.proof, {item["id"]: o})
+        return
+    if all(o is None for _, o in pairs):
+        for r, _ in pairs:
+            note([item], {item["id"]}, r.why, r.proof.path.name)
+        return
+    # A bucket's groups reach `cause` only through an explanation.
+    lines, posted = [], []
+    for r, o in pairs:
+        name = r.proof.path.name
+        if o is None:
+            lines.append(r.why)
+            posted.append(f"explanation {name} not run; see the terminal")
+        else:
+            lines.append(o.gap_line(name))
+            posted.append(f"explanation {name} does not explain every row")
+    evidence = _kept(item.get("evidence") or [])
+    shown = _kept(item.get("evidence_posted") or item.get("evidence") or [])
+    item.update(
+        suggestion="investigate",
+        cause=None,
+        proof=None,
+        evidence=[*lines, *evidence],
+        evidence_posted=[*posted, *shown],
+    )
 
 
 # --- the command -------------------------------------------------------------------
@@ -1919,25 +2112,57 @@ def explain(
                 ) from exc
             print(f"Reproduce {b}: dry run OK, ${usd:.2f} on today's tables.")
         prepared = trace.Prepared(schools=network_schools(wh))
-        students: list[dict] = []
-        found = run_explanation(
+        moment = run.moment_of(target.id)
+        query, literals = explanation_sql(
             wh,
             target,
             prepared.row_sides(cfg, target, run, wh, cube),
             proof,
             bucket_items,
-            run.moment_of(target.id),
-            prepared.moved_at(run.moment_of(target.id)),
-            students,
+            moment,
             table=require_saved(wh, cfg, run, target),
+            moved=prepared.moved_at(moment),
+            students=True,
         )
-        # The comparisons on the same model and grain: the explanation classifies
-        # theirs too, unless one has its own. A refusal there keeps this explanation.
-        shared = [
-            r
-            for c in _shared(cfg, stored.parent, proof, target)
-            if (r := _run_one(cfg, run, c, proof, wh, cube, prepared))
-        ]
+        # The comparisons on the same model and grain with no explanation of
+        # their own run every sibling's, this one included. A refusal there
+        # keeps this explanation.
+        shared, jobs = _plan_shared(
+            cfg, run, stored.parent, proof, target, wh, cube, prepared
+        )
+        # Every query is priced before any runs, under one cap check.
+        price, *prices = trace._dry_runs(wh, [query, *(j[2] for j in jobs)])
+        if isinstance(price, GoogleAPIError):
+            raise pipeline.Refusal(
+                f"{proof.path.name}: BigQuery refused it ({bigquery_said(price)})"
+            ) from price
+        print(f"Explanation {proof.path.name}: ${price:.2f} (dry run).")
+        ready, also = [], 0.0
+        for job, usd in zip(jobs, prices, strict=True):
+            if isinstance(usd, GoogleAPIError):
+                job[0].why = _not_run(job[0].proof.path.name, usd)
+            else:
+                also += usd
+                ready.append(job)
+        if ready:
+            print(
+                f"On the comparisons sharing its rows: {len(ready)} to run, "
+                f"${also:.2f} (dry run)."
+            )
+        wh.refuse_past_caps(price + also)
+        try:
+            rows = wh.rows(query, timeout_s=TIMEOUT_S)
+        except GoogleAPIError as exc:
+            raise pipeline.Refusal(
+                f"{proof.path.name}: BigQuery refused it ({bigquery_said(exc)})"
+            ) from exc
+        found = outcomes(rows, proof, bucket_items, literals)
+        students = cause_students(rows, proof, target)
+        for job in ready:
+            _run_job(wh, *job)
+        for ran in shared:
+            if ran.why:
+                print(ran.why)
 
     stored.parent.mkdir(parents=True, exist_ok=True)
     stored.write_text(proof.text)
@@ -1951,14 +2176,13 @@ def explain(
     moved = sum(1 for o in found.values() if o.explained)
     print(f"Saved {stored}: {moved} of {len(found)} items explained.")
     reported = set(found)
+    by_sibling: dict[str, list[Ran]] = {}
     for r in shared:
-        sibling = _comparison_of(r)
-        if r.found is None:
-            print(f"Also {sibling}: not run; see above.")
-            continue
-        n = sum(1 for o in r.found.values() if o.explained)
-        print(f"Also {sibling}: {n} of {len(r.found)} items explained.")
-        reported |= set(r.found)
+        by_sibling.setdefault(_comparison_of(r), []).append(r)
+    for sibling, runs in by_sibling.items():
+        line, ids = _also_line(sibling, runs)
+        print(line)
+        reported |= ids
     _report(all_items, wanted or reported)
     for item_id, open_cells in left.items():
         print(f"{item_id}: the cells left open (local only, not masked):")

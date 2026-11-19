@@ -7,7 +7,8 @@ differing cells no unmatched row lies in, and those the formula check filed,
 up to the count it recorded. A `cause` decision names an explained
 cause, never a group: the latest triage, which re-runs every stored explanation,
 says which items it decides (`sort.mark_decided`), so `apply` only checks
-its SQL. Pure: no I/O.
+its SQL. A comparison decision (`all_groups`) names every row group of its
+comparison that no `group` decision claims, and never cells. Pure: no I/O.
 """
 
 from __future__ import annotations
@@ -114,7 +115,9 @@ def decisions_fingerprint(decisions: list[Decision]) -> str:
     """Hash a validation file's `decisions:` block as it was parsed.
 
     Comments and layout do not change it; any key or value does, except
-    `task`, which is filled in after the review issue posts.
+    `task`, which is filled in after the review issue posts. `all_groups` is
+    left out where false, so a file with no comparison decision hashes as it
+    did before the key existed.
 
     Args:
         decisions: The file's decisions, in file order.
@@ -122,11 +125,14 @@ def decisions_fingerprint(decisions: list[Decision]) -> str:
     Returns:
         The sha256 hex digest of the decisions as sorted-key JSON.
     """
-    text = json.dumps(
-        [{**dataclasses.asdict(d), "task": None} for d in decisions],
-        sort_keys=True,
-        default=str,
-    )
+
+    def fields(d: Decision) -> dict:
+        out = {**dataclasses.asdict(d), "task": None}
+        if not d.all_groups:
+            del out["all_groups"]
+        return out
+
+    text = json.dumps([fields(d) for d in decisions], sort_keys=True, default=str)
     return hashlib.sha256(text.encode()).hexdigest()
 
 
@@ -156,6 +162,12 @@ def cause_state(d: Decision, proof: str, current: dict[str, str]) -> str:
 def _text(value: object) -> str:
     """A decision value as group text: `None` reads as empty, as NULL does."""
     return "" if value is None else str(value)
+
+
+def _names(d: Decision, g: Group) -> bool:
+    """A `group` decision's column holds one of its values in `g`."""
+    values = {_text(v) for v in d.group.get("values") or []}
+    return g.value_of(d.group.get("column") or "") in values
 
 
 def _gap_of(decision: Decision) -> tuple[str, str] | None:
@@ -196,16 +208,27 @@ def apply(
         whose values match a group, with the values that match none. The
         values that do match stay quiet.
 
+    A comparison decision (`all_groups`) quiets, while both fingerprints
+    hold, every group of its comparison no `group` decision names, stale or
+    not (a stale one's groups stay open until it is re-confirmed); with none
+    left it is no longer needed.
+
     Raises:
-        ValueError: Two decisions claim the same group, or the same
-            comparison's formula difference.
+        ValueError: Two decisions claim the same group, the same
+            comparison's formula difference, or (2 comparison decisions)
+            the same comparison's row groups.
     """
     applied = Applied()
     claimed: dict[int, Decision] = {}
     gap_claims: dict[tuple[str, str], Decision] = {}
     formula_claims: dict[str, Decision] = {}
+    # After every `group` decision, so each keeps its groups.
+    whole: list[Decision] = []
 
     for decision in decisions:
+        if decision.all_groups:
+            whole.append(decision)
+            continue
         if decision.cause:
             # Its own explanation stands in for the item's: here only the SQL, and
             # that it has an explanation at all, can fail.
@@ -298,6 +321,46 @@ def apply(
         found = {groups[i].value_of(column or "") for i in matched}
         if missing := [v for v in values if v not in found]:
             applied.partly_stale.append((decision, missing))
+
+    whole_claims: dict[str, Decision] = {}
+    for decision in whole:
+        # Refused whatever this run holds, like 2 formula decisions.
+        if decision.comparison in whole_claims:
+            raise ValueError(
+                f"decisions {whole_claims[decision.comparison].id!r} and "
+                f"{decision.id!r} both claim every open row group of "
+                f"{decision.comparison!r}"
+            )
+        whole_claims[decision.comparison] = decision
+        current = fingerprints.get(decision.comparison) or {}
+        if any(
+            not decision.fingerprints.get(side)
+            or not current.get(side)
+            or decision.fingerprints[side] != current[side]
+            for side in ("cube", "dashboard")
+        ):
+            applied.reconfirm.append(decision)
+            continue
+        # A group a `group` decision names stays that decision's, stale or
+        # not: open until it is re-confirmed, never this decision's call.
+        named = [
+            d
+            for d in decisions
+            if d.group and not d.cause and d.comparison == decision.comparison
+        ]
+        matched = [
+            i
+            for i, g in enumerate(groups)
+            if g.comparison_id == decision.comparison
+            and i not in claimed
+            and not any(_names(d, g) for d in named)
+        ]
+        if not matched:
+            applied.no_longer_needed.append(decision)
+            continue
+        for i in matched:
+            claimed[i] = decision
+            applied.quiet.append((decision, groups[i]))
 
     applied.open = [g for i, g in enumerate(groups) if i not in claimed]
     applied.open_gaps = [g for g in gaps if (g.kind, g.field) not in gap_claims]

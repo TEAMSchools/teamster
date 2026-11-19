@@ -355,10 +355,17 @@ class FakeTableau:
         self.updated = updated
         self.edited = None
         self.refresh = NOW - timedelta(hours=2)
+        # The workbook's views as Tableau Server lists them.
+        self.views = {"Rate by Region"}
+        self.view_asks: list[str] = []
 
     def download_twb(self, luid):
         self.downloads = getattr(self, "downloads", 0) + 1
         return self.twb
+
+    def view_names(self, luid):
+        self.view_asks.append(luid)
+        return set(self.views)
 
     def workbook_updated(self, luid):
         error = getattr(self, "fail_next", None)
@@ -405,9 +412,9 @@ def fakes(monkeypatch, tmp_path):
     monkeypatch.setattr(cli, "cache_root", lambda: tmp_path / "cache")
 
     def linked(path, data):
-        """The review JSON written and linked as if committed and pushed."""
+        """A review file written and linked as if committed and pushed."""
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(data, indent=2))
+        path.write_text(data if isinstance(data, str) else json.dumps(data, indent=2))
         return f"https://github.com/o/r/blob/abc/{path.name}"
 
     monkeypatch.setattr(review, "_review_file", linked)
@@ -1011,11 +1018,12 @@ def test_a_changed_workbook_skips_only_its_comparisons(fakes, tmp_path, capsys):
 
 def test_compare_skips_a_sheet_on_no_published_dashboard(fakes, tmp_path, capsys):
     _hide_rate_by_region(fakes.tbl)
-    # c2's sheet shows in its own window, so it publishes.
+    # c2's sheet is a view of its own.
     fakes.tbl.twb = fakes.tbl.twb.replace(
         "  </windows>",
         "    <window class='worksheet' name='Rate Copy' />\n  </windows>",
     )
+    fakes.tbl.views = {"Rate Copy"}
     path = _two(
         tmp_path, lambda e: e.replace("sheet: Rate by Region", "sheet: Rate Copy")
     )
@@ -1108,33 +1116,78 @@ def test_unpublished_sheets_leaves_a_comparison_with_no_sheet_alone(fakes, tmp_p
     assert rebuild.unpublished_sheets([c], tbl=fakes.tbl) == {}
 
 
-def test_compare_downloads_no_workbook_for_a_check_that_recorded_published(
+def test_compare_downloads_no_workbook_for_a_sheet_that_is_a_view(
     fakes, tmp_path, capsys
 ):
-    proof = REBUILD_CHECK + "      published: true\n"
-    path = _two(tmp_path, text=YML.replace(REBUILD_CHECK, proof))
-
-    assert cli.main(["compare", str(path)]) == 0
+    assert cli.main(["compare", str(_two(tmp_path))]) == 0
 
     assert not getattr(fakes.tbl, "downloads", 0)
+    # Asked once for the workbook both comparisons read.
+    assert fakes.tbl.view_asks == ["wb-1"]
     assert _scripts_for(fakes.bq) == ["c1", "c2"]
 
 
-def test_compare_checks_again_after_a_republish(fakes, tmp_path, capsys):
-    path = _republished(fakes, tmp_path)
-    path.write_text(
-        path.read_text().replace(
-            "      sheet_query_fingerprint",
-            "      published: true\n      sheet_query_fingerprint",
-        )
+def _on_dashboard(tbl, dashboard="Standards"):
+    """Put the fixture sheet in a zone of a dashboard whose window shows."""
+    tbl.twb = tbl.twb.replace(
+        "  </worksheets>\n",
+        f"  </worksheets>\n  <dashboards><dashboard name='{dashboard}'><zones>"
+        "<zone id='1' name='Rate by Region' /></zones></dashboard></dashboards>\n",
+    ).replace(
+        "  </windows>",
+        f"    <window class='dashboard' name='{dashboard}' />\n  </windows>",
     )
-    _hide_rate_by_region(fakes.tbl)
+    assert "<dashboards>" in tbl.twb
+
+
+def test_compare_reads_published_from_the_server_views_not_the_check(
+    fakes, tmp_path, capsys
+):
+    # The sheet's window and its dashboard's both show in the .twb, and the
+    # check recorded it published, but neither is a view on the server.
+    _on_dashboard(fakes.tbl)
+    fakes.tbl.views = {"Other"}
+    proof = REBUILD_CHECK + "      published: true\n"
+    path = _two(tmp_path, text=YML.replace(REBUILD_CHECK, proof))
 
     assert cli.main(["compare", str(path)]) == 1
 
-    assert fakes.tbl.downloads
-    assert "not on a published dashboard" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    for cid in ("c1", "c2"):
+        assert (
+            f"Skipping {cid}: not on a published dashboard; set unpublished: true "
+            "to compare it anyway"
+        ) in out
+    assert fakes.tbl.downloads == 1
     assert _scripts_for(fakes.bq) == []
+
+    # A zone on a dashboard that is a view publishes.
+    fakes.tbl.views = {"Standards"}
+    assert cli.main(["compare", str(path)]) == 0
+    assert "not on a published dashboard" not in capsys.readouterr().out
+    assert _scripts_for(fakes.bq) == ["c1", "c2"]
+
+
+def test_compare_skips_a_workbook_whose_views_tableau_errs_on(
+    fakes, tmp_path, monkeypatch, capsys
+):
+    asked = []
+
+    def answer(luid):
+        asked.append(luid)
+        raise TSC.ServerResponseError("404", "Resource Not Found", "gone")
+
+    monkeypatch.setattr(fakes.tbl, "view_names", answer)
+
+    assert cli.main(["compare", str(_two(tmp_path))]) == 1
+
+    out = capsys.readouterr().out
+    for cid in ("c1", "c2"):
+        assert (
+            f"Skipping {cid}: the workbook could not be checked: Tableau answered "
+            "404 Resource Not Found"
+        ) in out
+    assert asked == ["wb-1"]
 
 
 def test_compare_runs_an_opted_in_unpublished_sheet(fakes, tmp_path, capsys):
@@ -1852,11 +1905,16 @@ def test_review_posts_the_masked_lead_of_an_item_with_the_analyst(
 
     body = capsys.readouterr().out
     section = body.split("## Still with the analyst", 1)[1].split("## Proposed")[0]
-    assert "- `ada-region` in `v`: `j` (group); lead: relaxing a step in main " in (
+    assert "- `ada-region` in `v` (group): 1 listed item\n" in section
+    # The items one by one go to a file beside the review JSON, linked.
+    detail = tmp_path / "reviews" / "v-still-with-analyst.md"
+    assert f"[{detail.name}](https://github.com/o/r/blob/abc/{detail.name})" in (
         section
     )
-    assert "brings back <10 of 30 rows" in section
-    assert "3 of 30" not in body and "region = " not in section
+    text = detail.read_text()
+    # An item with no exact count posted keeps its lead's scope, not its counts.
+    assert "- `j`; lead: relaxing a step in main\n" in text
+    assert "of 30" not in body + text and "region = " not in text
 
 
 def test_ask_owner_lists_formulas_not_compared_and_record_answers_ignores_them(
@@ -1899,6 +1957,44 @@ def _predating_the_formula_check(tmp_path):
     del loaded["formulas_not_compared"]
     triage.write_text(json.dumps(loaded))
     return path
+
+
+@pytest.mark.parametrize("held", [None, 0])
+def test_ask_owner_and_decide_refuse_a_triage_of_older_posted_masking(
+    fakes, tmp_path, capsys, held
+):
+    # Its posted evidence was masked by an older rule, and ask-owner posts it
+    # as stored.
+    path = _file(tmp_path)
+    assert cli.main(["compare", str(path)]) == 0
+    (run_json,) = (tmp_path / "cache" / "v").glob("*/run.json")
+    _write_sorted(run_json, [_sorted_item("e"), _gap_sorted_item()])
+    triage = run_json.parent / "triage.json"
+    loaded = json.loads(triage.read_text())
+    if held is None:
+        del loaded["posted_version"]
+    else:
+        loaded["posted_version"] = held
+    triage.write_text(json.dumps(loaded))
+    approved = _approved(
+        tmp_path,
+        [{"id": "no-team", "call": "deliberate", "reason": "A label only.",
+          "task": "", "item": "cut:Team"}],
+    )  # fmt: skip
+    capsys.readouterr()
+
+    assert cli.main(["ask-owner", str(path), "--domain", "Registrar"]) == 1
+    assert "posted evidence was masked by an older rule; run `sort`" in (
+        capsys.readouterr().err
+    )
+    assert cli.main(["decide", str(path), str(approved)]) == 1
+    assert "posted evidence was masked by an older rule" in capsys.readouterr().err
+    assert load_view_config(path).decisions == []
+
+    # A fresh sort writes the version, and the review goes ahead.
+    assert cli.main(["sort", str(path), "--no-trace", "--no-explanations"]) == 0
+    assert json.loads(triage.read_text())["posted_version"] == sort.POSTED_VERSION
+    assert cli.main(["ask-owner", str(path), "--domain", "Registrar"]) == 0
 
 
 def test_ask_owner_refuses_a_triage_that_predates_the_formula_check(
@@ -3027,7 +3123,28 @@ def test_review_never_posts(fakes, tmp_path, monkeypatch, capsys):
     assert out.startswith("## What and why")
     assert "The Registrar team owns the rule behind 1 question" in out
     # A region name names no person, and the group has 10+ students.
-    assert "`regions_region_name` = `Miami`" in out and "12 students" in out
+    assert "`regions_region_name` = `Miami`" in out and "10+ students" in out
+    assert "12 students" not in out
+
+
+def test_record_answers_takes_a_review_whose_counts_are_bounds(fakes, tmp_path, capsys):
+    assert cli.main(["compare", str(_file(tmp_path))]) == 0
+    path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
+    assert cli.main(["compare", str(path), "--all"]) == 0
+    _write_sorted_everywhere(tmp_path)
+    assert cli.main(["ask-owner", str(path), "--domain", "Registrar"]) == 0
+
+    # The owner's JSON carries bounds, never the group's exact 30 rows.
+    (question,) = json.loads((tmp_path / "reviews" / "v.json").read_text())
+    assert question["counts"][0].endswith("<10 row groups, 10+ rows, 10+ students")
+    assert "30 rows" not in json.dumps(question)
+    comment = _comment(tmp_path, [_answer(["miami-scope"], "deliberate", "ok")])
+    capsys.readouterr()
+
+    assert _record([path], comment, "--yes") == 0, capsys.readouterr().err
+
+    (d,) = load_view_config(path).decisions
+    assert (d.id, d.call) == ("miami-scope", "deliberate")
 
 
 def test_review_carries_triage_evidence_in_its_json(fakes, tmp_path, capsys):
@@ -3139,6 +3256,7 @@ def _write_sorted(run_json, items=(), open_keys=None):
                 "open": sort.open_keys(run) if open_keys is None else open_keys,
                 "items": list(items),
                 "formulas_not_compared": {},
+                "posted_version": sort.POSTED_VERSION,
             }
         )
     )
@@ -3198,6 +3316,31 @@ def test_review_refuses_a_view_never_triaged(fakes, tmp_path, capsys):
     assert captured.out == ""
 
 
+@pytest.mark.parametrize("stale", [True, False])
+def test_ask_owner_leaves_no_stale_open_items_file_when_nothing_is_open(
+    fakes, tmp_path, capsys, stale
+):
+    path = _file(tmp_path)
+    assert cli.main(["compare", str(path)]) == 0
+    _write_sorted_everywhere(tmp_path, [_sorted_item("e")])
+    old = tmp_path / "reviews" / "v-still-with-analyst.md"
+    if stale:
+        old.parent.mkdir(parents=True, exist_ok=True)
+        old.write_text("# Still with the analyst: `v`\n\n- `x`, 40 rows; no lead yet\n")
+    capsys.readouterr()
+
+    assert cli.main(["ask-owner", str(path), "--domain", "Registrar"]) == 0
+
+    body = capsys.readouterr().out
+    assert old.name not in body
+    if stale:
+        assert old.read_text() == (
+            "# Still with the analyst: `v`\n\nNothing is with the analyst.\n"
+        )
+    else:
+        assert not old.exists()
+
+
 def test_review_lists_items_in_investigate_still_with_the_analyst(
     fakes, tmp_path, capsys
 ):
@@ -3218,8 +3361,9 @@ def test_review_lists_items_in_investigate_still_with_the_analyst(
 
     body = capsys.readouterr().out
     section = body.split("## Still with the analyst", 1)[1].split("## Proposed")[0]
-    assert "`j` (group); no lead yet" in section
-    assert "`k` (group); no lead yet" in section
+    assert "- `ada-region` in `v` (group): 2 listed items\n" in section
+    text = (tmp_path / "reviews" / "v-still-with-analyst.md").read_text()
+    assert "- `j`; no lead yet\n- `k`; no lead yet\n" in text
     assert "Q1." in body.split("## Still with the analyst", 1)[0]
 
 
@@ -3484,12 +3628,12 @@ def test_rebuild_sheet_refuses_an_unwritable_comparison_before_any_export(
 
 
 def _hide_rate_by_region(tbl):
-    """Hide the fixture sheet's window; no dashboard holds it, so it publishes
-    no view."""
+    """Hide the fixture sheet's window, so the server lists no view for it."""
     tbl.twb = tbl.twb.replace(
         "<window class='worksheet' name='Rate by Region'>",
         "<window class='worksheet' hidden='true' name='Rate by Region'>",
     )
+    tbl.views = set()
 
 
 def test_rebuild_sheet_refuses_an_unpublished_sheet_before_any_export(
@@ -3540,12 +3684,72 @@ def test_prove_unhides_a_dashboard_only_sheet_on_the_copy(fakes, tmp_path, capsy
         "<zone id='1' name='Rate by Region' /></zones></dashboard></dashboards>\n",
     )
     assert "<dashboards>" in fakes.tbl.twb
+    fakes.tbl.views = {"Overview"}
     path = _file(tmp_path, YML.replace(REBUILD_CHECK, "    rebuild_check: null\n"))
     argv = ["rebuild-sheet", str(path), "--comparison", "ada-region"]
 
     assert cli.main(argv) == 0, capsys.readouterr().err
 
     assert "hidden=" not in fakes.tbl.edited
+    proof = load_view_config(path).comparisons[0].rebuild_check
+    assert proof is not None and proof.published is True
+
+
+def test_rebuild_sheet_refuses_a_shown_sheet_the_server_does_not_publish(
+    fakes, tmp_path, capsys
+):
+    # Its window and its dashboard's show in the .twb; neither is a view.
+    _on_dashboard(fakes.tbl)
+    fakes.tbl.views = {"Other"}
+    path = _file(tmp_path, NO_REBUILD_CHECK)
+    argv = ["rebuild-sheet", str(path), "--comparison", "ada-region"]
+
+    assert cli.main(argv) == 1
+    assert (
+        "comparison 'ada-region': sheet 'Rate by Region' is not on a published "
+        "dashboard; set unpublished: true to compare it anyway"
+    ) in capsys.readouterr().err
+    assert not getattr(fakes.tbl, "captures", 0)
+
+
+def test_rebuild_sheet_asks_a_workbook_s_views_once_per_run(
+    fakes, tmp_path, monkeypatch, capsys
+):
+    path = _two(tmp_path, text=NO_REBUILD_CHECK)
+    argv = ["rebuild-sheet", str(path), "--comparison", "c1", "--comparison", "c2"]
+
+    assert cli.main(argv) == 0, capsys.readouterr().err
+    assert fakes.tbl.view_asks == ["wb-1"]
+
+    # An error is kept too: each comparison is refused, Tableau asked once.
+    asked = []
+
+    def answer(luid):
+        asked.append(luid)
+        raise TSC.ServerResponseError("404", "Resource Not Found", "gone")
+
+    monkeypatch.setattr(fakes.tbl, "view_names", answer)
+    assert cli.main(argv) == 1
+    err = capsys.readouterr().err
+    assert err.count("Tableau answered 404 Resource Not Found") == 2
+    assert asked == ["wb-1"]
+
+
+def test_rebuild_sheet_refuses_when_tableau_errs_on_the_views(
+    fakes, tmp_path, monkeypatch, capsys
+):
+    def answer(luid):
+        raise TSC.ServerResponseError("404", "Resource Not Found", "gone")
+
+    monkeypatch.setattr(fakes.tbl, "view_names", answer)
+    path = _file(tmp_path, NO_REBUILD_CHECK)
+    argv = ["rebuild-sheet", str(path), "--comparison", "ada-region"]
+
+    assert cli.main(argv) == 1
+    assert (
+        "refused: ada-region: Tableau answered 404 Resource Not Found"
+    ) in capsys.readouterr().err
+    assert not getattr(fakes.tbl, "captures", 0)
 
 
 def test_rebuild_sheet_prints_the_blank_cells_it_skipped(fakes, tmp_path, capsys):
@@ -4221,8 +4425,39 @@ def test_discover_reads_a_local_workbook_without_tableau(
     assert fakes.cube.compiled_queries == [{"measures": ["v.avg_daily_attendance"]}]
 
 
-def test_find_field_marks_an_unpublished_sheet(fakes, tmp_path, capsys):
-    # The roster fixture has no dashboard and no window for its sheet.
+def test_find_field_marks_an_unpublished_sheet(fakes, tmp_path, monkeypatch, capsys):
+    _exposures(tmp_path, monkeypatch)
+    fakes.tbl.twb = (FIXTURES / "roster.twb").read_text()
+    fakes.tbl.views = {"Other"}
+    argv = ["find-field", str(_file(tmp_path)), "--measure", "avg_daily_attendance",
+            "--caption", "# Tardy"]  # fmt: skip
+
+    assert cli.main(argv) == 0, capsys.readouterr().err
+
+    sheets = capsys.readouterr().out.split("Sheets:", 1)[1].splitlines()
+    at = next(i for i, x in enumerate(sheets) if x.startswith("  Roster ("))
+    assert sheets[at + 1] == "    not on a published dashboard"
+
+    # A view on the server, the sheet publishes.
+    fakes.tbl.views = {"Roster"}
+    assert cli.main(argv) == 0
+    assert "not on a published dashboard" not in capsys.readouterr().out
+
+    def answer(luid):
+        raise TSC.ServerResponseError("404", "Resource Not Found", "gone")
+
+    monkeypatch.setattr(fakes.tbl, "view_names", answer)
+    assert cli.main(argv) == 0
+    sheets = capsys.readouterr().out.split("Sheets:", 1)[1].splitlines()
+    at = next(i for i, x in enumerate(sheets) if x.startswith("  Roster ("))
+    assert sheets[at + 1] == (
+        "    published: not checked: Tableau answered 404 Resource Not Found"
+    )
+
+
+def test_find_field_does_not_guess_published_from_a_local_workbook(
+    fakes, tmp_path, capsys
+):
     twb = tmp_path / "roster.twb"
     twb.write_text((FIXTURES / "roster.twb").read_text())
     argv = ["find-field", str(_file(tmp_path)), "--measure", "avg_daily_attendance",
@@ -4230,21 +4465,9 @@ def test_find_field_marks_an_unpublished_sheet(fakes, tmp_path, capsys):
 
     assert cli.main(argv) == 0, capsys.readouterr().err
 
-    sheets = capsys.readouterr().out.split("Sheets:", 1)[1].splitlines()
-    at = next(i for i, x in enumerate(sheets) if x.startswith("  Roster (roster.twb)"))
-    assert sheets[at + 1] == "    not on a published dashboard"
-
-    # Shown in its own window, the sheet publishes.
-    twb.write_text(
-        (FIXTURES / "roster.twb")
-        .read_text()
-        .replace(
-            "</workbook>",
-            "<windows><window class='worksheet' name='Roster' /></windows></workbook>",
-        )
-    )
-    assert cli.main(argv) == 0
-    assert "not on a published dashboard" not in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert f"Sheets ({tableau.NOT_CHECKED}):" in out
+    assert "not on a published dashboard" not in out
 
 
 def test_discover_keeps_the_top_5_by_default(fakes, tmp_path, monkeypatch, capsys):
@@ -4788,6 +5011,7 @@ def test_prove_headers_shows_the_reshaped_sheet(fakes, tmp_path, capsys):
 
 def test_prove_headers_names_the_table_calcs_a_reshape_changes(fakes, tmp_path, capsys):
     fakes.tbl.twb = (FIXTURES / "dki_grid.twb").read_text()
+    fakes.tbl.views = {"Mastery Grid"}
     text = (
         NO_REBUILD_CHECK.replace("sheet: Rate by Region", "sheet: Mastery Grid")
         .replace(
@@ -6077,6 +6301,91 @@ def test_reapply_refuses_a_hand_edit_making_a_cause_disagree_with_a_closed_group
     assert "Miami" not in err
 
 
+WHOLE_ENTRY = {"id": "old-sheet", "comparison": "ada-region", "call": "deliberate",
+               "reason": "an old sheet no one reads"}  # fmt: skip
+
+
+def test_decide_closes_a_whole_comparison_and_ask_owner_lists_it(
+    fakes, tmp_path, capsys
+):
+    path = _file(tmp_path)
+    assert cli.main(["compare", str(path)]) == 0
+    # The comparison's only row group is still in `investigate`.
+    _write_sorted_everywhere(tmp_path, [_sorted_item("e", "investigate")])
+
+    assert cli.main(["decide", str(path), str(_approved(tmp_path, [WHOLE_ENTRY]))]) == 0
+
+    (d,) = load_view_config(path).decisions
+    assert (d.id, d.comparison, d.all_groups, d.call) == (
+        "old-sheet", "ada-region", True, "deliberate"
+    )  # fmt: skip
+    assert "  - id: old-sheet\n    comparison: ada-region\n    all_groups: true\n" in (
+        path.read_text()
+    )
+    run, _ = results.latest_run(load_view_config(path), tmp_path / "cache")
+    assert run.applied.open == []
+    assert [x.id for x, _ in run.applied.quiet] == ["old-sheet"]
+    # The run report (terminal and local cache) lists it once, with how many
+    # groups it closed, exactly.
+    assert (
+        "- `old-sheet` (ada-region every open row group, deliberate): an old sheet "
+        "no one reads (1 row group)\n"
+    ) in report.render_local(run)
+    capsys.readouterr()
+
+    # The closed group is no longer with the analyst, and the owner sees the
+    # decision with masked counts only.
+    assert cli.main(["ask-owner", str(path), "--domain", "Registrar"]) == 0
+
+    body = capsys.readouterr().out
+    line = next(x for x in body.splitlines() if "every open row group" in x)
+    # Bounds only, never the exact 30 rows or 12 students.
+    assert line.startswith(
+        "- every open row group of `ada-region` in `v` (dashboard_only): "
+        "<10 row groups, 10+ rows, at least 10 students: an intended difference"
+    )
+    assert line.endswith("Reason: an old sheet no one reads.")
+    assert MIAMI not in body
+
+
+def test_decide_refuses_a_whole_comparison_disagreeing_with_a_cause_decision(
+    fakes, tmp_path, capsys
+):
+    path = _file(tmp_path)
+    assert cli.main(["compare", str(path)]) == 0
+    _write_sorted_everywhere(tmp_path, [_sorted_item("e")])
+    cause = {"id": "cause", "call": "fix_cube", "reason": "r", "task": "#6150",
+             "item": MIAMI}  # fmt: skip
+    assert cli.main(["decide", str(path), str(_approved(tmp_path, [cause]))]) == 0
+    before = path.read_text()
+    capsys.readouterr()
+
+    assert cli.main(["decide", str(path), str(_approved(tmp_path, [WHOLE_ENTRY]))]) == 1
+
+    err = capsys.readouterr().err
+    assert "'old-sheet' (deliberate) and 'cause' (fix_cube) disagree" in err
+    assert path.read_text() == before
+
+
+def test_a_hand_group_decision_on_an_unexplained_group_still_refuses(
+    fakes, tmp_path, capsys
+):
+    # Only a comparison decision may close a group no one explained.
+    assert cli.main(["compare", str(_file(tmp_path))]) == 0
+    path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
+    assert cli.main(["reapply", str(path)]) == 0
+    (run_json,) = (tmp_path / "cache" / "v").glob("*/run.json")
+    run = results._run_from_json(json.loads(run_json.read_text()))
+    ((_, miami),) = run.applied.quiet
+    item = {**_sorted_item("e", "investigate"), "key": sort._open_key(miami)}
+    _write_sorted(run_json, [item])
+    capsys.readouterr()
+
+    assert cli.main(["ask-owner", str(path), "--domain", "Registrar"]) == 1
+
+    assert "which the sort holds in `investigate`" in capsys.readouterr().err
+
+
 def test_add_decisions_refuses_a_view_never_triaged(fakes, tmp_path, capsys):
     path = _file(tmp_path)
     assert cli.main(["compare", str(path)]) == 0
@@ -6512,6 +6821,52 @@ def test_record_answers_writes_onto_the_cause_decision(tmp_path, capsys):
     assert d.fingerprints == {"cube": "abc", "dashboard": "def", "explanation": "0f"}
 
 
+def test_record_answers_updates_a_missing_filter_decision_decide_wrote(
+    fakes, tmp_path, capsys
+):
+    path = _file(tmp_path)
+    assert cli.main(["compare", str(path)]) == 0
+    (run_json,) = (tmp_path / "cache" / "v").glob("*/run.json")
+    gap = {**_gap_sorted_item(), "id": "filter:Team",
+           "stub": {"missing_filter": "Team"}}  # fmt: skip
+    _write_sorted(run_json, [gap])
+    entry = {"id": "no-team-filter", "call": "domain_owner", "reason": "Ask.",
+             "item": "filter:Team"}  # fmt: skip
+    assert cli.main(["decide", str(path), str(_approved(tmp_path, [entry]))]) == 0
+    assert "  - id: no-team-filter\n    missing_filter: Team\n" in path.read_text()
+    path.write_text(path.read_text() + TASKS)
+    comment = _comment(
+        tmp_path, [_answer(["no-team-filter"], "deliberate", "a label only")]
+    )
+
+    assert _record([path], comment, "--yes") == 0
+
+    (d,) = load_view_config(path).decisions
+    assert (d.missing_filter, d.call) == ("Team", "deliberate")
+    assert d.reason == "Ask. Owner: a label only"
+
+
+def test_record_answers_ends_stdout_with_nothing_written_when_a_write_refuses(
+    tmp_path, monkeypatch, capsys
+):
+    path = _owner_file(tmp_path)
+    before = path.read_text()
+
+    def refuse(path, decision):
+        raise cli.ConfigError("cannot write")
+
+    monkeypatch.setattr(cli, "write_decision", refuse)
+    comment = _comment(tmp_path, [_answer(["miami-scope"], "fix_cube", "n")])
+
+    assert _record([path], comment, "--yes") == 1
+
+    out, err = capsys.readouterr()
+    assert "miami-scope: call domain_owner -> fix_cube" in out
+    assert out.rstrip().splitlines()[-1] == "Nothing written."
+    assert "cannot write" in err
+    assert path.read_text() == before
+
+
 def _approve(path, tmp_path, entry):
     return cli.main(["decide", str(path), str(_approved(tmp_path, [entry]))])
 
@@ -6653,6 +7008,7 @@ def test_decide_help_names_every_key_an_approved_entry_takes(capsys):
 
     help_text = " ".join(capsys.readouterr().out.split())
     assert '{"id", "call", "reason", "task", "item", "cause"}' in help_text
+    assert '{"id", "comparison", "call": "deliberate", "reason"}' in help_text
 
 
 def test_skip_lines_never_end_in_a_doubled_period(capsys):

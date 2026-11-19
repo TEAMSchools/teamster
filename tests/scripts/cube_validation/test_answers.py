@@ -391,6 +391,39 @@ def _questions(run, cfg=None, triage=SORTED):
 OWNER_SORTED = SORTED
 
 
+@pytest.mark.parametrize(
+    "rows, evidence, total",
+    [
+        # 11 beside `masked` (10+) and `<10` (1+) would pin both.
+        (11, ["scores: a = 1: masked rows", "scores: b = 1: <10 rows"], "10+ rows"),
+        # Bounded beside exact evidence too: an earlier review's open-items
+        # file may have listed the group's parts with some withheld.
+        (50, ["scores: a = 1: 20 rows", "scores: b = 1: 30 rows"], "10+ rows"),
+    ],
+)
+def test_a_group_question_bounds_its_rows_beside_hidden_evidence(rows, evidence, total):
+    d = Decision("d-newark", "enrollment", "domain_owner", REASON,
+                 {"column": "region", "values": ["Newark"]})  # fmt: skip
+    run = _run([_cell()])
+    group = Group("enrollment", (("region", "Newark"),), "value_differs", rows, 12)
+    run.applied = Applied(quiet=[(d, group)])
+    item = {
+        "id": "enrollment:region=Newark", "kind": "group", "comparison": "enrollment",
+        "label": "x", "suggestion": "cause", "evidence": evidence, "candidates": [],
+        "stub": {"comparison": "enrollment",
+                 "group": {"column": "region", "values": ["Newark"]}},
+    }  # fmt: skip
+    triage = {"enrollment": {"view": "enrollment", "items": [item]}}
+
+    (q,) = _questions(run, triage=triage)
+    body = render_review_issue("Registrar", [run], questions=[q])
+
+    assert f", {total}, " in q["counts"][0]
+    assert f"{rows} rows" not in " ".join(q["counts"])
+    (line,) = [x for x in body.splitlines() if x.startswith("- Q1. ")]
+    assert f", {total}, " in line
+
+
 def test_unsettled_items_are_not_in_the_questions_json():
     run = _owner_run([_cell(cube=25.0)])
     left = {
@@ -480,7 +513,7 @@ def test_questions_json_hides_what_the_markdown_hides():
     assert "Camden" not in text and "1234567" not in text
     assert "UNRELATED" not in text
     assert "<10 cells differ" in text and "3 cells" not in text
-    assert "45 rows" in text and " 5 rows" not in text
+    assert "10+ rows" in text and "45 rows" not in text and " 5 rows" not in text
     # A count measure's value under 10 is masked like any count.
     check = _questions(run, cfg)[0]["hand_checks"][0]
     assert (check["dashboard"], check["cube"]) == ("<10", "25")
@@ -751,6 +784,68 @@ def test_approved_decisions_refuse_a_comparison_the_run_has_no_fingerprints_for(
         approved_decisions([entry], SORTED, {})
 
 
+WHOLE = {"id": "old", "comparison": "ada", "call": "deliberate",
+         "reason": "an old sheet no one reads"}  # fmt: skip
+# A row group still in `investigate`: a comparison decision may close it.
+UNEXPLAINED = {
+    "items": [
+        {"id": "ada:g1", "kind": "group", "comparison": "ada",
+         "suggestion": "investigate", "stub": {"comparison": "ada"}},
+        *SORTED["items"],
+    ]
+}  # fmt: skip
+
+
+def test_approved_decisions_decide_a_whole_comparison():
+    (decision,) = approved_decisions([WHOLE], UNEXPLAINED, FPS)
+
+    assert decision == {"id": "old", "comparison": "ada", "all_groups": True,
+                        "call": "deliberate", "reason": "an old sheet no one reads",
+                        "fingerprints": FPS["ada"]}  # fmt: skip
+
+
+def test_approved_decisions_re_approve_a_comparison_decision_on_new_sql():
+    was = Decision("old", "ada", "deliberate", "before", all_groups=True,
+                   fingerprints={"cube": "c0", "dashboard": "d0"})  # fmt: skip
+
+    (decision,) = approved_decisions([WHOLE], UNEXPLAINED, FPS, existing=[was])
+
+    assert decision["fingerprints"] == FPS["ada"]
+    assert decision["reason"] == "an old sheet no one reads"
+
+    # Under another id it would be a second claim on the comparison.
+    with pytest.raises(AnswerError, match="'old' already decides every open row"):
+        approved_decisions([{**WHOLE, "id": "new"}], UNEXPLAINED, FPS, existing=[was])
+
+
+@pytest.mark.parametrize(
+    "entry, triage, match",
+    [
+        ({**WHOLE, "call": "domain_owner"}, UNEXPLAINED,
+         "a comparison decision is deliberate"),
+        ({**WHOLE, "call": "fix_cube", "task": "#1"}, UNEXPLAINED,
+         "a comparison decision is deliberate"),
+        ({**WHOLE, "reason": "  "}, UNEXPLAINED, "`reason` must be non-empty"),
+        ({k: v for k, v in WHOLE.items() if k != "reason"}, UNEXPLAINED, "reason"),
+        ({**WHOLE, "item": "ada:g1"}, UNEXPLAINED, "either `item` or `comparison`"),
+        ({**WHOLE, "comparison": "nope"}, UNEXPLAINED, "no fingerprints for 'nope'"),
+        # No open row group of the comparison to close.
+        (WHOLE, {"items": [i for i in SORTED["items"] if i.get("kind") != "group"]},
+         "the sort lists no open row group of 'ada'"),
+    ],
+)  # fmt: skip
+def test_approved_decisions_refuse_a_bad_comparison_decision(entry, triage, match):
+    with pytest.raises(AnswerError, match=match):
+        approved_decisions([entry], triage, {**FPS, "nope": {}})
+
+
+def test_approved_decisions_refuse_a_taken_id_for_a_comparison_decision():
+    taken = Decision("old", "ada", "deliberate", "r", {"column": "x", "values": ["1"]})
+
+    with pytest.raises(AnswerError, match="decisions already has 'old'"):
+        approved_decisions([WHOLE], UNEXPLAINED, FPS, existing=[taken])
+
+
 def test_parse_answers_reads_a_crlf_comment():
     body = _body([{"question": "Q1", "decisions": ["a"], "call": "deliberate",
                    "note": "n"}]).replace("\n", "\r\n")  # fmt: skip
@@ -1018,13 +1113,13 @@ def test_review_asks_one_question_per_cause_not_per_school():
     assert no_section["evidence"] == [f"cause (cube side): {NO_SECTION}", LEAD]
     assert no_section["counts"] == [
         f"cause `{NO_SECTION}` on the cube side",
-        "`enrollment` (dashboard_only): <10 row groups, 90 rows",
+        "`enrollment` (dashboard_only): <10 row groups, 10+ rows",
     ]
     assert late["evidence"][0] == "cause (cube side): score dated after week <n>"
     assert "20250701" not in body
     bullets = [x for x in body.split("## Proposed")[0].splitlines() if "Reason:" in x]
     assert len(bullets) == 2
-    assert f"`{NO_SECTION}`" in bullets[0] and "<10 row groups, 90 rows" in bullets[0]
+    assert f"`{NO_SECTION}`" in bullets[0] and "<10 row groups, 10+ rows" in bullets[0]
 
 
 def _decided_ddi():
@@ -1117,19 +1212,26 @@ def test_other_calls_show_once_each_as_also_decided_never_as_questions():
 def test_pinned_sql_too_long_to_post_is_left_out_before_anything_else(monkeypatch):
     from cube_validation import report as report_mod
 
+    # One owner question, so the JSON below matches the questions the run asks.
+    run = _run([])
+    run.applied = Applied(quiet=[(
+        Decision("d", "enrollment", "domain_owner", REASON,
+                 {"column": "region", "values": ["Newark"]}),
+        Group("enrollment", (("region", "Newark"),), "value_differs", 40, 12),
+    )])  # fmt: skip
     questions = [
-        {"id": "Q1", "hand_checks": [{
+        {"id": "Q1", "counts": ["a part"], "hand_checks": [{
             "view": "v", "comparison": "c", "cut": "{}", "dims": [],
             "dashboard": "1", "cube": "2", "dashboard_sql": "S" * 5000,
             "cube_sql": "T" * 7000, "dashboard_usd": 0.01, "cube_usd": 0.01,
             "expires": "2026-11-06", "expired": False, "workbook": "w",
             "sheet": "s", "filters": {}, "mixed": False}]},
     ]  # fmt: skip
-    full = render_review_issue("Registrar", [_run([])], DEFS, questions, None, [])
+    full = render_review_issue("Registrar", [run], DEFS, questions, None, [])
     monkeypatch.setattr(report_mod, "BODY_WARN_CHARS", len(full) - 1000)
     comments: list[str] = []
 
-    body = render_review_issue("Registrar", [_run([])], DEFS, questions, None, comments)
+    body = render_review_issue("Registrar", [run], DEFS, questions, None, comments)
 
     assert "S" * 5000 not in body and comments == []
     assert "The pinned BigQuery SQL is left out (5,000 and 7,000 characters" in body
@@ -1181,8 +1283,8 @@ def test_one_cause_on_several_comparisons_is_one_question():
     # The cause once, then each comparison's share; 1 view, so no view names.
     assert question["counts"] == [
         f"cause `{NO_SECTION}` on the cube side",
-        "`enrollment` (dashboard_only): <10 row group, 30 rows",
-        "`other` (dashboard_only): <10 row group, 30 rows",
+        "`enrollment` (dashboard_only): <10 row groups, 10+ rows",
+        "`other` (dashboard_only): <10 row groups, 10+ rows",
     ]
     assert question["evidence"] == [f"cause (cube side): {NO_SECTION}"]
 
@@ -1213,10 +1315,10 @@ def test_a_split_group_shows_only_each_causes_own_rows():
     questions, body = _review(groups, items, decisions)
 
     posted = body.split("<summary>Questions for Claude")[0] + json.dumps(questions)
-    # The bullet and the evidence both give the cause's own 57 rows; the
-    # groups' whole 60 never shows, so nothing gives the other cause's 3 away.
-    numbers = set(re.findall(r"(?<![<\d])\d+ rows", posted))
-    assert numbers == {"57 rows"}
+    # The bullet gives the cause's own share as a bound; neither its 57 rows
+    # nor the groups' whole 60 shows, so nothing gives the other cause's 3 away.
+    numbers = set(re.findall(r"(?<![<\d])\d+\+? rows", posted))
+    assert numbers == {"10+ rows"}
 
 
 # --- reproducing a cause ---------------------------------------------------------------
@@ -1420,6 +1522,36 @@ def test_the_review_file_is_linked_only_once_committed_and_pushed(tmp_path):
         review_mod._review_file(path, [{"id": "Q2"}])
 
 
+def test_a_text_review_file_ignores_rewrapping_and_sits_beside_the_json(tmp_path):
+    path = review_mod.still_file(tmp_path / "reviews" / "v.json")
+    assert path == tmp_path / "reviews" / "v-still-with-analyst.md"
+    text = "# Still\n\n- `a`, 40 rows; no lead yet\n"
+
+    with pytest.raises(pipeline_mod.Refusal, match="wrote .*commit and push it"):
+        review_mod._review_file(path, text)
+    assert path.read_text() == text
+    # The formatter's rewrapping is no change: only the commit check refuses.
+    path.write_text("# Still\n\n- `a`, 40 rows;\n  no lead yet\n")
+    with pytest.raises(pipeline_mod.Refusal, match="not committed and pushed"):
+        review_mod._review_file(path, text)
+    with pytest.raises(pipeline_mod.Refusal, match="wrote"):
+        review_mod._review_file(path, text.replace("40", "41"))
+
+
+def test_review_files_writes_each_changed_file_before_refusing(tmp_path):
+    reviews = tmp_path / "reviews"
+    files = [(reviews / "v.json", [{"id": "Q1"}]),
+             (reviews / "v-still-with-analyst.md", "# Still\n")]  # fmt: skip
+
+    with pytest.raises(pipeline_mod.Refusal) as exc:
+        review_mod._review_files(files)
+
+    assert str(reviews / "v.json") in str(exc.value)
+    assert str(reviews / "v-still-with-analyst.md") in str(exc.value)
+    assert json.loads((reviews / "v.json").read_text()) == [{"id": "Q1"}]
+    assert (reviews / "v-still-with-analyst.md").read_text() == "# Still\n"
+
+
 def test_a_review_across_views_is_named_for_its_domain(tmp_path):
     cfgs = [ViewConfig(view=v, fact="d.t", comparisons=[]) for v in ("a", "b")]
     path = review_mod.review_file([tmp_path / "a.yml"], cfgs, "Data & Analytics")
@@ -1446,6 +1578,26 @@ def test_a_hand_check_never_posts_2_counts_whose_difference_is_under_10(
     )
     posted = _check_json("v", check)
     assert (posted["dashboard"], posted["cube"]) == shown
+
+
+def test_a_hand_check_posts_its_cause_s_students_as_a_bound():
+    """For a count-of-students measure, the two numbers less an exact cause
+    count would post the other causes' students: 57 - 40 - 12 = 5."""
+    # trunk-ignore(pyright/reportAttributeAccessIssue): conftest.py registers cube_validation
+    from cube_validation import report
+
+    # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+    from cube_validation.answers import _check_json
+
+    check = HandCheck(
+        "enrollment", "{}", (), 40.0, 57.0, "", "", 0.0, 0.0, START, False,
+        mixed=True, cause_students=12,
+    )  # fmt: skip
+    posted = _check_json("v", check)
+    assert posted["cause_students"] == "10+"
+    text = "\n".join(report._hand_check_lines("Q1", posted))
+    assert "10 or more students' rows in it have this cause" in text
+    assert "12" not in text
 
 
 def test_a_question_reads_its_comparison_s_own_moment():

@@ -482,20 +482,35 @@ def _comparison_by_id(cfg: ViewConfig, path: Path, comparison_id: str) -> Compar
 def _capture(
     comparison: Comparison,
     tbl: tableau.Tableau,
-    captures: dict[tuple, tableau.Snapshot] | None,
-) -> tuple[str, str, list[ET.Element], list[dict], list[dict], tableau.Snapshot]:
+    captures: dict[tuple, Any] | None,
+) -> tuple[str, str, list[ET.Element], list[dict], list[dict], tableau.Snapshot, bool]:
     """Export a comparison's sheet once per workbook, sheet, cuts, parameter
-    values and reshape.
+    values and reshape. `captures` also keeps each workbook's views (or
+    Tableau's error on them) under `("views", luid)`, so a run asks once.
 
     Returns:
         The workbook XML, the same with the sheet reshaped (`shelves`), the
         reshaped sheet's columns, the cuts a REST export takes, the cuts only
-        a browser can check, and the snapshot.
+        a browser can check, the snapshot, and whether the server publishes
+        the sheet (`tableau.published_sheets`).
+
+    Raises:
+        TSC.ServerResponseError: Tableau erred on the workbook or its views.
     """
     _require(comparison, "workbook", "sheet")
     workbook, sheet = comparison.workbook or "", comparison.sheet or ""
     twb = tbl.download_twb(workbook)
-    if not comparison.unpublished and sheet not in tableau.published_sheets(twb):
+    captures = {} if captures is None else captures
+    if ("views", workbook) not in captures:
+        try:
+            captures["views", workbook] = tbl.view_names(workbook)
+        except TSC.ServerResponseError as exc:
+            captures["views", workbook] = exc
+    views = captures["views", workbook]
+    if isinstance(views, TSC.ServerResponseError):
+        raise views
+    published = sheet in tableau.published_sheets(twb, views)
+    if not comparison.unpublished and not published:
         raise Refusal(
             f"comparison {comparison.id!r}: sheet {sheet!r} is "
             f"{tableau.NOT_PUBLISHED}; set unpublished: true to compare it anyway"
@@ -518,7 +533,6 @@ def _capture(
     exportable, browser = tableau.split_cuts(comparison_cuts(comparison), twb)
     if not exportable:
         raise Refusal(f"comparison {comparison.id!r} has no cut a REST export can take")
-    captures = {} if captures is None else captures
 
     def edit(x: str) -> str:
         # The reshape goes first, so the format drop sees any column it copied.
@@ -540,7 +554,7 @@ def _capture(
             captures[key] = tbl.capture(workbook, sheet, exportable, edit)
         except (LookupError, tableau.RefreshMovedError) as exc:
             raise Refusal(f"cannot export {sheet!r}: {exc}") from exc
-    return twb, shaped, columns, exportable, browser, captures[key]
+    return twb, shaped, columns, exportable, browser, captures[key], published
 
 
 def rebuild_sheet_headers(
@@ -549,14 +563,14 @@ def rebuild_sheet_headers(
     comparison_id: str,
     *,
     tbl: tableau.Tableau,
-    captures: dict[tuple, tableau.Snapshot] | None = None,
+    captures: dict[tuple, Any] | None = None,
 ) -> None:
     """Print each exported cut's column headers, and the fields a long export
     names, without probing or writing anything. A reshaped comparison first
     prints the copy's rows and columns.
     """
     comparison = _comparison_by_id(cfg, path, comparison_id)
-    twb, shaped, _, exportable, _, snap = _capture(comparison, tbl, captures)
+    twb, shaped, _, exportable, _, snap, _ = _capture(comparison, tbl, captures)
     if comparison.shelves:
         sheet = comparison.sheet or ""
         shape = finder.sheet_shape(shaped, sheet)
@@ -586,7 +600,7 @@ def rebuild_sheet(
     tbl: tableau.Tableau,
     now: datetime,
     max_usd: float,
-    captures: dict[tuple, tableau.Snapshot] | None = None,
+    captures: dict[tuple, Any] | None = None,
     failures_dir: Path | None = None,
 ) -> tableau.RebuildResult:
     """Rebuild a comparison's sheet in SQL, match it to the sheet's export, and
@@ -594,8 +608,8 @@ def rebuild_sheet(
 
     Failures and browser cuts print to the terminal only: a count per reason
     and a few samples, with the full list in `failures_dir` when given.
-    `captures` keeps each sheet's export across calls, so comparisons on one
-    sheet and cuts share a capture.
+    `captures` keeps each sheet's export and each workbook's views across
+    calls, so comparisons on one sheet and cuts share a capture.
 
     Raises:
         Refusal: The comparison is unknown or incomplete, an exportable cut
@@ -607,7 +621,7 @@ def rebuild_sheet(
         find_comparison(path, comparison.id)
     except ConfigError as exc:
         raise Refusal(str(exc)) from exc
-    twb, shaped, columns, exportable, browser, snap = _capture(
+    twb, shaped, columns, exportable, browser, snap, published = _capture(
         comparison, tbl, captures
     )
     if snap.refresh_started < now - REBUILD_WINDOW:
@@ -707,7 +721,7 @@ def rebuild_sheet(
             ),
             # False only for a comparison set `unpublished: true`; `_capture`
             # refuses any other unpublished sheet.
-            "published": sheet in tableau.published_sheets(twb),
+            "published": published,
             # `compare` lists every other cut as one to check in the browser.
             "cuts": [cut_label(cut) for cut in exportable],
             # `compare` lists these rows as totals no rebuild check covered.
@@ -761,7 +775,7 @@ def _print_failures(
 
 
 class WorkbookCache:
-    """Each workbook's publish time and file, asked of Tableau once.
+    """Each workbook's publish time, file and views, asked of Tableau once.
 
     Share one across `workbook_check` and `unpublished_sheets` so a compare
     run downloads a republished workbook once. A Tableau error is kept as
@@ -772,6 +786,24 @@ class WorkbookCache:
         self.tbl = tbl
         self._updated: dict[str, datetime | TSC.ServerResponseError] = {}
         self._twbs: dict[str, str | TSC.ServerResponseError] = {}
+        self._views: dict[str, set[str] | TSC.ServerResponseError] = {}
+
+    def views(self, luid: str) -> set[str]:
+        """The names of the workbook's views on the server.
+
+        Raises:
+            TSC.ServerResponseError: Tableau erred on this workbook's views,
+                now or on an earlier ask.
+        """
+        if luid not in self._views:
+            try:
+                self._views[luid] = self.tbl.view_names(luid)
+            except TSC.ServerResponseError as exc:
+                self._views[luid] = exc
+        got = self._views[luid]
+        if isinstance(got, TSC.ServerResponseError):
+            raise got
+        return got
 
     def updated(self, luid: str) -> datetime:
         """The workbook's publish time.
@@ -806,10 +838,6 @@ class WorkbookCache:
         if isinstance(got, TSC.ServerResponseError):
             raise got
         return got
-
-    def downloaded(self, luid: str) -> bool:
-        """True when the workbook's XML is already in hand."""
-        return isinstance(self._twbs.get(luid), str)
 
 
 def workbook_check(
@@ -909,16 +937,18 @@ def unpublished_sheets(
     tbl: tableau.Tableau,
     workbooks: WorkbookCache | None = None,
 ) -> dict[str, str]:
-    """Name the comparisons whose sheet no published dashboard shows.
+    """Name the comparisons whose sheet the server does not publish.
 
-    A comparison with `unpublished: true` or no `sheet` is never listed. A
-    workbook is downloaded once, and only when one of its comparisons' check
-    does not record that the sheet is published, or the workbook was
-    published after the check.
+    A comparison with `unpublished: true` or no `sheet` is never listed.
+    The workbook's views on the server decide (`tableau.published_sheets`),
+    never the check's recorded `published`, so a view dropped on the server
+    is seen. Each workbook's views are asked once; the workbook is
+    downloaded, once, only when a sheet is not itself a view and may sit on
+    a dashboard that is.
 
     Args:
         comparisons: The comparisons to check.
-        tbl: Tableau, for each workbook's publish time and file.
+        tbl: Tableau, for each workbook's views and file.
         workbooks: The run's shared workbook cache; a new one on `tbl` when
             omitted.
 
@@ -929,24 +959,18 @@ def unpublished_sheets(
     workbooks = WorkbookCache(tbl) if workbooks is None else workbooks
     skipped: dict[str, str] = {}
     for comparison in comparisons:
-        proof = comparison.rebuild_check
         if (
             comparison.unpublished
             or not comparison.workbook
             or not comparison.sheet
-            or proof is None
+            or comparison.rebuild_check is None
         ):
             continue
         luid = comparison.workbook
         try:
-            if not workbooks.downloaded(luid):
-                at = proof.workbook_updated_at
-                if (
-                    proof.published is True
-                    and at
-                    and workbooks.updated(luid) <= datetime.fromisoformat(at)
-                ):
-                    continue
+            views = workbooks.views(luid)
+            if comparison.sheet in views:
+                continue
             twb = workbooks.twb(luid)
         except TSC.ServerResponseError as exc:
             skipped[comparison.id] = (
@@ -954,7 +978,7 @@ def unpublished_sheets(
                 f"{exc.code} {exc.summary}"
             )
             continue
-        if comparison.sheet not in tableau.published_sheets(twb):
+        if comparison.sheet not in tableau.published_sheets(twb, views):
             skipped[comparison.id] = (
                 f"{tableau.NOT_PUBLISHED}; set unpublished: true to compare it anyway"
             )

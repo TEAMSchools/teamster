@@ -151,21 +151,26 @@ PUBLISHED = """\
 """
 
 
-def test_published_sheets_reads_dashboard_zones_and_visible_windows():
-    # A: hidden, but in a (nested) dashboard zone. B: its own visible window.
-    # C: hidden and in no zone. D: no window at all.
-    assert published_sheets(PUBLISHED) == {"A", "B"}
+def test_published_sheets_reads_the_server_views():
+    # A sits in a (nested) zone of Overview, published only when Overview is
+    # a view. B's window is visible, yet it is published only as a view.
+    assert published_sheets(PUBLISHED, {"Overview"}) == {"Overview", "A"}
+    assert published_sheets(PUBLISHED, {"B"}) == {"B"}
+    # Visible windows and dashboards publish nothing the server does not list.
+    assert published_sheets(PUBLISHED, set()) == set()
 
 
-def test_published_sheets_counts_a_sheet_a_story_point_captures():
+def test_published_sheets_counts_a_sheet_a_published_story_point_captures():
     story = PUBLISHED.replace(
         "</dashboards>",
         "<dashboard name='Tour' type='storyboard'><zones><zone id='9' />"
         "<story-points><story-point captured-sheet='C' id='1' />"
+        "<story-point captured-sheet='Overview' id='2' />"
         "</story-points></zones></dashboard></dashboards>",
     )
-    # C: hidden and in no zone, but a story point shows it.
-    assert published_sheets(story) == {"A", "B", "C"}
+    # The story shows C, and Overview, whose zone shows A.
+    assert published_sheets(story, {"Tour"}) == {"Tour", "C", "Overview", "A"}
+    assert published_sheets(story, {"B"}) == {"B"}
 
 
 def test_displayed_decimals_cases():
@@ -580,6 +585,13 @@ def test_publish_copy_refuses_an_edit_that_flattens_crlf():
     with pytest.raises(ValueError, match="line ending"):
         Tableau(server).publish_copy("wb-luid", lambda xml: xml.replace("\r\n", "\n"))
     assert server.published == []
+
+
+def test_view_names_lists_the_workbook_s_views():
+    server = FakeServer(_twb())
+
+    assert Tableau(server).view_names("wb-luid") == {"Rate by Region", "Other"}
+    assert ("get_by_id", "wb-luid") in server.calls
 
 
 def test_export_applies_view_filters_and_parses_csv():

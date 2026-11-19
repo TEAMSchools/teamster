@@ -813,7 +813,8 @@ def test_a_row_only_a_row_pick_drops_says_so(duck):
 
 def test_masked_cells_of_a_breakdown_hold_10_or_more_together():
     # P-old-2: 40 = 10 + (25 + 3 + 2). With the 25 shown, 40 - 10 - 25 gives
-    # the two small cells' sum; so the 25 is masked too, and the 30 may show.
+    # the two small cells' sum; so the 25 is masked too, and the 30, a total
+    # beside hidden parts, reads as a bound.
     found = trace.ItemTrace("dashboard", 40)
     found.steps["a"] = 10
     found.labels["a"] = "main: a"
@@ -826,7 +827,7 @@ def test_masked_cells_of_a_breakdown_hold_10_or_more_together():
 
     assert lines[0] == "main: a: 10 rows"
     assert lines[1] == (
-        "30 rows unattributed: masked recovered by steps in 2 or more scopes "
+        "10+ rows unattributed: masked recovered by steps in 2 or more scopes "
         "(main: b, main: c); <10 a row pick drops it; the row is in the tables "
         "the dashboard SQL reads; <10 recovered by no step"
     )
@@ -1418,3 +1419,21 @@ def test_a_model_past_max_levels_still_reads_below(tmp_path):
     posted = " ".join(found.leads(posted=True))
     assert "recovered by no step (below fact)" in posted
     assert "not traced" not in posted
+
+
+@pytest.mark.parametrize(
+    "steps, n_rows, total",
+    [({"a": 10, "b": 1}, 11, "10+"), ({"a": 12, "b": 3}, 15, "10+"),
+     ({"a": 20, "b": 30}, 50, "50")],
+)  # fmt: skip
+def test_a_posted_lead_bounds_its_total_beside_a_hidden_part(steps, n_rows, total):
+    from collections import Counter
+
+    found = trace.ItemTrace(
+        "cube_only", n_rows, Counter(steps), {k: f"scores: {k} = 1" for k in steps}
+    )
+
+    posted = found.leads(posted=True)
+
+    assert all(line.endswith(f" of {total} rows") for line in posted)
+    assert all(line.endswith(f" of {n_rows} rows") for line in found.leads())

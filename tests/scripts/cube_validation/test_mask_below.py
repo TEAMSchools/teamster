@@ -29,7 +29,7 @@ def mask_below_15(monkeypatch):
 
 def test_every_mask_and_label_follows_mask_below(mask_below_15):
     assert mask(14) == "<15" and mask(15) == "15"
-    assert suppress(25, [14, 11]) == ("masked", ["<15", "<15"])
+    assert suppress(25, [14, 11]) == ("15+", ["<15", "<15"])
 
 
 def test_a_posted_trace_masks_and_labels_by_mask_below(mask_below_15):
