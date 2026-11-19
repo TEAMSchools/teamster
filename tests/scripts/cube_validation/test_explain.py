@@ -1777,6 +1777,17 @@ def test_missing_columns_reads_the_unmatched_alias_and_bare_columns():
     assert (
         explain.missing_columns(EXPLANATION.replace("f.ok1", "f.mastery"), THIRD) == []
     )
+    # An UNNEST is a source too: a bare column may be its alias.
+    unnest = (
+        "SELECT __row, CASE WHEN k = 1 THEN 'C1' ELSE 'UNEXPLAINED' END AS cause "
+        "FROM {unmatched}, UNNEST([1, 2]) AS k"
+    )
+    assert explain.missing_columns(unnest, THIRD) == []
+    joined = (
+        "SELECT u.__row, CASE WHEN u.region = k THEN 'C1' ELSE 'UNEXPLAINED' END "
+        "AS cause FROM {unmatched} AS u CROSS JOIN UNNEST(['a']) AS k"
+    )
+    assert explain.missing_columns(joined, THIRD) == ["region"]
 
 
 def test_explain_runs_every_sibling_s_explanation_on_a_sharing_one_priced_first(

@@ -795,9 +795,10 @@ def missing_columns(body: str, comparison: Comparison) -> list[str]:
     lacks, read from its SQL without running it.
 
     A column counts as read from `{unmatched}` when it is qualified by the
-    relation's alias (or `__u`), or unqualified in a SELECT whose only source
-    is `{unmatched}` and is no alias that SELECT projects. SQL that does not
-    parse reads as lacking nothing; `check_sql` refuses it where it runs.
+    relation's alias (or `__u`), or unqualified in a SELECT whose only FROM or
+    JOIN source (a table, subquery or UNNEST) is `{unmatched}` and is no
+    alias that SELECT projects. SQL that does not parse reads as lacking
+    nothing; `check_sql` refuses it where it runs.
     """
     try:
         tree = sqlglot.parse_one(body.replace(PLACEHOLDER, "__u"), read="bigquery")
@@ -810,9 +811,10 @@ def missing_columns(body: str, comparison: Comparison) -> list[str]:
         def own(node, select=select) -> bool:
             return node.find_ancestor(exp.Select) is select
 
+        start = select.args.get("from_") or select.args.get("from")
         sources = [
-            *(t for t in select.find_all(exp.Table) if own(t)),
-            *(s for s in select.find_all(exp.Subquery) if own(s)),
+            *([start.this] if start is not None else []),
+            *(j.this for j in select.args.get("joins") or []),
         ]
         aliases = {
             t.alias_or_name.lower()
