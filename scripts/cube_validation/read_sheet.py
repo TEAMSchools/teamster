@@ -7,18 +7,18 @@ the sheet reads, and whether `sheet_field` is on the sheet. It ends with the
 items to settle before `rebuild-sheet`. It reads a local `.twb` and the
 `members` cache, and prints a filter's chosen values only for a field on
 `find_field.SHOWN_FILTER_FIELDS` (one that cannot identify a person). It prints
-no parameter value.
+no parameter value. Whether the server publishes a sheet takes its views
+list, so it says that is not checked.
 """
 
 from __future__ import annotations
 
-import functools
 import re
 
 # trunk-ignore(bandit/B405): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
 import xml.etree.ElementTree as ET
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from . import coverage
 from . import find_field as finder
@@ -100,20 +100,6 @@ class Sheet:
     values: dict[str, set[str]]
     # Export names of the value fields that are text, not numbers.
     text_values: frozenset[str] = frozenset()
-    # The parsed workbook and the sheet's name, for `published`. A Sheet built
-    # without a workbook reads as published.
-    workbook: ET.Element | None = field(default=None, repr=False, compare=False)
-    name: str = ""
-
-    @functools.cached_property
-    def published(self) -> bool:
-        """Whether a dashboard viewer can see the sheet (`tableau.published_sheets`).
-
-        Worked out on first use, since most reads of a sheet never ask.
-        """
-        if self.workbook is None:
-            return True
-        return self.name in tableau.published_sheets(self.workbook)
 
 
 def _plain(text: str) -> str:
@@ -261,8 +247,6 @@ def read_sheet(twb_xml: str, sheet: str) -> Sheet:
         parameters,
         values,
         frozenset(finder.text_values(twb_xml, sheet)),
-        root,
-        sheet,
     )
 
 
@@ -548,9 +532,8 @@ def _measure_line(out: _Checklist, comparison: Comparison | None, facts: Sheet) 
 
 
 def _sheet_lines(label: str, sheet: str, facts: Sheet) -> list[str]:
-    lines = [f"{sheet} ({label})"]
-    if not facts.published:
-        lines[0] += f"; {tableau.NOT_PUBLISHED}"
+    # Offline, so never guessed from the .twb (`tableau.published_sheets`).
+    lines = [f"{sheet} ({label}); {tableau.NOT_CHECKED}"]
     if facts.table_calcs:
         lines.append("  Table calculations:")
         lines += [f"    - {c.label}" for c in facts.table_calcs]
@@ -610,11 +593,6 @@ def check(
     """
     facts = read_sheet(twb_xml, sheet)
     out = _Checklist([f"  {comparison.id if comparison else 'No comparison'}:"], [])
-    if comparison and not facts.published and not comparison.unpublished:
-        out.before.append(
-            f"sheet: {tableau.NOT_PUBLISHED}; set unpublished: true to compare it "
-            "anyway"
-        )
     shaped: Sheet | None = None
     reshaped: tableau.Reshaped | None = None
     if comparison and comparison.shelves:

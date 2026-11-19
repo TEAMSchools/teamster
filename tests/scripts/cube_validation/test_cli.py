@@ -355,10 +355,17 @@ class FakeTableau:
         self.updated = updated
         self.edited = None
         self.refresh = NOW - timedelta(hours=2)
+        # The workbook's views as Tableau Server lists them.
+        self.views = {"Rate by Region"}
+        self.view_asks: list[str] = []
 
     def download_twb(self, luid):
         self.downloads = getattr(self, "downloads", 0) + 1
         return self.twb
+
+    def view_names(self, luid):
+        self.view_asks.append(luid)
+        return set(self.views)
 
     def workbook_updated(self, luid):
         error = getattr(self, "fail_next", None)
@@ -1011,11 +1018,12 @@ def test_a_changed_workbook_skips_only_its_comparisons(fakes, tmp_path, capsys):
 
 def test_compare_skips_a_sheet_on_no_published_dashboard(fakes, tmp_path, capsys):
     _hide_rate_by_region(fakes.tbl)
-    # c2's sheet shows in its own window, so it publishes.
+    # c2's sheet is a view of its own.
     fakes.tbl.twb = fakes.tbl.twb.replace(
         "  </windows>",
         "    <window class='worksheet' name='Rate Copy' />\n  </windows>",
     )
+    fakes.tbl.views = {"Rate Copy"}
     path = _two(
         tmp_path, lambda e: e.replace("sheet: Rate by Region", "sheet: Rate Copy")
     )
@@ -1108,33 +1116,78 @@ def test_unpublished_sheets_leaves_a_comparison_with_no_sheet_alone(fakes, tmp_p
     assert rebuild.unpublished_sheets([c], tbl=fakes.tbl) == {}
 
 
-def test_compare_downloads_no_workbook_for_a_check_that_recorded_published(
+def test_compare_downloads_no_workbook_for_a_sheet_that_is_a_view(
     fakes, tmp_path, capsys
 ):
-    proof = REBUILD_CHECK + "      published: true\n"
-    path = _two(tmp_path, text=YML.replace(REBUILD_CHECK, proof))
-
-    assert cli.main(["compare", str(path)]) == 0
+    assert cli.main(["compare", str(_two(tmp_path))]) == 0
 
     assert not getattr(fakes.tbl, "downloads", 0)
+    # Asked once for the workbook both comparisons read.
+    assert fakes.tbl.view_asks == ["wb-1"]
     assert _scripts_for(fakes.bq) == ["c1", "c2"]
 
 
-def test_compare_checks_again_after_a_republish(fakes, tmp_path, capsys):
-    path = _republished(fakes, tmp_path)
-    path.write_text(
-        path.read_text().replace(
-            "      sheet_query_fingerprint",
-            "      published: true\n      sheet_query_fingerprint",
-        )
+def _on_dashboard(tbl, dashboard="Standards"):
+    """Put the fixture sheet in a zone of a dashboard whose window shows."""
+    tbl.twb = tbl.twb.replace(
+        "  </worksheets>\n",
+        f"  </worksheets>\n  <dashboards><dashboard name='{dashboard}'><zones>"
+        "<zone id='1' name='Rate by Region' /></zones></dashboard></dashboards>\n",
+    ).replace(
+        "  </windows>",
+        f"    <window class='dashboard' name='{dashboard}' />\n  </windows>",
     )
-    _hide_rate_by_region(fakes.tbl)
+    assert "<dashboards>" in tbl.twb
+
+
+def test_compare_reads_published_from_the_server_views_not_the_check(
+    fakes, tmp_path, capsys
+):
+    # The sheet's window and its dashboard's both show in the .twb, and the
+    # check recorded it published, but neither is a view on the server.
+    _on_dashboard(fakes.tbl)
+    fakes.tbl.views = {"Other"}
+    proof = REBUILD_CHECK + "      published: true\n"
+    path = _two(tmp_path, text=YML.replace(REBUILD_CHECK, proof))
 
     assert cli.main(["compare", str(path)]) == 1
 
-    assert fakes.tbl.downloads
-    assert "not on a published dashboard" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    for cid in ("c1", "c2"):
+        assert (
+            f"Skipping {cid}: not on a published dashboard; set unpublished: true "
+            "to compare it anyway"
+        ) in out
+    assert fakes.tbl.downloads == 1
     assert _scripts_for(fakes.bq) == []
+
+    # A zone on a dashboard that is a view publishes.
+    fakes.tbl.views = {"Standards"}
+    assert cli.main(["compare", str(path)]) == 0
+    assert "not on a published dashboard" not in capsys.readouterr().out
+    assert _scripts_for(fakes.bq) == ["c1", "c2"]
+
+
+def test_compare_skips_a_workbook_whose_views_tableau_errs_on(
+    fakes, tmp_path, monkeypatch, capsys
+):
+    asked = []
+
+    def answer(luid):
+        asked.append(luid)
+        raise TSC.ServerResponseError("404", "Resource Not Found", "gone")
+
+    monkeypatch.setattr(fakes.tbl, "view_names", answer)
+
+    assert cli.main(["compare", str(_two(tmp_path))]) == 1
+
+    out = capsys.readouterr().out
+    for cid in ("c1", "c2"):
+        assert (
+            f"Skipping {cid}: the workbook could not be checked: Tableau answered "
+            "404 Resource Not Found"
+        ) in out
+    assert asked == ["wb-1"]
 
 
 def test_compare_runs_an_opted_in_unpublished_sheet(fakes, tmp_path, capsys):
@@ -3554,12 +3607,12 @@ def test_rebuild_sheet_refuses_an_unwritable_comparison_before_any_export(
 
 
 def _hide_rate_by_region(tbl):
-    """Hide the fixture sheet's window; no dashboard holds it, so it publishes
-    no view."""
+    """Hide the fixture sheet's window, so the server lists no view for it."""
     tbl.twb = tbl.twb.replace(
         "<window class='worksheet' name='Rate by Region'>",
         "<window class='worksheet' hidden='true' name='Rate by Region'>",
     )
+    tbl.views = set()
 
 
 def test_rebuild_sheet_refuses_an_unpublished_sheet_before_any_export(
@@ -3610,12 +3663,49 @@ def test_prove_unhides_a_dashboard_only_sheet_on_the_copy(fakes, tmp_path, capsy
         "<zone id='1' name='Rate by Region' /></zones></dashboard></dashboards>\n",
     )
     assert "<dashboards>" in fakes.tbl.twb
+    fakes.tbl.views = {"Overview"}
     path = _file(tmp_path, YML.replace(REBUILD_CHECK, "    rebuild_check: null\n"))
     argv = ["rebuild-sheet", str(path), "--comparison", "ada-region"]
 
     assert cli.main(argv) == 0, capsys.readouterr().err
 
     assert "hidden=" not in fakes.tbl.edited
+    proof = load_view_config(path).comparisons[0].rebuild_check
+    assert proof is not None and proof.published is True
+
+
+def test_rebuild_sheet_refuses_a_shown_sheet_the_server_does_not_publish(
+    fakes, tmp_path, capsys
+):
+    # Its window and its dashboard's show in the .twb; neither is a view.
+    _on_dashboard(fakes.tbl)
+    fakes.tbl.views = {"Other"}
+    path = _file(tmp_path, NO_REBUILD_CHECK)
+    argv = ["rebuild-sheet", str(path), "--comparison", "ada-region"]
+
+    assert cli.main(argv) == 1
+    assert (
+        "comparison 'ada-region': sheet 'Rate by Region' is not on a published "
+        "dashboard; set unpublished: true to compare it anyway"
+    ) in capsys.readouterr().err
+    assert not getattr(fakes.tbl, "captures", 0)
+
+
+def test_rebuild_sheet_refuses_when_tableau_errs_on_the_views(
+    fakes, tmp_path, monkeypatch, capsys
+):
+    def answer(luid):
+        raise TSC.ServerResponseError("404", "Resource Not Found", "gone")
+
+    monkeypatch.setattr(fakes.tbl, "view_names", answer)
+    path = _file(tmp_path, NO_REBUILD_CHECK)
+    argv = ["rebuild-sheet", str(path), "--comparison", "ada-region"]
+
+    assert cli.main(argv) == 1
+    assert (
+        "refused: ada-region: Tableau answered 404 Resource Not Found"
+    ) in capsys.readouterr().err
+    assert not getattr(fakes.tbl, "captures", 0)
 
 
 def test_rebuild_sheet_prints_the_blank_cells_it_skipped(fakes, tmp_path, capsys):
@@ -4291,8 +4381,39 @@ def test_discover_reads_a_local_workbook_without_tableau(
     assert fakes.cube.compiled_queries == [{"measures": ["v.avg_daily_attendance"]}]
 
 
-def test_find_field_marks_an_unpublished_sheet(fakes, tmp_path, capsys):
-    # The roster fixture has no dashboard and no window for its sheet.
+def test_find_field_marks_an_unpublished_sheet(fakes, tmp_path, monkeypatch, capsys):
+    _exposures(tmp_path, monkeypatch)
+    fakes.tbl.twb = (FIXTURES / "roster.twb").read_text()
+    fakes.tbl.views = {"Other"}
+    argv = ["find-field", str(_file(tmp_path)), "--measure", "avg_daily_attendance",
+            "--caption", "# Tardy"]  # fmt: skip
+
+    assert cli.main(argv) == 0, capsys.readouterr().err
+
+    sheets = capsys.readouterr().out.split("Sheets:", 1)[1].splitlines()
+    at = next(i for i, x in enumerate(sheets) if x.startswith("  Roster ("))
+    assert sheets[at + 1] == "    not on a published dashboard"
+
+    # A view on the server, the sheet publishes.
+    fakes.tbl.views = {"Roster"}
+    assert cli.main(argv) == 0
+    assert "not on a published dashboard" not in capsys.readouterr().out
+
+    def answer(luid):
+        raise TSC.ServerResponseError("404", "Resource Not Found", "gone")
+
+    monkeypatch.setattr(fakes.tbl, "view_names", answer)
+    assert cli.main(argv) == 0
+    sheets = capsys.readouterr().out.split("Sheets:", 1)[1].splitlines()
+    at = next(i for i, x in enumerate(sheets) if x.startswith("  Roster ("))
+    assert sheets[at + 1] == (
+        "    published: not checked: Tableau answered 404 Resource Not Found"
+    )
+
+
+def test_find_field_does_not_guess_published_from_a_local_workbook(
+    fakes, tmp_path, capsys
+):
     twb = tmp_path / "roster.twb"
     twb.write_text((FIXTURES / "roster.twb").read_text())
     argv = ["find-field", str(_file(tmp_path)), "--measure", "avg_daily_attendance",
@@ -4300,21 +4421,9 @@ def test_find_field_marks_an_unpublished_sheet(fakes, tmp_path, capsys):
 
     assert cli.main(argv) == 0, capsys.readouterr().err
 
-    sheets = capsys.readouterr().out.split("Sheets:", 1)[1].splitlines()
-    at = next(i for i, x in enumerate(sheets) if x.startswith("  Roster (roster.twb)"))
-    assert sheets[at + 1] == "    not on a published dashboard"
-
-    # Shown in its own window, the sheet publishes.
-    twb.write_text(
-        (FIXTURES / "roster.twb")
-        .read_text()
-        .replace(
-            "</workbook>",
-            "<windows><window class='worksheet' name='Roster' /></windows></workbook>",
-        )
-    )
-    assert cli.main(argv) == 0
-    assert "not on a published dashboard" not in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert f"Sheets ({tableau.NOT_CHECKED}):" in out
+    assert "not on a published dashboard" not in out
 
 
 def test_discover_keeps_the_top_5_by_default(fakes, tmp_path, monkeypatch, capsys):
@@ -4858,6 +4967,7 @@ def test_prove_headers_shows_the_reshaped_sheet(fakes, tmp_path, capsys):
 
 def test_prove_headers_names_the_table_calcs_a_reshape_changes(fakes, tmp_path, capsys):
     fakes.tbl.twb = (FIXTURES / "dki_grid.twb").read_text()
+    fakes.tbl.views = {"Mastery Grid"}
     text = (
         NO_REBUILD_CHECK.replace("sheet: Rate by Region", "sheet: Mastery Grid")
         .replace(

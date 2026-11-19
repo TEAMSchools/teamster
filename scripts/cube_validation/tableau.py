@@ -27,7 +27,7 @@ import tempfile
 # trunk-ignore(bandit/B405): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
 import xml.etree.ElementTree as ET
 import zipfile
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
@@ -71,6 +71,8 @@ TEXT_MEASURE = (
     "text measures are not compared; compare the numeric measure it is built from"
 )
 NOT_PUBLISHED = "not on a published dashboard"
+# Only Tableau Server's views list says which sheets are published.
+NOT_CHECKED = "published: not checked; `rebuild-sheet` and `compare` ask Tableau Server"
 _THOUSANDS = re.compile(r"[-+]?\d{1,3}(?:,\d{3})+(?:\.\d+)?")
 _PLAIN_NUMBER = re.compile(r"[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?")
 _INSTANCE_SUFFIXES = {"nk", "ok", "qk"}
@@ -245,14 +247,15 @@ def drop_number_formats(twb_xml: str, measures: list[str]) -> str:
     return out
 
 
-def published_sheets(twb_xml: str | ET.Element) -> set[str]:
-    """The worksheets a viewer of the published workbook can see.
+def published_sheets(twb_xml: str | ET.Element, views: Iterable[str]) -> set[str]:
+    """The sheets and dashboards a viewer of the published workbook can see.
 
-    A sheet is seen when a dashboard holds it in a zone (zones nest; every
-    level counts), when a story point captures it (`captured-sheet`), or
-    when its own window is not hidden. A hidden window publishes no view, so
-    a hidden sheet in no dashboard or story is a working sheet no viewer
-    sees. `twb_xml` may be the workbook already parsed.
+    Tableau publishes only the sheets chosen at publish time, and the `.twb`
+    does not record that choice, so `views` (the workbook's views as Tableau
+    Server lists them, `Tableau.view_names`) decides. A sheet is seen when it
+    is a view, or when a seen dashboard holds it in a zone (zones nest; every
+    level counts) or a seen story's point captures it (`captured-sheet`).
+    `twb_xml` may be the workbook already parsed.
     """
     root = (
         twb_xml
@@ -260,18 +263,21 @@ def published_sheets(twb_xml: str | ET.Element) -> set[str]:
         # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
         else ET.fromstring(twb_xml)
     )
-    zoned = {
-        zone.get("name") or ""
+    holds = {
+        dashboard.get("name") or "": {
+            z.get("name") or "" for z in dashboard.iter("zone")
+        }
+        | {p.get("captured-sheet") or "" for p in dashboard.iter("story-point")}
         for dashboard in root.iter("dashboard")
-        for zone in dashboard.iter("zone")
     }
-    shown = {
-        window.get("name") or ""
-        for window in root.iter("window")
-        if window.get("class") == "worksheet" and window.get("hidden") != "true"
-    }
-    captured = {point.get("captured-sheet") or "" for point in root.iter("story-point")}
-    return (zoned | shown | captured) - {""}
+    seen = set(views)
+    # A story point can capture a dashboard, whose zones are then seen too.
+    todo = list(seen)
+    while todo:
+        for name in holds.get(todo.pop(), set()) - seen - {""}:
+            seen.add(name)
+            todo.append(name)
+    return seen
 
 
 def expose_sheet(twb_xml: str, sheet: str) -> str:
@@ -1616,6 +1622,19 @@ class Tableau:
         """Return when a workbook was last published."""
         return self._call(lambda s: s.workbooks.get_by_id(luid).updated_at)
 
+    def _views(self, luid: str) -> list:
+        def views(s: Any) -> list:
+            wb = s.workbooks.get_by_id(luid)
+            s.workbooks.populate_views(wb)
+            return list(wb.views)
+
+        return self._call(views)
+
+    def view_names(self, luid: str) -> set[str]:
+        """Return the names of a workbook's views, the sheets and dashboards
+        it publishes (`published_sheets`)."""
+        return {v.name for v in self._views(luid)}
+
     def refresh_started(
         self, workbook_luid: str, since: datetime | None = None
     ) -> datetime:
@@ -1781,12 +1800,7 @@ class Tableau:
                 in the workbook does not publish as a view.
         """
 
-        def views(s: Any) -> list:
-            wb = s.workbooks.get_by_id(copy_luid)
-            s.workbooks.populate_views(wb)
-            return list(wb.views)
-
-        view = next((v for v in self._call(views) if v.name == sheet), None)
+        view = next((v for v in self._views(copy_luid) if v.name == sheet), None)
         if view is None:
             raise LookupError(
                 f"no view {sheet!r} on the copy; a hidden sheet is not published"

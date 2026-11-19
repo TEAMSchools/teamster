@@ -129,16 +129,17 @@ refuses when the view's only run read another fact.
    filter's kind (context, code group, relative date, parameter-driven) and
    whether other sheets share it through `filter-group`, the parameters the
    sheet reads, and whether `sheet_field` is on the sheet. It refuses a text
-   measure (compare the numeric measure it is built from) and marks a sheet on
-   no published dashboard (step 3, `unpublished`). A sheet filter that keeps
-   non-null values only is marked: it needs a `dashboard_filters` entry with
-   `operator: set` on its column, or, for a workbook calc, on any datasource
-   column the calc reads. Use it instead of reading the workbook XML by hand.
-   Without `--sheet` it checks every comparison's sheet, and names a comparison
-   whose cells cannot be covered ("Cells cannot be covered: <why>", step 6).
-   `--twb` is required, since `read-sheet` never signs in to Tableau: download
-   the workbook once through the runner, with this in place of its `cli.main`
-   call, and reuse that file:
+   measure (compare the numeric measure it is built from). Its header reads
+   `published: not checked`: only Tableau Server's views list says which sheets
+   are published, and `read-sheet` never signs in (step 3, `unpublished`). A
+   sheet filter that keeps non-null values only is marked: it needs a
+   `dashboard_filters` entry with `operator: set` on its column, or, for a
+   workbook calc, on any datasource column the calc reads. Use it instead of
+   reading the workbook XML by hand. Without `--sheet` it checks every
+   comparison's sheet, and names a comparison whose cells cannot be covered
+   ("Cells cannot be covered: <why>", step 6). `--twb` is required, since
+   `read-sheet` never signs in to Tableau: download the workbook once through
+   the runner, with this in place of its `cli.main` call, and reuse that file:
 
    ```python
    import pathlib
@@ -155,10 +156,14 @@ refuses when the view's only run read another fact.
    `config.py`. Give every comparison `rows`: without it, or when a cell dim is
    part of the row grain rather than a column the row groups split by, its
    differing cells cannot be covered and stay open. Optional keys:
-   - `unpublished: true`: compare a sheet that is on no published dashboard.
-     Without it, `read-sheet` and `rebuild-sheet` refuse that sheet and
+   - `unpublished: true`: compare a sheet the server does not publish. A sheet
+     is published when it is one of the workbook's views on Tableau Server, or a
+     zone on a dashboard (or a story) that is one; a visible window in the
+     `.twb` does not count, since the publish dialog's choice is not saved in
+     it. Without the key, `rebuild-sheet` refuses an unpublished sheet and
      `compare` skips it
      (`... not on a published dashboard; set unpublished: true to compare it anyway`).
+     `find-field` marks one too; with `--twb` it says published is not checked.
    - `sheet_field`: the field to compare, by its exported caption. In a long
      export (`Measure Names` / `Measure Values` columns) it is a `Measure Names`
      value; otherwise a column header. Required when the export has more than
@@ -219,10 +224,11 @@ refuses when the view's only run read another fact.
 4. Run `read-sheet <file> --twb <path>` again and settle its "Before
    rebuild-sheet" list with the analyst; rebuild only when it reads "nothing
    blocks" or each item left is a decision the analyst made. `rebuild-sheet`
-   refuses a text measure and an unpublished sheet the same way. It skips blank
-   cells, `*` total rows and dual-axis repeats; it prints how many total rows
-   and blank cells it skipped, but not how many repeats. If a sheet keeps
-   non-null values only and its rebuild check was written before the
+   refuses a text measure the same way, and a sheet the server does not publish
+   (step 3); a Tableau error on the views list refuses that comparison alone. It
+   skips blank cells, `*` total rows and dual-axis repeats; it prints how many
+   total rows and blank cells it skipped, but not how many repeats. If a sheet
+   keeps non-null values only and its rebuild check was written before the
    `dashboard_filters` entry existed, run `rebuild-sheet` again.
    `rebuild-sheet <file> --comparison <id>` exports the sheet from a `TEMP-CB`
    copy and writes `rebuild_check` (with `matched_at` and
@@ -252,8 +258,9 @@ refuses when the view's only run read another fact.
      compares the rest: a missing `dashboard_view` or `decimals`, no rebuild
      check, a sheet query changed since its rebuild check, a member Cube's model
      lacks, a workbook changed since its rebuild check or one Tableau errs on,
-     SQL that cannot be built today or at the run's moment, a sheet on no
-     published dashboard without `unpublished: true`, a pre-aggregation refusal
+     SQL that cannot be built today or at the run's moment, a sheet the server's
+     views do not publish (asked every run; the check's recorded `published`
+     does not decide) without `unpublished: true`, a pre-aggregation refusal
      (Cube answered from a pre-aggregation: add a Cube-only `scope` on a
      never-null member the rollup does not carry, such as the fact's primary
      key, with `operator: set`), or a dry run that fails. A republished workbook

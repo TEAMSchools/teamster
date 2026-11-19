@@ -17,7 +17,7 @@ import hashlib
 import json
 import re
 import zipfile
-from collections.abc import Iterable, Iterator
+from collections.abc import Callable, Iterable, Iterator
 from datetime import date, datetime, time, timezone
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
@@ -1062,7 +1062,9 @@ def find_field(
             f"{c.score:.2f}  {c.workbook_label} ({c.workbook_luid})  "
             f"{c.caption!r} on {', '.join(c.worksheets) or 'no sheet'}: {formula}"
         )
-    _print_sheets(found, twbs)
+    # A local workbook's views are not on the server: published is not checked.
+    views = tbl.view_names if twb_path is None and tbl is not None else None
+    _print_sheets(found, twbs, views)
     return found
 
 
@@ -1096,7 +1098,13 @@ def _exposure_workbooks(
         yield exposure.luid, exposure.label, twb
 
 
-def _print_sheets(found: list[finder.Candidate], twbs: dict[str, str]) -> None:
+def _print_sheets(
+    found: list[finder.Candidate],
+    twbs: dict[str, str],
+    views: Callable[[str], set[str]] | None = None,
+) -> None:
+    """Print each listed sheet's shape. `views` lists a workbook's views on
+    the server; without it (a local workbook) published is not checked."""
     sheets = list(
         dict.fromkeys(
             (c.workbook_luid, c.workbook_label, s) for c in found for s in c.worksheets
@@ -1104,19 +1112,30 @@ def _print_sheets(found: list[finder.Candidate], twbs: dict[str, str]) -> None:
     )
     if not sheets:
         return
-    print("\nSheets:")
+    print("\nSheets:" if views else f"\nSheets ({tableau.NOT_CHECKED}):")
     roots = {
         luid: finder.parse_workbook(twbs[luid])
         for luid in dict.fromkeys(luid for luid, _, _ in sheets)
     }
-    published = {luid: tableau.published_sheets(root) for luid, root in roots.items()}
+    # Per workbook, its published sheets or why they could not be asked.
+    published: dict[str, set[str] | str] = {}
+    for luid, root in roots.items():
+        if views is None:
+            continue
+        try:
+            published[luid] = tableau.published_sheets(root, views(luid))
+        except TSC.ServerResponseError as exc:
+            published[luid] = f"Tableau answered {exc.code} {exc.summary}"
     for luid, label, sheet in sheets:
         shape = finder.sheet_shape(roots[luid], sheet)
         print(
             f"  {sheet} ({label}): rows {', '.join(shape.rows) or 'none'}; "
             f"columns {', '.join(shape.cols) or 'none'}"
         )
-        if sheet not in published[luid]:
+        seen = published.get(luid)
+        if isinstance(seen, str):
+            print(f"    published: not checked: {seen}")
+        elif seen is not None and sheet not in seen:
             print(f"    {tableau.NOT_PUBLISHED}")
         export = (
             "long (set sheet_field to a Measure Names value)"
