@@ -725,10 +725,11 @@ refuses when the view's only run read another fact.
    show the analyst the printed changes, and on their confirmation run it again
    with `--yes`. It re-applies the decisions to each file's saved run offline; a
    file it prints as "not re-applied" needs `compare`. A refusal refuses the
-   whole comment: tell the analyst why and ask the owner for a corrected
-   comment; never edit the saved body to make it pass. The validation issue
-   closes when every question has a decision, every fix has its issue, PR or
-   Asana task, and nothing is left with the analyst.
+   whole comment (stdout ends `Nothing written.`; the reason is on stderr): tell
+   the analyst why and ask the owner for a corrected comment; never edit the
+   saved body to make it pass. The validation issue closes when every question
+   has a decision, every fix has its issue, PR or Asana task, and nothing is
+   left with the analyst.
 10. Tell Cube's users why a number differs on purpose. Run `describe <files>`
     (no credentials, writes nothing): per measure, every `deliberate` decision
     (the analyst's, or an owner's answer) as what differs and its reason, and a

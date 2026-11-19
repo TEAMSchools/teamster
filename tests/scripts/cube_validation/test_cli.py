@@ -6512,6 +6512,52 @@ def test_record_answers_writes_onto_the_cause_decision(tmp_path, capsys):
     assert d.fingerprints == {"cube": "abc", "dashboard": "def", "explanation": "0f"}
 
 
+def test_record_answers_updates_a_missing_filter_decision_decide_wrote(
+    fakes, tmp_path, capsys
+):
+    path = _file(tmp_path)
+    assert cli.main(["compare", str(path)]) == 0
+    (run_json,) = (tmp_path / "cache" / "v").glob("*/run.json")
+    gap = {**_gap_sorted_item(), "id": "filter:Team",
+           "stub": {"missing_filter": "Team"}}  # fmt: skip
+    _write_sorted(run_json, [gap])
+    entry = {"id": "no-team-filter", "call": "domain_owner", "reason": "Ask.",
+             "item": "filter:Team"}  # fmt: skip
+    assert cli.main(["decide", str(path), str(_approved(tmp_path, [entry]))]) == 0
+    assert "  - id: no-team-filter\n    missing_filter: Team\n" in path.read_text()
+    path.write_text(path.read_text() + TASKS)
+    comment = _comment(
+        tmp_path, [_answer(["no-team-filter"], "deliberate", "a label only")]
+    )
+
+    assert _record([path], comment, "--yes") == 0
+
+    (d,) = load_view_config(path).decisions
+    assert (d.missing_filter, d.call) == ("Team", "deliberate")
+    assert d.reason == "Ask. Owner: a label only"
+
+
+def test_record_answers_ends_stdout_with_nothing_written_when_a_write_refuses(
+    tmp_path, monkeypatch, capsys
+):
+    path = _owner_file(tmp_path)
+    before = path.read_text()
+
+    def refuse(path, decision):
+        raise cli.ConfigError("cannot write")
+
+    monkeypatch.setattr(cli, "write_decision", refuse)
+    comment = _comment(tmp_path, [_answer(["miami-scope"], "fix_cube", "n")])
+
+    assert _record([path], comment, "--yes") == 1
+
+    out, err = capsys.readouterr()
+    assert "miami-scope: call domain_owner -> fix_cube" in out
+    assert out.rstrip().splitlines()[-1] == "Nothing written."
+    assert "cannot write" in err
+    assert path.read_text() == before
+
+
 def _approve(path, tmp_path, entry):
     return cli.main(["decide", str(path), str(_approved(tmp_path, [entry]))])
 

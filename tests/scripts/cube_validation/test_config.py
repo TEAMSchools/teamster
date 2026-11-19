@@ -5,7 +5,7 @@ import pytest
 import yaml
 
 # trunk-ignore(pyright/reportAttributeAccessIssue): conftest.py registers cube_validation
-from cube_validation import latest, pipeline
+from cube_validation import decisions, latest, pipeline
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.config import (
@@ -1008,28 +1008,74 @@ def test_write_decision_restores_file_when_result_does_not_load(tmp_path):
     assert path.read_text() == EXAMPLE
 
 
-def test_write_decision_refuses_a_flow_mapping_item_it_cannot_find_by_its_line(
-    tmp_path,
-):
-    text = EXAMPLE.replace(
-        "  - id: example\n    comparison: ada-y1-region\n",
-        "  - {id: example, comparison: ada-y1-region, call: deliberate, reason: r}\n",
-    )
-    text = text.replace(
-        '    group: { column: grade_level, values: ["9"] }\n'
-        "    call: deliberate\n    reason: counted differently\n"
-        '    task: ""\n    fingerprints: { cube: abc, dashboard: def }\n',
-        "",
-    )
-    path = _write(tmp_path, text)
+EXAMPLE_DECISION = (
+    "  - id: example\n    comparison: ada-y1-region\n"
+    '    group: { column: grade_level, values: ["9"] }\n'
+    "    call: deliberate\n    reason: counted differently\n"
+    '    task: ""\n    fingerprints: { cube: abc, dashboard: def }\n'
+)
 
-    with pytest.raises(ConfigError, match="example"):
-        write_decision(
-            path,
-            {"id": "example", "missing_cut": "T", "call": "deliberate", "reason": "r"},
-        )
 
-    assert path.read_text() == text
+@pytest.mark.parametrize(
+    "flow",
+    [
+        "  - {id: example, missing_filter: T, call: deliberate, reason: r}\n",
+        # The commit hook's formatter wraps a long flow item over lines.
+        "  - {\n      id: example,\n      missing_filter: T,\n"
+        "      call: deliberate,\n      reason: r,\n    }\n",
+    ],
+    ids=["one line", "wrapped"],
+)
+def test_write_decision_replaces_a_flow_mapping_item(tmp_path, flow):
+    path = _write(tmp_path, EXAMPLE.replace(EXAMPLE_DECISION, flow) + "# tail\n")
+    assert [d.id for d in load_view_config(path).decisions] == ["example"]
+
+    write_decision(
+        path,
+        {"id": "example", "missing_filter": "T", "call": "fix_cube", "reason": "o",
+         "task": "#1"},
+    )  # fmt: skip
+
+    (d,) = load_view_config(path).decisions
+    assert (d.missing_filter, d.call, d.reason, d.task) == ("T", "fix_cube", "o", "#1")
+    after = path.read_text()
+    assert "{" not in after.split("decisions:", 1)[1]
+    assert after.endswith("# tail\n")
+
+
+def test_write_decision_writes_block_items(tmp_path):
+    path = _write(tmp_path, EXAMPLE.split("decisions:")[0])
+    write_decision(
+        path, {"id": "a", "missing_filter": "Team", "call": "deliberate", "reason": "r"}
+    )
+    group = {"id": "b", "comparison": "ada-y1-region",
+             "group": {"column": "grade_level", "values": ["9"]},
+             "call": "deliberate", "reason": "r",
+             "fingerprints": {"cube": "abc", "dashboard": "def"}}  # fmt: skip
+    write_decision(path, group)
+
+    written = path.read_text().split("decisions:\n", 1)[1]
+    assert written.startswith(
+        "  - id: a\n    missing_filter: Team\n    call: deliberate\n    reason: r\n"
+        "  - id: b\n"
+    )
+    assert "{" not in written and "[" not in written
+    assert load_view_config(path).decisions[1].group == group["group"]
+
+
+def test_block_and_flow_decisions_share_one_fingerprint(tmp_path):
+    decisions_fingerprint = decisions.decisions_fingerprint
+    flow = "  - {id: example, missing_filter: T, call: deliberate, reason: r}\n"
+    path = _write(tmp_path, EXAMPLE.replace(EXAMPLE_DECISION, flow))
+    before = decisions_fingerprint(load_view_config(path).decisions)
+
+    write_decision(
+        path,
+        {"id": "example", "missing_filter": "T", "call": "deliberate", "reason": "r"},
+    )
+
+    assert "{" not in path.read_text().split("decisions:", 1)[1]
+    assert decisions_fingerprint(load_view_config(path).decisions) == before
 
 
 def test_write_decision_replaces_an_item_with_a_column_0_comment_inside(tmp_path):
@@ -1297,23 +1343,30 @@ def test_find_comparison_raises_when_no_item_matches(tmp_path):
         find_comparison(path, "goal")
 
 
-@pytest.mark.parametrize(
-    "old, new",
-    [
-        (
+def test_write_rebuild_check_rewrites_a_flow_mapping_comparison_as_block(tmp_path):
+    path = _write(
+        tmp_path,
+        MERGED.replace(
             "  - <<: *roster\n    id: goal  # the goal sheet\n    measure: m\n",
-            "  - {id: goal, measure: m}\n",
+            "  - {id: other, measure: m}\n  - {id: goal, measure: m}\n",
         ),
-        (
-            "comparisons:\n  - <<: *roster\n    id: goal  # the goal sheet\n"
-            "    measure: m\n",
-            "comparisons: [{id: goal, measure: m}]\n",
-        ),
-    ],
-    ids=["flow mapping", "flow list"],
-)
-def test_find_comparison_names_a_flow_written_comparison(tmp_path, old, new):
-    path = _write(tmp_path, MERGED.replace(old, new))
+    )
+    find_comparison(path, "goal")
+    assert comparison_item(path.read_text().splitlines(), "goal") == (7, 8, 4)
+
+    write_rebuild_check(path, "goal", {"fingerprint": "f"})
+
+    other, goal = load_view_config(path).comparisons
+    assert (goal.id, goal.measure, goal.rebuild_check.fingerprint) == ("goal", "m", "f")
+    assert other.rebuild_check is None
+    assert "  - id: goal\n    measure: m\n    rebuild_check:\n" in path.read_text()
+
+
+def test_find_comparison_names_a_flow_list_of_comparisons(tmp_path):
+    old = "comparisons:\n  - <<: *roster\n    id: goal  # the goal sheet\n    measure: m\n"
+    path = _write(
+        tmp_path, MERGED.replace(old, "comparisons: [{id: goal, measure: m}]\n")
+    )
 
     for edit in (
         lambda: find_comparison(path, "goal"),

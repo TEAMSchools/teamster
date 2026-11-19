@@ -643,6 +643,19 @@ def _write_all(writes: list[tuple[Path, dict]]) -> None:
         raise
 
 
+def _write_or_say_nothing(write) -> None:
+    """Run `write`; on a refusal, end stdout with a line saying nothing was written.
+
+    The refusal itself goes to stderr, which a caller reading only stdout
+    misses after the planned changes; `_write_all` has restored every file.
+    """
+    try:
+        write()
+    except REFUSALS:
+        print("Nothing written.")
+        raise
+
+
 def _check_claims(writes: list[tuple[Path, dict]], also=None) -> None:
     """Refuse, before writing, a batch whose decisions would claim one item twice.
 
@@ -701,8 +714,11 @@ def _decide(cfg: ViewConfig, path: Path, approved_path: Path) -> int:
         items = copy.deepcopy(saved.get("items", []))
         sort.mark_decided(run, items, rehearsed.decisions, refuse=True)
 
-    _check_claims(writes, agree)
-    _write_all(writes)
+    def write() -> None:
+        _check_claims(writes, agree)
+        _write_all(writes)
+
+    _write_or_say_nothing(write)
     had = {d.id for d in cfg.decisions}
     for d in decisions:
         done = "re-approved" if d["id"] in had else "wrote"
@@ -764,7 +780,7 @@ def _record_answers(views: list[Path], comment: Path, author: str, yes: bool) ->
     if not writes:
         print("Nothing to write; every answer is already recorded.")
         return 0
-    _write_all(writes)
+    _write_or_say_nothing(lambda: _write_all(writes))
     print(f"Wrote {len(writes)} decisions.")
     _reapply_written([Path(p) for p in dict.fromkeys(c.path for c in changes)])
     return 0

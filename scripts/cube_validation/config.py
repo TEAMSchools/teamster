@@ -11,6 +11,7 @@ import json
 import os
 import re
 import tempfile
+import textwrap
 from dataclasses import asdict, dataclass, field, replace
 from datetime import date
 from pathlib import Path
@@ -869,13 +870,34 @@ def _indent(line: str) -> int:
     return len(line) - len(line.lstrip())
 
 
+_FLOW_ITEM = re.compile(r"\s*- \{")
+
+
+def _flow_item(lines: list[str], start: int, stop: int) -> dict | None:
+    """The mapping a flow-style item (`- {id: x, ...}`) holds, or None.
+
+    The item may span lines, as the commit hook's formatter wraps a long one.
+    """
+    if not _FLOW_ITEM.match(lines[start]):
+        return None
+    try:
+        loaded = yaml.safe_load(textwrap.dedent("\n".join(lines[start:stop])))
+    except yaml.YAMLError:
+        return None
+    if isinstance(loaded, list) and len(loaded) == 1 and isinstance(loaded[0], dict):
+        return loaded[0]
+    return None
+
+
 def _list_item(
     lines: list[str], head: int, end: int, item_id: str
 ) -> tuple[int, int, int] | None:
-    """Find the block-list item whose `id:` line is `item_id`.
+    """Find the block-list item whose id is `item_id`.
 
     The `id:` may be the item's first line (`- id: x`) or any later line at the
-    item's key indent, as when a `<<: *anchor` merge key comes first.
+    item's key indent, as when a `<<: *anchor` merge key comes first. A
+    flow-style item (`- {id: x, ...}`, on one line or wrapped) matches on the
+    `id` it loads with; `_flow_item` tells the caller which it found.
 
     Args:
         lines: The file's lines.
@@ -915,7 +937,12 @@ def _list_item(
             ):
                 stop = i
                 break
-        if any(wanted.fullmatch(lines[i]) for i in range(start, stop)):
+        flow = _flow_item(lines, start, stop)
+        if (
+            flow.get("id") == item_id
+            if flow is not None
+            else any(wanted.fullmatch(lines[i]) for i in range(start, stop))
+        ):
             while stop > start + 1 and (
                 not lines[stop - 1].strip()
                 or (
@@ -956,9 +983,8 @@ def _editable_comparison(
     """`comparison_item`, or the reason a line edit cannot reach the comparison.
 
     Raises:
-        ConfigError: The comparison is written as a flow mapping or inside a
-            flow list, so no `- id:` line carries it; or no comparison has
-            that id.
+        ConfigError: The comparison sits inside a flow list, so no item of a
+            block list carries it; or no comparison has that id.
     """
     found = comparison_item(lines, comparison_id)
     if found is not None:
@@ -981,9 +1007,9 @@ def find_comparison(path: Path, comparison_id: str) -> None:
     """Check that a line edit can find a comparison's item.
 
     Raises:
-        ConfigError: No block item of `comparisons:` carries that id, so
-            `write_rebuild_check` could not write it. The message says when
-            the comparison exists but is written in flow style.
+        ConfigError: No item of the `comparisons:` block list carries that id,
+            so `write_rebuild_check` could not write it. The message says when
+            the comparison exists inside a flow list.
     """
     _editable_comparison(path, Path(path).read_text().splitlines(), comparison_id)
 
@@ -992,7 +1018,8 @@ def write_rebuild_check(path: Path, comparison_id: str, check: dict[str, Any]) -
     """Rewrite one comparison's `rebuild_check:` key, leaving the rest of the
     file as is.
 
-    The edit is line-based so comments and layout elsewhere survive.
+    The edit is line-based so comments and layout elsewhere survive. A
+    comparison written as a flow mapping is rewritten as a block item.
 
     Args:
         path: The validation file.
@@ -1001,13 +1028,25 @@ def write_rebuild_check(path: Path, comparison_id: str, check: dict[str, Any]) -
             `RebuildCheck` holds the keys the loader reads back.
 
     Raises:
-        ConfigError: No comparison has that id, or it is written in flow
-            style (see `find_comparison`).
+        ConfigError: No comparison has that id, or it sits inside a flow list
+            (see `find_comparison`).
     """
     path = Path(path)
     lines = path.read_text().splitlines()
 
     start, end, key_indent = _editable_comparison(path, lines, comparison_id)
+    flow = _flow_item(lines, start, end)
+    if flow is not None:
+        block = yaml.safe_dump(
+            [{**flow, "rebuild_check": check}],
+            default_flow_style=False,
+            sort_keys=False,
+        )
+        lines[start:end] = [
+            " " * (key_indent - 2) + line for line in block.splitlines()
+        ]
+        path.write_text("\n".join(lines) + "\n")
+        return
 
     check_at = next(
         (
@@ -1116,8 +1155,10 @@ def write_decision(path: Path, decision: dict[str, Any]) -> None:
     """Replace the `decisions:` item with `decision`'s id, or append it.
 
     The edit is line-based like `write_rebuild_check`, so comments and layout outside
-    that item survive. Values YAML would rewrite (`9.50`, `010`, `no`) are
-    written quoted.
+    that item survive. The item is written in block style, so the next line
+    edit finds its `id:` line; a flow-style item written before is found too
+    and replaced in block style. Values YAML would rewrite (`9.50`, `010`,
+    `no`) are written quoted.
 
     Args:
         path: The validation file.
@@ -1127,8 +1168,8 @@ def write_decision(path: Path, decision: dict[str, Any]) -> None:
         ConfigError: The file does not load afterwards, or does not hold the
             values asked for (the original text is restored either way);
             `decisions:` is not a block list (see `_decisions_block`); or a
-            decision with that id exists but no block item carries an `id:`
-            line for it (a flow mapping), so a line edit cannot find it.
+            decision with that id loads but no list item carries it, so a
+            line edit cannot find it.
     """
     path = Path(path)
     decision_id = decision.get("id")
@@ -1146,15 +1187,15 @@ def write_decision(path: Path, decision: dict[str, Any]) -> None:
         if first_item is not None
         else 2
     )
-    block = yaml.safe_dump([decision], default_flow_style=None, sort_keys=False)
+    block = yaml.safe_dump([decision], default_flow_style=False, sort_keys=False)
     new = [" " * indent + line for line in block.splitlines()]
 
     found = _list_item(lines, head, end, decision_id)
     if found is None:
         if any(d.id == decision_id for d in load_view_config(path).decisions):
             raise ConfigError(
-                f"{path}: decisions: {decision_id!r} is written as a flow "
-                "mapping, so a line edit cannot find it; edit it by hand"
+                f"{path}: decisions: no list item carries {decision_id!r} where "
+                "a line edit can find it; edit it by hand"
             )
         # Append after the block's last item line, before trailing blanks and
         # column-0 comments that lead into the next key.
