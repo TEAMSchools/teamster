@@ -139,7 +139,9 @@ refuses when the view's only run read another fact.
    comparison's sheet, and names a comparison whose cells cannot be covered
    ("Cells cannot be covered: <why>", step 6). `--twb` is required, since
    `read-sheet` never signs in to Tableau: download the workbook once through
-   the runner, with this in place of its `cli.main` call, and reuse that file:
+   the runner, with this in place of its `cli.main` call, and reuse that file.
+   The workbook luid is `config.meta.dagster.asset.metadata.id` on the
+   dashboard's exposure in `src/dbt/kipptaf/models/exposures/tableau.yml`:
 
    ```python
    import pathlib
