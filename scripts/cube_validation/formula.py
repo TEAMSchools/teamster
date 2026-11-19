@@ -786,7 +786,7 @@ def cube_side_sql(
     A table the dashboard's rows also read is read at the build start, as the
     run's Cube rows read it, so one query reads each table at one moment. A
     grain off the fact is reached through the joins of Cube's row SQL, each
-    table read as the run's Cube rows read it, by the same rule.
+    table read as `sides.cube_rows_sql` reads it.
 
     Args:
         cfg: The view's config.
@@ -819,15 +819,9 @@ def cube_side_sql(
     dates = pipeline.date_cubes(cfg)
     grain_dates = [p.cube in dates for p in pipeline.rows_of(comparison).grain]
     dims = [d.cube for d in comparison.dims]
-    path = None
-    if grain.hops:
-        rows = ex.at(
-            ex.cube_sql(pipeline.row_query(cfg.view, comparison), rows=True),
-            build.end,
-        )
-        shared = sorted(rows.tables & sides.dashboard.tables)
-        pinned = repin(rows.sql, shared, build.end, build.start)
-        path = Path(grain, path_joins(grain, pinned))
+    # The hops are read as the row SQL `matched_ctes` reads them, so each
+    # table keeps that moment and nothing is expanded again.
+    path = Path(grain, path_joins(grain, sides.cube_rows_sql)) if grain.hops else None
     parts = []
     for cut in cuts:
         query = pipeline.cell_query(cfg.view, comparison, cut)

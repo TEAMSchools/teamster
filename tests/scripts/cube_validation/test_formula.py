@@ -1280,6 +1280,37 @@ def test_cube_side_through_joins_reads_each_table_at_one_moment(duck):
     assert kept == {("{}", "X"): pytest.approx(0.75)}
 
 
+def _joined_grain(comparison=JOINED, cfg=JOINED_CFG):
+    return formula.fact_grain(
+        _JoinEx().cube_sql(pipeline.row_query("v", comparison), rows=True),
+        "v",
+        [p.cube for p in comparison.rows.grain],
+        [cfg.fact, *cfg.also_facts],
+    )
+
+
+def test_cube_side_reads_the_hops_as_the_run_s_cube_rows_read_them():
+    # The hops are copied from the row SQL `matched_ctes` reads, not expanded
+    # again, so they match it by construction and bill nothing new.
+    sides = _joined_sides(JOINED_CFG, JOINED, frozenset())
+    moved = datetime(2026, 10, 1, tzinfo=timezone.utc)
+    sides = replace(
+        sides,
+        cube_rows_sql=repin(sides.cube_rows_sql, ["m.dim_students"], BUILD.end, moved),
+    )
+    grain = _joined_grain()
+
+    body = formula.cube_side_sql(
+        JOINED_CFG, JOINED, [{}], BUILD, ex=_JoinEx(), sides=sides,
+        tables=[grain.table], grain=grain, keep=False,
+    )  # fmt: skip
+
+    assert (
+        "LEFT JOIN `teamster-332318.m.dim_students` AS `students` FOR SYSTEM_TIME "
+        f"AS OF TIMESTAMP '{utc_literal(moved)}'"
+    ) in body
+
+
 def test_cube_self_check_through_a_join_that_repeats_a_student_differs(duck):
     # Student 2's key sits twice in the students dim, so the subquery repeats
     # score 2 where Cube's cell SQL, which never joins the students, does not.
