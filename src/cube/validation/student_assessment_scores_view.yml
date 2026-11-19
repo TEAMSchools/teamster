@@ -789,9 +789,6 @@ comparisons:
   # count_assessments and avg_percent_correct share one export.
   - id: count_assessments__standards_over_time
     <<: *sot
-    # Off: the sheet sits on no published dashboard, and the owner's rule is to
-    # compare published sheets only.
-    confirmed: false
     measure: count_assessments
     sheet_field: "# Asmt"
     decimals: 0
@@ -857,9 +854,6 @@ comparisons:
 
   - id: avg_percent_correct__standards_over_time
     <<: *sot
-    # Off: the sheet sits on no published dashboard, and the owner's rule is to
-    # compare published sheets only.
-    confirmed: false
     measure: avg_percent_correct
     sheet_field: Avg. Percent Correct
     decimals: 0
@@ -925,9 +919,6 @@ comparisons:
 
   - id: count_students__score_distribution
     <<: *asmt
-    # Off: the sheet sits on no published dashboard, and the owner's rule is to
-    # compare published sheets only.
-    confirmed: false
     measure: count_students
     sheet: Score Distribution - Bar Chart
     sheet_field: Distinct count of Student Number
