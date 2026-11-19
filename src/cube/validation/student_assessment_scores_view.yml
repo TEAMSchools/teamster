@@ -1615,64 +1615,81 @@ decisions:
   - id: ddi-051
     comparison: grade_goal_distance__grid_grade
     cause: { side: dashboard, label: sheet filter is_mastery_int }
-    call: domain_owner
+    call: fix_cube
     reason:
-      The goal sheets keep only rows with a mastery score; Cube's goal measures
+      "The goal sheets keep only rows with a mastery score; Cube's goal measures
       also take goals from unscored rows. Should unscored assessments count
-      toward goal distance?
+      toward goal distance? Owner: Unscored assessments should not count toward
+      goal distance."
     fingerprints:
       {
         cube: 4a525e3865590de20adc45f8a374c9cab5272da64c06258ea4cadc48304dca4e,
         dashboard: 46ea75ad0ab01f600573f2875e32aedb7d94f1fd88e2a0145958b1de24f892ce,
         explanation: 69df2e1acf0d08dc8a2ccb8ff6707534f2eaf6fa28557d806527e930eb2fcafb,
       }
+    task: "#6417"
+    answer: fix_cube
   - id: ddi-052
     comparison: school_goal_distance__lines_all
     cause: { side: dashboard, label: sheet filter is_mastery_int }
-    call: domain_owner
+    call: fix_cube
     reason:
-      The goal sheets keep only rows with a mastery score; Cube's goal measures
+      "The goal sheets keep only rows with a mastery score; Cube's goal measures
       also take goals from unscored rows. Should unscored assessments count
-      toward goal distance?
+      toward goal distance? Owner: Unscored assessments should not count toward
+      goal distance."
     fingerprints:
       {
         cube: 62cc738d1616ebd052253643d0553fa906ae6c7f54d8ced699a60c1dc0864f94,
         dashboard: ae914d7ed85230c7c528c2cdfa266e5dddd65f6ad79df95c080f0a35b0285664,
         explanation: 69df2e1acf0d08dc8a2ccb8ff6707534f2eaf6fa28557d806527e930eb2fcafb,
       }
+    task: "#6417"
+    answer: fix_cube
   - id: ddi-053
     comparison: region_goal_distance__lines_all
     cause: { side: dashboard, label: sheet filter is_mastery_int }
-    call: domain_owner
+    call: fix_cube
     reason:
-      The goal sheets keep only rows with a mastery score; Cube's goal measures
+      "The goal sheets keep only rows with a mastery score; Cube's goal measures
       also take goals from unscored rows. Should unscored assessments count
-      toward goal distance?
+      toward goal distance? Owner: Unscored assessments should not count toward
+      goal distance."
     fingerprints:
       {
         cube: ca01c96cc0614c1f5891af3a91373162b90a910fe1f98331db00908b96825fed,
         dashboard: 7f7454e8d2e84f1205c60a762c38c5fbc9b21ffe1e5e3ac5db035cccb78b2572,
         explanation: 69df2e1acf0d08dc8a2ccb8ff6707534f2eaf6fa28557d806527e930eb2fcafb,
       }
+    task: "#6417"
+    answer: fix_cube
   - id: ddi-054
     missing_filter: "% Completion"
-    call: domain_owner
+    call: fix_dashboard
     reason:
-      The completion sheet hides module groups under 75% completion; Cube shows
-      every group. Which completion rate is the KPI?
+      "The completion sheet hides module groups under 75% completion; Cube shows
+      every group. Which completion rate is the KPI? Owner: Cube is right:
+      completion is pooled taken over assigned, not an average of school and
+      subject groups with groups under 75% hidden. Comment added on the existing
+      Avg. % Completion subtask in Asana."
+    task: https://app.asana.com/0/0/1220348719767537
   - id: ddi-055
     comparison: pct_taken__assessments_over_time
     formula: true
-    call: domain_owner
+    call: fix_dashboard
     reason:
-      Where rows match, the dashboard averages completion across school, subject
-      and replacement groups, while Cube pools assessments taken over assigned.
-      Which completion rate is the KPI?
+      "Where rows match, the dashboard averages completion across school,
+      subject and replacement groups, while Cube pools assessments taken over
+      assigned. Which completion rate is the KPI? Owner: Cube is right:
+      completion is pooled taken over assigned, not an average of school and
+      subject groups with groups under 75% hidden. Comment added on the existing
+      Avg. % Completion subtask in Asana."
     fingerprints:
       {
         cube: 11cc3cdd00795835a2b246a2befaf842b5c0b8bb8b6388d51706ef91396d3b5a,
         dashboard: 12892dfd5eb39545b7325e119050ce14daf905612c7e5456029b62ab45b148cd,
       }
+    task: https://app.asana.com/0/0/1220348719767537
   - id: ddi-056
     comparison: pct_students_at_level__dki_bars
     formula: true
@@ -1727,17 +1744,24 @@ decisions:
           assessment date (the responses join to
           int_extracts__student_enrollments_weeks),
       }
-    call: domain_owner
+    call: fix_dashboard
     reason:
-      The dashboard keeps a score only when an enrollment week in the score's
+      "The dashboard keeps a score only when an enrollment week in the score's
       region and year covers the assessment date; Cube uses the section
       enrollment instead. Which enrollment rule decides whether a score counts?
+      Owner: Decided policy: all internal assessment data follows 'is enrolled
+      in a relevant course as of test date.' rpt_tableau__ddi_dashboard (Sunday
+      enrollment, status 0/2/3) and rpt_tableau__assessment_dashboard (latest
+      section in subject, no course-enrollment gate) conflict and need a
+      dashboard fix; tracked as a subtask of DDI Suite Dashboard Fixes in Asana."
     fingerprints:
       {
         cube: 7e37d48c7200c2ae9b2e874b0bef88ccb3a36439c77fc0a0f7c106ae7b7a671e,
         dashboard: 3a4c42f66acd6e9382b94e790766eab19dff496da3b5f981467407d0629ee2df,
         explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
       }
+    task: https://app.asana.com/0/0/1220348719767537
+    answer: fix_dashboard
   - id: ddi-060
     comparison: pct_proficient__dki_grid
     cause:
@@ -1747,17 +1771,24 @@ decisions:
           the student was not enrolled on the week's Sunday
           (co.is_enrolled_week_end),
       }
-    call: domain_owner
+    call: fix_dashboard
     reason:
-      The dashboard keeps a score only when the student was enrolled on the
+      "The dashboard keeps a score only when the student was enrolled on the
       week's Sunday; Cube uses the section enrollment instead. Which enrollment
-      rule decides whether a score counts?
+      rule decides whether a score counts? Owner: Decided policy: all internal
+      assessment data follows 'is enrolled in a relevant course as of test
+      date.' rpt_tableau__ddi_dashboard (Sunday enrollment, status 0/2/3) and
+      rpt_tableau__assessment_dashboard (latest section in subject, no
+      course-enrollment gate) conflict and need a dashboard fix; tracked as a
+      subtask of DDI Suite Dashboard Fixes in Asana."
     fingerprints:
       {
         cube: 7e37d48c7200c2ae9b2e874b0bef88ccb3a36439c77fc0a0f7c106ae7b7a671e,
         dashboard: 3a4c42f66acd6e9382b94e790766eab19dff496da3b5f981467407d0629ee2df,
         explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
       }
+    task: https://app.asana.com/0/0/1220348719767537
+    answer: fix_dashboard
   - id: ddi-061
     comparison: pct_proficient__dki_grid
     cause:
@@ -1765,16 +1796,20 @@ decisions:
         side: dashboard,
         label: the dashboard drops WPP modules (r.module_type != 'WPP'),
       }
-    call: domain_owner
+    call: fix_dashboard
     reason:
-      The dashboard drops WPP modules with a filter marked temporary; Cube keeps
-      them. Should WPP modules count?
+      "The dashboard drops WPP modules with a filter marked temporary; Cube
+      keeps them. Should WPP modules count? Owner: WPP stays in Cube. Resolve
+      the 'Remove SY26' WPP filter on rpt_tableau__ddi_dashboard; tracked as a
+      subtask of DDI Suite Dashboard Fixes in Asana."
     fingerprints:
       {
         cube: 7e37d48c7200c2ae9b2e874b0bef88ccb3a36439c77fc0a0f7c106ae7b7a671e,
         dashboard: 3a4c42f66acd6e9382b94e790766eab19dff496da3b5f981467407d0629ee2df,
         explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
       }
+    task: https://app.asana.com/0/0/1220348719767537
+    answer: fix_dashboard
   - id: ddi-062
     comparison: pct_proficient__dki_grid
     cause:
@@ -1805,17 +1840,24 @@ decisions:
           (inner join to int_assessments__resolved_section_enrollments); the
           dashboard needs only the student's year enrollment,
       }
-    call: domain_owner
+    call: fix_dashboard
     reason:
-      Cube keeps a score only when it resolves to a section enrollment; the
+      "Cube keeps a score only when it resolves to a section enrollment; the
       dashboard needs only the student's year or week enrollment. Which
-      enrollment rule decides whether a score counts?
+      enrollment rule decides whether a score counts? Owner: Decided policy: all
+      internal assessment data follows 'is enrolled in a relevant course as of
+      test date.' rpt_tableau__ddi_dashboard (Sunday enrollment, status 0/2/3)
+      and rpt_tableau__assessment_dashboard (latest section in subject, no
+      course-enrollment gate) conflict and need a dashboard fix; tracked as a
+      subtask of DDI Suite Dashboard Fixes in Asana."
     fingerprints:
       {
         cube: 7e37d48c7200c2ae9b2e874b0bef88ccb3a36439c77fc0a0f7c106ae7b7a671e,
         dashboard: 3a4c42f66acd6e9382b94e790766eab19dff496da3b5f981467407d0629ee2df,
         explanation: 2e047da162dc7df95edd6ab3d931bf233c5957ca5cf7b2e736b0348882e77a0b,
       }
+    task: https://app.asana.com/0/0/1220348719767537
+    answer: fix_dashboard
   - id: ddi-064
     comparison: pct_proficient__dki_standards_grid
     cause:
@@ -1825,17 +1867,24 @@ decisions:
           the student was not enrolled on the week's Sunday
           (co.is_enrolled_week_end),
       }
-    call: domain_owner
+    call: fix_dashboard
     reason:
-      The dashboard keeps a score only when the student was enrolled on the
+      "The dashboard keeps a score only when the student was enrolled on the
       week's Sunday; Cube uses the section enrollment instead. Which enrollment
-      rule decides whether a score counts?
+      rule decides whether a score counts? Owner: Decided policy: all internal
+      assessment data follows 'is enrolled in a relevant course as of test
+      date.' rpt_tableau__ddi_dashboard (Sunday enrollment, status 0/2/3) and
+      rpt_tableau__assessment_dashboard (latest section in subject, no
+      course-enrollment gate) conflict and need a dashboard fix; tracked as a
+      subtask of DDI Suite Dashboard Fixes in Asana."
     fingerprints:
       {
         cube: 8388048ba9c0d765791e878a5bea341b622138dbe107aa824bd841b1dccbd704,
         dashboard: 14adb3f5320b7a0553812c221db658b5493221f71eb649e1e78751580f82e5f4,
         explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
       }
+    task: https://app.asana.com/0/0/1220348719767537
+    answer: fix_dashboard
   - id: ddi-065
     comparison: pct_proficient__dki_standards_grid
     cause:
@@ -1843,16 +1892,20 @@ decisions:
         side: dashboard,
         label: the dashboard drops WPP modules (r.module_type != 'WPP'),
       }
-    call: domain_owner
+    call: fix_dashboard
     reason:
-      The dashboard drops WPP modules with a filter marked temporary; Cube keeps
-      them. Should WPP modules count?
+      "The dashboard drops WPP modules with a filter marked temporary; Cube
+      keeps them. Should WPP modules count? Owner: WPP stays in Cube. Resolve
+      the 'Remove SY26' WPP filter on rpt_tableau__ddi_dashboard; tracked as a
+      subtask of DDI Suite Dashboard Fixes in Asana."
     fingerprints:
       {
         cube: 8388048ba9c0d765791e878a5bea341b622138dbe107aa824bd841b1dccbd704,
         dashboard: 14adb3f5320b7a0553812c221db658b5493221f71eb649e1e78751580f82e5f4,
         explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
       }
+    task: https://app.asana.com/0/0/1220348719767537
+    answer: fix_dashboard
   - id: ddi-066
     comparison: pct_proficient__dki_standards_grid
     cause:
@@ -1863,17 +1916,24 @@ decisions:
           assessment date (the responses join to
           int_extracts__student_enrollments_weeks),
       }
-    call: domain_owner
+    call: fix_dashboard
     reason:
-      The dashboard keeps a score only when an enrollment week in the score's
+      "The dashboard keeps a score only when an enrollment week in the score's
       region and year covers the assessment date; Cube uses the section
       enrollment instead. Which enrollment rule decides whether a score counts?
+      Owner: Decided policy: all internal assessment data follows 'is enrolled
+      in a relevant course as of test date.' rpt_tableau__ddi_dashboard (Sunday
+      enrollment, status 0/2/3) and rpt_tableau__assessment_dashboard (latest
+      section in subject, no course-enrollment gate) conflict and need a
+      dashboard fix; tracked as a subtask of DDI Suite Dashboard Fixes in Asana."
     fingerprints:
       {
         cube: 8388048ba9c0d765791e878a5bea341b622138dbe107aa824bd841b1dccbd704,
         dashboard: 14adb3f5320b7a0553812c221db658b5493221f71eb649e1e78751580f82e5f4,
         explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
       }
+    task: https://app.asana.com/0/0/1220348719767537
+    answer: fix_dashboard
   - id: ddi-067
     comparison: pct_proficient__dki_standards_grid
     cause:
@@ -1904,17 +1964,24 @@ decisions:
           (inner join to int_assessments__resolved_section_enrollments); the
           dashboard needs only the student's year enrollment,
       }
-    call: domain_owner
+    call: fix_dashboard
     reason:
-      Cube keeps a score only when it resolves to a section enrollment; the
+      "Cube keeps a score only when it resolves to a section enrollment; the
       dashboard needs only the student's year or week enrollment. Which
-      enrollment rule decides whether a score counts?
+      enrollment rule decides whether a score counts? Owner: Decided policy: all
+      internal assessment data follows 'is enrolled in a relevant course as of
+      test date.' rpt_tableau__ddi_dashboard (Sunday enrollment, status 0/2/3)
+      and rpt_tableau__assessment_dashboard (latest section in subject, no
+      course-enrollment gate) conflict and need a dashboard fix; tracked as a
+      subtask of DDI Suite Dashboard Fixes in Asana."
     fingerprints:
       {
         cube: 8388048ba9c0d765791e878a5bea341b622138dbe107aa824bd841b1dccbd704,
         dashboard: 14adb3f5320b7a0553812c221db658b5493221f71eb649e1e78751580f82e5f4,
         explanation: 2e047da162dc7df95edd6ab3d931bf233c5957ca5cf7b2e736b0348882e77a0b,
       }
+    task: https://app.asana.com/0/0/1220348719767537
+    answer: fix_dashboard
   - id: ddi-069
     comparison: grade_goal_distance__grid_grade
     cause:
@@ -1945,17 +2012,24 @@ decisions:
           assessment date (the responses join to
           int_extracts__student_enrollments_weeks),
       }
-    call: domain_owner
+    call: fix_dashboard
     reason:
-      The dashboard keeps a score only when an enrollment week in the score's
+      "The dashboard keeps a score only when an enrollment week in the score's
       region and year covers the assessment date; Cube uses the section
       enrollment instead. Which enrollment rule decides whether a score counts?
+      Owner: Decided policy: all internal assessment data follows 'is enrolled
+      in a relevant course as of test date.' rpt_tableau__ddi_dashboard (Sunday
+      enrollment, status 0/2/3) and rpt_tableau__assessment_dashboard (latest
+      section in subject, no course-enrollment gate) conflict and need a
+      dashboard fix; tracked as a subtask of DDI Suite Dashboard Fixes in Asana."
     fingerprints:
       {
         cube: 4a525e3865590de20adc45f8a374c9cab5272da64c06258ea4cadc48304dca4e,
         dashboard: 46ea75ad0ab01f600573f2875e32aedb7d94f1fd88e2a0145958b1de24f892ce,
         explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
       }
+    task: https://app.asana.com/0/0/1220348719767537
+    answer: fix_dashboard
   - id: ddi-071
     comparison: grade_goal_distance__grid_grade
     cause:
@@ -1965,17 +2039,24 @@ decisions:
           the student was not enrolled on the week's Sunday
           (co.is_enrolled_week_end),
       }
-    call: domain_owner
+    call: fix_dashboard
     reason:
-      The dashboard keeps a score only when the student was enrolled on the
+      "The dashboard keeps a score only when the student was enrolled on the
       week's Sunday; Cube uses the section enrollment instead. Which enrollment
-      rule decides whether a score counts?
+      rule decides whether a score counts? Owner: Decided policy: all internal
+      assessment data follows 'is enrolled in a relevant course as of test
+      date.' rpt_tableau__ddi_dashboard (Sunday enrollment, status 0/2/3) and
+      rpt_tableau__assessment_dashboard (latest section in subject, no
+      course-enrollment gate) conflict and need a dashboard fix; tracked as a
+      subtask of DDI Suite Dashboard Fixes in Asana."
     fingerprints:
       {
         cube: 4a525e3865590de20adc45f8a374c9cab5272da64c06258ea4cadc48304dca4e,
         dashboard: 46ea75ad0ab01f600573f2875e32aedb7d94f1fd88e2a0145958b1de24f892ce,
         explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
       }
+    task: https://app.asana.com/0/0/1220348719767537
+    answer: fix_dashboard
   - id: ddi-072
     comparison: grade_goal_distance__grid_grade
     cause:
@@ -1983,16 +2064,20 @@ decisions:
         side: dashboard,
         label: the dashboard drops WPP modules (r.module_type != 'WPP'),
       }
-    call: domain_owner
+    call: fix_dashboard
     reason:
-      The dashboard drops WPP modules with a filter marked temporary; Cube keeps
-      them. Should WPP modules count?
+      "The dashboard drops WPP modules with a filter marked temporary; Cube
+      keeps them. Should WPP modules count? Owner: WPP stays in Cube. Resolve
+      the 'Remove SY26' WPP filter on rpt_tableau__ddi_dashboard; tracked as a
+      subtask of DDI Suite Dashboard Fixes in Asana."
     fingerprints:
       {
         cube: 4a525e3865590de20adc45f8a374c9cab5272da64c06258ea4cadc48304dca4e,
         dashboard: 46ea75ad0ab01f600573f2875e32aedb7d94f1fd88e2a0145958b1de24f892ce,
         explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
       }
+    task: https://app.asana.com/0/0/1220348719767537
+    answer: fix_dashboard
   - id: ddi-073
     comparison: grade_goal_distance__grid_grade
     cause:
@@ -2023,17 +2108,24 @@ decisions:
           (inner join to int_assessments__resolved_section_enrollments); the
           dashboard needs only the student's year enrollment,
       }
-    call: domain_owner
+    call: fix_dashboard
     reason:
-      Cube keeps a score only when it resolves to a section enrollment; the
+      "Cube keeps a score only when it resolves to a section enrollment; the
       dashboard needs only the student's year or week enrollment. Which
-      enrollment rule decides whether a score counts?
+      enrollment rule decides whether a score counts? Owner: Decided policy: all
+      internal assessment data follows 'is enrolled in a relevant course as of
+      test date.' rpt_tableau__ddi_dashboard (Sunday enrollment, status 0/2/3)
+      and rpt_tableau__assessment_dashboard (latest section in subject, no
+      course-enrollment gate) conflict and need a dashboard fix; tracked as a
+      subtask of DDI Suite Dashboard Fixes in Asana."
     fingerprints:
       {
         cube: 4a525e3865590de20adc45f8a374c9cab5272da64c06258ea4cadc48304dca4e,
         dashboard: 46ea75ad0ab01f600573f2875e32aedb7d94f1fd88e2a0145958b1de24f892ce,
         explanation: 2e047da162dc7df95edd6ab3d931bf233c5957ca5cf7b2e736b0348882e77a0b,
       }
+    task: https://app.asana.com/0/0/1220348719767537
+    answer: fix_dashboard
   - id: ddi-075
     comparison: school_goal_distance__lines_all
     cause:
@@ -2064,17 +2156,24 @@ decisions:
           assessment date (the responses join to
           int_extracts__student_enrollments_weeks),
       }
-    call: domain_owner
+    call: fix_dashboard
     reason:
-      The dashboard keeps a score only when an enrollment week in the score's
+      "The dashboard keeps a score only when an enrollment week in the score's
       region and year covers the assessment date; Cube uses the section
       enrollment instead. Which enrollment rule decides whether a score counts?
+      Owner: Decided policy: all internal assessment data follows 'is enrolled
+      in a relevant course as of test date.' rpt_tableau__ddi_dashboard (Sunday
+      enrollment, status 0/2/3) and rpt_tableau__assessment_dashboard (latest
+      section in subject, no course-enrollment gate) conflict and need a
+      dashboard fix; tracked as a subtask of DDI Suite Dashboard Fixes in Asana."
     fingerprints:
       {
         cube: 62cc738d1616ebd052253643d0553fa906ae6c7f54d8ced699a60c1dc0864f94,
         dashboard: ae914d7ed85230c7c528c2cdfa266e5dddd65f6ad79df95c080f0a35b0285664,
         explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
       }
+    task: https://app.asana.com/0/0/1220348719767537
+    answer: fix_dashboard
   - id: ddi-077
     comparison: school_goal_distance__lines_all
     cause:
@@ -2084,17 +2183,24 @@ decisions:
           the student was not enrolled on the week's Sunday
           (co.is_enrolled_week_end),
       }
-    call: domain_owner
+    call: fix_dashboard
     reason:
-      The dashboard keeps a score only when the student was enrolled on the
+      "The dashboard keeps a score only when the student was enrolled on the
       week's Sunday; Cube uses the section enrollment instead. Which enrollment
-      rule decides whether a score counts?
+      rule decides whether a score counts? Owner: Decided policy: all internal
+      assessment data follows 'is enrolled in a relevant course as of test
+      date.' rpt_tableau__ddi_dashboard (Sunday enrollment, status 0/2/3) and
+      rpt_tableau__assessment_dashboard (latest section in subject, no
+      course-enrollment gate) conflict and need a dashboard fix; tracked as a
+      subtask of DDI Suite Dashboard Fixes in Asana."
     fingerprints:
       {
         cube: 62cc738d1616ebd052253643d0553fa906ae6c7f54d8ced699a60c1dc0864f94,
         dashboard: ae914d7ed85230c7c528c2cdfa266e5dddd65f6ad79df95c080f0a35b0285664,
         explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
       }
+    task: https://app.asana.com/0/0/1220348719767537
+    answer: fix_dashboard
   - id: ddi-078
     comparison: school_goal_distance__lines_all
     cause:
@@ -2102,16 +2208,20 @@ decisions:
         side: dashboard,
         label: the dashboard drops WPP modules (r.module_type != 'WPP'),
       }
-    call: domain_owner
+    call: fix_dashboard
     reason:
-      The dashboard drops WPP modules with a filter marked temporary; Cube keeps
-      them. Should WPP modules count?
+      "The dashboard drops WPP modules with a filter marked temporary; Cube
+      keeps them. Should WPP modules count? Owner: WPP stays in Cube. Resolve
+      the 'Remove SY26' WPP filter on rpt_tableau__ddi_dashboard; tracked as a
+      subtask of DDI Suite Dashboard Fixes in Asana."
     fingerprints:
       {
         cube: 62cc738d1616ebd052253643d0553fa906ae6c7f54d8ced699a60c1dc0864f94,
         dashboard: ae914d7ed85230c7c528c2cdfa266e5dddd65f6ad79df95c080f0a35b0285664,
         explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
       }
+    task: https://app.asana.com/0/0/1220348719767537
+    answer: fix_dashboard
   - id: ddi-079
     comparison: school_goal_distance__lines_all
     cause:
@@ -2142,17 +2252,24 @@ decisions:
           (inner join to int_assessments__resolved_section_enrollments); the
           dashboard needs only the student's year enrollment,
       }
-    call: domain_owner
+    call: fix_dashboard
     reason:
-      Cube keeps a score only when it resolves to a section enrollment; the
+      "Cube keeps a score only when it resolves to a section enrollment; the
       dashboard needs only the student's year or week enrollment. Which
-      enrollment rule decides whether a score counts?
+      enrollment rule decides whether a score counts? Owner: Decided policy: all
+      internal assessment data follows 'is enrolled in a relevant course as of
+      test date.' rpt_tableau__ddi_dashboard (Sunday enrollment, status 0/2/3)
+      and rpt_tableau__assessment_dashboard (latest section in subject, no
+      course-enrollment gate) conflict and need a dashboard fix; tracked as a
+      subtask of DDI Suite Dashboard Fixes in Asana."
     fingerprints:
       {
         cube: 62cc738d1616ebd052253643d0553fa906ae6c7f54d8ced699a60c1dc0864f94,
         dashboard: ae914d7ed85230c7c528c2cdfa266e5dddd65f6ad79df95c080f0a35b0285664,
         explanation: 2e047da162dc7df95edd6ab3d931bf233c5957ca5cf7b2e736b0348882e77a0b,
       }
+    task: https://app.asana.com/0/0/1220348719767537
+    answer: fix_dashboard
   - id: ddi-081
     comparison: region_goal_distance__lines_all
     cause:
@@ -2183,17 +2300,24 @@ decisions:
           assessment date (the responses join to
           int_extracts__student_enrollments_weeks),
       }
-    call: domain_owner
+    call: fix_dashboard
     reason:
-      The dashboard keeps a score only when an enrollment week in the score's
+      "The dashboard keeps a score only when an enrollment week in the score's
       region and year covers the assessment date; Cube uses the section
       enrollment instead. Which enrollment rule decides whether a score counts?
+      Owner: Decided policy: all internal assessment data follows 'is enrolled
+      in a relevant course as of test date.' rpt_tableau__ddi_dashboard (Sunday
+      enrollment, status 0/2/3) and rpt_tableau__assessment_dashboard (latest
+      section in subject, no course-enrollment gate) conflict and need a
+      dashboard fix; tracked as a subtask of DDI Suite Dashboard Fixes in Asana."
     fingerprints:
       {
         cube: ca01c96cc0614c1f5891af3a91373162b90a910fe1f98331db00908b96825fed,
         dashboard: 7f7454e8d2e84f1205c60a762c38c5fbc9b21ffe1e5e3ac5db035cccb78b2572,
         explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
       }
+    task: https://app.asana.com/0/0/1220348719767537
+    answer: fix_dashboard
   - id: ddi-083
     comparison: region_goal_distance__lines_all
     cause:
@@ -2203,17 +2327,24 @@ decisions:
           the student was not enrolled on the week's Sunday
           (co.is_enrolled_week_end),
       }
-    call: domain_owner
+    call: fix_dashboard
     reason:
-      The dashboard keeps a score only when the student was enrolled on the
+      "The dashboard keeps a score only when the student was enrolled on the
       week's Sunday; Cube uses the section enrollment instead. Which enrollment
-      rule decides whether a score counts?
+      rule decides whether a score counts? Owner: Decided policy: all internal
+      assessment data follows 'is enrolled in a relevant course as of test
+      date.' rpt_tableau__ddi_dashboard (Sunday enrollment, status 0/2/3) and
+      rpt_tableau__assessment_dashboard (latest section in subject, no
+      course-enrollment gate) conflict and need a dashboard fix; tracked as a
+      subtask of DDI Suite Dashboard Fixes in Asana."
     fingerprints:
       {
         cube: ca01c96cc0614c1f5891af3a91373162b90a910fe1f98331db00908b96825fed,
         dashboard: 7f7454e8d2e84f1205c60a762c38c5fbc9b21ffe1e5e3ac5db035cccb78b2572,
         explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
       }
+    task: https://app.asana.com/0/0/1220348719767537
+    answer: fix_dashboard
   - id: ddi-084
     comparison: region_goal_distance__lines_all
     cause:
@@ -2221,16 +2352,20 @@ decisions:
         side: dashboard,
         label: the dashboard drops WPP modules (r.module_type != 'WPP'),
       }
-    call: domain_owner
+    call: fix_dashboard
     reason:
-      The dashboard drops WPP modules with a filter marked temporary; Cube keeps
-      them. Should WPP modules count?
+      "The dashboard drops WPP modules with a filter marked temporary; Cube
+      keeps them. Should WPP modules count? Owner: WPP stays in Cube. Resolve
+      the 'Remove SY26' WPP filter on rpt_tableau__ddi_dashboard; tracked as a
+      subtask of DDI Suite Dashboard Fixes in Asana."
     fingerprints:
       {
         cube: ca01c96cc0614c1f5891af3a91373162b90a910fe1f98331db00908b96825fed,
         dashboard: 7f7454e8d2e84f1205c60a762c38c5fbc9b21ffe1e5e3ac5db035cccb78b2572,
         explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
       }
+    task: https://app.asana.com/0/0/1220348719767537
+    answer: fix_dashboard
   - id: ddi-085
     comparison: region_goal_distance__lines_all
     cause:
@@ -2261,17 +2396,24 @@ decisions:
           (inner join to int_assessments__resolved_section_enrollments); the
           dashboard needs only the student's year enrollment,
       }
-    call: domain_owner
+    call: fix_dashboard
     reason:
-      Cube keeps a score only when it resolves to a section enrollment; the
+      "Cube keeps a score only when it resolves to a section enrollment; the
       dashboard needs only the student's year or week enrollment. Which
-      enrollment rule decides whether a score counts?
+      enrollment rule decides whether a score counts? Owner: Decided policy: all
+      internal assessment data follows 'is enrolled in a relevant course as of
+      test date.' rpt_tableau__ddi_dashboard (Sunday enrollment, status 0/2/3)
+      and rpt_tableau__assessment_dashboard (latest section in subject, no
+      course-enrollment gate) conflict and need a dashboard fix; tracked as a
+      subtask of DDI Suite Dashboard Fixes in Asana."
     fingerprints:
       {
         cube: ca01c96cc0614c1f5891af3a91373162b90a910fe1f98331db00908b96825fed,
         dashboard: 7f7454e8d2e84f1205c60a762c38c5fbc9b21ffe1e5e3ac5db035cccb78b2572,
         explanation: 2e047da162dc7df95edd6ab3d931bf233c5957ca5cf7b2e736b0348882e77a0b,
       }
+    task: https://app.asana.com/0/0/1220348719767537
+    answer: fix_dashboard
   - id: ddi-087
     comparison: pct_taken__assessments_over_time
     cause:
@@ -2282,17 +2424,24 @@ decisions:
           (inner join to int_assessments__resolved_section_enrollments); the
           dashboard needs only the student's year enrollment,
       }
-    call: domain_owner
+    call: fix_dashboard
     reason:
-      Cube keeps a score only when it resolves to a section enrollment; the
+      "Cube keeps a score only when it resolves to a section enrollment; the
       dashboard needs only the student's year or week enrollment. Which
-      enrollment rule decides whether a score counts?
+      enrollment rule decides whether a score counts? Owner: Decided policy: all
+      internal assessment data follows 'is enrolled in a relevant course as of
+      test date.' rpt_tableau__ddi_dashboard (Sunday enrollment, status 0/2/3)
+      and rpt_tableau__assessment_dashboard (latest section in subject, no
+      course-enrollment gate) conflict and need a dashboard fix; tracked as a
+      subtask of DDI Suite Dashboard Fixes in Asana."
     fingerprints:
       {
         cube: 11cc3cdd00795835a2b246a2befaf842b5c0b8bb8b6388d51706ef91396d3b5a,
         dashboard: 12892dfd5eb39545b7325e119050ce14daf905612c7e5456029b62ab45b148cd,
         explanation: 2e047da162dc7df95edd6ab3d931bf233c5957ca5cf7b2e736b0348882e77a0b,
       }
+    task: https://app.asana.com/0/0/1220348719767537
+    answer: fix_dashboard
   - id: ddi-088
     comparison: pct_students_at_level__dki_bars
     cause:
@@ -2302,17 +2451,24 @@ decisions:
           the student was not enrolled on the week's Sunday
           (co.is_enrolled_week_end),
       }
-    call: domain_owner
+    call: fix_dashboard
     reason:
-      The dashboard keeps a score only when the student was enrolled on the
+      "The dashboard keeps a score only when the student was enrolled on the
       week's Sunday; Cube uses the section enrollment instead. Which enrollment
-      rule decides whether a score counts?
+      rule decides whether a score counts? Owner: Decided policy: all internal
+      assessment data follows 'is enrolled in a relevant course as of test
+      date.' rpt_tableau__ddi_dashboard (Sunday enrollment, status 0/2/3) and
+      rpt_tableau__assessment_dashboard (latest section in subject, no
+      course-enrollment gate) conflict and need a dashboard fix; tracked as a
+      subtask of DDI Suite Dashboard Fixes in Asana."
     fingerprints:
       {
         cube: c67def6e5df305c30f2dc8475bbf92f68a810b2e7093e9d0c9863b54f59434a9,
         dashboard: 8e62ccde46f50f682ea9f420f20b251895600b2b47f819e0a7cb2d286ffb5da9,
         explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
       }
+    task: https://app.asana.com/0/0/1220348719767537
+    answer: fix_dashboard
   - id: ddi-089
     comparison: pct_students_at_level__dki_bars
     cause:
@@ -2363,17 +2519,24 @@ decisions:
           assessment date (the responses join to
           int_extracts__student_enrollments_weeks),
       }
-    call: domain_owner
+    call: fix_dashboard
     reason:
-      The dashboard keeps a score only when an enrollment week in the score's
+      "The dashboard keeps a score only when an enrollment week in the score's
       region and year covers the assessment date; Cube uses the section
       enrollment instead. Which enrollment rule decides whether a score counts?
+      Owner: Decided policy: all internal assessment data follows 'is enrolled
+      in a relevant course as of test date.' rpt_tableau__ddi_dashboard (Sunday
+      enrollment, status 0/2/3) and rpt_tableau__assessment_dashboard (latest
+      section in subject, no course-enrollment gate) conflict and need a
+      dashboard fix; tracked as a subtask of DDI Suite Dashboard Fixes in Asana."
     fingerprints:
       {
         cube: c67def6e5df305c30f2dc8475bbf92f68a810b2e7093e9d0c9863b54f59434a9,
         dashboard: 8e62ccde46f50f682ea9f420f20b251895600b2b47f819e0a7cb2d286ffb5da9,
         explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
       }
+    task: https://app.asana.com/0/0/1220348719767537
+    answer: fix_dashboard
   - id: ddi-092
     comparison: pct_students_at_level__dki_bars
     cause:
@@ -2381,16 +2544,20 @@ decisions:
         side: dashboard,
         label: the dashboard drops WPP modules (r.module_type != 'WPP'),
       }
-    call: domain_owner
+    call: fix_dashboard
     reason:
-      The dashboard drops WPP modules with a filter marked temporary; Cube keeps
-      them. Should WPP modules count?
+      "The dashboard drops WPP modules with a filter marked temporary; Cube
+      keeps them. Should WPP modules count? Owner: WPP stays in Cube. Resolve
+      the 'Remove SY26' WPP filter on rpt_tableau__ddi_dashboard; tracked as a
+      subtask of DDI Suite Dashboard Fixes in Asana."
     fingerprints:
       {
         cube: c67def6e5df305c30f2dc8475bbf92f68a810b2e7093e9d0c9863b54f59434a9,
         dashboard: 8e62ccde46f50f682ea9f420f20b251895600b2b47f819e0a7cb2d286ffb5da9,
         explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
       }
+    task: https://app.asana.com/0/0/1220348719767537
+    answer: fix_dashboard
   - id: ddi-093
     comparison: pct_students_at_level__dki_bars
     cause:
@@ -2401,17 +2568,24 @@ decisions:
           (inner join to int_assessments__resolved_section_enrollments); the
           dashboard needs only the student's year enrollment,
       }
-    call: domain_owner
+    call: fix_dashboard
     reason:
-      Cube keeps a score only when it resolves to a section enrollment; the
+      "Cube keeps a score only when it resolves to a section enrollment; the
       dashboard needs only the student's year or week enrollment. Which
-      enrollment rule decides whether a score counts?
+      enrollment rule decides whether a score counts? Owner: Decided policy: all
+      internal assessment data follows 'is enrolled in a relevant course as of
+      test date.' rpt_tableau__ddi_dashboard (Sunday enrollment, status 0/2/3)
+      and rpt_tableau__assessment_dashboard (latest section in subject, no
+      course-enrollment gate) conflict and need a dashboard fix; tracked as a
+      subtask of DDI Suite Dashboard Fixes in Asana."
     fingerprints:
       {
         cube: c67def6e5df305c30f2dc8475bbf92f68a810b2e7093e9d0c9863b54f59434a9,
         dashboard: 8e62ccde46f50f682ea9f420f20b251895600b2b47f819e0a7cb2d286ffb5da9,
         explanation: 2e047da162dc7df95edd6ab3d931bf233c5957ca5cf7b2e736b0348882e77a0b,
       }
+    task: https://app.asana.com/0/0/1220348719767537
+    answer: fix_dashboard
   - id: ddi-094
     comparison: pct_students_at_level__dki_bars
     cause:
@@ -2425,15 +2599,20 @@ decisions:
       }
     call: domain_owner
     reason:
-      The dashboard groups band numbers into 3 levels by fixed numbers; Cube
+      "The dashboard groups band numbers into 3 levels by fixed numbers; Cube
       sets mastery_level relative to each band set's mastery band. Which
-      band-to-level rule is right?
+      band-to-level rule is right? Owner: Goes to Teaching & Learning for a
+      decision on the band-to-level rule (fixed band numbers vs each set's
+      mastery band); about 5% of SY26 results change level, not just bands 6-8.
+      Memo:
+      https://docs.google.com/document/d/13Z2UOD9yV5P6BG0hBbQQYNwZ89EhIZ9WPQ_pvfRX89s/edit"
     fingerprints:
       {
         cube: c67def6e5df305c30f2dc8475bbf92f68a810b2e7093e9d0c9863b54f59434a9,
         dashboard: 8e62ccde46f50f682ea9f420f20b251895600b2b47f819e0a7cb2d286ffb5da9,
         explanation: abc4f85d38c0225e4efe9b7e65989181718f834a504756e02abaee4e8bd94295,
       }
+    answer: domain_owner
   - id: ddi-095
     comparison: pct_students_at_level__dki_standards_bars
     cause:
@@ -2443,17 +2622,24 @@ decisions:
           the student was not enrolled on the week's Sunday
           (co.is_enrolled_week_end),
       }
-    call: domain_owner
+    call: fix_dashboard
     reason:
-      The dashboard keeps a score only when the student was enrolled on the
+      "The dashboard keeps a score only when the student was enrolled on the
       week's Sunday; Cube uses the section enrollment instead. Which enrollment
-      rule decides whether a score counts?
+      rule decides whether a score counts? Owner: Decided policy: all internal
+      assessment data follows 'is enrolled in a relevant course as of test
+      date.' rpt_tableau__ddi_dashboard (Sunday enrollment, status 0/2/3) and
+      rpt_tableau__assessment_dashboard (latest section in subject, no
+      course-enrollment gate) conflict and need a dashboard fix; tracked as a
+      subtask of DDI Suite Dashboard Fixes in Asana."
     fingerprints:
       {
         cube: 7d360cc79f30d506f02012dc6bd7ea1ba0ee575d62961a0e03cc0c324b6b0a44,
         dashboard: 065d0590b16edbb677420cb3fd90b51ba0cc0392155576b02d3c5a980e9bfc08,
         explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
       }
+    task: https://app.asana.com/0/0/1220348719767537
+    answer: fix_dashboard
   - id: ddi-096
     comparison: pct_students_at_level__dki_standards_bars
     cause:
@@ -2484,17 +2670,24 @@ decisions:
           assessment date (the responses join to
           int_extracts__student_enrollments_weeks),
       }
-    call: domain_owner
+    call: fix_dashboard
     reason:
-      The dashboard keeps a score only when an enrollment week in the score's
+      "The dashboard keeps a score only when an enrollment week in the score's
       region and year covers the assessment date; Cube uses the section
       enrollment instead. Which enrollment rule decides whether a score counts?
+      Owner: Decided policy: all internal assessment data follows 'is enrolled
+      in a relevant course as of test date.' rpt_tableau__ddi_dashboard (Sunday
+      enrollment, status 0/2/3) and rpt_tableau__assessment_dashboard (latest
+      section in subject, no course-enrollment gate) conflict and need a
+      dashboard fix; tracked as a subtask of DDI Suite Dashboard Fixes in Asana."
     fingerprints:
       {
         cube: 7d360cc79f30d506f02012dc6bd7ea1ba0ee575d62961a0e03cc0c324b6b0a44,
         dashboard: 065d0590b16edbb677420cb3fd90b51ba0cc0392155576b02d3c5a980e9bfc08,
         explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
       }
+    task: https://app.asana.com/0/0/1220348719767537
+    answer: fix_dashboard
   - id: ddi-098
     comparison: pct_students_at_level__dki_standards_bars
     cause:
@@ -2502,16 +2695,20 @@ decisions:
         side: dashboard,
         label: the dashboard drops WPP modules (r.module_type != 'WPP'),
       }
-    call: domain_owner
+    call: fix_dashboard
     reason:
-      The dashboard drops WPP modules with a filter marked temporary; Cube keeps
-      them. Should WPP modules count?
+      "The dashboard drops WPP modules with a filter marked temporary; Cube
+      keeps them. Should WPP modules count? Owner: WPP stays in Cube. Resolve
+      the 'Remove SY26' WPP filter on rpt_tableau__ddi_dashboard; tracked as a
+      subtask of DDI Suite Dashboard Fixes in Asana."
     fingerprints:
       {
         cube: 7d360cc79f30d506f02012dc6bd7ea1ba0ee575d62961a0e03cc0c324b6b0a44,
         dashboard: 065d0590b16edbb677420cb3fd90b51ba0cc0392155576b02d3c5a980e9bfc08,
         explanation: 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4,
       }
+    task: https://app.asana.com/0/0/1220348719767537
+    answer: fix_dashboard
   - id: ddi-099
     comparison: pct_students_at_level__dki_standards_bars
     cause:
@@ -2522,17 +2719,24 @@ decisions:
           (inner join to int_assessments__resolved_section_enrollments); the
           dashboard needs only the student's year enrollment,
       }
-    call: domain_owner
+    call: fix_dashboard
     reason:
-      Cube keeps a score only when it resolves to a section enrollment; the
+      "Cube keeps a score only when it resolves to a section enrollment; the
       dashboard needs only the student's year or week enrollment. Which
-      enrollment rule decides whether a score counts?
+      enrollment rule decides whether a score counts? Owner: Decided policy: all
+      internal assessment data follows 'is enrolled in a relevant course as of
+      test date.' rpt_tableau__ddi_dashboard (Sunday enrollment, status 0/2/3)
+      and rpt_tableau__assessment_dashboard (latest section in subject, no
+      course-enrollment gate) conflict and need a dashboard fix; tracked as a
+      subtask of DDI Suite Dashboard Fixes in Asana."
     fingerprints:
       {
         cube: 7d360cc79f30d506f02012dc6bd7ea1ba0ee575d62961a0e03cc0c324b6b0a44,
         dashboard: 065d0590b16edbb677420cb3fd90b51ba0cc0392155576b02d3c5a980e9bfc08,
         explanation: 2e047da162dc7df95edd6ab3d931bf233c5957ca5cf7b2e736b0348882e77a0b,
       }
+    task: https://app.asana.com/0/0/1220348719767537
+    answer: fix_dashboard
   - id: ddi-100
     comparison: pct_students_at_level__dki_standards_bars
     cause:
@@ -2546,12 +2750,17 @@ decisions:
       }
     call: domain_owner
     reason:
-      The dashboard groups band numbers into 3 levels by fixed numbers; Cube
+      "The dashboard groups band numbers into 3 levels by fixed numbers; Cube
       sets mastery_level relative to each band set's mastery band. Which
-      band-to-level rule is right?
+      band-to-level rule is right? Owner: Goes to Teaching & Learning for a
+      decision on the band-to-level rule (fixed band numbers vs each set's
+      mastery band); about 5% of SY26 results change level, not just bands 6-8.
+      Memo:
+      https://docs.google.com/document/d/13Z2UOD9yV5P6BG0hBbQQYNwZ89EhIZ9WPQ_pvfRX89s/edit"
     fingerprints:
       {
         cube: 7d360cc79f30d506f02012dc6bd7ea1ba0ee575d62961a0e03cc0c324b6b0a44,
         dashboard: 065d0590b16edbb677420cb3fd90b51ba0cc0392155576b02d3c5a980e9bfc08,
         explanation: abc4f85d38c0225e4efe9b7e65989181718f834a504756e02abaee4e8bd94295,
       }
+    answer: domain_owner
