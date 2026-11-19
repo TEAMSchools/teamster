@@ -56,7 +56,7 @@ _RAN = (REWRITE_DIFFERS, NO_ROWS, FANS_OUT)
 # nothing is spent again until the comparison is compared again; a bump runs
 # every kept check again, so a fix to its formula or coverage verdicts takes
 # effect.
-CHECK_VERSION = 2
+CHECK_VERSION = 3
 
 
 def bigquery_refused(exc: GoogleAPIError) -> str:
@@ -978,7 +978,8 @@ def _job_sql(
     sides: pipeline.RowSides,
     table: str,
 ) -> dict[str, str]:
-    """The check's 4 queries over the cuts `cells` sit in, as `Job.sql` holds them."""
+    """The check's queries over the cuts `cells` sit in, as `Job.sql` holds them:
+    4, plus the fan-out count when the grain is reached through Cube's joins."""
     held = {c["cut"] for c in cells}
     cuts = [
         c for c in pipeline.comparison_cuts(comparison) if pipeline.cut_label(c) in held
@@ -1081,7 +1082,7 @@ def plan(
 
     Returns:
         None when no cell can be checked (`checkable_cells`); a `Job` holding
-        the 4 queries; else the fallback check.
+        the check's queries; else the fallback check.
     """
     cells = checkable_cells(run, comparison)
     if not cells:
