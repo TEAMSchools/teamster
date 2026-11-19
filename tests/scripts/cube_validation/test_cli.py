@@ -6294,11 +6294,10 @@ def test_decide_closes_a_whole_comparison_and_ask_owner_lists_it(
 
     body = capsys.readouterr().out
     line = next(x for x in body.splitlines() if "every open row group" in x)
-    # The group count is under 10, so it is masked; the 30 rows and the
-    # largest group's 12 students are not.
+    # Bounds only, never the exact 30 rows or 12 students.
     assert line.startswith(
         "- every open row group of `ada-region` in `v` (dashboard_only): "
-        "<10 row groups, 30 rows, at least 12 students: an intended difference"
+        "<10 row groups, 10+ rows, at least 10 students: an intended difference"
     )
     assert line.endswith("Reason: an old sheet no one reads.")
     assert MIAMI not in body

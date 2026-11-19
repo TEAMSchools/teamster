@@ -641,8 +641,10 @@ refuses when the view's only run read another fact.
    `{"id", "comparison": "<comparison id>", "call": "deliberate", "reason"}` in
    place of an `item`. `decide` writes an `all_groups: true` decision with both
    SQL fingerprints. It closes every open row group of that comparison, those
-   still in `investigate` too, while the fingerprints hold, and leaves a `group`
-   decision's groups to it. It closes no cells: a formula difference still
+   still in `investigate` too, while the fingerprints hold, and those new data
+   adds later while the SQL is unchanged. It leaves every group a `group`
+   decision names to that decision, stale or not: a stale one's groups stay open
+   until it is re-confirmed. It closes no cells: a formula difference still
    files, and a cell set closes only by coverage as for any closed group. Use it
    only on the analyst's word, never to clear `investigate` faster: the
    comparison's unexplained groups leave "Still with the analyst". Only
@@ -738,17 +740,20 @@ refuses when the view's only run read another fact.
    behind it, decided alike, print once: what it covers, the call, the reason
    and the task, masked like the questions and kept out of the JSON, so
    `record-answers` never reads one as an answer. A comparison decision lists
-   there as "every open row group of `<comparison>`" with its buckets and only
-   masked counts (row groups, rows, and students of the largest group, each
-   `<10` under 10), never a group's values. Each cause question also gets a
-   folded Reproduce block: each example cell as a Cube `load` query for Claude
-   chat's Cube connector, each distinct `-- reproduce` count query once
-   (numbered only when there are several, so "1" never reads as a count; labeled
-   today's data), then per explanation file a branch link and the `explain` that
-   re-explains it at the run's moment, and the `compare --all` plus `sort` after
-   time travel ends. Commit and push the explanations before posting, or the
-   link finds nothing. When the checks and Reproduce blocks would take the body
-   past GitHub's 65,536-character cap, they move out of it into numbered comment
+   there as "every open row group of `<comparison>`" with its buckets, and a
+   `group` decision with its column; both post only bounds (row groups, rows,
+   and students of the largest group, each `10+`, or `<10` under 10), never a
+   group's values. An earlier review's "Still with the analyst" file may have
+   listed those groups with the small ones withheld, and an exact count less the
+   ones it posted would pin them. Each cause question also gets a folded
+   Reproduce block: each example cell as a Cube `load` query for Claude chat's
+   Cube connector, each distinct `-- reproduce` count query once (numbered only
+   when there are several, so "1" never reads as a count; labeled today's data),
+   then per explanation file a branch link and the `explain` that re-explains it
+   at the run's moment, and the `compare --all` plus `sort` after time travel
+   ends. Commit and push the explanations before posting, or the link finds
+   nothing. When the checks and Reproduce blocks would take the body past
+   GitHub's 65,536-character cap, they move out of it into numbered comment
    files that stderr names: post the issue, then each file as a comment, in
    order (the linked JSON holds everything the owner's session reads). stderr
    names any question with no sort evidence: `sort` that view and render again

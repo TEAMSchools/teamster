@@ -922,6 +922,45 @@ def test_a_bounded_group_part_bounds_its_students_too(groups, bound, who):
     assert part.endswith(who)
 
 
+# As an earlier review's "Still with the analyst" file listed them: 40, 25
+# and a masked 10 rows, and "fewer than 10 more" of 1 row each.
+LISTED_EARLIER = [40, 25, 10] + [1] * 9
+
+
+def _earlier_groups():
+    return [Group("cmp", (("school", f"S{i}"),), "cube_only", n, min(n, 10))
+            for i, n in enumerate(LISTED_EARLIER)]  # fmt: skip
+
+
+def test_a_comparison_decision_posts_only_bounds():
+    # Exact 12 groups and 84 rows would give 12 - 3 listed = 9 small items and
+    # 84 - 40 - 25 = 19 = 10 + 9, pinning every count the file withheld.
+    part, _ = report._comparison_part("v", _earlier_groups())
+
+    assert part == (
+        "every open row group of `cmp` in `v` (cube_only): 10+ row groups, "
+        "10+ rows, at least 10 students"
+    )
+    small = [Group("cmp", (("school", "S"),), "cube_only", 4, 2)]
+    assert report._comparison_part("v", small)[0].endswith(
+        "<10 row groups, <10 rows, at least <10 students"
+    )
+
+
+def test_also_decided_bounds_a_group_decision_s_counts():
+    decision = Decision("d", "cmp", "deliberate", "an old rule",
+                        {"column": "school", "values": ["x"]})  # fmt: skip
+    run = dataclasses.replace(
+        _run(), view="v",
+        applied=Applied(quiet=[(decision, g) for g in _earlier_groups()]),
+    )  # fmt: skip
+
+    (line,) = report.also_decided([run])
+
+    assert "10+ row groups, 10+ rows, at least 10 students" in line
+    assert not re.search(r"\b(12|84|19)\b", line)
+
+
 def test_a_review_refuses_questions_json_that_does_not_match_its_questions():
     run = _run()
     asked = report._questions([run])

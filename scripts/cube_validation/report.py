@@ -573,13 +573,18 @@ def _by_reason(pairs, owner: bool = True) -> list[tuple[list[Decision], list]]:
 
 
 def _group_part(
-    view: str, decisions: list[Decision], groups: list[Group], bound: bool = False
+    view: str,
+    decisions: list[Decision],
+    groups: list[Group],
+    bound: bool = False,
+    bound_groups: bool = False,
 ) -> tuple[str, list]:
     """The row-group part of a question, and the values its reason must lose.
 
     With `bound`, the groups' posted evidence carries a hidden count, so
     their row total and student count read as bounds (`bounded`), never
-    exact beside it.
+    exact beside it. With `bound_groups`, the group count reads as a bound
+    too, so every count is one.
 
     The decision's column shows each value only for a reviewed column, and only
     when one of that value's groups holds 10 or more students. A reason loses whatever
@@ -625,7 +630,8 @@ def _group_part(
     plural = "group" if len(groups) == 1 else "groups"
     # Rows are at least students, and equal them at one row per student, so a
     # bounded row total takes a bounded student count too.
-    count = bounded if bound else mask
+    count = bounded if bound or bound_groups else mask
+    n_groups = bounded(len(groups)) if bound_groups else str(len(groups))
     if len(groups) == 1:
         who = f"{count(students)} students"
     else:
@@ -637,7 +643,7 @@ def _group_part(
     return (
         f"{where} in {', '.join(sorted(per_comparison))} of "
         f"`{view}` ({', '.join(sorted({g.bucket for g in groups}))}): "
-        f"{len(groups)} row {plural}, {count(rows)} rows, {who}"
+        f"{n_groups} row {plural}, {count(rows)} rows, {who}"
     ), hidden
 
 
@@ -645,11 +651,13 @@ def _comparison_part(view: str, groups: list[Group]) -> tuple[str, list]:
     """What a comparison decision closes, for the review, and the values its
     reason must lose.
 
-    It names no group's values, and every count is masked (`mask`): the
-    groups, their rows, and the students of the largest group, the count
-    surely there. None of them is a total posted beside a hidden part.
-    A reason loses every identifier column's values and a reviewed column's
-    value no group with 10 or more students holds.
+    It names no group's values, and every count is a bound (`bounded`,
+    `10+` or `<10`): the groups, their rows, and the students of the
+    largest group, the count surely there. An earlier review listed these
+    groups in its "Still with the analyst" file, with the small ones and a
+    bucket's total withheld; an exact count here, less the counts it
+    posted, would pin them. A reason loses every identifier column's values
+    and a reviewed column's value no group with 10 or more students holds.
     """
     (cid,) = {g.comparison_id for g in groups}
     students = max(g.n_students for g in groups)
@@ -663,10 +671,12 @@ def _comparison_part(view: str, groups: list[Group]) -> tuple[str, list]:
                 per_value[c, v] = max(per_value.get((c, v), 0), g.n_students)
     hidden += [v for (_, v), n in per_value.items() if n < MASK_BELOW]
     buckets = ", ".join(sorted({g.bucket for g in groups}))
+    # "at least" already bounds it: the bound's own `+` would say it twice.
+    least = bounded(students).removesuffix("+")
     return (
         f"every open row group of `{cid}` in `{view}` ({buckets}): "
-        f"{mask(len(groups))} row groups, {mask(sum(g.n_rows for g in groups))} "
-        f"rows, at least {mask(students)} students"
+        f"{bounded(len(groups))} row groups, "
+        f"{bounded(sum(g.n_rows for g in groups))} rows, at least {least} students"
     ), hidden
 
 
@@ -1079,9 +1089,10 @@ def also_decided(
     """One line per decision the analyst made that the owner only sees.
 
     Every call but `domain_owner`, masked like the questions: what it covers
-    (a cause once across its comparisons, a comparison decision's closed
-    groups as masked counts (`_comparison_part`), else the question's part),
-    the call, the reason and the task. `decided` is per view, `sort.cause_asks` for
+    (a cause once across its comparisons, else its row groups with every
+    count a bound, `10+` or `<10`: a comparison decision's by
+    `_comparison_part`, a `group` decision's by `_group_part`), the call,
+    the reason and the task. `decided` is per view, `sort.cause_asks` for
     those calls. Never part of the questions JSON, so `record-answers` cannot
     take one for an answer.
     """
@@ -1101,7 +1112,9 @@ def also_decided(
             add(key, _cause_head(ask), [(run.view, d.comparison)], d, hidden)
         by_group = [(d, g) for d, g in run.applied.quiet if not d.all_groups]
         for decisions, groups in _by_reason(by_group, owner=False):
-            part, hidden = _group_part(run.view, decisions, groups)
+            # Bounds only: an earlier review may have listed these groups with
+            # their small ones withheld (`_comparison_part`).
+            part, hidden = _group_part(run.view, decisions, groups, bound_groups=True)
             d = decisions[0]
             add(("group", run.view, part, d.call), part, [], d, hidden)
         # A comparison decision is always deliberate: listed, never asked.

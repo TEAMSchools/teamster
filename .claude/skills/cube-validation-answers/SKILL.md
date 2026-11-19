@@ -49,10 +49,12 @@ validation files or runs the validator, and neither does this session.
    is "Also decided (no answer needed)": the analyst's own calls. A line there
    reading "every open row group of `<comparison>`" means the analyst decided
    that whole comparison's remaining differences are intended (`deliberate`),
-   with the reason given. If the owner disagrees, send them to the analyst
-   rather than answering it in the comment. Read its comments too: skip a
-   question an earlier answers comment of the owner's already covers, unless
-   they want to change it, and then send them to the analyst.
+   with the reason given, including differences new data adds later while the
+   comparison's SQL stays the same. Its counts are bounds (`10+`, `<10`). If the
+   owner disagrees, send them to the analyst rather than answering it in the
+   comment. Read its comments too: skip a question an earlier answers comment of
+   the owner's already covers, unless they want to change it, and then send them
+   to the analyst.
 2. Say how many questions there are. A question with `expired: true` has pinned
    SQL that no longer runs: the owner can answer without the checks, check a
    cause through its `reproduce` entries (which never expire), or wait for the
