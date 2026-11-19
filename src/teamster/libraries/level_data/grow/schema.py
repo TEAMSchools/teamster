@@ -33,6 +33,12 @@ class Content(BaseModel):
     right: str | None = None
 
 
+class CheckboxOption(BaseModel):
+    value: str | None = None
+    label: str | None = None
+    description: str | None = None
+
+
 class AdditionalField(Ref):
     description: str | None = None
     disableDeleting: bool | None = None
@@ -49,7 +55,10 @@ class AdditionalField(Ref):
     rightName: str | None = None
     type: str | None = None
 
-    content: bool | int | str | Content | None = None
+    # checkbox fields send a list
+    content: bool | int | str | Content | list[str | None] | None = None
+
+    checkboxOptions: list[CheckboxOption | None] | None = None
 
 
 class SignedItem(BaseModel):
