@@ -710,14 +710,18 @@ _LEAD = re.compile(
 _SCOPE = re.compile(r"(?:^| / )([^\s:/][^\s:]*): ")
 
 
-def _posted_lead(lead: str) -> str:
-    """A trace lead as the issue shows it: each step's scope and the counts,
-    never the step's SQL. The full lead stays in the local triage."""
+def _posted_lead(lead: str, counts: bool = True) -> str:
+    """A trace lead as the issue shows it: each step's scope and, with
+    `counts`, the counts; never the step's SQL. The full lead stays in the
+    local triage. Its `of M rows` is the item's exact row count, so a lead
+    beside a count that is not posted exact must leave `counts` out."""
     found = _LEAD.match(lead)
     if found is None:
         return "a trace lead; ask the analyst"
     scopes = list(dict.fromkeys(_SCOPE.findall(found["label"])))
     where = f" in {', '.join(scopes)}" if scopes else ""
+    if not counts:
+        return f"lead: relaxing a step{where}"
     return (
         f"lead: relaxing a step{where} brings back {found['n']} of {found['of']} rows"
     )
@@ -748,19 +752,22 @@ class _Bucket:
 
     @property
     def count(self) -> str:
-        """The issue's count of the bucket's items.
+        """The issue's count of the bucket's items, saying no more than the
+        linked file does.
 
-        The linked file lists every item not `_small`, so an exact total less
-        those lines would give the number left out. The total is exact only
-        when that number is 0 or the file states it (`MASK_BELOW` or more);
-        otherwise it reads `10+`, or `<10` under `MASK_BELOW`.
+        It gives the items the file lists (anyone can count those lines) and
+        the items it leaves out as the file states them: their number at
+        `MASK_BELOW` or more, else only that there are fewer than
+        `MASK_BELOW`. It never gives a total of all items, which less the
+        listed lines would pin a masked number.
         """
-        n = len(self.items)
-        if n < MASK_BELOW:
-            return mask(n)
-        return (
-            str(n) if self.small == 0 or self.small >= MASK_BELOW else f"{MASK_BELOW}+"
-        )
+        listed = len(self.items) - self.small
+        out = f"{listed} listed item{'' if listed == 1 else 's'}"
+        if self.small >= MASK_BELOW:
+            out += f", plus {self.small} under {MASK_BELOW} rows or cells"
+        elif self.small:
+            out += f", plus fewer than {MASK_BELOW} under {MASK_BELOW} rows or cells"
+        return out
 
 
 def _buckets(items: list[Unsettled]) -> list[_Bucket]:
@@ -805,11 +812,12 @@ def unsettled_detail(items: list[Unsettled], name: str) -> str:
     It is posted (the issue links it), so it is masked like the issue: per
     comparison and bucket, each item of `MASK_BELOW` or more rows or cells
     with its triage id, its count as `still_with_analyst`'s total masks it,
-    and the trace's lead (its steps' scopes and counts, `_posted_lead`) or
-    `no lead yet`. Items under `MASK_BELOW` rows or cells are never listed;
-    their number is stated only when it is `MASK_BELOW` or more, so no count
-    here and in the issue (`_Bucket.count`) gives away a masked one. No stub
-    value and no SQL.
+    and the trace's lead (`_posted_lead`: its steps' scopes, and its counts
+    only beside an exact count, since a lead's `of M rows` is the item's
+    count) or `no lead yet`. Items under `MASK_BELOW` rows or cells are
+    never listed; their number is stated only when it is `MASK_BELOW` or
+    more, and the issue says no more (`_Bucket.count`), so no count here and
+    there gives away a masked one. No stub value and no SQL.
 
     Args:
         items: The items in `investigate` (`sort.unsettled`).
@@ -827,8 +835,9 @@ def unsettled_detail(items: list[Unsettled], name: str) -> str:
         for u, count in bucket.items:
             if _small(u):
                 continue
+            exact = bool(count) and count.split(" ", 1)[0].isdigit()
             lead = (
-                _safe_reason(_posted_lead(u.lead), list(u.hidden))
+                _safe_reason(_posted_lead(u.lead, counts=exact), list(u.hidden))
                 if u.lead
                 else "no lead yet"
             )
@@ -859,8 +868,8 @@ def still_with_analyst(
     """The review's lines for what is not settled yet, never asked as questions.
 
     One line per comparison and bucket (or kind) of the items in
-    `investigate`: the masked count of items and their masked row and cell
-    totals. The items one by one go to `unsettled_detail`'s file, since a
+    `investigate`: the items listed and left out, as the file says
+    (`_Bucket.count`), and their masked row and cell totals. The items one by one go to `unsettled_detail`'s file, since a
     view can hold thousands. Then one line per comparison in `waiting` (per
     view, id to why: missing, stale or skipped, `sort.comparisons_waiting`).
     No stub value and no SQL. Then, given `unchecked` (per view, comparison
@@ -868,10 +877,7 @@ def still_with_analyst(
     `sort.formulas_not_compared`), one masked line per comparison and
     reason, sorted.
     """
-    out = [
-        f"{b.head}: " + ", ".join([f"{b.count} open items", *b.totals])
-        for b in _buckets(items)
-    ]
+    out = [f"{b.head}: " + ", ".join([b.count, *b.totals]) for b in _buckets(items)]
     out += [
         f"`{cid}` in `{view}`: {_posted_why(why)}"
         for view, whys in waiting.items()

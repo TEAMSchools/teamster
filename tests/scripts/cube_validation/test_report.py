@@ -1085,10 +1085,12 @@ def test_still_with_the_analyst_counts_open_items_per_comparison_and_bucket():
     # The total and its parts are masked together (`suppress`), so the file's
     # listed counts never give away the small ones.
     assert lines == [
-        "`c1` in `v` (value_differs): <10 open items, 55 rows",
-        "`c1` in `v` (cube_only): <10 open items, <10 rows",
-        "`c2` in `v` (value): <10 open items, 30 cells",
-        "`c2` in `v` (group): <10 open items",
+        "`c1` in `v` (value_differs): 2 listed items, plus fewer than 10 under 10 "
+        "rows or cells, 55 rows",
+        "`c1` in `v` (cube_only): 0 listed items, plus fewer than 10 under 10 rows "
+        "or cells, <10 rows",
+        "`c2` in `v` (value): 1 listed item, 30 cells",
+        "`c2` in `v` (group): 1 listed item",
         "`c3` in `v`: never compared",
     ]
 
@@ -1130,22 +1132,28 @@ def test_a_review_with_over_1000_open_groups_stays_under_the_cap():
     assert len(body) <= report.BODY_WARN_CHARS
     section = body.split("## Still with the analyst\n", 1)[1].split("Also decided")[0]
     assert "[v-still-with-analyst.md](https://github.com/o/r/blob/abc/" in section
-    assert "`c0` in `v` (cube_only): 650 open items, " in section
+    assert (
+        "`c0` in `v` (cube_only): 416 listed items, plus 234 under 10 rows or cells, "
+    ) in section
     detail = report.unsettled_detail(items, "v")
     listed = [line for line in detail.splitlines() if line.startswith("- `")]
     assert listed and all(", <10 rows" not in line for line in listed)
     assert len(listed) < len(items)
 
 
-@pytest.mark.parametrize("small", [1, 3, 9])
+@pytest.mark.parametrize(
+    "big, small", [(1, 9), (8, 1), (9, 1), (12, 1), (12, 9), (0, 3), (12, 3)]
+)
 def test_the_issue_and_the_file_never_give_away_the_small_items_by_subtraction(
-    small,
+    big, small
 ):
-    items = [
-        _open("c1", "cube_only", rows=20 + i, item=f"c1:big{i}") for i in range(12)
-    ]
-    items += [_open("c1", "cube_only", rows=1 + i, item=f"c1:small{i}")
-              for i in range(small)]  # fmt: skip
+    # Each listed item carries a lead whose "of M rows" is its exact count.
+    lead = "lead: relaxing main: x = 1 brings back <10 of {} rows"
+    items = [_open("c1", "cube_only", rows=20 + i, item=f"c1:big{i}",
+                   lead=lead.format(20 + i)) for i in range(big)]  # fmt: skip
+    items += [_open("c1", "cube_only", rows=1 + i, item=f"c1:small{i}",
+                    lead=lead.format(1 + i)) for i in range(small)]  # fmt: skip
+    small_rows = sum(1 + i for i in range(small))
     run = _run()
 
     body = render_review_issue(
@@ -1155,22 +1163,38 @@ def test_the_issue_and_the_file_never_give_away_the_small_items_by_subtraction(
     detail = report.unsettled_detail(items, "v")
 
     (line,) = [x for x in body.splitlines() if x.startswith("- `c1` in `v`")]
-    head = re.match(r"- `c1` in `v` \(cube_only\): (\S+) open items, (\S+) rows", line)
+    head = re.fullmatch(
+        r"- `c1` in `v` \(cube_only\): (\d+) listed items?, plus (.+) under 10 rows "
+        r"or cells, (\S+) rows",
+        line,
+    )
     assert head is not None
-    count, rows = head[1], head[2]
     listed = [x for x in detail.splitlines() if x.startswith("- `c1:")]
-    assert len(listed) == 12 and not any("small" in x for x in listed)
-    # The issue's item count is no exact total a reader could subtract the
-    # listed items from, and the file states no count of the small ones.
-    assert not count.isdigit()
-    stated = re.findall(r"\b(\d+) items\b", detail)
-    assert all(int(n) >= 10 for n in stated)
-    assert f" {small} items" not in body + detail
-    # The rows: the total less the listed exact counts leaves a masked part.
+    assert int(head[1]) == len(listed) == big
+    assert not any("small" in x for x in listed)
+    # Neither output bounds the small items beyond "1 to 9": no total of all
+    # items, no count of the small ones.
+    assert head[2] == "fewer than 10"
+    assert (
+        "- Fewer than 10 more items, each under 10 rows or cells, are not listed.\n"
+    ) in detail
+    numbers = re.findall(r"\d+", line.split(":", 1)[1])
+    assert numbers == [str(big), "10", "10", *re.findall(r"\d+", head[3])]
+    assert not re.search(r"\b\d+ items\b", detail)
+    # The rows: a masked item's lead gives no count either, so the total less
+    # every exact count posted leaves a masked part, never the small rows.
+    for x in listed:
+        if "masked rows" in x:
+            assert " of " not in x and "brings back" not in x
     exact = [int(m) for m in re.findall(r", (\d+) rows;", detail)]
-    if rows.isdigit():
-        assert re.search(r", masked rows;", detail)
-        assert int(rows) - sum(exact) != sum(1 + i for i in range(small))
+    exact += [
+        int(m)
+        for x in listed
+        if "masked rows" in x
+        for m in re.findall(r"of (\d+) rows", x)
+    ]
+    if head[3].isdigit():
+        assert int(head[3]) - sum(exact) != small_rows
 
 
 def test_an_exact_count_of_small_items_is_stated_once_it_is_10_or_more():
@@ -1180,8 +1204,28 @@ def test_an_exact_count_of_small_items_is_stated_once_it_is_10_or_more():
     (line,) = report.still_with_analyst(items, {})
     detail = report.unsettled_detail(items, "v")
 
-    assert line.startswith("`c1` in `v` (cube_only): 14 open items, ")
+    assert line.startswith(
+        "`c1` in `v` (cube_only): 3 listed items, plus 11 under 10 rows or cells, "
+    )
     assert "- Under 10 rows or cells each, not listed: 11 items.\n" in detail
+
+
+def test_a_posted_lead_shows_its_counts_only_beside_an_exact_count():
+    lead = "lead: relaxing main: x = 1 brings back <10 of {} rows"
+    items = [
+        _open("c1", "cube_only", rows=20, item="c1:a", lead=lead.format(20)),
+        _open("c1", "cube_only", rows=50, item="c1:b", lead=lead.format(50)),
+        _open("c1", "cube_only", rows=3, item="c1:c", lead=lead.format(3)),
+        _open("c1", "group", item="c1:gone", lead=lead.format(30)),
+    ]
+
+    detail = report.unsettled_detail(items, "v")
+
+    assert "- `c1:a`, masked rows; lead: relaxing a step in main\n" in detail
+    assert (
+        "- `c1:b`, 50 rows; lead: relaxing a step in main brings back <10 of 50 rows\n"
+    ) in detail
+    assert "- `c1:gone`; lead: relaxing a step in main\n" in detail
 
 
 def test_still_with_the_analyst_lists_formulas_not_compared_masked():
@@ -1253,7 +1297,7 @@ def test_review_posts_ready_questions_and_lists_unsettled_items():
     section = section.split("Also decided")[0]
     assert "not explained yet" in section and "comment" in section
     assert (
-        "- `enrollment` in `enrollment_view` (value_differs): <10 open items, 40 rows\n"
+        "- `enrollment` in `enrollment_view` (value_differs): 1 listed item, 40 rows\n"
     ) in section
     assert "school_id" not in body
     assert "- `seats` in `enrollment_view`: never compared" in section
@@ -1272,9 +1316,9 @@ def test_unsettled_counts_under_10_are_masked():
     loaded = _left_in_investigate(run, "not traced (`sort --no-trace`)")
 
     (line,) = _still(run, loaded)
-    assert (
-        line
-        == "`enrollment` in `enrollment_view` (cube_only): <10 open items, <10 rows"
+    assert line == (
+        "`enrollment` in `enrollment_view` (cube_only): 0 listed items, plus fewer "
+        "than 10 under 10 rows or cells, <10 rows"
     )
     assert _detail(run, loaded) == [
         "Fewer than 10 more items, each under 10 rows or cells, are not listed."
@@ -1301,7 +1345,8 @@ def test_unsettled_cells_and_reasons_are_posted_without_their_detail():
     still = _still(run, loaded, waiting)
 
     assert still == [
-        "`enrollment` in `enrollment_view` (cells): <10 open items, <10 cells",
+        "`enrollment` in `enrollment_view` (cells): 0 listed items, plus fewer than "
+        "10 under 10 rows or cells, <10 cells",
         "`seats` in `enrollment_view`: its SQL cannot be built today",
     ]
 

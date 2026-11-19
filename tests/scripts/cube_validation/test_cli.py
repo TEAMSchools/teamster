@@ -1852,15 +1852,16 @@ def test_review_posts_the_masked_lead_of_an_item_with_the_analyst(
 
     body = capsys.readouterr().out
     section = body.split("## Still with the analyst", 1)[1].split("## Proposed")[0]
-    assert "- `ada-region` in `v` (group): <10 open items\n" in section
+    assert "- `ada-region` in `v` (group): 1 listed item\n" in section
     # The items one by one go to a file beside the review JSON, linked.
     detail = tmp_path / "reviews" / "v-still-with-analyst.md"
     assert f"[{detail.name}](https://github.com/o/r/blob/abc/{detail.name})" in (
         section
     )
     text = detail.read_text()
-    assert "- `j`; lead: relaxing a step in main brings back <10 of 30 rows\n" in text
-    assert "3 of 30" not in body + text and "region = " not in text
+    # An item with no exact count posted keeps its lead's scope, not its counts.
+    assert "- `j`; lead: relaxing a step in main\n" in text
+    assert "of 30" not in body + text and "region = " not in text
 
 
 def test_ask_owner_lists_formulas_not_compared_and_record_answers_ignores_them(
@@ -3222,7 +3223,7 @@ def test_review_lists_items_in_investigate_still_with_the_analyst(
 
     body = capsys.readouterr().out
     section = body.split("## Still with the analyst", 1)[1].split("## Proposed")[0]
-    assert "- `ada-region` in `v` (group): <10 open items\n" in section
+    assert "- `ada-region` in `v` (group): 2 listed items\n" in section
     text = (tmp_path / "reviews" / "v-still-with-analyst.md").read_text()
     assert "- `j`; no lead yet\n- `k`; no lead yet\n" in text
     assert "Q1." in body.split("## Still with the analyst", 1)[0]
