@@ -396,7 +396,9 @@ OWNER_SORTED = SORTED
     [
         # 11 beside `masked` (10+) and `<10` (1+) would pin both.
         (11, ["scores: a = 1: masked rows", "scores: b = 1: <10 rows"], "10+ rows"),
-        (50, ["scores: a = 1: 20 rows", "scores: b = 1: 30 rows"], "50 rows"),
+        # Bounded beside exact evidence too: an earlier review's open-items
+        # file may have listed the group's parts with some withheld.
+        (50, ["scores: a = 1: 20 rows", "scores: b = 1: 30 rows"], "10+ rows"),
     ],
 )
 def test_a_group_question_bounds_its_rows_beside_hidden_evidence(rows, evidence, total):
@@ -417,7 +419,7 @@ def test_a_group_question_bounds_its_rows_beside_hidden_evidence(rows, evidence,
     body = render_review_issue("Registrar", [run], questions=[q])
 
     assert f", {total}, " in q["counts"][0]
-    assert f"{rows} rows" not in " ".join(q["counts"]) or total == f"{rows} rows"
+    assert f"{rows} rows" not in " ".join(q["counts"])
     (line,) = [x for x in body.splitlines() if x.startswith("- Q1. ")]
     assert f", {total}, " in line
 
@@ -511,7 +513,7 @@ def test_questions_json_hides_what_the_markdown_hides():
     assert "Camden" not in text and "1234567" not in text
     assert "UNRELATED" not in text
     assert "<10 cells differ" in text and "3 cells" not in text
-    assert "45 rows" in text and " 5 rows" not in text
+    assert "10+ rows" in text and "45 rows" not in text and " 5 rows" not in text
     # A count measure's value under 10 is masked like any count.
     check = _questions(run, cfg)[0]["hand_checks"][0]
     assert (check["dashboard"], check["cube"]) == ("<10", "25")
@@ -1111,13 +1113,13 @@ def test_review_asks_one_question_per_cause_not_per_school():
     assert no_section["evidence"] == [f"cause (cube side): {NO_SECTION}", LEAD]
     assert no_section["counts"] == [
         f"cause `{NO_SECTION}` on the cube side",
-        "`enrollment` (dashboard_only): <10 row groups, 90 rows",
+        "`enrollment` (dashboard_only): <10 row groups, 10+ rows",
     ]
     assert late["evidence"][0] == "cause (cube side): score dated after week <n>"
     assert "20250701" not in body
     bullets = [x for x in body.split("## Proposed")[0].splitlines() if "Reason:" in x]
     assert len(bullets) == 2
-    assert f"`{NO_SECTION}`" in bullets[0] and "<10 row groups, 90 rows" in bullets[0]
+    assert f"`{NO_SECTION}`" in bullets[0] and "<10 row groups, 10+ rows" in bullets[0]
 
 
 def _decided_ddi():
@@ -1281,8 +1283,8 @@ def test_one_cause_on_several_comparisons_is_one_question():
     # The cause once, then each comparison's share; 1 view, so no view names.
     assert question["counts"] == [
         f"cause `{NO_SECTION}` on the cube side",
-        "`enrollment` (dashboard_only): <10 row group, 30 rows",
-        "`other` (dashboard_only): <10 row group, 30 rows",
+        "`enrollment` (dashboard_only): <10 row groups, 10+ rows",
+        "`other` (dashboard_only): <10 row groups, 10+ rows",
     ]
     assert question["evidence"] == [f"cause (cube side): {NO_SECTION}"]
 
@@ -1313,10 +1315,10 @@ def test_a_split_group_shows_only_each_causes_own_rows():
     questions, body = _review(groups, items, decisions)
 
     posted = body.split("<summary>Questions for Claude")[0] + json.dumps(questions)
-    # The bullet and the evidence both give the cause's own 57 rows; the
-    # groups' whole 60 never shows, so nothing gives the other cause's 3 away.
-    numbers = set(re.findall(r"(?<![<\d])\d+ rows", posted))
-    assert numbers == {"57 rows"}
+    # The bullet gives the cause's own share as a bound; neither its 57 rows
+    # nor the groups' whole 60 shows, so nothing gives the other cause's 3 away.
+    numbers = set(re.findall(r"(?<![<\d])\d+\+? rows", posted))
+    assert numbers == {"10+ rows"}
 
 
 # --- reproducing a cause ---------------------------------------------------------------

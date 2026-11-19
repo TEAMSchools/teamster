@@ -3123,7 +3123,28 @@ def test_review_never_posts(fakes, tmp_path, monkeypatch, capsys):
     assert out.startswith("## What and why")
     assert "The Registrar team owns the rule behind 1 question" in out
     # A region name names no person, and the group has 10+ students.
-    assert "`regions_region_name` = `Miami`" in out and "12 students" in out
+    assert "`regions_region_name` = `Miami`" in out and "10+ students" in out
+    assert "12 students" not in out
+
+
+def test_record_answers_takes_a_review_whose_counts_are_bounds(fakes, tmp_path, capsys):
+    assert cli.main(["compare", str(_file(tmp_path))]) == 0
+    path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
+    assert cli.main(["compare", str(path), "--all"]) == 0
+    _write_sorted_everywhere(tmp_path)
+    assert cli.main(["ask-owner", str(path), "--domain", "Registrar"]) == 0
+
+    # The owner's JSON carries bounds, never the group's exact 30 rows.
+    (question,) = json.loads((tmp_path / "reviews" / "v.json").read_text())
+    assert question["counts"][0].endswith("<10 row groups, 10+ rows, 10+ students")
+    assert "30 rows" not in json.dumps(question)
+    comment = _comment(tmp_path, [_answer(["miami-scope"], "deliberate", "ok")])
+    capsys.readouterr()
+
+    assert _record([path], comment, "--yes") == 0, capsys.readouterr().err
+
+    (d,) = load_view_config(path).decisions
+    assert (d.id, d.call) == ("miami-scope", "deliberate")
 
 
 def test_review_carries_triage_evidence_in_its_json(fakes, tmp_path, capsys):

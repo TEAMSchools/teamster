@@ -734,34 +734,36 @@ refuses when the view's only run read another fact.
    unanswered `domain_owner` cause is one question, across the comparisons it is
    explained on, with its words, per comparison the count of groups it decides
    and of the rows its explanation attributes to it, and the model-doc leads;
-   the owner's answer records onto every decision it lists. Every other call
+   the owner's answer records onto every decision it lists. Every count a
+   question posts, in the issue and in the JSON's `counts`, is a bound (`10+`,
+   or `<10` under 10, "row groups" even for 1): its row groups, rows, students
+   of the largest group, and a formula question's cells. An earlier review's
+   "Still with the analyst" file may have listed the same groups with the small
+   ones withheld, and an exact count less the ones it posted would pin them.
+   Hand checks still show their example cell's values. Every other call
    (`deliberate`, a `fix_`) is listed under "Also decided (no answer needed)",
    one line per call, reason and task, so a cause and the missing sheet filter
    behind it, decided alike, print once: what it covers, the call, the reason
-   and the task, masked like the questions and kept out of the JSON, so
+   and the task, bounded like the questions and kept out of the JSON, so
    `record-answers` never reads one as an answer. A comparison decision lists
    there as "every open row group of `<comparison>`" with its buckets, and a
-   `group` decision with its column; both post only bounds (row groups, rows,
-   and students of the largest group, each `10+`, or `<10` under 10), never a
-   group's values. An earlier review's "Still with the analyst" file may have
-   listed those groups with the small ones withheld, and an exact count less the
-   ones it posted would pin them. Each cause question also gets a folded
-   Reproduce block: each example cell as a Cube `load` query for Claude chat's
-   Cube connector, each distinct `-- reproduce` count query once (numbered only
-   when there are several, so "1" never reads as a count; labeled today's data),
-   then per explanation file a branch link and the `explain` that re-explains it
-   at the run's moment, and the `compare --all` plus `sort` after time travel
-   ends. Commit and push the explanations before posting, or the link finds
-   nothing. When the checks and Reproduce blocks would take the body past
-   GitHub's 65,536-character cap, they move out of it into numbered comment
-   files that stderr names: post the issue, then each file as a comment, in
-   order (the linked JSON holds everything the owner's session reads). stderr
-   names any question with no sort evidence: `sort` that view and render again
-   before posting. The footnote promises that identifiers of students and staff
-   are hidden, which holds only if no reason or definition names a person: read
-   them first. Show the draft to the analyst, then post it with
-   `mcp__github__issue_write`, titled "Validate <dashboard> in Cube", using the
-   repo's issue template. That issue is the validation's hub. Then write
+   `group` decision with its column, never a group's values. Each cause question
+   also gets a folded Reproduce block: each example cell as a Cube `load` query
+   for Claude chat's Cube connector, each distinct `-- reproduce` count query
+   once (numbered only when there are several, so "1" never reads as a count;
+   labeled today's data), then per explanation file a branch link and the
+   `explain` that re-explains it at the run's moment, and the `compare --all`
+   plus `sort` after time travel ends. Commit and push the explanations before
+   posting, or the link finds nothing. When the checks and Reproduce blocks
+   would take the body past GitHub's 65,536-character cap, they move out of it
+   into numbered comment files that stderr names: post the issue, then each file
+   as a comment, in order (the linked JSON holds everything the owner's session
+   reads). stderr names any question with no sort evidence: `sort` that view and
+   render again before posting. The footnote promises that identifiers of
+   students and staff are hidden, which holds only if no reason or definition
+   names a person: read them first. Show the draft to the analyst, then post it
+   with `mcp__github__issue_write`, titled "Validate <dashboard> in Cube", using
+   the repo's issue template. That issue is the validation's hub. Then write
    `task: "#<issue>"` into each decision stderr lists; filling in a task needs
    no new `compare`. As more items settle, render `ask-owner` again and update
    the issue body. Tell the analyst the owner answers in their own Claude Code

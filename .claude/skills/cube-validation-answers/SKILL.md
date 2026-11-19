@@ -71,7 +71,9 @@ validation files or runs the validator, and neither does this session.
    2. Both definitions side by side (`definitions.dashboard` and
       `definitions.cube`), code groups spelled out.
    3. Who differs: the filters on each side, and the rows and students only one
-      side counts, by school or grade, from `counts` as given.
+      side counts, by school or grade, from `counts` as given. Its counts are
+      bounds (`10+`, `<10`), never exact: say "10 or more", never guess a
+      number. The owner can count exactly under their own access.
    4. What the validator found (`evidence`) and why it is the owner's call.
       Evidence that "differing cells hold no unmatched row" is a formula
       difference: both sides hold the same rows and compute the number

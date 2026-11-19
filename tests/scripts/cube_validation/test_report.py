@@ -167,8 +167,10 @@ def test_local_result_is_not_masked():
 
 def test_review_issue_has_no_raw_small_counts():
     body = render_review_issue("Registrar", [_run()])
-    assert "40 rows, 12 students" in body
-    assert "<10 rows, <10 students" in body
+    # Every count an owner question posts is a bound.
+    assert "<10 row groups, 10+ rows, 10+ students" in body
+    assert "<10 row groups, <10 rows, <10 students" in body
+    assert "40 rows" not in body and "12 students" not in body
     assert "Camden" not in body  # deliberate group, not domain owner
 
 
@@ -481,7 +483,7 @@ def test_a_formula_question_shows_both_definitions_and_masks_its_count():
     body = render_review_issue(
         "Registrar", [run], definitions={"enrollment_view": TARDY_DEFS}
     )
-    assert f"- Q1. `enrollment` in `enrollment_view`: 61 {FORMULA_ASK} Reason:" in body
+    assert f"- Q1. `enrollment` in `enrollment_view`: 10+ {FORMULA_ASK} Reason:" in body
     assert "Reason: owner picks codes" in body
     section = body.split("Definitions side by side", 1)[1]
     assert "Dashboard: codes ET, T" in section and "Cube: codes T%" in section
@@ -566,7 +568,7 @@ def test_review_issue_prints_one_bullet_per_decision():
     bullets = [x for x in body.splitlines() if x.startswith("- Q1. `dashboard_filter`")]
     assert bullets == [
         "- Q1. `dashboard_filter` = `enroll_status` in tardy-roster of `enrollment_view` "
-        "(dashboard_filtered): 13 row groups, 130 rows, at least 10 students. "
+        "(dashboard_filtered): 10+ row groups, 10+ rows, at least 10 students. "
         "Reason: " + ENROLLED_REASON + "."
     ]
 
@@ -655,8 +657,8 @@ def test_review_issue_merges_decisions_that_share_a_reason():
     bullets = [x for x in body.splitlines() if LEFT in x]
     assert bullets == [
         "- Q1. `dashboard_filter` = `enroll_status` in absences-roster, tardy-roster of "
-        "`enrollment_view` (dashboard_filtered): 2 row groups, 400 rows, "
-        "at least 20 students in one comparison. "
+        "`enrollment_view` (dashboard_filtered): <10 row groups, 10+ rows, "
+        "at least 10 students in one comparison. "
         "Reason: " + LEFT
     ]
     fold = body.split("<summary>For Claude</summary>", 1)[1]
@@ -712,7 +714,7 @@ def test_review_issue_merges_missing_fields_and_formula_differences_on_a_reason(
         "Cube has no member for. Reason: " + reason
     ) in body
     assert (
-        f"- Q1. `tardy-roster`, `oss-roster` in `enrollment_view`: 60 {FORMULA_ASK} "
+        f"- Q1. `tardy-roster`, `oss-roster` in `enrollment_view`: 10+ {FORMULA_ASK} "
         "Reason: Codes differ?"
     ) in body
     assert "owns the rule behind 2 questions" in body
@@ -766,8 +768,8 @@ def test_one_reason_across_decision_kinds_is_one_bullet():
     body = render_review_issue("Registrar", [run])
     bullets = [x for x in body.splitlines() if OOD in x]
     assert bullets == [
-        "- Q1. `region` = `Newark` in board of `enrollment_view` (cube_only): 1 row group, "
-        f"400 rows, 40 students; `board` in `enrollment_view`: <10 {FORMULA_ASK} "
+        "- Q1. `region` = `Newark` in board of `enrollment_view` (cube_only): <10 row "
+        f"groups, 10+ rows, 10+ students; `board` in `enrollment_view`: <10 {FORMULA_ASK} "
         "Reason: " + OOD + "."
     ]
     assert "owns the rule behind 1 question" in body
@@ -896,28 +898,27 @@ def test_suppress_bounds_a_total_beside_any_hidden_part():
 
 
 @pytest.mark.parametrize(
-    "groups, bound, who",
+    "groups, who",
     [
         # One row per student: an exact 11 students would pin the 11 rows.
-        ([("c", "A", 11, 11)], True, "10+ rows, 10+ students"),
-        ([("c", "A", 11, 4)], True, "10+ rows, <10 students"),
-        ([("c", "A", 11, 11), ("c", "B", 12, 12)], True,
-         "10+ rows, at least 10 students"),
-        ([("c", "A", 11, 11), ("d", "A", 12, 12)], True,
-         "10+ rows, at least 10 students in one comparison"),
-        # Under 10 the bound reads like the mask, as in the unbounded wording.
-        ([("c", "A", 11, 4), ("c", "B", 12, 3)], True,
-         "10+ rows, at least <10 students"),
-        ([("c", "A", 11, 11)], False, "11 rows, 11 students"),
+        ([("c", "A", 11, 11)], "<10 row groups, 10+ rows, 10+ students"),
+        ([("c", "A", 11, 4)], "<10 row groups, 10+ rows, <10 students"),
+        ([("c", "A", 11, 11), ("c", "B", 12, 12)],
+         "<10 row groups, 10+ rows, at least 10 students"),
+        ([("c", "A", 11, 11), ("d", "A", 12, 12)],
+         "<10 row groups, 10+ rows, at least 10 students in one comparison"),
+        ([("c", "A", 11, 4), ("c", "B", 12, 3)],
+         "<10 row groups, 10+ rows, at least <10 students"),
+        ([("c", "A", 4, 4)], "<10 row groups, <10 rows, <10 students"),
     ],
 )  # fmt: skip
-def test_a_bounded_group_part_bounds_its_students_too(groups, bound, who):
+def test_a_group_part_posts_every_count_as_a_bound(groups, who):
     decision = Decision("d", "c", "domain_owner", "r", {"column": "school",
                         "values": ["A", "B"]})  # fmt: skip
     found = [Group(cid, (("school", v),), "cube_only", rows, students)
              for cid, v, rows, students in groups]  # fmt: skip
 
-    part, _ = report._group_part("v", [decision], found, bound)
+    part, _ = report._group_part("v", [decision], found)
 
     assert part.endswith(who)
 
@@ -959,6 +960,33 @@ def test_also_decided_bounds_a_group_decision_s_counts():
 
     assert "10+ row groups, 10+ rows, at least 10 students" in line
     assert not re.search(r"\b(12|84|19)\b", line)
+
+
+def test_owner_questions_post_only_bounds_beside_an_earlier_listing():
+    # Exact "12 row groups, 84 rows" less the earlier file's 40 and 25 pins
+    # the masked 10 and the 9 one-row items it withheld.
+    groups = _earlier_groups()
+    owner = Decision("d", "cmp", "domain_owner", "which rule?",
+                     {"column": "school", "values": ["x"]})  # fmt: skip
+    group_part, _ = report._group_part("v", [owner], groups)
+    cause = Decision("c", "cmp", "domain_owner", "which rule?",
+                     cause={"side": "cube", "label": "a rule"})  # fmt: skip
+    cause_part, _ = report._cause_part(
+        "v", report.CauseAsk(cause, groups, sum(LISTED_EARLIER))
+    )
+
+    assert group_part.endswith("10+ row groups, 10+ rows, at least 10 students")
+    assert cause_part == "`cmp` in `v` (cube_only): 10+ row groups, 10+ rows"
+    for part in (group_part, cause_part):
+        assert not re.search(r"\b(12|84|19|9)\b", part)
+    # A bound reads plural, even over 1 group.
+    one = [Group("cmp", (("school", "S"),), "cube_only", 4, 2)]
+    assert report._group_part("v", [owner], one)[0].endswith(
+        "<10 row groups, <10 rows, <10 students"
+    )
+    assert report._cause_part("v", report.CauseAsk(cause, one, 4))[0].endswith(
+        "<10 row groups, <10 rows"
+    )
 
 
 def test_a_review_refuses_questions_json_that_does_not_match_its_questions():
