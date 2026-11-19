@@ -496,6 +496,47 @@ def test_read_sheet_points_a_non_null_filter_at_dashboard_filters_set():
     assert any("non-null values only" in b and "operator: set" in b for b in before)
 
 
+def _non_null_calc(columns):
+    return read_sheet.SheetFilter(
+        caption="Is Mastery Int - Custom", name="Calculation_1",
+        kinds=("parameter-driven",), restricting=True, formula="", group="",
+        shared_with=(), source="", columns=("Calculation_1", *columns),
+        parameters=("Mastery Level",), null_mode="non-null",
+    )  # fmt: skip
+
+
+@pytest.mark.parametrize(
+    "columns, entries, handled",
+    [
+        (("is_mastery_int", "is_mastery"), [{"dashboard": "is_mastery_int",
+                                             "operator": "set"}], True),
+        (("is_mastery",), [{"dashboard": "is_mastery_int", "operator": "set"}],
+         False),
+        (("is_mastery_int",), [{"dashboard": "is_mastery_int",
+                                "values": ["1"]}], False),
+        (("is_mastery_int",), [], False),
+    ],
+    ids=["set on a column it reads", "set on another column", "not set", "none"],
+)  # fmt: skip
+def test_a_non_null_calc_filter_is_handled_by_a_set_entry_on_a_column_it_reads(
+    columns, entries, handled
+):
+    facts = read_sheet.Sheet([], [], [_non_null_calc(columns)], [], {})
+    out = read_sheet._Checklist([], [])
+
+    read_sheet._filter_lines(out, _comparison(dashboard_filters=entries), facts)
+
+    if handled:
+        assert out.before == []
+        assert (
+            "    - Is Mastery Int - Custom: dashboard_filters operator: set on "
+            "is_mastery_int"
+        ) in out.lines
+    else:
+        (blocking,) = out.before
+        assert "non-null values only" in blocking and "operator: set" in blocking
+
+
 def test_read_sheet_refuses_a_text_sheet_field():
     facts = read_sheet.Sheet(
         [], [], [], [], {"Status": {"status"}}, text_values=frozenset({"status"})

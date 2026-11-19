@@ -404,6 +404,9 @@ def _filter_lines(out: _Checklist, comparison: Comparison | None, facts: Sheet) 
     # The columns a week-end dashboard filter compares; one handles only a
     # relative-date filter that reads its column.
     week_end = {str(e.get("dashboard")) for e in entries if "days_from_week_end" in e}
+    # The columns a not-null dashboard filter keeps; one handles a non-null
+    # filter on any calculation that reads its column.
+    not_null = [str(e.get("dashboard")) for e in entries if e.get("operator") == "set"]
     sheet_query_sql = (comparison.sheet_query_sql or "") if comparison else ""
     set_here = set(comparison.parameters) if comparison else set()
 
@@ -456,6 +459,15 @@ def _filter_lines(out: _Checklist, comparison: Comparison | None, facts: Sheet) 
             lines.append((f"{f.caption}: dashboard_filters", ""))
         elif "parameter-driven" in f.kinds and set(f.parameters) <= set_here:
             lines.append((f"{f.caption}: its parameter is set under parameters:", ""))
+        elif f.null_mode == "non-null" and (
+            read := [c for c in not_null if c in f.columns]
+        ):
+            lines.append(
+                (
+                    f"{f.caption}: dashboard_filters operator: set on {', '.join(read)}",
+                    "",
+                )
+            )
         elif f.null_mode:
             # `operator: set` means not null; no operator expresses null only.
             how = (

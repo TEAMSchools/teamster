@@ -130,12 +130,13 @@ refuses when the view's only run read another fact.
    measure (compare the numeric measure it is built from) and marks a sheet on
    no published dashboard (step 3, `unpublished`). A sheet filter that keeps
    non-null values only is marked: it needs a `dashboard_filters` entry with
-   `operator: set`. Use it instead of reading the workbook XML by hand. Without
-   `--sheet` it checks every comparison's sheet, and names a comparison whose
-   cells cannot be covered ("Cells cannot be covered: <why>", step 6). `--twb`
-   is required, since `read-sheet` never signs in to Tableau: download the
-   workbook once through the runner, with this in place of its `cli.main` call,
-   and reuse that file:
+   `operator: set` on its column, or, for a workbook calc, on any datasource
+   column the calc reads. Use it instead of reading the workbook XML by hand.
+   Without `--sheet` it checks every comparison's sheet, and names a comparison
+   whose cells cannot be covered ("Cells cannot be covered: <why>", step 6).
+   `--twb` is required, since `read-sheet` never signs in to Tableau: download
+   the workbook once through the runner, with this in place of its `cli.main`
+   call, and reuse that file:
 
    ```python
    import pathlib
