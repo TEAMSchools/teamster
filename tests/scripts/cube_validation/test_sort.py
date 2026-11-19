@@ -785,6 +785,7 @@ import pytest  # noqa: E402
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.config import Decision  # noqa: E402
 from cube_validation.sort import (  # noqa: E402
+    POSTED_VERSION,
     _moment,
     cause_asks,
     checked_sort,
@@ -977,7 +978,8 @@ def _write_run_sorted(tmp_path, run, items):
     run_json.write_text("{}")
     (tmp_path / "triage.json").write_text(json.dumps(
         {"moment": _moment(run), "open": open_keys(run), "items": items,
-         "formulas_not_compared": {}}))  # fmt: skip
+         "formulas_not_compared": {},
+         "posted_version": POSTED_VERSION}))  # fmt: skip
     return run_json
 
 

@@ -1906,6 +1906,44 @@ def _predating_the_formula_check(tmp_path):
     return path
 
 
+@pytest.mark.parametrize("held", [None, 0])
+def test_ask_owner_and_decide_refuse_a_triage_of_older_posted_masking(
+    fakes, tmp_path, capsys, held
+):
+    # Its posted evidence was masked by an older rule, and ask-owner posts it
+    # as stored.
+    path = _file(tmp_path)
+    assert cli.main(["compare", str(path)]) == 0
+    (run_json,) = (tmp_path / "cache" / "v").glob("*/run.json")
+    _write_sorted(run_json, [_sorted_item("e"), _gap_sorted_item()])
+    triage = run_json.parent / "triage.json"
+    loaded = json.loads(triage.read_text())
+    if held is None:
+        del loaded["posted_version"]
+    else:
+        loaded["posted_version"] = held
+    triage.write_text(json.dumps(loaded))
+    approved = _approved(
+        tmp_path,
+        [{"id": "no-team", "call": "deliberate", "reason": "A label only.",
+          "task": "", "item": "cut:Team"}],
+    )  # fmt: skip
+    capsys.readouterr()
+
+    assert cli.main(["ask-owner", str(path), "--domain", "Registrar"]) == 1
+    assert "posted evidence was masked by an older rule; run `sort`" in (
+        capsys.readouterr().err
+    )
+    assert cli.main(["decide", str(path), str(approved)]) == 1
+    assert "posted evidence was masked by an older rule" in capsys.readouterr().err
+    assert load_view_config(path).decisions == []
+
+    # A fresh sort writes the version, and the review goes ahead.
+    assert cli.main(["sort", str(path), "--no-trace", "--no-explanations"]) == 0
+    assert json.loads(triage.read_text())["posted_version"] == sort.POSTED_VERSION
+    assert cli.main(["ask-owner", str(path), "--domain", "Registrar"]) == 0
+
+
 def test_ask_owner_refuses_a_triage_that_predates_the_formula_check(
     fakes, tmp_path, capsys
 ):
@@ -3144,6 +3182,7 @@ def _write_sorted(run_json, items=(), open_keys=None):
                 "open": sort.open_keys(run) if open_keys is None else open_keys,
                 "items": list(items),
                 "formulas_not_compared": {},
+                "posted_version": sort.POSTED_VERSION,
             }
         )
     )

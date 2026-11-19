@@ -817,6 +817,7 @@ def _saved(tmp_path, monkeypatch, run):
                 "open": sort.open_keys(run),
                 "items": _items(run),
                 "formulas_not_compared": {},
+                "posted_version": sort.POSTED_VERSION,
             }
         )
     )

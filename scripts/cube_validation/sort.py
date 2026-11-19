@@ -305,6 +305,22 @@ def formulas_not_compared(loaded: dict) -> dict[str, dict[str, int]]:
     }
 
 
+# How the triage's posted lines (`evidence_posted`) are masked (`report.suppress`,
+# `shown_counts(posted=True)`). `ask-owner` posts them as `sort` stored them,
+# so bump this whenever that masking changes: `load_sort` then refuses a
+# triage written under an older rule until `sort` runs again.
+POSTED_VERSION = 1
+
+
+def posted_current(loaded: dict) -> bool:
+    """Whether the triage's posted lines were masked by the current rule
+    (`POSTED_VERSION`); a missing or older version was not."""
+    held = loaded.get("posted_version")
+    return (
+        isinstance(held, int) and not isinstance(held, bool) and held >= POSTED_VERSION
+    )
+
+
 def formula_checked(loaded: dict) -> bool:
     """Whether the triage was written by a `sort` that ran the formula check.
 
@@ -349,7 +365,8 @@ def load_sort(
 ) -> tuple[Path, dict]:
     """Read the triage beside `run_json`, refusing one that is missing,
     unreadable, of another moment, written before the formula check
-    (`formula_checked`), or blind to an open item of `run`.
+    (`formula_checked`) or under an older posted masking (`posted_current`),
+    or blind to an open item of `run`.
 
     Args:
         run: The view's latest run.
@@ -387,6 +404,10 @@ def load_sort(
     if not formula_checked(loaded):
         raise pipeline.Refusal(
             f"{view}: the triage predates the formula check; {again}"
+        )
+    if not posted_current(loaded):
+        raise pipeline.Refusal(
+            f"{view}: the triage's posted evidence was masked by an older rule; {again}"
         )
     if unseen := len(set(open_keys(run)) - set(loaded.get("open") or [])):
         if for_explain:
@@ -426,8 +447,9 @@ def checked_sort(
 
     Raises:
         pipeline.Refusal: No triage sits beside the run, it is unreadable or of
-            another moment, it predates the formula check (`formula_checked`),
-            the run has an open item the triage did not see,
+            another moment, it predates the formula check (`formula_checked`)
+            or the current posted masking (`posted_current`), the run has an
+            open item the triage did not see,
             an item sits in a pile this validator does not sort into (a triage
             from an older validator), a `cause` item has no cause, a decision
             closes an item in `investigate`, a row group or cell set in
@@ -1659,6 +1681,8 @@ def sort_run(
                 # Per comparison, the cells the formula check left to coverage,
                 # counted per reason (`formula.label`).
                 "formulas_not_compared": unchecked,
+                # The masking rule its posted lines were written under.
+                "posted_version": POSTED_VERSION,
             },
             indent=1,
         ),
