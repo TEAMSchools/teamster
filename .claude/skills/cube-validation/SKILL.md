@@ -672,7 +672,9 @@ refuses when the view's only run read another fact.
    by one, with the trace's lead (its count and scope only), go to
    `reviews/<view>-still-with-analyst.md` beside the JSON, which the section
    links; it is posted, so it is masked, and an item under 10 rows or cells is
-   counted, not listed. The owner can say if one looks familiar. They are not
+   not listed. The file states how many it left out only when they are 10 or
+   more; otherwise the section's item count reads `10+`, so no subtraction gives
+   the number away. The owner can say if one looks familiar. They are not
    questions, and `record-answers` never reads them. A decision waiting to be
    re-confirmed is no question either: `ask-owner` names those decisions on
    stderr, with their count and ids, and points to `To re-confirm` in the view's

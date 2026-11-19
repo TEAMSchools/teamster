@@ -741,6 +741,27 @@ class _Bucket:
     items: list[tuple[Unsettled, str | None]]
     totals: list[str]
 
+    @property
+    def small(self) -> int:
+        """How many items `unsettled_detail` leaves out (`_small`)."""
+        return sum(1 for u, _ in self.items if _small(u))
+
+    @property
+    def count(self) -> str:
+        """The issue's count of the bucket's items.
+
+        The linked file lists every item not `_small`, so an exact total less
+        those lines would give the number left out. The total is exact only
+        when that number is 0 or the file states it (`MASK_BELOW` or more);
+        otherwise it reads `10+`, or `<10` under `MASK_BELOW`.
+        """
+        n = len(self.items)
+        if n < MASK_BELOW:
+            return mask(n)
+        return (
+            str(n) if self.small == 0 or self.small >= MASK_BELOW else f"{MASK_BELOW}+"
+        )
+
 
 def _buckets(items: list[Unsettled]) -> list[_Bucket]:
     by: dict[tuple[str, str, str], list[Unsettled]] = {}
@@ -785,8 +806,10 @@ def unsettled_detail(items: list[Unsettled], name: str) -> str:
     comparison and bucket, each item of `MASK_BELOW` or more rows or cells
     with its triage id, its count as `still_with_analyst`'s total masks it,
     and the trace's lead (its steps' scopes and counts, `_posted_lead`) or
-    `no lead yet`; items under `MASK_BELOW` are counted, never listed. No
-    stub value and no SQL.
+    `no lead yet`. Items under `MASK_BELOW` rows or cells are never listed;
+    their number is stated only when it is `MASK_BELOW` or more, so no count
+    here and in the issue (`_Bucket.count`) gives away a masked one. No stub
+    value and no SQL.
 
     Args:
         items: The items in `investigate` (`sort.unsettled`).
@@ -797,7 +820,7 @@ def unsettled_detail(items: list[Unsettled], name: str) -> str:
         "",
         "The open items behind the review issue's counts, not explained yet. "
         f"Counts under {MASK_BELOW} show as `{mask(0)}`; an item under "
-        f"{MASK_BELOW} rows or cells is counted, not listed.",
+        f"{MASK_BELOW} rows or cells is not listed.",
     ]
     for bucket in _buckets(items):
         out += ["", f"## {bucket.head}", ""]
@@ -814,10 +837,16 @@ def unsettled_detail(items: list[Unsettled], name: str) -> str:
                 + ", ".join([f"`{_clean(u.item)}`", *([count] if count else [])])
                 + f"; {lead}"
             )
-        if small := sum(1 for u, _ in bucket.items if _small(u)):
+        # Stated only when it needs no mask; see `_Bucket.count`.
+        if bucket.small >= MASK_BELOW:
             out.append(
-                f"- Under {MASK_BELOW} rows or cells each, counted not listed: "
-                f"{mask(small)} items."
+                f"- Under {MASK_BELOW} rows or cells each, not listed: "
+                f"{bucket.small} items."
+            )
+        elif bucket.small:
+            out.append(
+                f"- Fewer than {MASK_BELOW} more items, each under {MASK_BELOW} "
+                "rows or cells, are not listed."
             )
     return "\n".join(out) + "\n"
 
@@ -840,7 +869,7 @@ def still_with_analyst(
     reason, sorted.
     """
     out = [
-        f"{b.head}: " + ", ".join([f"{mask(len(b.items))} open items", *b.totals])
+        f"{b.head}: " + ", ".join([f"{b.count} open items", *b.totals])
         for b in _buckets(items)
     ]
     out += [
