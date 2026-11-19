@@ -1298,6 +1298,74 @@ def _joined_grain(comparison=JOINED, cfg=JOINED_CFG):
     )
 
 
+def test_cube_side_through_joins_when_the_cells_join_the_same_tables(duck):
+    # DDI's real shape: Cube's cell SQL itself joins the path's tables under
+    # the aliases the subquery uses inside, each name in its own scope.
+    _joined_tables(duck)
+    ex = _JoinEx(cells_from=f"FROM  m.fct_s  AS `scores`\n{_JOINS}")
+    shared = frozenset({"m.dim_students"})
+
+    run = _joined_run(duck, ex=ex)
+    whole, _ = _joined_cells(duck, keep=False, ex=ex, shared=shared)
+    kept, sql = _joined_cells(duck, ex=ex, shared=shared)
+
+    assert run == {("{}", "X"): pytest.approx(0.52)}
+    assert whole == run
+    assert kept == {("{}", "X"): pytest.approx(0.75)}
+    # The students are read by the run's rows, the cells and the subquery,
+    # every time at the moment the dashboard's rows share.
+    assert sql.count("`teamster-332318.m.dim_students` AS `students`") == 3
+    assert _moments(sql)["m.dim_students"] == {START}
+    assert all(len(at) == 1 for at in _moments(sql).values())
+
+
+# A cell SQL that reads the fact a second time, as a filter on its sections.
+_TWICE = (
+    "FROM  m.fct_s  AS `scores`\n"
+    "INNER JOIN (SELECT DISTINCT `again`.section_key FROM  m.fct_s  AS `again`) "
+    "AS `seen` ON `seen`.section_key = `scores`.section_key"
+)
+
+
+def test_cube_side_through_joins_wraps_every_read_of_the_fact(duck):
+    _joined_tables(duck)
+    ex = _JoinEx(cells_from=_TWICE)
+
+    run = _joined_run(duck, ex=ex)
+    whole, _ = _joined_cells(duck, keep=False, ex=ex)
+    kept, sql = _joined_cells(duck, ex=ex)
+
+    # Each read keeps its own alias around the same keyed subquery.
+    assert (
+        sql.count("(SELECT `scores`.* FROM `teamster-332318.m.fct_s` AS `scores`") == 2
+    )
+    assert ") AS `again`" in sql and ") AS `scores`" in sql
+    assert whole == run
+    assert kept == {("{}", "X"): pytest.approx(0.75)}
+
+
+def test_cube_side_through_joins_refuses_a_read_of_the_fact_it_cannot_place():
+    # The second read has no moment, so the pattern misses it; left as is,
+    # it would read every row on one side only.
+    grain = _joined_grain()
+    sides = _joined_sides(JOINED_CFG, JOINED, frozenset())
+    ex = _JoinEx(cells_from=_TWICE)
+    pinned = (
+        ex.at(ex.cube_sql(pipeline.cell_query("v", JOINED, {})), BUILD.end).sql
+        + "\nJOIN `teamster-332318.m.fct_s` AS `third` ON TRUE"
+    )
+    path = formula.Path(grain, formula.path_joins(grain, sides.cube_rows_sql))
+
+    with pytest.raises(
+        formula.NotCompared,
+        match="Cube's SQL reads m.fct_s in a form the rewrite does not know",
+    ):
+        formula.rewrite_cube_sql(
+            pinned, [grain.table], grain.columns, [False] * 3, keep=True,
+            path=path,
+        )  # fmt: skip
+
+
 def test_cube_side_reads_the_hops_as_the_run_s_cube_rows_read_them():
     # The hops are copied from the row SQL `matched_ctes` reads, not expanded
     # again, so they match it by construction and bill nothing new.
