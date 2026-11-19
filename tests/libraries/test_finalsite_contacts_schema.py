@@ -34,3 +34,19 @@ def test_custom_attribute_number_value_writes():
 
     assert values == [9.0, 9.0, True, "Other"]
     assert values[2] is True
+
+
+def test_us_citizen_union_writes():
+    # us_citizen's type is unconfirmed; a bool must not be written as a string
+    schema = json.loads(py_avro_schema.generate(py_type=Contact, options=PAS_OPTIONS))
+
+    records = [{"us_citizen": None}, {"us_citizen": True}, {"us_citizen": "Yes"}]
+
+    fo = io.BytesIO()
+    fastavro.writer(fo=fo, schema=fastavro.parse_schema(schema), records=records)
+    fo.seek(0)
+
+    values = [check.inst(r, dict)["us_citizen"] for r in fastavro.reader(fo)]
+
+    assert values == [None, True, "Yes"]
+    assert values[1] is True
