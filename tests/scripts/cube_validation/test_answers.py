@@ -1580,6 +1580,26 @@ def test_a_hand_check_never_posts_2_counts_whose_difference_is_under_10(
     assert (posted["dashboard"], posted["cube"]) == shown
 
 
+def test_a_hand_check_posts_its_cause_s_students_as_a_bound():
+    """For a count-of-students measure, the two numbers less an exact cause
+    count would post the other causes' students: 57 - 40 - 12 = 5."""
+    # trunk-ignore(pyright/reportAttributeAccessIssue): conftest.py registers cube_validation
+    from cube_validation import report
+
+    # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+    from cube_validation.answers import _check_json
+
+    check = HandCheck(
+        "enrollment", "{}", (), 40.0, 57.0, "", "", 0.0, 0.0, START, False,
+        mixed=True, cause_students=12,
+    )  # fmt: skip
+    posted = _check_json("v", check)
+    assert posted["cause_students"] == "10+"
+    text = "\n".join(report._hand_check_lines("Q1", posted))
+    assert "10 or more students' rows in it have this cause" in text
+    assert "12" not in text
+
+
 def test_a_question_reads_its_comparison_s_own_moment():
     earlier = Build(START - timedelta(days=3), END - timedelta(days=3), "j0")
     run = dataclasses.replace(

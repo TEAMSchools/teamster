@@ -89,27 +89,28 @@ validation files or runs the validator, and neither does this session.
       both numbers means two whole numbers that differ by less than 10: their
       gap would post a small count of the cell's students, so the owner reads
       both on the dashboard and through the SQL. A cause question has at most 1
-      example: a cell where at least `cause_students` (10 or more) students'
-      rows have that cause; with `mixed` true, say it holds other causes' rows
-      too. Without one, never offer a cell of your own for a cause: its words
-      could single out a student there. Then each side's SQL (`dashboard_sql`,
-      `cube_sql`) in a fenced `sql` block to paste into the BigQuery console,
-      with its dry-run price (`dashboard_usd`, `cube_usd`): it is pinned to the
-      run's moment and returns only that cell. When they are null,
-      `sql_left_out` gives their lengths: too long for the issue, so the owner
-      checks Cube with the `reproduce` Cube query, or asks the analyst for the
-      SQL. Tableau shows its last refresh, so a small difference may not match
-      there. An entry with `none` lists the `comparisons` with no group cell to
-      show: offer to find an example under the owner's access, in this chat. For
-      a cause question, then its `reproduce`, which keeps working after the
-      pinned SQL expires: each `cube` entry's `query` for the owner to run with
-      the Cube connector (Cube applies their access) and compare with the
-      dashboard number in the hand check of the same `comparison`; each
-      `queries` entry's `sql` to paste into BigQuery, labeled today's data whose
-      counts drift from the run; and each `explanations` entry's file
-      (`<blob>/<path>`, or `path` when `blob` is null), with its count query
-      (its `query` index into `queries`, or none yet). The issue's comments may
-      repeat the checks and Reproduce blocks; read them from the JSON.
+      example: a cell where 10 or more students' rows have that cause
+      (`cause_students` reads `10+`, a bound, never the exact count); with
+      `mixed` true, say it holds other causes' rows too. Without one, never
+      offer a cell of your own for a cause: its words could single out a student
+      there. Then each side's SQL (`dashboard_sql`, `cube_sql`) in a fenced
+      `sql` block to paste into the BigQuery console, with its dry-run price
+      (`dashboard_usd`, `cube_usd`): it is pinned to the run's moment and
+      returns only that cell. When they are null, `sql_left_out` gives their
+      lengths: too long for the issue, so the owner checks Cube with the
+      `reproduce` Cube query, or asks the analyst for the SQL. Tableau shows its
+      last refresh, so a small difference may not match there. An entry with
+      `none` lists the `comparisons` with no group cell to show: offer to find
+      an example under the owner's access, in this chat. For a cause question,
+      then its `reproduce`, which keeps working after the pinned SQL expires:
+      each `cube` entry's `query` for the owner to run with the Cube connector
+      (Cube applies their access) and compare with the dashboard number in the
+      hand check of the same `comparison`; each `queries` entry's `sql` to paste
+      into BigQuery, labeled today's data whose counts drift from the run; and
+      each `explanations` entry's file (`<blob>/<path>`, or `path` when `blob`
+      is null), with its count query (its `query` index into `queries`, or none
+      yet). The issue's comments may repeat the checks and Reproduce blocks;
+      read them from the JSON.
    6. The choices, with what happens next, plus free text:
 
       | Choice                     | `call`          | What happens next                                 |

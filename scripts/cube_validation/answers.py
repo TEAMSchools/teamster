@@ -42,6 +42,7 @@ from .report import (
     _is_identifier,
     _questions,
     _safe_reason,
+    bounded,
     defined_comparisons,
     definition_text,
     mask,
@@ -386,7 +387,9 @@ def _check_json(view: str, check: HandCheck) -> dict:
     """A hand check as JSON, its two numbers masked like the issue's counts.
 
     Two whole numbers that differ by under 10 both read `<masked>`: their
-    difference would post a small count of the cell's students.
+    difference would post a small count of the cell's students. The cause's
+    students post as a bound: for a measure that counts students, the two
+    numbers less an exact cause count would post the other causes' students.
     """
     dashboard, cube = _shown_number(check.dashboard), _shown_number(check.cube)
     d, c = check.dashboard, check.cube
@@ -404,6 +407,9 @@ def _check_json(view: str, check: HandCheck) -> dict:
         "dims": [list(pair) for pair in check.dims],
         "dashboard": dashboard,
         "cube": cube,
+        "cause_students": (
+            None if check.cause_students is None else bounded(check.cause_students)
+        ),
         "expires": check.expires.isoformat(),
     }
 
@@ -613,7 +619,7 @@ def questions_json(
         One dict per question in the issue's order: `id` (`Q1`, ...),
         `reason`, `decisions` (ids), `views`, `definitions` (`dashboard` and
         `cube`, one `<comparison> in <view>: <text>` line each), `evidence`,
-        `counts` (the masked parts of its bullet), `hand_checks` (one per
+        `counts` (the bounded parts of its bullet), `hand_checks` (one per
         comparison and kind with an example cell, and per view 1 `none` entry listing
         the `comparisons` without one, to find an example locally; a cause
         question, one rule, has 1 example across its comparisons, or the

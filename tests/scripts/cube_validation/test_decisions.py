@@ -489,6 +489,7 @@ def test_two_comparison_decisions_on_one_comparison_refuse():
 
 
 def test_comparison_decisions_leave_the_decisions_fingerprint_unchanged():
+    # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
     from cube_validation.decisions import decisions_fingerprint
 
     recorded = [

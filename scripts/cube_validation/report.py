@@ -1220,10 +1220,16 @@ def _hand_check_lines(question_id: str, check: dict) -> list[str]:
         f"{check['dashboard']}, Cube shows {check['cube']}. "
     )
     if check.get("cause_students"):
-        line += (
-            f"At least {check['cause_students']} students' rows in it have "
-            "this cause"
-            + ("; other causes' rows are in it too. " if check.get("mixed") else ". ")
+        students = check["cause_students"]
+        if isinstance(students, int):
+            students = bounded(students)
+        said = (
+            f"{MASK_BELOW} or more"
+            if students == f"{MASK_BELOW}+"
+            else f"Fewer than {MASK_BELOW}"
+        )
+        line += f"{said} students' rows in it have this cause" + (
+            "; other causes' rows are in it too. " if check.get("mixed") else ". "
         )
     if check.get("dashboard_sql") is None:
         pass
