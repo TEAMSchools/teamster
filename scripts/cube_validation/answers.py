@@ -44,6 +44,7 @@ from .report import (
     _safe_reason,
     defined_comparisons,
     definition_text,
+    hides_a_count,
     mask,
     question_parts,
     question_reason,
@@ -638,8 +639,27 @@ def questions_json(
             )
         return held[view, cid]
 
+    def covered(view: str, decisions) -> list[dict]:
+        # An item still in `investigate` is with the analyst, never evidence.
+        return [
+            item
+            for d in decisions
+            for item in triage.get(view, {}).get("items", [])
+            if item.get("suggestion") != "investigate"
+            and _covers(d, item.get("stub") or {})
+        ]
+
+    def hides(view: str, decisions) -> bool:
+        """Whether the evidence posted beside these group decisions hides a
+        count; their row total is then bounded (`report._group_part`)."""
+        return any(
+            hides_a_count(line)
+            for item in covered(view, decisions)
+            for line in item.get("evidence", [])
+        )
+
     out = []
-    for n, q in enumerate(_questions(runs, causes), start=1):
+    for n, q in enumerate(_questions(runs, causes, hides), start=1):
         views = list(dict.fromkeys(view for view, _ in q["decisions"]))
 
         defs: dict[str, list[str]] = {"dashboard": [], "cube": []}
@@ -652,14 +672,7 @@ def questions_json(
                             f"`{cid}` in `{view}`: {definition_text(sides[side])}"
                         )
 
-        # An item still in `investigate` is with the analyst, never evidence.
-        items = [
-            item
-            for view, d in q["decisions"]
-            for item in triage.get(view, {}).get("items", [])
-            if item.get("suggestion") != "investigate"
-            and _covers(d, item.get("stub") or {})
-        ]
+        items = [item for view, d in q["decisions"] for item in covered(view, [d])]
         lines = [line for item in items for line in item.get("evidence", [])]
         if "asks" in q:
             lines = _cause_evidence(q["asks"])

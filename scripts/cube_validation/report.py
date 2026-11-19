@@ -146,13 +146,18 @@ SUPPRESSED = "masked"
 def suppress(total: int, parts: list[int]) -> tuple[str, list[str]]:
     """Mask a total and its parts so no small part can be worked out.
 
-    Each part under `MASK_BELOW` reads `<10`. The total minus the shown parts
-    gives the masked parts' sum, so the masked parts must hold `MASK_BELOW` or
-    more together and include at least one `masked` part with no upper bound:
-    `<10` parts alone are pinned by their sum (18 over two `<10` parts is 9
-    and 9). Until both hold, the next-smallest shown part reads `masked` too.
-    When no part is left to mask, the total reads `masked`, or `<10` when it
-    is under `MASK_BELOW`.
+    Each part under `MASK_BELOW` reads `<10`. The masked parts must hold
+    `MASK_BELOW` or more together and include at least one `masked` part with
+    no upper bound: `<10` parts alone are pinned by their sum (18 over two
+    `<10` parts is 9 and 9). Until both hold, the next-smallest shown part
+    reads `masked` too.
+
+    The total is exact only when every part is: beside any hidden part it
+    reads `10+` (`<10` under `MASK_BELOW`). A `masked` part is at least
+    `MASK_BELOW` and a `<10` part at least 1, so an exact total less the
+    shown parts can equal those floors and pin every hidden one (11 beside
+    `masked` and `<10` is 10 and 1). Every posted total built from masked
+    parts goes through here (`shown_counts`), so none can.
 
     Returns:
         The total's text and each part's, in order.
@@ -172,9 +177,19 @@ def suppress(total: int, parts: list[int]) -> tuple[str, list[str]]:
         mask(n) if i in hidden else SUPPRESSED if i in extra else str(n)
         for i, n in enumerate(parts)
     ]
-    if hidden and not extra and total >= MASK_BELOW:
-        return SUPPRESSED, texts
+    if hidden:
+        return bounded(total), texts
     return mask(total), texts
+
+
+def bounded(n: int) -> str:
+    """A total posted beside a hidden part: `10+`, or `<10` under `MASK_BELOW`."""
+    return f"{MASK_BELOW}+" if n >= MASK_BELOW else mask(n)
+
+
+def hides_a_count(line: str) -> bool:
+    """Whether a posted line carries a hidden count (`masked` or `<10`)."""
+    return bool(re.search(rf"\b{SUPPRESSED}\b|<\d", line))
 
 
 def shown_counts(total: int, parts: list[int], posted: bool) -> tuple[str, list[str]]:
@@ -547,9 +562,12 @@ def _by_reason(pairs, owner: bool = True) -> list[tuple[list[Decision], list]]:
 
 
 def _group_part(
-    view: str, decisions: list[Decision], groups: list[Group]
+    view: str, decisions: list[Decision], groups: list[Group], bound: bool = False
 ) -> tuple[str, list]:
     """The row-group part of a question, and the values its reason must lose.
+
+    With `bound`, the groups' posted evidence carries a hidden count, so
+    their row total reads as a bound (`bounded`), never exact beside it.
 
     The decision's column shows each value only for a reviewed column, and only
     when one of that value's groups holds 10 or more students. A reason loses whatever
@@ -602,7 +620,8 @@ def _group_part(
     return (
         f"{where} in {', '.join(sorted(per_comparison))} of "
         f"`{view}` ({', '.join(sorted({g.bucket for g in groups}))}): "
-        f"{len(groups)} row {plural}, {mask(rows)} rows, {who}"
+        f"{len(groups)} row {plural}, {bounded(rows) if bound else mask(rows)} rows, "
+        f"{who}"
     ), hidden
 
 
@@ -713,14 +732,16 @@ _SCOPE = re.compile(r"(?:^| / )([^\s:/][^\s:]*): ")
 def _posted_lead(lead: str, counts: bool = True) -> str:
     """A trace lead as the issue shows it: each step's scope and, with
     `counts`, the counts; never the step's SQL. The full lead stays in the
-    local triage. Its `of M rows` is the item's exact row count, so a lead
-    beside a count that is not posted exact must leave `counts` out."""
+    local triage. Its `of M rows` is the item's row count, so a lead beside
+    a count that is not posted exact must leave `counts` out; and one whose
+    `M` is bounded (`suppress`: a part is hidden) leaves them out always,
+    since the item's own exact count would pin its parts."""
     found = _LEAD.match(lead)
     if found is None:
         return "a trace lead; ask the analyst"
     scopes = list(dict.fromkeys(_SCOPE.findall(found["label"])))
     where = f" in {', '.join(scopes)}" if scopes else ""
-    if not counts:
+    if not counts or not (found["n"].isdigit() and found["of"].isdigit()):
         return f"lead: relaxing a step{where}"
     return (
         f"lead: relaxing a step{where} brings back {found['n']} of {found['of']} rows"
@@ -740,8 +761,7 @@ class _Bucket:
     """One comparison's open items of one bucket or kind, with each item's
     count and the bucket's totals masked together (`suppress`), so the
     listed counts never give away the ones left out. A total is exact only
-    when every part of it is posted exact; beside any hidden part it reads
-    `10+` (or `<10` under `MASK_BELOW`)."""
+    when every part of it is posted exact (`suppress`)."""
 
     head: str
     items: list[tuple[Unsettled, str | None]]
@@ -785,12 +805,7 @@ def _buckets(items: list[Unsettled]) -> list[_Bucket]:
             counted = [(i, n) for i, n in counted if n is not None]
             if not counted:
                 continue
-            whole = sum(n for _, n in counted)
-            total, texts = suppress(whole, [n for _, n in counted])
-            if not all(t.isdigit() for t in texts):
-                # A floor per hidden part (10 per masked listed item, 1 per
-                # small one) can pin them all against an exact total.
-                total = f"{MASK_BELOW}+" if whole >= MASK_BELOW else mask(whole)
+            total, texts = suppress(sum(n for _, n in counted), [n for _, n in counted])
             totals.append(f"{total} {word}")
             shown.update(
                 {
@@ -909,7 +924,9 @@ def still_with_analyst(
 
 
 def _questions(
-    runs: list[RunResult], causes: dict[str, list[CauseAsk]] | None = None
+    runs: list[RunResult],
+    causes: dict[str, list[CauseAsk]] | None = None,
+    hides: Callable[[str, list[Decision]], bool] | None = None,
 ) -> list[dict]:
     """Group the runs' domain-owner decisions into the review's questions.
 
@@ -917,7 +934,9 @@ def _questions(
     kind and view adds a part to its bullet, and the reason prints once. A
     cause in `causes` (per view, `sort.cause_asks`) is its own question,
     whatever its reason: one per side, words and task, never one per school
-    or comparison, with a part per comparison it covers.
+    or comparison, with a part per comparison it covers. `hides(view,
+    decisions)` says whether those group decisions' posted evidence carries a
+    hidden count; their part's row total is then bounded (`_group_part`).
 
     Returns:
         In the order the issue asks them, dicts of `reason`, `task`, `parts`
@@ -958,7 +977,8 @@ def _questions(
 
     for run in runs:
         for decisions, groups in _by_reason(run.applied.quiet):
-            part, hidden = _group_part(run.view, decisions, groups)
+            bound = hides is not None and hides(run.view, decisions)
+            part, hidden = _group_part(run.view, decisions, groups, bound)
             add(
                 run.view,
                 "group",
@@ -1314,9 +1334,16 @@ def render_review_issue(
                     f"Dashboard: {definition_text(sides['dashboard'])}. "
                     f"Cube: {definition_text(sides['cube'])}."
                 )
+    # The JSON's counts when given: they bound a group's rows beside hidden
+    # evidence, which only the triage it was built from can tell.
+    counts = (
+        [q["counts"] for q in questions]
+        if questions is not None and len(questions) == len(asked)
+        else [question_parts(q) for q in asked]
+    )
     # Numbered like the JSON's question ids, so a hand check names its bullet.
     question_lines = [
-        f"Q{n}. {_ended('; '.join(question_parts(q)))} "
+        f"Q{n}. {_ended('; '.join(counts[n - 1]))} "
         f"Reason: {_with_task(question_reason(q), q['task'])}"
         + "".join(
             f" Note: `{cid}`'s sheet is on no published dashboard."

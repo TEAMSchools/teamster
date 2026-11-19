@@ -389,8 +389,9 @@ def test_a_lead_is_exact_locally_and_masked_for_the_review_issue():
         "lead: relaxing week_end brings back 5 of 40 rows",
     )
     assert s.posted[:2] == (
-        "lead: relaxing wpp brings back masked of 40 rows",
-        "lead: relaxing week_end brings back <10 of 40 rows",
+        # Beside a hidden part the total is a bound, never exact.
+        "lead: relaxing wpp brings back masked of 10+ rows",
+        "lead: relaxing week_end brings back <10 of 10+ rows",
     )
 
 

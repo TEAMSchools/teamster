@@ -856,15 +856,15 @@ def test_review_issue_ends_with_fenced_json_in_details():
 
 
 def test_suppress_hides_a_lone_small_part_and_its_next_smallest():
-    # 25 = 18 + 7: masking 7 alone leaves it as 25 - 18. With both masked,
-    # the total gives only their sum, which holds 10 or more.
-    assert suppress(25, [18, 7]) == ("25", ["masked", "<10"])
+    # 25 = 18 + 7: masking 7 alone leaves it as 25 - 18. With both masked and
+    # the total bounded, nothing gives either.
+    assert suppress(25, [18, 7]) == ("10+", ["masked", "<10"])
 
 
 def test_suppress_rules():
     assert suppress(40, [20, 20]) == ("40", ["20", "20"])
-    assert suppress(48, [30, 13, 5]) == ("48", ["30", "masked", "<10"])
-    assert suppress(15, [9, 6]) == ("masked", ["<10", "<10"])
+    assert suppress(48, [30, 13, 5]) == ("10+", ["30", "masked", "<10"])
+    assert suppress(15, [9, 6]) == ("10+", ["<10", "<10"])
     assert suppress(5, [5]) == ("<10", ["<10"])
     assert suppress(120, [100, 20]) == ("120", ["100", "20"])
 
@@ -872,18 +872,44 @@ def test_suppress_rules():
 def test_suppress_never_lets_a_sum_pin_the_small_parts():
     # 18 over two `<10` parts is 9 and 9; 48 - 30 leaves 18 for two `<10`
     # parts, the same. A `masked` part, or a hidden total, breaks the pin.
-    assert suppress(18, [9, 9]) == ("masked", ["<10", "<10"])
-    assert suppress(27, [9, 9, 9]) == ("masked", ["<10", "<10", "<10"])
-    assert suppress(48, [30, 9, 9]) == ("48", ["masked", "<10", "<10"])
+    assert suppress(18, [9, 9]) == ("10+", ["<10", "<10"])
+    assert suppress(27, [9, 9, 9]) == ("10+", ["<10", "<10", "<10"])
+    assert suppress(48, [30, 9, 9]) == ("10+", ["masked", "<10", "<10"])
 
 
 def test_suppress_masks_until_the_masked_parts_hold_10_together():
     # Two `<10` parts summing to under 10: the total minus the shown parts
     # would give their sum, so the next-smallest part is masked too.
-    assert suppress(30, [22, 4, 4]) == ("30", ["masked", "<10", "<10"])
-    assert suppress(40, [25, 3, 2]) == ("40", ["masked", "<10", "<10"])
-    assert suppress(50, [30, 11, 5, 4]) == ("50", ["30", "masked", "<10", "<10"])
-    assert suppress(12, [11, 1]) == ("12", ["masked", "<10"])
+    assert suppress(30, [22, 4, 4]) == ("10+", ["masked", "<10", "<10"])
+    assert suppress(40, [25, 3, 2]) == ("10+", ["masked", "<10", "<10"])
+    assert suppress(50, [30, 11, 5, 4]) == ("10+", ["30", "masked", "<10", "<10"])
+
+
+def test_suppress_bounds_a_total_beside_any_hidden_part():
+    # 11 beside `masked` (10 or more) and `<10` (1 or more) pins 10 and 1.
+    assert suppress(11, [10, 1]) == ("10+", ["masked", "<10"])
+    assert suppress(12, [11, 1]) == ("10+", ["masked", "<10"])
+    assert suppress(8, [5, 3]) == ("<10", ["<10", "<10"])
+    # Every part exact: the total stays exact.
+    assert suppress(70, [20, 50]) == ("70", ["20", "50"])
+    assert report.shown_counts(11, [10, 1], posted=False) == ("11", ["10", "1"])
+
+
+def test_a_lead_posts_its_counts_only_when_its_total_is_exact():
+    lead = "lead: relaxing scores: a = 1 brings back {} of {} rows"
+    items = [
+        _open("c1", "cube_only", rows=11, item="c1:a",
+              lead=lead.format("masked", "10+")),
+        _open("c1", "cube_only", rows=50, item="c1:b", lead=lead.format(20, 50)),
+    ]  # fmt: skip
+
+    detail = report.unsettled_detail(items, "v")
+
+    # Beside the item's own exact 11, a bounded lead's parts would pin again.
+    assert "- `c1:a`, 11 rows; lead: relaxing a step in scores\n" in detail
+    assert (
+        "- `c1:b`, 50 rows; lead: relaxing a step in scores brings back 20 of 50 rows\n"
+    ) in detail
 
 
 def test_a_hidden_value_is_redacted_only_as_a_whole_value():
@@ -1249,16 +1275,17 @@ def test_a_posted_lead_shows_its_counts_only_beside_an_exact_count():
     lead = "lead: relaxing main: x = 1 brings back <10 of {} rows"
     items = [
         _open("c1", "cube_only", rows=20, item="c1:a", lead=lead.format(20)),
-        _open("c1", "cube_only", rows=50, item="c1:b", lead=lead.format(50)),
+        _open("c1", "cube_only", rows=50, item="c1:b",
+              lead="lead: relaxing main: x = 1 brings back 30 of 50 rows"),
         _open("c1", "cube_only", rows=3, item="c1:c", lead=lead.format(3)),
         _open("c1", "group", item="c1:gone", lead=lead.format(30)),
-    ]
+    ]  # fmt: skip
 
     detail = report.unsettled_detail(items, "v")
 
     assert "- `c1:a`, masked rows; lead: relaxing a step in main\n" in detail
     assert (
-        "- `c1:b`, 50 rows; lead: relaxing a step in main brings back <10 of 50 rows\n"
+        "- `c1:b`, 50 rows; lead: relaxing a step in main brings back 30 of 50 rows\n"
     ) in detail
     assert "- `c1:gone`; lead: relaxing a step in main\n" in detail
 
@@ -1414,10 +1441,8 @@ def test_a_posted_lead_names_each_step_s_scope_never_its_sql():
 
     (line,) = _detail(run, _left_in_investigate(run, lead))
 
-    assert line.endswith(
-        "; lead: relaxing a step in enrolled, kipptaf_int.int_e/main brings back "
-        "<10 of 40 rows"
-    )
+    # A hidden step count (`<10`) posts the lead's scope only.
+    assert line.endswith("; lead: relaxing a step in enrolled, kipptaf_int.int_e/main")
     assert "JOIN" not in line and "x / 2" not in line
 
 

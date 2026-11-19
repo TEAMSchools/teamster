@@ -391,6 +391,37 @@ def _questions(run, cfg=None, triage=SORTED):
 OWNER_SORTED = SORTED
 
 
+@pytest.mark.parametrize(
+    "rows, evidence, total",
+    [
+        # 11 beside `masked` (10+) and `<10` (1+) would pin both.
+        (11, ["scores: a = 1: masked rows", "scores: b = 1: <10 rows"], "10+ rows"),
+        (50, ["scores: a = 1: 20 rows", "scores: b = 1: 30 rows"], "50 rows"),
+    ],
+)
+def test_a_group_question_bounds_its_rows_beside_hidden_evidence(rows, evidence, total):
+    d = Decision("d-newark", "enrollment", "domain_owner", REASON,
+                 {"column": "region", "values": ["Newark"]})  # fmt: skip
+    run = _run([_cell()])
+    group = Group("enrollment", (("region", "Newark"),), "value_differs", rows, 12)
+    run.applied = Applied(quiet=[(d, group)])
+    item = {
+        "id": "enrollment:region=Newark", "kind": "group", "comparison": "enrollment",
+        "label": "x", "suggestion": "cause", "evidence": evidence, "candidates": [],
+        "stub": {"comparison": "enrollment",
+                 "group": {"column": "region", "values": ["Newark"]}},
+    }  # fmt: skip
+    triage = {"enrollment": {"view": "enrollment", "items": [item]}}
+
+    (q,) = _questions(run, triage=triage)
+    body = render_review_issue("Registrar", [run], questions=[q])
+
+    assert f", {total}, " in q["counts"][0]
+    assert f"{rows} rows" not in " ".join(q["counts"]) or total == f"{rows} rows"
+    (line,) = [x for x in body.splitlines() if x.startswith("- Q1. ")]
+    assert f", {total}, " in line
+
+
 def test_unsettled_items_are_not_in_the_questions_json():
     run = _owner_run([_cell(cube=25.0)])
     left = {
