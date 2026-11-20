@@ -252,7 +252,9 @@ with
             'Leader Intent to Return Survey' as survey,
             'Complete Leader Intent to Return Survey' as `assignment`,
 
-            'TODO(#6251): leader form responder URL' as link,
+            -- trunk-ignore(sqlfluff/LT05)
+            'https://docs.google.com/forms/d/e/1FAIpQLSdjfdSX21xtoS6NqQD8rEnuUC97CPHAr36e0oaCo6OuChg98A/viewform'
+            as link,
         from eligible_roster as r
         inner join
             {{ ref("int_surveys__leader_intent_to_return_population") }} as lp
