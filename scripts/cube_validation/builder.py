@@ -16,7 +16,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 
 from . import find_field as finder
-from .cube_client import _FACT, Cube, CubeError, CubeRefusal, bind
+from .cube_client import FACT_TABLE, Cube, CubeError, CubeRefusal, bind
 from .decisions import sql_fingerprint
 from .pipeline import measure_expression
 from .tableau import bare_name, unquote
@@ -78,7 +78,7 @@ def members(cube: Cube, skipped: list[dict] | None = None) -> list[Member]:
                     skipped.append({"name": name, "reason": str(exc)})
                 continue
 
-            facts = _FACT.findall(compiled.sql)
+            facts = FACT_TABLE.findall(compiled.sql)
             found.append(
                 Member(
                     name=name,
@@ -166,8 +166,8 @@ def _sheet_uses(ws: ET.Element, groups: set[str]) -> dict[tuple[str, str], str]:
         if m is None:
             name = finder.filter_field(ref, groups)
             return (("", name), "cut") if name else None
-        if m["deriv"] in finder._AGG_PREFIXES:
-            return (finder._AGG_PREFIXES[m["deriv"]], m["name"]), "measure"
+        if m["deriv"] in finder.AGG_PREFIXES:
+            return (finder.AGG_PREFIXES[m["deriv"]], m["name"]), "measure"
         if m["deriv"] == "usr":
             # `usr` is also in AGGREGATES: it marks a calculation, whose role
             # says whether it aggregates.
@@ -342,7 +342,7 @@ class InventoryRow:
 
 
 _AGG_CAPTION = re.compile(
-    "(?:" + "|".join(finder._AGG_PREFIXES.values()) + r")\((.*)\)", re.IGNORECASE
+    "(?:" + "|".join(finder.AGG_PREFIXES.values()) + r")\((.*)\)", re.IGNORECASE
 )
 _CATALOG_STATUSES = ("cube-covered", "mart-ready", "mart-missing", "workbook-only")
 _MEMBER_REF = re.compile(r"`(\w+\.\w+)`")

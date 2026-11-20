@@ -432,7 +432,7 @@ class _Side:
         )
 
 
-def _dry_runs(wh: Warehouse, queries: list[str]) -> list[float | GoogleAPIError]:
+def dry_runs(wh: Warehouse, queries: list[str]) -> list[float | GoogleAPIError]:
     """Dry-run `queries` at once: each one's price, or the error it raised.
 
     A dry run is free and spends its time waiting on BigQuery's planner.
@@ -456,7 +456,7 @@ def _priced(wh: Warehouse, queries: list[str]) -> float:
     Raises:
         GoogleAPIError: The first query, in order, whose dry run failed.
     """
-    got = _dry_runs(wh, queries)
+    got = dry_runs(wh, queries)
     if errors := [g for g in got if isinstance(g, GoogleAPIError)]:
         raise errors[0]
     return sum(g for g in got if not isinstance(g, GoogleAPIError))
@@ -745,7 +745,7 @@ class _Bucket:
                     node["compiled_code"], side.build.start, self.wh
                 )
                 why = "changed during the build"
-                sql = _one_moment(at, self.end_tables, self.moved, side.build, self.wh)
+                sql = one_moment(at, self.end_tables, self.moved, side.build, self.wh)
                 child = _Frame(
                     Query(sql, ref.wanted),
                     (ref.dataset, ref.name),
@@ -768,7 +768,7 @@ class _Bucket:
         # runs only at the top of a query.
         found = []
         for (ref, child, _), got in zip(
-            ready, _dry_runs(self.wh, [c for _, _, c in ready]), strict=True
+            ready, dry_runs(self.wh, [c for _, _, c in ready]), strict=True
         ):
             if isinstance(got, GoogleAPIError):
                 self._skip(ref.name, failure_reason(got))
@@ -1148,7 +1148,7 @@ class _Bucket:
         return nxt
 
 
-def _one_moment(
+def one_moment(
     at,
     end_tables: set[str],
     moved: dict[str, bool],
@@ -1414,7 +1414,7 @@ def trace_run(
         except Stopped as exc:
             print(f"Trace {b.runner.label} stopped: level 0: {exc.reason}")
             out |= b.stop(f"level 0: {exc.reason}")
-    priced = iter(_dry_runs(wh, [q for _, qs in planned for q in qs]))
+    priced = iter(dry_runs(wh, [q for _, qs in planned for q in qs]))
     for b, qs in planned:
         got = [next(priced) for _ in qs]
         try:

@@ -33,21 +33,21 @@ from . import checkpoints, decisions, latest, pipeline, results, trace
 from .bq import CostCapError, Warehouse
 from .config import Comparison, Decision, RebuildCheck, ViewConfig, mask_digits
 from .cube_client import Cube, MemberDoc, member_docs, network_schools
-from .find_field import _tokens
+from .find_field import name_tokens
 from .moment import Build, utcnow
 from .reconcile import CellDiff, Gap, Group
 from .report import (
-    _CELL_WORDS,
+    CELL_WORDS,
     CauseAsk,
     RunResult,
     Ticker,
     Unsettled,
-    _gap_line,
-    _is_identifier,
-    _shown_value,
-    _where,
+    gap_line,
+    is_identifier,
     mask,
+    name_group,
     run_stamp,
+    shown_value,
 )
 from .timetravel import PROJECT
 
@@ -94,7 +94,7 @@ class Item:
     comparison: str
     label: str
     stub: dict
-    # `_open_key`: what the item is, whichever siblings are open. An id's
+    # `open_key`: what the item is, whichever siblings are open. An id's
     # `#n` can move when a sibling closes; this cannot.
     key: str = ""
 
@@ -156,7 +156,7 @@ def _group_label(g: Group) -> str:
     shows them.
     """
     return (
-        f"{_where(g, lambda column, value: _shown_value(g, column, value))} in "
+        f"{name_group(g, lambda column, value: shown_value(g, column, value))} in "
         f"{g.comparison_id} ({g.bucket}): {g.n_rows} rows, "
         f"{g.n_students} students"
     )
@@ -181,7 +181,7 @@ def _gap_item(g: Gap) -> Item:
         id=f"{g.kind}:{g.field}",
         kind="gap",
         comparison=g.comparisons[0] if g.comparisons else "",
-        label=_gap_line(g),
+        label=gap_line(g),
         stub={key: g.field},
     )
 
@@ -194,7 +194,7 @@ def _group_ids(groups: list[Group]) -> list[str]:
     """
     base = []
     for g in groups:
-        shown = ",".join(f"{c}={_shown_value(g, c, v)}" for c, v in g.dims)
+        shown = ",".join(f"{c}={shown_value(g, c, v)}" for c, v in g.dims)
         base.append(f"{g.comparison_id}:{shown or 'all'}")
     ids = list(base)
     for name in dict.fromkeys(base):
@@ -206,7 +206,7 @@ def _group_ids(groups: list[Group]) -> list[str]:
     return ids
 
 
-def _entries(run: RunResult) -> list[tuple[Item, Group | Gap | CellDiff]]:
+def open_entries(run: RunResult) -> list[tuple[Item, Group | Gap | CellDiff]]:
     """Pair each open item with the object it came from."""
     open_groups = run.applied.open
     ids = _group_ids(open_groups)
@@ -217,7 +217,7 @@ def _entries(run: RunResult) -> list[tuple[Item, Group | Gap | CellDiff]]:
     out += [(_gap_item(g), g) for g in run.applied.open_gaps]
     for diff in run.applied.open_cells:
         counts = ", ".join(
-            f"{n} {_CELL_WORDS.get(verdict, verdict)}"
+            f"{n} {CELL_WORDS.get(verdict, verdict)}"
             for verdict, n in diff.counts.items()
         )
         # A formula difference is its own item, decided by `formula: true`;
@@ -231,7 +231,7 @@ def _entries(run: RunResult) -> list[tuple[Item, Group | Gap | CellDiff]]:
             stub={"comparison": diff.comparison_id, diff.kind: True},
         )
         out.append((item, diff))
-    return [(dataclasses.replace(i, key=_open_key(src)), src) for i, src in out]
+    return [(dataclasses.replace(i, key=open_key(src)), src) for i, src in out]
 
 
 def open_items(run: RunResult) -> list[Item]:
@@ -246,10 +246,10 @@ def open_items(run: RunResult) -> list[Item]:
         column of a group with 10+ students; a collision gets `#2`, `#3`.
         Stubs carry real values.
     """
-    return [item for item, _ in _entries(run)]
+    return [item for item, _ in open_entries(run)]
 
 
-def _open_key(source: Group | Gap | CellDiff) -> str:
+def open_key(source: Group | Gap | CellDiff) -> str:
     """Name an open item by what it is, not by which other items are open.
 
     An item's id and stub change as its siblings close; this does not. The
@@ -273,8 +273,8 @@ def _open_key(source: Group | Gap | CellDiff) -> str:
 
 
 def open_keys(run: RunResult) -> list[str]:
-    """The run's open items as `_open_key`s, sorted."""
-    return sorted({_open_key(source) for _, source in _entries(run)})
+    """The run's open items as `open_key`s, sorted."""
+    return sorted({open_key(source) for _, source in open_entries(run)})
 
 
 def _moment(run: RunResult) -> dict:
@@ -489,7 +489,7 @@ def checked_sort(
     # hand-written comparison decision would pass here too: the runbook
     # forbids one, and nothing here can tell who wrote it.
     closed = {
-        _open_key(src): d for d, src in [*run.applied.quiet, *run.applied.quiet_cells]
+        open_key(src): d for d, src in [*run.applied.quiet, *run.applied.quiet_cells]
     }
     for i in items:
         d = closed.get(i.get("key", ""))
@@ -537,13 +537,13 @@ def unsettled(run: RunResult, loaded: dict) -> list[Unsettled]:
     """The sort's items still in `investigate` and open, as `ask-owner`
     lists them; one a comparison decision closed since is decided.
 
-    Each is matched to the run's open item by its `_open_key` for its bucket
+    Each is matched to the run's open item by its `open_key` for its bucket
     and counts; one the run no longer holds keeps its kind and no count. Read
     `loaded` through `posted_sort`, so a lead's counts are masked.
     """
-    sources = {_open_key(src): src for _, src in _entries(run)}
+    sources = {open_key(src): src for _, src in open_entries(run)}
     # A comparison decision closes groups still in `investigate`.
-    closed = {_open_key(g) for _, g in run.applied.quiet}
+    closed = {open_key(g) for _, g in run.applied.quiet}
     out = []
     for item in loaded.get("items", []):
         if item.get("suggestion") != "investigate" or item.get("key") in closed:
@@ -558,7 +558,7 @@ def unsettled(run: RunResult, loaded: dict) -> list[Unsettled]:
         }
         if isinstance(source, Group):
             hidden = tuple(
-                v for c, v in source.dims if _shown_value(source, c, v) == "<redacted>"
+                v for c, v in source.dims if shown_value(source, c, v) == "<redacted>"
             )
             out.append(
                 Unsettled(
@@ -653,14 +653,14 @@ def cause_decision(
     )
 
 
-def _groups_by_key(run: RunResult) -> dict[str, Group]:
-    """The run's open groups by `_open_key`, which no sibling's closing moves."""
-    return {i.key: g for i, g in _entries(run) if isinstance(g, Group)}
+def groups_by_key(run: RunResult) -> dict[str, Group]:
+    """The run's open groups by `open_key`, which no sibling's closing moves."""
+    return {i.key: g for i, g in open_entries(run) if isinstance(g, Group)}
 
 
 def _quiet_by_key(run: RunResult) -> dict[str, Group]:
-    """The groups a `group` decision closes in the run, by `_open_key`."""
-    return {_open_key(g): g for _, g in run.applied.quiet}
+    """The groups a `group` decision closes in the run, by `open_key`."""
+    return {open_key(g): g for _, g in run.applied.quiet}
 
 
 def mark_decided(
@@ -701,7 +701,7 @@ def mark_decided(
     Raises:
         pipeline.Refusal: With `refuse`, a disagreement.
     """
-    groups = {**_quiet_by_key(run), **_groups_by_key(run)}
+    groups = {**_quiet_by_key(run), **groups_by_key(run)}
     by_group = [d for d in recorded if (d.group or d.all_groups) and not d.cause]
     for item in items:
         if not decidable(item):
@@ -769,7 +769,7 @@ def _covers_group(d: Decision, g: Group) -> bool:
     comparison, whether or not its SQL still holds."""
     if d.all_groups:
         return d.comparison == g.comparison_id
-    values = {decisions._text(v) for v in d.group.get("values") or []}
+    values = {decisions.group_text(v) for v in d.group.get("values") or []}
     return (
         d.comparison == g.comparison_id
         and g.value_of(d.group.get("column") or "") in values
@@ -790,7 +790,7 @@ def cause_asks(
     question only by its own share. With `owner` False, the cause decisions
     the analyst made with any other call instead, which `ask-owner` only reports.
     """
-    groups = _groups_by_key(run)
+    groups = groups_by_key(run)
     out = []
     for d in recorded:
         if not d.cause or d.answer or (d.call == "domain_owner") != owner:
@@ -860,7 +860,7 @@ def posted_sort(loaded: dict) -> dict:
 def _candidates(caption: str, docs: dict[str, MemberDoc]) -> tuple[str, ...]:
     """Name the non-measure members whose name, title or description holds the
     caption."""
-    wanted = _tokens(caption)
+    wanted = name_tokens(caption)
     if not wanted:
         return ()
     return tuple(
@@ -868,7 +868,7 @@ def _candidates(caption: str, docs: dict[str, MemberDoc]) -> tuple[str, ...]:
             name
             for name, d in docs.items()
             if d.kind != "measure"
-            and wanted <= _tokens(f"{name} {d.title} {d.description}")
+            and wanted <= name_tokens(f"{name} {d.title} {d.description}")
         )
     )
 
@@ -1089,7 +1089,7 @@ def suggest(
         evidence here: they have not explained a missing row.
     """
     by_id = {c.id: c for c in cfg.comparisons}
-    entries = _entries(run)
+    entries = open_entries(run)
     out = []
     for item, source in entries:
         evidence: tuple[str, ...] = ()
@@ -1237,7 +1237,7 @@ def batch_lines(run: RunResult, found: list[Suggestion]) -> list[str]:
     `BATCH_CAP` items with their evidence and says how many more
     `sort.json` holds.
     """
-    buckets = {i.id: g.bucket for i, g in _entries(run) if isinstance(g, Group)}
+    buckets = {i.id: g.bucket for i, g in open_entries(run) if isinstance(g, Group)}
     lines = ["Summary"]
     for comparison in dict.fromkeys(s.item.comparison for s in found):
         mine = [s for s in found if s.item.comparison == comparison]
@@ -1304,7 +1304,7 @@ def _from_json(d: dict) -> Suggestion:
 
 # A column with more distinct values than this is a key, not a coding.
 REFERENCE_MAX_VALUES = 50
-_ID_SUFFIXES = ("_number", "_id", "_name", "_email")
+ID_SUFFIXES = ("_number", "_id", "_name", "_email")
 _SAME = "same values: map it under filters:"
 _CODING = "same field, different coding"
 _NOT_COMPARED = "not compared: identifier column"
@@ -1381,8 +1381,8 @@ def value_check(
     table = _dashboard_view(cfg, column)
     if (
         member in pii
-        or member.endswith(_ID_SUFFIXES)
-        or column.endswith(_ID_SUFFIXES)
+        or member.endswith(ID_SUFFIXES)
+        or column.endswith(ID_SUFFIXES)
         or not _SQL_NAME.fullmatch(column)
         or not _TABLE.fullmatch(table)
     ):
@@ -1413,7 +1413,7 @@ def value_check(
 
     if dash == theirs:
         return _SAME
-    if not (_is_identifier(member) or _is_identifier(column)):
+    if not (is_identifier(member) or is_identifier(column)):
         print(f"  {member}: dashboard {sorted(dash)} vs Cube {sorted(theirs)}")
     return _CODING
 
@@ -1462,27 +1462,27 @@ def closed_groups(run: RunResult, ran: list, cfg: ViewConfig) -> tuple[list, lis
         `explain.apply_runs` reads them (a run over closed groups alone is
         dropped), and the closed groups an explanation fully explains, or a
         `dashboard_filters` entry drops, each as an item `mark_decided`
-        reads, marked `closed` and named by its `_open_key`.
+        reads, marked `closed` and named by its `open_key`.
     """
     from . import explain
 
-    open_ids = {i.key: i.id for i, g in _entries(run) if isinstance(g, Group)}
+    open_ids = {i.key: i.id for i, g in open_entries(run) if isinstance(g, Group)}
     quiet = _quiet_by_key(run)
     kept, closed = [], []
     for r in ran:
         mine = [
-            (open_ids[_open_key(g)], g) for _, g in r.items if _open_key(g) in open_ids
+            (open_ids[open_key(g)], g) for _, g in r.items if open_key(g) in open_ids
         ]
         if mine:
             found = r.found and {
-                open_ids[_open_key(g)]: r.found[i]
+                open_ids[open_key(g)]: r.found[i]
                 for i, g in r.items
-                if _open_key(g) in open_ids
+                if open_key(g) in open_ids
             }
             kept.append(dataclasses.replace(r, items=mine, found=found))
         if not r.found:
             continue
-        shut = {_open_key(g): r.found[i] for i, g in r.items if _open_key(g) in quiet}
+        shut = {open_key(g): r.found[i] for i, g in r.items if open_key(g) in quiet}
         entries = [_closed_item(quiet[k]) for k in shut]
         explain.apply_outcomes(entries, r.explanation, shut)
         closed += [e for e in entries if e["suggestion"] == "cause"]
@@ -1507,7 +1507,7 @@ def closed_groups(run: RunResult, ran: list, cfg: ViewConfig) -> tuple[list, lis
 
 
 def _closed_item(g: Group) -> dict:
-    key = _open_key(g)
+    key = open_key(g)
     return {"id": key, "key": key, "kind": "group", "comparison": g.comparison_id,
             "closed": True, "suggestion": "investigate", "evidence": [],
             "evidence_posted": [], "cause": None, "explanation": None}  # fmt: skip
@@ -1741,7 +1741,7 @@ def sort_run(
     return found
 
 
-def _stored_check(held: latest.Latest) -> Check | None:
+def stored_check(held: latest.Latest) -> Check | None:
     """The formula check kept beside a result, when it checked that very result.
 
     The one reading of a kept check, for `sort` to reuse it and for
@@ -1805,7 +1805,7 @@ def _formula_jobs(
         # A kept check of this version would decide its cells the same while
         # its result stands, so only a validator update runs it again (a new
         # result drops it); outside --comparison it stays as it is.
-        if (kept := _stored_check(held[c.id])) is not None and (
+        if (kept := stored_check(held[c.id])) is not None and (
             outside or kept.version == formula.CHECK_VERSION
         ):
             checks[c.id] = kept
@@ -1830,7 +1830,7 @@ def _formula_jobs(
         # One job at a time, so an error outside BigQuery (expired
         # credentials, say) stops only its own check.
         try:
-            mine = trace._dry_runs(wh, list(job.sql.values()))
+            mine = trace.dry_runs(wh, list(job.sql.values()))
         except Exception as exc:  # noqa: BLE001 - the check never stops `sort`
             print(f"Formula check of {job.comparison} not priced: {exc!r}")
             checks[job.comparison] = _fallen_back(
@@ -1954,6 +1954,6 @@ def _outside(run: RunResult, wanted: set[str] | None) -> set[tuple]:
         return set()
     return {
         trace.item_key(g)
-        for _, g in _entries(run)
+        for _, g in open_entries(run)
         if isinstance(g, Group) and g.comparison_id not in wanted
     }

@@ -363,7 +363,7 @@ def _identifies(column: str, student: set[str]) -> bool:
 
 def _id_like(column: str, student: set[str]) -> bool:
     """A column a cause may not select: any identifier, not only a person's."""
-    return _identifies(column, student) or column.lower().endswith(sort._ID_SUFFIXES)
+    return _identifies(column, student) or column.lower().endswith(sort.ID_SUFFIXES)
 
 
 _STOP = (exp.Predicate, exp.Connector, exp.Not, exp.Subquery, exp.AggFunc, exp.Exists)
@@ -719,7 +719,7 @@ def unmatched_sql(
             # A row each side files in another cell belongs only to a group
             # with the dashboard's cell (`d:` dims), whatever its own dims.
             moved = any(c.startswith(reconcile.DASH_PREFIX) for c, _ in g.dims)
-            tests.append(f"COALESCE({reconcile._MOVED}, FALSE) = {str(moved).upper()}")
+            tests.append(f"COALESCE({reconcile.MOVED}, FALSE) = {str(moved).upper()}")
         test = " AND ".join(tests)
         whens.append(f"WHEN {test or 'TRUE'} THEN {pipeline.lit(item_id)}")
     key = f"CASE {' '.join(whens)} END" if whens else "CAST(NULL AS STRING)"
@@ -729,7 +729,7 @@ def unmatched_sql(
         f"{key} AS item_key",
         "side",
         *(p.cube for p in dims),
-        *([reconcile._MOVED] if dims else []),
+        *([reconcile.MOVED] if dims else []),
         *(f"__d_{p.cube}" for p in dims),
         *(p.cube for p in grain),
         "__rn",
@@ -762,7 +762,7 @@ def bucket_rows_sql(comparison: Comparison, bucket: str, source: str) -> str:
         "__row",
         f"'{held}' AS side",
         *(p.cube for p in dims),
-        *([reconcile._MOVED] if dims else []),
+        *([reconcile.MOVED] if dims else []),
         *(f"__d_{p.cube}" for p in dims),
         *(f"__g{side}{i} AS {p.cube}" for i, p in enumerate(grain)),
         "__rn",
@@ -784,7 +784,7 @@ def unmatched_columns(comparison: Comparison) -> set[str]:
         c.lower()
         for c in [
             "__row", "item_key", "side", *dims,
-            *([reconcile._MOVED] if dims else []),
+            *([reconcile.MOVED] if dims else []),
             *(f"__d_{d}" for d in dims), *grain, "__rn",
         ]
     }  # fmt: skip
@@ -931,7 +931,7 @@ def _with_students(
     places = [placed(lambda d: d)]
     if s.moved:
         # A row in the same cell on both sides has no dashboard cell of its own.
-        moved = f" AND f.{reconcile._MOVED}" if s.dims else ""
+        moved = f" AND f.{reconcile.MOVED}" if s.dims else ""
         places.append(placed(lambda d: f"__d_{d}", "__dcut", moved))
     cell = "TO_JSON_STRING(STRUCT(" + ", ".join(s.dims) + "))" if s.dims else "'{}'"
     nulls = "CAST(NULL AS STRING) AS item_key, cause, " + ", ".join(
@@ -1217,7 +1217,7 @@ def explanation_sql(
         explanation.body, grain_names(comparison), identifying(comparison)
     )
     at = pipeline.checked_as_of(explanation.body, build.start, wh)
-    body = trace._one_moment(
+    body = trace.one_moment(
         at,
         set(sides.cube.tables - sides.dashboard.tables),
         {} if moved is None else moved,
@@ -1371,7 +1371,7 @@ def note(items: list[dict], ids: set[str], line: str, name: str) -> None:
 def _bucket_items(run: RunResult, comparison: str, bucket: str):
     return [
         (item.id, g)
-        for item, g in sort._entries(run)
+        for item, g in sort.open_entries(run)
         if isinstance(g, Group) and g.comparison_id == comparison and g.bucket == bucket
     ]
 
@@ -1396,7 +1396,7 @@ def _covering(
     for d, g in run.applied.quiet:
         if g.comparison_id == comparison:
             groups.append((None, g))
-            closed[sort._open_key(g)] = (d, g)
+            closed[sort.open_key(g)] = (d, g)
     return groups, closed
 
 
@@ -1426,7 +1426,7 @@ def link_cells(
     Returns:
         Per cell-set item id: the differing cells left open, and all of them.
     """
-    entries = sort._entries(run)
+    entries = sort.open_entries(run)
     by_id = {i["id"]: i for i in items}
     by_cmp = {c.id: c for c in (cfg.comparisons if cfg else [])}
     out = {}
@@ -1468,7 +1468,7 @@ def link_cells(
             for g in inside:
                 gid = ids[id(g)]
                 if gid is None:
-                    said.append([sort._open_key(g), g.bucket, "closed by a decision"])
+                    said.append([sort.open_key(g), g.bucket, "closed by a decision"])
                     continue
                 state = by_id[gid]["suggestion"]
                 said.append([gid, g.bucket, state])
@@ -1484,7 +1484,7 @@ def link_cells(
                 continue
             for g in inside:
                 if (gid := ids[id(g)]) is None:
-                    shut[sort._open_key(g)] = None
+                    shut[sort.open_key(g)] = None
                 else:
                     used[gid] = None
         out[item.id] = (len(left), len(cells))
@@ -1689,7 +1689,7 @@ def run_stored(
                 comparison.id,
                 explanation.bucket,
                 run.fingerprints.get(comparison.id, {}),
-                [sort._open_key(g) for _, g in items],
+                [sort.open_key(g) for _, g in items],
             )
             # A kept outcome holds only while the run's SQL and saved rows do:
             # check both, compile only, before reusing or running anything.
@@ -1727,7 +1727,7 @@ def run_stored(
 
     ready = []
     total = 0.0
-    for job, price in zip(todo, trace._dry_runs(wh, [t[2] for t in todo]), strict=True):
+    for job, price in zip(todo, trace.dry_runs(wh, [t[2] for t in todo]), strict=True):
         if isinstance(price, GoogleAPIError):
             job[0].why = _not_run(job[0].explanation.path.name, price)
         else:
@@ -1892,7 +1892,7 @@ def _to_progress(ran: Ran) -> dict:
     found = ran.found or {}
     return {
         "found": {
-            sort._open_key(g): {
+            sort.open_key(g): {
                 "n_rows": found[item_id].n_rows,
                 "counts": dict(found[item_id].counts),
                 "unexplained": found[item_id].unexplained,
@@ -1914,7 +1914,7 @@ def _from_progress(ran: Ran, kept: dict) -> None:
             unexplained=o["unexplained"],
         )
         for item_id, g in ran.items
-        if (o := by_key.get(sort._open_key(g))) is not None
+        if (o := by_key.get(sort.open_key(g))) is not None
     }
     ran.students = kept["students"]
 
@@ -2139,7 +2139,7 @@ def explain(
             cfg, run, stored.parent, explanation, target, wh, cube, prepared
         )
         # Every query is priced before any runs, under one cap check.
-        price, *prices = trace._dry_runs(wh, [query, *(j[2] for j in jobs)])
+        price, *prices = trace.dry_runs(wh, [query, *(j[2] for j in jobs)])
         if isinstance(price, GoogleAPIError):
             raise pipeline.Refusal(
                 f"{explanation.path.name}: BigQuery refused it ({bigquery_said(price)})"

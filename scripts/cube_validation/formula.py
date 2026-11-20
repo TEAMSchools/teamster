@@ -29,7 +29,7 @@ from .config import Comparison, ViewConfig
 from .cube_client import Cube, CubeError, CubeRefusal
 from .moment import Build
 from .report import RunResult, mask
-from .timetravel import _NOT_ALIAS, PROJECT, closing_paren, repin
+from .timetravel import NOT_ALIAS, PROJECT, closing_paren, repin
 
 # A cell the check could not recompute closes by coverage under this label,
 # followed by one of the reasons below.
@@ -236,7 +236,7 @@ def key_sql(
         f"CAST({c} AS DATE)" if is_date else c
         for c, is_date in zip(named, dates, strict=True)
     ]
-    return _keyed(reconcile._grain_keys(read))
+    return _keyed(reconcile.grain_keys(read))
 
 
 def matched_ctes(
@@ -265,7 +265,7 @@ def matched_ctes(
     """
     n = len(pipeline.rows_of(comparison).grain)
     args, kwargs = pipeline.reconcile_args(cfg, comparison, sides)
-    ctes, _ = reconcile._joined(*args, keys=True, moved=True, **kwargs)
+    ctes, _ = reconcile.joined_ctes(*args, keys=True, moved=True, **kwargs)
     # `__k*` are already the reconcile's grain keys.
     joined_key = _keyed([f"__k{i}" for i in range(n)])
     # The saved grain is typed as the reconcile typed it, as `__k*` were, so
@@ -389,7 +389,7 @@ def cube_read_tables(cfg: ViewConfig, compiled_sql: str) -> list[str]:
     """
     found = {
         f"{ds}.{name}".lower()
-        for ds, name in cube_client._FACT_REF.findall(compiled_sql)
+        for ds, name in cube_client.FACT_REF.findall(compiled_sql)
     }
     return [cfg.fact, *(f for f in cfg.also_facts if f.lower() in found)]
 
@@ -695,7 +695,7 @@ def _read_pattern(table: str) -> re.Pattern[str]:
     return re.compile(
         f"(?P<ref>{ref})"
         + r"(?P<alias>\s+AS\s+`?\w+`?|\s+(?!(?:"
-        + _NOT_ALIAS
+        + NOT_ALIAS
         + r")\b)`?\w+`?)?\s+FOR SYSTEM_TIME AS OF TIMESTAMP '(?P<at>[^']+)'",
         re.IGNORECASE,
     )

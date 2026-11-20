@@ -387,17 +387,17 @@ def _ignored_headers(
     a column.
     """
     names = {
-        read_sheet._export_name(n)
+        read_sheet.export_name(n)
         for col in columns
         if col.get("role") == "measure"
         for n in (col.get("caption") or "", tableau.bare_name(col.get("name") or ""))
         if n
     }
-    names |= {read_sheet._export_name(c.caption) for c in calcs}
+    names |= {read_sheet.export_name(c.caption) for c in calcs}
     return {
         h
         for h in headers
-        if h not in mapping and h != value and read_sheet._export_name(h) in names
+        if h not in mapping and h != value and read_sheet.export_name(h) in names
     }
 
 

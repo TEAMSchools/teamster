@@ -5322,7 +5322,7 @@ def test_sort_classifies_a_group_a_group_decision_closes(fakes, tmp_path, monkey
     # Closed, so never an item; the explanation still says which causes it holds.
     assert not [i for i in loaded["items"] if i["kind"] == "group"]
     (closed,) = loaded["closed"]
-    assert closed["key"] == sort._open_key(group)
+    assert closed["key"] == sort.open_key(group)
     assert closed["cause"] == [
         {"side": "dashboard", "step": "C1", "label": "the sheet drops them",
          "n_rows": group.n_rows}
@@ -6373,7 +6373,7 @@ def _closed_by_a_group_decision(tmp_path):
     _write_sorted(run_json, [_sorted_item("e", item_id="other")])
     found = run_json.parent / "sort.json"
     loaded = json.loads(found.read_text())
-    key = sort._open_key(miami)
+    key = sort.open_key(miami)
     loaded["closed"] = [
         {"id": key, "key": key, "kind": "group", "comparison": "ada-region",
          "closed": True, "suggestion": "cause", "cause": [STEP],
@@ -6518,7 +6518,7 @@ def test_a_hand_group_decision_on_an_unexplained_group_still_refuses(
     (run_json,) = (tmp_path / "cache" / "v").glob("*/run.json")
     run = results._run_from_json(json.loads(run_json.read_text()))
     ((_, miami),) = run.applied.quiet
-    item = {**_sorted_item("e", "investigate"), "key": sort._open_key(miami)}
+    item = {**_sorted_item("e", "investigate"), "key": sort.open_key(miami)}
     _write_sorted(run_json, [item])
     capsys.readouterr()
 

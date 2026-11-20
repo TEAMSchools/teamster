@@ -77,8 +77,8 @@ def candidate_causes(
             ] += 1
         elif (
             abs(
-                reconcile._half_up(c.dashboard, decimals)
-                - reconcile._half_up(c.cube, decimals)
+                reconcile.half_up(c.dashboard, decimals)
+                - reconcile.half_up(c.cube, decimals)
             )
             == unit
         ):
@@ -605,8 +605,8 @@ def compose_run(
 def _formula_cells(held: latest.Latest) -> set[tuple[str, str]] | None:
     """The cells the result's formula check files as formula, or None when it
     has no check of that very result, read as `sort` reads it to reuse it
-    (`sort._stored_check`): a check that cannot be read counts as none."""
-    check = sort._stored_check(held)
+    (`sort.stored_check`): a check that cannot be read counts as none."""
+    check = sort.stored_check(held)
     return None if check is None else set(check.formula)
 
 

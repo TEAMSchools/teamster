@@ -943,7 +943,7 @@ def test_dry_runs_run_at_once_and_keep_each_error_in_order():
                 raise BadRequest("x", errors=[{"reason": "invalidQuery"}])
             return 1.0
 
-    got = trace._dry_runs(Wh(), ["a", "b", "c"])
+    got = trace.dry_runs(Wh(), ["a", "b", "c"])
 
     assert got[0] == 1.0 and got[2] == 1.0 and isinstance(got[1], BadRequest)
     assert len(seen) == 3

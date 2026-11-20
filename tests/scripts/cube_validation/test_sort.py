@@ -755,21 +755,19 @@ def test_pii_members_reads_contains_pii_from_meta():
 
 
 def test_open_key_changes_when_a_group_or_cell_set_changes_its_counts():
-    from cube_validation.sort import _open_key
+    from cube_validation.sort import open_key
 
     dims = (("grade_level", "9"),)
     base = Group("enrollment", dims, "cube_only", 40, 38)
-    assert _open_key(base) == _open_key(Group("enrollment", dims, "cube_only", 40, 38))
-    assert _open_key(base) != _open_key(Group("enrollment", dims, "cube_only", 41, 38))
-    assert _open_key(base) != _open_key(Group("enrollment", dims, "cube_only", 40, 39))
+    assert open_key(base) == open_key(Group("enrollment", dims, "cube_only", 40, 38))
+    assert open_key(base) != open_key(Group("enrollment", dims, "cube_only", 41, 38))
+    assert open_key(base) != open_key(Group("enrollment", dims, "cube_only", 40, 39))
 
     cells = CellDiff("enrollment", {"differs": 3})
-    assert _open_key(cells) != _open_key(CellDiff("enrollment", {"differs": 4}))
-    assert _open_key(cells) == _open_key(
-        CellDiff("enrollment", {"differs": 3}, ("why",))
-    )
+    assert open_key(cells) != open_key(CellDiff("enrollment", {"differs": 4}))
+    assert open_key(cells) == open_key(CellDiff("enrollment", {"differs": 3}, ("why",)))
     # A formula difference is another item than the cell set it split from.
-    assert _open_key(cells) != _open_key(
+    assert open_key(cells) != open_key(
         CellDiff("enrollment", {"differs": 3}, kind="formula")
     )
 
@@ -1210,10 +1208,10 @@ from pathlib import Path  # noqa: E402
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.sort import (  # noqa: E402
-    _entries,
-    _open_key,
     check_closed,
     closed_groups,
+    open_entries,
+    open_key,
     with_closed,
 )
 
@@ -1223,7 +1221,7 @@ def _ran_over(run, cause="C1"):
     path = Path("v") / "explanations" / "v" / "enrollment__dashboard_only.sql"
     explanation = explain.Explanation(path, "enrollment", "dashboard_only",
                                 {cause: ("cube", NO_SECTION)}, "SELECT 1")  # fmt: skip
-    items = [(i.id, g) for i, g in _entries(with_closed(run))]
+    items = [(i.id, g) for i, g in open_entries(with_closed(run))]
     found = {i: explain.Outcome(g.n_rows, Counter({cause: g.n_rows})) for i, g in items}
     return explanation, explain.Ran(explanation, items, found)
 
@@ -1242,7 +1240,7 @@ def test_closed_groups_keep_open_ids_and_classify_the_closed_one(tmp_path):
 
     assert kept.items == [(p_item.id, p)] and list(kept.found) == [p_item.id]
     assert closed == {
-        "id": _open_key(q), "key": _open_key(q), "kind": "group",
+        "id": open_key(q), "key": open_key(q), "kind": "group",
         "comparison": "enrollment", "closed": True, "suggestion": "cause",
         "cause": [{"side": "cube", "step": "C1", "label": NO_SECTION, "n_rows": 20}],
         "explanation": {"kind": "query", "path": explanation.recorded,
@@ -1258,7 +1256,7 @@ def test_a_run_over_closed_groups_alone_is_not_an_open_items_run():
 
     kept, closed = closed_groups(run, [ran], _cfg())
 
-    assert kept == [] and [c["key"] for c in closed] == [_open_key(q)]
+    assert kept == [] and [c["key"] for c in closed] == [open_key(q)]
 
 
 def test_check_closed_says_when_no_sort_lets_it_run(tmp_path, capsys):

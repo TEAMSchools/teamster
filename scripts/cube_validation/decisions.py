@@ -191,14 +191,14 @@ def cause_state(d: Decision, explanation: str, current: dict[str, str]) -> str:
     return "holds"
 
 
-def _text(value: object) -> str:
+def group_text(value: object) -> str:
     """A decision value as group text: `None` reads as empty, as NULL does."""
     return "" if value is None else str(value)
 
 
 def _names(d: Decision, g: Group) -> bool:
     """A `group` decision's column holds one of its values in `g`."""
-    values = {_text(v) for v in d.group.get("values") or []}
+    values = {group_text(v) for v in d.group.get("values") or []}
     return g.value_of(d.group.get("column") or "") in values
 
 
@@ -343,7 +343,7 @@ def apply(
         column = decision.group.get("column")
         # A group's value is text; YAML reads an unquoted `9` as an int.
         values = list(
-            dict.fromkeys(_text(v) for v in decision.group.get("values") or [])
+            dict.fromkeys(group_text(v) for v in decision.group.get("values") or [])
         )
         # A decision on one column covers every row with that value, whatever
         # its other group-by columns hold.

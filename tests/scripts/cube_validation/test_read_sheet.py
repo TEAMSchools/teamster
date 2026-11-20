@@ -472,7 +472,7 @@ def test_a_rows_grain_field_on_the_shelves_is_mapped():
 
 def test_export_name_reads_a_countd_caption():
     assert (
-        read_sheet._export_name("Distinct count of Student Number") == "student number"
+        read_sheet.export_name("Distinct count of Student Number") == "student number"
     )
 
 

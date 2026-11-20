@@ -1036,7 +1036,7 @@ def test_a_cell_covered_by_a_decided_group_and_an_explained_one_closes():
     assert cells["explanation"] == {
         "kind": "cells",
         "groups": _group_ids(run),
-        "closed": [sort._open_key(quiet)],
+        "closed": [sort.open_key(quiet)],
     }
     assert {"side": "both", "step": "decision", "label": "closed by closed-x",
             "n_rows": 4} in cells["cause"]  # fmt: skip

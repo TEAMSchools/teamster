@@ -497,7 +497,7 @@ def test_a_formula_question_shows_both_definitions_and_masks_its_count():
     body = render_review_issue("Registrar", [_run(applied=few)])
     assert f"`enrollment` in `enrollment_view`: <10 {FORMULA_ASK}" in body
     assert "4 cells" not in body
-    q = report._questions([_run(applied=few)])[0]
+    q = report.owner_questions([_run(applied=few)])[0]
     assert q["kinds"] == ["formula"]
     assert report.defined_comparisons([q], "enrollment_view") == {"enrollment"}
 
@@ -993,7 +993,7 @@ def test_owner_questions_post_only_bounds_beside_an_earlier_listing():
 
 def test_a_review_refuses_questions_json_that_does_not_match_its_questions():
     run = _run()
-    asked = report._questions([run])
+    asked = report.owner_questions([run])
     assert asked
 
     with pytest.raises(ValueError, match="questions JSON"):
@@ -1018,9 +1018,9 @@ def test_a_lead_posts_its_counts_only_when_its_total_is_exact():
 
 
 def test_a_hidden_value_is_redacted_only_as_a_whole_value():
-    from cube_validation.report import _safe_reason
+    from cube_validation.report import safe_reason
 
-    text = _safe_reason("grade 1 lost 414 rows; see Q1 and 1.5", ["1"])
+    text = safe_reason("grade 1 lost 414 rows; see Q1 and 1.5", ["1"])
 
     assert text == "grade <redacted> lost 414 rows; see Q1 and 1.5"
 

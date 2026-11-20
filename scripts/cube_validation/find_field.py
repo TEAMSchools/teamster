@@ -68,7 +68,7 @@ _AGG_NAMES = {
     "Sum": "SUM", "Avg": "AVG", "Count": "COUNT", "CountD": "COUNTD",
     "Min": "MIN", "Max": "MAX", "Median": "MEDIAN",
 }  # fmt: skip
-_AGG_PREFIXES = {
+AGG_PREFIXES = {
     "sum": "SUM", "avg": "AVG", "cnt": "COUNT", "ctd": "COUNTD",
     "min": "MIN", "max": "MAX", "med": "MEDIAN",
 }  # fmt: skip
@@ -364,7 +364,7 @@ def _ref_caption(m: re.Match, caption: dict[str, str]) -> str | None:
     name = caption.get(m["name"], m["name"])
     if m["deriv"] in ("usr", "none", ""):
         return name
-    agg = _AGG_PREFIXES.get(m["deriv"])
+    agg = AGG_PREFIXES.get(m["deriv"])
     return f"{agg}({name})" if agg else None
 
 
@@ -584,7 +584,7 @@ def text_values(twb_xml: str, sheet: str) -> set[str]:
     }
 
 
-def _tokens(text: str) -> set[str]:
+def name_tokens(text: str) -> set[str]:
     parts = re.split(r"[^A-Za-z0-9]+", text.lower())
     return {p for p in parts if len(p) >= MIN_TOKEN_LENGTH and p not in SQL_KEYWORDS}
 
@@ -619,12 +619,12 @@ def rank(
         Up to `limit` candidates with a score above 0, best first, ties by
         caption.
     """
-    wanted = _tokens(measure) | _tokens(member_sql)
+    wanted = name_tokens(measure) | name_tokens(member_sql)
     if not wanted and not caption:
         return []
     scored = []
     for calc in calcs:
-        shared = wanted & (_tokens(calc.caption) | _tokens(calc.formula))
+        shared = wanted & (name_tokens(calc.caption) | name_tokens(calc.formula))
         boost = 1.0 if caption and caption.lower() in calc.caption.lower() else 0.0
         if shared or boost:
             scored.append(

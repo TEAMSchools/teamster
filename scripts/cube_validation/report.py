@@ -54,7 +54,7 @@ _SHOWN_COLUMNS = frozenset(
 )
 
 
-def _is_identifier(column: str) -> bool:
+def is_identifier(column: str) -> bool:
     """True for every column not on the reviewed list, so unknowns fail closed."""
     return column not in _SHOWN_COLUMNS
 
@@ -232,14 +232,14 @@ def untasked(decisions) -> list[str]:
     )
 
 
-_CELL_WORDS = {
+CELL_WORDS = {
     "differs": "differ",
     "cube_only": "Cube only",
     "dashboard_only": "dashboard only",
 }
 
 
-def _gap_line(g: Gap) -> str:
+def gap_line(g: Gap) -> str:
     kind = "filter, set to chosen values, not All" if g.restricting else g.kind
     return (
         f"`{_clean(g.field)}` ({kind}) on {', '.join(g.sheets)}: Cube has no "
@@ -293,7 +293,7 @@ def render_local(run: RunResult) -> str:
     to_sort = []
     for g in run.applied.open:
         line = (
-            f"{_where(g, lambda _column, value: value)} in {g.comparison_id} "
+            f"{name_group(g, lambda _column, value: value)} in {g.comparison_id} "
             f"({g.bucket}): {g.n_rows} rows, {g.n_students} students"
         )
         for clause in run.clauses.get(g.comparison_id, []):
@@ -304,7 +304,7 @@ def render_local(run: RunResult) -> str:
     # A dashboard cut or filter Cube cannot make: sorted like a row group.
     out += ["", "## Missing cuts and filters", ""]
     out += _bullets(
-        [_gap_line(g) for g in run.applied.open_gaps] + run.gaps_unknown,
+        [gap_line(g) for g in run.applied.open_gaps] + run.gaps_unknown,
         "None open.",
     )
 
@@ -314,7 +314,7 @@ def render_local(run: RunResult) -> str:
         out.append("None open.")
     for diff in run.applied.open_cells:
         counts = ", ".join(
-            f"{n} {_CELL_WORDS.get(verdict, verdict)}"
+            f"{n} {CELL_WORDS.get(verdict, verdict)}"
             for verdict, n in diff.counts.items()
         )
         what = " formula difference" if diff.kind == "formula" else ""
@@ -509,21 +509,21 @@ def _clean(text: str) -> str:
     return " ".join(text.replace("`", "").split())
 
 
-def _where(g: Group, show) -> str:
+def name_group(g: Group, show) -> str:
     """Name a group by its columns; `show(column, value)` gives the text shown."""
     if not g.dims:
         return "the whole comparison"
     return ", ".join(f"`{c}` = `{show(c, v)}`" for c, v in g.dims)
 
 
-def _shown_value(g: Group, column: str, value: str) -> str:
+def shown_value(g: Group, column: str, value: str) -> str:
     """Show a value only for a reviewed column of a group with 10+ students."""
-    if g.n_students < MASK_BELOW or _is_identifier(column):
+    if g.n_students < MASK_BELOW or is_identifier(column):
         return "<redacted>"
     return _clean(value)
 
 
-def _safe_reason(reason: str, values: list) -> str:
+def safe_reason(reason: str, values: list) -> str:
     """Keep a decision's reason but strip digit runs and the group's values.
 
     `values` may hold YAML numbers from a decision's `group.values`.
@@ -607,14 +607,14 @@ def _group_part(
     # A value shows only when one group alone has 10 of its students.
     shown = (
         set()
-        if _is_identifier(column)
+        if is_identifier(column)
         else {v for (_, v), n in per_value.items() if n >= MASK_BELOW}
     )
     values = ", ".join(
         dict.fromkeys(_clean(v) if v in shown else "<redacted>" for v in found)
     )
     where = f"`{column}` = `{values}`" if column else "the whole comparison"
-    hidden = [v for g in groups for c, v in g.dims if _is_identifier(c)]
+    hidden = [v for g in groups for c, v in g.dims if is_identifier(c)]
     hidden += [
         v
         for v in [*found, *(v for d in decisions for v in d.group.get("values", []))]
@@ -653,7 +653,7 @@ def _comparison_part(view: str, groups: list[Group]) -> tuple[str, list]:
     hidden = []
     for g in groups:
         for c, v in g.dims:
-            if _is_identifier(c):
+            if is_identifier(c):
                 hidden.append(v)
             else:
                 per_value[c, v] = max(per_value.get((c, v), 0), g.n_students)
@@ -701,7 +701,7 @@ def _cause_part(view: str, ask: CauseAsk) -> tuple[str, list]:
     """
     d, groups = ask.decision, ask.groups
     hidden = [
-        v for g in groups for c, v in g.dims if _shown_value(g, c, v) == "<redacted>"
+        v for g in groups for c, v in g.dims if shown_value(g, c, v) == "<redacted>"
     ]
     return (
         f"`{d.comparison}` in `{view}` "
@@ -796,7 +796,7 @@ def _posted_why(why: str) -> str:
     at = why.find(SQL_BROKEN)
     if at != -1:
         why = why[: at + len(SQL_BROKEN)]
-    return _safe_reason(why, [])
+    return safe_reason(why, [])
 
 
 @dataclass(frozen=True)
@@ -903,7 +903,7 @@ def unsettled_detail(items: list[Unsettled], name: str) -> str:
                 continue
             exact = bool(count) and count.split(" ", 1)[0].isdigit()
             lead = (
-                _safe_reason(_posted_lead(u.lead, counts=exact), list(u.hidden))
+                safe_reason(_posted_lead(u.lead, counts=exact), list(u.hidden))
                 if u.lead
                 else "no lead yet"
             )
@@ -957,7 +957,7 @@ def still_with_analyst(
         for cid, why in whys.items()
     ]
     out += [
-        f"`{cid}` in `{view}`: formulas not compared: {_safe_reason(reason, [])}; "
+        f"`{cid}` in `{view}`: formulas not compared: {safe_reason(reason, [])}; "
         f"{mask(cells)} cells closed by coverage only"
         for view, comparisons in sorted((unchecked or {}).items())
         for cid, reasons in sorted(comparisons.items())
@@ -966,7 +966,7 @@ def still_with_analyst(
     return out
 
 
-def _questions(
+def owner_questions(
     runs: list[RunResult],
     causes: dict[str, list[CauseAsk]] | None = None,
 ) -> list[dict]:
@@ -1137,7 +1137,7 @@ def also_decided(
     for m in merged.values():
         d = m["d"]
         call = CALL_WORDS.get(d.call, d.call)
-        reason = _with_task(_safe_reason(d.reason, m["hidden"]), d.task)
+        reason = _with_task(safe_reason(d.reason, m["hidden"]), d.task)
         out.append(f"{' and '.join(m['heads'])}: {call} (`{d.call}`). Reason: {reason}")
     return out
 
@@ -1149,7 +1149,7 @@ def question_reasons(q: dict) -> list[str]:
     comparison's decision may carry its own reason.
     """
     raw = q["reasons"] or [q["reason"]]
-    return list(dict.fromkeys(_safe_reason(r, q["hidden"]) for r in raw))
+    return list(dict.fromkeys(safe_reason(r, q["hidden"]) for r in raw))
 
 
 def question_reason(q: dict) -> str:
@@ -1177,7 +1177,7 @@ def defined_comparisons(questions: list[dict], view: str) -> set[str]:
 
 def definition_text(text: str) -> str:
     """A comparison's definition as the issue shows it, scrubbed like a reason."""
-    return _safe_reason(text, [])
+    return safe_reason(text, [])
 
 
 def _dashboard_location(check: dict) -> str:
@@ -1384,7 +1384,7 @@ def render_review_issue(
         Markdown in the feature-request structure. Every count is masked and
         values outside the reviewed reference columns read `<redacted>`.
     """
-    asked = _questions(runs, causes)
+    asked = owner_questions(runs, causes)
     kinds = [k for q in asked for k in q["kinds"]]
     asked_ids = [d.id for q in asked for _, d in q["decisions"]]
     definition_lines = []

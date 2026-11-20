@@ -24,32 +24,32 @@ from typing import Any
 
 from . import coverage, explain, pipeline, sort
 from .config import (
-    _TASK,
     CALLS,
     FORMULA_CELLS,
     MATCHED_ONLY,
     SEPARATED_DIGITS,
+    TASK_REF,
     Decision,
     ViewConfig,
     mask_digits,
 )
-from .cube_client import _literal
+from .cube_client import sql_literal
 from .decisions import cause_state
 from .pipeline import Refusal
 from .report import (
     MASK_BELOW,
     CauseAsk,
     RunResult,
-    _is_identifier,
-    _questions,
-    _safe_reason,
     bounded,
     defined_comparisons,
     definition_text,
+    is_identifier,
     mask,
+    owner_questions,
     question_parts,
     question_reason,
     question_reasons,
+    safe_reason,
     without_sql,
 )
 
@@ -138,7 +138,7 @@ def cell_causes(
     }
     groups = [
         (key, g)
-        for key, g in sort._groups_by_key(run).items()
+        for key, g in sort.groups_by_key(run).items()
         if g.comparison_id == comparison
     ]
     counted: dict[tuple, dict[str, int]] = {}
@@ -204,7 +204,7 @@ def example_cell(
         for c in run.diff_cells
         if c["comparison"] == comparison
         and kind in (None, c.get("kind", "cells"))
-        and not any(_is_identifier(column) for column, _ in c["dims"])
+        and not any(is_identifier(column) for column, _ in c["dims"])
         and c["n_students"] is not None
         and c["n_students"] >= MASK_BELOW
         and c["dashboard"] is not None
@@ -249,14 +249,14 @@ def _predicate(column: str, key: str) -> str:
     if key == "":
         return f"{column} IS NULL"
     if key.lower() in ("true", "false"):
-        return f"LOWER(CAST({column} AS STRING)) = {_literal(key.lower())}"
+        return f"LOWER(CAST({column} AS STRING)) = {sql_literal(key.lower())}"
     try:
         number = Decimal(key)
     except InvalidOperation:
         number = None
     if number is not None and number.is_finite():
         return f"SAFE_CAST({column} AS NUMERIC) = {format(number.normalize(), 'f')}"
-    return f"{column} = {_literal(key)}"
+    return f"{column} = {sql_literal(key)}"
 
 
 def _pinned(sql: str, pairs: list[tuple[str, str]]) -> str:
@@ -657,7 +657,7 @@ def questions_json(
         ]
 
     out = []
-    for n, q in enumerate(_questions(runs, causes), start=1):
+    for n, q in enumerate(owner_questions(runs, causes), start=1):
         views = list(dict.fromkeys(view for view, _ in q["decisions"]))
 
         defs: dict[str, list[str]] = {"dashboard": [], "cube": []}
@@ -674,9 +674,7 @@ def questions_json(
         lines = [line for item in items for line in item.get("evidence", [])]
         if "asks" in q:
             lines = _cause_evidence(q["asks"])
-        evidence = list(
-            dict.fromkeys(_safe_reason(line, q["hidden"]) for line in lines)
-        )
+        evidence = list(dict.fromkeys(safe_reason(line, q["hidden"]) for line in lines))
 
         # A cause question's example holds that cause's rows.
         asked = {
@@ -892,7 +890,7 @@ def parse_answers(body: str) -> list[Answer]:
             raise AnswerError(f"{where}: fix_source needs a task")
         if task and call != "fix_source":
             raise AnswerError(f"{where}: only fix_source takes a task; got {call}")
-        if task and not _TASK.fullmatch(task):
+        if task and not TASK_REF.fullmatch(task):
             raise AnswerError(
                 f"{where}: task must be an https:// link or #<issue>; got {task!r}"
             )

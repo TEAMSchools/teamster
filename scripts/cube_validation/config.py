@@ -35,7 +35,7 @@ CAUSE_SIDES = ("dashboard", "cube")
 _ID_RUN = re.compile(r"\d+(?:[-.,/:]\d+)*")
 _YEAR_OR_DATE = re.compile(r"\d{4}-(?:\d{2}|\d{4})|\d{4}-\d{2}-\d{2}")
 # Digits split by spaces, dashes, commas or dots, for scrubbing free text
-# (`report._safe_reason`, `answers.NOTE_REFUSALS`).
+# (`report.safe_reason`, `answers.NOTE_REFUSALS`).
 SEPARATED_DIGITS = re.compile(r"\d[\d\-\s,.]{3,}\d")
 
 
@@ -56,7 +56,7 @@ def mask_digits(text: str) -> str:
     return _ID_RUN.sub(masked, text)
 
 
-_TASK = re.compile(r"https://\S+|#\d+")
+TASK_REF = re.compile(r"https://\S+|#\d+")
 # Filter operators for `scope` (Cube side) and `dashboard_filters` (dashboard
 # side). The comparisons take exactly 1 number; `set` means not null.
 SCOPE_OPERATORS = ("equals", "not_equals", "gt", "gte", "lt", "lte", "set")
@@ -700,7 +700,7 @@ def _decision(
         reader.fail("task", f"is required when call is {call}")
     # The review issue posts `task` to GitHub as written, so it may only be a
     # link, never free text that could name a person.
-    if task and not _TASK.fullmatch(task):
+    if task and not TASK_REF.fullmatch(task):
         reader.fail("task", f"must be an https:// link or #<issue>; got {task!r}")
     if "cells" in reader.data:
         reader.fail(
@@ -834,7 +834,7 @@ def _tasks(root: _Reader) -> dict[str, str]:
         value = reader.get(key, str)
         if value is None:
             continue
-        if not _TASK.fullmatch(value):
+        if not TASK_REF.fullmatch(value):
             reader.fail(key, f"must be an https:// link or #<issue>; got {value!r}")
         tasks[key] = value
     return tasks

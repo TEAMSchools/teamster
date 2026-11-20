@@ -259,11 +259,11 @@ def _value_names(
         return calc.caption, {calc.caption.lower()}
     name = m["name"]
     shown = caption.get(name) or name
-    agg = finder._AGG_PREFIXES.get(m["deriv"])
+    agg = finder.AGG_PREFIXES.get(m["deriv"])
     return (f"{agg}({shown})" if agg else shown), {shown.lower()}
 
 
-def _export_name(field: str) -> str:
+def export_name(field: str) -> str:
     """`Avg. Is Mastery Int` or `AVG(Is Mastery Int)` as `is mastery int`."""
     field = field.strip()
     if call := _AGG_CALL.match(field):
@@ -488,9 +488,9 @@ def text_measure(facts: Sheet, sheet_field: str | None) -> str | None:
         # shows as `attr` shares its name.
         if _COUNT_FIELD.match(sheet_field):
             return None
-        # Read as written too: `_export_name` strips a leading `Count ` as an
+        # Read as written too: `export_name` strips a leading `Count ` as an
         # aggregate, which would miss a text field captioned `Count Type`.
-        named = {sheet_field.strip().lower(), _export_name(sheet_field)}
+        named = {sheet_field.strip().lower(), export_name(sheet_field)}
         if named & facts.text_values:
             return f"sheet_field {sheet_field!r}: {tableau.TEXT_MEASURE}"
         return None
@@ -520,7 +520,7 @@ def _measure_line(out: _Checklist, comparison: Comparison | None, facts: Sheet) 
         else:
             out.add(f"  Measure: sheet_field not set; the sheet shows {shown}")
         return
-    name = _export_name(wanted)
+    name = export_name(wanted)
     found = [s for s, names in facts.values.items() if name in names]
     if found:
         out.add(f"  Measure: sheet_field {wanted!r} is on the sheet ({found[0]})")
@@ -619,7 +619,7 @@ def check(
     _measure_line(inner, comparison, shaped or facts)
     wanted = comparison.sheet_field if comparison else None
     for shelf, captions in (reshaped.recomputed if reshaped else {}).items():
-        if wanted and _export_name(wanted) in {c.lower() for c in captions}:
+        if wanted and export_name(wanted) in {c.lower() for c in captions}:
             inner.before.append(
                 f"sheet_field {wanted!r}: recomputes along the new {shelf} on the "
                 "reshaped copy, a number the dashboard never shows"
