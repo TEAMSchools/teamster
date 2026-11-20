@@ -1,0 +1,118 @@
+models:
+  - name: rpt_gsheets__leader_intent_to_return_followup
+    description: >-
+      Leaders in the open Leader Intent to Return Survey round who have not
+      submitted it, one row per leader, with their manager. Feeds recruitment's
+      follow-up Sheet: their Zapier reminder reads it, and they work from it to
+      follow up with each leader and manager. Empty outside the survey window. A
+      submission to the staff Intent to Return form does not count.
+    columns:
+      - name: employee_number
+        data_type: int64
+        description: Staff identifier from the ADP-derived roster.
+        config:
+          meta:
+            contains_pii: true
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: preferred_name_lastfirst
+        data_type: string
+        description: Leader's preferred name, last name first.
+        config:
+          meta:
+            contains_pii: true
+      - name: job_title
+        data_type: string
+        description: Job title on the leader's primary assignment.
+      - name: department
+        data_type: string
+        description: Home department the leader is assigned to.
+      - name: business_unit
+        data_type: string
+        description: Legal entity the leader is employed by.
+      - name: location
+        data_type: string
+        description: Home work location the leader is assigned to.
+      - name: mail
+        data_type: string
+        description: Leader's work email address.
+        config:
+          meta:
+            contains_pii: true
+      - name: report_to_preferred_name_lastfirst
+        data_type: string
+        description: Manager's preferred name, last name first.
+        config:
+          meta:
+            contains_pii: true
+      - name: report_to_mail
+        data_type: string
+        description: Manager's work email address, for the reminder's CC.
+        config:
+          meta:
+            contains_pii: true
+
+unit_tests:
+  - name: test_leader_followup_lists_non_submitters
+    description: >-
+      A leader with no leader-survey submission is listed, even if they
+      submitted the staff form; a leader with no manager is listed with blank
+      manager columns; a leader who submitted is not listed; a leader in a round
+      that is not open is not listed.
+    model: rpt_gsheets__leader_intent_to_return_followup
+    given:
+      - input: ref('int_surveys__leader_intent_to_return_population')
+        format: sql
+        rows: |
+          select
+              201 as employee_number,
+              2026 as academic_year,
+              'LITR' as survey_round,
+              true as is_current,
+              'Person A' as preferred_name_lastfirst,
+              'School Leader' as job_title,
+              'School Leadership' as department,
+              'KIPP Miami' as business_unit,
+              'School A' as `location`,
+              'a@example.org' as mail,
+              901 as report_to_employee_number,
+              'Manager A' as report_to_preferred_name_lastfirst,
+              'ma@example.org' as report_to_mail
+          union all
+          select
+              202, 2026, 'LITR', true, 'Person B', 'School Leader',
+              'School Leadership', 'KIPP Miami', 'School A', 'b@example.org',
+              901, 'Manager A', 'ma@example.org'
+          union all
+          select
+              203, 2026, 'LITR', true, 'Person C', 'Director',
+              'Teaching and Learning', 'KIPP TEAM and Family Schools Inc.',
+              'Network Office', 'c@example.org', null, null, null
+          union all
+          select
+              204, 2026, 'LITR', false, 'Person D', 'School Leader',
+              'School Leadership', 'KIPP Paterson', 'School B', 'd@example.org',
+              902, 'Manager B', 'mb@example.org'
+      - input: ref('int_surveys__survey_submissions')
+        rows:
+          - respondent_employee_number: 202
+            academic_year: 2026
+            term_code: LITR
+            round_rn: 1
+          - respondent_employee_number: 201
+            academic_year: 2026
+            term_code: ITR
+            round_rn: 1
+    expect:
+      rows:
+        - employee_number: 201
+          report_to_preferred_name_lastfirst: Manager A
+          report_to_mail: ma@example.org
+        - employee_number: 203
+          report_to_preferred_name_lastfirst: null
+          report_to_mail: null

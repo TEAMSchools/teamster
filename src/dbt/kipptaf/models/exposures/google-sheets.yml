@@ -307,6 +307,19 @@ exposures:
         dagster:
           kinds:
             - googlesheets
+  - name: leader_intent_to_return_followup
+    label: Leader Intent to Return Follow-up
+    type: application
+    owner:
+      name: Data Team
+    url: TODO(#6251) follow-up sheet URL
+    depends_on:
+      - ref("rpt_gsheets__leader_intent_to_return_followup")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - googlesheets
   - name: survey_tracking_v3p0
     label: Survey Tracking v3.0
     type: application
