@@ -891,8 +891,14 @@ def explanation_query(
     allowed = ", ".join(pipeline.lit(v) for v in sorted(literals))
     explanation = body.replace(PLACEHOLDER, "__u")
     head = f"{ctes},\n" if ctes else "WITH "
+    kind, extra, cs, tail = "", "", "", ""
     if students is not None:
-        return _with_students(head, select, explanation, allowed, students)
+        cs, tail = _student_parts(allowed, students)
+        kind = "'count' AS __kind, "
+        extra = (
+            ", CAST(NULL AS INT64) AS __cut, "
+            "CAST(NULL AS STRING) AS __cell, CAST(NULL AS INT64) AS n_students"
+        )
     return (
         # trunk-ignore(bandit/B608): the explanation is the analyst's read-only SQL, vetted by check_sql; cause literals are quoted by pipeline.lit
         f"{head}__u AS (\n{select}\n),\n__p AS (\n{explanation}\n),\n"
@@ -901,22 +907,22 @@ def explanation_query(
         f"COUNTIF(cause IS NULL OR cause NOT IN ({allowed})) AS __bad\n"
         "  FROM __p GROUP BY __row\n),\n"
         "__stray AS (\n  SELECT COUNT(*) AS n FROM __per "
-        "WHERE __row NOT IN (SELECT __row FROM __u)\n)\n"
-        "SELECT u.item_key, per.cause, COUNT(*) AS n, "
+        f"WHERE __row NOT IN (SELECT __row FROM __u)\n){cs}\n"
+        f"SELECT {kind}u.item_key, per.cause, COUNT(*) AS n, "
         "COUNTIF(per.__row IS NULL) AS missed, "
         "COUNTIF(per.__times > 1) AS doubled, "
         "COUNTIF(per.__bad > 0) AS bad, "
-        "ANY_VALUE(s.n) AS stray\n"
+        f"ANY_VALUE(s.n) AS stray{extra}\n"
         "FROM __u AS u LEFT JOIN __per AS per ON per.__row = u.__row "
         "CROSS JOIN __stray AS s\n"
-        "GROUP BY u.item_key, per.cause"
+        f"GROUP BY u.item_key, per.cause{tail}"
     )
 
 
-def _with_students(
-    head: str, select: str, explanation: str, allowed: str, s: StudentCount
-) -> str:
-    """`explanation_query` with the cause-student counts after the item counts."""
+def _student_parts(allowed: str, s: StudentCount) -> tuple[str, str]:
+    """What `explanation_query` adds for the cause-student counts: the `__cs`
+    CTE (each cause's rows placed in their cells and cuts) and the per-cut
+    `students` SELECTs unioned after the item counts."""
 
     def placed(dim, flag: str = "__cut", where: str = "") -> str:
         cols = ", ".join(f"CAST(f.{dim(d)} AS STRING) AS {d}" for d in s.dims)
@@ -945,26 +951,8 @@ def _with_students(
         "GROUP BY cause, __cell"
         for j in range(s.cuts)
     ]
-    return (
-        # trunk-ignore(bandit/B608): the explanation is the analyst's read-only SQL, vetted by check_sql; identifiers come from validated config
-        f"{head}__u AS (\n{select}\n),\n__p AS (\n{explanation}\n),\n"
-        "__per AS (\n  SELECT __row, COUNT(*) AS __times, "
-        f"MIN(IF(cause IN ({allowed}), cause, NULL)) AS cause, "
-        f"COUNTIF(cause IS NULL OR cause NOT IN ({allowed})) AS __bad\n"
-        "  FROM __p GROUP BY __row\n),\n"
-        "__stray AS (\n  SELECT COUNT(*) AS n FROM __per "
-        "WHERE __row NOT IN (SELECT __row FROM __u)\n),\n"
-        f"__cs AS (\n  {' UNION ALL '.join(places)}\n)\n"
-        "SELECT 'count' AS __kind, u.item_key, per.cause, COUNT(*) AS n, "
-        "COUNTIF(per.__row IS NULL) AS missed, "
-        "COUNTIF(per.__times > 1) AS doubled, "
-        "COUNTIF(per.__bad > 0) AS bad, "
-        "ANY_VALUE(s.n) AS stray, CAST(NULL AS INT64) AS __cut, "
-        "CAST(NULL AS STRING) AS __cell, CAST(NULL AS INT64) AS n_students\n"
-        "FROM __u AS u LEFT JOIN __per AS per ON per.__row = u.__row "
-        "CROSS JOIN __stray AS s\n"
-        "GROUP BY u.item_key, per.cause" + "".join(f"\nUNION ALL\n{q}" for q in per_cut)
-    )
+    cs = f",\n__cs AS (\n  {' UNION ALL '.join(places)}\n)"
+    return cs, "".join(f"\nUNION ALL\n{q}" for q in per_cut)
 
 
 def cause_students(
