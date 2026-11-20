@@ -1257,17 +1257,44 @@ def run_explanation(
     )
     try:
         usd = wh.estimate(sql)
-        wh.refuse_past_caps(usd)
-        print(f"Explanation {explanation.path.name}: ${usd:.2f} (dry run).")
+    except GoogleAPIError as exc:
+        raise _refused(explanation.path.name, exc) from exc
+    wh.refuse_past_caps(usd)
+    print(f"Explanation {explanation.path.name}: ${usd:.2f} (dry run).")
+    found, counted = _counted(wh, sql, explanation, items, literals, comparison)
+    if students is not None:
+        students += counted
+    return found
+
+
+def _counted(
+    wh: Warehouse,
+    sql: str,
+    explanation: Explanation,
+    items: list[tuple[str, Group]],
+    literals: set[str],
+    comparison: Comparison,
+) -> tuple[dict[str, Outcome], list[dict]]:
+    """Run a priced explanation query: its outcomes per item (`outcomes`) and
+    its cause-student counts (`cause_students`, none unless it counted them).
+
+    Raises:
+        pipeline.Refusal: BigQuery refuses it (`_refused`), or an outcome fails
+            a check.
+        CostCapError: It would pass the run's or the day's cap.
+    """
+    try:
         rows = wh.rows(sql, timeout_s=TIMEOUT_S)
     except GoogleAPIError as exc:
-        raise pipeline.Refusal(
-            f"{explanation.path.name}: BigQuery refused it ({bigquery_said(exc)})"
-        ) from exc
+        raise _refused(explanation.path.name, exc) from exc
     found = outcomes(rows, explanation, items, literals)
-    if students is not None:
-        students += cause_students(rows, explanation, comparison)
-    return found
+    return found, cause_students(rows, explanation, comparison)
+
+
+def _refused(name: str, exc: GoogleAPIError) -> pipeline.Refusal:
+    """Explanation `name`'s refusal for a BigQuery error, in BigQuery's words
+    (`bigquery_said`)."""
+    return pipeline.Refusal(f"{name}: BigQuery refused it ({bigquery_said(exc)})")
 
 
 def _student_count(comparison: Comparison, bucket: str) -> StudentCount | None:
@@ -1713,14 +1740,7 @@ def run_stored(
                 continue
             todo.append((ran, comparison, sql, literals, done))
 
-    ready = []
-    total = 0.0
-    for job, price in zip(todo, trace.dry_runs(wh, [t[2] for t in todo]), strict=True):
-        if isinstance(price, GoogleAPIError):
-            job[0].why = _not_run(job[0].explanation.path.name, price)
-        else:
-            total += price
-            ready.append(job)
+    ready, total = _price_jobs(todo, trace.dry_runs(wh, [t[2] for t in todo]))
     if ready or reused:
         print(
             f"Explanations: {len(ready)} to run, ${total:.2f} (dry run); {reused} "
@@ -1749,20 +1769,30 @@ def _run_job(
 ) -> bool:
     """Run one priced explanation query into `ran`; False, with why, when it
     cannot run or its outcome fails a check."""
-    name = ran.explanation.path.name
     try:
-        rows = wh.rows(sql, timeout_s=TIMEOUT_S)
-        ran.found = outcomes(rows, ran.explanation, ran.items, literals)
-        ran.students = cause_students(rows, ran.explanation, comparison)
-    except (pipeline.Refusal, CostCapError) as exc:
-        ran.why = _not_run(name, exc)
-    except GoogleAPIError as exc:
-        # As `run_explanation` words it, so the evidence reads the same.
-        ran.why = (
-            f"explanation {name} not run: {name}: BigQuery refused it "
-            f"({bigquery_said(exc)})"
+        ran.found, ran.students = _counted(
+            wh, sql, ran.explanation, ran.items, literals, comparison
         )
+    except (pipeline.Refusal, CostCapError) as exc:
+        ran.why = _not_run(ran.explanation.path.name, exc)
     return not ran.why
+
+
+def _price_jobs[J: tuple](
+    jobs: list[J], prices: list[float | GoogleAPIError]
+) -> tuple[list[J], float]:
+    """The jobs (a `Ran` first) whose dry run priced them, and their total
+    price. A job whose dry run BigQuery refused keeps why (`_not_run`) and is
+    left out."""
+    ready: list[J] = []
+    total = 0.0
+    for job, price in zip(jobs, prices, strict=True):
+        if isinstance(price, GoogleAPIError):
+            job[0].why = _not_run(job[0].explanation.path.name, price)
+        else:
+            total += price
+            ready.append(job)
+    return ready, total
 
 
 def _applicable(
@@ -2129,31 +2159,18 @@ def explain(
         # Every query is priced before any runs, under one cap check.
         price, *prices = trace.dry_runs(wh, [query, *(j[2] for j in jobs)])
         if isinstance(price, GoogleAPIError):
-            raise pipeline.Refusal(
-                f"{explanation.path.name}: BigQuery refused it ({bigquery_said(price)})"
-            ) from price
+            raise _refused(explanation.path.name, price) from price
         print(f"Explanation {explanation.path.name}: ${price:.2f} (dry run).")
-        ready, also = [], 0.0
-        for job, usd in zip(jobs, prices, strict=True):
-            if isinstance(usd, GoogleAPIError):
-                job[0].why = _not_run(job[0].explanation.path.name, usd)
-            else:
-                also += usd
-                ready.append(job)
+        ready, also = _price_jobs(jobs, prices)
         if ready:
             print(
                 f"On the comparisons sharing its rows: {len(ready)} to run, "
                 f"${also:.2f} (dry run)."
             )
         wh.refuse_past_caps(price + also)
-        try:
-            rows = wh.rows(query, timeout_s=TIMEOUT_S)
-        except GoogleAPIError as exc:
-            raise pipeline.Refusal(
-                f"{explanation.path.name}: BigQuery refused it ({bigquery_said(exc)})"
-            ) from exc
-        found = outcomes(rows, explanation, bucket_items, literals)
-        students = cause_students(rows, explanation, target)
+        found, students = _counted(
+            wh, query, explanation, bucket_items, literals, target
+        )
         for job in ready:
             _run_job(wh, *job)
         for ran in shared:
