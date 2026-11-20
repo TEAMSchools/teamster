@@ -478,6 +478,22 @@ Not part of this work. They go on #5348 as a comment so they are not lost.
 - A first check on claude.ai, where tool names and skill loading differ. A
   personal upload in one account is enough and can happen before anything is
   published.
+- Shipping the Cube connector inside `ktaf-cube`, so one install gives a person
+  the connector and the skills together. A plugin can list connectors in a
+  `.mcp.json` file at its root, and the installed `k12-education` plugin does.
+  Three things to settle first:
+  - Sign-in through a bundled Cube connector has not been tried, and bundled
+    connectors have only been seen working in Claude Code. Try both in the
+    claude.ai check above.
+  - Anyone who already has the organization's Cube connector would get two sets
+    of Cube tools. Remove the organization one for them.
+  - The plugin grant becomes the only gate. Cube limits a person to the schools
+    their role covers, but shows them every data area, including ones not yet
+    verified or security-reviewed.
+
+  The skills do not depend on how the connector arrives, so the draft does not
+  change either way.
+
 - Specific causes for a dashboard mismatch, added to the attendance and
   enrollment skill once each is re-measured.
 - How the plugins are published. #5348 says organization marketplaces need a
