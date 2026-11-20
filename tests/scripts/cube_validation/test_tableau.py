@@ -19,7 +19,6 @@ from cube_validation.find_field import sheet_shape
 from cube_validation.tableau import (
     RefreshMovedError,
     Tableau,
-    _key_text,
     _number,
     _parse_shelf,
     _shelf_text,
@@ -31,6 +30,7 @@ from cube_validation.tableau import (
     published_sheets,
     set_shelves,
     split_cuts,
+    value_key,
 )
 
 FIXTURE = Path(__file__).parent / "fixtures" / "sheet_formats.twb"
@@ -780,13 +780,13 @@ def test_set_shelves_fills_an_empty_shelf_and_keeps_its_attributes():
 def test_rebuild_check_keys_read_an_export_date_as_the_probe_date():
     # Tableau's export writes M/D/YYYY; the probe returns a DATE.
     assert (
-        _key_text("9/21/2026")
-        == _key_text(datetime(2026, 9, 21).date())
+        value_key("9/21/2026", export=True)
+        == value_key(datetime(2026, 9, 21).date(), export=True)
         == "2026-09-21"
     )
-    assert _key_text("2026-09-21") == "2026-09-21"
-    assert _key_text("1,234") == "1234"
-    assert _key_text("13/45/2026") == "13/45/2026"
+    assert value_key("2026-09-21", export=True) == "2026-09-21"
+    assert value_key("1,234", export=True) == "1234"
+    assert value_key("13/45/2026", export=True) == "13/45/2026"
 
 
 # Each input with its cell key in compare, coverage, formula and the answers.
@@ -898,50 +898,61 @@ def test_cell_key_text_is_pinned(value, key):
     ],
 )
 def test_rebuild_check_key_text_is_pinned(value, key):
-    assert _key_text(value) == key
+    assert value_key(value, export=True) == key
 
 
 @pytest.mark.parametrize(
     ("value", "key"),
     [
-        (True, "True"),
-        (False, "False"),
-        ("TRUE", "TRUE"),
-        ("True", "True"),
-        ("False", "False"),
+        (True, "true"),
+        (False, "false"),
+        ("TRUE", "true"),
+        ("True", "true"),
+        ("False", "false"),
     ],
 )
-def test_rebuild_check_keys_a_boolean_in_its_written_case(value, key):
-    assert _key_text(value) == key
+def test_rebuild_check_keys_a_boolean_in_lower_case(value, key):
+    assert value_key(value, export=True) == key
 
 
 @pytest.mark.parametrize(
     ("value", "key"),
     [
-        (datetime(2026, 9, 21), "2026-09-21 00:00:00"),
-        (datetime(2026, 9, 21, 8, 30), "2026-09-21 08:30:00"),
-        (datetime(2026, 9, 21, tzinfo=timezone.utc), "2026-09-21 00:00:00+00:00"),
-        (
-            datetime(2026, 9, 21, 8, 30, tzinfo=timezone.utc),
-            "2026-09-21 08:30:00+00:00",
-        ),
+        (datetime(2026, 9, 21), "2026-09-21"),
+        (datetime(2026, 9, 21, 8, 30), "2026-09-21T08:30:00"),
+        (datetime(2026, 9, 21, tzinfo=timezone.utc), "2026-09-21"),
+        (datetime(2026, 9, 21, 8, 30, tzinfo=timezone.utc), "2026-09-21T08:30:00"),
     ],
 )
-def test_rebuild_check_keys_a_datetime_as_python_prints_it(value, key):
-    assert _key_text(value) == key
+def test_rebuild_check_keys_a_midnight_datetime_as_its_day_else_a_naive_iso_stamp(
+    value, key
+):
+    assert value_key(value, export=True) == key
 
 
 @pytest.mark.parametrize(
-    "value",
+    ("value", "key"),
     [
-        "2026-09-21 00:00:00",
-        "2026-09-21T00:00:00.000",
-        "2026-09-21 08:30:00",
-        "2026-09-21T08:30:00+00:00",
+        ("2026-09-21 00:00:00", "2026-09-21"),
+        ("2026-09-21T00:00:00.000", "2026-09-21"),
+        ("2026-09-21 08:30:00", "2026-09-21T08:30:00"),
+        ("2026-09-21T08:30:00+00:00", "2026-09-21T08:30:00"),
     ],
 )
-def test_rebuild_check_keys_an_iso_timestamp_string_as_written(value):
-    assert _key_text(value) == value
+def test_rebuild_check_keys_an_iso_timestamp_string_as_its_day_else_a_naive_iso_stamp(
+    value, key
+):
+    assert value_key(value, export=True) == key
+
+
+def test_rebuild_check_matches_a_midnight_datetime_dim_to_the_export_date():
+    comparison = _comparison(dims=[ColumnPair("week_start", "dates_week_start")])
+    exports = [{"week_start": "9/21/2026", "value": "0.5"}]
+    probe = [{"week_start": datetime(2026, 9, 21), "value": 0.5}]
+
+    rebuild_check = match_export(comparison, exports, probe, twb_xml=_twb(), now=NOW)
+
+    assert rebuild_check.matched and rebuild_check.cells == 1
 
 
 def test_shelf_parser_reads_the_cross_operator():

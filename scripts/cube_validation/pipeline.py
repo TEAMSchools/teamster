@@ -17,8 +17,7 @@ import hashlib
 import json
 import re
 from collections.abc import Iterable
-from datetime import date, datetime, time, timezone
-from decimal import Decimal, InvalidOperation
+from datetime import datetime, timezone
 from typing import Any
 
 from google.api_core.exceptions import GoogleAPIError
@@ -537,40 +536,9 @@ def wrap_cube(
 # --- cells -------------------------------------------------------------------
 
 
-def value_key(value: Any) -> str:
-    """Cell key text: dates by day, booleans as `true`/`false`, numbers by
-    value, else the text.
-
-    Tableau's export writes a date as M/D/YYYY (the server's en-US format),
-    the sheet query and Cube as ISO, so both read as the same day. A boolean
-    reads as BigQuery casts it, whatever its case, so a group label
-    (`reconcile._label`) keys as its cell does; `reconcile._cell_key` is
-    this rule in SQL.
-    """
-    if isinstance(value, bool):
-        return "true" if value else "false"
-    if isinstance(value, str) and re.match(r"\d{4}-\d{2}-\d{2}", value):
-        try:
-            value = datetime.fromisoformat(value)
-        except ValueError:
-            pass
-    elif isinstance(value, str) and (day := tableau.export_date(value)) is not None:
-        value = day
-    if isinstance(value, datetime):
-        stamp = value.replace(tzinfo=None)
-        return stamp.date().isoformat() if stamp.time() == time() else stamp.isoformat()
-    if isinstance(value, date):
-        return value.isoformat()
-    if value is None:
-        return ""
-    text = str(value).strip()
-    if text.lower() in ("true", "false"):
-        return text.lower()
-    try:
-        number = Decimal(text)
-    except InvalidOperation:
-        return text
-    return format(number.normalize(), "f") if number.is_finite() else text
+# The rule lives in tableau so the rebuild check can share it without an import
+# cycle; compare, coverage, formula and the answers call it from here.
+value_key = tableau.value_key
 
 
 @dataclasses.dataclass(frozen=True)

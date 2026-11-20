@@ -29,7 +29,7 @@ import xml.etree.ElementTree as ET
 import zipfile
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any
@@ -1276,20 +1276,48 @@ def export_date(text: str) -> date | None:
         return None
 
 
-def _key_text(value: Any) -> str:
-    """Key text that treats 2026, 2026.0 and '2026' alike, and reads the
-    export's M/D/YYYY date (the server's en-US format) as the sheet query's ISO
-    date.
+def value_key(value: Any, *, export: bool = False) -> str:
+    """Cell key text: dates by day, booleans as `true`/`false`, numbers by
+    value, else the text.
+
+    Tableau's export writes a date as M/D/YYYY (the server's en-US format),
+    the sheet query and Cube as ISO, so both read as the same day. A boolean
+    reads as BigQuery casts it, whatever its case, so a group label
+    (`reconcile._label`) keys as its cell does; `reconcile._cell_key` is
+    this rule in SQL. Numbers key by value, so 2026, 2026.0 and '2026' match.
+
+    Args:
+        value: A dim value from any side.
+        export: Also read text as Tableau's export writes it: trimmed before
+            its date is read, and with thousands separators, so `1,234` keys
+            as 1234. The rebuild check keys both of its sides this way. Off
+            for compare's keys, which answers and formula fingerprints store.
+
+    Returns:
+        The key text; NULL keys as the empty string.
     """
+    if export and isinstance(value, str):
+        value = value.strip()
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, str) and re.match(r"\d{4}-\d{2}-\d{2}", value):
+        try:
+            value = datetime.fromisoformat(value)
+        except ValueError:
+            pass
+    elif isinstance(value, str) and (day := export_date(value)) is not None:
+        value = day
+    if isinstance(value, datetime):
+        stamp = value.replace(tzinfo=None)
+        return stamp.date().isoformat() if stamp.time() == time() else stamp.isoformat()
+    if isinstance(value, date):
+        return value.isoformat()
     if value is None:
         return ""
     text = str(value).strip()
-    day = export_date(text)
-    if day is not None:
-        return day.isoformat()
-    if re.fullmatch(r"\d{1,2}/\d{1,2}/\d{4}", text):
-        return text
-    if _THOUSANDS.fullmatch(text):
+    if text.lower() in ("true", "false"):
+        return text.lower()
+    if export and _THOUSANDS.fullmatch(text):
         text = text.replace(",", "")
     try:
         number = Decimal(text)
@@ -1354,7 +1382,7 @@ def _index(
         if missing:
             raise ValueError(f"{side} row lacks {', '.join(missing)}")
         others = sorted(k for k in row if k != "value")
-        key = tuple((k, _key_text(row[k])) for k in others)
+        key = tuple((k, value_key(row[k], export=True)) for k in others)
         label = ", ".join(f"{k}={row[k]}" for k in others)
         if key in values:
             failures.append(f"{label}: more than 1 {side} row")
