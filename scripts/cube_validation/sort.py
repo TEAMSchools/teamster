@@ -35,7 +35,7 @@ from .config import Comparison, Decision, RebuildCheck, ViewConfig, mask_digits
 from .cube_client import Cube, MemberDoc, member_docs, network_schools
 from .find_field import name_tokens
 from .moment import Build, utcnow
-from .reconcile import CellDiff, Gap, Group
+from .reconcile import FORMULA_CHECK, CellDiff, Gap, Group
 from .report import (
     CELL_WORDS,
     CauseAsk,
@@ -990,7 +990,9 @@ def _formula_evidence(
     One line per origin: cells no unmatched row lies in, and cells the formula
     check filed (`matched_only`), each count masked when posted. With the
     latter, the local evidence also names each formula cell's cut and dims
-    from `run.diff_cells`; the posted evidence never does.
+    from `run.diff_cells`, tagged with its origin; the posted evidence never
+    names a cell. A run saved without origins tags no line, since its tags
+    would not add up to `matched_only`.
     """
     matched = diff.matched_only
     free = sum(diff.counts.values()) - matched
@@ -1005,13 +1007,28 @@ def _formula_evidence(
     evidence = tuple(f"{n} {tail}" for n, tail in origins if n)
     posted = tuple(f"{mask(n)} {tail}" for n, tail in origins if n)
     if matched:
-        evidence += tuple(
-            f"cell {c['cut']} {c['key']}"
+        cells = [
+            c
             for c in run.diff_cells
             if c["comparison"] == diff.comparison_id and c.get("kind") == "formula"
+        ]
+        tagged = sum(_checked_cell(c) for c in cells) == matched
+        evidence += tuple(
+            f"cell {c['cut']} {c['key']}" + (f" ({_cell_origin(c)})" if tagged else "")
+            for c in cells
         )
     cause = {**_FORMULA_CAUSE, "label": MATCHED_LABEL if matched else FORMULA_LABEL}
     return [cause], evidence, posted
+
+
+def _checked_cell(cell: dict) -> bool:
+    """Whether the formula check filed this `run.diff_cells` cell."""
+    return cell.get("origin") == FORMULA_CHECK
+
+
+def _cell_origin(cell: dict) -> str:
+    """A formula cell's origin, as its local evidence line names it."""
+    return "filed by the formula check" if _checked_cell(cell) else "no unmatched row"
 
 
 def _formula_explanation(run: RunResult, comparison: str) -> dict:
@@ -1905,10 +1922,12 @@ def _run_formula_jobs(
         else:
             check = _fallen_back(job.stored, check)
         checks[job.comparison] = check
+    # A cell counts as filed only with its origin, so a run saved without
+    # origins is composed again and its local evidence tagged.
     filed = {
         (c["comparison"], c["cut"], c["key"])
         for c in run.diff_cells
-        if c.get("kind") == "formula"
+        if c.get("kind") == "formula" and _checked_cell(c)
     }
     unfiled = {
         cid

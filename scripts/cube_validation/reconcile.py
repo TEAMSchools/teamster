@@ -91,6 +91,12 @@ class CellDiff:
     matched_only: int = 0
 
 
+# A formula cell's `origin` in `run.diff_cells` when the formula check filed
+# it. A cell no unmatched row lies in carries no `origin`, so a run with no
+# formula check saves its cells unchanged.
+FORMULA_CHECK = "formula check"
+
+
 def _numbered(
     rows_sql: str,
     grain: list[str],

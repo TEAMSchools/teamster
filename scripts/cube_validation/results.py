@@ -130,7 +130,7 @@ def _cell_diffs(
     cube: Cube,
     older: frozenset[str] = frozenset(),
     checks: dict[str, set[tuple[str, str]]] | None = None,
-) -> tuple[list[CellDiff], set[Cell]]:
+) -> tuple[list[CellDiff], dict[Cell, bool]]:
     """Each comparison's differing cells, with candidate causes.
 
     A cell `coverage.placed` finds no group in is a formula difference: every
@@ -143,11 +143,12 @@ def _cell_diffs(
     when Cube can no longer compile its measure.
 
     Returns:
-        The diffs, and the formula cells, which `_diff_cells` marks so later
-        steps read this split instead of placing the cells again.
+        The diffs, and the formula cells, each True when the formula check
+        filed it, which `_diff_cells` marks so later steps read this split
+        and each cell's origin instead of placing the cells again.
     """
     out = []
-    formula_cells: set[Cell] = set()
+    formula_cells: dict[Cell, bool] = {}
     for comparison in comparisons:
         differing = [
             c for c in sides.cells
@@ -172,8 +173,11 @@ def _cell_diffs(
             inside = coverage.placed(_coverage_cell(c), sides.groups, comparison)
             on_matched = bool(inside) and (c.cut, c.key) in checked
             matched_only += on_matched
-            (formula if inside == [] or on_matched else cells).append(c)
-        formula_cells.update(formula)
+            if inside == [] or on_matched:
+                formula.append(c)
+                formula_cells[c] = on_matched
+            else:
+                cells.append(c)
         if cells:
             causes = candidate_causes(comparison, cells, comparison.decimals or 0, expr)
             if comparison.rows is not None:
@@ -668,11 +672,14 @@ def _unvalidated(
     ]
 
 
-def _diff_cells(sides: Sides, formula: set[Cell]) -> list[dict]:
+def _diff_cells(sides: Sides, formula: dict[Cell, bool]) -> list[dict]:
     """Every cell that neither passes nor is dashboard-filtered, for run.json.
 
     `kind` names the item holding it: `formula` for a cell in `formula`
     (`_cell_diffs`), else `cells`. A run saved before it reads as `cells`.
+    A formula cell the formula check filed also carries `origin`
+    (`reconcile.FORMULA_CHECK`); one no unmatched row lies in carries none,
+    so a run with no formula check saves as it did before origins.
     """
     return [
         {
@@ -686,6 +693,7 @@ def _diff_cells(sides: Sides, formula: set[Cell]) -> list[dict]:
                 (c.cut, tuple(v for _, v in c.dims))
             ),
             "kind": "formula" if c in formula else "cells",
+            **({"origin": reconcile.FORMULA_CHECK} if formula.get(c) else {}),
         }
         for c in sides.cells
         if c.verdict not in ("pass", "dashboard_filtered")

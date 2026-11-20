@@ -565,6 +565,31 @@ def test_formula_evidence_counts_matched_row_cells_masked():
     )
 
 
+def test_formula_evidence_tags_each_local_cell_with_its_origin():
+    run = _matched_run(4, 2)
+    for cell in run.diff_cells[2:]:
+        cell["origin"] = "formula check"
+    s = {i.item.id: i for i in suggest(_cfg(), run, {}, traces={})}[
+        "enrollment:formula"
+    ]
+
+    assert s.evidence[2:] == (
+        "cell {} Grade=9 (no unmatched row)",
+        "cell {} Grade=10 (no unmatched row)",
+        "cell {} Grade=11 (filed by the formula check)",
+        "cell {} Grade=12 (filed by the formula check)",
+    )
+    # Posted: the 2 count lines only, masked, with no cell and no tag.
+    assert s.posted == tuple(f"<10 {line[2:]}" for line in s.evidence[:2])
+
+    # A run saved before cells carried an origin: its tags would not add up
+    # to `matched_only`, so no line claims one.
+    old = {i.item.id: i for i in suggest(_cfg(), _matched_run(4, 2), {}, traces={})}
+    assert old["enrollment:formula"].evidence[2:] == tuple(
+        f"cell {{}} Grade={g}" for g in (9, 10, 11, 12)
+    )
+
+
 # --- value_check -------------------------------------------------------------
 
 

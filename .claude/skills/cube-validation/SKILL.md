@@ -370,7 +370,13 @@ refuses when the view's only run read another fact.
    name it.
 
    The formula check recomputes each differing cell on rows both sides matched.
-   It is priced with the explanations: the same dry run prints
+   A cell that still differs there joins the `<id>:formula` item, whose cause
+   then reads "differing cells differ on matched rows", with one count line per
+   origin. Its local evidence (the terminal and `sort.json` `evidence`) also
+   lists every formula cell, each tagged `(no unmatched row)` or
+   `(filed by the formula check)`; a cell tagged the first way reached the item
+   without the check. The posted evidence holds the masked counts only, never a
+   cell. The check is priced with the explanations: the same dry run prints
    `Formula check: N queries, $X (dry run).`, under `--max-usd` and the daily
    cap. A cell it cannot check reads `formulas not compared: <why>`: the cell
    closes by coverage as before, the owner sees the comparison under "Still with

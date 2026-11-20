@@ -2,6 +2,7 @@ import json
 import re
 from dataclasses import replace
 from datetime import date, datetime, timezone
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -1760,6 +1761,45 @@ def test_compose_ignores_a_check_of_another_result(tmp_path):
     # A run with no check that counts saves exactly as before the check.
     assert run_json.read_text() == plain_json.read_text()
     assert "matched_only" not in plain_json.read_text()
+
+
+# The run.json of the result `_keep_two_cells` keeps with no formula check,
+# pinned byte for byte: a run with no check saves no `origin`. Its `.txt` suffix
+# keeps the commit hook's JSON formatter from rewriting the pinned bytes.
+NO_CHECK_RUN = Path(__file__).parent / "fixtures" / "run_no_formula_check.json.txt"
+
+
+def _keep_two_cells(cache, check=None):
+    """`_keep_result` plus a differing cell no unmatched row lies in."""
+    held = _keep_result(cache, check)
+    kept = latest.read_all(held, CFG.fact)["mastery"]
+    free = pipeline.Cell(
+        "mastery", "{}", "abbreviation=Y", 0.8, 0.3, "differs", (("abbreviation", "Y"),)
+    )
+    sides = pipeline.Sides.from_json(kept.data)
+    sides.cells.append(free)
+    data = {**kept.data, **sides.to_json()}
+    latest.write(held, "mastery", replace(kept, data=data))
+    return held
+
+
+def test_compose_tags_the_cells_the_formula_check_filed(tmp_path):
+    cache = tmp_path / "cache"
+    _, run_json = _compose(cache, _keep_two_cells(cache, _checked()))
+
+    cells = {c["key"]: c for c in json.loads(run_json.read_text())["diff_cells"]}
+    assert cells["abbreviation=X"]["kind"] == "formula"
+    assert cells["abbreviation=X"]["origin"] == "formula check"
+    assert cells["abbreviation=Y"]["kind"] == "formula"
+    assert "origin" not in cells["abbreviation=Y"]
+
+
+def test_a_run_with_no_formula_check_saves_as_before_origins(tmp_path):
+    cache = tmp_path / "cache"
+    _, run_json = _compose(cache, _keep_two_cells(cache))
+
+    assert run_json.read_text() == NO_CHECK_RUN.read_text()
+    assert '"origin"' not in run_json.read_text()
 
 
 @pytest.mark.parametrize(

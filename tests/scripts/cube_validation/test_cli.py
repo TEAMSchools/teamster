@@ -5852,6 +5852,58 @@ def test_a_formula_decision_reads_re_confirm_after_compare_until_a_full_sort(
     assert state() == ([], ["which-rate"])
 
 
+def _mixed_formula_item(fakes, tmp_path):
+    """Sort a mixed formula difference: Newark differs with every row
+    matched, Miami still differs on matched rows. Returns the file and the
+    formula item."""
+    fakes.bq.sheet_query = [{"region": "Newark", "value": 0.9123},
+                            {"region": "Miami", "value": 0.5}]  # fmt: skip
+    fakes.bq.cells = [{"regions_region_name": "Newark", "value": 0.95},
+                      {"regions_region_name": "Miami", "value": 0.95}]  # fmt: skip
+    path = _file(tmp_path)
+    assert cli.main(["compare", str(path)]) == 0
+    fakes.bq.formula = {
+        "dashboard": [{"region": "Newark", "value": 0.9123},
+                      {"region": "Miami", "value": 0.6}],
+        "cube": [{"regions_region_name": "Newark", "value": 0.91234},
+                 {"regions_region_name": "Miami", "value": 0.95}],
+    }  # fmt: skip
+    return path, _sorted_items(path, tmp_path)["ada-region:formula"]
+
+
+def test_sort_tags_each_local_formula_cell_with_its_origin(fakes, tmp_path):
+    _, item = _mixed_formula_item(fakes, tmp_path)
+
+    cells = [e for e in item["evidence"] if e.startswith("cell ")]
+    assert cells and all("Newark" in e or "Miami" in e for e in cells)
+    by_region = {("Newark" if "Newark" in e else "Miami"): e for e in cells}
+    assert by_region["Newark"].endswith(" (no unmatched row)")
+    assert by_region["Miami"].endswith(" (filed by the formula check)")
+    # Posted evidence stays counts only: no cell, no origin tag.
+    posted = " ".join(item["evidence_posted"])
+    assert "Newark" not in posted and "Miami" not in posted
+    assert "(no unmatched row)" not in posted
+    assert "(filed by the formula check)" not in posted
+    assert all(not line.startswith("cell ") for line in item["evidence_posted"])
+
+
+def test_sort_composes_a_run_saved_before_origins_again(fakes, tmp_path):
+    path, _ = _mixed_formula_item(fakes, tmp_path)
+    run_json = _latest_run(tmp_path)
+    data = json.loads(run_json.read_text())
+    for cell in data["diff_cells"]:
+        cell.pop("origin", None)
+    run_json.write_text(json.dumps(data, indent=1))
+
+    item = _sorted_items(path, tmp_path)["ada-region:formula"]
+
+    # The kept check is reused; its cells, untagged in the run, are filed
+    # again, so the local lines carry their origin.
+    assert any(e.endswith(" (filed by the formula check)") for e in item["evidence"])
+    saved = json.loads(_latest_run(tmp_path).read_text())["diff_cells"]
+    assert any(c.get("origin") == "formula check" for c in saved)
+
+
 def test_sort_reuses_a_stored_check_without_spending(fakes, tmp_path):
     path = _miami_differs(fakes, tmp_path)
     assert cli.main(["sort", str(path), "--no-trace"]) == 0
