@@ -27,6 +27,20 @@ models:
         config:
           meta:
             contains_pii: true
+        data_tests:
+          - not_null
+      - name: academic_year
+        data_type: int64
+        description: Academic year of the survey round.
+        data_tests:
+          - not_null
+      - name: survey_round
+        data_type: string
+        description: >-
+          Reporting term code identifying which administration of the survey
+          this assignment belongs to.
+        data_tests:
+          - not_null
       - name: assignment_status
         data_type: string
         description: >-
@@ -91,14 +105,6 @@ models:
         config:
           meta:
             contains_pii: true
-      - name: academic_year
-        data_type: int64
-        description: Academic year of the survey round.
-      - name: survey_round
-        data_type: string
-        description: >-
-          Reporting term code identifying which administration of the survey
-          this assignment belongs to.
       - name: is_current
         data_type: boolean
         description: >-

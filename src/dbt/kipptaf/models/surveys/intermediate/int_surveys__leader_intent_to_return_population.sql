@@ -2,15 +2,6 @@ with
     roster as (
         select
             employee_number,
-            formatted_name as preferred_name_lastfirst,
-            job_title,
-            home_department_name as department,
-            home_business_unit_name as business_unit,
-            home_work_location_name as `location`,
-            mail,
-            reports_to_employee_number as report_to_employee_number,
-            reports_to_formatted_name as report_to_preferred_name_lastfirst,
-            reports_to_mail as report_to_mail,
 
             -- no 3-week new-hire wait, unlike most staff surveys
             assignment_status = 'Active' and primary_indicator as is_survey_eligible,
@@ -60,22 +51,7 @@ with
         from {{ ref("int_people__staff_roster") }}
     )
 
-select
-    r.employee_number,
-
-    rt.academic_year,
-    rt.code as survey_round,
-    rt.is_current,
-
-    r.preferred_name_lastfirst,
-    r.job_title,
-    r.department,
-    r.business_unit,
-    r.location,
-    r.mail,
-    r.report_to_employee_number,
-    r.report_to_preferred_name_lastfirst,
-    r.report_to_mail,
+select r.employee_number, rt.academic_year, rt.code as survey_round, rt.is_current,
 from roster as r
 inner join
     {{ ref("stg_google_sheets__reporting__terms") }} as rt

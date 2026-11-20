@@ -7,8 +7,8 @@ models:
       unit are all on recruitment's lists for the round. Unlike most staff
       surveys, recent hires are included: intent to return asks about next year,
       which a new hire is also planning. This is the only place the leader rule
-      lives; survey assignments, the staff intent to return exclusion, and
-      recruitment's follow-up list all read it.
+      lives; rpt_tableau__survey_links reads it both to assign the leader survey
+      and to leave leaders out of the staff intent to return survey.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -36,48 +36,6 @@ models:
         description: >-
           True while the leader survey round is open, per the reporting terms
           sheet.
-      - name: preferred_name_lastfirst
-        data_type: string
-        description: Staff preferred name, last name first.
-        config:
-          meta:
-            contains_pii: true
-      - name: job_title
-        data_type: string
-        description: Job title on the person's primary assignment.
-      - name: department
-        data_type: string
-        description: Home department the person is assigned to.
-      - name: business_unit
-        data_type: string
-        description: Legal entity the person is employed by.
-      - name: location
-        data_type: string
-        description: Home work location the person is assigned to.
-      - name: mail
-        data_type: string
-        description: Work email address.
-        config:
-          meta:
-            contains_pii: true
-      - name: report_to_employee_number
-        data_type: int64
-        description: Employee number of the person's manager.
-        config:
-          meta:
-            contains_pii: true
-      - name: report_to_preferred_name_lastfirst
-        data_type: string
-        description: Manager's preferred name, last name first.
-        config:
-          meta:
-            contains_pii: true
-      - name: report_to_mail
-        data_type: string
-        description: Manager's work email address.
-        config:
-          meta:
-            contains_pii: true
 
 unit_tests:
   - name: test_leader_population_rule

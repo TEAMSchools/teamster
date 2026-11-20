@@ -80,6 +80,7 @@ with
         where
             term_code in ('ITR', 'LITR')
             and question_shortname in ('itr_plans', 'litr_plans')
+            and round_rn = 1
             and academic_year = {{ var("current_academic_year") }}
         group by respondent_employee_number, answer, academic_year, term_code
     ),

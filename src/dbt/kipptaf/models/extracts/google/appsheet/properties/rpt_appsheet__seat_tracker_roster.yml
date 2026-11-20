@@ -134,12 +134,14 @@ unit_tests:
       setup page, map to Not Returning, one of the 3 Returning lengths,
       Interested in Transfer, or Not Sure; a staff Intent to Return answer keeps
       its existing label. A leader who answered both forms gets one row, labeled
-      from the leader form. The placeholder seat rows carry no answer.
+      from the leader form. A leader who changed their answer gets one row, from
+      their latest submission. The placeholder seat rows carry no answer.
     model: rpt_appsheet__seat_tracker_roster
     given:
       - input: ref('int_surveys__survey_responses')
         format: sql
         rows: |
+          select *, 1 as round_rn from (
           select
               301 as respondent_employee_number,
               'This is my last school year in my current role. The Recruitment TEAM should definitely hire for my position.'
@@ -187,6 +189,12 @@ unit_tests:
               306,
               'I am not sure if I am returning and want to follow up with my manager and/or School Leader.',
               2026, timestamp '2026-12-01 12:00:00', 'ITR', 'itr_plans'
+          )
+          union all
+          select
+              304,
+              'This is my last school year in my current role. The Recruitment TEAM should definitely hire for my position.',
+              2026, timestamp '2026-11-30 12:00:00', 'LITR', 'litr_plans', 2
       - input: ref('int_students__teacher_grade_levels')
         format: sql
         rows: |
