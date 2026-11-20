@@ -129,6 +129,35 @@ def test_a_formula_check_with_no_result_is_dropped(tmp_path):
     assert not folder.exists() or not list(folder.glob("*.json"))
 
 
+@pytest.mark.parametrize(
+    "text",
+    [
+        pytest.param("{not json", id="not JSON"),
+        pytest.param(b"\xff\xfe", id="not text"),
+        pytest.param("[1]", id="not an object"),
+        pytest.param('{"comparison": "c1"}', id="no data"),
+        pytest.param('{"comparison": "c1", "data": []}', id="data not an object"),
+    ],
+)
+def test_a_formula_check_beside_an_unreadable_result_is_skipped(tmp_path, capsys, text):
+    # As `read_all` skips it: never raised into `sort`.
+    folder = latest.folder(tmp_path / "v", "kipptaf_marts.fct_f")
+    latest.write(folder, "c1", latest.Latest(BUILD, "f", "e", "t", {}))
+    (path,) = folder.glob("*.json")
+    if isinstance(text, bytes):
+        path.write_bytes(text)
+    else:
+        path.write_text(text)
+    before = path.read_bytes()
+
+    latest.add_formula_check(folder, "c1", _check())
+
+    assert path.read_bytes() == before
+    assert f"Latest result {path.name} skipped: it cannot be read" in (
+        capsys.readouterr().out
+    )
+
+
 def test_a_formula_check_of_another_comparison_is_refused(tmp_path):
     folder = latest.folder(tmp_path / "v", "kipptaf_marts.fct_f")
     latest.write(folder, "c1", latest.Latest(BUILD, "f", "e", "t", {}))

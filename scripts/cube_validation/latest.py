@@ -91,7 +91,8 @@ def add_formula_check(results: Path, comparison_id: str, check: dict) -> None:
     The check names the result it checked by fingerprint, so a newer result
     written over this file drops it, and one kept elsewhere never counts. With
     no result to keep it beside, it is dropped: the next `compare` writes a
-    result no older check fits.
+    result no older check fits. A result file that cannot be read is left as
+    it is and named, as `read_all` skips it, and the check is dropped.
 
     Raises:
         ValueError: The check is of another comparison.
@@ -101,9 +102,15 @@ def add_formula_check(results: Path, comparison_id: str, check: dict) -> None:
     path = _file(results, comparison_id)
     try:
         data = json.loads(path.read_text())
+        data["data"]["formula_check"] = check
     except FileNotFoundError:
         return
-    data["data"]["formula_check"] = check
+    except (OSError, ValueError, KeyError, TypeError):
+        print(
+            f"Latest result {path.name} skipped: it cannot be read, so its "
+            "formula check is not kept."
+        )
+        return
     checkpoints.write_json(path, data)
 
 
