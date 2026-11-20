@@ -189,7 +189,9 @@ def example_cell(
             not used.
         kind: Only cells of this `kind` (`formula` or `cells`, as `compare` saved
             it; a cell saved without one is `cells`), so a formula question's
-            example is a cell where every row matched.
+            example is a formula cell: one where every row matched, or one
+            the formula check filed, whose 2 numbers can still include its
+            unmatched rows.
 
     Returns:
         The cell with the largest absolute difference whose dims are all

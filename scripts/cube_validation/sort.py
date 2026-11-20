@@ -1900,13 +1900,16 @@ def _run_formula_jobs(
     ticker: Ticker,
 ) -> RunResult:
     """Run the priced formula checks into `checks`, keep each that ran, and
-    compose the run again when a check files a cell the run does not.
+    compose the run again when a check files a cell the run does not, or
+    one the run files without its origin.
 
     Returns:
         The run, composed again when a check filed a formula cell; else as
         given. When composing refuses or fails (the error printed), the run
-        is kept and each check just run, or not yet filed, reads
-        `formula.NOT_COMPOSED`; the kept checks stay for the next compose.
+        is kept; if a check's cell is not filed, each check just run, or not
+        yet filed, reads `formula.NOT_COMPOSED`, and the kept checks stay
+        for the next compose. A run that files every cell, only without
+        origins, keeps every check as it is and its local lines untagged.
     """
     from . import formula
 
@@ -1922,26 +1925,35 @@ def _run_formula_jobs(
         else:
             check = _fallen_back(job.stored, check)
         checks[job.comparison] = check
-    # A cell counts as filed only with its origin, so a run saved without
-    # origins is composed again and its local evidence tagged.
     filed = {
-        (c["comparison"], c["cut"], c["key"])
+        (c["comparison"], c["cut"], c["key"]): _checked_cell(c)
         for c in run.diff_cells
-        if c.get("kind") == "formula" and _checked_cell(c)
+        if c.get("kind") == "formula"
     }
     unfiled = {
         cid
         for cid, check in checks.items()
         if any((cid, cut, key) not in filed for cut, key in check.formula)
     }
-    if not unfiled:
+    # Filed without its origin: a run saved without origins, composed again
+    # only so its local evidence is tagged.
+    untagged = any(
+        filed.get((cid, cut, key)) is False
+        for cid, check in checks.items()
+        for cut, key in check.formula
+    )
+    if not unfiled and not untagged:
         return run
+    what = "not filed" if unfiled else "not tagged with their origin"
     try:
         return results.recompose(cfg, cache_root, run, run_json, cube=cube)
     except pipeline.Refusal as exc:
-        print(f"Formula check: its cells are not filed: {exc}.")
+        print(f"Formula check: its cells are {what}: {exc}.")
     except Exception as exc:  # noqa: BLE001 - the checks are paid for; keep sorting
-        print(f"Formula check: its cells are not filed: {exc!r}")
+        print(f"Formula check: its cells are {what}: {exc!r}")
+    if not unfiled:
+        # The run already files every cell; only its local tags are missing.
+        return run
     for cid in just_ran | unfiled:
         check = checks[cid]
         cells = [

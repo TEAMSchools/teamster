@@ -259,17 +259,21 @@ def test_matched_keys_of_one_read_equal_those_of_two_reads(duck):
     # 1 matches; 2 matches with NULL scores on both sides; 3 is NULL on the
     # dashboard only; 4 holds a matching and a differing copy; Cube alone
     # holds 5 and the dashboard alone 6; 7 matches twice; a NULL student
-    # matches. Saved, then 8 joins both sides, so only the saved rows drop it.
+    # matches. Saved, then 8 joins both sides, so only the saved rows drop
+    # it, and 9, which matched once, gains a differing copy on each side, so
+    # only the rebuilt join holds it unmatched: one matching row is not enough.
     cube = [(1, "a", 10, "X"), (2, "a", None, "X"), (3, "a", 10, "X"),
             (4, "a", 10, "X"), (4, "a", 10, "X"), (5, "a", 10, "X"),
             (7, "a", 10, "X"), (7, "a", 10, "X"), (None, "a", 10, "X"),
-            (8, "a", 10, "X")]  # fmt: skip
+            (8, "a", 10, "X"), (9, "a", 10, "X")]  # fmt: skip
     dash = [(1, "a", 10, "X"), (2, "a", None, "X"), (3, "a", None, "X"),
             (4, "a", 10, "X"), (4, "a", 99, "X"), (6, "a", 10, "X"),
-            (7, "a", 10, "X"), (7, "a", 10, "X"), (None, "a", 10, "X")]  # fmt: skip
+            (7, "a", 10, "X"), (7, "a", 10, "X"), (None, "a", 10, "X"),
+            (9, "a", 10, "X")]  # fmt: skip
     _tables(duck, cube, dash)
     _save(duck)
-    _tables(duck, cube, [*dash, (8, "a", 10, "X")])
+    _tables(duck, [*cube, (9, "a", 20, "X")],
+            [*dash, (8, "a", 10, "X"), (9, "a", 30, "X")])  # fmt: skip
 
     old = duck.rows(_two_read_matched_sql(CFG, COMPARISON, VALUED, SAVED))
     new = duck.rows(
@@ -1798,7 +1802,7 @@ def test_a_run_with_no_formula_check_saves_as_before_origins(tmp_path):
     cache = tmp_path / "cache"
     _, run_json = _compose(cache, _keep_two_cells(cache))
 
-    assert run_json.read_text() == NO_CHECK_RUN.read_text()
+    assert run_json.read_bytes() == NO_CHECK_RUN.read_bytes()
     assert '"origin"' not in run_json.read_text()
 
 

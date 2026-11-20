@@ -5904,6 +5904,33 @@ def test_sort_composes_a_run_saved_before_origins_again(fakes, tmp_path):
     assert any(c.get("origin") == "formula check" for c in saved)
 
 
+def test_sort_keeps_filed_cells_when_tagging_a_run_without_origins_fails(
+    fakes, tmp_path, monkeypatch, capsys
+):
+    path, _ = _mixed_formula_item(fakes, tmp_path)
+    run_json = _latest_run(tmp_path)
+    data = json.loads(run_json.read_text())
+    for cell in data["diff_cells"]:
+        cell.pop("origin", None)
+    run_json.write_text(json.dumps(data, indent=1))
+
+    def refuse(*args, **kwargs):
+        raise pipeline.Refusal("Cube is down")
+
+    monkeypatch.setattr(results, "recompose", refuse)
+    capsys.readouterr()
+
+    item = _sorted_items(path, tmp_path)["ada-region:formula"]
+
+    # The run files the check's cells already: only the tags are missing, so
+    # no check reads not composed and the local lines stay untagged.
+    assert _loaded_sort(tmp_path)["formulas_not_compared"] == {}
+    assert "not tagged with their origin: Cube is down" in capsys.readouterr().out
+    assert any(e.startswith(f"2 {sort.MATCHED_LABEL}: ") for e in item["evidence"])
+    cells = [e for e in item["evidence"] if e.startswith("cell ")]
+    assert cells and not [e for e in cells if e.endswith(")")]
+
+
 def test_sort_reuses_a_stored_check_without_spending(fakes, tmp_path):
     path = _miami_differs(fakes, tmp_path)
     assert cli.main(["sort", str(path), "--no-trace"]) == 0
