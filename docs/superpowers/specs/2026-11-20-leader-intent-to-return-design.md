@@ -216,3 +216,12 @@ reads `rpt_tableau__survey_completion` (leader survey, open round, completion
 per person), which shows a round's answers only after the round closes. Build
 steps 5 and 6 are replaced by one exposure for that Sheet; no new extract model
 ships.
+
+## Revision 2026-11-20: leader rule inline in survey links
+
+At review, the leader rule moved from its own intermediate model into a
+`leader_population` CTE in `rpt_tableau__survey_links`, so this change touches
+only report models. The CTE reads `eligible_roster`, and both the leader branch
+and the staff intent to return exclusion join it. Moving eligibility rules into
+a domain intermediate model for `bridge_survey_expectations` is tracked in
+#6455.

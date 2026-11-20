@@ -113,10 +113,11 @@ models:
       - name: survey
         data_type: string
         description: >-
-          Name of the survey the person is assigned. Leaders in
-          int_surveys__leader_intent_to_return_population get the Leader Intent
-          to Return Survey instead of the staff Intent to Return Survey for the
-          same academic year.
+          Name of the survey the person is assigned. Leaders get the Leader
+          Intent to Return Survey instead of the staff Intent to Return Survey
+          for any academic year that has a leader round. A leader is anyone
+          whose job title, home department, and home business unit are all on
+          recruitment's lists, which live in the leader_population CTE.
       - name: assignment
         data_type: string
         description: >-
@@ -147,3 +148,156 @@ models:
           none does. Null for TNTP Insight and Gallup Q12, which are
           administered outside Google Forms and so never produce a response here
           — a 0 would read as confirmed incomplete rather than unknown.
+
+unit_tests:
+  - name: test_survey_links_leader_intent_to_return
+    description: >-
+      Leaders (title, department, and entity all on recruitment's lists) get the
+      leader survey and lose the staff Intent to Return Survey only in a year
+      with a leader round. A title match in an unlisted department, a KTAF
+      Teacher Development Director, and the Managing Director of Talent
+      Acquisition are not leaders. KTAF never gets the staff survey. A recent
+      hire gets both intent to return surveys; a non-primary assignment gets
+      nothing.
+    model: rpt_tableau__survey_links
+    given:
+      - input: ref('int_surveys__survey_submissions')
+        format: sql
+        rows: |
+          select
+              0 as respondent_employee_number,
+              2026 as academic_year,
+              'ITR' as term_code,
+              'r0' as survey_response_id,
+              timestamp '2026-12-01 12:00:00' as date_submitted,
+              1 as round_rn
+      - input: ref('int_people__staff_roster')
+        format: sql
+        rows: |
+          select
+              p.employee_number,
+              'Active' as assignment_status,
+              p.primary_indicator,
+              p.worker_original_hire_date,
+              cast(null as date) as worker_rehire_date,
+              p.job_title,
+              p.home_department_name,
+              p.home_business_unit_name,
+              'Person' as formatted_name,
+              'School A' as home_work_location_name,
+              'MS' as home_work_location_grade_band,
+              cast(null as string) as mail,
+              cast(null as string) as google_email,
+              cast(null as int64) as reports_to_employee_number,
+              cast(null as string) as reports_to_formatted_name,
+              cast(null as timestamp) as survey_last_submitted_timestamp,
+              cast(null as string) as race_ethnicity,
+              cast(null as string) as gender_identity,
+              cast(null as string) as community_grew_up,
+              cast(null as string) as community_professional_exp,
+              cast(null as string) as languages_spoken,
+              cast(null as string) as additional_languages,
+              cast(null as string) as level_of_education,
+              cast(null as string) as undergraduate_school,
+              cast(null as int64) as years_exp_outside_kipp,
+              cast(null as int64) as years_teaching_in_njfl,
+              cast(null as int64) as years_teaching_outside_njfl,
+              cast(null as string) as alumni_status,
+              cast(null as string) as relay_status,
+              cast(null as string) as path_to_education,
+              cast(null as string) as sam_account_name,
+              cast(null as string) as user_principal_name
+          from
+              unnest(
+                  [
+                      struct(
+                          101 as employee_number,
+                          true as primary_indicator,
+                          date '2020-08-01' as worker_original_hire_date,
+                          'School Leader' as job_title,
+                          'School Leadership' as home_department_name,
+                          'TEAM Academy Charter School' as home_business_unit_name
+                      ),
+                      (
+                          102, true, date '2020-08-01', 'School Leader',
+                          'Human Resources', 'TEAM Academy Charter School'
+                      ),
+                      (
+                          103, true, date '2020-08-01', 'Director',
+                          'Teaching and Learning', 'KIPP TEAM and Family Schools Inc.'
+                      ),
+                      (
+                          104, true, date '2020-08-01', 'Director',
+                          'Teacher Development', 'KIPP TEAM and Family Schools Inc.'
+                      ),
+                      (
+                          105, true, date '2020-08-01',
+                          'Managing Director of Talent Acquisition',
+                          'Talent Acquisition', 'KIPP TEAM and Family Schools Inc.'
+                      ),
+                      (
+                          106, true, date_sub(current_date(), interval 1 week),
+                          'School Leader', 'School Leadership', 'KIPP Miami'
+                      ),
+                      (
+                          107, false, date '2020-08-01', 'School Leader',
+                          'School Leadership', 'KIPP Miami'
+                      )
+                  ]
+              ) as p
+      - input: ref('stg_google_sheets__reporting__terms')
+        format: sql
+        rows: |
+          select
+              'Leader Intent to Return Survey' as `name`,
+              'SURVEY' as type,
+              2026 as academic_year,
+              'LITR' as code,
+              true as is_current,
+              date '2026-11-30' as start_date,
+              date '2026-12-11' as end_date
+          union all
+          select
+              'Intent to Return Survey', 'SURVEY', 2026, 'ITR', true,
+              date '2026-11-30', date '2027-01-15'
+          union all
+          select
+              'Intent to Return Survey', 'SURVEY', 2025, 'ITR', false,
+              date '2025-11-24', date '2026-02-28'
+    expect:
+      rows:
+        - {
+            employee_number: 101,
+            survey: Leader Intent to Return Survey,
+            academic_year: 2026,
+          }
+        - {
+            employee_number: 101,
+            survey: Intent to Return Survey,
+            academic_year: 2025,
+          }
+        - {
+            employee_number: 102,
+            survey: Intent to Return Survey,
+            academic_year: 2025,
+          }
+        - {
+            employee_number: 102,
+            survey: Intent to Return Survey,
+            academic_year: 2026,
+          }
+        - {
+            employee_number: 103,
+            survey: Leader Intent to Return Survey,
+            academic_year: 2026,
+          }
+        - {
+            employee_number: 106,
+            survey: Leader Intent to Return Survey,
+            academic_year: 2026,
+          }
+        - {
+            employee_number: 106,
+            survey: Intent to Return Survey,
+            academic_year: 2025,
+          }
