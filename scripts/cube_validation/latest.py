@@ -44,7 +44,12 @@ class Latest:
 
 
 def folder(view_dir: Path, fact: str) -> Path:
-    """Where the view's results of `fact`'s dataset are kept."""
+    """Where the view's results of `fact`'s dataset are kept.
+
+    Keyed on the dataset, and each file on the comparison id (`_file`), so
+    one comparison's results for 2 facts in one dataset share a file: each
+    write replaces the other's, and `read_all` reads only its own fact's.
+    """
     return view_dir / DIR / fact.split(".", 1)[0]
 
 
