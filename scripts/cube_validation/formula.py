@@ -56,7 +56,7 @@ _RAN = (REWRITE_DIFFERS, NO_ROWS, FANS_OUT)
 # nothing is spent again until the comparison is compared again; a bump runs
 # every kept check again, so a fix to its formula or coverage verdicts takes
 # effect.
-CHECK_VERSION = 3
+CHECK_VERSION = 4
 
 
 def bigquery_refused(exc: GoogleAPIError) -> str:
@@ -274,19 +274,21 @@ def matched_ctes(
     dash_key = key_sql([f"__gd{i}" for i in range(n)], plain)
     cube_key = key_sql([f"__gc{i}" for i in range(n)], plain)
     matched = "bucket = 'match' AND __cin IS NOT NULL AND __din IS NOT NULL"
+    # One read of `joined`: a key is matched only when every row it keys is.
+    # `__joined_keys` is read once below, since BigQuery may run a CTE once
+    # per reference.
     return (
         # trunk-ignore(bandit/B608): identifiers are validated in config.py; row SQL is the run's own and the table name the tool's
         f"{ctes},\n"
-        f"__match AS (\n  SELECT {joined_key} AS __key FROM joined\n"
-        f"  WHERE {matched}\n),\n"
-        f"__other AS (\n  SELECT {joined_key} AS __key FROM joined\n"
-        f"  WHERE NOT ({matched})\n),\n"
+        f"__joined_keys AS (\n  SELECT {joined_key} AS __key,\n"
+        f"    LOGICAL_AND({matched}) AS __all_match\n"
+        "  FROM joined\n  GROUP BY 1\n),\n"
         f"__saved AS (\n  SELECT {dash_key} AS __key FROM {saved_table}\n"
         "  WHERE bucket != 'cube_only'\n  UNION DISTINCT\n"
         f"  SELECT {cube_key} AS __key FROM {saved_table}\n"
         "  WHERE bucket != 'dashboard_only'\n),\n"
-        "__matched AS (\n  SELECT __key FROM __match WHERE __key IS NOT NULL\n"
-        "  EXCEPT DISTINCT SELECT __key FROM __other\n"
+        "__matched AS (\n  SELECT __key FROM __joined_keys\n"
+        "  WHERE __key IS NOT NULL AND __all_match\n"
         "  EXCEPT DISTINCT SELECT __key FROM __saved\n)"
     )
 

@@ -25,7 +25,7 @@ from cube_validation.decisions import Applied
 from cube_validation.moment import Build
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation.reconcile import Group
+from cube_validation.reconcile import Group, joined_ctes
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.report import RunResult
@@ -216,13 +216,70 @@ def test_matched_keys_key_alike_on_the_rebuilt_join_and_the_saved_rows(duck):
     _tables(duck, [], [(1, "a", 1, "X")])
     sql = formula.matched_ctes(CFG, COMPARISON, VALUED, SAVED)
     _save(duck)
-    (other,) = duck.rows(f"{sql}\nSELECT __key FROM __other")
+    (other,) = duck.rows(
+        f"{sql}\nSELECT __key FROM __joined_keys WHERE NOT __all_match"
+    )
     saved = duck.rows(
         f"SELECT {formula.key_sql(['__gd0', '__gd1'], [False, False])} AS k "
         "FROM saved_t"
     )
     assert other["__key"] is not None
     assert [r["k"] for r in saved] == [other["__key"]]
+
+
+def _two_read_matched_sql(cfg, comparison, sides, saved_table) -> str:
+    """The matched keys as 2 reads of `joined` build them: the keys with a
+    `match` row, less the keys with any other row and the saved keys."""
+    n = len(comparison.rows.grain)
+    args, kwargs = pipeline.reconcile_args(cfg, comparison, sides)
+    ctes, _ = joined_ctes(*args, keys=True, moved=True, **kwargs)
+    joined_key = formula._keyed([f"__k{i}" for i in range(n)])
+    plain = [False] * n
+    dash_key = formula.key_sql([f"__gd{i}" for i in range(n)], plain)
+    cube_key = formula.key_sql([f"__gc{i}" for i in range(n)], plain)
+    matched = "bucket = 'match' AND __cin IS NOT NULL AND __din IS NOT NULL"
+    return (
+        f"{ctes},\n"
+        f"__match AS (SELECT {joined_key} AS __key FROM joined WHERE {matched}),\n"
+        f"__other AS (SELECT {joined_key} AS __key FROM joined "
+        f"WHERE NOT ({matched})),\n"
+        f"__saved AS (SELECT {dash_key} AS __key FROM {saved_table} "
+        "WHERE bucket != 'cube_only' UNION DISTINCT "
+        f"SELECT {cube_key} AS __key FROM {saved_table} "
+        "WHERE bucket != 'dashboard_only'),\n"
+        "__matched AS (SELECT __key FROM __match WHERE __key IS NOT NULL "
+        "EXCEPT DISTINCT SELECT __key FROM __other "
+        "EXCEPT DISTINCT SELECT __key FROM __saved)\n"
+        "SELECT __key FROM __matched"
+    )
+
+
+def test_matched_keys_of_one_read_equal_those_of_two_reads(duck):
+    # 1 matches; 2 matches with NULL scores on both sides; 3 is NULL on the
+    # dashboard only; 4 holds a matching and a differing copy; Cube alone
+    # holds 5 and the dashboard alone 6; 7 matches twice; a NULL student
+    # matches. Saved, then 8 joins both sides, so only the saved rows drop it.
+    cube = [(1, "a", 10, "X"), (2, "a", None, "X"), (3, "a", 10, "X"),
+            (4, "a", 10, "X"), (4, "a", 10, "X"), (5, "a", 10, "X"),
+            (7, "a", 10, "X"), (7, "a", 10, "X"), (None, "a", 10, "X"),
+            (8, "a", 10, "X")]  # fmt: skip
+    dash = [(1, "a", 10, "X"), (2, "a", None, "X"), (3, "a", None, "X"),
+            (4, "a", 10, "X"), (4, "a", 99, "X"), (6, "a", 10, "X"),
+            (7, "a", 10, "X"), (7, "a", 10, "X"), (None, "a", 10, "X")]  # fmt: skip
+    _tables(duck, cube, dash)
+    _save(duck)
+    _tables(duck, cube, [*dash, (8, "a", 10, "X")])
+
+    old = duck.rows(_two_read_matched_sql(CFG, COMPARISON, VALUED, SAVED))
+    new = duck.rows(
+        formula.matched_ctes(CFG, COMPARISON, VALUED, SAVED)
+        + "\nSELECT __key FROM __matched"
+    )
+
+    def students(rows):
+        return sorted(int(float(json.loads(r["__key"])["k0"])) for r in rows)
+
+    assert students(new) == students(old) == [1, 2, 7]
 
 
 # --- the dashboard side -------------------------------------------------------
