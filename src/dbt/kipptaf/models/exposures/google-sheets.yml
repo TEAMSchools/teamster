@@ -307,14 +307,20 @@ exposures:
         dagster:
           kinds:
             - googlesheets
-  - name: leader_intent_to_return_followup
-    label: Leader Intent to Return Follow-up
+  - name: leader_intent_to_return_sheet
+    label: Leader Intent to Return Reminders and Responses
     type: application
+    description: >-
+      Recruitment's Connected Sheet for the leader survey. Its reminder tab
+      lists leaders with completion 0 in the open round from
+      rpt_tableau__survey_completion and feeds their Zapier reminder. Its
+      responses tab reads int_surveys__survey_responses directly, because the
+      dashboard's responses model hides rounds that are still open.
     owner:
       name: Data Team
-    url: TODO(#6251) follow-up sheet URL
+    url: https://docs.google.com/spreadsheets/d/1iDLJ9DAiGOIP_0u42VE11ua6khYwEoG-CcSHYmbhyjY
     depends_on:
-      - ref("rpt_gsheets__leader_intent_to_return_followup")
+      - ref("rpt_tableau__survey_completion")
     config:
       meta:
         dagster:

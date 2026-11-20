@@ -206,3 +206,12 @@ from the staff form. The seat tracker maps the leader transfer answer to
 Interested in Transfer and the leader not-sure answer to Not Sure, alongside the
 4 mappings in build step 7. Matching uses the wording before any network name,
 so the KIPP South Florida rebrand in the answers doesn't break it.
+
+## Revision 2026-11-20: Connected Sheet instead of extracts
+
+Recruitment's reminder list and responses view are one Connected Sheet
+with custom queries, so it could exist before this change deploys. The reminder
+tab reads `rpt_tableau__survey_completion` (leader survey, open round,
+completion 0); the responses tab reads `int_surveys__survey_responses`. Build
+steps 5 and 6 are replaced by one exposure for that Sheet; no new extract model
+ships.
