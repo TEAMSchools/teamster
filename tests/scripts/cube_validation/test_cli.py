@@ -4702,11 +4702,11 @@ def test_a_cell_that_gains_a_row_leaves_the_formula_claim(fakes, tmp_path, capsy
     assert cli.main(["decide", str(path), str(approved)]) == 0
     (decision,) = load_view_config(path).decisions
     assert decision.formula
+    fp = _saved_fingerprints(tmp_path)
+    run = json.loads(_latest_run(tmp_path).read_text())
     assert decision.fingerprints == {
-        **_saved_fingerprints(tmp_path),
-        "formula_cells": formula_cells_hash(
-            json.loads(_latest_run(tmp_path).read_text())["diff_cells"], "ada-region"
-        ),
+        **fp,
+        "formula_cells": formula_cells_hash(run["diff_cells"], "ada-region", fp),
     }
 
     # Run 2: an unproven Cube-only group lands in Newark under the default cut.
@@ -5644,7 +5644,9 @@ def test_a_formula_decision_is_asked_again_once_the_check_files_more_cells(
 
     (decision,) = [d for d in load_view_config(path).decisions if d.formula]
     run = json.loads(_latest_run(tmp_path).read_text())
-    cells = formula_cells_hash(run["diff_cells"], "ada-region")
+    cells = formula_cells_hash(
+        run["diff_cells"], "ada-region", _saved_fingerprints(tmp_path)
+    )
     assert decision.fingerprints == {
         **_saved_fingerprints(tmp_path),
         "matched_only": "2",

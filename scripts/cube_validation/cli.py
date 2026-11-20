@@ -713,7 +713,11 @@ def _decide(cfg: ViewConfig, path: Path, approved_path: Path) -> int:
             if d.kind == "formula"
         },
         formula_hashes={
-            d.comparison_id: formula_cells_hash(run.diff_cells, d.comparison_id)
+            d.comparison_id: formula_cells_hash(
+                run.diff_cells,
+                d.comparison_id,
+                run.fingerprints.get(d.comparison_id) or {},
+            )
             for d in run.applied.open_cells
             if d.kind == "formula"
         },

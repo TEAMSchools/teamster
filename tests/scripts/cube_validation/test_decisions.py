@@ -338,22 +338,26 @@ CELLS = [_cell("Newark"), _cell("Miami")]
 def _hashed():
     """A formula decision recording that it covered `CELLS`."""
     return _formula(
-        fingerprints={**FP, FORMULA_CELLS: formula_cells_hash(CELLS, "enrollment")}
-    )
+        fingerprints={
+            **FP, FORMULA_CELLS: formula_cells_hash(CELLS, "enrollment", FP),
+        }
+    )  # fmt: skip
 
 
-def test_the_formula_cells_hash_is_a_digest_of_the_refs_alone():
-    digest = formula_cells_hash(CELLS, "enrollment")
+def test_the_formula_cells_hash_is_a_salted_digest_of_the_refs():
+    digest = formula_cells_hash(CELLS, "enrollment", FP)
 
     assert len(digest) == 64 and set(digest) <= set("0123456789abcdef")
-    assert "Newark" not in digest
     # Its comparison's formula cells only, in any order.
     assert digest == formula_cells_hash(
         [CELLS[1], _cell("Camden", kind="cells"),
          _cell("Paterson", comparison="other"), CELLS[0]],
-        "enrollment",
+        "enrollment", FP,
     )  # fmt: skip
-    assert digest != formula_cells_hash(CELLS, "other")
+    assert digest != formula_cells_hash(CELLS, "other", FP)
+    # Salted with both SQL fingerprints.
+    assert digest != formula_cells_hash(CELLS, "enrollment", {**FP, "cube": "c2"})
+    assert digest != formula_cells_hash(CELLS, "enrollment", {**FP, "dashboard": "d2"})
 
 
 def test_a_formula_decision_quiets_its_diff_while_its_cells_are_the_same():

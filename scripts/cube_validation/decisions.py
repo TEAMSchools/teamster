@@ -137,17 +137,22 @@ def decisions_fingerprint(decisions: list[Decision]) -> str:
     return hashlib.sha256(text.encode()).hexdigest()
 
 
-def formula_cells_hash(diff_cells: Iterable[dict], comparison: str) -> str:
+def formula_cells_hash(
+    diff_cells: Iterable[dict], comparison: str, sql: dict[str, str]
+) -> str:
     """Hash which cells a comparison's formula difference holds.
 
     Args:
         diff_cells: Cells as run.json's `diff_cells` saves them.
         comparison: The comparison id.
+        sql: The comparison's `{cube, dashboard}` SQL fingerprints, the salt.
 
     Returns:
         The sha256 hex digest of the sorted `(cut, key)` refs of the
         comparison's `formula` cells, both those holding no unmatched row and
-        those the formula check filed. It carries no cell value.
+        those the formula check filed, salted with both SQL fingerprints. It
+        carries no cell value; the salt sits beside it in the decision, so
+        it does not stop a guessed key being checked against it.
     """
     refs = sorted(
         {
@@ -156,7 +161,8 @@ def formula_cells_hash(diff_cells: Iterable[dict], comparison: str) -> str:
             if c.get("comparison") == comparison and c.get("kind") == "formula"
         }
     )
-    return hashlib.sha256(json.dumps(refs).encode()).hexdigest()
+    salt = [sql.get("cube", ""), sql.get("dashboard", "")]
+    return hashlib.sha256(json.dumps([salt, refs]).encode()).hexdigest()
 
 
 def cause_state(d: Decision, proof: str, current: dict[str, str]) -> str:
@@ -222,9 +228,10 @@ def apply(
         cell_diffs: Each comparison's differing cells. A `formula` decision
             quiets its comparison's `formula` diff while both fingerprints
             hold and the diff holds the cells the decision recorded
-            (`FORMULA_CELLS`); one recorded without them, while the formula
-            check has filed no more cells than it recorded (`MATCHED_ONLY`).
-            No decision quiets a `cells` diff, which coverage closes.
+            (`FORMULA_CELLS`). A formula decision recorded without them
+            quiets the diff while the formula check has filed no more cells
+            than it recorded (`MATCHED_ONLY`). No decision quiets a `cells`
+            diff, which coverage closes.
         diff_cells: The run's cells as run.json's `diff_cells` saves them,
             which say which cells each formula diff holds.
 
@@ -311,12 +318,15 @@ def apply(
             if diff is None:
                 applied.no_longer_needed.append(decision)
                 continue
-            # Cells other than those the decision was made on were never put
-            # to whoever made it: ask again. Without a record of its cells,
-            # only a cell the check filed since counts.
+            # The answer covered one set of cells; once the set changes (a
+            # cell added, gone or swapped), it is not the set the answer was
+            # given on: ask again. Without a record of its cells, only a cell
+            # the check filed since counts.
             if recorded := decision.fingerprints.get(FORMULA_CELLS):
+                # Both fingerprints held above, so the decision's salt is the
+                # run's, as `decide` wrote it.
                 changed = recorded != formula_cells_hash(
-                    diff_cells, decision.comparison
+                    diff_cells, decision.comparison, decision.fingerprints
                 )
             else:
                 filed = int(decision.fingerprints.get(MATCHED_ONLY) or 0)

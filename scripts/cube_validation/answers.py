@@ -1144,10 +1144,10 @@ def approved_decisions(
     which holds its real values; a formula difference's is `formula: true`.
     Either kind takes the comparison's `{cube, dashboard}` from the run's
     fingerprints; a formula difference also records which cells it holds
-    (`fingerprints.formula_cells`, a digest of their refs) and, when there
-    are any, how many the formula check filed in it
-    (`fingerprints.matched_only`), so other cells later send it to
-    re-confirm (`decisions.apply`). A missing cut
+    (`fingerprints.formula_cells`, a digest of their refs salted with those
+    fingerprints) and, when there are any, how many the formula check filed
+    in it (`fingerprints.matched_only`), so a changed set of cells later
+    sends it to re-confirm (`decisions.apply`). A missing cut
     or filter covers the view, so it takes neither a comparison nor
     fingerprints. A cell set takes no decision.
 

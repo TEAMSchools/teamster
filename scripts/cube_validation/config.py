@@ -226,8 +226,9 @@ def explanation_key(comparison: Comparison) -> str | None:
 # re-confirm when more are filed since.
 MATCHED_ONLY = "matched_only"
 # A formula decision's `fingerprints` key: which cells the diff held when it
-# was decided, as `decisions.formula_cells_hash`, a digest of their refs that
-# carries no cell value. Other cells since send the decision to re-confirm.
+# was decided, as `decisions.formula_cells_hash`, a digest of their refs
+# salted with the decision's SQL fingerprints; it carries no cell value. A
+# changed set of cells sends the decision to re-confirm.
 FORMULA_CELLS = "formula_cells"
 _SHA256 = re.compile(r"[0-9a-f]{64}")
 
