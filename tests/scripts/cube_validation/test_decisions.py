@@ -491,12 +491,12 @@ def test_apply_never_quiets_a_group_from_a_cause_decision():
 
     applied = apply([_cause()], [group], {"enrollment": FP})
 
-    # The latest triage, not the run, says which groups a cause decides.
+    # The latest sort, not the run, says which groups a cause decides.
     assert applied.open == [group] and applied.quiet == []
     assert applied.causes == [_cause()] and applied.reconfirm == []
 
 
-def test_apply_reconfirms_a_cause_decision_whose_sql_changed_or_has_no_proof():
+def test_apply_reconfirms_a_cause_decision_whose_sql_changed_or_has_no_explanation():
     stale = _cause(fingerprints={**FP, "cube": "old", "explanation": "p1"})
     bare = _cause("c2", fingerprints=dict(FP))
 

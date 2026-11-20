@@ -62,14 +62,14 @@ def test_a_result_missing_a_key_is_skipped(tmp_path, capsys):
 
 
 def test_the_entry_fingerprint_changes_with_the_rebuild_check():
-    proof = RebuildCheck(
+    rebuild_check = RebuildCheck(
         fingerprint="abc", cells=2, matched_at="2026-10-26T12:00:00+00:00"
     )
-    comparison = Comparison(id="c", measure="m", rebuild_check=proof)
+    comparison = Comparison(id="c", measure="m", rebuild_check=rebuild_check)
 
     same = latest.entry_fingerprint(replace(comparison))
     rebuilt = latest.entry_fingerprint(
-        replace(comparison, rebuild_check=replace(proof, fingerprint="abd"))
+        replace(comparison, rebuild_check=replace(rebuild_check, fingerprint="abd"))
     )
     edited = latest.entry_fingerprint(replace(comparison, measure="n"))
 

@@ -227,7 +227,7 @@ def test_measure_found_or_not():
     )
 
 
-def test_report_ends_each_comparison_with_before_prove():
+def test_report_ends_each_comparison_with_before_rebuild_sheet():
     cfg = type("Cfg", (), {"view": "v", "comparisons": [_comparison()]})()
 
     text = read_sheet.report(cfg, lambda wb: ("w.twb", TWB), MEMBERS)
@@ -240,7 +240,7 @@ def test_report_ends_each_comparison_with_before_prove():
     )
 
 
-def test_preflight_names_a_comparison_whose_cells_cannot_be_covered():
+def test_read_sheet_names_a_comparison_whose_cells_cannot_be_covered():
     rows = RowSpec(
         grain=[ColumnPair("student", "student_number")],
         values=[ColumnPair("ok", "ok")],
@@ -297,7 +297,7 @@ def _save_members():
     saved.write_text(json.dumps({"members": [dataclasses.asdict(m) for m in MEMBERS]}))
 
 
-def test_preflight_command_reads_a_local_workbook(tmp_path, capsys, monkeypatch):
+def test_read_sheet_command_reads_a_local_workbook(tmp_path, capsys, monkeypatch):
     def no_tableau():
         raise AssertionError("preflight --twb signs in to no Tableau")
 
@@ -315,7 +315,7 @@ def test_preflight_command_reads_a_local_workbook(tmp_path, capsys, monkeypatch)
     assert "Other (w.twb)" in capsys.readouterr().out
 
 
-def test_preflight_command_refuses_without_members_or_a_workbook(tmp_path, capsys):
+def test_read_sheet_command_refuses_without_members_or_a_workbook(tmp_path, capsys):
     view, twb = _files(tmp_path, members=False)
 
     assert cli.main(["read-sheet", str(view), "--twb", str(twb)]) == 1
@@ -325,7 +325,7 @@ def test_preflight_command_refuses_without_members_or_a_workbook(tmp_path, capsy
     assert cli.main(["read-sheet", str(view), "--twb", str(tmp_path / "none")]) == 1
 
 
-def test_preflight_command_never_signs_in_to_tableau(tmp_path, capsys, monkeypatch):
+def test_read_sheet_command_never_signs_in_to_tableau(tmp_path, capsys, monkeypatch):
     def no_tableau():
         raise AssertionError("preflight signs in to no Tableau")
 
@@ -337,7 +337,7 @@ def test_preflight_command_never_signs_in_to_tableau(tmp_path, capsys, monkeypat
 
 
 @pytest.mark.skipif(not DDI_TWB.is_file(), reason="the DDI workbook is not on disk")
-def test_preflight_reads_the_dki_grid_offline():
+def test_read_sheet_reads_the_dki_grid_offline():
     sheet = "DKI - Assessment Mastery Grid"
     comparison = _comparison(
         sheet=sheet,

@@ -140,7 +140,7 @@ def test_local_result_lists_live_sources_and_changed_dims():
     assert "0.42" in text
 
 
-def test_local_result_section_order_and_triage():
+def test_local_result_section_order_and_sort():
     text = render_local(_run())
     heads = [
         "## Measures",
@@ -156,7 +156,7 @@ def test_local_result_section_order_and_triage():
     assert positions == sorted(positions)
     assert "WHERE grade_level > 8" in text
     assert "40" in text and "38" in text
-    assert "123456" not in text  # not a triage group, so not listed
+    assert "123456" not in text  # not a sort group, so not listed
 
 
 def test_local_result_is_not_masked():
@@ -430,14 +430,14 @@ def test_review_issue_skips_definitions_with_no_owner_question():
     assert "Definitions side by side" not in body
 
 
-def test_proof_dates_sit_apart_from_browser_cuts():
+def test_rebuild_check_dates_sit_apart_from_browser_cuts():
     text = render_local(
         _run(browser_cuts=[], rebuild_checks={"ada": "2026-10-27T19:00"})
     )
     cuts = text.split("## Cuts to check in the browser", 1)[1].split("## ", 1)[0]
     assert "ada" not in cuts and "None." in cuts
-    proofs = text.split("## Rebuild checks", 1)[1].split("## ", 1)[0]
-    assert "ada: last matched 2026-10-27T19:00" in proofs
+    rebuild_checks = text.split("## Rebuild checks", 1)[1].split("## ", 1)[0]
+    assert "ada: last matched 2026-10-27T19:00" in rebuild_checks
 
 
 def test_local_result_lists_domain_owner_decisions_without_a_task():
@@ -1026,7 +1026,7 @@ def test_a_hidden_value_is_redacted_only_as_a_whole_value():
 
 
 def _cause_asks(reasons):
-    """One cause proven on a comparison per reason, each decided on its own."""
+    """One cause explained on a comparison per reason, each decided on its own."""
     asks = []
     for n, reason in enumerate(reasons, start=1):
         d = Decision(
@@ -1164,7 +1164,7 @@ from cube_validation import sort  # noqa: E402
 
 
 def _left_in_investigate(run, evidence):
-    """Each of `compare`'s open row groups as a triage item still in `investigate`,
+    """Each of `compare`'s open row groups as a sort item still in `investigate`,
     its stub holding the group's real values as `sort.json` does."""
     return {
         "items": [

@@ -41,7 +41,7 @@ def _cause(id, comparison, label, call="deliberate"):
 def test_a_cause_decided_deliberate_drafts_one_line_per_measure():
     cfg = _cfg(
         _cause("d1", "mastery-school", "the dashboard drops WPP modules"),
-        # The same cause proven on the region comparison: one line, 2 ids.
+        # The same cause explained on the region comparison: one line, 2 ids.
         _cause("d2", "mastery-region", "the dashboard drops WPP modules"),
         _cause("d3", "mastery-school", "not this one", call="domain_owner"),
     )

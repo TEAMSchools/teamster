@@ -30,16 +30,16 @@ START = datetime(2026, 10, 27, 6, 0, tzinfo=timezone.utc)
 END = datetime(2026, 10, 27, 6, 5, tzinfo=timezone.utc)
 
 
-def _explanation(**kw):
+def _rebuild_check(**kw):
     return RebuildCheck(fingerprint="f", cells=None, matched_at="2026-10-27", **kw)
 
 
-def _cfg(**proof_kw):
+def _cfg(**check_kw):
     cmp = Comparison(
         id="enrollment",
         measure="student_count",
         dims=[ColumnPair("Grade", "grade_level")],
-        rebuild_check=_explanation(**proof_kw),
+        rebuild_check=_rebuild_check(**check_kw),
     )
     return ViewConfig(view="enrollment", fact="d.t", comparisons=[cmp])
 
@@ -300,11 +300,11 @@ def test_no_group_by_stub_matches_a_row_with_no_group_by():
     assert item.stub["group"] == {"column": "", "values": [""]}
 
 
-def test_unknown_proof_on_the_gap_sheet_is_not_filters_nothing():
+def test_unknown_rebuild_check_on_the_gap_sheet_is_not_filters_nothing():
     known = Comparison(
-        id="other", measure="m", rebuild_check=_explanation(restricting_filters=[])
+        id="other", measure="m", rebuild_check=_rebuild_check(restricting_filters=[])
     )
-    unknown = Comparison(id="enrollment", measure="m", rebuild_check=_explanation())
+    unknown = Comparison(id="enrollment", measure="m", rebuild_check=_rebuild_check())
     cfg = ViewConfig(view="enrollment", fact="d.t", comparisons=[known, unknown])
 
     [s] = suggest(cfg, _run(gaps=[_gap()]), {})
@@ -316,14 +316,14 @@ def test_another_sheets_note_does_not_speak_for_the_gap():
     other = Comparison(
         id="other",
         measure="m",
-        rebuild_check=_explanation(
+        rebuild_check=_rebuild_check(
             restricting_filters=[], filter_notes={"Enroll Status": "copy of X"}
         ),
     )
     mine = Comparison(
         id="enrollment",
         measure="m",
-        rebuild_check=_explanation(restricting_filters=["Enroll Status"]),
+        rebuild_check=_rebuild_check(restricting_filters=["Enroll Status"]),
     )
     cfg = ViewConfig(view="enrollment", fact="d.t", comparisons=[other, mine])
 
@@ -335,7 +335,7 @@ def test_another_sheets_note_does_not_speak_for_the_gap():
 # --- the trace and the gap ruling --------------------------------------------
 
 
-def test_a_gap_the_sheet_carries_is_a_proven_dashboard_step():
+def test_a_gap_the_sheet_carries_is_an_explained_dashboard_step():
     cfg = _cfg(restricting_filters=["Enroll Status"])
 
     [cut] = suggest(cfg, _run(gaps=[_gap("Week", "cut")]), {})
@@ -774,7 +774,7 @@ def test_open_key_changes_when_a_group_or_cell_set_changes_its_counts():
     )
 
 
-# --- cause decisions: what the latest triage says they decide (T17) ----------
+# --- cause decisions: what the latest sort says they decide (T17) ----------
 
 import copy  # noqa: E402
 import json  # noqa: E402
@@ -887,7 +887,7 @@ def test_a_cells_item_is_decided_once_every_covering_group_is(tmp_path):
     assert closed_only["decided"] is True
 
 
-def test_a_changed_proof_file_re_opens_the_decision(tmp_path):
+def test_a_changed_explanation_file_re_opens_the_decision(tmp_path):
     run = _fp_run(_groups("Newark"))
     (key,) = open_items(run)
     old = _explanation_file(tmp_path, "SELECT 1")
@@ -988,7 +988,7 @@ def _write_run_sorted(tmp_path, run, items):
     return run_json
 
 
-def test_the_gate_refuses_a_proven_group_or_cell_set_with_no_proof(tmp_path):
+def test_the_gate_refuses_an_explained_group_or_cell_set_with_no_explanation(tmp_path):
     run = _fp_run(_groups("Newark"))
     (key,) = open_items(run)
     item = {**_item(key, None, ("cube", NO_SECTION, 30))}
@@ -1004,7 +1004,7 @@ def test_the_gate_refuses_a_proven_group_or_cell_set_with_no_proof(tmp_path):
     )
 
 
-def test_the_gate_takes_a_reconcile_or_workbook_proof_and_no_bare_cause(tmp_path):
+def test_the_gate_takes_a_reconcile_or_workbook_explanation_and_no_bare_cause(tmp_path):
     run = _fp_run(_groups("Newark", bucket="dashboard_filtered"))
     run.applied.open_gaps = [_gap()]
     (key, gap) = open_items(run)
@@ -1108,19 +1108,19 @@ def test_closing_a_masked_sibling_moves_no_other_items_counts(tmp_path):
     assert ask.groups == [p] and ask.rows == 30
 
 
-def test_a_quieted_dashboard_filtered_group_passes_the_proof_gate(tmp_path):
+def test_a_quieted_dashboard_filtered_group_passes_the_explanation_gate(tmp_path):
     group = _groups("Newark", bucket="dashboard_filtered")[0]
     run = _fp_run([group])
     (it,) = open_items(run)
     item = _item(it, {"kind": "reconcile"}, ("dashboard", "dashboard filter", 30))
-    # A `group` decision closed it after triage: it is no longer open.
+    # A `group` decision closed it after the sort: it is no longer open.
     run.applied.open = []
     run_json = _write_run_sorted(tmp_path, run, [item])
 
     assert checked_sort(run, run_json)["items"] == [item]
 
 
-def test_decided_marks_round_trip_through_triage_json(tmp_path):
+def test_decided_marks_round_trip_through_sort_json(tmp_path):
     run = _fp_run(_groups("Newark"))
     (it,) = open_items(run)
     explanation = _explanation_file(tmp_path)
@@ -1146,11 +1146,11 @@ from cube_validation.answers import approved_decisions  # noqa: E402
 def test_sheet_filtered_groups_share_one_cause_decision_and_no_group_stub(tmp_path):
     # DDI's C6: 6 groups the sheet's own filter drops, on 6 different modules.
     entry = {"dashboard": "administered_at", "operator": "lte", "days_from_week_end": 0}
-    proof = _explanation(
+    check = _rebuild_check(
         missing_columns={"Exclude Future Assessments": "administered_at"}
     )
     cmp = Comparison(id="enrollment", measure="m", dims=[ColumnPair("Module", "module_code")],
-                     rebuild_check=proof, dashboard_filters=[entry])  # fmt: skip
+                     rebuild_check=check, dashboard_filters=[entry])  # fmt: skip
     cfg = ViewConfig(view="enrollment", fact="d.t", comparisons=[cmp])
     groups = [
         Group("enrollment", (("dashboard_filter", "administered_at"),
@@ -1182,7 +1182,7 @@ def test_sheet_filtered_groups_share_one_cause_decision_and_no_group_stub(tmp_pa
     assert all(i["decided"] for i in marked)
 
 
-def test_a_decision_closing_an_item_triage_holds_in_investigate_refuses(tmp_path):
+def test_a_decision_closing_an_item_sort_holds_in_investigate_refuses(tmp_path):
     group = _groups("Newark")[0]
     run = _fp_run([group])
     (it,) = open_items(run)
@@ -1191,7 +1191,7 @@ def test_a_decision_closing_an_item_triage_holds_in_investigate_refuses(tmp_path
     hand = Decision("hand", "enrollment", "deliberate", "r",
                     group={"column": "region", "values": ["Newark"]},
                     fingerprints=dict(FPS))  # fmt: skip
-    # Written by hand after triage, then re-applied: the group is now quiet.
+    # Written by hand after the sort, then re-applied: the group is now quiet.
     run.applied = Applied(quiet=[(hand, group)])
     run_json = _write_run_sorted(tmp_path, run, [item])
 
@@ -1203,7 +1203,7 @@ def test_a_decision_closing_an_item_triage_holds_in_investigate_refuses(tmp_path
         checked_sort(run, run_json)
 
 
-# --- closed groups: what a cause decision covers past triage's items ---------
+# --- closed groups: what a cause decision covers past the sort's items ---------
 
 from collections import Counter  # noqa: E402
 from pathlib import Path  # noqa: E402
@@ -1261,7 +1261,7 @@ def test_a_run_over_closed_groups_alone_is_not_an_open_items_run():
     assert kept == [] and [c["key"] for c in closed] == [_open_key(q)]
 
 
-def test_check_closed_says_when_no_triage_lets_it_run(tmp_path, capsys):
+def test_check_closed_says_when_no_sort_lets_it_run(tmp_path, capsys):
     run = _fp_run([])
 
     check_closed(run, tmp_path / "run.json", [])
@@ -1308,9 +1308,9 @@ from cube_validation import latest  # noqa: E402
 from cube_validation.sort import comparisons_waiting  # noqa: E402
 
 
-def test_a_recomposed_run_needs_a_new_triage(tmp_path):
+def test_a_recomposed_run_needs_a_new_sort(tmp_path):
     # Another comparison's result moved to a newer moment: the run's own moment
-    # is unchanged, but its triage was of the earlier composition.
+    # is unchanged, but its sort was of the earlier composition.
     run = _fp_run(_groups("Newark"))
     run.moments = {"enrollment": run.moment}
     run_json = _write_run_sorted(tmp_path, run, [])
@@ -1354,23 +1354,23 @@ def test_waiting_comparisons_name_a_skipped_one_by_why_it_was_skipped():
         entries={"c2": latest.entry_fingerprint(c2)},
         skipped=[
             {"comparison": "c1", "why": "no explanation; run `rebuild-sheet` first"},
-            {"comparison": "c2", "why": "workbook changed since its proof"},
+            {"comparison": "c2", "why": "workbook changed since its rebuild check"},
         ],
     )
 
     assert comparisons_waiting(cfg, run, {}) == {
         "c1": "not compared: no explanation; run `rebuild-sheet` first",
-        "c2": "not compared: workbook changed since its proof",
+        "c2": "not compared: workbook changed since its rebuild check",
     }
 
 
 def test_the_gate_returns_items_in_investigate_as_unsettled(tmp_path):
     run = _fp_run(_groups("Newark", "Camden"))
     newark, camden = open_items(run)
-    proven = _item(newark, _explanation_file(tmp_path), ("cube", NO_SECTION, 30))
+    explained = _item(newark, _explanation_file(tmp_path), ("cube", NO_SECTION, 30))
     left = {**_item(camden, None), "suggestion": "investigate", "cause": None}
 
-    loaded = checked_sort(run, _write_run_sorted(tmp_path, run, [proven, left]))
+    loaded = checked_sort(run, _write_run_sorted(tmp_path, run, [explained, left]))
 
     assert [i["id"] for i in loaded["unsettled"]] == [camden.id]
     assert [i["id"] for i in loaded["items"]] == [newark.id, camden.id]
@@ -1438,7 +1438,7 @@ def test_a_cut_gap_gets_no_filter_label():
     assert not s.evidence[0].startswith(("Cube ", "Workbook-only"))
 
 
-def test_the_default_call_round_trips_through_triage_json():
+def test_the_default_call_round_trips_through_sort_json():
     cfg = _cfg(restricting_filters=["Enroll Status"])
     [s] = suggest(cfg, _run(gaps=[_gap()]), {})
 
@@ -1489,13 +1489,13 @@ def test_another_comparisons_column_never_makes_a_gap_for_cube():
         id="enrollment",
         measure="student_count",
         dims=[ColumnPair("Grade", "grade_level")],
-        rebuild_check=_explanation(restricting_filters=["Enroll Status"]),
+        rebuild_check=_rebuild_check(restricting_filters=["Enroll Status"]),
     )
     other = Comparison(
         id="attendance",
         measure="student_count",
         dims=[ColumnPair("Grade", "grade_level")],
-        rebuild_check=_explanation(
+        rebuild_check=_rebuild_check(
             restricting_filters=["Enroll Status"],
             missing_columns={"Enroll Status": "enroll_status"},
         ),
