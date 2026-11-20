@@ -36,6 +36,7 @@ from . import (
     compare,
     describe,
     explain,
+    find_field,
     pipeline,
     read_sheet,
     rebuild,
@@ -551,7 +552,7 @@ def _dispatch(args: argparse.Namespace) -> int:
         # measure.
         session = contextlib.nullcontext() if args.twb else tableau_session()
         with session as tbl:
-            pipeline.find_field(
+            find_field.find_field(
                 cfg,
                 args.measure,
                 cube=cube,

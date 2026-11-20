@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 # trunk-ignore(pyright/reportAttributeAccessIssue): conftest.py registers cube_validation
-from cube_validation import cli, pipeline, read_sheet, tableau
+from cube_validation import cli, find_field, read_sheet, tableau
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.builder import Member
@@ -647,7 +647,7 @@ def test_print_sheets_parses_each_workbook_once(monkeypatch, capsys):
     real = ET.fromstring
     monkeypatch.setattr(ET, "fromstring", lambda text: parses.append(1) or real(text))
 
-    pipeline._print_sheets(found, {"wb-1": TWB})
+    find_field._print_sheets(found, {"wb-1": TWB})
 
     out = capsys.readouterr().out
     assert "  Grid (w.twb): " in out and "  Other (w.twb): " in out
