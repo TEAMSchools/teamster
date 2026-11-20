@@ -312,6 +312,9 @@ def _reads_only_rows(comparison: Comparison) -> None:
     marker = "__formula_rows__"
     text = template.format(rows=marker, where="TRUE", dims="").replace("`", "")
     view = re.escape(comparison.dashboard_view or "")
+    # Catches only a template that names the dashboard view itself. One that
+    # also reads an upstream model holding the same rows (the view's source,
+    # or a copy) passes, and its unmatched rows reach the dashboard side.
     if marker not in text or (view and re.search(rf"\b{view}\b", text, re.IGNORECASE)):
         raise NotCompared(ROWS_BYPASSED)
 
