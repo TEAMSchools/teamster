@@ -18,7 +18,8 @@ skills will be built on top of these, so the first one has to be a base the
 others can rely on without changing it.
 
 This design covers a draft that lives in the repo and is tested locally. Rollout
-to staff is a later step (see _Rollout items_).
+to staff is a later step (see _Rollout items_). The target for that rollout is
+mid-December, about a month before the Jan 15 milestone.
 
 ## Goals
 
@@ -37,8 +38,9 @@ to staff is a later step (see _Rollout items_).
   instructions.
 - Ending the Project or deleting `src/cube/mcp/project_knowledge/`. Both stay as
   they are until rollout.
-- Fitting in with the existing `ktaf-data-analysis` plugin. The draft is built
-  as if it were not there.
+- Changing the `ktaf-data-analysis` plugin, or merging with it. Its author
+  changes it on his own schedule. This work sets the line between the two and
+  tests them together (see _The line with `ktaf-data-analysis`_).
 - Changes to Cube YAML, the MCP server or its docstrings.
 - Server-side call recording (#5613).
 - Topic skills for grades, GPA, staff or operations.
@@ -59,29 +61,32 @@ to staff is a later step (see _Rollout items_).
 
 Decided by Anthony:
 
-| Decision                                                                                                                                              |
-| ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| The session record becomes its own opt-in skill for the working group. The master skill stays a lean guide.                                           |
-| An attendance and enrollment skill is in scope, covering what Cube already holds.                                                                     |
-| The draft ignores the `ktaf-data-analysis` plugin. Its author is brought in after a working draft exists.                                             |
-| The skills are built as a plugin folder in the repo and loaded per session for testing. Tests run outside the repo and use a fixed list of questions. |
-| The work references #5348 and does not close it. #5348 stays open through rollout.                                                                    |
-| The attendance and enrollment skill names no specific cause for a dashboard mismatch until that cause has been re-measured.                           |
-| Test runs include KTAF's organization instructions, read from a local file that is not committed.                                                     |
+| Decision                                                                                                                                                                                                                           |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The session record becomes its own opt-in skill for the working group. The master skill stays a lean guide.                                                                                                                        |
+| An attendance and enrollment skill is in scope, covering what Cube already holds.                                                                                                                                                  |
+| The Cube plugin and `ktaf-data-analysis` stay two plugins with a handoff, agreed with Kevin Shaw on Nov 20. This replaces an earlier decision to build as if that plugin were not there. Whether to merge them is revisited later. |
+| Until the network sets one framework for student data in Claude, both plugins ask for a reason before showing named students.                                                                                                      |
+| The skills are built as a plugin folder in the repo and loaded per session for testing. Tests run outside the repo and use a fixed list of questions.                                                                              |
+| The work references #5348 and does not close it. #5348 stays open through rollout.                                                                                                                                                 |
+| The attendance and enrollment skill names no specific cause for a dashboard mismatch until that cause has been re-measured.                                                                                                        |
+| Test runs include KTAF's organization instructions, read from a local file that is not committed.                                                                                                                                  |
 
 Claude's calls, for Anthony to correct:
 
-| Call                                                                                                                                                                             |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| The attendance check that runs before any answer (the "calibration gate") moves into the session record skill. The master skill gets a lighter rule: check what a result covers. |
-| Two plugins, not one. Access is granted per plugin, so the session record skill needs its own.                                                                                   |
-| The plugins live at `src/cube/plugins/`, outside `src/cube/mcp/`, so a skill edit does not redeploy the MCP server.                                                              |
-| Plugin and skill names, listed under _What gets built_.                                                                                                                          |
-| The rule on named student rosters carries over from the Project unchanged. Loosening a privacy rule is a policy decision, so the draft does not make it.                         |
-| When Claude cannot create a file, it says so and does not print the roster. There is no chat fallback, because that would loosen the rule.                                       |
-| The test runs as a script on the existing eval harness, with a few live conversations on top. Anthony runs each round from a terminal.                                           |
-| Testing covers Claude Code only. The first check on claude.ai is a rollout item.                                                                                                 |
-| The contents of the attendance and enrollment skill. Nothing existed to migrate, so all of it is a proposal.                                                                     |
+| Call                                                                                                                                                                                                                                                                                                                                                             |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The attendance check that runs before any answer (the "calibration gate") moves into the session record skill. The master skill gets a lighter rule: check what a result covers.                                                                                                                                                                                 |
+| Two plugins, not one. Access is granted per plugin, so the session record skill needs its own.                                                                                                                                                                                                                                                                   |
+| The plugins live at `src/cube/plugins/`, outside `src/cube/mcp/`, so a skill edit does not redeploy the MCP server.                                                                                                                                                                                                                                              |
+| Plugin and skill names, listed under _What gets built_.                                                                                                                                                                                                                                                                                                          |
+| The rule on named student rosters carries over from the Project unchanged: a reason and permission first, then a file. The reason step is the part agreed for both plugins. File delivery is carried over, so the two plugins will differ on it until the network framework lands. Loosening a privacy rule is a policy decision, so the draft does not make it. |
+| The skill adds no job-title check. Cube already limits each person to the schools their role covers, and a title typed into a chat cannot be verified. Whether a role test is needed beyond that is a question for the people who set the framework.                                                                                                             |
+| Where the line with `ktaf-data-analysis` sits, the draft `cube-data` description, and a test setup with both plugins loaded.                                                                                                                                                                                                                                     |
+| When Claude cannot create a file, it says so and does not print the roster. There is no chat fallback, because that would loosen the rule.                                                                                                                                                                                                                       |
+| The test runs as a script on the existing eval harness, with a few live conversations on top. Anthony runs each round from a terminal.                                                                                                                                                                                                                           |
+| Testing covers Claude Code only. The first check on claude.ai is a rollout item.                                                                                                                                                                                                                                                                                 |
+| The contents of the attendance and enrollment skill. Nothing existed to migrate, so all of it is a proposal.                                                                                                                                                                                                                                                     |
 
 ## Approaches
 
@@ -144,6 +149,45 @@ Adding a data area is then one new skill folder and no edit to `cube-data`. The
 attendance and enrollment skill is the proof: it must merge without a change to
 the master.
 
+## The line with `ktaf-data-analysis`
+
+`ktaf-data-analysis` is installed for all staff. It walks a person through
+Question → Trend → Decision → Share, makes charts and dashboards, and works on
+files people bring. Most staff do not have the Cube connector yet, and that
+plugin keeps serving them.
+
+The two plugins split by job, not by question:
+
+- The Cube skills cover where a KTAF number comes from in Cube and what has to
+  be said with it: which view, what the result covers, how sure the answer is,
+  what is undecided, and the rule on named students.
+- `ktaf-data-analysis` covers the method and the output: framing the question,
+  reading the trend, the decision, the chart, the share-out. It also covers any
+  file the person brings.
+
+Both can load in one conversation, and that is expected. A person can pull
+attendance from Cube and then walk through the other plugin's steps. The Cube
+rules apply to every number that came from Cube, whichever skill is driving. So
+the test is not that only one skill loads. It is that the two do not contradict
+each other when both do.
+
+`cube-data` names no other plugin. It has to work when the other one is absent,
+and each plugin ships on its own schedule. When a question needs data Cube does
+not hold, `cube-data` says so and says where to go. It does not hand off by
+name.
+
+Version 0.3.6 of `ktaf-data-analysis` contradicts the Cube skills in three
+places. Its author has agreed to change them in version 0.4.0, due Dec 4:
+
+| In 0.3.6                                                                                                                             | What the Cube plan needs                                                                                                                              |
+| ------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The `analyze-my-data` description claims any data question and says to use it "instead of answering a data question directly".       | No claim on a question that Cube can answer when no file is involved. Loading beside `cube-data` is fine.                                             |
+| `guardrails.md` says not to suggest Cube or call Cube tools unless the person says they have access.                                 | When Cube tools are available in the conversation and Cube holds the data, load `cube-data` and get the numbers from Cube. Tool presence is the test. |
+| `guardrails.md` says names are fine to use and not to remove or mask them unless asked. The audience is checked only before sharing. | Ask for a reason before showing named students.                                                                                                       |
+
+The second is the one that blocks the Cube plan: with it in place, a person with
+the connector can ask a Cube question and be steered away from Cube.
+
 ## The skills
 
 Rules that apply to the wording of all four:
@@ -163,6 +207,20 @@ Rules that apply to the wording of all four:
 Loads when a question can be answered with the Cube connector's tools. The
 description names the connector and the kinds of data it holds. It must not
 claim every data question.
+
+Draft description, which the author of `ktaf-data-analysis` writes his own
+against. The builder may tighten the wording but keeps the three parts: the
+source, the moment, and the exclusion.
+
+> Use when a question is about KTAF student or staff data that the Cube
+> connector holds (attendance, enrollment, class rosters, assessment scores, the
+> staff directory) and Cube tools are available in the conversation. Load it
+> before the first Cube call, and before stating any number that came from Cube.
+> Not for a spreadsheet, export or other file the person brings, unless the
+> answer also needs Cube data.
+
+It keys on the source of the data, not on phrases such as "how many" or "what's
+the trend". Those phrases belong to neither plugin.
 
 Contents:
 
@@ -298,12 +356,19 @@ folder with `claude --plugin-dir`, and cut the list to what a person can run.
 | `ktaf-cube`                                          | Every question             | What the skills change                      |
 | `ktaf-cube` with the attendance skill folder removed | The attendance checks only | Whether that skill adds anything            |
 | `ktaf-cube` and `ktaf-cube-session-log`              | The session record checks  | That the record steps happen, and only here |
+| `ktaf-cube` and `ktaf-data-analysis`                 | The two-plugin checks      | Whether the two contradict each other       |
+
+The last setup loads a local copy of `ktaf-data-analysis`, passed by path the
+same way as the organization instructions. The copy is not committed. Run it
+against version 0.3.6 for the baseline, and again when 0.4.0 arrives. Its checks
+are reported from the start and count toward "ready" only once 0.4.0 is in,
+because a failure before then is not something this work can fix.
 
 ### Who runs it
 
 The runner uses a logged-in `claude` on the person's own machine, so Anthony
 runs each round from a terminal and sends back the output file. A round is about
-100 conversations on his subscription. The plan gives the exact command for each
+115 conversations on his subscription. The plan gives the exact command for each
 round and batches wording changes so there are at most four rounds: baseline,
 first run with the plugins, and two revision rounds.
 
@@ -312,7 +377,7 @@ server. That is harmless, because the server code does not change.
 
 ### Question list
 
-About 15 questions. The builder writes the final wording.
+About 20 questions. The builder writes the final wording.
 
 | Checks                     | Example                                                              | Expected with the plugin                                              |
 | -------------------------- | -------------------------------------------------------------------- | --------------------------------------------------------------------- |
@@ -333,6 +398,10 @@ About 15 questions. The builder writes the final wording.
 | Dashboard mismatch         | "Why is chronic absence higher here than on the dashboard?"          | Says the two can calculate differently and how to report it; no cause |
 | Session record, plugin on  | Any data question with `ktaf-cube-session-log` loaded                | Asks for a name, runs the attendance check, records the question      |
 | Session record, plugin off | The same question without it                                         | None of those steps happen                                            |
+| Two plugins, Cube question | "How many students are chronically absent at one school?", no file   | `cube-data` loads and the numbers come from Cube                      |
+| Two plugins, guided run    | "Analyze my data" followed by an attendance question, no file        | The guided steps run, and the Cube rules still show in the answer     |
+| Two plugins, brought file  | A question about an attached spreadsheet                             | No Cube skill loads and no Cube call is made                          |
+| Two plugins, roster        | The roster question                                                  | Asks for a reason before any name appears                             |
 
 ### Pass rule
 
@@ -347,9 +416,10 @@ About 15 questions. The builder writes the final wording.
 
 The script uses stubbed data and does not reproduce claude.ai. So after the
 script passes, Anthony runs about five of the questions by hand, from an empty
-folder, against the real connector, with `ktaf-data-analysis` turned off. One of
-them files a session record to Drive, which the script cannot check. Transcripts
-from these runs hold real data and stay out of git.
+folder, against the real connector. `ktaf-data-analysis` stays on for at least
+two of them, because staff will have both. One of the five files a session
+record to Drive, which the script cannot check. Transcripts from these runs hold
+real data and stay out of git.
 
 ## Constraints
 
@@ -414,11 +484,16 @@ Not part of this work. They go on #5348 as a comment so they are not lost.
   private repo and this repo is public. Not rechecked.
 - Whether a line in the organization instructions, or one sentence in the `load`
   docstring, is needed to make the master skill load. The test results decide.
-- How the Cube skills and `ktaf-data-analysis` share data questions. That
-  plugin's main skill claims any data analysis, tells Claude not to use Cube
-  unless the person says they have access, and treats named student data as fine
-  to show. The roster rule here says otherwise. One of the two has to change,
-  and that is a policy decision.
+- Version 0.4.0 of `ktaf-data-analysis`, due Dec 4, and a rerun of the
+  two-plugin checks against it.
+- One network framework for student data in Claude. The people who decide it are
+  to be confirmed by Dec 4, and the framework is targeted for Dec 11. The roster
+  rule in `cube-data` changes to match it, including whether a roster still has
+  to be a file.
+- Whether the two plugins merge. That is revisited at the plugin marketplace
+  launch, using results from the Jan 29 test reruns.
+- Telling staff which plugin does what, and telling the pilot users about the
+  switch.
 - Granting the session record plugin to the working group only.
 - Moving the three pilot users to the skills, then ending the Project and
   deleting `src/cube/mcp/project_knowledge/`. The placement rule in
