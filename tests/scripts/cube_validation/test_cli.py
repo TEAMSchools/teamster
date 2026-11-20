@@ -968,6 +968,25 @@ def test_a_run_json_with_no_fact_is_older_than_any_fact_s_run(fakes, tmp_path):
         results._saved_run(cfg, tmp_path / "cache")
 
 
+def test_a_run_json_with_proofs_is_refused_until_compare_runs_again(
+    fakes, tmp_path, capsys
+):
+    path = _file(tmp_path)
+    assert cli.main(["compare", str(path)]) == 0
+    run_json = _latest_run(tmp_path)
+    # As an older validator saved it: `proofs`, not `rebuild_checks`.
+    data = json.loads(run_json.read_text())
+    data["proofs"] = data.pop("rebuild_checks")
+    run_json.write_text(json.dumps(data))
+    cfg = load_view_config(path)
+
+    with pytest.raises(pipeline.Refusal, match=r"older validator; `compare` it again"):
+        results.latest_run(cfg, tmp_path / "cache")
+    capsys.readouterr()
+    assert cli.main(["sort", str(path), "--no-trace", "--no-explanations"]) == 1
+    assert "older validator; `compare` it again" in capsys.readouterr().err
+
+
 def test_a_comparison_without_a_proof_is_skipped_and_the_rest_run(
     fakes, tmp_path, capsys
 ):
@@ -1927,7 +1946,7 @@ def test_ask_owner_lists_formulas_not_compared_and_record_answers_ignores_them(
     assert cli.main(["compare", str(path)]) == 0
     for run_json in (tmp_path / "cache" / "v").glob("*/run.json"):
         _write_sorted(run_json, [_sorted_item("e")])
-        triage = run_json.parent / "triage.json"
+        triage = run_json.parent / "sort.json"
         loaded = json.loads(triage.read_text())
         loaded["formulas_not_compared"] = {"ada-region": {"no rows both sides hold": 3}}
         triage.write_text(json.dumps(loaded))
@@ -1955,7 +1974,7 @@ def _predating_the_formula_check(tmp_path):
     assert cli.main(["compare", str(path)]) == 0
     (run_json,) = (tmp_path / "cache" / "v").glob("*/run.json")
     _write_sorted(run_json, [_sorted_item("e"), _gap_sorted_item()])
-    triage = run_json.parent / "triage.json"
+    triage = run_json.parent / "sort.json"
     loaded = json.loads(triage.read_text())
     del loaded["formulas_not_compared"]
     triage.write_text(json.dumps(loaded))
@@ -1972,7 +1991,7 @@ def test_ask_owner_and_decide_refuse_a_triage_of_older_posted_masking(
     assert cli.main(["compare", str(path)]) == 0
     (run_json,) = (tmp_path / "cache" / "v").glob("*/run.json")
     _write_sorted(run_json, [_sorted_item("e"), _gap_sorted_item()])
-    triage = run_json.parent / "triage.json"
+    triage = run_json.parent / "sort.json"
     loaded = json.loads(triage.read_text())
     if held is None:
         del loaded["posted_version"]
@@ -2146,7 +2165,7 @@ def test_triage_records_and_prints_the_stale_comparisons(fakes, tmp_path, capsys
     assert cli.main(["sort", str(path), "--no-trace", "--no-explanations"]) == 0
 
     assert "v: comparison c2 never compared" in capsys.readouterr().out
-    (saved,) = (tmp_path / "cache" / "v").glob("*/triage.json")
+    (saved,) = (tmp_path / "cache" / "v").glob("*/sort.json")
     assert json.loads(saved.read_text())["stale"] == {"c2": "never compared"}
 
 
@@ -2159,7 +2178,7 @@ def _sorted_stale(path, tmp_path):
     """Triage the view's latest run and return the stale list it wrote."""
     assert cli.main(["sort", str(path), "--no-trace", "--no-explanations"]) == 0
     saved = max(
-        (tmp_path / "cache" / "v").glob("*/triage.json"),
+        (tmp_path / "cache" / "v").glob("*/sort.json"),
         key=lambda p: p.stat().st_mtime,
     )
     return json.loads(saved.read_text())["stale"]
@@ -2237,12 +2256,12 @@ def test_a_dev_build_keeps_its_results_apart_from_production(fakes, tmp_path, ca
     prod_folder = report.run_dir(tmp_path / "cache", "v", report.Build(START, END, "j"))
     dev_folder = report.run_dir(tmp_path / "cache", "v", report.Build(*LATER, "j"))
     assert _sorted_stale(path, tmp_path) == {}
-    assert (prod_folder / "triage.json").exists()
-    assert not (dev_folder / "triage.json").exists()
+    assert (prod_folder / "sort.json").exists()
+    assert not (dev_folder / "sort.json").exists()
     fakes.cube.dataset = DEV
     argv = ["sort", str(path), "--no-trace", "--no-explanations", "--fact-dataset", DEV]
     assert cli.main(argv) == 0
-    dev_triage = json.loads((dev_folder / "triage.json").read_text())
+    dev_triage = json.loads((dev_folder / "sort.json").read_text())
     assert dev_triage["stale"] == {"c1": "never compared"}
 
 
@@ -3161,7 +3180,7 @@ def test_review_carries_triage_evidence_in_its_json(fakes, tmp_path, capsys):
     }
     item = {"id": "i", "kind": "group", "comparison": "ada-region", "label": "l",
             "stub": stub, "suggestion": "cause", "evidence": ["the fact drops them"],
-            "candidates": [], "cause": [STEP], "proof": dict(STORED_EXPLANATION)}  # fmt: skip
+            "candidates": [], "cause": [STEP], "explanation": dict(STORED_EXPLANATION)}  # fmt: skip
     _write_sorted(run_json, [item])
     capsys.readouterr()
 
@@ -3179,7 +3198,7 @@ def test_review_carries_triage_evidence_in_its_json(fakes, tmp_path, capsys):
 def test_review_quotes_the_masked_copy_of_exact_triage_evidence(
     fakes, tmp_path, capsys
 ):
-    # triage.json shows exact counts; the review issue is GitHub-bound.
+    # sort.json shows exact counts; the review issue is GitHub-bound.
     assert cli.main(["compare", str(_file(tmp_path))]) == 0
     path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
     assert cli.main(["compare", str(path), "--all"]) == 0
@@ -3238,7 +3257,7 @@ def _sorted_item(evidence, suggestion="cause", item_id=MIAMI):
     return {"id": item_id, "kind": "group", "comparison": "ada-region",
             "label": "l", "stub": stub, "suggestion": suggestion,
             "evidence": [evidence], "candidates": [], "cause": cause,
-            "proof": dict(STORED_EXPLANATION) if cause else None}  # fmt: skip
+            "explanation": dict(STORED_EXPLANATION) if cause else None}  # fmt: skip
 
 
 def _write_sorted(run_json, items=(), open_keys=None):
@@ -3250,7 +3269,7 @@ def _write_sorted(run_json, items=(), open_keys=None):
     # Each item of an open group carries its stable key, as `sort` writes.
     keys = {i.id: i.key for i in sort.open_items(run)}
     items = [{"key": keys.get(i["id"], ""), **i} for i in items]
-    (run_json.parent / "triage.json").write_text(
+    (run_json.parent / "sort.json").write_text(
         json.dumps(
             {
                 "view": run.view,
@@ -3317,6 +3336,30 @@ def test_review_refuses_a_view_never_triaged(fakes, tmp_path, capsys):
     assert "v: no sort of the latest run" in captured.err
     assert "run `sort` for" in captured.err
     assert captured.out == ""
+
+
+def test_a_sort_saved_as_triage_json_is_refused_until_sort_runs_again(
+    fakes, tmp_path, capsys
+):
+    path = _file(tmp_path)
+    assert cli.main(["compare", str(path)]) == 0
+    assert cli.main(["sort", str(path), "--no-trace", "--no-explanations"]) == 0
+    folder = _latest_run(tmp_path).parent
+    # As an older validator named it; its items held `proof`, never read now.
+    (folder / "sort.json").rename(folder / "triage.json")
+    capsys.readouterr()
+
+    assert cli.main(["ask-owner", str(path), "--domain", "Registrar"]) == 1
+
+    captured = capsys.readouterr()
+    assert (
+        "v: the sort of the latest run is an older validator's triage.json; "
+        "run `sort` for"
+    ) in captured.err
+    assert captured.out == ""
+    # `sort` writes `sort.json` beside it, which the next command reads.
+    assert cli.main(["sort", str(path), "--no-trace", "--no-explanations"]) == 0
+    assert cli.main(["ask-owner", str(path), "--domain", "Registrar"]) == 0
 
 
 @pytest.mark.parametrize("stale", [True, False])
@@ -3408,15 +3451,15 @@ def test_review_refuses_a_triage_whose_moment_is_not_the_runs(fakes, tmp_path, c
     assert cli.main(["compare", str(path)]) == 0
     (run_json,) = (tmp_path / "cache" / "v").glob("*/run.json")
     _write_sorted(run_json, [_sorted_item("e")])
-    saved = json.loads((run_json.parent / "triage.json").read_text())
+    saved = json.loads((run_json.parent / "sort.json").read_text())
     saved["moment"]["job_id"] = "another-build"
-    (run_json.parent / "triage.json").write_text(json.dumps(saved))
+    (run_json.parent / "sort.json").write_text(json.dumps(saved))
     capsys.readouterr()
 
     assert cli.main(["ask-owner", str(path), "--domain", "Registrar"]) == 1
 
     err = capsys.readouterr().err
-    assert "v: triage.json is of another moment" in err and "run `sort` for" in err
+    assert "v: sort.json is of another moment" in err and "run `sort` for" in err
 
 
 def test_review_names_questions_left_without_evidence(fakes, tmp_path, capsys):
@@ -3436,12 +3479,12 @@ def test_review_refuses_an_unreadable_triage_file(fakes, tmp_path, capsys):
     path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
     assert cli.main(["compare", str(path), "--all"]) == 0
     run_json = next((tmp_path / "cache" / "v").glob("*/run.json"))
-    (run_json.parent / "triage.json").write_text("{not json")
+    (run_json.parent / "sort.json").write_text("{not json")
     capsys.readouterr()
 
     assert cli.main(["ask-owner", str(path), "--domain", "Registrar"]) == 1
 
-    assert "v: triage.json is unreadable; re-run `sort`" in capsys.readouterr().err
+    assert "v: sort.json is unreadable; re-run `sort`" in capsys.readouterr().err
 
 
 def test_review_refuses_a_triage_file_that_is_not_an_object(fakes, tmp_path, capsys):
@@ -3449,12 +3492,12 @@ def test_review_refuses_a_triage_file_that_is_not_an_object(fakes, tmp_path, cap
     path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
     assert cli.main(["compare", str(path), "--all"]) == 0
     run_json = next((tmp_path / "cache" / "v").glob("*/run.json"))
-    (run_json.parent / "triage.json").write_text("[]")
+    (run_json.parent / "sort.json").write_text("[]")
     capsys.readouterr()
 
     assert cli.main(["ask-owner", str(path), "--domain", "Registrar"]) == 1
 
-    assert "v: triage.json is unreadable; re-run `sort`" in capsys.readouterr().err
+    assert "v: sort.json is unreadable; re-run `sort`" in capsys.readouterr().err
 
 
 def _review_json(path, capsys):
@@ -4658,7 +4701,7 @@ def _latest_run(tmp_path):
 
 def _sorted_items(path, tmp_path):
     assert cli.main(["sort", str(path), "--no-trace"]) == 0
-    loaded = json.loads((_latest_run(tmp_path).parent / "triage.json").read_text())
+    loaded = json.loads((_latest_run(tmp_path).parent / "sort.json").read_text())
     return {i["id"]: i for i in loaded["items"]}
 
 
@@ -4681,7 +4724,7 @@ def test_a_cell_whose_rows_all_match_is_a_formula_difference(fakes, tmp_path):
     items = _sorted_items(path, tmp_path)
     item = items["ada-region:formula"]
     assert (item["kind"], item["suggestion"]) == ("formula", "cause")
-    assert item["proof"]["kind"] == "formula"
+    assert item["explanation"]["kind"] == "formula"
     assert item["stub"] == {"comparison": "ada-region", "formula": True}
     assert "ada-region:cells" not in items
 
@@ -5149,7 +5192,7 @@ def test_triage_of_one_comparison_prints_its_items_and_keeps_every_item(
 
     out = capsys.readouterr().out
     assert "ada-region-2:" in out and "ada-region-1:" not in out
-    (saved,) = (tmp_path / "cache" / "v").glob("*/triage.json")
+    (saved,) = (tmp_path / "cache" / "v").glob("*/sort.json")
     kept = {i["comparison"] for i in json.loads(saved.read_text())["items"]}
     assert {"ada-region-1", "ada-region-2"} <= kept
     (kwargs,) = seen
@@ -5174,7 +5217,7 @@ def test_triage_proves_first_and_traces_only_what_no_proof_explains(
     (saved,) = (tmp_path / "cache" / "v").glob("*/run.json")
     run = results._run_from_json(json.loads(saved.read_text()))
     (group,) = run.applied.open
-    proof = explain.Explanation(
+    explanation = explain.Explanation(
         path.parent / "explanations" / "v" / f"ada-region__{group.bucket}.sql",
         "ada-region",
         group.bucket,
@@ -5188,12 +5231,12 @@ def test_triage_proves_first_and_traces_only_what_no_proof_explains(
         items = explain._bucket_items(run_, "ada-region", group.bucket)
         found = {i: explain.Outcome(g.n_rows, Counter({"C1": g.n_rows}))
                  for i, g in items}  # fmt: skip
-        return [explain.Ran(proof, items, found)]
+        return [explain.Ran(explanation, items, found)]
 
     def traced(cfg, run_, *, skip, **k):
         order.append("trace")
         assert skip == {trace.item_key(group)}
-        # A cap stops the trace: it never un-proves what a proof explained.
+        # A cap stops the trace: it never undoes what an explanation explained.
         return trace.TraceResult({})
 
     monkeypatch.setattr(explain, "run_stored", stored)
@@ -5202,12 +5245,14 @@ def test_triage_proves_first_and_traces_only_what_no_proof_explains(
 
     assert cli.main(["sort", str(path)]) == 0
 
-    # The trace's own refusals come before any proof spends.
+    # The trace's own refusals come before any explanation spends.
     assert order == ["ready", "proofs", "trace"]
-    items = json.loads((saved.parent / "triage.json").read_text())["items"]
+    items = json.loads((saved.parent / "sort.json").read_text())["items"]
     (item,) = [i for i in items if i["kind"] == "group"]
     assert item["suggestion"] == "cause"
-    assert item["proof"]["path"] == f"explanations/v/ada-region__{group.bucket}.sql"
+    assert (
+        item["explanation"]["path"] == f"explanations/v/ada-region__{group.bucket}.sql"
+    )
 
 
 def test_triage_classifies_a_group_a_group_decision_closes(
@@ -5220,7 +5265,7 @@ def test_triage_classifies_a_group_a_group_decision_closes(
     run = results._run_from_json(json.loads(saved.read_text()))
     assert run.applied.open == []
     ((_, group),) = run.applied.quiet
-    proof = explain.Explanation(
+    explanation = explain.Explanation(
         path.parent / "explanations" / "v" / f"ada-region__{group.bucket}.sql",
         "ada-region",
         group.bucket,
@@ -5232,7 +5277,7 @@ def test_triage_classifies_a_group_a_group_decision_closes(
         items = explain._bucket_items(run_, "ada-region", group.bucket)
         found = {i: explain.Outcome(g.n_rows, Counter({"C1": g.n_rows}))
                  for i, g in items}  # fmt: skip
-        return [explain.Ran(proof, items, found)]
+        return [explain.Ran(explanation, items, found)]
 
     monkeypatch.setattr(explain, "run_stored", stored)
     monkeypatch.setattr(trace, "trace_run", lambda *a, **k: trace.TraceResult({}))
@@ -5240,7 +5285,7 @@ def test_triage_classifies_a_group_a_group_decision_closes(
 
     assert cli.main(["sort", str(path)]) == 0
 
-    loaded = json.loads((saved.parent / "triage.json").read_text())
+    loaded = json.loads((saved.parent / "sort.json").read_text())
     # Closed, so never an item; the proof still says which causes it holds.
     assert not [i for i in loaded["items"] if i["kind"] == "group"]
     (closed,) = loaded["closed"]
@@ -5249,7 +5294,10 @@ def test_triage_classifies_a_group_a_group_decision_closes(
         {"side": "dashboard", "step": "C1", "label": "the sheet drops them",
          "n_rows": group.n_rows}
     ]  # fmt: skip
-    assert closed["proof"]["path"] == f"explanations/v/ada-region__{group.bucket}.sql"
+    assert (
+        closed["explanation"]["path"]
+        == f"explanations/v/ada-region__{group.bucket}.sql"
+    )
 
 
 def test_triage_confirm_reaches_its_command(fakes, tmp_path, monkeypatch):
@@ -5290,7 +5338,7 @@ def test_triage_command_writes_triage_json_beside_latest_run(fakes, tmp_path, ca
     assert cli.main(["sort", str(path), "--no-trace"]) == 0
 
     out = capsys.readouterr().out
-    written = json.loads((saved.parent / "triage.json").read_text())
+    written = json.loads((saved.parent / "sort.json").read_text())
     assert written["view"] == "v"
     assert (
         written["decisions_fingerprint"]
@@ -5304,7 +5352,7 @@ def test_triage_command_writes_triage_json_beside_latest_run(fakes, tmp_path, ca
     assert set(item) == {
         "id", "kind", "comparison", "label", "stub",
         "suggestion", "evidence", "evidence_posted", "candidates", "cause",
-        "proof", "key", "decisions", "decided", "default_call",
+        "explanation", "key", "decisions", "decided", "default_call",
     }  # fmt: skip
     assert item["stub"]["group"]["values"] == ["Miami"]
     assert (item["suggestion"], item["cause"]) == ("investigate", None)
@@ -5320,7 +5368,7 @@ def test_triage_refuses_when_decisions_changed_since_run(fakes, tmp_path, capsys
 
     err = capsys.readouterr().err
     assert "decisions" in err and "`compare`" in err
-    assert not list((tmp_path / "cache" / "v").glob("*/triage.json"))
+    assert not list((tmp_path / "cache" / "v").glob("*/sort.json"))
 
 
 def test_triage_takes_fact_dataset_and_refuses_a_bad_one(fakes, tmp_path, capsys):
@@ -5355,7 +5403,7 @@ def test_triage_runs_a_value_check_and_records_the_verdict(fakes, tmp_path, caps
     assert cli.main(["sort", str(path), "--no-trace"]) == 0, capsys.readouterr().err
 
     assert any("DISTINCT CAST(school_level AS STRING)" in s for s in fakes.bq.ran)
-    items = json.loads((saved.parent / "triage.json").read_text())["items"]
+    items = json.loads((saved.parent / "sort.json").read_text())["items"]
     (gap,) = [i for i in items if i["kind"] == "gap"]
     assert "school_level: same field, different coding" in gap["evidence"]
     assert "MS" not in json.dumps(items)
@@ -5369,7 +5417,7 @@ def test_triage_no_trace_skips_the_trace(fakes, tmp_path, capsys, monkeypatch):
 
     assert cli.main(["sort", str(path), "--no-trace"]) == 0
 
-    items = json.loads((saved.parent / "triage.json").read_text())["items"]
+    items = json.loads((saved.parent / "sort.json").read_text())["items"]
     (group,) = [i for i in items if i["kind"] == "group"]
     assert group["suggestion"] == "investigate"
     assert group["evidence"][0] == sort.NOT_TRACED
@@ -5414,7 +5462,7 @@ def test_triage_traces_the_rows_by_default(fakes, tmp_path, capsys, monkeypatch)
     )
 
     assert seen == {"manifest": manifest, "minutes": 5.0}
-    items = json.loads((saved.parent / "triage.json").read_text())["items"]
+    items = json.loads((saved.parent / "sort.json").read_text())["items"]
     groups = [i for i in items if i["kind"] == "group"]
     assert len(groups) == len(run.applied.open)
     # The trace leads; it never proves.
@@ -5471,7 +5519,7 @@ def test_triage_writes_its_batch_when_the_trace_stops(
 
     assert cli.main(["sort", str(path)]) == 0
 
-    items = json.loads((saved.parent / "triage.json").read_text())["items"]
+    items = json.loads((saved.parent / "sort.json").read_text())["items"]
     (group,) = [i for i in items if i["kind"] == "group"]
     assert group["suggestion"] == "investigate"
     assert "trace stopped: the trace passed its time limit" in group["evidence"]
@@ -5506,7 +5554,7 @@ def test_a_value_check_past_the_cap_still_writes_the_batch(
 
     assert cli.main(["sort", str(path), "--no-trace"]) == 0, capsys.readouterr().err
 
-    items = json.loads((saved.parent / "triage.json").read_text())["items"]
+    items = json.loads((saved.parent / "sort.json").read_text())["items"]
     (gap,) = [i for i in items if i["kind"] == "gap"]
     assert any(e.startswith("school_level: not checked:") for e in gap["evidence"])
 
@@ -5534,7 +5582,7 @@ def _formula_runs(bq, since=0):
 
 
 def _triage(tmp_path):
-    return json.loads((_latest_run(tmp_path).parent / "triage.json").read_text())
+    return json.loads((_latest_run(tmp_path).parent / "sort.json").read_text())
 
 
 def test_sort_prices_the_formula_check_with_the_explanations(
@@ -5609,7 +5657,7 @@ def test_sort_files_a_decided_cell_whose_formulas_differ_as_formula(fakes, tmp_p
 
     assert "ada-region:cells" not in items
     item = items["ada-region:formula"]
-    assert (item["suggestion"], item["proof"]["kind"]) == ("cause", "formula")
+    assert (item["suggestion"], item["explanation"]["kind"]) == ("cause", "formula")
     assert item["cause"][0]["label"] == sort.MATCHED_LABEL
     assert item["evidence_posted"][0] == (
         f"<10 {sort.MATCHED_LABEL}: with their unmatched rows left out, the 2 sides "
@@ -6300,13 +6348,13 @@ def _closed_by_a_group_decision(tmp_path):
     run = results._run_from_json(json.loads(run_json.read_text()))
     ((_, miami),) = run.applied.quiet
     _write_sorted(run_json, [_sorted_item("e", item_id="other")])
-    found = run_json.parent / "triage.json"
+    found = run_json.parent / "sort.json"
     loaded = json.loads(found.read_text())
     key = sort._open_key(miami)
     loaded["closed"] = [
         {"id": key, "key": key, "kind": "group", "comparison": "ada-region",
          "closed": True, "suggestion": "cause", "cause": [STEP],
-         "proof": dict(STORED_EXPLANATION)}
+         "explanation": dict(STORED_EXPLANATION)}
     ]  # fmt: skip
     found.write_text(json.dumps(loaded))
     return path

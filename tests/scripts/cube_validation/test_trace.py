@@ -454,7 +454,7 @@ def test_evidence_masks_a_part_its_total_would_give_away():
         "main: s: masked rows",
         "<10 rows unattributed: <10 recovered by no step",
     )
-    # The terminal and triage.json show exact counts.
+    # The terminal and sort.json show exact counts.
     assert found.evidence() == (
         "main: s: 18 rows",
         "7 rows unattributed: 7 recovered by no step",

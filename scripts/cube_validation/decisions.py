@@ -165,26 +165,29 @@ def formula_cells_hash(
     return hashlib.sha256(json.dumps([salt, refs]).encode()).hexdigest()
 
 
-def cause_state(d: Decision, proof: str, current: dict[str, str]) -> str:
-    """Whether a cause decision still holds for an item explained by `proof`.
+def cause_state(d: Decision, explanation: str, current: dict[str, str]) -> str:
+    """Whether a cause decision still holds for an item explained by `explanation`.
 
     Args:
         d: A cause decision.
-        proof: The fingerprint of the stored explanation the item's cause
+        explanation: The fingerprint of the stored explanation the item's cause
             rests on.
         current: The comparison's current `{cube, dashboard}` fingerprints.
 
     Returns:
         `holds`, `sql` (either side's SQL changed since the decision) or
-        `proof` (the explanation file changed since the decision).
+        `explanation` (the explanation file changed since the decision).
     """
     if any(
         not d.fingerprints.get(side) or d.fingerprints[side] != current.get(side)
         for side in ("cube", "dashboard")
     ):
         return "sql"
-    if not d.fingerprints.get("explanation") or d.fingerprints["explanation"] != proof:
-        return "proof"
+    if (
+        not d.fingerprints.get("explanation")
+        or d.fingerprints["explanation"] != explanation
+    ):
+        return "explanation"
     return "holds"
 
 

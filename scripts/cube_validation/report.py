@@ -82,7 +82,7 @@ class RunResult:
     scopes: list[str] = field(default_factory=list)
     cost_usd: float = 0.0
     # Comparison id to its rebuild check's `matched_at`.
-    proofs: dict[str, str] = field(default_factory=dict)
+    rebuild_checks: dict[str, str] = field(default_factory=dict)
     browser_cuts: list[str] = field(default_factory=list)
     # Total rows the rebuild checks' exports showed but no check compared.
     totals: list[str] = field(default_factory=list)
@@ -411,7 +411,7 @@ def render_local(run: RunResult) -> str:
                 if comparison in run.reshaped
                 else ""
             )
-            for comparison, at in sorted(run.proofs.items())
+            for comparison, at in sorted(run.rebuild_checks.items())
         ]
     )
     out += ["", "## Totals not matched", ""]
@@ -1307,16 +1307,22 @@ def _reproduce_lines(question_id: str, block: dict) -> list[str]:
             "```",
             "",
         ]
-    for proof in block["explanations"]:
-        name = proof["path"].rsplit("/", 1)[-1]
+    for explanation in block["explanations"]:
+        name = explanation["path"].rsplit("/", 1)[-1]
         blob = block.get("blob")
-        link = f"[`{name}`]({blob}/{proof['path']})" if blob else f"`{proof['path']}`"
-        if proof["query"] is None:
+        link = (
+            f"[`{name}`]({blob}/{explanation['path']})"
+            if blob
+            else f"`{explanation['path']}`"
+        )
+        if explanation["query"] is None:
             count = " (no count query yet)"
         else:
-            count = f" (count query {proof['query'] + 1})" if several else ""
-        commands = "; ".join(f"`{c}`" for c in proof["explain"])
-        out += [f"- Cause `{_clean(proof['bucket'])}` in {link}{count}: {commands}"]
+            count = f" (count query {explanation['query'] + 1})" if several else ""
+        commands = "; ".join(f"`{c}`" for c in explanation["explain"])
+        out += [
+            f"- Cause `{_clean(explanation['bucket'])}` in {link}{count}: {commands}"
+        ]
     after = " then ".join(f"`{a}`" for a in block["after"])
     out += [
         "",
@@ -1495,12 +1501,12 @@ def posted_json(questions: list[dict]) -> list[dict]:
     out = []
     for q in questions:
         if q.get("reproduce"):
-            proofs = [
+            explanations = [
                 {k: v for k, v in p.items() if k != "explain"}
                 for p in q["reproduce"]["explanations"]
             ]
             kept = {k: v for k, v in q["reproduce"].items() if k != "after"}
-            q = {**q, "reproduce": {**kept, "explanations": proofs}}
+            q = {**q, "reproduce": {**kept, "explanations": explanations}}
         out.append(q)
     return out
 

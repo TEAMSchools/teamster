@@ -65,24 +65,24 @@ def ask_owner(
     runs = [run for run, _ in saved]
     # Stored explanation paths are relative to each validation file's directory.
     bases = [f.parent for f in view_files]
-    proven = {
+    sorts = {
         run.view: sort.checked_sort(run, run_json, cfg.decisions, base)
         for (run, run_json), cfg, base in zip(saved, configs, bases, strict=True)
     }
-    found = {view: sort.posted_sort(loaded) for view, loaded in proven.items()}
+    found = {view: sort.posted_sort(loaded) for view, loaded in sorts.items()}
     unsettled = [u for run in runs for u in sort.unsettled(run, found[run.view])]
     still = report.still_with_analyst(
         unsettled,
         {
-            run.view: sort.comparisons_waiting(cfg, run, proven[run.view])
+            run.view: sort.comparisons_waiting(cfg, run, sorts[run.view])
             for run, cfg in zip(runs, configs, strict=True)
         },
-        {run.view: sort.formulas_not_compared(proven[run.view]) for run in runs},
+        {run.view: sort.formulas_not_compared(sorts[run.view]) for run in runs},
     )
     # One question per unanswered owner cause, over the groups it decides.
     causes = {
         run.view: sort.cause_asks(
-            run, proven[run.view], cfg.decisions, sort.doc_leads(cfg)
+            run, sorts[run.view], cfg.decisions, sort.doc_leads(cfg)
         )
         for run, cfg in zip(runs, configs, strict=True)
     }
@@ -105,7 +105,7 @@ def ask_owner(
     )
     # The analyst's other calls, which the body reports without asking.
     decided = {
-        run.view: sort.cause_asks(run, proven[run.view], cfg.decisions, owner=False)
+        run.view: sort.cause_asks(run, sorts[run.view], cfg.decisions, owner=False)
         for run, cfg in zip(runs, configs, strict=True)
     }
     files: list[tuple[Path, list[dict] | str]] = [

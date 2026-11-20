@@ -71,6 +71,11 @@ FORMULA_LABEL = "differing cells hold no unmatched row"
 MATCHED_LABEL = "differing cells differ on matched rows"
 # How `sort` and `ask-owner` name a comparison the latest run skipped.
 NOT_COMPARED = "not compared"
+# The sort `sort` writes beside the run's `run.json`.
+FILE = "sort.json"
+# The name an older validator wrote it under, with items in an older shape:
+# never read, only refused.
+OLD_FILE = "triage.json"
 
 
 @dataclass(frozen=True)
@@ -102,7 +107,7 @@ class Suggestion:
     a lead never picks the pile. `candidates` are the Cube members a
     missing filter or cut may map to. `cause` is, for a `cause` item, its
     causes, each `{side, step, label, n_rows}`; it is None until one is
-    explained. `proof` is what the cause rests on, typed by `kind`
+    explained. `explanation` is what the cause rests on, typed by `kind`
     (`EXPLANATION_KINDS`); a stored explanation's also names its file. `evidence`
     shows exact counts; `posted` is the same lines masked for the review
     issue (`report.shown_counts`), or None when it equals `evidence`. A
@@ -115,7 +120,7 @@ class Suggestion:
     evidence: tuple[str, ...]
     candidates: tuple[str, ...] = ()
     cause: list[dict] | None = None
-    proof: dict | None = None
+    explanation: dict | None = None
     posted: tuple[str, ...] | None = None
     # `mark_decided`'s marks: each cause's deciding decision id, and whether
     # every cause has one. None on an item no cause decision decides.
@@ -363,7 +368,8 @@ def comparisons_waiting(
 def load_sort(
     run: RunResult, run_json: Path, *, for_explain: bool = False
 ) -> tuple[Path, dict]:
-    """Read the triage beside `run_json`, refusing one that is missing,
+    """Read the sort beside `run_json`, refusing one that is missing (an
+    older validator's `OLD_FILE` alone counts as missing, named as such),
     unreadable, of another moment, written before the formula check
     (`formula_checked`) or under an older posted masking (`posted_current`),
     or blind to an open item of `run`.
@@ -375,28 +381,30 @@ def load_sort(
             "first", and it counts no unseen items.
 
     Raises:
-        pipeline.Refusal: The triage fails one of those checks.
+        pipeline.Refusal: The sort fails one of those checks.
 
     Returns:
-        The triage's path and its contents.
+        The sort's path and its contents.
     """
-    view, found = run.view, run_json.parent / "triage.json"
+    view, found = run.view, run_json.parent / FILE
     again = f"run `sort` for {run.moment.start:%Y-%m-%d %H:%M} UTC" + (
         " first" if for_explain else ""
     )
     if not found.exists():
+        if (run_json.parent / OLD_FILE).exists():
+            raise pipeline.Refusal(
+                f"{view}: the sort of the latest run is an older validator's "
+                f"{OLD_FILE}; {again}"
+            )
         raise pipeline.Refusal(f"{view}: no sort of the latest run; {again}")
     unreadable = pipeline.Refusal(
-        f"{view}: triage.json is unreadable; "
-        + (again if for_explain else "re-run `sort`")
+        f"{view}: {FILE} is unreadable; " + (again if for_explain else "re-run `sort`")
     )
     try:
         loaded = json.loads(found.read_text())
     except json.JSONDecodeError as exc:
         raise unreadable from exc
-    other_moment = pipeline.Refusal(
-        f"{view}: triage.json is of another moment; {again}"
-    )
+    other_moment = pipeline.Refusal(f"{view}: {FILE} is of another moment; {again}")
     if not isinstance(loaded, dict):
         raise other_moment if for_explain else unreadable
     if loaded.get("moment") != _moment(run):
@@ -459,7 +467,7 @@ def checked_sort(
             one group.
 
     Returns:
-        The triage as `triage.json` holds it, with `unsettled`: its items
+        The triage as `sort.json` holds it, with `unsettled`: its items
         still in `investigate` that no decision closed.
     """
     view = run.view
@@ -498,14 +506,16 @@ def checked_sort(
         1
         for i in items
         if i["suggestion"] == "cause"
-        and (i.get("proof") or {}).get("kind") not in EXPLANATION_KINDS
+        and (i.get("explanation") or {}).get("kind") not in EXPLANATION_KINDS
     ):
         raise pipeline.Refusal(
             f"{view}: {bare} `cause` item{'' if bare == 1 else 's'} "
             f"rest{'s' if bare == 1 else ''} on no explanation; run `explain` "
             f"on {'it' if bare == 1 else 'them'}, then re-run `sort`"
         )
-    if moved := sum(1 for i in items if _explanation_changed(i.get("proof"), base)):
+    if moved := sum(
+        1 for i in items if _explanation_changed(i.get("explanation"), base)
+    ):
         raise pipeline.Refusal(
             f"{view}: {moved} item{'' if moved == 1 else 's'} in `cause` "
             f"rest{'s' if moved == 1 else ''} on an explanation file changed "
@@ -586,7 +596,7 @@ def check_closed(run: RunResult, run_json: Path, recorded: list[Decision]) -> No
             one closed group make different calls.
     """
     try:
-        loaded = json.loads((run_json.parent / "triage.json").read_text())
+        loaded = json.loads((run_json.parent / FILE).read_text())
     except (OSError, json.JSONDecodeError):
         loaded = None
     if isinstance(loaded, dict) and loaded.get("moment") == _moment(run):
@@ -602,7 +612,7 @@ def check_closed(run: RunResult, run_json: Path, recorded: list[Decision]) -> No
 # Why a cause decision no longer decides an item it names.
 _STALE = {
     "sql": "the SQL changed since the decision; re-approve",
-    "proof": "the explanation changed since the decision; re-approve",
+    "explanation": "the explanation changed since the decision; re-approve",
 }
 
 
@@ -612,13 +622,13 @@ DECIDABLE_EXPLANATIONS = ("query", "reconcile")
 
 def decidable(item: dict) -> bool:
     """An explained row group: cause decisions decide it, never a column value."""
-    proof = item.get("proof") or {}
+    explanation = item.get("explanation") or {}
     return (
         item.get("kind") == "group"
         and item.get("suggestion") == "cause"
         and bool(item.get("cause"))
-        and proof.get("kind") in DECIDABLE_EXPLANATIONS
-        and bool(proof.get("fingerprint"))
+        and explanation.get("kind") in DECIDABLE_EXPLANATIONS
+        and bool(explanation.get("fingerprint"))
     )
 
 
@@ -670,9 +680,9 @@ def mark_decided(
     holds: the comparison's SQL and the item's explanation file are the ones it was
     made on. A decision that no longer holds counts as none.
 
-    A cell set in `cause` on its covering groups (`proof.kind` `cells`) gets
-    `decided`, true when every item its explanation names (`proof.groups`) is
-    decided; the groups a `group` decision closed (`proof.closed`) are
+    A cell set in `cause` on its covering groups (`explanation.kind` `cells`) gets
+    `decided`, true when every item its explanation names (`explanation.groups`) is
+    decided; the groups a `group` decision closed (`explanation.closed`) are
     decided by it.
 
     A holding cause decision on a group a `group` decision also covers,
@@ -699,14 +709,14 @@ def mark_decided(
         if not decidable(item):
             continue
         current = run.fingerprints.get(item["comparison"]) or {}
-        proof = item["proof"].get("fingerprint", "")
+        explanation = item["explanation"].get("fingerprint", "")
         found: dict[str, str | None] = {}
         held: list[Decision] = []
         lines: list[str] = []
         for c in item["cause"]:
             key = cause_key(c["side"], c["label"])
             d = cause_decision(recorded, item["comparison"], c["side"], c["label"])
-            state = decisions.cause_state(d, proof, current) if d else ""
+            state = decisions.cause_state(d, explanation, current) if d else ""
             found[key] = d.id if d and state == "holds" else None
             if d and state == "holds":
                 held.append(d)
@@ -751,9 +761,9 @@ def mark_decided(
     # After the groups, which a cell set's mark reads, wherever it is listed.
     marked = {i["id"]: i.get("decided") is True for i in items if decidable(i)}
     for item in items:
-        proof = item.get("proof") or {}
-        if item.get("suggestion") == "cause" and proof.get("kind") == "cells":
-            item["decided"] = all(marked.get(g, False) for g in proof["groups"])
+        explanation = item.get("explanation") or {}
+        if item.get("suggestion") == "cause" and explanation.get("kind") == "cells":
+            item["decided"] = all(marked.get(g, False) for g in explanation["groups"])
 
 
 def _covers_group(d: Decision, g: Group) -> bool:
@@ -787,7 +797,7 @@ def cause_asks(
     for d in recorded:
         if not d.cause or d.answer or (d.call == "domain_owner") != owner:
             continue
-        mine, rows, proofs = [], 0, {}
+        mine, rows, explanations = [], 0, {}
         for item in loaded.get("items", []):
             if not decidable(item) or item.get("key", "") not in groups:
                 continue
@@ -800,38 +810,44 @@ def cause_asks(
             if causes:
                 mine.append(groups[item["key"]])
                 rows += sum(c.get("n_rows") or 0 for c in causes)
-                proof = item.get("proof") or {}
-                if proof.get("kind") == "query" and proof.get("path"):
-                    proofs |= dict.fromkeys((proof["path"], c["step"]) for c in causes)
+                explanation = item.get("explanation") or {}
+                if explanation.get("kind") == "query" and explanation.get("path"):
+                    explanations |= dict.fromkeys(
+                        (explanation["path"], c["step"]) for c in causes
+                    )
         if mine:
             out.append(
                 CauseAsk(
-                    d, mine, rows, (leads or {}).get(d.comparison, ""), tuple(proofs)
+                    d,
+                    mine,
+                    rows,
+                    (leads or {}).get(d.comparison, ""),
+                    tuple(explanations),
                 )
             )
     return out
 
 
-def _explanation_changed(proof: dict | None, base: Path | None = None) -> bool:
+def _explanation_changed(explanation: dict | None, base: Path | None = None) -> bool:
     """A stored explanation's file is gone, or no longer the explanation triage ran.
 
     The recorded path is relative to the validation file's directory, `base`.
     Compared by `explain.fingerprint`, so a formatting-only edit is no change.
     """
-    if not proof or not proof.get("path"):
+    if not explanation or not explanation.get("path"):
         return False
     from . import explain
 
-    path = Path(proof["path"])
+    path = Path(explanation["path"])
     if base is not None and not path.is_absolute():
         path = base / path
-    return explain.file_fingerprint(path) != proof.get("fingerprint")
+    return explain.file_fingerprint(path) != explanation.get("fingerprint")
 
 
 def posted_sort(loaded: dict) -> dict:
     """A triage as the review issue may quote it: each item's masked evidence.
 
-    `evidence` in `triage.json` shows exact counts for the analyst;
+    `evidence` in `sort.json` shows exact counts for the analyst;
     `evidence_posted` holds the same lines masked (`report.shown_counts`).
     """
     return {
@@ -1084,7 +1100,7 @@ def suggest(
         call = ""
         default_call = ""
         cause: list[dict] | None = None
-        proof: dict | None = None
+        explanation: dict | None = None
         found: tuple[str, ...] = ()
         # The same lines masked, for the review issue (`posted`).
         posted: tuple[str, ...] | None = None
@@ -1122,7 +1138,7 @@ def suggest(
                     # The workbook carries it: that is the explanation. Whether
                     # Cube needs it is the owner's call on an explained step.
                     step = f"sheet {gap.kind} {caption}"
-                    call, proof = "cause", {"kind": "workbook"}
+                    call, explanation = "cause", {"kind": "workbook"}
                     cause = [
                         {
                             "side": "dashboard",
@@ -1146,7 +1162,7 @@ def suggest(
                     filtered = _filter_cause(comparison, source)
                     if filtered:
                         call = "cause"
-                        cause, evidence, posted, proof = filtered
+                        cause, evidence, posted, explanation = filtered
                     else:
                         found = (NO_FILTER,)
                 elif traced is not None:
@@ -1165,7 +1181,10 @@ def suggest(
                 # The run's own reconcile matched every row in these cells, or
                 # the formula check recomputed them on matched rows alone, so
                 # the 2 formulas differ: no explanation file is needed.
-                call, proof = "cause", _formula_explanation(run, source.comparison_id)
+                call, explanation = (
+                    "cause",
+                    _formula_explanation(run, source.comparison_id),
+                )
                 cause, evidence, posted = _formula_evidence(run, source)
 
         if not call:
@@ -1190,7 +1209,7 @@ def suggest(
                 evidence,
                 candidates,
                 cause,
-                proof,
+                explanation,
                 posted,
                 default_call=default_call,
             )
@@ -1201,7 +1220,7 @@ def suggest(
 
 # --- the printed batch -------------------------------------------------------
 
-# Items listed per suggestion; `triage.json` keeps them all.
+# Items listed per suggestion; `sort.json` keeps them all.
 BATCH_CAP = 25
 
 
@@ -1218,7 +1237,7 @@ def batch_lines(run: RunResult, found: list[Suggestion]) -> list[str]:
     The summary counts each comparison's items by suggestion and by kind, and
     its row groups by bucket. Each suggestion then lists its first
     `BATCH_CAP` items with their evidence and says how many more
-    `triage.json` holds.
+    `sort.json` holds.
     """
     buckets = {i.id: g.bucket for i, g in _entries(run) if isinstance(g, Group)}
     lines = ["Summary"]
@@ -1246,12 +1265,12 @@ def batch_lines(run: RunResult, found: list[Suggestion]) -> list[str]:
             if s.default_call:
                 lines.append(f"    default call: {s.default_call}")
         if len(group) > BATCH_CAP:
-            lines.append(f"  … {len(group) - BATCH_CAP:,} more in triage.json")
+            lines.append(f"  … {len(group) - BATCH_CAP:,} more in {FILE}")
     return lines
 
 
 def _as_json(s: Suggestion) -> dict:
-    """One item as `triage.json` holds it."""
+    """One item as `sort.json` holds it."""
     return {
         **dataclasses.asdict(s.item),
         "suggestion": s.suggestion,
@@ -1259,7 +1278,7 @@ def _as_json(s: Suggestion) -> dict:
         "evidence_posted": list(s.posted if s.posted is not None else s.evidence),
         "candidates": list(s.candidates),
         "cause": s.cause,
-        "proof": s.proof,
+        "explanation": s.explanation,
         "decisions": s.decisions,
         "decided": s.decided,
         "default_call": s.default_call,
@@ -1275,7 +1294,7 @@ def _from_json(d: dict) -> Suggestion:
         tuple(d["evidence"]),
         tuple(d["candidates"]),
         d["cause"],
-        d.get("proof"),
+        d.get("explanation"),
         tuple(d["evidence_posted"]),
         d.get("decisions"),
         d.get("decided"),
@@ -1344,7 +1363,7 @@ def value_check(
     more than `REFERENCE_MAX_VALUES` values. A distinct-value list carries no
     group size, so values print only to the terminal, and only when both the
     member and the column are in `report._SHOWN_COLUMNS`; they never reach
-    `triage.json` or the evidence.
+    `sort.json` or the evidence.
 
     Args:
         wh: The warehouse the dashboard side reads through.
@@ -1467,22 +1486,24 @@ def closed_groups(run: RunResult, ran: list, cfg: ViewConfig) -> tuple[list, lis
             continue
         shut = {_open_key(g): r.found[i] for i, g in r.items if _open_key(g) in quiet}
         entries = [_closed_item(quiet[k]) for k in shut]
-        explain.apply_outcomes(entries, r.proof, shut)
+        explain.apply_outcomes(entries, r.explanation, shut)
         closed += [e for e in entries if e["suggestion"] == "cause"]
     by_id = {c.id: c for c in cfg.comparisons}
     for g in quiet.values():
         if g.bucket == "dashboard_filtered" and (
             filtered := _filter_cause(by_id.get(g.comparison_id), g)
         ):
-            cause, _, _, proof = filtered
+            cause, _, _, explanation = filtered
             closed.append({**_closed_item(g), "suggestion": "cause", "cause": cause,
-                           "proof": proof})  # fmt: skip
+                           "explanation": explanation})  # fmt: skip
     # 2 explanations, or an explanation and a sheet filter, can explain one
     # closed group.
-    closed = list({json.dumps([e["key"], e["proof"]]): e for e in closed}.values())
+    closed = list(
+        {json.dumps([e["key"], e["explanation"]]): e for e in closed}.values()
+    )
     return kept, [
         {k: e[k] for k in ("id", "key", "kind", "comparison", "closed", "suggestion",
-                           "cause", "proof")}
+                           "cause", "explanation")}
         for e in closed
     ]  # fmt: skip
 
@@ -1491,7 +1512,7 @@ def _closed_item(g: Group) -> dict:
     key = _open_key(g)
     return {"id": key, "key": key, "kind": "group", "comparison": g.comparison_id,
             "closed": True, "suggestion": "investigate", "evidence": [],
-            "evidence_posted": [], "cause": None, "proof": None}  # fmt: skip
+            "evidence_posted": [], "cause": None, "explanation": None}  # fmt: skip
 
 
 def sort_run(
@@ -1518,7 +1539,7 @@ def sort_run(
     against `max_usd` and the daily cap with the value checks. A cap or
     `trace_max_minutes` hit partway stops the trace; what it found is kept and
     the batch is still written, as it is when an explanation cannot run.
-    Prints `batch_lines`. Writes every item to `triage.json` beside that run's
+    Prints `batch_lines`. Writes every item to `sort.json` beside that run's
     `run.json`, with the run's moment, decisions fingerprint and open items
     (see `checked_sort`), each explained row group marked by the cause
     decisions that decide it (`mark_decided`): it stays in the local cache,
@@ -1527,7 +1548,7 @@ def sort_run(
     Each confirmed comparison whose result in the run is missing or stale at
     `now` (`results.stale_comparisons` over `results.composed_results`),
     whose SQL cannot be built today, or which the run skipped (`not compared:
-    <why>`), is printed and written to `triage.json` under `stale`, so
+    <why>`), is printed and written to `sort.json` under `stale`, so
     `comparisons_waiting` can name it. Such a comparison's row groups are
     neither checked for the trace nor traced: its SQL may not build today, or
     not as the run reconciled it.
@@ -1535,7 +1556,7 @@ def sort_run(
     Each explanation's outcome is kept beside `run.json` as it finishes
     (`explain_progress`), so a stopped sort skips the explanations it
     finished. With `comparisons`, only their explanations run and only their
-    row groups are traced or printed; `triage.json` still holds every item,
+    row groups are traced or printed; `sort.json` still holds every item,
     the others' from their kept explanation outcomes.
 
     Each confirmed comparison with `rows` that is not stale also gets the
@@ -1551,7 +1572,7 @@ def sort_run(
     kept check is reused as it is and a comparison with none is not checked.
     A check that cannot run, for any reason, never refuses the sort or makes
     the comparison stale: its cells stay with coverage, and the cell set's
-    evidence says why (`formula.label`), as does `triage.json` under
+    evidence says why (`formula.label`), as does `sort.json` under
     `formulas_not_compared`.
 
     `ticker` (a new one by default) prints a progress line after each
@@ -1682,7 +1703,7 @@ def sort_run(
         mark_decided(run, items, cfg.decisions, note=True)
         found = [_from_json(i) for i in items]
 
-    out = run_json.parent / "triage.json"
+    out = run_json.parent / FILE
     checkpoints.write_text(
         out,
         json.dumps(

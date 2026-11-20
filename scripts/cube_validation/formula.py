@@ -1167,7 +1167,7 @@ def label(items: list[dict], checks: dict[str, Check]) -> dict[str, dict[str, in
     exact locally and masked (`mask`) in `evidence_posted`. Names no cell.
 
     Returns:
-        Per comparison with any, each reason's cell count, for `triage.json`.
+        Per comparison with any, each reason's cell count, for `sort.json`.
     """
     by_id = {i["id"]: i for i in items}
     out: dict[str, dict[str, int]] = {}

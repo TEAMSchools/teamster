@@ -462,21 +462,21 @@ def reproduce_json(
             where.pop(key)
         cube = {"query": _cube_query(cfg, check), "dashboard": where}
     file = source.view_file if source else f"<{view} validation file>"
-    proofs = []
+    explanations = []
     for path, bucket in ask.explanations:
         stored = (source.base / path) if source else None
         try:
-            proof = explain.read_explanation(stored) if stored else None
+            explanation = explain.read_explanation(stored) if stored else None
         except (OSError, Refusal):
-            proof = None
-        proofs.append(
+            explanation = None
+        explanations.append(
             {
                 "bucket": bucket,
-                "reproduce": _checked_reproduce(cfg, proof, bucket),
+                "reproduce": _checked_reproduce(cfg, explanation, bucket),
                 "explain": (
                     f"explain {file} --comparison "
-                    f"{proof.comparison if proof else cid} --bucket "
-                    f"{proof.bucket if proof else '<bucket>'}"
+                    f"{explanation.comparison if explanation else cid} --bucket "
+                    f"{explanation.bucket if explanation else '<bucket>'}"
                 ),
                 "after": [f"compare {file} --all", f"sort {file}"],
                 "expires": (
@@ -486,10 +486,10 @@ def reproduce_json(
                 "url": f"{source.blob}/{path}" if source and source.blob else None,
             }
         )
-    return {"view": view, "comparison": cid, "cube": cube, "explanations": proofs}
+    return {"view": view, "comparison": cid, "cube": cube, "explanations": explanations}
 
 
-def _checked_reproduce(cfg: ViewConfig, proof, bucket: str) -> str | None:
+def _checked_reproduce(cfg: ViewConfig, explanation, bucket: str) -> str | None:
     """An explanation's reproduce query for one bucket, checked again before it posts.
 
     `explain` checks it, but the block is comment lines, which an
@@ -497,9 +497,10 @@ def _checked_reproduce(cfg: ViewConfig, proof, bucket: str) -> str | None:
     unchecked.
     A query that fails the check is left out, as if the explanation had none.
     """
-    sql = proof.reproduce.get(bucket) if proof else None
+    sql = explanation.reproduce.get(bucket) if explanation else None
     comparison = next(
-        (c for c in cfg.comparisons if proof and c.id == proof.comparison), None
+        (c for c in cfg.comparisons if explanation and c.id == explanation.comparison),
+        None,
     )
     if sql is None or comparison is None:
         return None
@@ -544,7 +545,7 @@ def merged_reproduce(
         it has passed, per validation file).
     """
     queries: list[dict] = []
-    proofs: dict[tuple, dict] = {}
+    explanations: dict[tuple, dict] = {}
     cube, after, expires, blob = [], [], None, None
     for part in parts:
         shown = examples is None or (part["view"], part["comparison"]) in examples
@@ -565,7 +566,7 @@ def merged_reproduce(
                 query = queries.index(entry)
             if p["url"]:
                 blob = p["url"][: -len(p["path"]) - 1]
-            merged = proofs.setdefault(
+            merged = explanations.setdefault(
                 (p["path"], p["bucket"]),
                 {
                     "bucket": p["bucket"],
@@ -580,7 +581,7 @@ def merged_reproduce(
             expires = min(expires or p["expires"], p["expires"])
     return {
         "queries": queries,
-        "explanations": list(proofs.values()),
+        "explanations": list(explanations.values()),
         "blob": blob,
         "cube": cube,
         "expires": expires,
@@ -608,7 +609,7 @@ def questions_json(
         runs: The runs the issue renders.
         configs: Their views' configs, for each hand check's column names.
         definitions: Per view, per comparison id, `dashboard` and `cube` text.
-        triage: Per view, its `triage.json`; a view without one has no
+        triage: Per view, its `sort.json`; a view without one has no
             evidence. Items still in `investigate` are left out, so
             `record-answers` never reads one as an answer.
         now: The current time, to say whether the pinned SQL still runs.
@@ -1039,9 +1040,9 @@ def _explanations_by_cause(items: list[dict]) -> dict[tuple, set[str]]:
                     mask_digits(c.get("label", "")),
                 )
                 # A reconcile has no file; its filter's fingerprint stands in.
-                proof = item["proof"]
+                explanation = item["explanation"]
                 out.setdefault(key, set()).add(
-                    proof.get("path") or proof["fingerprint"]
+                    explanation.get("path") or explanation["fingerprint"]
                 )
     return out
 
@@ -1160,7 +1161,7 @@ def approved_decisions(
             `item` is a triage item id, `task` may be empty, and `cause` (the
             cause's words) is needed only on an item with several causes. Or
             `{"id", "comparison", "call": "deliberate", "reason"}`.
-        triage: The view's `triage.json`, marked by `sort.mark_decided`.
+        triage: The view's `sort.json`, marked by `sort.mark_decided`.
         fingerprints: The latest run's fingerprints per comparison id.
         existing: The file's decisions.
         formula_cells: Per comparison, the cells the formula check filed in
@@ -1184,7 +1185,7 @@ def approved_decisions(
             changed.
     """
     items = {item.get("id"): item for item in triage.get("items", [])}
-    proofs = _explanations_by_cause(list(items.values()))
+    explanations = _explanations_by_cause(list(items.values()))
     taken = {d.id for d in existing}
     out: list[dict] = []
     # Each cause's decision as this batch leaves it, by (comparison, side, words).
@@ -1276,7 +1277,7 @@ def approved_decisions(
             out.append(decision)
             continue
 
-        proof = item["proof"].get("fingerprint", "")
+        explanation = item["explanation"].get("fingerprint", "")
         causes = item["cause"]
         if named:
             causes = [
@@ -1302,9 +1303,9 @@ def approved_decisions(
                     f"{where}: item {item_id!r} has a cause with no words"
                 )
             key = (comparison, side, label)
-            if len(proofs.get(key, ())) > 1:
+            if len(explanations.get(key, ())) > 1:
                 raise AnswerError(
-                    f"{where}: {len(proofs[key])} explanation files name the {side} "
+                    f"{where}: {len(explanations[key])} explanation files name the {side} "
                     f"cause {label!r}; give each its own words"
                 )
             target = decided.get(key)
@@ -1312,7 +1313,7 @@ def approved_decisions(
                 found = sort.cause_decision(existing, comparison, side, label)
                 if found is not None:
                     target = decided[key] = _file_cause(found)
-                    state = cause_state(found, proof, fp)
+                    state = cause_state(found, explanation, fp)
                     if state != "holds":
                         if found.answer:
                             raise AnswerError(
@@ -1325,7 +1326,7 @@ def approved_decisions(
                         target.pop("task", None)
                         if task:
                             target["task"] = task
-                        target["fingerprints"] = {**fp, "explanation": proof}
+                        target["fingerprints"] = {**fp, "explanation": explanation}
                         out.append(target)
             if target is None:
                 new += 1
@@ -1341,7 +1342,7 @@ def approved_decisions(
                     "call": call,
                     "reason": reason,
                     **({"task": task} if task else {}),
-                    "fingerprints": {**fp, "explanation": proof},
+                    "fingerprints": {**fp, "explanation": explanation},
                 }
                 out.append(target)
             elif target["call"] != call:
@@ -1349,7 +1350,7 @@ def approved_decisions(
                     f"{where}: the {side} cause {label!r} is decided "
                     f"{target['call']} in {target['id']!r}, not {call}"
                 )
-            elif target["fingerprints"].get("explanation") != proof:
+            elif target["fingerprints"].get("explanation") != explanation:
                 raise AnswerError(
                     f"{where}: {target['id']!r} was approved on another version of "
                     "the explanation; re-run `sort`"

@@ -316,9 +316,9 @@ def test_a_stored_proof_proves_every_row_of_an_item(duck, tmp_path, offline):
     ]
     path = tmp_path / "explanations" / "v" / "mastery__cube_only.sql"
     # Recorded relative to the validation file's directory.
-    assert item["proof"]["path"] == "explanations/v/mastery__cube_only.sql"
-    assert item["proof"]["kind"] == "query"
-    assert item["proof"]["fingerprint"] == explain.file_fingerprint(path)
+    assert item["explanation"]["path"] == "explanations/v/mastery__cube_only.sql"
+    assert item["explanation"]["kind"] == "query"
+    assert item["explanation"]["fingerprint"] == explain.file_fingerprint(path)
     # The explanation reads its own tables as of the run, under the trace's limit.
     ((sql, timeout),) = wh.ran
     assert "`teamster-332318.d.fact` AS f FOR SYSTEM_TIME AS OF" in sql
@@ -807,7 +807,7 @@ def _saved(tmp_path, monkeypatch, run):
     run_json = tmp_path / "cache" / "v" / "m" / "run.json"
     run_json.parent.mkdir(parents=True)
     monkeypatch.setattr(results, "latest_run", lambda cfg, root: (run, run_json))
-    path = run_json.parent / "triage.json"
+    path = run_json.parent / "sort.json"
     path.write_text(
         json.dumps(
             {
@@ -920,7 +920,7 @@ def test_cells_confirm_when_every_differing_cell_lies_in_proven_groups():
         {"side": "dashboard", "step": "C1", "label": "fails ok1", "n_rows": 3}
     ]
     (group_id,) = _group_ids(_run([_placed(3)]))
-    assert cells["proof"] == {"kind": "cells", "groups": [group_id], "closed": []}
+    assert cells["explanation"] == {"kind": "cells", "groups": [group_id], "closed": []}
 
 
 def test_covered_cells_keep_the_formula_check_s_not_compared_lines():
@@ -949,7 +949,7 @@ def test_covered_cells_keep_the_formula_check_s_not_compared_lines():
 def test_cells_stay_open_with_the_count_left_outside_proven_groups():
     cells = _cells(proven=False)
 
-    assert cells["suggestion"] == "investigate" and cells["proof"] is None
+    assert cells["suggestion"] == "investigate" and cells["explanation"] is None
     assert cells["evidence"][0] == "1 of 1 differing cells are not covered"
     # The posted copy masks both counts.
     assert cells["evidence_posted"][0] == "<10 of <10 differing cells are not covered"
@@ -1025,7 +1025,7 @@ def test_a_cell_covered_by_a_decided_group_and_a_proven_one_closes():
     cells = _cells(run=run)
 
     assert cells["suggestion"] == "cause"
-    assert cells["proof"] == {
+    assert cells["explanation"] == {
         "kind": "cells",
         "groups": _group_ids(run),
         "closed": [sort._open_key(quiet)],
@@ -1047,7 +1047,7 @@ def test_a_cell_covered_only_by_decided_groups_still_has_a_cause():
         {"side": "both", "step": "decision", "label": "closed by closed-x",
          "n_rows": 3}
     ]  # fmt: skip
-    assert cells["proof"]["groups"] == []
+    assert cells["explanation"]["groups"] == []
 
 
 def test_a_cell_with_one_unproven_group_stays_in_investigate():
@@ -1128,7 +1128,7 @@ def test_the_gate_accepts_proven_items_until_their_proof_changes(
     _tables(duck)
     run = _run([_group(3)])
     path = _saved(tmp_path, monkeypatch, run)
-    directory, proof = _explanation(tmp_path)
+    directory, explanation = _explanation(tmp_path)
     saved = json.loads(path.read_text())
     _stored(run, saved["items"], directory, Wh(duck))
     path.write_text(json.dumps(saved))
@@ -1136,12 +1136,12 @@ def test_the_gate_accepts_proven_items_until_their_proof_changes(
     assert sort.checked_sort(run, path.parent / "run.json", base=tmp_path)["items"]
 
     # Formatting is no change; a changed predicate is.
-    proof.write_text(
-        proof.read_text().replace("SELECT u.__row", "select   U.__ROW")
+    explanation.write_text(
+        explanation.read_text().replace("SELECT u.__row", "select   U.__ROW")
         + "\n-- reviewed\n"
     )
     assert sort.checked_sort(run, path.parent / "run.json", base=tmp_path)["items"]
-    proof.write_text(proof.read_text().replace("NOT f.ok2", "f.ok2"))
+    explanation.write_text(explanation.read_text().replace("NOT f.ok2", "f.ok2"))
     with pytest.raises(
         pipeline.Refusal, match="explanation file changed since the sort"
     ):
@@ -1205,14 +1205,14 @@ def test_a_proof_counts_each_cause_s_students_per_cell_and_cut(duck, tmp_path, o
     wh = Wh(duck)
     run = _run([_group(3)])
     _save(duck, wh, run)
-    proof = explain.Explanation(
+    explanation = explain.Explanation(
         tmp_path / "mastery__cube_only.sql", "mastery", "cube_only",
         CAUSES, EXPLANATION, {},
     )  # fmt: skip
     students: list[dict] = []
 
     found = explain.run_explanation(
-        wh, COMPARISON, SIDES, proof, [("G1", _group(3))], BUILD, {},
+        wh, COMPARISON, SIDES, explanation, [("G1", _group(3))], BUILD, {},
         students, table=explain.require_saved(wh, CFG, run, COMPARISON),
     )  # fmt: skip
 
@@ -1246,7 +1246,7 @@ def _prove_saved(duck, bucket, rows, items):
         [(bucket, row, school, moved, dash, student, "a", student, "a", 1, *flags)
          for row, student, school, dash, moved, flags in rows],
     )  # fmt: skip
-    proof = explain.Explanation(
+    explanation = explain.Explanation(
         Path("p.sql"), "mastery", bucket,
         {"C1": ("dashboard", "the dashboard files it elsewhere")},
         "SELECT u.__row, 'C1' AS cause FROM {unmatched} AS u", {},
@@ -1254,12 +1254,12 @@ def _prove_saved(duck, bucket, rows, items):
     ctes, select = explain.unmatched_sql(BY_GRADE, bucket, items, "saved_t")
     rows = duck.rows(
         explain.explanation_query(
-            ctes, select, proof.body, {"C1"},
+            ctes, select, explanation.body, {"C1"},
             explain._student_count(BY_GRADE, bucket),
         )
     )  # fmt: skip
     counts = {r["item_key"]: r["n"] for r in rows if r["__kind"] == "count"}
-    return counts, explain.cause_students(rows, proof, BY_GRADE)
+    return counts, explain.cause_students(rows, explanation, BY_GRADE)
 
 
 def test_a_row_each_side_files_under_another_cut_counts_in_each_side_s_cell(duck):
@@ -1329,7 +1329,7 @@ def test_a_row_with_no_cube_value_keys_to_its_group_and_counts_in_each_side_s_ce
     duck.rows(
         "CREATE TABLE saved_t AS " + reconcile.unmatched_rows_sql(*sides, cuts=cuts)
     )
-    proof = explain.Explanation(
+    explanation = explain.Explanation(
         Path("p.sql"), "mastery", "dims_differ",
         {"C1": ("dashboard", "the dashboard files it elsewhere")},
         "SELECT u.__row, 'C1' AS cause FROM {unmatched} AS u", {},
@@ -1339,14 +1339,14 @@ def test_a_row_with_no_cube_value_keys_to_its_group_and_counts_in_each_side_s_ce
     )
     rows = duck.rows(
         explain.explanation_query(
-            ctes, select, proof.body, {"C1"},
+            ctes, select, explanation.body, {"C1"},
             explain._student_count(BY_GRADE, "dims_differ"),
         )
     )  # fmt: skip
 
     assert group.dims == (("abbreviation", ""), ("d:abbreviation", "Newark"))
     assert {r["item_key"]: r["n"] for r in rows if r["__kind"] == "count"} == {"G1": 1}
-    found = explain.cause_students(rows, proof, BY_GRADE)
+    found = explain.cause_students(rows, explanation, BY_GRADE)
     assert sorted((pipeline.value_key(e["dims"][0][1]), e["n"]) for e in found) == [
         ("", 1),
         ("Newark", 1),
@@ -1541,7 +1541,9 @@ def test_a_stored_proof_also_proves_a_comparison_with_the_same_rows(
 
     by = {i["comparison"]: i for i in items}
     assert {i["suggestion"] for i in items} == {"cause"}
-    assert by["mastery-b"]["proof"]["path"] == by["mastery"]["proof"]["path"]
+    assert (
+        by["mastery-b"]["explanation"]["path"] == by["mastery"]["explanation"]["path"]
+    )
 
 
 def test_a_comparison_s_own_proof_wins_over_a_shared_one(duck, tmp_path, offline):
@@ -1556,7 +1558,7 @@ def test_a_comparison_s_own_proof_wins_over_a_shared_one(duck, tmp_path, offline
     _stored(run, items, directory, wh, cfg=CFG2)
 
     by = {i["comparison"]: i for i in items}
-    assert by["mastery-b"]["proof"]["path"].endswith("mastery-b__cube_only.sql")
+    assert by["mastery-b"]["explanation"]["path"].endswith("mastery-b__cube_only.sql")
     assert len(wh.ran) == 2  # each comparison ran once, with its own file
 
 
@@ -1682,13 +1684,13 @@ def test_a_sibling_runs_every_sibling_s_explanation_and_any_one_explains_it(
     explain.apply_runs(run, items, ran, CFG3)
 
     on_third = [r for r in ran if r.items[0][1].comparison_id == "mastery-c"]
-    assert sorted(r.proof.path.name for r in on_third) == [
+    assert sorted(r.explanation.path.name for r in on_third) == [
         "mastery-b__cube_only.sql",
         "mastery__cube_only.sql",
     ]
     by = {i["comparison"]: i for i in items}
     assert by["mastery-c"]["suggestion"] == "cause"
-    assert by["mastery-c"]["proof"]["path"].endswith("mastery-b__cube_only.sql")
+    assert by["mastery-c"]["explanation"]["path"].endswith("mastery-b__cube_only.sql")
     # Each keeps its own result: never closed on another comparison's.
     assert by["mastery"]["suggestion"] == "investigate"
     assert by["mastery-b"]["suggestion"] == "cause"
@@ -1729,7 +1731,7 @@ def test_a_shared_explanation_reading_a_column_the_sibling_lacks_is_skipped(
         "abbreviation, which mastery-c's {unmatched} lacks.\n"
     ) in out
     assert out.count("skipped") == 1 and "not run" not in out
-    pairs = sorted((r.proof.path.name, r.items[0][1].comparison_id) for r in ran)
+    pairs = sorted((r.explanation.path.name, r.items[0][1].comparison_id) for r in ran)
     assert pairs == [
         ("mastery-b__cube_only.sql", "mastery-b"),
         ("mastery__cube_only.sql", "mastery"),
@@ -1746,12 +1748,12 @@ def test_two_files_on_one_comparison_keep_both_files_cause_students(tmp_path):
     third = run.applied.open[2]
 
     def ran(name, cause, n):
-        proof = explain.Explanation(
+        explanation = explain.Explanation(
             tmp_path / name, "mastery", "cube_only", NEVER, NOTHING, {}
         )
         counts = [{"cause": cause, "cut": "all", "dims": [], "n": n,
                    "bucket": "cube_only"}]  # fmt: skip
-        return explain.Ran(proof, [("G3", third)], found={}, students=counts)
+        return explain.Ran(explanation, [("G3", third)], found={}, students=counts)
 
     loaded: dict = {}
     runs = [
@@ -1825,7 +1827,7 @@ def test_explain_runs_every_sibling_s_explanation_on_a_sharing_one_priced_first(
     )
     by = {i["comparison"]: i for i in json.loads(path.read_text())["items"]}
     assert by["mastery-c"]["suggestion"] == "cause"
-    assert by["mastery-c"]["proof"]["path"].endswith("mastery__cube_only.sql")
+    assert by["mastery-c"]["explanation"]["path"].endswith("mastery__cube_only.sql")
 
 
 # --- reproduce queries ---------------------------------------------------------------

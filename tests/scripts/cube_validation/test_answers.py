@@ -767,7 +767,7 @@ def test_a_missing_filter_in_cause_is_decided_across_the_view():
         "comparison": "ada", "stub": {"missing_filter": "Exclude Future"},
         "cause": [{"side": "dashboard", "step": "sheet filter Exclude Future",
                    "label": "sheet filter Exclude Future", "n_rows": None}],
-        "proof": {"kind": "workbook"},
+        "explanation": {"kind": "workbook"},
     }  # fmt: skip
     approved = [{"id": "future", "call": "deliberate", "reason": "a display filter",
                  "item": item["id"]}]  # fmt: skip
@@ -905,11 +905,11 @@ def _cause_entry(label, side="cube", n_rows=20):
     return {"side": side, "step": "b", "label": label, "n_rows": n_rows}
 
 
-def _cause_item(item_id, *causes, proof=EXPLANATION, key=""):
+def _cause_item(item_id, *causes, explanation=EXPLANATION, key=""):
     return {"id": item_id, "key": key, "kind": "group", "comparison": "enrollment",
             "label": "l", "stub": {"comparison": "enrollment"},
             "suggestion": "cause", "evidence": ["proof line"], "candidates": [],
-            "cause": list(causes), "proof": proof}  # fmt: skip
+            "cause": list(causes), "explanation": explanation}  # fmt: skip
 
 
 def _ok(id, item, call="domain_owner", reason="r", cause=""):
@@ -917,11 +917,11 @@ def _ok(id, item, call="domain_owner", reason="r", cause=""):
     return {**out, "cause": cause} if cause else out
 
 
-def _existing(id="no-section", label=NO_SECTION, call="domain_owner", proof="p1",
+def _existing(id="no-section", label=NO_SECTION, call="domain_owner", explanation="p1",
               cube="c1", **kw):  # fmt: skip
     return Decision(id, "enrollment", call, "kept reason",
                     cause={"side": "cube", "label": label},
-                    fingerprints={"cube": cube, "dashboard": "d1", "explanation": proof},
+                    fingerprints={"cube": cube, "dashboard": "d1", "explanation": explanation},
                     **kw)  # fmt: skip
 
 
@@ -964,7 +964,7 @@ def test_a_cause_already_decided_writes_nothing_more():
 
 def test_a_cause_decision_on_a_changed_proof_is_re_approved():
     item = _cause_item("k2", _cause_entry(NO_SECTION))
-    stale = _existing(proof="old")
+    stale = _existing(explanation="old")
 
     (decision,) = approved_decisions(
         [_ok("new", "k2", call="fix_cube", reason="fresh")], {"items": [item]},
@@ -1034,7 +1034,7 @@ def test_a_split_group_is_decided_only_once_every_cause_is():
     [
         (_existing(call="fix_cube", task="#1"), {}, "decided fix_cube"),
         (
-            _existing(proof="old", answer="fix_cube"),
+            _existing(explanation="old", answer="fix_cube"),
             {},
             "answered.*explanation changed",
         ),
@@ -1054,13 +1054,13 @@ def test_cause_approvals_refuse_bad_batches():
     one = _cause_item("k1", _cause_entry(NO_SECTION))
     two = _cause_item("k2", _cause_entry(NO_SECTION))
     other_proof = _cause_item("k3", _cause_entry(NO_SECTION),
-                              proof={**EXPLANATION, "path": "explanations/v/x.sql",
+                              explanation={**EXPLANATION, "path": "explanations/v/x.sql",
                                      "fingerprint": "p9"})  # fmt: skip
     blank = _cause_item("k4", _cause_entry(""))
     split = _cause_item("k5", _cause_entry(NO_SECTION), _cause_entry(LATE))
-    unproven = {**_cause_item("k6", _cause_entry(NO_SECTION)), "proof": None}
+    unproven = {**_cause_item("k6", _cause_entry(NO_SECTION)), "explanation": None}
     waiting = {**_cause_item("k7"), "suggestion": "investigate", "cause": None,
-               "proof": None}  # fmt: skip
+               "explanation": None}  # fmt: skip
 
     for approved, items, match in [
         ([_ok("a", "k1"), _ok("b", "k2", call="deliberate")], [one, two], "domain_owner"),
@@ -1410,21 +1410,21 @@ def test_a_cause_reproduces_through_cube_a_count_query_and_the_proof(tmp_path):
     assert query["measures"] == ["enrollment.student_count"]
     assert {"member": "enrollment.grade_level", "operator": "equals",
             "values": ["7"]} in query["filters"]  # fmt: skip
-    (proof,) = part["explanations"]
-    assert proof["reproduce"] == LIVE
-    assert proof["explain"] == (
+    (explanation,) = part["explanations"]
+    assert explanation["reproduce"] == LIVE
+    assert explanation["explain"] == (
         "explain src/cube/validation/e.yml --comparison enrollment --bucket cube_only"
     )
-    assert proof["after"] == [
+    assert explanation["after"] == [
         "compare src/cube/validation/e.yml --all",
         "sort src/cube/validation/e.yml",
     ]
-    assert proof["url"] == f"https://x/blob/b/dir/{path}"
+    assert explanation["url"] == f"https://x/blob/b/dir/{path}"
 
     block = merged_reproduce([part])
     assert block["queries"] == [{"bucket": "C1", "sql": LIVE}]
     assert block["explanations"] == [
-        {"bucket": "C1", "query": 0, "path": path, "explain": [proof["explain"]]},
+        {"bucket": "C1", "query": 0, "path": path, "explain": [explanation["explain"]]},
     ]  # fmt: skip
     assert block["blob"] == "https://x/blob/b/dir"
     text = "\n".join(_reproduce_lines("Q1", block))

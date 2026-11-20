@@ -86,7 +86,7 @@ def _run(**overrides):
         changed_dims=["dim_students"],
         scopes=["region = Newark"],
         cost_usd=0.42,
-        proofs={"enrollment": "2026-10-20"},
+        rebuild_checks={"enrollment": "2026-10-20"},
         browser_cuts=["Region = Newark, Grade = 9"],
         clauses={"enrollment": ["WHERE grade_level > 8"]},
     )
@@ -431,7 +431,9 @@ def test_review_issue_skips_definitions_with_no_owner_question():
 
 
 def test_proof_dates_sit_apart_from_browser_cuts():
-    text = render_local(_run(browser_cuts=[], proofs={"ada": "2026-10-27T19:00"}))
+    text = render_local(
+        _run(browser_cuts=[], rebuild_checks={"ada": "2026-10-27T19:00"})
+    )
     cuts = text.split("## Cuts to check in the browser", 1)[1].split("## ", 1)[0]
     assert "ada" not in cuts and "None." in cuts
     proofs = text.split("## Rebuild checks", 1)[1].split("## ", 1)[0]
@@ -1163,7 +1165,7 @@ from cube_validation import sort  # noqa: E402
 
 def _left_in_investigate(run, evidence):
     """Each of `compare`'s open row groups as a triage item still in `investigate`,
-    its stub holding the group's real values as `triage.json` does."""
+    its stub holding the group's real values as `sort.json` does."""
     return {
         "items": [
             {
@@ -1173,7 +1175,7 @@ def _left_in_investigate(run, evidence):
                 "evidence_posted": [evidence],
                 "candidates": [],
                 "cause": None,
-                "proof": None,
+                "explanation": None,
             }
             for item in sort.open_items(run)
             if item.kind == "group"

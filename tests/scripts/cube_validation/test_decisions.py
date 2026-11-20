@@ -481,9 +481,9 @@ def test_cause_state_names_what_changed():
     d = _cause()
 
     assert cause_state(d, "p1", FP) == "holds"
-    assert cause_state(d, "p2", FP) == "proof"
+    assert cause_state(d, "p2", FP) == "explanation"
     assert cause_state(d, "p1", {**FP, "cube": "c2"}) == "sql"
-    assert cause_state(_cause(fingerprints=dict(FP)), "p1", FP) == "proof"
+    assert cause_state(_cause(fingerprints=dict(FP)), "p1", FP) == "explanation"
 
 
 def test_apply_never_quiets_a_group_from_a_cause_decision():

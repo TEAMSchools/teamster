@@ -87,9 +87,9 @@ def test_clear_keeps_the_finished_results(tmp_path):
     folder = _folder(tmp_path)
     checkpoints.start(folder, BUILD, "p1")
     checkpoints.write(folder, "a", "f", {}, T0)
-    for name in ("run.json", "triage.json", "triage-progress.json"):
+    for name in ("run.json", "sort.json", "sort-progress.json"):
         (folder / name).write_text("{}")
 
     checkpoints.clear(folder)
 
-    assert sorted(p.name for p in folder.iterdir()) == ["run.json", "triage.json"]
+    assert sorted(p.name for p in folder.iterdir()) == ["run.json", "sort.json"]

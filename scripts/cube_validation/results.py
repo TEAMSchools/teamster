@@ -409,17 +409,17 @@ def _gaps(comparisons: list[Comparison]) -> tuple[list[Gap], list[str]]:
     found: dict[tuple[str, str], dict[str, Any]] = {}
     unknown = []
     for comparison in comparisons:
-        proof = comparison.rebuild_check
-        if proof is None or proof.missing_cuts is None or proof.missing_filters is None:
+        check = comparison.rebuild_check
+        if check is None or check.missing_cuts is None or check.missing_filters is None:
             unknown.append(
                 f"{comparison.id}: missing cuts and filters unknown (the rebuild "
                 "check predates them); re-run `rebuild-sheet`"
             )
             continue
-        restricting = set(proof.restricting_filters or [])
+        restricting = set(check.restricting_filters or [])
         for kind, names in (
-            ("cut", proof.missing_cuts),
-            ("filter", proof.missing_filters),
+            ("cut", check.missing_cuts),
+            ("filter", check.missing_filters),
         ):
             for name in names:
                 entry = found.setdefault(
@@ -573,7 +573,7 @@ def compose_run(
             for e in c.dashboard_filters
         ],
         cost_usd=cost,
-        proofs={
+        rebuild_checks={
             c.id: c.rebuild_check.matched_at for c in comparisons if c.rebuild_check
         },
         browser_cuts=_browser_cuts(comparisons),
@@ -752,7 +752,7 @@ def _run_from_json(data: dict) -> RunResult:
         changed_dims=data["changed_dims"],
         scopes=data["scopes"],
         cost_usd=data["cost_usd"],
-        proofs=data["proofs"],
+        rebuild_checks=data["rebuild_checks"],
         browser_cuts=data["browser_cuts"],
         totals=data.get("totals", []),
         reshaped=data.get("reshaped", {}),

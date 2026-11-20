@@ -411,8 +411,8 @@ def test_rows_the_sheet_s_own_filter_drops_are_a_cause_with_no_trace():
     # `--no-trace`: the reconcile alone explains it.
     [s] = suggest(cfg, _run(groups=[group]), {}, traces=None)
 
-    assert s.suggestion == "cause" and s.proof["kind"] == "reconcile"
-    assert s.proof["fingerprint"]
+    assert s.suggestion == "cause" and s.explanation["kind"] == "reconcile"
+    assert s.explanation["fingerprint"]
     assert s.cause[0]["n_rows"] == 12
     assert s.cause[0]["label"] == "sheet filter administered_at"
     assert "(administered_at <= " in s.evidence[0]
@@ -425,7 +425,7 @@ def test_rows_the_sheet_s_own_filter_drops_are_a_cause_with_no_trace():
 def test_a_gap_the_workbook_carries_rests_on_the_workbook():
     [s] = suggest(_cfg(), _run(gaps=[_gap("Team", "cut")]), {})
 
-    assert s.suggestion == "cause" and s.proof == {"kind": "workbook"}
+    assert s.suggestion == "cause" and s.explanation == {"kind": "workbook"}
 
 
 def test_a_group_with_an_unattributed_row_stays_in_investigate():
@@ -496,7 +496,7 @@ def test_a_formula_difference_is_in_cause_on_the_run_s_own_evidence():
                         "label": "differing cells hold no unmatched row",
                         "n_rows": None}]  # fmt: skip
     fp = json.dumps({"cube": "c1", "dashboard": "d1"}, sort_keys=True)
-    assert s.proof == {
+    assert s.explanation == {
         "kind": "formula",
         "fingerprint": hashlib.sha256(fp.encode()).hexdigest(),
     }
@@ -729,10 +729,9 @@ def test_batch_lists_at_most_the_cap_per_suggestion():
     assert f"investigate ({BATCH_CAP + 5})" in lines
     assert sum(line.startswith("- label ") for line in lines) == BATCH_CAP + 1
     assert "- label 24" in lines and "- label 25" not in lines
-    assert "  … 5 more in triage.json" in lines
+    assert "  … 5 more in sort.json" in lines
     assert not any(
-        "more in triage.json" in line
-        for line in lines[: lines.index("investigate (30)")]
+        "more in sort.json" in line for line in lines[: lines.index("investigate (30)")]
     )
 
 
@@ -818,7 +817,7 @@ def _explanation_file(tmp_path, text="SELECT 1"):
             "fingerprint": explain.file_fingerprint(path)}  # fmt: skip
 
 
-def _item(it, proof, *causes):
+def _item(it, explanation, *causes):
     return {"id": it.id, "key": it.key, "kind": "group", "comparison": "enrollment",
             "label": "l", "stub": {"comparison": "enrollment",
                                    "group": {"column": "region", "values": ["x"]}},
@@ -826,23 +825,27 @@ def _item(it, proof, *causes):
             "evidence_posted": ["proof line"], "candidates": [],
             "cause": [{"side": side, "step": "b", "label": label, "n_rows": n}
                       for side, label, n in causes],
-            "proof": proof, "default_call": ""}  # fmt: skip
+            "explanation": explanation, "default_call": ""}  # fmt: skip
 
 
-def _cause_decision(id, label, side="cube", call="domain_owner", proof=None, **kw):
+def _cause_decision(
+    id, label, side="cube", call="domain_owner", explanation=None, **kw
+):
     return Decision(id, "enrollment", call, "r",
                     cause={"side": side, "label": label},
-                    fingerprints={**FPS, "explanation": proof or "", **kw.pop("fps", {})},
+                    fingerprints={**FPS, "explanation": explanation or "", **kw.pop("fps", {})},
                     **kw)  # fmt: skip
 
 
 def test_a_split_group_stays_undecided_until_both_causes_are_decided(tmp_path):
     run = _fp_run(_groups("Newark"))
     (key,) = open_items(run)
-    proof = _explanation_file(tmp_path)
-    item = _item(key, proof, ("cube", NO_SECTION, 20), ("dashboard", LATE, 10))
-    a = _cause_decision("a", NO_SECTION, proof=proof["fingerprint"])
-    b = _cause_decision("b", LATE, side="dashboard", proof=proof["fingerprint"])
+    explanation = _explanation_file(tmp_path)
+    item = _item(key, explanation, ("cube", NO_SECTION, 20), ("dashboard", LATE, 10))
+    a = _cause_decision("a", NO_SECTION, explanation=explanation["fingerprint"])
+    b = _cause_decision(
+        "b", LATE, side="dashboard", explanation=explanation["fingerprint"]
+    )
 
     half, both = copy.deepcopy(item), copy.deepcopy(item)
     mark_decided(run, [half], [a])
@@ -856,15 +859,17 @@ def test_a_split_group_stays_undecided_until_both_causes_are_decided(tmp_path):
 def test_a_cells_item_is_decided_once_every_covering_group_is(tmp_path):
     run = _fp_run(_groups("Newark", "Miami"))
     newark, miami = open_items(run)
-    proof = _explanation_file(tmp_path)
-    groups = [_item(newark, proof, ("cube", NO_SECTION, 30)),
-              _item(miami, proof, ("dashboard", LATE, 30))]  # fmt: skip
+    explanation = _explanation_file(tmp_path)
+    groups = [_item(newark, explanation, ("cube", NO_SECTION, 30)),
+              _item(miami, explanation, ("dashboard", LATE, 30))]  # fmt: skip
     cells = {"id": "enrollment:cells", "kind": "cells", "comparison": "enrollment",
              "suggestion": "cause", "cause": groups[0]["cause"],
-             "proof": {"kind": "cells", "groups": [newark.id, miami.id],
+             "explanation": {"kind": "cells", "groups": [newark.id, miami.id],
                        "closed": ["0123456789abcdef"]}}  # fmt: skip
-    a = _cause_decision("a", NO_SECTION, proof=proof["fingerprint"])
-    b = _cause_decision("b", LATE, side="dashboard", proof=proof["fingerprint"])
+    a = _cause_decision("a", NO_SECTION, explanation=explanation["fingerprint"])
+    b = _cause_decision(
+        "b", LATE, side="dashboard", explanation=explanation["fingerprint"]
+    )
 
     # The cell set comes first: it is marked after the groups it rests on.
     half = copy.deepcopy([cells, *groups])
@@ -877,7 +882,7 @@ def test_a_cells_item_is_decided_once_every_covering_group_is(tmp_path):
     # A cell set whose covering groups are all closed is decided by their
     # `group` decisions.
     closed_only = copy.deepcopy(cells)
-    closed_only["proof"]["groups"] = []
+    closed_only["explanation"]["groups"] = []
     mark_decided(run, [closed_only], [])
     assert closed_only["decided"] is True
 
@@ -887,7 +892,7 @@ def test_a_changed_proof_file_re_opens_the_decision(tmp_path):
     (key,) = open_items(run)
     old = _explanation_file(tmp_path, "SELECT 1")
     new = _explanation_file(tmp_path, "SELECT 2")
-    decision = _cause_decision("a", NO_SECTION, proof=old["fingerprint"])
+    decision = _cause_decision("a", NO_SECTION, explanation=old["fingerprint"])
     item = _item(key, new, ("cube", NO_SECTION, 30))
 
     mark_decided(run, [item], [decision], note=True)
@@ -903,10 +908,10 @@ def test_a_changed_proof_file_re_opens_the_decision(tmp_path):
 def test_a_cause_decision_on_other_sql_does_not_decide(tmp_path):
     run = _fp_run(_groups("Newark"))
     (key,) = open_items(run)
-    proof = _explanation_file(tmp_path)
-    stale = _cause_decision("a", NO_SECTION, proof=proof["fingerprint"],
+    explanation = _explanation_file(tmp_path)
+    stale = _cause_decision("a", NO_SECTION, explanation=explanation["fingerprint"],
                             fps={"cube": "old"})  # fmt: skip
-    item = _item(key, proof, ("cube", NO_SECTION, 30))
+    item = _item(key, explanation, ("cube", NO_SECTION, 30))
 
     mark_decided(run, [item], [stale], note=True)
 
@@ -923,10 +928,10 @@ def _group_decision(call, fps=FPS):
 def test_a_cause_decision_agreeing_with_a_group_decision_is_redundant(tmp_path):
     run = _fp_run(_groups("Newark"))
     (key,) = open_items(run)
-    proof = _explanation_file(tmp_path)
-    item = _item(key, proof, ("cube", NO_SECTION, 30))
+    explanation = _explanation_file(tmp_path)
+    item = _item(key, explanation, ("cube", NO_SECTION, 30))
     cause = _cause_decision(
-        "a", NO_SECTION, call="fix_cube", proof=proof["fingerprint"]
+        "a", NO_SECTION, call="fix_cube", explanation=explanation["fingerprint"]
     )
 
     mark_decided(run, [item], [_group_decision("fix_cube"), cause], note=True)
@@ -938,9 +943,9 @@ def test_a_cause_decision_agreeing_with_a_group_decision_is_redundant(tmp_path):
 def test_a_cause_decision_disagreeing_with_a_group_decision_refuses(tmp_path, fps):
     run = _fp_run(_groups("Newark"))
     (key,) = open_items(run)
-    proof = _explanation_file(tmp_path)
-    item = _item(key, proof, ("cube", NO_SECTION, 30))
-    cause = _cause_decision("a", NO_SECTION, proof=proof["fingerprint"])
+    explanation = _explanation_file(tmp_path)
+    item = _item(key, explanation, ("cube", NO_SECTION, 30))
+    cause = _cause_decision("a", NO_SECTION, explanation=explanation["fingerprint"])
 
     # Refused even while the group decision waits to be re-confirmed.
     with pytest.raises(
@@ -954,16 +959,16 @@ def test_a_cause_decision_disagreeing_with_a_group_decision_refuses(tmp_path, fp
 def test_cause_asks_count_only_each_causes_own_rows(tmp_path):
     run = _fp_run(_groups("Newark", "Camden"))
     newark, camden = open_items(run)
-    proof = _explanation_file(tmp_path)
-    fp = proof["fingerprint"]
+    explanation = _explanation_file(tmp_path)
+    fp = explanation["fingerprint"]
     items = [
-        _item(newark, proof, ("cube", NO_SECTION, 27), ("cube", LATE, 3)),
-        _item(camden, proof, ("cube", NO_SECTION, 30)),
+        _item(newark, explanation, ("cube", NO_SECTION, 27), ("cube", LATE, 3)),
+        _item(camden, explanation, ("cube", NO_SECTION, 30)),
     ]
     recorded = [
-        _cause_decision("a", NO_SECTION, proof=fp),
-        _cause_decision("b", LATE, proof=fp),
-        _cause_decision("answered", "x", proof=fp, answer="fix_cube"),
+        _cause_decision("a", NO_SECTION, explanation=fp),
+        _cause_decision("b", LATE, explanation=fp),
+        _cause_decision("answered", "x", explanation=fp, answer="fix_cube"),
     ]
     mark_decided(run, items, recorded)
 
@@ -976,7 +981,7 @@ def test_cause_asks_count_only_each_causes_own_rows(tmp_path):
 def _write_run_sorted(tmp_path, run, items):
     run_json = tmp_path / "run.json"
     run_json.write_text("{}")
-    (tmp_path / "triage.json").write_text(json.dumps(
+    (tmp_path / "sort.json").write_text(json.dumps(
         {"moment": _moment(run), "open": open_keys(run), "items": items,
          "formulas_not_compared": {},
          "posted_version": POSTED_VERSION}))  # fmt: skip
@@ -993,8 +998,10 @@ def test_the_gate_refuses_a_proven_group_or_cell_set_with_no_proof(tmp_path):
     ):
         checked_sort(run, _write_run_sorted(tmp_path, run, [item]))
 
-    proof = _explanation_file(tmp_path)
-    checked_sort(run, _write_run_sorted(tmp_path, run, [{**item, "proof": proof}]))
+    explanation = _explanation_file(tmp_path)
+    checked_sort(
+        run, _write_run_sorted(tmp_path, run, [{**item, "explanation": explanation}])
+    )
 
 
 def test_the_gate_takes_a_reconcile_or_workbook_proof_and_no_bare_cause(tmp_path):
@@ -1005,12 +1012,12 @@ def test_the_gate_takes_a_reconcile_or_workbook_proof_and_no_bare_cause(tmp_path
         _item(key, {"kind": "reconcile"}, ("dashboard", "dashboard filter", 30)),
         {"id": gap.id, "kind": "gap", "comparison": "", "suggestion": "cause",
          "cause": [{"side": "dashboard", "label": "sheet filter x"}],
-         "proof": {"kind": "workbook"}},
+         "explanation": {"kind": "workbook"}},
     ]  # fmt: skip
 
     assert checked_sort(run, _write_run_sorted(tmp_path, run, items))["items"]
 
-    items[1]["proof"] = None
+    items[1]["explanation"] = None
     with pytest.raises(
         pipeline.Refusal, match="1 `cause` item rests on no explanation"
     ):
@@ -1085,10 +1092,10 @@ def test_closing_a_masked_sibling_moves_no_other_items_counts(tmp_path):
     q = Group("enrollment", (("region", "Camden"),), "dashboard_only", 20, 4)
     run = _fp_run([p, q])
     by_dims = {g.dims: it for it, g in zip(open_items(run), [p, q], strict=True)}
-    proof = _explanation_file(tmp_path)
-    fp = proof["fingerprint"]
-    item = _item(by_dims[p.dims], proof, ("cube", NO_SECTION, 30))
-    recorded = [_cause_decision("a", NO_SECTION, proof=fp)]
+    explanation = _explanation_file(tmp_path)
+    fp = explanation["fingerprint"]
+    item = _item(by_dims[p.dims], explanation, ("cube", NO_SECTION, 30))
+    recorded = [_cause_decision("a", NO_SECTION, explanation=fp)]
     assert item["id"].endswith("#2")
 
     # A `group` decision closes Q; P's id would now be the bare masked one.
@@ -1116,11 +1123,13 @@ def test_a_quieted_dashboard_filtered_group_passes_the_proof_gate(tmp_path):
 def test_decided_marks_round_trip_through_triage_json(tmp_path):
     run = _fp_run(_groups("Newark"))
     (it,) = open_items(run)
-    proof = _explanation_file(tmp_path)
-    item = _item(it, proof, ("cube", NO_SECTION, 30))
+    explanation = _explanation_file(tmp_path)
+    item = _item(it, explanation, ("cube", NO_SECTION, 30))
     item.update(evidence=["proof line"], evidence_posted=["proof line"])
     mark_decided(
-        run, [item], [_cause_decision("a", NO_SECTION, proof=proof["fingerprint"])]
+        run,
+        [item],
+        [_cause_decision("a", NO_SECTION, explanation=explanation["fingerprint"])],
     )
 
     back = _as_json(_from_json(item))
@@ -1164,7 +1173,10 @@ def test_sheet_filtered_groups_share_one_cause_decision_and_no_group_stub(tmp_pa
         "label": "sheet filter Exclude Future Assessments",
     }
     assert "group" not in decision
-    assert decision["fingerprints"]["explanation"] == items[0]["proof"]["fingerprint"]
+    assert (
+        decision["fingerprints"]["explanation"]
+        == items[0]["explanation"]["fingerprint"]
+    )
     marked = [dict(i) for i in items]
     mark_decided(run, marked, [Decision(**decision)])
     assert all(i["decided"] for i in marked)
@@ -1175,7 +1187,7 @@ def test_a_decision_closing_an_item_triage_holds_in_investigate_refuses(tmp_path
     run = _fp_run([group])
     (it,) = open_items(run)
     item = {"id": it.id, "key": it.key, "kind": "group", "comparison": "enrollment",
-            "suggestion": "investigate", "cause": None, "proof": None}  # fmt: skip
+            "suggestion": "investigate", "cause": None, "explanation": None}  # fmt: skip
     hand = Decision("hand", "enrollment", "deliberate", "r",
                     group={"column": "region", "values": ["Newark"]},
                     fingerprints=dict(FPS))  # fmt: skip
@@ -1209,11 +1221,11 @@ from cube_validation.sort import (  # noqa: E402
 def _ran_over(run, cause="C1"):
     """A stored explanation's run over `with_closed(run)` explaining every group."""
     path = Path("v") / "explanations" / "v" / "enrollment__dashboard_only.sql"
-    proof = explain.Explanation(path, "enrollment", "dashboard_only",
+    explanation = explain.Explanation(path, "enrollment", "dashboard_only",
                                 {cause: ("cube", NO_SECTION)}, "SELECT 1")  # fmt: skip
     items = [(i.id, g) for i, g in _entries(with_closed(run))]
     found = {i: explain.Outcome(g.n_rows, Counter({cause: g.n_rows})) for i, g in items}
-    return proof, explain.Ran(proof, items, found)
+    return explanation, explain.Ran(explanation, items, found)
 
 
 def test_closed_groups_keep_open_ids_and_classify_the_closed_one(tmp_path):
@@ -1223,7 +1235,7 @@ def test_closed_groups_keep_open_ids_and_classify_the_closed_one(tmp_path):
     run = _fp_run([p])
     run.applied.quiet = [(_group_decision("fix_cube"), q)]
     (p_item,) = open_items(run)
-    proof, ran = _ran_over(run)
+    explanation, ran = _ran_over(run)
     assert {i for i, _ in ran.items} == {p_item.id, f"{p_item.id}#2"}
 
     (kept,), (closed,) = closed_groups(run, [ran], _cfg())
@@ -1233,8 +1245,8 @@ def test_closed_groups_keep_open_ids_and_classify_the_closed_one(tmp_path):
         "id": _open_key(q), "key": _open_key(q), "kind": "group",
         "comparison": "enrollment", "closed": True, "suggestion": "cause",
         "cause": [{"side": "cube", "step": "C1", "label": NO_SECTION, "n_rows": 20}],
-        "proof": {"kind": "query", "path": proof.recorded,
-                  "fingerprint": proof.fingerprint},
+        "explanation": {"kind": "query", "path": explanation.recorded,
+                  "fingerprint": explanation.fingerprint},
     }  # fmt: skip
 
 
@@ -1265,12 +1277,14 @@ def test_check_closed_compares_a_cause_with_the_group_decision_closing_it(
     run = _fp_run([])
     group_decision = _group_decision("fix_cube")
     run.applied.quiet = [(group_decision, q)]
-    proof, ran = _ran_over(run)
+    explanation, ran = _ran_over(run)
     _, closed = closed_groups(run, [ran], _cfg())
     run_json = _write_run_sorted(tmp_path, run, [])
-    loaded = json.loads((tmp_path / "triage.json").read_text())
-    (tmp_path / "triage.json").write_text(json.dumps({**loaded, "closed": closed}))
-    cause = _cause_decision("a", NO_SECTION, call=call, proof=proof.fingerprint)
+    loaded = json.loads((tmp_path / "sort.json").read_text())
+    (tmp_path / "sort.json").write_text(json.dumps({**loaded, "closed": closed}))
+    cause = _cause_decision(
+        "a", NO_SECTION, call=call, explanation=explanation.fingerprint
+    )
 
     if call == "fix_cube":
         check_closed(run, run_json, [group_decision, cause])
@@ -1304,7 +1318,7 @@ def test_a_recomposed_run_needs_a_new_triage(tmp_path):
 
     recomposed = replace(run, moments={**run.moments, "other": later})
 
-    with pytest.raises(pipeline.Refusal, match="triage.json is of another moment"):
+    with pytest.raises(pipeline.Refusal, match="sort.json is of another moment"):
         checked_sort(recomposed, run_json)
 
 
