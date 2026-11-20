@@ -36,6 +36,7 @@ from . import (
     compare,
     describe,
     explain,
+    find_field,
     pipeline,
     read_sheet,
     rebuild,
@@ -56,6 +57,7 @@ from .config import (
     write_decision,
 )
 from .cube_client import Cube, CubeError, CubeRefusal
+from .decisions import formula_cells_hash
 from .moment import MomentError, utcnow
 
 EXPOSURES = (
@@ -550,7 +552,7 @@ def _dispatch(args: argparse.Namespace) -> int:
         # measure.
         session = contextlib.nullcontext() if args.twb else tableau_session()
         with session as tbl:
-            pipeline.find_field(
+            find_field.find_field(
                 cfg,
                 args.measure,
                 cube=cube,
@@ -708,6 +710,15 @@ def _decide(cfg: ViewConfig, path: Path, approved_path: Path) -> int:
         existing=cfg.decisions,
         formula_cells={
             d.comparison_id: d.matched_only
+            for d in run.applied.open_cells
+            if d.kind == "formula"
+        },
+        formula_hashes={
+            d.comparison_id: formula_cells_hash(
+                run.diff_cells,
+                d.comparison_id,
+                run.fingerprints.get(d.comparison_id) or {},
+            )
             for d in run.applied.open_cells
             if d.kind == "formula"
         },

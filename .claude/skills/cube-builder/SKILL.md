@@ -35,11 +35,6 @@ holds the package. Keep the builder's working files in
 - A new student-level column (a tier, a bucket, a flag) is PII: tag it
   `config.meta.contains_pii: true` in its dbt YAML
   (`.claude/rules/ferpa-pii.md`).
-- `count_students` means the enrollment headcount and nothing else. A measure
-  that counts any other set of students is named for that set
-  (`count_students_with_attendance`).
-- A `.twbx` holds extracts with student data. Keep only its `.twb` XML and
-  delete the `.twbx` in the same step.
 - Tableau calls share one token with other sessions: make one Tableau call at a
   time, never in parallel.
 
@@ -49,9 +44,10 @@ holds the package. Keep the builder's working files in
    which covers buckets and DDI tiers).
 2. `members` writes `~/.cache/cube-validation/members.json`: each member's name,
    view, description, compiled SQL and fact.
-3. Download the workbook with the Tableau MCP's `download-workbook`, then
-   `unzip -p <file>.twbx '*.twb' > ~/.cache/cube-validation/<slug>/<slug>.twb`
-   and delete the `.twbx`.
+3. Download the workbook's XML through the runner, with the `download_twb`
+   snippet from the `cube-validation` runbook step 2 in place of its `cli.main`
+   call, and write it to `~/.cache/cube-validation/<slug>/<slug>.twb`. It
+   downloads without the extract, so no student data lands on disk.
 4. `inventory-workbook <twb> > ~/.cache/cube-validation/<slug>/review.json`
    lists every field: caption, role (`measure`, `cut`, `filter`, `parameter`),
    formula with code groups expanded, sheets, and `presentation`.
@@ -72,8 +68,9 @@ holds the package. Keep the builder's working files in
    retired notes. Write `asana.json` as `[{"field": ..., "status": ...}]` with
    status `open` or `deferred`; leave retired items out.
 7. Find the catalog file holding the dashboard's section:
-   `rg -l '<slug>' docs/superpowers/plans/2026-10-02-cube-gap-catalog*.md` (DDI
-   Suite: `2026-10-02-cube-gap-catalog-assessments.md`, slug `ddi_suite`).
+   `rg -l '<slug>' docs/superpowers/plans -g '2026-10-02-cube-gap-catalog-*.md'`
+   (the glob skips the index file, which names every slug) (DDI Suite:
+   `2026-10-02-cube-gap-catalog-assessments.md`, slug `ddi_suite`).
 8. `inventory <catalog file> <slug> --review review.json --asana asana.json`
    prints a markdown table (field, kind, member, sources, disagreement), then
    JSON. The member column is today's Cube; a catalog status is only where the
@@ -114,10 +111,18 @@ _Build_ step 4.
    | 4    | A new cube over an existing mart                        |
    | 5    | A new fact table: a new dbt mart, then everything above |
 
-   A column the catalog marks `mart-missing`, such as a student flag the
-   dashboard slices by that no mart has, is tier 3: a dbt PR adds the column, a
-   Cube PR adds the dimension, and a comparison slices an existing measure by
-   it.
+   Before placing a field in tier 2, confirm a mart has its column:
+   `rg -n '<column>' src/dbt/kipptaf/models/marts`, plus words from its meaning,
+   since a mart may have renamed it. A catalog `mart-ready` is not proof. A
+   column found only in an `rpt_` or `int_extracts__` model is tier 3 or deeper:
+   its logic moves into the domain `int_` both read (A12), and it goes on the
+   fact or dimension whose grain it varies at (`dbt-marts.md` _Grain_). Moving a
+   default or a mapping changes counts, so the domain owner confirms it. A dbt
+   PR adds the column, a Cube PR adds the dimension, and a comparison slices an
+   existing measure by it.
+
+   The catalog's `mart-missing` `nj_student_tier`, for one, is in the marts as
+   `ela_bucket` and `math_bucket` on `dim_student_enrollment_status`.
 
 2. Search open issues for "Build <dashboard> in Cube"; reuse one that exists.
    Otherwise draft it: the `inventory` table, each disagreement with the
@@ -127,9 +132,11 @@ _Build_ step 4.
 
 ## Build
 
-Build shallowest tier first, one PR type at a time. Each PR follows the root
-CLAUDE.md branch flow, is based on `origin/main`, and carries
-`Refs #<build issue>`.
+Build shallowest tier first, one PR type at a time. Each PR takes the root
+CLAUDE.md no-issue branch form
+(`git worktree add -b <branch> <path> origin/main`) and carries
+`Refs #<build issue>`: a branch linked with `gh issue develop` closes the build
+issue when its PR merges.
 
 Comparisons, explanations and decisions go in the validation file
 `src/cube/validation/<view>.yml` on the dashboard's own validation branch, never
@@ -137,21 +144,22 @@ in a builder PR. Base that branch on the branch that carries the validator:
 `origin/main` once the validator has merged, else the validator's branch. The
 runner's `PKG` is the `scripts/cube_validation` of that branch's checkout.
 
-| PR type         | What it changes                           | Reviewer           |
-| --------------- | ----------------------------------------- | ------------------ |
-| 1: YAML only    | New measures over members already present | simple review      |
-| 2: Cube changes | New dimensions, joins, a new cube         | analytics engineer |
-| 3: Fact changes | New columns or a new mart in dbt          | data engineer      |
+| PR type | What it changes                           | Reviewer           |
+| ------- | ----------------------------------------- | ------------------ |
+| YAML    | New measures over members already present | simple review      |
+| Cube    | New dimensions, joins, a new cube         | analytics engineer |
+| dbt     | New columns or a new mart                 | data engineer      |
 
-**A type 3 PR merges before the type 2 PR that reads its column.**
+**A dbt PR merges before the Cube PR that reads its column.**
 
-1. Type 3: invoke `dbt-local-dev`, then `uv run dbt build --select <model>+`
+1. dbt PR: invoke `dbt-local-dev`, then
+   `uv run dbt build --select <model>+ --project-dir src/dbt/kipptaf --target dev`
    builds the column into `zz_<user>_kipptaf_marts`.
 2. Start a local Cube over the PR's model, per _Testing a model variant locally_
    in the `cube-ops` skill: the copy comes from the PR's worktree, and the
-   server runs from the main checkout's `src/cube`, since a worktree has no
-   dotenv file. `cube-ops` covers starting it in the background. Use a Cube
-   Cloud Dev Mode deployment only when the analyst asks for it.
+   server runs from the main checkout's `src/cube`. `cube-ops` covers starting
+   it in the background. Use a Cube Cloud Dev Mode deployment only when the
+   analyst asks for it.
    - Start the server with a throwaway `CUBEJS_API_SECRET=<local value>`.
    - In the runner, `monkeypatch.setenv` `CUBE_API_SECRET` to that same value
      and `CUBE_REST_URL` to `http://localhost:4000/cubejs-api/v1`.
@@ -164,8 +172,10 @@ runner's `PKG` is the `scripts/cube_validation` of that branch's checkout.
    `~/.cache/cube-validation/members.json` aside, then run `members` against it:
    the new members must be listed before any query bills. For a new measure, a
    `same SQL: <new>, <other>` line means it is `<other>` under another name:
-   confirm in `members.json`, drop the new one and reuse `<other>`. Restore the
-   copy, or rerun `members` against Cube Cloud, before any later `inventory`.
+   confirm in `members.json`, drop the new one and reuse `<other>`. Keep the
+   local `members.json` through step 6, since `read-sheet` reads it; then
+   restore the copy, or rerun `members` against Cube Cloud, before any later
+   `inventory`.
 5. On the validation branch, add the comparison that checks the piece by the
    `cube-validation` runbook steps 2 and 3. A new dimension is checked by
    slicing an existing measure by it (the new dimension mapped under `dims`).
@@ -173,12 +183,12 @@ runner's `PKG` is the `scripts/cube_validation` of that branch's checkout.
    otherwise a differing cell can never be covered and stays open. Slicing an
    existing measure brings back that measure's known causes; read them in the
    view's validation file before calling a difference a bug in the new piece.
-6. Run the `cube-validation` runbook steps 4 and 5: `rebuild-sheet`, then
-   `compare --comparison <id>`.
+6. Run the `cube-validation` runbook steps 4 and 5: `read-sheet`,
+   `rebuild-sheet`, then `compare --comparison <id>`.
 7. The PR description says what was checked, the moment, the branch, and the
    `Cube:` and `Fact:` lines `compare` printed.
-8. After a type 3 PR merges and its production build lands, run
-   `compare --comparison <id>` for the type 2 PR without `--fact-dataset` and
+8. After a dbt PR merges and its production build lands, run
+   `compare --comparison <id>` for the Cube PR without `--fact-dataset` and
    update its description.
 
 ## Finish
@@ -186,6 +196,5 @@ runner's `PKG` is the `scripts/cube_validation` of that branch's checkout.
 1. When every tier has merged, open "Validate <dashboard> in Cube" and run the
    whole dashboard through the `cube-validation` runbook, `sort` included; the
    owner answers with the `cube-validation-answers` skill.
-2. With the analyst's approval, move the dashboard's Asana stage subtasks from
-   "Built in Cube" toward "Matches within tolerance", as far as the validation
-   result supports.
+2. With the analyst's approval, record the validation result on the dashboard's
+   task in the Asana project "Data Marts + Semantic Layer".

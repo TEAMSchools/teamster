@@ -4,8 +4,8 @@ A decision quiets the groups it names only while the SQL on both sides is the
 SQL it was made against. A `group` decision names its groups by one column's
 value. A `formula` decision names its comparison's formula difference: the
 differing cells no unmatched row lies in, and those the formula check filed,
-up to the count it recorded. A `cause` decision names an explained
-cause, never a group: the latest triage, which re-runs every stored explanation,
+while they are the cells it recorded. A `cause` decision names an explained
+cause, never a group: the latest sort, which re-runs every stored explanation,
 says which items it decides (`sort.mark_decided`), so `apply` only checks
 its SQL. A comparison decision (`all_groups`) names every row group of its
 comparison that no `group` decision claims, and never cells. Pure: no I/O.
@@ -17,9 +17,10 @@ import dataclasses
 import hashlib
 import json
 import re
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 
-from .config import MATCHED_ONLY, Decision
+from .config import FORMULA_CELLS, MATCHED_ONLY, Decision
 from .reconcile import CellDiff, Gap, Group
 
 
@@ -35,7 +36,7 @@ class Applied:
     quiet_gaps: list[tuple[Decision, Gap]] = field(default_factory=list)
     open_cells: list[CellDiff] = field(default_factory=list)
     quiet_cells: list[tuple[Decision, CellDiff]] = field(default_factory=list)
-    # Cause decisions whose SQL still holds; the triage says what they cover.
+    # Cause decisions whose SQL still holds; the sort says what they cover.
     causes: list[Decision] = field(default_factory=list)
 
 
@@ -136,37 +137,68 @@ def decisions_fingerprint(decisions: list[Decision]) -> str:
     return hashlib.sha256(text.encode()).hexdigest()
 
 
-def cause_state(d: Decision, proof: str, current: dict[str, str]) -> str:
-    """Whether a cause decision still holds for an item explained by `proof`.
+def formula_cells_hash(
+    diff_cells: Iterable[dict], comparison: str, sql: dict[str, str]
+) -> str:
+    """Hash which cells a comparison's formula difference holds.
+
+    Args:
+        diff_cells: Cells as run.json's `diff_cells` saves them.
+        comparison: The comparison id.
+        sql: The comparison's `{cube, dashboard}` SQL fingerprints, the salt.
+
+    Returns:
+        The sha256 hex digest of the sorted `(cut, key)` refs of the
+        comparison's `formula` cells, both those holding no unmatched row and
+        those the formula check filed, salted with both SQL fingerprints. It
+        carries no cell value; the salt sits beside it in the decision, so
+        it does not stop a guessed key being checked against it.
+    """
+    refs = sorted(
+        {
+            (str(c.get("cut")), str(c.get("key")))
+            for c in diff_cells
+            if c.get("comparison") == comparison and c.get("kind") == "formula"
+        }
+    )
+    salt = [sql.get("cube", ""), sql.get("dashboard", "")]
+    return hashlib.sha256(json.dumps([salt, refs]).encode()).hexdigest()
+
+
+def cause_state(d: Decision, explanation: str, current: dict[str, str]) -> str:
+    """Whether a cause decision still holds for an item explained by `explanation`.
 
     Args:
         d: A cause decision.
-        proof: The fingerprint of the stored explanation the item's cause
+        explanation: The fingerprint of the stored explanation the item's cause
             rests on.
         current: The comparison's current `{cube, dashboard}` fingerprints.
 
     Returns:
         `holds`, `sql` (either side's SQL changed since the decision) or
-        `proof` (the explanation file changed since the decision).
+        `explanation` (the explanation file changed since the decision).
     """
     if any(
         not d.fingerprints.get(side) or d.fingerprints[side] != current.get(side)
         for side in ("cube", "dashboard")
     ):
         return "sql"
-    if not d.fingerprints.get("explanation") or d.fingerprints["explanation"] != proof:
-        return "proof"
+    if (
+        not d.fingerprints.get("explanation")
+        or d.fingerprints["explanation"] != explanation
+    ):
+        return "explanation"
     return "holds"
 
 
-def _text(value: object) -> str:
+def group_text(value: object) -> str:
     """A decision value as group text: `None` reads as empty, as NULL does."""
     return "" if value is None else str(value)
 
 
 def _names(d: Decision, g: Group) -> bool:
     """A `group` decision's column holds one of its values in `g`."""
-    values = {_text(v) for v in d.group.get("values") or []}
+    values = {group_text(v) for v in d.group.get("values") or []}
     return g.value_of(d.group.get("column") or "") in values
 
 
@@ -184,6 +216,7 @@ def apply(
     fingerprints: dict[str, dict[str, str]],
     gaps: list[Gap] | tuple[Gap, ...] = (),
     cell_diffs: list[CellDiff] | tuple[CellDiff, ...] = (),
+    diff_cells: list[dict] | tuple[dict, ...] = (),
 ) -> Applied:
     """Sort groups and decisions by what the recorded decisions still cover.
 
@@ -197,14 +230,18 @@ def apply(
             `rebuild-sheet` rewrites the list it matches.
         cell_diffs: Each comparison's differing cells. A `formula` decision
             quiets its comparison's `formula` diff while both fingerprints
-            hold and the formula check has filed no more cells in it than the
-            decision recorded (`MATCHED_ONLY`); no decision quiets a `cells`
+            hold and the diff holds the cells the decision recorded
+            (`FORMULA_CELLS`). A formula decision recorded without them
+            quiets the diff while the formula check has filed no more cells
+            than it recorded (`MATCHED_ONLY`). No decision quiets a `cells`
             diff, which coverage closes.
+        diff_cells: The run's cells as run.json's `diff_cells` saves them,
+            which say which cells each formula diff holds.
 
     Returns:
         Groups still open or quieted, decisions to reconfirm because the SQL
-        changed or the formula check filed more cells (their groups or diff
-        stay open), decisions matching no group, and decisions only some of
+        changed or a formula diff's cells did (their groups or diff stay
+        open), decisions matching no group, and decisions only some of
         whose values match a group, with the values that match none. The
         values that do match stay quiet.
 
@@ -284,9 +321,20 @@ def apply(
             if diff is None:
                 applied.no_longer_needed.append(decision)
                 continue
-            # Cells the formula check filed since the decision was made were
-            # never put to whoever made it: ask again.
-            if diff.matched_only > int(decision.fingerprints.get(MATCHED_ONLY) or 0):
+            # The answer covered one set of cells; once the set changes (a
+            # cell added, gone or swapped), it is not the set the answer was
+            # given on: ask again. Without a record of its cells, only a cell
+            # the check filed since counts.
+            if recorded := decision.fingerprints.get(FORMULA_CELLS):
+                # Both fingerprints held above, so the decision's salt is the
+                # run's, as `decide` wrote it.
+                changed = recorded != formula_cells_hash(
+                    diff_cells, decision.comparison, decision.fingerprints
+                )
+            else:
+                filed = int(decision.fingerprints.get(MATCHED_ONLY) or 0)
+                changed = diff.matched_only > filed
+            if changed:
                 applied.reconfirm.append(decision)
                 continue
             applied.quiet_cells.append((decision, diff))
@@ -295,7 +343,7 @@ def apply(
         column = decision.group.get("column")
         # A group's value is text; YAML reads an unquoted `9` as an int.
         values = list(
-            dict.fromkeys(_text(v) for v in decision.group.get("values") or [])
+            dict.fromkeys(group_text(v) for v in decision.group.get("values") or [])
         )
         # A decision on one column covers every row with that value, whatever
         # its other group-by columns hold.

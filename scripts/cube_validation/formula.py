@@ -29,7 +29,7 @@ from .config import Comparison, ViewConfig
 from .cube_client import Cube, CubeError, CubeRefusal
 from .moment import Build
 from .report import RunResult, mask
-from .timetravel import _NOT_ALIAS, PROJECT, closing_paren, repin
+from .timetravel import NOT_ALIAS, PROJECT, closing_paren, repin
 
 # A cell the check could not recompute closes by coverage under this label,
 # followed by one of the reasons below.
@@ -56,7 +56,7 @@ _RAN = (REWRITE_DIFFERS, NO_ROWS, FANS_OUT)
 # nothing is spent again until the comparison is compared again; a bump runs
 # every kept check again, so a fix to its formula or coverage verdicts takes
 # effect.
-CHECK_VERSION = 3
+CHECK_VERSION = 4
 
 
 def bigquery_refused(exc: GoogleAPIError) -> str:
@@ -236,7 +236,7 @@ def key_sql(
         f"CAST({c} AS DATE)" if is_date else c
         for c, is_date in zip(named, dates, strict=True)
     ]
-    return _keyed(reconcile._grain_keys(read))
+    return _keyed(reconcile.grain_keys(read))
 
 
 def matched_ctes(
@@ -265,7 +265,7 @@ def matched_ctes(
     """
     n = len(pipeline.rows_of(comparison).grain)
     args, kwargs = pipeline.reconcile_args(cfg, comparison, sides)
-    ctes, _ = reconcile._joined(*args, keys=True, moved=True, **kwargs)
+    ctes, _ = reconcile.joined_ctes(*args, keys=True, moved=True, **kwargs)
     # `__k*` are already the reconcile's grain keys.
     joined_key = _keyed([f"__k{i}" for i in range(n)])
     # The saved grain is typed as the reconcile typed it, as `__k*` were, so
@@ -274,19 +274,21 @@ def matched_ctes(
     dash_key = key_sql([f"__gd{i}" for i in range(n)], plain)
     cube_key = key_sql([f"__gc{i}" for i in range(n)], plain)
     matched = "bucket = 'match' AND __cin IS NOT NULL AND __din IS NOT NULL"
+    # One read of `joined`: a key is matched only when every row it keys is.
+    # `__joined_keys` is read once below, since BigQuery may run a CTE once
+    # per reference.
     return (
         # trunk-ignore(bandit/B608): identifiers are validated in config.py; row SQL is the run's own and the table name the tool's
         f"{ctes},\n"
-        f"__match AS (\n  SELECT {joined_key} AS __key FROM joined\n"
-        f"  WHERE {matched}\n),\n"
-        f"__other AS (\n  SELECT {joined_key} AS __key FROM joined\n"
-        f"  WHERE NOT ({matched})\n),\n"
+        f"__joined_keys AS (\n  SELECT {joined_key} AS __key,\n"
+        f"    LOGICAL_AND({matched}) AS __all_match\n"
+        "  FROM joined\n  GROUP BY 1\n),\n"
         f"__saved AS (\n  SELECT {dash_key} AS __key FROM {saved_table}\n"
         "  WHERE bucket != 'cube_only'\n  UNION DISTINCT\n"
         f"  SELECT {cube_key} AS __key FROM {saved_table}\n"
         "  WHERE bucket != 'dashboard_only'\n),\n"
-        "__matched AS (\n  SELECT __key FROM __match WHERE __key IS NOT NULL\n"
-        "  EXCEPT DISTINCT SELECT __key FROM __other\n"
+        "__matched AS (\n  SELECT __key FROM __joined_keys\n"
+        "  WHERE __key IS NOT NULL AND __all_match\n"
         "  EXCEPT DISTINCT SELECT __key FROM __saved\n)"
     )
 
@@ -312,6 +314,9 @@ def _reads_only_rows(comparison: Comparison) -> None:
     marker = "__formula_rows__"
     text = template.format(rows=marker, where="TRUE", dims="").replace("`", "")
     view = re.escape(comparison.dashboard_view or "")
+    # Catches only a template that names the dashboard view itself. One that
+    # also reads an upstream model holding the same rows (the view's source,
+    # or a copy) passes, and its unmatched rows reach the dashboard side.
     if marker not in text or (view and re.search(rf"\b{view}\b", text, re.IGNORECASE)):
         raise NotCompared(ROWS_BYPASSED)
 
@@ -386,7 +391,7 @@ def cube_read_tables(cfg: ViewConfig, compiled_sql: str) -> list[str]:
     """
     found = {
         f"{ds}.{name}".lower()
-        for ds, name in cube_client._FACT_REF.findall(compiled_sql)
+        for ds, name in cube_client.FACT_REF.findall(compiled_sql)
     }
     return [cfg.fact, *(f for f in cfg.also_facts if f.lower() in found)]
 
@@ -692,7 +697,7 @@ def _read_pattern(table: str) -> re.Pattern[str]:
     return re.compile(
         f"(?P<ref>{ref})"
         + r"(?P<alias>\s+AS\s+`?\w+`?|\s+(?!(?:"
-        + _NOT_ALIAS
+        + NOT_ALIAS
         + r")\b)`?\w+`?)?\s+FOR SYSTEM_TIME AS OF TIMESTAMP '(?P<at>[^']+)'",
         re.IGNORECASE,
     )
@@ -1078,7 +1083,7 @@ def plan(
             check is kept under.
         wh: The warehouse, for view history, saved labels and columns.
         cube: Cube, for the compiled SQL.
-        prepared: What the triage fetched once; its row SQL is reused.
+        prepared: What the sort fetched once; its row SQL is reused.
 
     Returns:
         None when no cell can be checked (`checkable_cells`); a `Job` holding
@@ -1164,7 +1169,7 @@ def label(items: list[dict], checks: dict[str, Check]) -> dict[str, dict[str, in
     exact locally and masked (`mask`) in `evidence_posted`. Names no cell.
 
     Returns:
-        Per comparison with any, each reason's cell count, for `triage.json`.
+        Per comparison with any, each reason's cell count, for `sort.json`.
     """
     by_id = {i["id"]: i for i in items}
     out: dict[str, dict[str, int]] = {}

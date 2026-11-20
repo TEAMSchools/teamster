@@ -4,7 +4,7 @@
 `compare`, `results`, `rebuild` and `review` take those clients as arguments
 so tests can pass fakes. This module holds what several of them share: the
 filters and queries, cells, the SQL fingerprints and checkpoint slices, the row
-sides, the skip and refusal types, and `find-field`. The dashboard side is read
+sides, and the skip and refusal types. The dashboard side is read
 as of a fact build's start and Cube as of its end. Every BigQuery query runs
 inside `Warehouse.budget`, and only aggregates come back: row-level
 comparisons run inside BigQuery through `reconcile.reconcile_script`.
@@ -16,19 +16,13 @@ import dataclasses
 import hashlib
 import json
 import re
-import zipfile
-from collections.abc import Callable, Iterable, Iterator
-from datetime import date, datetime, time, timezone
-from decimal import Decimal, InvalidOperation
-from pathlib import Path
+from collections.abc import Iterable
+from datetime import datetime, timezone
 from typing import Any
 
-import tableauserverclient as TSC
 from google.api_core.exceptions import GoogleAPIError
 
-from . import decisions
-from . import find_field as finder
-from . import reconcile, report, tableau
+from . import decisions, reconcile, report, tableau
 from .bq import ViewHistoryError, Warehouse, job_failure
 from .config import (
     WEEK_END_KEY,
@@ -542,40 +536,9 @@ def wrap_cube(
 # --- cells -------------------------------------------------------------------
 
 
-def value_key(value: Any) -> str:
-    """Cell key text: dates by day, booleans as `true`/`false`, numbers by
-    value, else the text.
-
-    Tableau's export writes a date as M/D/YYYY (the server's en-US format),
-    the sheet query and Cube as ISO, so both read as the same day. A boolean
-    reads as BigQuery casts it, whatever its case, so a group label
-    (`reconcile._label`) keys as its cell does; `reconcile._cell_key` is
-    this rule in SQL.
-    """
-    if isinstance(value, bool):
-        return "true" if value else "false"
-    if isinstance(value, str) and re.match(r"\d{4}-\d{2}-\d{2}", value):
-        try:
-            value = datetime.fromisoformat(value)
-        except ValueError:
-            pass
-    elif isinstance(value, str) and (day := tableau.export_date(value)) is not None:
-        value = day
-    if isinstance(value, datetime):
-        stamp = value.replace(tzinfo=None)
-        return stamp.date().isoformat() if stamp.time() == time() else stamp.isoformat()
-    if isinstance(value, date):
-        return value.isoformat()
-    if value is None:
-        return ""
-    text = str(value).strip()
-    if text.lower() in ("true", "false"):
-        return text.lower()
-    try:
-        number = Decimal(text)
-    except InvalidOperation:
-        return text
-    return format(number.normalize(), "f") if number.is_finite() else text
+# The rule lives in tableau so the rebuild check can share it without an import
+# cycle; compare, coverage, formula and the answers call it from here.
+value_key = tableau.value_key
 
 
 @dataclasses.dataclass(frozen=True)
@@ -923,7 +886,7 @@ def verdict(
     cells: dict[str, int], open_groups: int, open_gaps: int, open_cells: int
 ) -> str:
     """`validated` when every cell passes or is only dashboard-filtered and
-    nothing is left to triage, else `differs`.
+    nothing is left to sort, else `differs`.
 
     Args:
         cells: Cell count per verdict for one measure.
@@ -1006,148 +969,6 @@ def measure_expression(sql: str, view: str, measure: str) -> str:
     head = sql if end < 0 else sql[:end]
     head = re.sub(r"^\s*SELECT\s+", "", head, flags=re.IGNORECASE)
     return head.replace(f"`{view}__{measure}`", "").strip()
-
-
-def find_field(
-    cfg: ViewConfig,
-    measure: str,
-    *,
-    cube: Cube,
-    tbl: tableau.Tableau | None,
-    exposures_path: Path,
-    only: list[str],
-    caption: str | None = None,
-    limit: int | None = finder.TOP_N,
-    twb_path: Path | None = None,
-) -> list[finder.Candidate]:
-    """Print workbook fields ranked against a measure, then each listed sheet's
-    shape: shelves, export form, displayed decimals and filters.
-
-    Calculated fields and aggregated raw fields both rank; a formula that uses a
-    code group shows its codes. `caption` boosts the dashboard's name for the
-    measure; `limit` None prints every candidate. With `twb_path` the one local
-    workbook is read instead of the exposures' downloads, and `tbl` is unused.
-    """
-    compiled = cube.compiled({"measures": [member_name(cfg.view, measure)]})
-    member_sql = measure_expression(compiled.sql, cfg.view, measure)
-
-    found: list[finder.Candidate] = []
-    twbs: dict[str, str] = {}
-    workbooks = (
-        [(str(twb_path), twb_path.name, twb_path.read_text(encoding="utf-8"))]
-        if twb_path is not None
-        else _exposure_workbooks(tbl, exposures_path, only)
-    )
-    for luid, label, twb in workbooks:
-        twbs[luid] = twb
-        found += finder.rank(
-            measure,
-            member_sql,
-            finder.calculated_fields(twb) + finder.aggregated_fields(twb),
-            workbook_luid=luid,
-            workbook_label=label,
-            caption=caption,
-            limit=None,
-        )
-
-    found.sort(key=lambda c: (-c.score, c.workbook_label, c.caption))
-    found = found if limit is None else found[:limit]
-    if not found:
-        print(f"No candidates for {measure}.")
-    for c in found:
-        formula = finder.explain_bins(
-            " ".join(c.formula.split()), finder.bins(twbs[c.workbook_luid])
-        )
-        print(
-            f"{c.score:.2f}  {c.workbook_label} ({c.workbook_luid})  "
-            f"{c.caption!r} on {', '.join(c.worksheets) or 'no sheet'}: {formula}"
-        )
-    # A local workbook's views are not on the server: published is not checked.
-    views = tbl.view_names if twb_path is None and tbl is not None else None
-    _print_sheets(found, twbs, views)
-    return found
-
-
-def _exposure_workbooks(
-    tbl: tableau.Tableau | None, exposures_path: Path, only: list[str]
-) -> Iterator[tuple[str, str, str]]:
-    """Download each Tableau exposure's workbook: luid, label and XML."""
-    if tbl is None:
-        raise Refusal("find-field needs a Tableau session or a local --twb")
-    exposures = finder.tableau_exposures(exposures_path)
-    if exposures.skipped:
-        print(
-            f"Skipped exposures without a luid or models: {', '.join(exposures.skipped)}"
-        )
-    for exposure in exposures:
-        if only and exposure.name not in only:
-            continue
-        if not exposure.luid:
-            print(f"Skipped {exposure.name}: empty luid")
-            continue
-        try:
-            twb = tbl.download_twb(exposure.luid)
-        except (
-            TSC.ServerResponseError,
-            zipfile.BadZipFile,
-            ValueError,
-            OSError,
-        ) as exc:
-            print(f"Could not read {exposure.label}: {type(exc).__name__}: {exc}")
-            continue
-        yield exposure.luid, exposure.label, twb
-
-
-def _print_sheets(
-    found: list[finder.Candidate],
-    twbs: dict[str, str],
-    views: Callable[[str], set[str]] | None = None,
-) -> None:
-    """Print each listed sheet's shape. `views` lists a workbook's views on
-    the server; without it (a local workbook) published is not checked."""
-    sheets = list(
-        dict.fromkeys(
-            (c.workbook_luid, c.workbook_label, s) for c in found for s in c.worksheets
-        )
-    )
-    if not sheets:
-        return
-    print("\nSheets:" if views else f"\nSheets ({tableau.NOT_CHECKED}):")
-    roots = {
-        luid: finder.parse_workbook(twbs[luid])
-        for luid in dict.fromkeys(luid for luid, _, _ in sheets)
-    }
-    # Per workbook, its published sheets or why they could not be asked.
-    published: dict[str, set[str] | str] = {}
-    for luid, root in roots.items():
-        if views is None:
-            continue
-        try:
-            published[luid] = tableau.published_sheets(root, views(luid))
-        except TSC.ServerResponseError as exc:
-            published[luid] = f"Tableau answered {exc.code} {exc.summary}"
-    for luid, label, sheet in sheets:
-        shape = finder.sheet_shape(roots[luid], sheet)
-        print(
-            f"  {sheet} ({label}): rows {', '.join(shape.rows) or 'none'}; "
-            f"columns {', '.join(shape.cols) or 'none'}"
-        )
-        seen = published.get(luid)
-        if isinstance(seen, str):
-            print(f"    published: not checked: {seen}")
-        elif seen is not None and sheet not in seen:
-            print(f"    {tableau.NOT_PUBLISHED}")
-        export = (
-            "long (set sheet_field to a Measure Names value)"
-            if shape.long_export
-            else "wide"
-        )
-        print(f"    export: {export}")
-        if shape.decimals:
-            shown = ", ".join(f"{k} {v}" for k, v in shape.decimals.items())
-            print(f"    decimals: {shown}")
-        for line in shape.filters:
-            print(f"    filter {line}")
 
 
 def utc(value: str) -> datetime:

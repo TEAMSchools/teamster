@@ -1,14 +1,15 @@
 import re
 import xml.etree.ElementTree as ET
 import zipfile
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
+from decimal import Decimal
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation import rebuild
+from cube_validation import pipeline, rebuild
 from cube_validation.config import ColumnPair, Comparison
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
@@ -18,7 +19,6 @@ from cube_validation.find_field import sheet_shape
 from cube_validation.tableau import (
     RefreshMovedError,
     Tableau,
-    _key_text,
     _number,
     _parse_shelf,
     _shelf_text,
@@ -30,6 +30,7 @@ from cube_validation.tableau import (
     published_sheets,
     set_shelves,
     split_cuts,
+    value_key,
 )
 
 FIXTURE = Path(__file__).parent / "fixtures" / "sheet_formats.twb"
@@ -203,44 +204,48 @@ def _rows(values: dict[str, float | str | None]) -> list[dict]:
     return [{"region": k, "value": v} for k, v in values.items()]
 
 
-def test_prove_fails_on_one_mismatch():
+def test_rebuild_check_fails_on_one_mismatch():
     exports = _rows({"North": "0.9123", "South": "0.8504", "East": "0.7001"})
     probe = _rows({"North": 0.91249, "South": 0.85, "East": 0.7012})
 
-    proof = match_export(_comparison(), exports, probe, twb_xml=_twb(), now=NOW)
+    rebuild_check = match_export(_comparison(), exports, probe, twb_xml=_twb(), now=NOW)
 
-    assert proof.cells == 3
-    assert len(proof.failures) == 1
-    assert "region=East" in proof.failures[0]
-    assert not proof.matched
-    assert proof.matched_at == NOW
-    assert proof.fingerprint == formula_fingerprint(_twb(), "Rate by Region")
+    assert rebuild_check.cells == 3
+    assert len(rebuild_check.failures) == 1
+    assert "region=East" in rebuild_check.failures[0]
+    assert not rebuild_check.matched
+    assert rebuild_check.matched_at == NOW
+    assert rebuild_check.fingerprint == formula_fingerprint(_twb(), "Rate by Region")
 
 
-def test_prove_passes_when_all_cells_round_equal():
+def test_rebuild_check_passes_when_all_cells_round_equal():
     exports = _rows({"North": "0.9123", "South": "0.8504"})
     probe = _rows({"North": 0.91249, "South": 0.85})
 
-    proof = match_export(_comparison(), exports, probe, twb_xml=_twb(), now=NOW)
+    rebuild_check = match_export(_comparison(), exports, probe, twb_xml=_twb(), now=NOW)
 
-    assert proof.failures == []
-    assert proof.matched
-    assert proof.cells == 2
+    assert rebuild_check.failures == []
+    assert rebuild_check.matched
+    assert rebuild_check.cells == 2
 
 
-def test_prove_one_sided_and_empty_exports_fail():
+def test_rebuild_check_one_sided_and_empty_exports_fail():
     exports = _rows({"North": "0.9", "South": "0.8"})
     probe = _rows({"North": 0.9, "West": 0.8})
-    proof = match_export(_comparison(), exports, probe, twb_xml=_twb(), now=NOW)
-    assert proof.cells == 1
-    assert any("region=South" in f and "export only" in f for f in proof.failures)
-    assert any("region=West" in f and "sheet query only" in f for f in proof.failures)
+    rebuild_check = match_export(_comparison(), exports, probe, twb_xml=_twb(), now=NOW)
+    assert rebuild_check.cells == 1
+    assert any(
+        "region=South" in f and "export only" in f for f in rebuild_check.failures
+    )
+    assert any(
+        "region=West" in f and "sheet query only" in f for f in rebuild_check.failures
+    )
 
     empty = match_export(_comparison(), [], [], twb_xml=_twb(), now=NOW)
     assert not empty.matched and empty.cells == 0
 
 
-def test_prove_matches_numeric_dims_across_types_and_cut_keys():
+def test_rebuild_check_matches_numeric_dims_across_types_and_cut_keys():
     comparison = _comparison(dims=[ColumnPair("academic_year", "dates_academic_year")])
     exports = [
         {"cut": "0", "academic_year": "2026", "value": "0.5"},
@@ -250,11 +255,11 @@ def test_prove_matches_numeric_dims_across_types_and_cut_keys():
         {"cut": "1", "academic_year": 2026, "value": 0.6},
         {"cut": "0", "academic_year": 2026.0, "value": 0.5},
     ]
-    proof = match_export(comparison, exports, probe, twb_xml=_twb(), now=NOW)
-    assert proof.matched and proof.cells == 2
+    rebuild_check = match_export(comparison, exports, probe, twb_xml=_twb(), now=NOW)
+    assert rebuild_check.matched and rebuild_check.cells == 2
 
 
-def test_prove_refuses_formatted_values_and_missing_decimals():
+def test_rebuild_check_refuses_formatted_values_and_missing_decimals():
     with pytest.raises(ValueError, match="number format"):
         match_export(
             _comparison(),
@@ -288,14 +293,14 @@ def test_parameter_cuts_go_to_the_browser_list():
     assert exportable == [{}, {"Region": "South"}]
     assert browser == [{"Basis": "Year end"}]
 
-    proof = match_export(
+    rebuild_check = match_export(
         _comparison(cuts=cuts),
         _rows({"North": "0.9"}),
         _rows({"North": 0.9}),
         twb_xml=_twb(),
         now=NOW,
     )
-    assert proof.browser == [{"Basis": "Year end"}]
+    assert rebuild_check.browser == [{"Basis": "Year end"}]
 
 
 def test_fingerprint_follows_formulas_and_filters_not_formats():
@@ -682,7 +687,7 @@ def test_csv_bom_is_stripped():
     assert Tableau(server).export("copy-luid", "Rate by Region", {}) == [{"A": "1"}]
 
 
-# --- parameters on the proof copy ----------------------------------------------
+# --- parameters on the rebuild copy --------------------------------------------
 
 PARAM_TWB = (Path(__file__).parent / "fixtures" / "sheet_formats.twb").read_text()
 
@@ -719,7 +724,7 @@ def test_sign_out_returns_a_sign_in_error_instead_of_raising():
     assert "401002" in (Tableau(Server()).sign_out() or "")
 
 
-# --- shelves on the proof copy ---------------------------------------------------
+# --- shelves on the rebuild copy -------------------------------------------------
 
 SHELVES_TWB = (Path(__file__).parent / "fixtures" / "shelves.twb").read_text()
 RESHAPE = {
@@ -772,16 +777,182 @@ def test_set_shelves_fills_an_empty_shelf_and_keeps_its_attributes():
     assert "<cols onLeft='true'>[federated.0ddi (copy)].[none:school:nk]</cols>" in out
 
 
-def test_proof_keys_read_an_export_date_as_the_probe_date():
+def test_rebuild_check_keys_read_an_export_date_as_the_probe_date():
     # Tableau's export writes M/D/YYYY; the probe returns a DATE.
     assert (
-        _key_text("9/21/2026")
-        == _key_text(datetime(2026, 9, 21).date())
+        value_key("9/21/2026", export=True)
+        == value_key(datetime(2026, 9, 21).date(), export=True)
         == "2026-09-21"
     )
-    assert _key_text("2026-09-21") == "2026-09-21"
-    assert _key_text("1,234") == "1234"
-    assert _key_text("13/45/2026") == "13/45/2026"
+    assert value_key("2026-09-21", export=True) == "2026-09-21"
+    assert value_key("1,234", export=True) == "1234"
+    assert value_key("13/45/2026", export=True) == "13/45/2026"
+
+
+# Each input with its cell key in compare, coverage, formula and the answers.
+# These keys feed stored state (answers keys, formula cell fingerprints), so
+# every one must stay byte-identical.
+VALUE_KEYS = [
+    (date(2026, 9, 21), "2026-09-21"),
+    (datetime(2026, 9, 21), "2026-09-21"),
+    (datetime(2026, 9, 21, 8, 30), "2026-09-21T08:30:00"),
+    (datetime(2026, 9, 21, tzinfo=timezone.utc), "2026-09-21"),
+    (datetime(2026, 9, 21, 8, 30, tzinfo=timezone.utc), "2026-09-21T08:30:00"),
+    ("9/21/2026", "2026-09-21"),
+    ("09/07/2026", "2026-09-07"),
+    (" 9/21/2026", "9/21/2026"),
+    ("13/45/2026", "13/45/2026"),
+    ("9/21", "9/21"),
+    ("2026-09-21", "2026-09-21"),
+    ("2026-09-21 00:00:00", "2026-09-21"),
+    ("2026-09-21T00:00:00.000", "2026-09-21"),
+    ("2026-09-21 08:30:00", "2026-09-21T08:30:00"),
+    ("2026-09-21T08:30:00+00:00", "2026-09-21T08:30:00"),
+    ("2026-09-21x", "2026-09-21x"),
+    (True, "true"),
+    (False, "false"),
+    ("TRUE", "true"),
+    ("true", "true"),
+    ("True", "true"),
+    ("False", "false"),
+    (" false ", "false"),
+    (2026, "2026"),
+    (0, "0"),
+    (-7, "-7"),
+    (2026.0, "2026"),
+    (0.5, "0.5"),
+    (-1.25, "-1.25"),
+    (Decimal("1.50"), "1.5"),
+    (Decimal("-0"), "-0"),
+    (Decimal("1E+3"), "1000"),
+    ("2026", "2026"),
+    ("2026.0", "2026"),
+    ("-1.250", "-1.25"),
+    ("1,234", "1,234"),
+    ("-1,234.50", "-1,234.50"),
+    ("12,34", "12,34"),
+    ("1,234,567", "1,234,567"),
+    (" 1,234 ", "1,234"),
+    ("1e3", "1000"),
+    ("NaN", "NaN"),
+    ("Infinity", "Infinity"),
+    (None, ""),
+    ("", ""),
+    ("  ", ""),
+    ("Newark", "Newark"),
+    (" Newark ", "Newark"),
+    ("007", "7"),
+    ("00", "0"),
+    ("0.10", "0.1"),
+    ("N/A", "N/A"),
+]
+
+
+@pytest.mark.parametrize(("value", "key"), VALUE_KEYS)
+def test_cell_key_text_is_pinned(value, key):
+    assert pipeline.value_key(value) == key
+
+
+@pytest.mark.parametrize(
+    ("value", "key"),
+    [
+        (date(2026, 9, 21), "2026-09-21"),
+        ("9/21/2026", "2026-09-21"),
+        ("09/07/2026", "2026-09-07"),
+        (" 9/21/2026", "2026-09-21"),
+        ("13/45/2026", "13/45/2026"),
+        ("9/21", "9/21"),
+        ("2026-09-21", "2026-09-21"),
+        ("2026-09-21x", "2026-09-21x"),
+        ("true", "true"),
+        (" false ", "false"),
+        (2026, "2026"),
+        (0, "0"),
+        (-7, "-7"),
+        (2026.0, "2026"),
+        (0.5, "0.5"),
+        (-1.25, "-1.25"),
+        (Decimal("1.50"), "1.5"),
+        (Decimal("-0"), "-0"),
+        (Decimal("1E+3"), "1000"),
+        ("2026", "2026"),
+        ("2026.0", "2026"),
+        ("-1.250", "-1.25"),
+        ("1,234", "1234"),
+        ("-1,234.50", "-1234.5"),
+        ("12,34", "12,34"),
+        ("1,234,567", "1234567"),
+        (" 1,234 ", "1234"),
+        ("1e3", "1000"),
+        ("NaN", "NaN"),
+        ("Infinity", "Infinity"),
+        (None, ""),
+        ("", ""),
+        ("  ", ""),
+        ("Newark", "Newark"),
+        (" Newark ", "Newark"),
+        ("007", "7"),
+        ("00", "0"),
+        ("0.10", "0.1"),
+        ("N/A", "N/A"),
+    ],
+)
+def test_rebuild_check_key_text_is_pinned(value, key):
+    assert value_key(value, export=True) == key
+
+
+@pytest.mark.parametrize(
+    ("value", "key"),
+    [
+        (True, "true"),
+        (False, "false"),
+        ("TRUE", "true"),
+        ("True", "true"),
+        ("False", "false"),
+    ],
+)
+def test_rebuild_check_keys_a_boolean_in_lower_case(value, key):
+    assert value_key(value, export=True) == key
+
+
+@pytest.mark.parametrize(
+    ("value", "key"),
+    [
+        (datetime(2026, 9, 21), "2026-09-21"),
+        (datetime(2026, 9, 21, 8, 30), "2026-09-21T08:30:00"),
+        (datetime(2026, 9, 21, tzinfo=timezone.utc), "2026-09-21"),
+        (datetime(2026, 9, 21, 8, 30, tzinfo=timezone.utc), "2026-09-21T08:30:00"),
+    ],
+)
+def test_rebuild_check_keys_a_midnight_datetime_as_its_day_else_a_naive_iso_stamp(
+    value, key
+):
+    assert value_key(value, export=True) == key
+
+
+@pytest.mark.parametrize(
+    ("value", "key"),
+    [
+        ("2026-09-21 00:00:00", "2026-09-21"),
+        ("2026-09-21T00:00:00.000", "2026-09-21"),
+        ("2026-09-21 08:30:00", "2026-09-21T08:30:00"),
+        ("2026-09-21T08:30:00+00:00", "2026-09-21T08:30:00"),
+    ],
+)
+def test_rebuild_check_keys_an_iso_timestamp_string_as_its_day_else_a_naive_iso_stamp(
+    value, key
+):
+    assert value_key(value, export=True) == key
+
+
+def test_rebuild_check_matches_a_midnight_datetime_dim_to_the_export_date():
+    comparison = _comparison(dims=[ColumnPair("week_start", "dates_week_start")])
+    exports = [{"week_start": "9/21/2026", "value": "0.5"}]
+    probe = [{"week_start": datetime(2026, 9, 21), "value": 0.5}]
+
+    rebuild_check = match_export(comparison, exports, probe, twb_xml=_twb(), now=NOW)
+
+    assert rebuild_check.matched and rebuild_check.cells == 1
 
 
 def test_shelf_parser_reads_the_cross_operator():
@@ -1349,19 +1520,23 @@ def test_match_export_skips_export_only_blanks_and_query_only_nulls():
     exports = [{"region": "A", "value": "0.5"}, {"region": "B", "value": ""}]
     query = [{"region": "A", "value": 0.5}, {"region": "C", "value": None}]
 
-    proof = match_export(_comparison(), exports, query, twb_xml=_twb(), now=NOW)
+    rebuild_check = match_export(_comparison(), exports, query, twb_xml=_twb(), now=NOW)
 
-    assert proof.matched and proof.cells == 1 and proof.blanks_skipped == 2
+    assert (
+        rebuild_check.matched
+        and rebuild_check.cells == 1
+        and rebuild_check.blanks_skipped == 2
+    )
 
 
 def test_match_export_still_fails_a_blank_against_a_value():
     exports = [{"region": "A", "value": ""}]
     query = [{"region": "A", "value": 0.5}]
 
-    proof = match_export(_comparison(), exports, query, twb_xml=_twb(), now=NOW)
+    rebuild_check = match_export(_comparison(), exports, query, twb_xml=_twb(), now=NOW)
 
-    assert not proof.matched
-    assert proof.cells == 1 and len(proof.failures) == 1
+    assert not rebuild_check.matched
+    assert rebuild_check.cells == 1 and len(rebuild_check.failures) == 1
 
 
 def _rebuild_comparison() -> Comparison:
@@ -1459,11 +1634,11 @@ def test_export_cells_keeps_two_marks_that_differ_in_another_column():
     assert len(cells) == 2
     # Teacher splits the mark but no dim carries it, so the match refuses the
     # pair rather than compare either row.
-    proof = match_export(
+    rebuild_check = match_export(
         comparison, cells, [{"school": "A", "value": 1}], twb_xml=_twb(), now=NOW
     )
-    assert not proof.matched
-    assert proof.failures == ["school=A: more than 1 export row"]
+    assert not rebuild_check.matched
+    assert rebuild_check.failures == ["school=A: more than 1 export row"]
 
 
 _SHELF_TWB = """<?xml version='1.0' encoding='utf-8' ?>

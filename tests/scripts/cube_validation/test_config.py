@@ -215,9 +215,9 @@ def test_error_names_the_file(tmp_path):
 
 def test_write_rebuild_check_changes_only_that_comparison(tmp_path):
     path = _write(tmp_path, EXAMPLE)
-    proof = {"fingerprint": "f00", "cells": 12, "matched_at": "2026-10-27"}
+    rebuild_check = {"fingerprint": "f00", "cells": 12, "matched_at": "2026-10-27"}
 
-    write_rebuild_check(path, "ada-y1-region", proof)
+    write_rebuild_check(path, "ada-y1-region", rebuild_check)
 
     text = path.read_text()
     assert text == EXAMPLE.replace(
@@ -287,7 +287,7 @@ def test_time_dimension_is_optional_without_rows(tmp_path):
     assert cfg.comparisons[0].rows is None
 
 
-def test_proof_keeps_workbook_updated_at(tmp_path):
+def test_rebuild_check_keeps_workbook_updated_at(tmp_path):
     path = _write(tmp_path, EXAMPLE)
     write_rebuild_check(
         path,
@@ -302,15 +302,15 @@ def test_proof_keeps_workbook_updated_at(tmp_path):
         },
     )
 
-    proof = load_view_config(path).comparisons[0].rebuild_check
+    rebuild_check = load_view_config(path).comparisons[0].rebuild_check
 
-    assert proof is not None
-    assert proof.workbook_updated_at == "2026-10-20T09:00:00+00:00"
-    assert proof.sheet_query_fingerprint == "p00"
-    assert proof.cuts == ["{}", '{"Region": "Miami"}']
+    assert rebuild_check is not None
+    assert rebuild_check.workbook_updated_at == "2026-10-20T09:00:00+00:00"
+    assert rebuild_check.sheet_query_fingerprint == "p00"
+    assert rebuild_check.cuts == ["{}", '{"Region": "Miami"}']
 
 
-def test_proof_keeps_totals_skipped(tmp_path):
+def test_rebuild_check_keeps_totals_skipped(tmp_path):
     path = _write(tmp_path, EXAMPLE)
     write_rebuild_check(
         path,
@@ -318,9 +318,9 @@ def test_proof_keeps_totals_skipped(tmp_path):
         {"fingerprint": "f", "cells": 1, "matched_at": "x", "totals_skipped": 2},
     )
 
-    proof = load_view_config(path).comparisons[0].rebuild_check
+    rebuild_check = load_view_config(path).comparisons[0].rebuild_check
 
-    assert proof is not None and proof.totals_skipped == 2
+    assert rebuild_check is not None and rebuild_check.totals_skipped == 2
 
 
 def test_negative_totals_skipped_is_refused(tmp_path):
@@ -335,16 +335,16 @@ def test_negative_totals_skipped_is_refused(tmp_path):
         load_view_config(path)
 
 
-def test_proof_without_cuts_reads_as_unknown(tmp_path):
+def test_rebuild_check_without_cuts_reads_as_unknown(tmp_path):
     path = _write(tmp_path, EXAMPLE)
     write_rebuild_check(
         path, "ada-y1-region", {"fingerprint": "f", "cells": 1, "matched_at": "x"}
     )
 
-    proof = load_view_config(path).comparisons[0].rebuild_check
+    rebuild_check = load_view_config(path).comparisons[0].rebuild_check
 
-    assert proof is not None and proof.cuts is None
-    assert proof.totals_skipped is None
+    assert rebuild_check is not None and rebuild_check.cuts is None
+    assert rebuild_check.totals_skipped is None
 
 
 def test_also_facts_load_as_listed(tmp_path):
@@ -521,8 +521,8 @@ def test_split_rows_takes_only_known_modes(tmp_path):
         load_view_config(_write(tmp_path, text))
 
 
-def test_proof_reads_missing_cuts_and_filters(tmp_path):
-    proof = """\
+def test_rebuild_check_reads_missing_cuts_and_filters(tmp_path):
+    rebuild_check = """\
     rebuild_check:
       fingerprint: f
       cells: 3
@@ -535,7 +535,7 @@ def test_proof_reads_missing_cuts_and_filters(tmp_path):
       missing_columns:
         Enroll Status: enroll_status
 """
-    text = EXAMPLE.replace("    rebuild_check: null\n", proof)
+    text = EXAMPLE.replace("    rebuild_check: null\n", rebuild_check)
     p = load_view_config(_write(tmp_path, text)).comparisons[0].rebuild_check
     assert p.filter_notes == {"Grade Copy": "copy of Grade"}
     assert p.missing_columns == {"Enroll Status": "enroll_status"}
@@ -837,6 +837,40 @@ def test_a_formula_decision_loads_its_recorded_check_cells(tmp_path):
 def test_a_bad_recorded_check_cell_count_is_refused(tmp_path, decision, value, match):
     text = EXAMPLE + decision.replace("def }", f"def, matched_only: {value} }}")
     with pytest.raises(ConfigError, match=rf"fingerprints\.matched_only: {match}"):
+        load_view_config(_write(tmp_path, text))
+
+
+CELLS_HASH = "0123456789abcdef" * 4
+
+
+def test_a_formula_decision_loads_its_recorded_cells(tmp_path):
+    text = EXAMPLE + FORMULA_DECISION.replace(
+        "def }", f"def, formula_cells: {CELLS_HASH} }}"
+    )
+    (*_, d) = load_view_config(_write(tmp_path, text)).decisions
+    assert d.fingerprints["formula_cells"] == CELLS_HASH
+
+
+@pytest.mark.parametrize(
+    ("decision", "value", "match"),
+    [
+        (FORMULA_DECISION, CELLS_HASH[:-1], "must be a sha256 hex digest"),
+        (FORMULA_DECISION, CELLS_HASH.upper(), "must be a sha256 hex digest"),
+        (FORMULA_DECISION, "'" + "g" * 64 + "'", "must be a sha256 hex digest"),
+        (FORMULA_DECISION, "Newark", "must be a sha256 hex digest"),
+        (FORMULA_DECISION, "[a]", "must be a sha256 hex digest"),
+        (
+            FORMULA_DECISION.replace(
+                "formula: true", "group: { column: x, values: ['1'] }"
+            ),
+            CELLS_HASH,
+            "belongs to a formula decision",
+        ),
+    ],
+)
+def test_a_bad_recorded_cells_hash_is_refused(tmp_path, decision, value, match):
+    text = EXAMPLE + decision.replace("def }", f"def, formula_cells: {value} }}")
+    with pytest.raises(ConfigError, match=rf"fingerprints\.formula_cells: {match}"):
         load_view_config(_write(tmp_path, text))
 
 

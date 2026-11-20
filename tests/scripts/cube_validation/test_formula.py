@@ -2,6 +2,7 @@ import json
 import re
 from dataclasses import replace
 from datetime import date, datetime, timezone
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -25,7 +26,7 @@ from cube_validation.decisions import Applied
 from cube_validation.moment import Build
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation.reconcile import Group
+from cube_validation.reconcile import Group, joined_ctes
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.report import RunResult
@@ -216,13 +217,74 @@ def test_matched_keys_key_alike_on_the_rebuilt_join_and_the_saved_rows(duck):
     _tables(duck, [], [(1, "a", 1, "X")])
     sql = formula.matched_ctes(CFG, COMPARISON, VALUED, SAVED)
     _save(duck)
-    (other,) = duck.rows(f"{sql}\nSELECT __key FROM __other")
+    (other,) = duck.rows(
+        f"{sql}\nSELECT __key FROM __joined_keys WHERE NOT __all_match"
+    )
     saved = duck.rows(
         f"SELECT {formula.key_sql(['__gd0', '__gd1'], [False, False])} AS k "
         "FROM saved_t"
     )
     assert other["__key"] is not None
     assert [r["k"] for r in saved] == [other["__key"]]
+
+
+def _two_read_matched_sql(cfg, comparison, sides, saved_table) -> str:
+    """The matched keys as 2 reads of `joined` build them: the keys with a
+    `match` row, less the keys with any other row and the saved keys."""
+    n = len(comparison.rows.grain)
+    args, kwargs = pipeline.reconcile_args(cfg, comparison, sides)
+    ctes, _ = joined_ctes(*args, keys=True, moved=True, **kwargs)
+    joined_key = formula._keyed([f"__k{i}" for i in range(n)])
+    plain = [False] * n
+    dash_key = formula.key_sql([f"__gd{i}" for i in range(n)], plain)
+    cube_key = formula.key_sql([f"__gc{i}" for i in range(n)], plain)
+    matched = "bucket = 'match' AND __cin IS NOT NULL AND __din IS NOT NULL"
+    return (
+        f"{ctes},\n"
+        f"__match AS (SELECT {joined_key} AS __key FROM joined WHERE {matched}),\n"
+        f"__other AS (SELECT {joined_key} AS __key FROM joined "
+        f"WHERE NOT ({matched})),\n"
+        f"__saved AS (SELECT {dash_key} AS __key FROM {saved_table} "
+        "WHERE bucket != 'cube_only' UNION DISTINCT "
+        f"SELECT {cube_key} AS __key FROM {saved_table} "
+        "WHERE bucket != 'dashboard_only'),\n"
+        "__matched AS (SELECT __key FROM __match WHERE __key IS NOT NULL "
+        "EXCEPT DISTINCT SELECT __key FROM __other "
+        "EXCEPT DISTINCT SELECT __key FROM __saved)\n"
+        "SELECT __key FROM __matched"
+    )
+
+
+def test_matched_keys_of_one_read_equal_those_of_two_reads(duck):
+    # 1 matches; 2 matches with NULL scores on both sides; 3 is NULL on the
+    # dashboard only; 4 holds a matching and a differing copy; Cube alone
+    # holds 5 and the dashboard alone 6; 7 matches twice; a NULL student
+    # matches. Saved, then 8 joins both sides, so only the saved rows drop
+    # it, and 9, which matched once, gains a differing copy on each side, so
+    # only the rebuilt join holds it unmatched: one matching row is not enough.
+    cube = [(1, "a", 10, "X"), (2, "a", None, "X"), (3, "a", 10, "X"),
+            (4, "a", 10, "X"), (4, "a", 10, "X"), (5, "a", 10, "X"),
+            (7, "a", 10, "X"), (7, "a", 10, "X"), (None, "a", 10, "X"),
+            (8, "a", 10, "X"), (9, "a", 10, "X")]  # fmt: skip
+    dash = [(1, "a", 10, "X"), (2, "a", None, "X"), (3, "a", None, "X"),
+            (4, "a", 10, "X"), (4, "a", 99, "X"), (6, "a", 10, "X"),
+            (7, "a", 10, "X"), (7, "a", 10, "X"), (None, "a", 10, "X"),
+            (9, "a", 10, "X")]  # fmt: skip
+    _tables(duck, cube, dash)
+    _save(duck)
+    _tables(duck, [*cube, (9, "a", 20, "X")],
+            [*dash, (8, "a", 10, "X"), (9, "a", 30, "X")])  # fmt: skip
+
+    old = duck.rows(_two_read_matched_sql(CFG, COMPARISON, VALUED, SAVED))
+    new = duck.rows(
+        formula.matched_ctes(CFG, COMPARISON, VALUED, SAVED)
+        + "\nSELECT __key FROM __matched"
+    )
+
+    def students(rows):
+        return sorted(int(float(json.loads(r["__key"])["k0"])) for r in rows)
+
+    assert students(new) == students(old) == [1, 2, 7]
 
 
 # --- the dashboard side -------------------------------------------------------
@@ -1703,6 +1765,45 @@ def test_compose_ignores_a_check_of_another_result(tmp_path):
     # A run with no check that counts saves exactly as before the check.
     assert run_json.read_text() == plain_json.read_text()
     assert "matched_only" not in plain_json.read_text()
+
+
+# The run.json of the result `_keep_two_cells` keeps with no formula check,
+# pinned byte for byte: a run with no check saves no `origin`. Its `.txt` suffix
+# keeps the commit hook's JSON formatter from rewriting the pinned bytes.
+NO_CHECK_RUN = Path(__file__).parent / "fixtures" / "run_no_formula_check.json.txt"
+
+
+def _keep_two_cells(cache, check=None):
+    """`_keep_result` plus a differing cell no unmatched row lies in."""
+    held = _keep_result(cache, check)
+    kept = latest.read_all(held, CFG.fact)["mastery"]
+    free = pipeline.Cell(
+        "mastery", "{}", "abbreviation=Y", 0.8, 0.3, "differs", (("abbreviation", "Y"),)
+    )
+    sides = pipeline.Sides.from_json(kept.data)
+    sides.cells.append(free)
+    data = {**kept.data, **sides.to_json()}
+    latest.write(held, "mastery", replace(kept, data=data))
+    return held
+
+
+def test_compose_tags_the_cells_the_formula_check_filed(tmp_path):
+    cache = tmp_path / "cache"
+    _, run_json = _compose(cache, _keep_two_cells(cache, _checked()))
+
+    cells = {c["key"]: c for c in json.loads(run_json.read_text())["diff_cells"]}
+    assert cells["abbreviation=X"]["kind"] == "formula"
+    assert cells["abbreviation=X"]["origin"] == "formula check"
+    assert cells["abbreviation=Y"]["kind"] == "formula"
+    assert "origin" not in cells["abbreviation=Y"]
+
+
+def test_a_run_with_no_formula_check_saves_as_before_origins(tmp_path):
+    cache = tmp_path / "cache"
+    _, run_json = _compose(cache, _keep_two_cells(cache))
+
+    assert run_json.read_bytes() == NO_CHECK_RUN.read_bytes()
+    assert '"origin"' not in run_json.read_text()
 
 
 @pytest.mark.parametrize(

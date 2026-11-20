@@ -53,4 +53,5 @@ Cloud:
 | [SFTP Integration](sftp-integration.md)                     | Adding a new SFTP file drop using `init_sftp_integration.py`                                                                         |
 | [Claude Code & Superpowers](superpowers.md)                 | Using Claude Code's structured workflows for features, fixes, and refactors                                                          |
 | [Cube](cube.md)                                             | Setting up Cube Cloud and running Cube locally                                                                                       |
+| [Cube Validation](cube-validation.md)                       | Checking that a Cube measure matches its Tableau dashboard, and answering the owner's review                                         |
 | [Tableau Permissions (People Data)](tableau-permissions.md) | Developer reference for row-level security on the people-data dashboards — who sees what, the exact group names, and how it is built |

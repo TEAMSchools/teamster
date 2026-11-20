@@ -383,8 +383,8 @@ SORTED = {
 DEFS = {"enrollment": {"enrollment": {"dashboard": "codes ET, T", "cube": "codes T%"}}}
 
 
-def _questions(run, cfg=None, triage=SORTED):
-    return questions_json([run], [cfg or _cfg()], DEFS, triage, START)
+def _questions(run, cfg=None, sorts=SORTED):
+    return questions_json([run], [cfg or _cfg()], DEFS, sorts, START)
 
 
 # `SORTED` is bound again further down, for the decisions-in tests.
@@ -413,9 +413,9 @@ def test_a_group_question_bounds_its_rows_beside_hidden_evidence(rows, evidence,
         "stub": {"comparison": "enrollment",
                  "group": {"column": "region", "values": ["Newark"]}},
     }  # fmt: skip
-    triage = {"enrollment": {"view": "enrollment", "items": [item]}}
+    sorts = {"enrollment": {"view": "enrollment", "items": [item]}}
 
-    (q,) = _questions(run, triage=triage)
+    (q,) = _questions(run, sorts=sorts)
     body = render_review_issue("Registrar", [run], questions=[q])
 
     assert f", {total}, " in q["counts"][0]
@@ -441,9 +441,9 @@ def test_unsettled_items_are_not_in_the_questions_json():
         "candidates": [],
     }
     items = [*OWNER_SORTED["enrollment"]["items"], left]
-    triage = {"enrollment": {**OWNER_SORTED["enrollment"], "items": items}}
+    sorts = {"enrollment": {**OWNER_SORTED["enrollment"], "items": items}}
 
-    questions = _questions(run, triage=triage)
+    questions = _questions(run, sorts=sorts)
 
     assert "UNSETTLED" not in json.dumps(questions)
     assert [q["id"] for q in questions] == ["Q1", "Q2"]
@@ -522,7 +522,7 @@ def test_questions_json_hides_what_the_markdown_hides():
 
 def test_question_without_example_cell_says_find_one_locally():
     run = _owner_run([_cell(n=9)])
-    questions = _questions(run, triage={})
+    questions = _questions(run, sorts={})
 
     assert questions[0]["hand_checks"] == [
         {
@@ -723,6 +723,25 @@ def test_a_formula_decision_records_the_cells_the_check_filed():
     assert none["fingerprints"] == FPS["ada"]
 
 
+def test_a_formula_decision_records_which_cells_it_covers():
+    entry = {"id": "f", "call": "domain_owner", "reason": "r", "item": "ada:formula"}
+    digest = "ab" * 32
+
+    (f,) = approved_decisions(
+        [entry], SORTED, FPS, formula_cells={"ada": 3},
+        formula_hashes={"ada": digest, "other": "cd" * 32},
+    )  # fmt: skip
+    (team,) = approved_decisions(
+        [{"id": "t", "call": "deliberate", "reason": "r", "item": "cut:Team"}],
+        SORTED, FPS, formula_hashes={"ada": digest},
+    )  # fmt: skip
+
+    assert f["fingerprints"] == {
+        **FPS["ada"], "matched_only": "3", "formula_cells": digest,
+    }  # fmt: skip
+    assert "fingerprints" not in team
+
+
 def test_a_cell_set_takes_no_decision():
     entry = {"id": "x", "call": "deliberate", "reason": "r", "item": "ada:cells"}
 
@@ -741,14 +760,14 @@ def test_a_formula_decision_covers_only_its_comparison_s_formula_item():
 
 
 def test_a_missing_filter_in_cause_is_decided_across_the_view():
-    # As triage writes it: a comparison it was found on, and the sheet filter
+    # As the sort writes it: a comparison it was found on, and the sheet filter
     # as its explained cause.
     item = {
         "id": "filter:Exclude Future", "kind": "gap", "suggestion": "cause",
         "comparison": "ada", "stub": {"missing_filter": "Exclude Future"},
         "cause": [{"side": "dashboard", "step": "sheet filter Exclude Future",
                    "label": "sheet filter Exclude Future", "n_rows": None}],
-        "proof": {"kind": "workbook"},
+        "explanation": {"kind": "workbook"},
     }  # fmt: skip
     approved = [{"id": "future", "call": "deliberate", "reason": "a display filter",
                  "item": item["id"]}]  # fmt: skip
@@ -819,7 +838,7 @@ def test_approved_decisions_re_approve_a_comparison_decision_on_new_sql():
 
 
 @pytest.mark.parametrize(
-    "entry, triage, match",
+    "entry, loaded, match",
     [
         ({**WHOLE, "call": "domain_owner"}, UNEXPLAINED,
          "a comparison decision is deliberate"),
@@ -834,9 +853,9 @@ def test_approved_decisions_re_approve_a_comparison_decision_on_new_sql():
          "the sort lists no open row group of 'ada'"),
     ],
 )  # fmt: skip
-def test_approved_decisions_refuse_a_bad_comparison_decision(entry, triage, match):
+def test_approved_decisions_refuse_a_bad_comparison_decision(entry, loaded, match):
     with pytest.raises(AnswerError, match=match):
-        approved_decisions([entry], triage, {**FPS, "nope": {}})
+        approved_decisions([entry], loaded, {**FPS, "nope": {}})
 
 
 def test_approved_decisions_refuse_a_taken_id_for_a_comparison_decision():
@@ -886,11 +905,11 @@ def _cause_entry(label, side="cube", n_rows=20):
     return {"side": side, "step": "b", "label": label, "n_rows": n_rows}
 
 
-def _cause_item(item_id, *causes, proof=EXPLANATION, key=""):
+def _cause_item(item_id, *causes, explanation=EXPLANATION, key=""):
     return {"id": item_id, "key": key, "kind": "group", "comparison": "enrollment",
             "label": "l", "stub": {"comparison": "enrollment"},
             "suggestion": "cause", "evidence": ["proof line"], "candidates": [],
-            "cause": list(causes), "proof": proof}  # fmt: skip
+            "cause": list(causes), "explanation": explanation}  # fmt: skip
 
 
 def _ok(id, item, call="domain_owner", reason="r", cause=""):
@@ -898,15 +917,15 @@ def _ok(id, item, call="domain_owner", reason="r", cause=""):
     return {**out, "cause": cause} if cause else out
 
 
-def _existing(id="no-section", label=NO_SECTION, call="domain_owner", proof="p1",
+def _existing(id="no-section", label=NO_SECTION, call="domain_owner", explanation="p1",
               cube="c1", **kw):  # fmt: skip
     return Decision(id, "enrollment", call, "kept reason",
                     cause={"side": "cube", "label": label},
-                    fingerprints={"cube": cube, "dashboard": "d1", "explanation": proof},
+                    fingerprints={"cube": cube, "dashboard": "d1", "explanation": explanation},
                     **kw)  # fmt: skip
 
 
-def test_a_proven_group_becomes_a_decision_on_its_cause():
+def test_an_explained_group_becomes_a_decision_on_its_cause():
     item = _cause_item("k1", _cause_entry(LATE))
 
     (decision,) = approved_decisions([_ok("late", "k1")], {"items": [item]}, CAUSE_FPS)
@@ -943,9 +962,9 @@ def test_a_cause_already_decided_writes_nothing_more():
     )
 
 
-def test_a_cause_decision_on_a_changed_proof_is_re_approved():
+def test_a_cause_decision_on_a_changed_explanation_is_re_approved():
     item = _cause_item("k2", _cause_entry(NO_SECTION))
-    stale = _existing(proof="old")
+    stale = _existing(explanation="old")
 
     (decision,) = approved_decisions(
         [_ok("new", "k2", call="fix_cube", reason="fresh")], {"items": [item]},
@@ -1015,7 +1034,7 @@ def test_a_split_group_is_decided_only_once_every_cause_is():
     [
         (_existing(call="fix_cube", task="#1"), {}, "decided fix_cube"),
         (
-            _existing(proof="old", answer="fix_cube"),
+            _existing(explanation="old", answer="fix_cube"),
             {},
             "answered.*explanation changed",
         ),
@@ -1035,13 +1054,13 @@ def test_cause_approvals_refuse_bad_batches():
     one = _cause_item("k1", _cause_entry(NO_SECTION))
     two = _cause_item("k2", _cause_entry(NO_SECTION))
     other_proof = _cause_item("k3", _cause_entry(NO_SECTION),
-                              proof={**EXPLANATION, "path": "explanations/v/x.sql",
+                              explanation={**EXPLANATION, "path": "explanations/v/x.sql",
                                      "fingerprint": "p9"})  # fmt: skip
     blank = _cause_item("k4", _cause_entry(""))
     split = _cause_item("k5", _cause_entry(NO_SECTION), _cause_entry(LATE))
-    unproven = {**_cause_item("k6", _cause_entry(NO_SECTION)), "proof": None}
+    unexplained = {**_cause_item("k6", _cause_entry(NO_SECTION)), "explanation": None}
     waiting = {**_cause_item("k7"), "suggestion": "investigate", "cause": None,
-               "proof": None}  # fmt: skip
+               "explanation": None}  # fmt: skip
 
     for approved, items, match in [
         ([_ok("a", "k1"), _ok("b", "k2", call="deliberate")], [one, two], "domain_owner"),
@@ -1051,7 +1070,7 @@ def test_cause_approvals_refuse_bad_batches():
         ([_ok("a", "k4")], [blank], "no words"),
         ([_ok("a", "k5")], [split], "2 causes; approve each"),
         ([_ok("a", "k5", cause="nothing like it")], [split], "has no cause"),
-        ([_ok("a", "k6")], [unproven], "no explanation decides"),
+        ([_ok("a", "k6")], [unexplained], "no explanation decides"),
         ([_ok("a", "k7")], [waiting], "still in `investigate`"),
     ]:  # fmt: skip
         with pytest.raises(AnswerError, match=match):
@@ -1094,7 +1113,7 @@ def _ddi():
     return groups, items
 
 
-def test_review_asks_one_question_per_cause_not_per_school():
+def test_ask_owner_asks_one_question_per_cause_not_per_school():
     groups, items = _ddi()
     approved = [
         _ok(f"school-{i}", item["id"], reason=f"Which rule holds at school {i}?")
@@ -1353,7 +1372,7 @@ def _cause_cfg():
     return ViewConfig(view="enrollment", fact="d.t", comparisons=[cmp])
 
 
-def _ask(proofs):
+def _ask(explanations):
     decision = Decision(
         id="c1",
         comparison="enrollment",
@@ -1361,7 +1380,7 @@ def _ask(proofs):
         reason="r",
         cause={"side": "dashboard", "label": "the sheet drops WPP"},
     )
-    return CauseAsk(decision, [], 30, "", proofs)
+    return CauseAsk(decision, [], 30, "", explanations)
 
 
 def _stored_explanation(tmp_path, reproduce):
@@ -1376,7 +1395,7 @@ def _stored_explanation(tmp_path, reproduce):
     return "explanations/enrollment/enrollment__cube_only.sql"
 
 
-def test_a_cause_reproduces_through_cube_a_count_query_and_the_proof(tmp_path):
+def test_a_cause_reproduces_through_cube_a_count_query_and_the_explanation(tmp_path):
     path = _stored_explanation(tmp_path, {"C1": LIVE})
     source = ExplanationSource(
         "src/cube/validation/e.yml", tmp_path, "https://x/blob/b/dir"
@@ -1391,21 +1410,21 @@ def test_a_cause_reproduces_through_cube_a_count_query_and_the_proof(tmp_path):
     assert query["measures"] == ["enrollment.student_count"]
     assert {"member": "enrollment.grade_level", "operator": "equals",
             "values": ["7"]} in query["filters"]  # fmt: skip
-    (proof,) = part["explanations"]
-    assert proof["reproduce"] == LIVE
-    assert proof["explain"] == (
+    (explanation,) = part["explanations"]
+    assert explanation["reproduce"] == LIVE
+    assert explanation["explain"] == (
         "explain src/cube/validation/e.yml --comparison enrollment --bucket cube_only"
     )
-    assert proof["after"] == [
+    assert explanation["after"] == [
         "compare src/cube/validation/e.yml --all",
         "sort src/cube/validation/e.yml",
     ]
-    assert proof["url"] == f"https://x/blob/b/dir/{path}"
+    assert explanation["url"] == f"https://x/blob/b/dir/{path}"
 
     block = merged_reproduce([part])
     assert block["queries"] == [{"bucket": "C1", "sql": LIVE}]
     assert block["explanations"] == [
-        {"bucket": "C1", "query": 0, "path": path, "explain": [proof["explain"]]},
+        {"bucket": "C1", "query": 0, "path": path, "explain": [explanation["explain"]]},
     ]  # fmt: skip
     assert block["blob"] == "https://x/blob/b/dir"
     text = "\n".join(_reproduce_lines("Q1", block))
@@ -1447,7 +1466,9 @@ def test_a_cause_with_no_reproduce_block_says_so(tmp_path):
     assert f"- Cause `C1` in `{path}` (no count query yet)" in text
 
 
-def test_a_proof_source_links_the_branch_and_never_the_remote_s_credentials(tmp_path):
+def test_an_explanation_source_links_the_branch_and_never_the_remote_s_credentials(
+    tmp_path,
+):
     import subprocess
 
     def git(*args):
@@ -1468,7 +1489,7 @@ def test_a_proof_source_links_the_branch_and_never_the_remote_s_credentials(tmp_
     assert "secret" not in source.blob
 
 
-def test_a_proof_source_outside_git_has_no_link(tmp_path):
+def test_an_explanation_source_outside_git_has_no_link(tmp_path):
     view = tmp_path / "v.yml"
     view.write_text("")
 

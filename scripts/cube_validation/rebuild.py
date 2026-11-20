@@ -319,7 +319,7 @@ def sheet_gaps(twb_xml: str, comparison: Comparison) -> SheetGaps:
     columns: dict[str, str] = {}
     for name in cuts | filters:
         formula = (calcs.get(name) or "").strip()
-        # A group or bin is no datasource column: triage cannot value-check it.
+        # A group or bin is no datasource column: the sort cannot value-check it.
         if name not in calcs and name not in groups:
             columns[caption.get(name, name)] = name
         elif (param := _parameter_only(formula)) is not None:
@@ -387,17 +387,17 @@ def _ignored_headers(
     a column.
     """
     names = {
-        read_sheet._export_name(n)
+        read_sheet.export_name(n)
         for col in columns
         if col.get("role") == "measure"
         for n in (col.get("caption") or "", tableau.bare_name(col.get("name") or ""))
         if n
     }
-    names |= {read_sheet._export_name(c.caption) for c in calcs}
+    names |= {read_sheet.export_name(c.caption) for c in calcs}
     return {
         h
         for h in headers
-        if h not in mapping and h != value and read_sheet._export_name(h) in names
+        if h not in mapping and h != value and read_sheet.export_name(h) in names
     }
 
 
@@ -680,21 +680,21 @@ def rebuild_sheet(
             ]
 
     try:
-        proof = tableau.match_export(comparison, exports, probes, twb_xml=twb, now=now)
+        check = tableau.match_export(comparison, exports, probes, twb_xml=twb, now=now)
     except ValueError as exc:
         raise Refusal(f"comparison {comparison.id!r}: {exc}") from exc
-    if proof.blanks_skipped:
+    if check.blanks_skipped:
         print(
-            f"Skipped {proof.blanks_skipped} blank cells "
+            f"Skipped {check.blanks_skipped} blank cells "
             "(blank in the export, NULL in the sheet query)"
         )
     for cut in browser:
         print(f"Check in the browser: {cut_label(cut)}")
-    if not proof.matched:
+    if not check.matched:
         print(
-            f"Rebuild check failed for {comparison.id} ({proof.cells} cells matched):"
+            f"Rebuild check failed for {comparison.id} ({check.cells} cells matched):"
         )
-        _print_failures(comparison.id, proof.failures, failures_dir)
+        _print_failures(comparison.id, check.failures, failures_dir)
         raise Refusal(f"comparison {comparison.id!r} did not match; nothing written")
 
     # The copy's shelves: a dropped field is no longer a missing cut.
@@ -707,9 +707,9 @@ def rebuild_sheet(
         path,
         comparison.id,
         {
-            "fingerprint": proof.fingerprint,
-            "cells": proof.cells,
-            "matched_at": proof.matched_at.isoformat(),
+            "fingerprint": check.fingerprint,
+            "cells": check.cells,
+            "matched_at": check.matched_at.isoformat(),
             "workbook_updated_at": tbl.workbook_updated(
                 comparison.workbook or ""
             ).isoformat(),
@@ -740,9 +740,9 @@ def rebuild_sheet(
         },
     )
     print(
-        f"Matched {comparison.id}: {proof.cells} cells; wrote rebuild_check to {path}."
+        f"Matched {comparison.id}: {check.cells} cells; wrote rebuild_check to {path}."
     )
-    return proof
+    return check
 
 
 FAILURE_SAMPLES = 5
@@ -871,13 +871,13 @@ def workbook_check(
     workbooks = WorkbookCache(tbl) if workbooks is None else workbooks
     stale: list[str] = []
     for comparison in comparisons:
-        proof = comparison.rebuild_check
-        if not comparison.workbook or proof is None:
+        check = comparison.rebuild_check
+        if not comparison.workbook or check is None:
             continue
         try:
             updated = workbooks.updated(comparison.workbook)
-            republished = bool(proof.workbook_updated_at) and updated > (
-                datetime.fromisoformat(proof.workbook_updated_at or "")
+            republished = bool(check.workbook_updated_at) and updated > (
+                datetime.fromisoformat(check.workbook_updated_at or "")
             )
             twb = workbooks.twb(comparison.workbook) if republished else ""
         except TSC.ServerResponseError as exc:
@@ -887,17 +887,17 @@ def workbook_check(
                 "try again, or re-run `rebuild-sheet` if the workbook moved"
             )
             continue
-        if not proof.workbook_updated_at:
+        if not check.workbook_updated_at:
             stale.append(
                 f"{comparison.id}: rebuild check has no workbook_updated_at; "
                 "re-run `rebuild-sheet`"
             )
             continue
-        if updated <= datetime.fromisoformat(proof.workbook_updated_at):
+        if updated <= datetime.fromisoformat(check.workbook_updated_at):
             continue
         published = (
             f"workbook published {updated.isoformat()}, after the rebuild check's "
-            f"{proof.workbook_updated_at}"
+            f"{check.workbook_updated_at}"
         )
         sheet = comparison.sheet or ""
         try:
@@ -908,18 +908,18 @@ def workbook_check(
                 f"{comparison.id}: {published}, and {exc}; re-run `rebuild-sheet`"
             )
             continue
-        if formulas != proof.fingerprint:
+        if formulas != check.fingerprint:
             stale.append(
                 f"{comparison.id}: {published}; the sheet's formulas or filters "
                 "changed; re-run `rebuild-sheet`"
             )
-        elif not proof.source_fingerprint:
+        elif not check.source_fingerprint:
             stale.append(
                 f"{comparison.id}: {published}; the sheet's formulas are unchanged, "
                 "but the rebuild check predates the datasource check; re-run "
                 "`rebuild-sheet` once"
             )
-        elif sources != proof.source_fingerprint:
+        elif sources != check.source_fingerprint:
             stale.append(
                 f"{comparison.id}: {published}; a datasource's connection or "
                 "filters changed; re-run `rebuild-sheet`"

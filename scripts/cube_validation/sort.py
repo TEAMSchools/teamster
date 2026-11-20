@@ -33,21 +33,21 @@ from . import checkpoints, decisions, latest, pipeline, results, trace
 from .bq import CostCapError, Warehouse
 from .config import Comparison, Decision, RebuildCheck, ViewConfig, mask_digits
 from .cube_client import Cube, MemberDoc, member_docs, network_schools
-from .find_field import _tokens
+from .find_field import name_tokens
 from .moment import Build, utcnow
-from .reconcile import CellDiff, Gap, Group
+from .reconcile import FORMULA_CHECK, CellDiff, Gap, Group
 from .report import (
-    _CELL_WORDS,
+    CELL_WORDS,
     CauseAsk,
     RunResult,
     Ticker,
     Unsettled,
-    _gap_line,
-    _is_identifier,
-    _shown_value,
-    _where,
+    gap_line,
+    is_identifier,
     mask,
+    name_group,
     run_stamp,
+    shown_value,
 )
 from .timetravel import PROJECT
 
@@ -71,6 +71,11 @@ FORMULA_LABEL = "differing cells hold no unmatched row"
 MATCHED_LABEL = "differing cells differ on matched rows"
 # How `sort` and `ask-owner` name a comparison the latest run skipped.
 NOT_COMPARED = "not compared"
+# The sort `sort` writes beside the run's `run.json`.
+FILE = "sort.json"
+# The name an older validator wrote it under, with items in an older shape:
+# never read, only refused.
+OLD_FILE = "triage.json"
 
 
 @dataclass(frozen=True)
@@ -89,7 +94,7 @@ class Item:
     comparison: str
     label: str
     stub: dict
-    # `_open_key`: what the item is, whichever siblings are open. An id's
+    # `open_key`: what the item is, whichever siblings are open. An id's
     # `#n` can move when a sibling closes; this cannot.
     key: str = ""
 
@@ -102,7 +107,7 @@ class Suggestion:
     a lead never picks the pile. `candidates` are the Cube members a
     missing filter or cut may map to. `cause` is, for a `cause` item, its
     causes, each `{side, step, label, n_rows}`; it is None until one is
-    explained. `proof` is what the cause rests on, typed by `kind`
+    explained. `explanation` is what the cause rests on, typed by `kind`
     (`EXPLANATION_KINDS`); a stored explanation's also names its file. `evidence`
     shows exact counts; `posted` is the same lines masked for the review
     issue (`report.shown_counts`), or None when it equals `evidence`. A
@@ -115,7 +120,7 @@ class Suggestion:
     evidence: tuple[str, ...]
     candidates: tuple[str, ...] = ()
     cause: list[dict] | None = None
-    proof: dict | None = None
+    explanation: dict | None = None
     posted: tuple[str, ...] | None = None
     # `mark_decided`'s marks: each cause's deciding decision id, and whether
     # every cause has one. None on an item no cause decision decides.
@@ -151,7 +156,7 @@ def _group_label(g: Group) -> str:
     shows them.
     """
     return (
-        f"{_where(g, lambda column, value: _shown_value(g, column, value))} in "
+        f"{name_group(g, lambda column, value: shown_value(g, column, value))} in "
         f"{g.comparison_id} ({g.bucket}): {g.n_rows} rows, "
         f"{g.n_students} students"
     )
@@ -176,7 +181,7 @@ def _gap_item(g: Gap) -> Item:
         id=f"{g.kind}:{g.field}",
         kind="gap",
         comparison=g.comparisons[0] if g.comparisons else "",
-        label=_gap_line(g),
+        label=gap_line(g),
         stub={key: g.field},
     )
 
@@ -189,7 +194,7 @@ def _group_ids(groups: list[Group]) -> list[str]:
     """
     base = []
     for g in groups:
-        shown = ",".join(f"{c}={_shown_value(g, c, v)}" for c, v in g.dims)
+        shown = ",".join(f"{c}={shown_value(g, c, v)}" for c, v in g.dims)
         base.append(f"{g.comparison_id}:{shown or 'all'}")
     ids = list(base)
     for name in dict.fromkeys(base):
@@ -201,7 +206,7 @@ def _group_ids(groups: list[Group]) -> list[str]:
     return ids
 
 
-def _entries(run: RunResult) -> list[tuple[Item, Group | Gap | CellDiff]]:
+def open_entries(run: RunResult) -> list[tuple[Item, Group | Gap | CellDiff]]:
     """Pair each open item with the object it came from."""
     open_groups = run.applied.open
     ids = _group_ids(open_groups)
@@ -212,7 +217,7 @@ def _entries(run: RunResult) -> list[tuple[Item, Group | Gap | CellDiff]]:
     out += [(_gap_item(g), g) for g in run.applied.open_gaps]
     for diff in run.applied.open_cells:
         counts = ", ".join(
-            f"{n} {_CELL_WORDS.get(verdict, verdict)}"
+            f"{n} {CELL_WORDS.get(verdict, verdict)}"
             for verdict, n in diff.counts.items()
         )
         # A formula difference is its own item, decided by `formula: true`;
@@ -226,7 +231,7 @@ def _entries(run: RunResult) -> list[tuple[Item, Group | Gap | CellDiff]]:
             stub={"comparison": diff.comparison_id, diff.kind: True},
         )
         out.append((item, diff))
-    return [(dataclasses.replace(i, key=_open_key(src)), src) for i, src in out]
+    return [(dataclasses.replace(i, key=open_key(src)), src) for i, src in out]
 
 
 def open_items(run: RunResult) -> list[Item]:
@@ -241,15 +246,15 @@ def open_items(run: RunResult) -> list[Item]:
         column of a group with 10+ students; a collision gets `#2`, `#3`.
         Stubs carry real values.
     """
-    return [item for item, _ in _entries(run)]
+    return [item for item, _ in open_entries(run)]
 
 
-def _open_key(source: Group | Gap | CellDiff) -> str:
+def open_key(source: Group | Gap | CellDiff) -> str:
     """Name an open item by what it is, not by which other items are open.
 
     An item's id and stub change as its siblings close; this does not. The
     counts are part of it, so a re-run whose rows changed at the same moment
-    re-opens a group or cell set the triage already sorted.
+    re-opens a group or cell set the sort already sorted.
     """
     if isinstance(source, Group):
         raw = [
@@ -268,13 +273,13 @@ def _open_key(source: Group | Gap | CellDiff) -> str:
 
 
 def open_keys(run: RunResult) -> list[str]:
-    """The run's open items as `_open_key`s, sorted."""
-    return sorted({_open_key(source) for _, source in _entries(run)})
+    """The run's open items as `open_key`s, sorted."""
+    return sorted({open_key(source) for _, source in open_entries(run)})
 
 
 def _moment(run: RunResult) -> dict:
-    """The run a triage sorted: its moment, and each composed comparison's,
-    so a run composed again from a newer result needs a new triage."""
+    """The run a sort sorted: its moment, and each composed comparison's,
+    so a run composed again from a newer result needs a new sort."""
     return {
         **run.moment.to_json(),
         "moments": {cid: run_stamp(m) for cid, m in run.moments.items()},
@@ -284,8 +289,8 @@ def _moment(run: RunResult) -> dict:
 def formulas_not_compared(loaded: dict) -> dict[str, dict[str, int]]:
     """Per comparison, the cells the formula check left to coverage, by reason.
 
-    Read from the triage's `formulas_not_compared`, not from item evidence,
-    which `explain` can rewrite. A triage without the key, or with a
+    Read from the sort's `formulas_not_compared`, not from item evidence,
+    which `explain` can rewrite. A sort without the key, or with a
     malformed one, gives `{}`; `formula_checked` tells that from a check that
     left nothing uncompared. A comparison whose counts are not all positive
     whole numbers is left out.
@@ -305,15 +310,15 @@ def formulas_not_compared(loaded: dict) -> dict[str, dict[str, int]]:
     }
 
 
-# How the triage's posted lines (`evidence_posted`) are masked (`report.suppress`,
+# How the sort's posted lines (`evidence_posted`) are masked (`report.suppress`,
 # `shown_counts(posted=True)`). `ask-owner` posts them as `sort` stored them,
 # so bump this whenever that masking changes: `load_sort` then refuses a
-# triage written under an older rule until `sort` runs again.
+# sort written under an older rule until `sort` runs again.
 POSTED_VERSION = 1
 
 
 def posted_current(loaded: dict) -> bool:
-    """Whether the triage's posted lines were masked by the current rule
+    """Whether the sort's posted lines were masked by the current rule
     (`POSTED_VERSION`); a missing or older version was not."""
     held = loaded.get("posted_version")
     return (
@@ -322,10 +327,10 @@ def posted_current(loaded: dict) -> bool:
 
 
 def formula_checked(loaded: dict) -> bool:
-    """Whether the triage was written by a `sort` that ran the formula check.
+    """Whether the sort was written by a `sort` that ran the formula check.
 
     `sort` always writes `formulas_not_compared`, empty when the check left
-    nothing uncompared, so a triage without it, or with a malformed one,
+    nothing uncompared, so a sort without it, or with a malformed one,
     predates the check: its cells closed by coverage alone, with nothing to
     say so.
     """
@@ -338,7 +343,7 @@ def comparisons_waiting(
     """Each confirmed comparison still with the analyst, and why, in config order.
 
     A comparison is waiting when the run skipped it (`not compared: <why>`),
-    the run holds no result of it, its result was stale when the triage ran
+    the run holds no result of it, its result was stale when the sort ran
     (`loaded["stale"]`), or its entry changed since the result
     (`latest.entry_fingerprint` against `run.entries`, offline). Nothing
     refuses over them: the rest of the view goes on.
@@ -363,7 +368,8 @@ def comparisons_waiting(
 def load_sort(
     run: RunResult, run_json: Path, *, for_explain: bool = False
 ) -> tuple[Path, dict]:
-    """Read the triage beside `run_json`, refusing one that is missing,
+    """Read the sort beside `run_json`, refusing one that is missing (an
+    older validator's `OLD_FILE` alone counts as missing, named as such),
     unreadable, of another moment, written before the formula check
     (`formula_checked`) or under an older posted masking (`posted_current`),
     or blind to an open item of `run`.
@@ -375,39 +381,39 @@ def load_sort(
             "first", and it counts no unseen items.
 
     Raises:
-        pipeline.Refusal: The triage fails one of those checks.
+        pipeline.Refusal: The sort fails one of those checks.
 
     Returns:
-        The triage's path and its contents.
+        The sort's path and its contents.
     """
-    view, found = run.view, run_json.parent / "triage.json"
+    view, found = run.view, run_json.parent / FILE
     again = f"run `sort` for {run.moment.start:%Y-%m-%d %H:%M} UTC" + (
         " first" if for_explain else ""
     )
     if not found.exists():
+        if (run_json.parent / OLD_FILE).exists():
+            raise pipeline.Refusal(
+                f"{view}: the sort of the latest run is an older validator's "
+                f"{OLD_FILE}; {again}"
+            )
         raise pipeline.Refusal(f"{view}: no sort of the latest run; {again}")
     unreadable = pipeline.Refusal(
-        f"{view}: triage.json is unreadable; "
-        + (again if for_explain else "re-run `sort`")
+        f"{view}: {FILE} is unreadable; " + (again if for_explain else "re-run `sort`")
     )
     try:
         loaded = json.loads(found.read_text())
     except json.JSONDecodeError as exc:
         raise unreadable from exc
-    other_moment = pipeline.Refusal(
-        f"{view}: triage.json is of another moment; {again}"
-    )
+    other_moment = pipeline.Refusal(f"{view}: {FILE} is of another moment; {again}")
     if not isinstance(loaded, dict):
         raise other_moment if for_explain else unreadable
     if loaded.get("moment") != _moment(run):
         raise other_moment
     if not formula_checked(loaded):
-        raise pipeline.Refusal(
-            f"{view}: the triage predates the formula check; {again}"
-        )
+        raise pipeline.Refusal(f"{view}: the sort predates the formula check; {again}")
     if not posted_current(loaded):
         raise pipeline.Refusal(
-            f"{view}: the triage's posted evidence was masked by an older rule; {again}"
+            f"{view}: the sort's posted evidence was masked by an older rule; {again}"
         )
     if unseen := len(set(open_keys(run)) - set(loaded.get("open") or [])):
         if for_explain:
@@ -428,12 +434,12 @@ def checked_sort(
     recorded: list[Decision] | None = None,
     base: Path | None = None,
 ) -> dict:
-    """Read the triage of the view's latest run, refusing one that is stale or
+    """Read the sort of the view's latest run, refusing one that is stale or
     whose explained items do not hold.
 
-    The gate is per validation file: it reads only the triage beside that view's
-    latest `run.json`. Decisions written since triage may close items; an
-    item open in the run but absent from the triage refuses. Items still in
+    The gate is per validation file: it reads only the sort beside that view's
+    latest `run.json`. Decisions written since the sort may close items; an
+    item open in the run but absent from the sort refuses. Items still in
     `investigate` do not refuse: they come back under `unsettled`, so
     `ask-owner` lists them, and `decide` decides the rest.
 
@@ -446,11 +452,11 @@ def checked_sort(
             relative to.
 
     Raises:
-        pipeline.Refusal: No triage sits beside the run, it is unreadable or of
+        pipeline.Refusal: No sort sits beside the run, it is unreadable or of
             another moment, it predates the formula check (`formula_checked`)
             or the current posted masking (`posted_current`), the run has an
-            open item the triage did not see,
-            an item sits in a pile this validator does not sort into (a triage
+            open item the sort did not see,
+            an item sits in a pile this validator does not sort into (a sort
             from an older validator), a `cause` item has no cause, a decision
             other than a comparison decision closes an item in `investigate`,
             a row group or cell set in
@@ -459,7 +465,7 @@ def checked_sort(
             one group.
 
     Returns:
-        The triage as `triage.json` holds it, with `unsettled`: its items
+        The sort as `sort.json` holds it, with `unsettled`: its items
         still in `investigate` that no decision closed.
     """
     view = run.view
@@ -483,7 +489,7 @@ def checked_sort(
     # hand-written comparison decision would pass here too: the runbook
     # forbids one, and nothing here can tell who wrote it.
     closed = {
-        _open_key(src): d for d, src in [*run.applied.quiet, *run.applied.quiet_cells]
+        open_key(src): d for d, src in [*run.applied.quiet, *run.applied.quiet_cells]
     }
     for i in items:
         d = closed.get(i.get("key", ""))
@@ -498,14 +504,16 @@ def checked_sort(
         1
         for i in items
         if i["suggestion"] == "cause"
-        and (i.get("proof") or {}).get("kind") not in EXPLANATION_KINDS
+        and (i.get("explanation") or {}).get("kind") not in EXPLANATION_KINDS
     ):
         raise pipeline.Refusal(
             f"{view}: {bare} `cause` item{'' if bare == 1 else 's'} "
             f"rest{'s' if bare == 1 else ''} on no explanation; run `explain` "
             f"on {'it' if bare == 1 else 'them'}, then re-run `sort`"
         )
-    if moved := sum(1 for i in items if _explanation_changed(i.get("proof"), base)):
+    if moved := sum(
+        1 for i in items if _explanation_changed(i.get("explanation"), base)
+    ):
         raise pipeline.Refusal(
             f"{view}: {moved} item{'' if moved == 1 else 's'} in `cause` "
             f"rest{'s' if moved == 1 else ''} on an explanation file changed "
@@ -526,16 +534,16 @@ def checked_sort(
 
 
 def unsettled(run: RunResult, loaded: dict) -> list[Unsettled]:
-    """The triage's items still in `investigate` and open, as `ask-owner`
+    """The sort's items still in `investigate` and open, as `ask-owner`
     lists them; one a comparison decision closed since is decided.
 
-    Each is matched to the run's open item by its `_open_key` for its bucket
+    Each is matched to the run's open item by its `open_key` for its bucket
     and counts; one the run no longer holds keeps its kind and no count. Read
     `loaded` through `posted_sort`, so a lead's counts are masked.
     """
-    sources = {_open_key(src): src for _, src in _entries(run)}
+    sources = {open_key(src): src for _, src in open_entries(run)}
     # A comparison decision closes groups still in `investigate`.
-    closed = {_open_key(g) for _, g in run.applied.quiet}
+    closed = {open_key(g) for _, g in run.applied.quiet}
     out = []
     for item in loaded.get("items", []):
         if item.get("suggestion") != "investigate" or item.get("key") in closed:
@@ -550,7 +558,7 @@ def unsettled(run: RunResult, loaded: dict) -> list[Unsettled]:
         }
         if isinstance(source, Group):
             hidden = tuple(
-                v for c, v in source.dims if _shown_value(source, c, v) == "<redacted>"
+                v for c, v in source.dims if shown_value(source, c, v) == "<redacted>"
             )
             out.append(
                 Unsettled(
@@ -567,7 +575,7 @@ def unsettled(run: RunResult, loaded: dict) -> list[Unsettled]:
 
 
 def _closed(loaded: dict) -> list[dict]:
-    """A copy of the triage's closed groups, which `mark_decided` marks in place."""
+    """A copy of the sort's closed groups, which `mark_decided` marks in place."""
     return copy.deepcopy(loaded.get("closed") or [])
 
 
@@ -575,18 +583,18 @@ def check_closed(run: RunResult, run_json: Path, recorded: list[Decision]) -> No
     """Refuse a cause decision that disagrees with the `group` decision closing a
     group its explanation covers.
 
-    Triage lists no closed group, so `mark_decided` on its items never sees
-    one; the triage's `closed` list (`closed_groups`) says which causes each
+    The sort lists no closed group, so `mark_decided` on its items never sees
+    one; the sort's `closed` list (`closed_groups`) says which causes each
     holds. Called wherever decisions are written, so the disagreement refuses
     then, not once the group decision goes stale and the group reopens. With
-    no readable triage of the run's moment there is nothing to compare.
+    no readable sort of the run's moment there is nothing to compare.
 
     Raises:
         pipeline.Refusal: A holding cause decision and a `group` decision on
             one closed group make different calls.
     """
     try:
-        loaded = json.loads((run_json.parent / "triage.json").read_text())
+        loaded = json.loads((run_json.parent / FILE).read_text())
     except (OSError, json.JSONDecodeError):
         loaded = None
     if isinstance(loaded, dict) and loaded.get("moment") == _moment(run):
@@ -602,7 +610,7 @@ def check_closed(run: RunResult, run_json: Path, recorded: list[Decision]) -> No
 # Why a cause decision no longer decides an item it names.
 _STALE = {
     "sql": "the SQL changed since the decision; re-approve",
-    "proof": "the explanation changed since the decision; re-approve",
+    "explanation": "the explanation changed since the decision; re-approve",
 }
 
 
@@ -612,13 +620,13 @@ DECIDABLE_EXPLANATIONS = ("query", "reconcile")
 
 def decidable(item: dict) -> bool:
     """An explained row group: cause decisions decide it, never a column value."""
-    proof = item.get("proof") or {}
+    explanation = item.get("explanation") or {}
     return (
         item.get("kind") == "group"
         and item.get("suggestion") == "cause"
         and bool(item.get("cause"))
-        and proof.get("kind") in DECIDABLE_EXPLANATIONS
-        and bool(proof.get("fingerprint"))
+        and explanation.get("kind") in DECIDABLE_EXPLANATIONS
+        and bool(explanation.get("fingerprint"))
     )
 
 
@@ -645,14 +653,14 @@ def cause_decision(
     )
 
 
-def _groups_by_key(run: RunResult) -> dict[str, Group]:
-    """The run's open groups by `_open_key`, which no sibling's closing moves."""
-    return {i.key: g for i, g in _entries(run) if isinstance(g, Group)}
+def groups_by_key(run: RunResult) -> dict[str, Group]:
+    """The run's open groups by `open_key`, which no sibling's closing moves."""
+    return {i.key: g for i, g in open_entries(run) if isinstance(g, Group)}
 
 
 def _quiet_by_key(run: RunResult) -> dict[str, Group]:
-    """The groups a `group` decision closes in the run, by `_open_key`."""
-    return {_open_key(g): g for _, g in run.applied.quiet}
+    """The groups a `group` decision closes in the run, by `open_key`."""
+    return {open_key(g): g for _, g in run.applied.quiet}
 
 
 def mark_decided(
@@ -670,9 +678,9 @@ def mark_decided(
     holds: the comparison's SQL and the item's explanation file are the ones it was
     made on. A decision that no longer holds counts as none.
 
-    A cell set in `cause` on its covering groups (`proof.kind` `cells`) gets
-    `decided`, true when every item its explanation names (`proof.groups`) is
-    decided; the groups a `group` decision closed (`proof.closed`) are
+    A cell set in `cause` on its covering groups (`explanation.kind` `cells`) gets
+    `decided`, true when every item its explanation names (`explanation.groups`) is
+    decided; the groups a `group` decision closed (`explanation.closed`) are
     decided by it.
 
     A holding cause decision on a group a `group` decision also covers,
@@ -682,9 +690,9 @@ def mark_decided(
 
     Args:
         run: The run the items come from.
-        items: The triage items, or its `closed` groups, marked in place. The
+        items: The sort items, or its `closed` groups, marked in place. The
             group is looked up among the run's open and closed groups, since
-            a re-apply since triage can close an item's.
+            a re-apply since the sort can close an item's.
         recorded: The view's decisions.
         refuse: Raise on a disagreement instead of noting it.
         note: Add why a decision does not hold, and any redundancy or
@@ -693,20 +701,20 @@ def mark_decided(
     Raises:
         pipeline.Refusal: With `refuse`, a disagreement.
     """
-    groups = {**_quiet_by_key(run), **_groups_by_key(run)}
+    groups = {**_quiet_by_key(run), **groups_by_key(run)}
     by_group = [d for d in recorded if (d.group or d.all_groups) and not d.cause]
     for item in items:
         if not decidable(item):
             continue
         current = run.fingerprints.get(item["comparison"]) or {}
-        proof = item["proof"].get("fingerprint", "")
+        explanation = item["explanation"].get("fingerprint", "")
         found: dict[str, str | None] = {}
         held: list[Decision] = []
         lines: list[str] = []
         for c in item["cause"]:
             key = cause_key(c["side"], c["label"])
             d = cause_decision(recorded, item["comparison"], c["side"], c["label"])
-            state = decisions.cause_state(d, proof, current) if d else ""
+            state = decisions.cause_state(d, explanation, current) if d else ""
             found[key] = d.id if d and state == "holds" else None
             if d and state == "holds":
                 held.append(d)
@@ -751,9 +759,9 @@ def mark_decided(
     # After the groups, which a cell set's mark reads, wherever it is listed.
     marked = {i["id"]: i.get("decided") is True for i in items if decidable(i)}
     for item in items:
-        proof = item.get("proof") or {}
-        if item.get("suggestion") == "cause" and proof.get("kind") == "cells":
-            item["decided"] = all(marked.get(g, False) for g in proof["groups"])
+        explanation = item.get("explanation") or {}
+        if item.get("suggestion") == "cause" and explanation.get("kind") == "cells":
+            item["decided"] = all(marked.get(g, False) for g in explanation["groups"])
 
 
 def _covers_group(d: Decision, g: Group) -> bool:
@@ -761,7 +769,7 @@ def _covers_group(d: Decision, g: Group) -> bool:
     comparison, whether or not its SQL still holds."""
     if d.all_groups:
         return d.comparison == g.comparison_id
-    values = {decisions._text(v) for v in d.group.get("values") or []}
+    values = {decisions.group_text(v) for v in d.group.get("values") or []}
     return (
         d.comparison == g.comparison_id
         and g.value_of(d.group.get("column") or "") in values
@@ -782,12 +790,12 @@ def cause_asks(
     question only by its own share. With `owner` False, the cause decisions
     the analyst made with any other call instead, which `ask-owner` only reports.
     """
-    groups = _groups_by_key(run)
+    groups = groups_by_key(run)
     out = []
     for d in recorded:
         if not d.cause or d.answer or (d.call == "domain_owner") != owner:
             continue
-        mine, rows, proofs = [], 0, {}
+        mine, rows, explanations = [], 0, {}
         for item in loaded.get("items", []):
             if not decidable(item) or item.get("key", "") not in groups:
                 continue
@@ -800,38 +808,44 @@ def cause_asks(
             if causes:
                 mine.append(groups[item["key"]])
                 rows += sum(c.get("n_rows") or 0 for c in causes)
-                proof = item.get("proof") or {}
-                if proof.get("kind") == "query" and proof.get("path"):
-                    proofs |= dict.fromkeys((proof["path"], c["step"]) for c in causes)
+                explanation = item.get("explanation") or {}
+                if explanation.get("kind") == "query" and explanation.get("path"):
+                    explanations |= dict.fromkeys(
+                        (explanation["path"], c["step"]) for c in causes
+                    )
         if mine:
             out.append(
                 CauseAsk(
-                    d, mine, rows, (leads or {}).get(d.comparison, ""), tuple(proofs)
+                    d,
+                    mine,
+                    rows,
+                    (leads or {}).get(d.comparison, ""),
+                    tuple(explanations),
                 )
             )
     return out
 
 
-def _explanation_changed(proof: dict | None, base: Path | None = None) -> bool:
-    """A stored explanation's file is gone, or no longer the explanation triage ran.
+def _explanation_changed(explanation: dict | None, base: Path | None = None) -> bool:
+    """A stored explanation's file is gone, or no longer the explanation the sort ran.
 
     The recorded path is relative to the validation file's directory, `base`.
     Compared by `explain.fingerprint`, so a formatting-only edit is no change.
     """
-    if not proof or not proof.get("path"):
+    if not explanation or not explanation.get("path"):
         return False
     from . import explain
 
-    path = Path(proof["path"])
+    path = Path(explanation["path"])
     if base is not None and not path.is_absolute():
         path = base / path
-    return explain.file_fingerprint(path) != proof.get("fingerprint")
+    return explain.file_fingerprint(path) != explanation.get("fingerprint")
 
 
 def posted_sort(loaded: dict) -> dict:
-    """A triage as the review issue may quote it: each item's masked evidence.
+    """A sort as the review issue may quote it: each item's masked evidence.
 
-    `evidence` in `triage.json` shows exact counts for the analyst;
+    `evidence` in `sort.json` shows exact counts for the analyst;
     `evidence_posted` holds the same lines masked (`report.shown_counts`).
     """
     return {
@@ -846,7 +860,7 @@ def posted_sort(loaded: dict) -> dict:
 def _candidates(caption: str, docs: dict[str, MemberDoc]) -> tuple[str, ...]:
     """Name the non-measure members whose name, title or description holds the
     caption."""
-    wanted = _tokens(caption)
+    wanted = name_tokens(caption)
     if not wanted:
         return ()
     return tuple(
@@ -854,7 +868,7 @@ def _candidates(caption: str, docs: dict[str, MemberDoc]) -> tuple[str, ...]:
             name
             for name, d in docs.items()
             if d.kind != "measure"
-            and wanted <= _tokens(f"{name} {d.title} {d.description}")
+            and wanted <= name_tokens(f"{name} {d.title} {d.description}")
         )
     )
 
@@ -976,7 +990,9 @@ def _formula_evidence(
     One line per origin: cells no unmatched row lies in, and cells the formula
     check filed (`matched_only`), each count masked when posted. With the
     latter, the local evidence also names each formula cell's cut and dims
-    from `run.diff_cells`; the posted evidence never does.
+    from `run.diff_cells`, tagged with its origin; the posted evidence never
+    names a cell. A run saved without origins tags no line, since its tags
+    would not add up to `matched_only`.
     """
     matched = diff.matched_only
     free = sum(diff.counts.values()) - matched
@@ -991,13 +1007,28 @@ def _formula_evidence(
     evidence = tuple(f"{n} {tail}" for n, tail in origins if n)
     posted = tuple(f"{mask(n)} {tail}" for n, tail in origins if n)
     if matched:
-        evidence += tuple(
-            f"cell {c['cut']} {c['key']}"
+        cells = [
+            c
             for c in run.diff_cells
             if c["comparison"] == diff.comparison_id and c.get("kind") == "formula"
+        ]
+        tagged = sum(_checked_cell(c) for c in cells) == matched
+        evidence += tuple(
+            f"cell {c['cut']} {c['key']}" + (f" ({_cell_origin(c)})" if tagged else "")
+            for c in cells
         )
     cause = {**_FORMULA_CAUSE, "label": MATCHED_LABEL if matched else FORMULA_LABEL}
     return [cause], evidence, posted
+
+
+def _checked_cell(cell: dict) -> bool:
+    """Whether the formula check filed this `run.diff_cells` cell."""
+    return cell.get("origin") == FORMULA_CHECK
+
+
+def _cell_origin(cell: dict) -> str:
+    """A formula cell's origin, as its local evidence line names it."""
+    return "filed by the formula check" if _checked_cell(cell) else "no unmatched row"
 
 
 def _formula_explanation(run: RunResult, comparison: str) -> dict:
@@ -1075,7 +1106,7 @@ def suggest(
         evidence here: they have not explained a missing row.
     """
     by_id = {c.id: c for c in cfg.comparisons}
-    entries = _entries(run)
+    entries = open_entries(run)
     out = []
     for item, source in entries:
         evidence: tuple[str, ...] = ()
@@ -1084,7 +1115,7 @@ def suggest(
         call = ""
         default_call = ""
         cause: list[dict] | None = None
-        proof: dict | None = None
+        explanation: dict | None = None
         found: tuple[str, ...] = ()
         # The same lines masked, for the review issue (`posted`).
         posted: tuple[str, ...] | None = None
@@ -1122,7 +1153,7 @@ def suggest(
                     # The workbook carries it: that is the explanation. Whether
                     # Cube needs it is the owner's call on an explained step.
                     step = f"sheet {gap.kind} {caption}"
-                    call, proof = "cause", {"kind": "workbook"}
+                    call, explanation = "cause", {"kind": "workbook"}
                     cause = [
                         {
                             "side": "dashboard",
@@ -1146,7 +1177,7 @@ def suggest(
                     filtered = _filter_cause(comparison, source)
                     if filtered:
                         call = "cause"
-                        cause, evidence, posted, proof = filtered
+                        cause, evidence, posted, explanation = filtered
                     else:
                         found = (NO_FILTER,)
                 elif traced is not None:
@@ -1165,7 +1196,10 @@ def suggest(
                 # The run's own reconcile matched every row in these cells, or
                 # the formula check recomputed them on matched rows alone, so
                 # the 2 formulas differ: no explanation file is needed.
-                call, proof = "cause", _formula_explanation(run, source.comparison_id)
+                call, explanation = (
+                    "cause",
+                    _formula_explanation(run, source.comparison_id),
+                )
                 cause, evidence, posted = _formula_evidence(run, source)
 
         if not call:
@@ -1190,7 +1224,7 @@ def suggest(
                 evidence,
                 candidates,
                 cause,
-                proof,
+                explanation,
                 posted,
                 default_call=default_call,
             )
@@ -1201,7 +1235,7 @@ def suggest(
 
 # --- the printed batch -------------------------------------------------------
 
-# Items listed per suggestion; `triage.json` keeps them all.
+# Items listed per suggestion; `sort.json` keeps them all.
 BATCH_CAP = 25
 
 
@@ -1218,9 +1252,9 @@ def batch_lines(run: RunResult, found: list[Suggestion]) -> list[str]:
     The summary counts each comparison's items by suggestion and by kind, and
     its row groups by bucket. Each suggestion then lists its first
     `BATCH_CAP` items with their evidence and says how many more
-    `triage.json` holds.
+    `sort.json` holds.
     """
-    buckets = {i.id: g.bucket for i, g in _entries(run) if isinstance(g, Group)}
+    buckets = {i.id: g.bucket for i, g in open_entries(run) if isinstance(g, Group)}
     lines = ["Summary"]
     for comparison in dict.fromkeys(s.item.comparison for s in found):
         mine = [s for s in found if s.item.comparison == comparison]
@@ -1246,12 +1280,12 @@ def batch_lines(run: RunResult, found: list[Suggestion]) -> list[str]:
             if s.default_call:
                 lines.append(f"    default call: {s.default_call}")
         if len(group) > BATCH_CAP:
-            lines.append(f"  … {len(group) - BATCH_CAP:,} more in triage.json")
+            lines.append(f"  … {len(group) - BATCH_CAP:,} more in {FILE}")
     return lines
 
 
 def _as_json(s: Suggestion) -> dict:
-    """One item as `triage.json` holds it."""
+    """One item as `sort.json` holds it."""
     return {
         **dataclasses.asdict(s.item),
         "suggestion": s.suggestion,
@@ -1259,7 +1293,7 @@ def _as_json(s: Suggestion) -> dict:
         "evidence_posted": list(s.posted if s.posted is not None else s.evidence),
         "candidates": list(s.candidates),
         "cause": s.cause,
-        "proof": s.proof,
+        "explanation": s.explanation,
         "decisions": s.decisions,
         "decided": s.decided,
         "default_call": s.default_call,
@@ -1275,7 +1309,7 @@ def _from_json(d: dict) -> Suggestion:
         tuple(d["evidence"]),
         tuple(d["candidates"]),
         d["cause"],
-        d.get("proof"),
+        d.get("explanation"),
         tuple(d["evidence_posted"]),
         d.get("decisions"),
         d.get("decided"),
@@ -1287,7 +1321,7 @@ def _from_json(d: dict) -> Suggestion:
 
 # A column with more distinct values than this is a key, not a coding.
 REFERENCE_MAX_VALUES = 50
-_ID_SUFFIXES = ("_number", "_id", "_name", "_email")
+ID_SUFFIXES = ("_number", "_id", "_name", "_email")
 _SAME = "same values: map it under filters:"
 _CODING = "same field, different coding"
 _NOT_COMPARED = "not compared: identifier column"
@@ -1344,7 +1378,7 @@ def value_check(
     more than `REFERENCE_MAX_VALUES` values. A distinct-value list carries no
     group size, so values print only to the terminal, and only when both the
     member and the column are in `report._SHOWN_COLUMNS`; they never reach
-    `triage.json` or the evidence.
+    `sort.json` or the evidence.
 
     Args:
         wh: The warehouse the dashboard side reads through.
@@ -1364,8 +1398,8 @@ def value_check(
     table = _dashboard_view(cfg, column)
     if (
         member in pii
-        or member.endswith(_ID_SUFFIXES)
-        or column.endswith(_ID_SUFFIXES)
+        or member.endswith(ID_SUFFIXES)
+        or column.endswith(ID_SUFFIXES)
         or not _SQL_NAME.fullmatch(column)
         or not _TABLE.fullmatch(table)
     ):
@@ -1396,7 +1430,7 @@ def value_check(
 
     if dash == theirs:
         return _SAME
-    if not (_is_identifier(member) or _is_identifier(column)):
+    if not (is_identifier(member) or is_identifier(column)):
         print(f"  {member}: dashboard {sorted(dash)} vs Cube {sorted(theirs)}")
     return _CODING
 
@@ -1436,7 +1470,7 @@ def closed_groups(run: RunResult, ran: list, cfg: ViewConfig) -> tuple[list, lis
     """Split the explanations' runs over `with_closed(run)` into open and closed groups.
 
     Args:
-        run: The run as triage lists it.
+        run: The run as the sort lists it.
         ran: `explain.run_stored`'s runs over `with_closed(run)`.
         cfg: The view's config, for a dashboard-filtered group's filter.
 
@@ -1445,53 +1479,55 @@ def closed_groups(run: RunResult, ran: list, cfg: ViewConfig) -> tuple[list, lis
         `explain.apply_runs` reads them (a run over closed groups alone is
         dropped), and the closed groups an explanation fully explains, or a
         `dashboard_filters` entry drops, each as an item `mark_decided`
-        reads, marked `closed` and named by its `_open_key`.
+        reads, marked `closed` and named by its `open_key`.
     """
     from . import explain
 
-    open_ids = {i.key: i.id for i, g in _entries(run) if isinstance(g, Group)}
+    open_ids = {i.key: i.id for i, g in open_entries(run) if isinstance(g, Group)}
     quiet = _quiet_by_key(run)
     kept, closed = [], []
     for r in ran:
         mine = [
-            (open_ids[_open_key(g)], g) for _, g in r.items if _open_key(g) in open_ids
+            (open_ids[open_key(g)], g) for _, g in r.items if open_key(g) in open_ids
         ]
         if mine:
             found = r.found and {
-                open_ids[_open_key(g)]: r.found[i]
+                open_ids[open_key(g)]: r.found[i]
                 for i, g in r.items
-                if _open_key(g) in open_ids
+                if open_key(g) in open_ids
             }
             kept.append(dataclasses.replace(r, items=mine, found=found))
         if not r.found:
             continue
-        shut = {_open_key(g): r.found[i] for i, g in r.items if _open_key(g) in quiet}
+        shut = {open_key(g): r.found[i] for i, g in r.items if open_key(g) in quiet}
         entries = [_closed_item(quiet[k]) for k in shut]
-        explain.apply_outcomes(entries, r.proof, shut)
+        explain.apply_outcomes(entries, r.explanation, shut)
         closed += [e for e in entries if e["suggestion"] == "cause"]
     by_id = {c.id: c for c in cfg.comparisons}
     for g in quiet.values():
         if g.bucket == "dashboard_filtered" and (
             filtered := _filter_cause(by_id.get(g.comparison_id), g)
         ):
-            cause, _, _, proof = filtered
+            cause, _, _, explanation = filtered
             closed.append({**_closed_item(g), "suggestion": "cause", "cause": cause,
-                           "proof": proof})  # fmt: skip
+                           "explanation": explanation})  # fmt: skip
     # 2 explanations, or an explanation and a sheet filter, can explain one
     # closed group.
-    closed = list({json.dumps([e["key"], e["proof"]]): e for e in closed}.values())
+    closed = list(
+        {json.dumps([e["key"], e["explanation"]]): e for e in closed}.values()
+    )
     return kept, [
         {k: e[k] for k in ("id", "key", "kind", "comparison", "closed", "suggestion",
-                           "cause", "proof")}
+                           "cause", "explanation")}
         for e in closed
     ]  # fmt: skip
 
 
 def _closed_item(g: Group) -> dict:
-    key = _open_key(g)
+    key = open_key(g)
     return {"id": key, "key": key, "kind": "group", "comparison": g.comparison_id,
             "closed": True, "suggestion": "investigate", "evidence": [],
-            "evidence_posted": [], "cause": None, "proof": None}  # fmt: skip
+            "evidence_posted": [], "cause": None, "explanation": None}  # fmt: skip
 
 
 def sort_run(
@@ -1518,7 +1554,7 @@ def sort_run(
     against `max_usd` and the daily cap with the value checks. A cap or
     `trace_max_minutes` hit partway stops the trace; what it found is kept and
     the batch is still written, as it is when an explanation cannot run.
-    Prints `batch_lines`. Writes every item to `triage.json` beside that run's
+    Prints `batch_lines`. Writes every item to `sort.json` beside that run's
     `run.json`, with the run's moment, decisions fingerprint and open items
     (see `checked_sort`), each explained row group marked by the cause
     decisions that decide it (`mark_decided`): it stays in the local cache,
@@ -1527,7 +1563,7 @@ def sort_run(
     Each confirmed comparison whose result in the run is missing or stale at
     `now` (`results.stale_comparisons` over `results.composed_results`),
     whose SQL cannot be built today, or which the run skipped (`not compared:
-    <why>`), is printed and written to `triage.json` under `stale`, so
+    <why>`), is printed and written to `sort.json` under `stale`, so
     `comparisons_waiting` can name it. Such a comparison's row groups are
     neither checked for the trace nor traced: its SQL may not build today, or
     not as the run reconciled it.
@@ -1535,7 +1571,7 @@ def sort_run(
     Each explanation's outcome is kept beside `run.json` as it finishes
     (`explain_progress`), so a stopped sort skips the explanations it
     finished. With `comparisons`, only their explanations run and only their
-    row groups are traced or printed; `triage.json` still holds every item,
+    row groups are traced or printed; `sort.json` still holds every item,
     the others' from their kept explanation outcomes.
 
     Each confirmed comparison with `rows` that is not stale also gets the
@@ -1551,7 +1587,7 @@ def sort_run(
     kept check is reused as it is and a comparison with none is not checked.
     A check that cannot run, for any reason, never refuses the sort or makes
     the comparison stale: its cells stay with coverage, and the cell set's
-    evidence says why (`formula.label`), as does `triage.json` under
+    evidence says why (`formula.label`), as does `sort.json` under
     `formulas_not_compared`.
 
     `ticker` (a new one by default) prints a progress line after each
@@ -1682,7 +1718,7 @@ def sort_run(
         mark_decided(run, items, cfg.decisions, note=True)
         found = [_from_json(i) for i in items]
 
-    out = run_json.parent / "triage.json"
+    out = run_json.parent / FILE
     checkpoints.write_text(
         out,
         json.dumps(
@@ -1722,7 +1758,7 @@ def sort_run(
     return found
 
 
-def _stored_check(held: latest.Latest) -> Check | None:
+def stored_check(held: latest.Latest) -> Check | None:
     """The formula check kept beside a result, when it checked that very result.
 
     The one reading of a kept check, for `sort` to reuse it and for
@@ -1786,7 +1822,7 @@ def _formula_jobs(
         # A kept check of this version would decide its cells the same while
         # its result stands, so only a validator update runs it again (a new
         # result drops it); outside --comparison it stays as it is.
-        if (kept := _stored_check(held[c.id])) is not None and (
+        if (kept := stored_check(held[c.id])) is not None and (
             outside or kept.version == formula.CHECK_VERSION
         ):
             checks[c.id] = kept
@@ -1811,7 +1847,7 @@ def _formula_jobs(
         # One job at a time, so an error outside BigQuery (expired
         # credentials, say) stops only its own check.
         try:
-            mine = trace._dry_runs(wh, list(job.sql.values()))
+            mine = trace.dry_runs(wh, list(job.sql.values()))
         except Exception as exc:  # noqa: BLE001 - the check never stops `sort`
             print(f"Formula check of {job.comparison} not priced: {exc!r}")
             checks[job.comparison] = _fallen_back(
@@ -1864,13 +1900,16 @@ def _run_formula_jobs(
     ticker: Ticker,
 ) -> RunResult:
     """Run the priced formula checks into `checks`, keep each that ran, and
-    compose the run again when a check files a cell the run does not.
+    compose the run again when a check files a cell the run does not, or
+    one the run files without its origin.
 
     Returns:
         The run, composed again when a check filed a formula cell; else as
         given. When composing refuses or fails (the error printed), the run
-        is kept and each check just run, or not yet filed, reads
-        `formula.NOT_COMPOSED`; the kept checks stay for the next compose.
+        is kept; if a check's cell is not filed, each check just run, or not
+        yet filed, reads `formula.NOT_COMPOSED`, and the kept checks stay
+        for the next compose. A run that files every cell, only without
+        origins, keeps every check as it is and its local lines untagged.
     """
     from . import formula
 
@@ -1887,7 +1926,7 @@ def _run_formula_jobs(
             check = _fallen_back(job.stored, check)
         checks[job.comparison] = check
     filed = {
-        (c["comparison"], c["cut"], c["key"])
+        (c["comparison"], c["cut"], c["key"]): _checked_cell(c)
         for c in run.diff_cells
         if c.get("kind") == "formula"
     }
@@ -1896,14 +1935,25 @@ def _run_formula_jobs(
         for cid, check in checks.items()
         if any((cid, cut, key) not in filed for cut, key in check.formula)
     }
-    if not unfiled:
+    # Filed without its origin: a run saved without origins, composed again
+    # only so its local evidence is tagged.
+    untagged = any(
+        filed.get((cid, cut, key)) is False
+        for cid, check in checks.items()
+        for cut, key in check.formula
+    )
+    if not unfiled and not untagged:
         return run
+    what = "not filed" if unfiled else "not tagged with their origin"
     try:
         return results.recompose(cfg, cache_root, run, run_json, cube=cube)
     except pipeline.Refusal as exc:
-        print(f"Formula check: its cells are not filed: {exc}.")
+        print(f"Formula check: its cells are {what}: {exc}.")
     except Exception as exc:  # noqa: BLE001 - the checks are paid for; keep sorting
-        print(f"Formula check: its cells are not filed: {exc!r}")
+        print(f"Formula check: its cells are {what}: {exc!r}")
+    if not unfiled:
+        # The run already files every cell; only its local tags are missing.
+        return run
     for cid in just_ran | unfiled:
         check = checks[cid]
         cells = [
@@ -1935,6 +1985,6 @@ def _outside(run: RunResult, wanted: set[str] | None) -> set[tuple]:
         return set()
     return {
         trace.item_key(g)
-        for _, g in _entries(run)
+        for _, g in open_entries(run)
         if isinstance(g, Group) and g.comparison_id not in wanted
     }

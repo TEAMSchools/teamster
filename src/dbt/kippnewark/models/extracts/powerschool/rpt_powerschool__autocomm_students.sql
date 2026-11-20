@@ -19,5 +19,6 @@ select
     s_nj_stu_x__graduation_pathway_ela,
     u_studentsuserfields__studentemail,
     s_stu_x__fafsa,
+    s_nj_stu_x__pid_504_tf,
 from {{ source("kipptaf_extracts", "rpt_powerschool__autocomm_students") }}
 where code_location = '{{ project_name }}'

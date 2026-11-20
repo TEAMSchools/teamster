@@ -24,7 +24,7 @@ STATE = "run-state.json"
 DIR = "checkpoints"
 # A sort's finished explanations (`explain_progress.FILE`); cleared with the run
 # it read.
-TRIAGE_PROGRESS = "triage-progress.json"
+SORT_PROGRESS = "sort-progress.json"
 
 
 @dataclass(frozen=True)
@@ -168,8 +168,8 @@ def find_unfinished(
 
 
 def clear(folder: Path, keep_spend_of: str | None = None) -> None:
-    """Remove the folder's checkpoints, run state and triage progress; keep
-    its finished results (`run.json`, `result.md`, `triage.json`).
+    """Remove the folder's checkpoints, run state and sort progress; keep
+    its finished results (`run.json`, `result.md`, `sort.json`).
 
     With `keep_spend_of` (a fact table), what an unfinished run of that fact
     spent stays, so the run that starts here reports the true total even when
@@ -182,7 +182,7 @@ def clear(folder: Path, keep_spend_of: str | None = None) -> None:
         and state.get("fact", "") == keep_spend_of
     )
     shutil.rmtree(folder / DIR, ignore_errors=True)
-    for name in (STATE, TRIAGE_PROGRESS):
+    for name in (STATE, SORT_PROGRESS):
         (folder / name).unlink(missing_ok=True)
     if keep and state.get("spent"):
         write_json(folder / STATE, {"finished": False, "spent": state["spent"]})

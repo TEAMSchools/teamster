@@ -44,7 +44,12 @@ class Latest:
 
 
 def folder(view_dir: Path, fact: str) -> Path:
-    """Where the view's results of `fact`'s dataset are kept."""
+    """Where the view's results of `fact`'s dataset are kept.
+
+    Keyed on the dataset, and each file on the comparison id (`_file`), so
+    one comparison's results for 2 facts in one dataset share a file: each
+    write replaces the other's, and `read_all` reads only its own fact's.
+    """
     return view_dir / DIR / fact.split(".", 1)[0]
 
 
@@ -91,7 +96,8 @@ def add_formula_check(results: Path, comparison_id: str, check: dict) -> None:
     The check names the result it checked by fingerprint, so a newer result
     written over this file drops it, and one kept elsewhere never counts. With
     no result to keep it beside, it is dropped: the next `compare` writes a
-    result no older check fits.
+    result no older check fits. A result file that cannot be read is left as
+    it is and named, as `read_all` skips it, and the check is dropped.
 
     Raises:
         ValueError: The check is of another comparison.
@@ -101,9 +107,15 @@ def add_formula_check(results: Path, comparison_id: str, check: dict) -> None:
     path = _file(results, comparison_id)
     try:
         data = json.loads(path.read_text())
+        data["data"]["formula_check"] = check
     except FileNotFoundError:
         return
-    data["data"]["formula_check"] = check
+    except (OSError, ValueError, KeyError, TypeError):
+        print(
+            f"Latest result {path.name} skipped: it cannot be read, so its "
+            "formula check is not kept."
+        )
+        return
     checkpoints.write_json(path, data)
 
 

@@ -185,7 +185,7 @@ def test_split_rows_sum_adds_rows_sharing_the_mapped_dims():
     assert totals == 0 and summed == 1
 
 
-def test_split_rows_default_leaves_rows_for_the_proof_to_refuse():
+def test_split_rows_default_leaves_rows_for_the_rebuild_check_to_refuse():
     cells, _, summed = _cells("refuse")
     assert [c["region"] for c in cells] == ["Newark", "Newark", "Camden"]
     assert summed == 0
@@ -517,7 +517,7 @@ def test_sheet_shape_and_gaps_list_a_filter_on_a_code_group():
         DKI_TWB, dataclasses.replace(_comparison(), sheet="Mastery Grid")
     )
     assert "Discipline" in gaps.filters and "Discipline" in gaps.restricting
-    # A group is no datasource column, so triage gets none to value-check.
+    # A group is no datasource column, so the sort gets none to value-check.
     assert "Discipline" not in gaps.columns
 
 

@@ -132,6 +132,10 @@ class Contact(BaseModel):
     next_contact_balance: str | None = None
     total_account_balance: str | None = None
     total_contact_balance: str | None = None
+    citizenship: str | None = None
+
+    # built-in field absent from the fields endpoint, so its type is unconfirmed
+    us_citizen: bool | str | None = None
 
     school_year: SchoolYear | None = None
     prospect_entry_year: SchoolYear | None = None

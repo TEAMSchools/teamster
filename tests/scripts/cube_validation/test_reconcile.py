@@ -5,12 +5,12 @@ import pytest
 from cube_validation.config import ColumnPair, Comparison, RowSpec
 from cube_validation.reconcile import (
     Group,
-    _joined,
     _label,
     _outer_sql,
     cell_verdict,
     clauses_for,
     groups_from,
+    joined_ctes,
     reconcile_script,
     scope_filters,
     trace_sql,
@@ -372,7 +372,7 @@ def test_the_save_script_counts_exactly_as_the_reconcile(duck):
         duck.rows(statement)
 
     # The join without the saved rows' keys and grain columns counts the same.
-    ctes, group_names = _joined(*SAVE_ARGS, filters=(), moved=True)
+    ctes, group_names = joined_ctes(*SAVE_ARGS, filters=(), moved=True)
     plain = ctes + "\n" + _outer_sql(group_names, (), (), "joined")
 
     assert "-- outer" in counts

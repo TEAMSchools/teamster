@@ -27,15 +27,15 @@ def ask_owner(
 ) -> str:
     """Return the review-issue body from each view's latest saved run.
 
-    Reads only the local cache: each run and its triage (see
-    `sort.checked_sort`), matching triage items to decisions by their stubs,
+    Reads only the local cache: each run and its sort (see
+    `sort.checked_sort`), matching sort items to decisions by their stubs,
     and to cause decisions by the causes the sort explained. What is ready is
     asked; what is not settled yet (items still in `investigate`, and
     comparisons missing, stale or skipped, `sort.comparisons_waiting`) is
     counted under "Still with the analyst" and never asked; the items one by
     one go to a file beside the questions JSON (`still_file`), linked the
     same way.
-    Nothing is posted; a question with no triage evidence, a decision waiting
+    Nothing is posted; a question with no sort evidence, a decision waiting
     to be re-confirmed (asked again only once decided again), and a body near
     GitHub's cap are named on stderr.
 
@@ -55,7 +55,7 @@ def ask_owner(
 
     Raises:
         Refusal: A view has no usable saved run (see `latest_run`), or its
-            triage is missing, stale, unreadable, or has a cause decision and
+            sort is missing, stale, unreadable, or has a cause decision and
             a `group` decision disagreeing (see `sort.checked_sort`). Or
             `json_file` or the open items' file is new or changed, or its
             commit is not pushed (each is written; commit and push them, then
@@ -65,24 +65,24 @@ def ask_owner(
     runs = [run for run, _ in saved]
     # Stored explanation paths are relative to each validation file's directory.
     bases = [f.parent for f in view_files]
-    proven = {
+    sorts = {
         run.view: sort.checked_sort(run, run_json, cfg.decisions, base)
         for (run, run_json), cfg, base in zip(saved, configs, bases, strict=True)
     }
-    found = {view: sort.posted_sort(loaded) for view, loaded in proven.items()}
+    found = {view: sort.posted_sort(loaded) for view, loaded in sorts.items()}
     unsettled = [u for run in runs for u in sort.unsettled(run, found[run.view])]
     still = report.still_with_analyst(
         unsettled,
         {
-            run.view: sort.comparisons_waiting(cfg, run, proven[run.view])
+            run.view: sort.comparisons_waiting(cfg, run, sorts[run.view])
             for run, cfg in zip(runs, configs, strict=True)
         },
-        {run.view: sort.formulas_not_compared(proven[run.view]) for run in runs},
+        {run.view: sort.formulas_not_compared(sorts[run.view]) for run in runs},
     )
     # One question per unanswered owner cause, over the groups it decides.
     causes = {
         run.view: sort.cause_asks(
-            run, proven[run.view], cfg.decisions, sort.doc_leads(cfg)
+            run, sorts[run.view], cfg.decisions, sort.doc_leads(cfg)
         )
         for run, cfg in zip(runs, configs, strict=True)
     }
@@ -105,7 +105,7 @@ def ask_owner(
     )
     # The analyst's other calls, which the body reports without asking.
     decided = {
-        run.view: sort.cause_asks(run, proven[run.view], cfg.decisions, owner=False)
+        run.view: sort.cause_asks(run, sorts[run.view], cfg.decisions, owner=False)
         for run, cfg in zip(runs, configs, strict=True)
     }
     files: list[tuple[Path, list[dict] | str]] = [
@@ -147,7 +147,7 @@ def ask_owner(
         if not q["evidence"]:
             # stderr, so the note never lands in the issue body.
             print(
-                f"{q['id']}: no triage evidence; `sort` the view to add it",
+                f"{q['id']}: no sort evidence; `sort` the view to add it",
                 file=sys.stderr,
             )
     for run in runs:

@@ -62,14 +62,14 @@ def test_a_result_missing_a_key_is_skipped(tmp_path, capsys):
 
 
 def test_the_entry_fingerprint_changes_with_the_rebuild_check():
-    proof = RebuildCheck(
+    rebuild_check = RebuildCheck(
         fingerprint="abc", cells=2, matched_at="2026-10-26T12:00:00+00:00"
     )
-    comparison = Comparison(id="c", measure="m", rebuild_check=proof)
+    comparison = Comparison(id="c", measure="m", rebuild_check=rebuild_check)
 
     same = latest.entry_fingerprint(replace(comparison))
     rebuilt = latest.entry_fingerprint(
-        replace(comparison, rebuild_check=replace(proof, fingerprint="abd"))
+        replace(comparison, rebuild_check=replace(rebuild_check, fingerprint="abd"))
     )
     edited = latest.entry_fingerprint(replace(comparison, measure="n"))
 
@@ -127,6 +127,35 @@ def test_a_formula_check_with_no_result_is_dropped(tmp_path):
     latest.add_formula_check(folder, "c1", _check())
 
     assert not folder.exists() or not list(folder.glob("*.json"))
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        pytest.param("{not json", id="not JSON"),
+        pytest.param(b"\xff\xfe", id="not text"),
+        pytest.param("[1]", id="not an object"),
+        pytest.param('{"comparison": "c1"}', id="no data"),
+        pytest.param('{"comparison": "c1", "data": []}', id="data not an object"),
+    ],
+)
+def test_a_formula_check_beside_an_unreadable_result_is_skipped(tmp_path, capsys, text):
+    # As `read_all` skips it: never raised into `sort`.
+    folder = latest.folder(tmp_path / "v", "kipptaf_marts.fct_f")
+    latest.write(folder, "c1", latest.Latest(BUILD, "f", "e", "t", {}))
+    (path,) = folder.glob("*.json")
+    if isinstance(text, bytes):
+        path.write_bytes(text)
+    else:
+        path.write_text(text)
+    before = path.read_bytes()
+
+    latest.add_formula_check(folder, "c1", _check())
+
+    assert path.read_bytes() == before
+    assert f"Latest result {path.name} skipped: it cannot be read" in (
+        capsys.readouterr().out
+    )
 
 
 def test_a_formula_check_of_another_comparison_is_refused(tmp_path):

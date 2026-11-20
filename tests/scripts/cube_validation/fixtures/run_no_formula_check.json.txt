@@ -1,0 +1,150 @@
+{
+ "view": "v",
+ "moment": {
+  "start": "2026-10-28T21:34:00+00:00",
+  "end": "2026-10-28T21:35:00+00:00",
+  "job_id": "job"
+ },
+ "measures": [
+  {
+   "measure": "pct",
+   "verdict": "differs",
+   "cells": {
+    "differs": 2
+   },
+   "open_groups": 1,
+   "open_gaps": 0,
+   "open_cells": 2
+  }
+ ],
+ "applied": {
+  "open": [
+   {
+    "comparison_id": "mastery",
+    "dims": [
+     [
+      "abbreviation",
+      "X"
+     ]
+    ],
+    "bucket": "cube_only",
+    "n_rows": 2,
+    "n_students": 1,
+    "nulls": [],
+    "cut_rows": [
+     [
+      "{}",
+      2,
+      0
+     ]
+    ]
+   }
+  ],
+  "quiet": [],
+  "reconfirm": [],
+  "no_longer_needed": [],
+  "partly_stale": [],
+  "open_gaps": [],
+  "quiet_gaps": [],
+  "open_cells": [
+   {
+    "comparison_id": "mastery",
+    "counts": {
+     "differs": 1
+    },
+    "causes": [
+     "1 cell: values differ beyond rounding",
+     "1 of 1 have abbreviation = X",
+     "Cube computes `pct` as AVG(score_c); the sheet query is ",
+     "1 row groups on this comparison (see Sort) may explain part of it"
+    ],
+    "kind": "cells"
+   },
+   {
+    "comparison_id": "mastery",
+    "counts": {
+     "differs": 1
+    },
+    "causes": [
+     "1 differing cells hold no unmatched row",
+     "1 cell: 1 display unit apart at 0 decimals",
+     "1 of 1 have abbreviation = Y",
+     "Cube computes `pct` as AVG(score_c); the sheet query is "
+    ],
+    "kind": "formula"
+   }
+  ],
+  "quiet_cells": [],
+  "causes": []
+ },
+ "live_sources": [],
+ "changed_dims": [],
+ "scopes": [],
+ "cost_usd": 0.0,
+ "rebuild_checks": {},
+ "browser_cuts": [
+  "mastery: cuts unknown (the rebuild check records none); re-run `rebuild-sheet`"
+ ],
+ "totals": [],
+ "reshaped": {},
+ "clauses": {},
+ "fingerprints": {
+  "mastery": {
+   "cube": "c",
+   "dashboard": "d"
+  }
+ },
+ "decisions_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+ "gaps_unknown": [
+  "mastery: missing cuts and filters unknown (the rebuild check predates them); re-run `rebuild-sheet`"
+ ],
+ "dashboard_filters": [],
+ "cube_host": "h",
+ "fact": "m.fct",
+ "diff_cells": [
+  {
+   "comparison": "mastery",
+   "cut": "{}",
+   "key": "abbreviation=X",
+   "dims": [
+    [
+     "abbreviation",
+     "X"
+    ]
+   ],
+   "dashboard": 0.6,
+   "cube": 0.5,
+   "n_students": null,
+   "kind": "cells"
+  },
+  {
+   "comparison": "mastery",
+   "cut": "{}",
+   "key": "abbreviation=Y",
+   "dims": [
+    [
+     "abbreviation",
+     "Y"
+    ]
+   ],
+   "dashboard": 0.8,
+   "cube": 0.3,
+   "n_students": null,
+   "kind": "formula"
+  }
+ ],
+ "cell_sql": {},
+ "cell_sql_usd": {},
+ "moments": {
+  "mastery": {
+   "start": "2026-10-28T21:34:00+00:00",
+   "end": "2026-10-28T21:35:00+00:00",
+   "job_id": "job"
+  }
+ },
+ "entries": {
+  "mastery": "489bd73219d5fadbb097d06f31b873e7c1f39f4e4cb03d60dbd6ed5ccf2c6244"
+ },
+ "missing": [],
+ "skipped": []
+}

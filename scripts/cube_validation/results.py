@@ -77,8 +77,8 @@ def candidate_causes(
             ] += 1
         elif (
             abs(
-                reconcile._half_up(c.dashboard, decimals)
-                - reconcile._half_up(c.cube, decimals)
+                reconcile.half_up(c.dashboard, decimals)
+                - reconcile.half_up(c.cube, decimals)
             )
             == unit
         ):
@@ -130,7 +130,7 @@ def _cell_diffs(
     cube: Cube,
     older: frozenset[str] = frozenset(),
     checks: dict[str, set[tuple[str, str]]] | None = None,
-) -> tuple[list[CellDiff], set[Cell]]:
+) -> tuple[list[CellDiff], dict[Cell, bool]]:
     """Each comparison's differing cells, with candidate causes.
 
     A cell `coverage.placed` finds no group in is a formula difference: every
@@ -143,11 +143,12 @@ def _cell_diffs(
     when Cube can no longer compile its measure.
 
     Returns:
-        The diffs, and the formula cells, which `_diff_cells` marks so later
-        steps read this split instead of placing the cells again.
+        The diffs, and the formula cells, each True when the formula check
+        filed it, which `_diff_cells` marks so later steps read this split
+        and each cell's origin instead of placing the cells again.
     """
     out = []
-    formula_cells: set[Cell] = set()
+    formula_cells: dict[Cell, bool] = {}
     for comparison in comparisons:
         differing = [
             c for c in sides.cells
@@ -172,8 +173,11 @@ def _cell_diffs(
             inside = coverage.placed(_coverage_cell(c), sides.groups, comparison)
             on_matched = bool(inside) and (c.cut, c.key) in checked
             matched_only += on_matched
-            (formula if inside == [] or on_matched else cells).append(c)
-        formula_cells.update(formula)
+            if inside == [] or on_matched:
+                formula.append(c)
+                formula_cells[c] = on_matched
+            else:
+                cells.append(c)
         if cells:
             causes = candidate_causes(comparison, cells, comparison.decimals or 0, expr)
             if comparison.rows is not None:
@@ -409,17 +413,17 @@ def _gaps(comparisons: list[Comparison]) -> tuple[list[Gap], list[str]]:
     found: dict[tuple[str, str], dict[str, Any]] = {}
     unknown = []
     for comparison in comparisons:
-        proof = comparison.rebuild_check
-        if proof is None or proof.missing_cuts is None or proof.missing_filters is None:
+        check = comparison.rebuild_check
+        if check is None or check.missing_cuts is None or check.missing_filters is None:
             unknown.append(
                 f"{comparison.id}: missing cuts and filters unknown (the rebuild "
                 "check predates them); re-run `rebuild-sheet`"
             )
             continue
-        restricting = set(proof.restricting_filters or [])
+        restricting = set(check.restricting_filters or [])
         for kind, names in (
-            ("cut", proof.missing_cuts),
-            ("filter", proof.missing_filters),
+            ("cut", check.missing_cuts),
+            ("filter", check.missing_filters),
         ):
             for name in names:
                 entry = found.setdefault(
@@ -440,12 +444,16 @@ def _gaps(comparisons: list[Comparison]) -> tuple[list[Gap], list[str]]:
 def last_run(cfg: ViewConfig, cache_root: Path) -> dict | None:
     """The view's last readable `run.json` of `cfg.fact`, or None.
 
-    A run saved before runs recorded their fact is no fact's run (`_saved_run`).
+    A run saved before runs recorded their fact is no fact's run (`_saved_run`),
+    and neither is one `_run_from_json` cannot read: `compare` composes it again
+    from the latest results.
     """
     try:
-        return _saved_run(cfg, cache_root)[0]
-    except Refusal:
+        data = _saved_run(cfg, cache_root)[0]
+        _run_from_json(data)
+    except (Refusal, KeyError, TypeError):
         return None
+    return data
 
 
 def composed_from(
@@ -524,6 +532,7 @@ def compose_run(
         frozenset(c.id for c in comparisons) - now,
         checks,
     )
+    diff_cells = _diff_cells(sides, formula_cells)
     try:
         applied = decisions.apply(
             cfg.decisions,
@@ -531,6 +540,7 @@ def compose_run(
             sides.fingerprints,
             gaps=gaps,
             cell_diffs=cell_diffs,
+            diff_cells=diff_cells,
         )
     except ValueError as exc:
         raise Refusal(str(exc)) from exc
@@ -571,7 +581,7 @@ def compose_run(
             for e in c.dashboard_filters
         ],
         cost_usd=cost,
-        proofs={
+        rebuild_checks={
             c.id: c.rebuild_check.matched_at for c in comparisons if c.rebuild_check
         },
         browser_cuts=_browser_cuts(comparisons),
@@ -581,7 +591,7 @@ def compose_run(
         fingerprints=sides.fingerprints,
         decisions_fingerprint=decisions.decisions_fingerprint(cfg.decisions),
         gaps_unknown=gaps_unknown,
-        diff_cells=_diff_cells(sides, formula_cells),
+        diff_cells=diff_cells,
         cell_sql=sides.cell_sql,
         cell_sql_usd=sides.cell_sql_usd,
         moments={c.id: results[c.id].moment for c in composed},
@@ -603,8 +613,8 @@ def compose_run(
 def _formula_cells(held: latest.Latest) -> set[tuple[str, str]] | None:
     """The cells the result's formula check files as formula, or None when it
     has no check of that very result, read as `sort` reads it to reuse it
-    (`sort._stored_check`): a check that cannot be read counts as none."""
-    check = sort._stored_check(held)
+    (`sort.stored_check`): a check that cannot be read counts as none."""
+    check = sort.stored_check(held)
     return None if check is None else set(check.formula)
 
 
@@ -662,11 +672,14 @@ def _unvalidated(
     ]
 
 
-def _diff_cells(sides: Sides, formula: set[Cell]) -> list[dict]:
+def _diff_cells(sides: Sides, formula: dict[Cell, bool]) -> list[dict]:
     """Every cell that neither passes nor is dashboard-filtered, for run.json.
 
     `kind` names the item holding it: `formula` for a cell in `formula`
     (`_cell_diffs`), else `cells`. A run saved before it reads as `cells`.
+    A formula cell the formula check filed also carries `origin`
+    (`reconcile.FORMULA_CHECK`); one no unmatched row lies in carries none,
+    so a run with no formula check saves as it did before origins.
     """
     return [
         {
@@ -680,6 +693,7 @@ def _diff_cells(sides: Sides, formula: set[Cell]) -> list[dict]:
                 (c.cut, tuple(v for _, v in c.dims))
             ),
             "kind": "formula" if c in formula else "cells",
+            **({"origin": reconcile.FORMULA_CHECK} if formula.get(c) else {}),
         }
         for c in sides.cells
         if c.verdict not in ("pass", "dashboard_filtered")
@@ -750,7 +764,7 @@ def _run_from_json(data: dict) -> RunResult:
         changed_dims=data["changed_dims"],
         scopes=data["scopes"],
         cost_usd=data["cost_usd"],
-        proofs=data["proofs"],
+        rebuild_checks=data["rebuild_checks"],
         browser_cuts=data["browser_cuts"],
         totals=data.get("totals", []),
         reshaped=data.get("reshaped", {}),
@@ -871,6 +885,7 @@ def _apply_saved(cfg: ViewConfig, saved: RunResult) -> Applied:
             saved.fingerprints,
             gaps=was.open_gaps + [g for _, g in was.quiet_gaps],
             cell_diffs=was.open_cells + [d for _, d in was.quiet_cells],
+            diff_cells=saved.diff_cells,
         )
     except ValueError as exc:
         raise Refusal(str(exc)) from exc

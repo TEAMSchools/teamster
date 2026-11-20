@@ -47,6 +47,9 @@ and diagnostics are in the `cube-ops` skill.
   distinction (see View access policies below). `sql_table` always points at
   `kipptaf_marts.<table>` (the warehouse table keeps its `dim_`/`fct_` prefix) —
   cubes never read district datasets directly.
+- **`count_students` names the enrollment headcount only.** A new measure that
+  counts any other set of students is named for that set
+  (`count_students_with_attendance`), and its description says how it differs.
 - **Joins use cube-reference syntax** (`{students.col} = {CUBE}.col`), not raw
   identifiers. Dim joins from facts set `relationship: many_to_one`.
 - **Range/non-equi join predicates** (`BETWEEN`, `>=`) are valid in a join

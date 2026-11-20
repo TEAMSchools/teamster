@@ -24,7 +24,7 @@ _IN = "__in"
 # A `dims_differ` row's group-by values on the dashboard side, as `d:<column>`
 # dims of its group; its own dims are Cube's.
 DASH_PREFIX = "d:"
-_MOVED = "__moved"
+MOVED = "__moved"
 # Per group, cut and side, its rows.
 _STATS = "__s_"
 
@@ -91,6 +91,12 @@ class CellDiff:
     matched_only: int = 0
 
 
+# A formula cell's `origin` in `run.diff_cells` when the formula check filed
+# it. A cell no unmatched row lies in carries no `origin`, so a run with no
+# formula check saves its cells unchanged.
+FORMULA_CHECK = "formula check"
+
+
 def _numbered(
     rows_sql: str,
     grain: list[str],
@@ -100,7 +106,7 @@ def _numbered(
 ) -> str:
     """Wrap a row source, numbering duplicates on the grain so the join cannot fan out.
 
-    Partitions by the same keys the join compares (`_grain_keys`), so both
+    Partitions by the same keys the join compares (`grain_keys`), so both
     sides number 1 and 1.0, or a NULL past the student column, as one value.
     The row source is aliased `alias` (`c` or `d`), so `cuts`, each cut's
     predicate over that alias, can order the numbering: a key's rows number
@@ -110,7 +116,7 @@ def _numbered(
     order = ", ".join(
         [f"COALESCE({cut}, FALSE) DESC" for cut in cuts] + (values or grain)
     )
-    partition = ", ".join(_grain_keys(grain))
+    partition = ", ".join(grain_keys(grain))
     return (
         # trunk-ignore(bandit/B608): identifiers are validated in config.py; row SQL comes from Cube's compiled query
         f"SELECT {alias}.*, TRUE AS {_IN}, "
@@ -219,7 +225,7 @@ def _grain_key(col: str) -> str:
     return f"IFNULL(CONCAT('=', {_key(col)}), '')"
 
 
-def _grain_keys(grain: list[str]) -> list[str]:
+def grain_keys(grain: list[str]) -> list[str]:
     """One join key per grain column: plain `_key` for the first, the student.
 
     A NULL student never matches: rows with no id would otherwise pair up by
@@ -274,7 +280,7 @@ def _saved_joined(
     """`joined` as the reconcile builds it, plus what a saved row needs: the
     grain keys (`__k<i>`, `__rn`) and each side's own grain (`__gc<i>`,
     `__gd<i>`, typed as that side types it)."""
-    return _joined(
+    return joined_ctes(
         cube_rows_sql,
         dashboard_rows_sql,
         rows,
@@ -308,7 +314,7 @@ def _saved_select(
         "bucket",
         f"FARM_FINGERPRINT(TO_JSON_STRING(STRUCT({keys}))) AS __row",
         *(p.cube for p in group_by),
-        *([_MOVED] if group_by else []),
+        *([MOVED] if group_by else []),
         *(f"__d_{p.cube}" for p in group_by),
         *(f"__gc{i}" for i in range(len(rows.grain))),
         *(f"__gd{i}" for i in range(len(rows.grain))),
@@ -447,7 +453,7 @@ def _cut_extras(
     )
 
 
-def _joined(
+def joined_ctes(
     cube_rows_sql: str,
     dashboard_rows_sql: str,
     rows: RowSpec,
@@ -474,8 +480,8 @@ def _joined(
     on = [f"c.{_RN} = d.{_RN}"] + [
         f"{c} = {d}"
         for c, d in zip(
-            _grain_keys([f"c.{g}" for g in cube_grain]),
-            _grain_keys([f"d.{g}" for g in dash_grain]),
+            grain_keys([f"c.{g}" for g in cube_grain]),
+            grain_keys([f"d.{g}" for g in dash_grain]),
             strict=True,
         )
     ]
@@ -506,11 +512,11 @@ def _joined(
     if group_by and moved:
         # Values equal or not: each side's copy sits in its own cell.
         differ = f"{both} AND NOT ({same_cell})"
-        group_cols += [f"IF({differ}, TRUE, NULL) AS {_MOVED}"] + [
+        group_cols += [f"IF({differ}, TRUE, NULL) AS {MOVED}"] + [
             f"IF({differ}, {_label(f'd.{p.dashboard}')}, NULL) AS __d_{p.cube}"
             for p in group_by
         ]
-        group_names += [_MOVED, *(f"__d_{p.cube}" for p in group_by)]
+        group_names += [MOVED, *(f"__d_{p.cube}" for p in group_by)]
     first = rows.grain[0]
 
     kept = " AND ".join(f"d.{flag}" for flag, _ in filters)
@@ -544,8 +550,8 @@ def _joined(
                     f"IF(c.{_IN} IS NULL, {d}, {c}) AS __k{i}"
                     for i, (c, d) in enumerate(
                         zip(
-                            _grain_keys([f"c.{g}" for g in cube_grain]),
-                            _grain_keys([f"d.{g}" for g in dash_grain]),
+                            grain_keys([f"c.{g}" for g in cube_grain]),
+                            grain_keys([f"d.{g}" for g in dash_grain]),
                             strict=True,
                         )
                     )
@@ -655,7 +661,7 @@ def trace_sql(
         One query returning `bucket`, each group-by column, `step_id` and
         `n_rows`.
     """
-    ctes, group_names = _joined(
+    ctes, group_names = joined_ctes(
         cube_rows_sql,
         dashboard_rows_sql,
         rows,
@@ -672,7 +678,7 @@ def trace_sql(
 
     def keyed(name: str, sql: str) -> str:
         cols = ", ".join(
-            f"{k} AS {kn}" for k, kn in zip(_grain_keys(grain), keys, strict=True)
+            f"{k} AS {kn}" for k, kn in zip(grain_keys(grain), keys, strict=True)
         )
         return (
             # trunk-ignore(bandit/B608): identifiers are validated in config.py; row SQL comes from Cube's compiled query
@@ -792,7 +798,7 @@ def groups_from(
         if row["bucket"] == "match":
             continue
         dims = _cell_dims(row)
-        if row.get(_MOVED):
+        if row.get(MOVED):
             dims += [
                 (f"{DASH_PREFIX}{k[4:]}", v)
                 for k, v in row.items()
@@ -834,7 +840,7 @@ def _cell_dims(row: dict) -> list[tuple[str, Any]]:
     ]
 
 
-_RESERVED = {"bucket", "n_rows", "n_students", "__filter", _MOVED}
+_RESERVED = {"bucket", "n_rows", "n_students", "__filter", MOVED}
 
 
 # Config operator names that Cube spells differently.
@@ -874,7 +880,7 @@ def scope_filters(comparison: Comparison) -> list[dict[str, Any]]:
 NOISE_DECIMALS = 9
 
 
-def _half_up(x: float, decimals: int) -> Decimal:
+def half_up(x: float, decimals: int) -> Decimal:
     """Round the way a dashboard displays: half up on the decimal text, after
     dropping float noise past `NOISE_DECIMALS`.
     """
@@ -903,9 +909,7 @@ def cell_verdict(dashboard: float | None, cube: float | None, decimals: int) -> 
     if dashboard is None:
         return "cube_only"
     return (
-        "pass"
-        if _half_up(dashboard, decimals) == _half_up(cube, decimals)
-        else "differs"
+        "pass" if half_up(dashboard, decimals) == half_up(cube, decimals) else "differs"
     )
 
 

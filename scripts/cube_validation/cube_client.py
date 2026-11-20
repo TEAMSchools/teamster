@@ -20,12 +20,12 @@ from typing import Any, Protocol
 
 TIMEOUT_SECONDS = 60
 # A fact table in any `<prefix>kipptaf_marts` dataset: prod's, an analyst's dev
-# build (`zz_<user>_kipptaf_marts`), or one named some other way. `_FACT` yields
-# table names; `_FACT_REF` yields (dataset, table), so each dataset is compared
+# build (`zz_<user>_kipptaf_marts`), or one named some other way. `FACT_TABLE` yields
+# table names; `FACT_REF` yields (dataset, table), so each dataset is compared
 # exactly and a second fact cannot hide behind an unfamiliar prefix.
 _MARTS = r"\w*kipptaf_marts"
-_FACT = re.compile(rf"{_MARTS}`?\.`?(fct_\w+)", re.IGNORECASE)
-_FACT_REF = re.compile(rf"({_MARTS})`?\.`?(fct_\w+)", re.IGNORECASE)
+FACT_TABLE = re.compile(rf"{_MARTS}`?\.`?(fct_\w+)", re.IGNORECASE)
+FACT_REF = re.compile(rf"({_MARTS})`?\.`?(fct_\w+)", re.IGNORECASE)
 _LOOPBACK = {"localhost", "127.0.0.1"}
 _STR = r"'(?:\\.|[^'\\])*'"
 _STRING = re.compile(_STR)
@@ -274,7 +274,7 @@ def _utc(query: dict) -> dict:
 _ESCAPES = {"\\": "\\\\", "'": "\\'", "\n": "\\n", "\r": "\\r", "\t": "\\t"}
 
 
-def _literal(value: Any) -> str:
+def sql_literal(value: Any) -> str:
     if value is None:
         return "NULL"
 
@@ -288,7 +288,7 @@ def _literal(value: Any) -> str:
         return "'" + "".join(_ESCAPES.get(c, c) for c in value) + "'"
 
     if isinstance(value, (list, tuple)):
-        return "[" + ", ".join(_literal(v) for v in value) + "]"
+        return "[" + ", ".join(sql_literal(v) for v in value) + "]"
 
     raise CubeError(f"Unsupported parameter type {type(value).__name__}")
 
@@ -328,7 +328,7 @@ def bind(compiled: Compiled) -> str:
     params = iter(compiled.params)
 
     return "".join(
-        t if lit else re.sub(r"\?", lambda _: _literal(next(params)), t)
+        t if lit else re.sub(r"\?", lambda _: sql_literal(next(params)), t)
         for lit, t in pieces
     )
 
@@ -393,7 +393,7 @@ def refuse_unless_safe(
             "with `operator: set`"
         )
 
-    facts = {f"{ds}.{name}".lower() for ds, name in _FACT_REF.findall(compiled.sql)}
+    facts = {f"{ds}.{name}".lower() for ds, name in FACT_REF.findall(compiled.sql)}
     allowed = [view_fact, *also_facts]
     others = facts - {f.lower() for f in allowed}
 

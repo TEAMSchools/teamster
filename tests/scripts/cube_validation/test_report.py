@@ -86,7 +86,7 @@ def _run(**overrides):
         changed_dims=["dim_students"],
         scopes=["region = Newark"],
         cost_usd=0.42,
-        proofs={"enrollment": "2026-10-20"},
+        rebuild_checks={"enrollment": "2026-10-20"},
         browser_cuts=["Region = Newark, Grade = 9"],
         clauses={"enrollment": ["WHERE grade_level > 8"]},
     )
@@ -140,7 +140,7 @@ def test_local_result_lists_live_sources_and_changed_dims():
     assert "0.42" in text
 
 
-def test_local_result_section_order_and_triage():
+def test_local_result_section_order_and_sort():
     text = render_local(_run())
     heads = [
         "## Measures",
@@ -156,7 +156,7 @@ def test_local_result_section_order_and_triage():
     assert positions == sorted(positions)
     assert "WHERE grade_level > 8" in text
     assert "40" in text and "38" in text
-    assert "123456" not in text  # not a triage group, so not listed
+    assert "123456" not in text  # not a sort group, so not listed
 
 
 def test_local_result_is_not_masked():
@@ -430,12 +430,14 @@ def test_review_issue_skips_definitions_with_no_owner_question():
     assert "Definitions side by side" not in body
 
 
-def test_proof_dates_sit_apart_from_browser_cuts():
-    text = render_local(_run(browser_cuts=[], proofs={"ada": "2026-10-27T19:00"}))
+def test_rebuild_check_dates_sit_apart_from_browser_cuts():
+    text = render_local(
+        _run(browser_cuts=[], rebuild_checks={"ada": "2026-10-27T19:00"})
+    )
     cuts = text.split("## Cuts to check in the browser", 1)[1].split("## ", 1)[0]
     assert "ada" not in cuts and "None." in cuts
-    proofs = text.split("## Rebuild checks", 1)[1].split("## ", 1)[0]
-    assert "ada: last matched 2026-10-27T19:00" in proofs
+    rebuild_checks = text.split("## Rebuild checks", 1)[1].split("## ", 1)[0]
+    assert "ada: last matched 2026-10-27T19:00" in rebuild_checks
 
 
 def test_local_result_lists_domain_owner_decisions_without_a_task():
@@ -495,7 +497,7 @@ def test_a_formula_question_shows_both_definitions_and_masks_its_count():
     body = render_review_issue("Registrar", [_run(applied=few)])
     assert f"`enrollment` in `enrollment_view`: <10 {FORMULA_ASK}" in body
     assert "4 cells" not in body
-    q = report._questions([_run(applied=few)])[0]
+    q = report.owner_questions([_run(applied=few)])[0]
     assert q["kinds"] == ["formula"]
     assert report.defined_comparisons([q], "enrollment_view") == {"enrollment"}
 
@@ -991,7 +993,7 @@ def test_owner_questions_post_only_bounds_beside_an_earlier_listing():
 
 def test_a_review_refuses_questions_json_that_does_not_match_its_questions():
     run = _run()
-    asked = report._questions([run])
+    asked = report.owner_questions([run])
     assert asked
 
     with pytest.raises(ValueError, match="questions JSON"):
@@ -1016,15 +1018,15 @@ def test_a_lead_posts_its_counts_only_when_its_total_is_exact():
 
 
 def test_a_hidden_value_is_redacted_only_as_a_whole_value():
-    from cube_validation.report import _safe_reason
+    from cube_validation.report import safe_reason
 
-    text = _safe_reason("grade 1 lost 414 rows; see Q1 and 1.5", ["1"])
+    text = safe_reason("grade 1 lost 414 rows; see Q1 and 1.5", ["1"])
 
     assert text == "grade <redacted> lost 414 rows; see Q1 and 1.5"
 
 
 def _cause_asks(reasons):
-    """One cause proven on a comparison per reason, each decided on its own."""
+    """One cause explained on a comparison per reason, each decided on its own."""
     asks = []
     for n, reason in enumerate(reasons, start=1):
         d = Decision(
@@ -1162,8 +1164,8 @@ from cube_validation import sort  # noqa: E402
 
 
 def _left_in_investigate(run, evidence):
-    """Each of `compare`'s open row groups as a triage item still in `investigate`,
-    its stub holding the group's real values as `triage.json` does."""
+    """Each of `compare`'s open row groups as a sort item still in `investigate`,
+    its stub holding the group's real values as `sort.json` does."""
     return {
         "items": [
             {
@@ -1173,7 +1175,7 @@ def _left_in_investigate(run, evidence):
                 "evidence_posted": [evidence],
                 "candidates": [],
                 "cause": None,
-                "proof": None,
+                "explanation": None,
             }
             for item in sort.open_items(run)
             if item.kind == "group"

@@ -2,7 +2,13 @@ import dataclasses
 
 import pytest
 from cube_validation.config import Decision
-from cube_validation.decisions import MATCHED_ONLY, apply, sql_fingerprint
+from cube_validation.decisions import (
+    FORMULA_CELLS,
+    MATCHED_ONLY,
+    apply,
+    formula_cells_hash,
+    sql_fingerprint,
+)
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.reconcile import CellDiff, Gap, Group
@@ -321,6 +327,96 @@ def test_a_formula_decision_with_no_recorded_count_reads_as_zero():
     assert none.quiet_cells == [(d, _checked(0))] and none.reconfirm == []
 
 
+def _cell(key, kind="formula", comparison="enrollment", cut="Region"):
+    """A cell as run.json's `diff_cells` saves it, values left out."""
+    return {"comparison": comparison, "cut": cut, "key": key, "kind": kind}
+
+
+CELLS = [_cell("Newark"), _cell("Miami")]
+
+
+def _hashed():
+    """A formula decision recording that it covered `CELLS`."""
+    return _formula(
+        fingerprints={
+            **FP, FORMULA_CELLS: formula_cells_hash(CELLS, "enrollment", FP),
+        }
+    )  # fmt: skip
+
+
+def test_the_formula_cells_hash_is_a_salted_digest_of_the_refs():
+    digest = formula_cells_hash(CELLS, "enrollment", FP)
+
+    assert len(digest) == 64 and set(digest) <= set("0123456789abcdef")
+    # Its comparison's formula cells only, in any order.
+    assert digest == formula_cells_hash(
+        [CELLS[1], _cell("Camden", kind="cells"),
+         _cell("Paterson", comparison="other"), CELLS[0]],
+        "enrollment", FP,
+    )  # fmt: skip
+    assert digest != formula_cells_hash(CELLS, "other", FP)
+    # Salted with both SQL fingerprints.
+    assert digest != formula_cells_hash(CELLS, "enrollment", {**FP, "cube": "c2"})
+    assert digest != formula_cells_hash(CELLS, "enrollment", {**FP, "dashboard": "d2"})
+
+
+def test_a_formula_decision_quiets_its_diff_while_its_cells_are_the_same():
+    d = _hashed()
+    # The count no longer decides: the same cells, however many were filed.
+    diff = _checked(2)
+
+    applied = apply(
+        [d], [], {"enrollment": FP}, cell_diffs=[diff], diff_cells=CELLS[::-1]
+    )
+
+    assert applied.quiet_cells == [(d, diff)] and applied.reconfirm == []
+
+
+@pytest.mark.parametrize(
+    "now",
+    [
+        pytest.param([CELLS[0], _cell("Camden")], id="same size, other cells"),
+        pytest.param([CELLS[0]], id="fewer"),
+        pytest.param([*CELLS, _cell("Camden")], id="more"),
+        pytest.param([CELLS[0], _cell("Miami", cut="School")], id="other cut"),
+    ],
+)
+def test_a_formula_decision_reconfirms_when_its_cells_change(now):
+    d = _hashed()
+
+    applied = apply([d], [], {"enrollment": FP}, cell_diffs=[FORMULA], diff_cells=now)
+
+    assert applied.reconfirm == [d] and applied.quiet_cells == []
+    assert applied.open_cells == [FORMULA]
+
+
+def test_a_formula_decision_with_no_recorded_cells_keeps_the_count_rule():
+    # Written before decisions recorded their cells: other cells change
+    # nothing, and any cell the check filed sends it back.
+    d = _formula()
+    other = [_cell("Camden")]
+
+    none = apply([d], [], {"enrollment": FP}, cell_diffs=[FORMULA], diff_cells=other)
+    assert none.quiet_cells == [(d, FORMULA)] and none.reconfirm == []
+
+    filed = apply(
+        [d], [], {"enrollment": FP}, cell_diffs=[_checked(1)], diff_cells=other
+    )
+    assert filed.reconfirm == [d] and filed.quiet_cells == []
+
+
+def test_recorded_cells_leave_older_decisions_fingerprint_unchanged():
+    # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+    from cube_validation.decisions import decisions_fingerprint
+
+    counted = _formula("f", fingerprints={**FP, MATCHED_ONLY: "2"})
+
+    # The digest of this decision before decisions recorded their cells.
+    assert decisions_fingerprint([counted]) == (
+        "aef82d813f60925f61fd678d41a18a5739d37252faaa5ccc32f0870a0d81a846"
+    )
+
+
 def test_a_formula_decision_never_quiets_a_cells_diff():
     d = _formula()
 
@@ -385,9 +481,9 @@ def test_cause_state_names_what_changed():
     d = _cause()
 
     assert cause_state(d, "p1", FP) == "holds"
-    assert cause_state(d, "p2", FP) == "proof"
+    assert cause_state(d, "p2", FP) == "explanation"
     assert cause_state(d, "p1", {**FP, "cube": "c2"}) == "sql"
-    assert cause_state(_cause(fingerprints=dict(FP)), "p1", FP) == "proof"
+    assert cause_state(_cause(fingerprints=dict(FP)), "p1", FP) == "explanation"
 
 
 def test_apply_never_quiets_a_group_from_a_cause_decision():
@@ -395,12 +491,12 @@ def test_apply_never_quiets_a_group_from_a_cause_decision():
 
     applied = apply([_cause()], [group], {"enrollment": FP})
 
-    # The latest triage, not the run, says which groups a cause decides.
+    # The latest sort, not the run, says which groups a cause decides.
     assert applied.open == [group] and applied.quiet == []
     assert applied.causes == [_cause()] and applied.reconfirm == []
 
 
-def test_apply_reconfirms_a_cause_decision_whose_sql_changed_or_has_no_proof():
+def test_apply_reconfirms_a_cause_decision_whose_sql_changed_or_has_no_explanation():
     stale = _cause(fingerprints={**FP, "cube": "old", "explanation": "p1"})
     bare = _cause("c2", fingerprints=dict(FP))
 

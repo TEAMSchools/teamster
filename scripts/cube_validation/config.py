@@ -35,7 +35,7 @@ CAUSE_SIDES = ("dashboard", "cube")
 _ID_RUN = re.compile(r"\d+(?:[-.,/:]\d+)*")
 _YEAR_OR_DATE = re.compile(r"\d{4}-(?:\d{2}|\d{4})|\d{4}-\d{2}-\d{2}")
 # Digits split by spaces, dashes, commas or dots, for scrubbing free text
-# (`report._safe_reason`, `answers.NOTE_REFUSALS`).
+# (`report.safe_reason`, `answers.NOTE_REFUSALS`).
 SEPARATED_DIGITS = re.compile(r"\d[\d\-\s,.]{3,}\d")
 
 
@@ -56,7 +56,7 @@ def mask_digits(text: str) -> str:
     return _ID_RUN.sub(masked, text)
 
 
-_TASK = re.compile(r"https://\S+|#\d+")
+TASK_REF = re.compile(r"https://\S+|#\d+")
 # Filter operators for `scope` (Cube side) and `dashboard_filters` (dashboard
 # side). The comparisons take exactly 1 number; `set` means not null.
 SCOPE_OPERATORS = ("equals", "not_equals", "gt", "gte", "lt", "lte", "set")
@@ -222,8 +222,15 @@ def explanation_key(comparison: Comparison) -> str | None:
 
 # A formula decision's `fingerprints` key: how many cells the formula check
 # had filed in the diff when it was decided (`CellDiff.matched_only`), as
-# text; absent reads as 0. More filed since sends the decision to re-confirm.
+# text; absent reads as 0. A decision without `FORMULA_CELLS` is sent to
+# re-confirm when more are filed since.
 MATCHED_ONLY = "matched_only"
+# A formula decision's `fingerprints` key: which cells the diff held when it
+# was decided, as `decisions.formula_cells_hash`, a digest of their refs
+# salted with the decision's SQL fingerprints; it carries no cell value. A
+# changed set of cells sends the decision to re-confirm.
+FORMULA_CELLS = "formula_cells"
+_SHA256 = re.compile(r"[0-9a-f]{64}")
 
 
 @dataclass(frozen=True)
@@ -239,15 +246,17 @@ class Decision:
     # of `group`, and covers the whole view, so it has no `comparison`.
     missing_cut: str = ""
     missing_filter: str = ""
-    # Covers the row groups whose triage cause names this `{side, label}`, in
+    # Covers the row groups whose sort cause names this `{side, label}`, in
     # place of `group`: `label` is the words of a stored explanation's bucket,
     # with each number of 5 or more digits written `<n>`. Which groups it covers
-    # is read from the latest triage, never stored here;
+    # is read from the latest sort, never stored here;
     # `fingerprints.explanation` is the explanation file's.
     cause: dict[str, Any] = field(default_factory=dict)
     # Covers the comparison's formula difference, in place of `group`: its
-    # differing cells that hold no unmatched row, whichever they are in a run,
-    # and the cells the formula check filed, up to `fingerprints.matched_only`.
+    # differing cells that hold no unmatched row and the cells the formula
+    # check filed, while they are the cells `fingerprints.formula_cells`
+    # recorded (without it, any cell of the first kind and the second up to
+    # `fingerprints.matched_only`).
     formula: bool = False
     # The call the owner answered a cause decision with; set by
     # `record-answers`, so `ask-owner` asks it no more.
@@ -691,7 +700,7 @@ def _decision(
         reader.fail("task", f"is required when call is {call}")
     # The review issue posts `task` to GitHub as written, so it may only be a
     # link, never free text that could name a person.
-    if task and not _TASK.fullmatch(task):
+    if task and not TASK_REF.fullmatch(task):
         reader.fail("task", f"must be an https:// link or #<issue>; got {task!r}")
     if "cells" in reader.data:
         reader.fail(
@@ -746,6 +755,15 @@ def _decision(
         if not str(fingerprints[MATCHED_ONLY]).isdecimal():
             reader.child("fingerprints", fingerprints).fail(
                 MATCHED_ONLY, "must be a whole number; `decide` writes it"
+            )
+    if FORMULA_CELLS in fingerprints:
+        if not formula:
+            reader.child("fingerprints", fingerprints).fail(
+                FORMULA_CELLS, "belongs to a formula decision"
+            )
+        if not _SHA256.fullmatch(str(fingerprints[FORMULA_CELLS])):
+            reader.child("fingerprints", fingerprints).fail(
+                FORMULA_CELLS, "must be a sha256 hex digest; `decide` writes it"
             )
     answer = reader.get("answer", str, default="")
     if answer and not cause:
@@ -816,7 +834,7 @@ def _tasks(root: _Reader) -> dict[str, str]:
         value = reader.get(key, str)
         if value is None:
             continue
-        if not _TASK.fullmatch(value):
+        if not TASK_REF.fullmatch(value):
             reader.fail(key, f"must be an https:// link or #<issue>; got {value!r}")
         tasks[key] = value
     return tasks

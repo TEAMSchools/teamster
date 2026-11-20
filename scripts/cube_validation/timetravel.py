@@ -18,7 +18,7 @@ PROJECT = "teamster-332318"
 MAX_VIEW_DEPTH = 12
 
 # A word after a table that starts the next clause, not an alias.
-_NOT_ALIAS = (
+NOT_ALIAS = (
     "where|join|left|right|inner|full|cross|natural|on|using|group|order|union|"
     "intersect|except|limit|qualify|having|window|for|tablesample|pivot|unpivot|"
     "select|from|with|and|or|when|then|else|end|is|in|not|as"
@@ -28,7 +28,7 @@ _NOT_ALIAS = (
 # may come without `as`, as `dbt_utils.deduplicate` writes it.
 _DBT_REF = re.compile(
     r"(?<!')`" + re.escape(PROJECT) + r"`\.`(?P<d_ds>\w+)`\.`(?P<d_t>\w+)`"
-    r"(?P<d_alias>\s+as\s+`?\w+`?|\s+(?!(?:" + _NOT_ALIAS + r")\b)`?\w+`?)?",
+    r"(?P<d_alias>\s+as\s+`?\w+`?|\s+(?!(?:" + NOT_ALIAS + r")\b)`?\w+`?)?",
     re.IGNORECASE,
 )
 # Cube writes `FROM dataset.table AS `alias``, with no project.

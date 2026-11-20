@@ -3,8 +3,9 @@
 Reads the dbt Tableau exposures and each workbook's calculated fields and
 aggregated raw fields, then ranks them by how many name tokens they share with
 the measure and its SQL. It also reads a sheet's shape: shelves, export form,
-filters and displayed decimals. Nothing is written: `find-field` prints the
-candidates and the analyst confirms each one.
+filters and displayed decimals. `find_field` runs the `find-field` command.
+Nothing is written: it prints the candidates and each listed sheet's shape, and
+the analyst confirms each one.
 """
 
 from __future__ import annotations
@@ -13,12 +14,27 @@ import re
 
 # trunk-ignore(bandit/B405): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
 import xml.etree.ElementTree as ET
+import zipfile
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
 
+import tableauserverclient as TSC
 import yaml
 
-from .tableau import bare_name, displayed_decimals, unquote, worksheet
+from .config import ViewConfig
+from .cube_client import Cube
+from .pipeline import Refusal, measure_expression, member_name
+from .tableau import (
+    NOT_CHECKED,
+    NOT_PUBLISHED,
+    Tableau,
+    bare_name,
+    displayed_decimals,
+    published_sheets,
+    unquote,
+    worksheet,
+)
 
 TOP_N = 5
 MIN_TOKEN_LENGTH = 3
@@ -68,7 +84,7 @@ _AGG_NAMES = {
     "Sum": "SUM", "Avg": "AVG", "Count": "COUNT", "CountD": "COUNTD",
     "Min": "MIN", "Max": "MAX", "Median": "MEDIAN",
 }  # fmt: skip
-_AGG_PREFIXES = {
+AGG_PREFIXES = {
     "sum": "SUM", "avg": "AVG", "cnt": "COUNT", "ctd": "COUNTD",
     "min": "MIN", "max": "MAX", "med": "MEDIAN",
 }  # fmt: skip
@@ -364,7 +380,7 @@ def _ref_caption(m: re.Match, caption: dict[str, str]) -> str | None:
     name = caption.get(m["name"], m["name"])
     if m["deriv"] in ("usr", "none", ""):
         return name
-    agg = _AGG_PREFIXES.get(m["deriv"])
+    agg = AGG_PREFIXES.get(m["deriv"])
     return f"{agg}({name})" if agg else None
 
 
@@ -584,7 +600,7 @@ def text_values(twb_xml: str, sheet: str) -> set[str]:
     }
 
 
-def _tokens(text: str) -> set[str]:
+def name_tokens(text: str) -> set[str]:
     parts = re.split(r"[^A-Za-z0-9]+", text.lower())
     return {p for p in parts if len(p) >= MIN_TOKEN_LENGTH and p not in SQL_KEYWORDS}
 
@@ -619,12 +635,12 @@ def rank(
         Up to `limit` candidates with a score above 0, best first, ties by
         caption.
     """
-    wanted = _tokens(measure) | _tokens(member_sql)
+    wanted = name_tokens(measure) | name_tokens(member_sql)
     if not wanted and not caption:
         return []
     scored = []
     for calc in calcs:
-        shared = wanted & (_tokens(calc.caption) | _tokens(calc.formula))
+        shared = wanted & (name_tokens(calc.caption) | name_tokens(calc.formula))
         boost = 1.0 if caption and caption.lower() in calc.caption.lower() else 0.0
         if shared or boost:
             scored.append(
@@ -639,3 +655,143 @@ def rank(
             )
     scored.sort(key=lambda c: (-c.score, c.caption))
     return scored if limit is None else scored[:limit]
+
+
+def find_field(
+    cfg: ViewConfig,
+    measure: str,
+    *,
+    cube: Cube,
+    tbl: Tableau | None,
+    exposures_path: Path,
+    only: list[str],
+    caption: str | None = None,
+    limit: int | None = TOP_N,
+    twb_path: Path | None = None,
+) -> list[Candidate]:
+    """Print workbook fields ranked against a measure, then each listed sheet's
+    shape: shelves, export form, displayed decimals and filters.
+
+    Calculated fields and aggregated raw fields both rank; a formula that uses a
+    code group shows its codes. `caption` boosts the dashboard's name for the
+    measure; `limit` None prints every candidate. With `twb_path` the one local
+    workbook is read instead of the exposures' downloads, and `tbl` is unused.
+    """
+    compiled = cube.compiled({"measures": [member_name(cfg.view, measure)]})
+    member_sql = measure_expression(compiled.sql, cfg.view, measure)
+
+    found: list[Candidate] = []
+    twbs: dict[str, str] = {}
+    workbooks = (
+        [(str(twb_path), twb_path.name, twb_path.read_text(encoding="utf-8"))]
+        if twb_path is not None
+        else _exposure_workbooks(tbl, exposures_path, only)
+    )
+    for luid, label, twb in workbooks:
+        twbs[luid] = twb
+        found += rank(
+            measure,
+            member_sql,
+            calculated_fields(twb) + aggregated_fields(twb),
+            workbook_luid=luid,
+            workbook_label=label,
+            caption=caption,
+            limit=None,
+        )
+
+    found.sort(key=lambda c: (-c.score, c.workbook_label, c.caption))
+    found = found if limit is None else found[:limit]
+    if not found:
+        print(f"No candidates for {measure}.")
+    for c in found:
+        formula = explain_bins(" ".join(c.formula.split()), bins(twbs[c.workbook_luid]))
+        print(
+            f"{c.score:.2f}  {c.workbook_label} ({c.workbook_luid})  "
+            f"{c.caption!r} on {', '.join(c.worksheets) or 'no sheet'}: {formula}"
+        )
+    # A local workbook's views are not on the server: published is not checked.
+    views = tbl.view_names if twb_path is None and tbl is not None else None
+    _print_sheets(found, twbs, views)
+    return found
+
+
+def _exposure_workbooks(
+    tbl: Tableau | None, exposures_path: Path, only: list[str]
+) -> Iterator[tuple[str, str, str]]:
+    """Download each Tableau exposure's workbook: luid, label and XML."""
+    if tbl is None:
+        raise Refusal("find-field needs a Tableau session or a local --twb")
+    exposures = tableau_exposures(exposures_path)
+    if exposures.skipped:
+        print(
+            f"Skipped exposures without a luid or models: {', '.join(exposures.skipped)}"
+        )
+    for exposure in exposures:
+        if only and exposure.name not in only:
+            continue
+        if not exposure.luid:
+            print(f"Skipped {exposure.name}: empty luid")
+            continue
+        try:
+            twb = tbl.download_twb(exposure.luid)
+        except (
+            TSC.ServerResponseError,
+            zipfile.BadZipFile,
+            ValueError,
+            OSError,
+        ) as exc:
+            print(f"Could not read {exposure.label}: {type(exc).__name__}: {exc}")
+            continue
+        yield exposure.luid, exposure.label, twb
+
+
+def _print_sheets(
+    found: list[Candidate],
+    twbs: dict[str, str],
+    views: Callable[[str], set[str]] | None = None,
+) -> None:
+    """Print each listed sheet's shape. `views` lists a workbook's views on
+    the server; without it (a local workbook) published is not checked."""
+    sheets = list(
+        dict.fromkeys(
+            (c.workbook_luid, c.workbook_label, s) for c in found for s in c.worksheets
+        )
+    )
+    if not sheets:
+        return
+    print("\nSheets:" if views else f"\nSheets ({NOT_CHECKED}):")
+    roots = {
+        luid: parse_workbook(twbs[luid])
+        for luid in dict.fromkeys(luid for luid, _, _ in sheets)
+    }
+    # Per workbook, its published sheets or why they could not be asked.
+    published: dict[str, set[str] | str] = {}
+    for luid, root in roots.items():
+        if views is None:
+            continue
+        try:
+            published[luid] = published_sheets(root, views(luid))
+        except TSC.ServerResponseError as exc:
+            published[luid] = f"Tableau answered {exc.code} {exc.summary}"
+    for luid, label, sheet in sheets:
+        shape = sheet_shape(roots[luid], sheet)
+        print(
+            f"  {sheet} ({label}): rows {', '.join(shape.rows) or 'none'}; "
+            f"columns {', '.join(shape.cols) or 'none'}"
+        )
+        seen = published.get(luid)
+        if isinstance(seen, str):
+            print(f"    published: not checked: {seen}")
+        elif seen is not None and sheet not in seen:
+            print(f"    {NOT_PUBLISHED}")
+        export = (
+            "long (set sheet_field to a Measure Names value)"
+            if shape.long_export
+            else "wide"
+        )
+        print(f"    export: {export}")
+        if shape.decimals:
+            shown = ", ".join(f"{k} {v}" for k, v in shape.decimals.items())
+            print(f"    decimals: {shown}")
+        for line in shape.filters:
+            print(f"    filter {line}")

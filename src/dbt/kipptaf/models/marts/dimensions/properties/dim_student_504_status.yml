@@ -1,0 +1,160 @@
+models:
+  - name: dim_student_504_status
+    description:
+      Section 504 plan spans per student per enrollment stint. One row per
+      student, region, plan and span start. A span is the part of a 504 plan's
+      in-force window that falls inside one enrollment stint, so a plan that
+      crosses 2 stints gives 2 rows and a plan outside every stint gives none. A
+      current plan and a later previous plan can overlap, so 2 spans can share a
+      start date. A student with no 504 plan has no row. Only regions with an
+      EdPlan 504 report have rows. To find students with a plan in force on a
+      date, filter to rows whose start is on or before that date and whose end
+      is on or after it.
+    config:
+      meta:
+        dagster:
+          group: marts
+          asset_key:
+            - kipptaf
+            - marts
+            - dim_student_504_status
+    columns:
+      - name: student_504_status_key
+        data_type: string
+        description: Surrogate primary key.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
+        data_tests:
+          - unique
+
+      - name: is_current_plan
+        data_type: boolean
+        description:
+          True when the span comes from the student's Currently Valid 504 plan,
+          false when it comes from a previous plan. A previous plan's span ends
+          no later than the day before the next plan starts.
+        config:
+          meta:
+            contains_pii: true
+        data_tests:
+          - not_null
+
+      - name: effective_date_start_key
+        data_type: date
+        description:
+          First day of the span, the later of the plan's start date and the
+          stint's entry date.
+        config:
+          meta:
+            contains_pii: true
+            foreign_key:
+              to: ref('dim_dates')
+              to_columns: [date_key]
+
+      - name: effective_date_end_key
+        data_type: date
+        description:
+          Last day of the span, inclusive. The earlier of the plan's last day in
+          force and the stint's last day. '9999-12-31' only when both the plan
+          and the stint are open-ended.
+        config:
+          meta:
+            contains_pii: true
+            foreign_key:
+              to: ref('dim_dates')
+              to_columns: [date_key]
+
+      - name: _dbt_source_project
+        data_type: string
+        description:
+          District context for this span. Part of the grain, so a student
+          enrolled in 2 regions has a separate 504 timeline in each. Include it
+          in any join at student grain.
+
+      - name: student_key
+        data_type: string
+        description: Foreign key to `dim_students.student_key`.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_students')
+              to_columns: [student_key]
+
+      - name: student_enrollment_key
+        data_type: string
+        description:
+          Foreign key to `dim_student_enrollments.student_enrollment_key`, the
+          stint this span falls in. Not unique here, because a stint can hold
+          spans from more than 1 plan.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_student_enrollments')
+              to_columns: [student_enrollment_key]
+
+unit_tests:
+  - name: test_504_status_stint_windows
+    description:
+      A plan that crosses 2 stints gives 1 span per stint, each clipped to the
+      stint, with the stint's last day 1 day before its exit date. A plan
+      outside every stint gives no row. An open stint (no exit date) does not
+      cut the plan. A graduate placeholder row with no entry date adds nothing.
+      A current plan and an overlapping later plan that clip to the same entry
+      date give 2 rows with different keys.
+    model: dim_student_504_status
+    given:
+      - input: ref('int_students__section_504_plans')
+        format: sql
+        rows: |
+          select
+            2001 as student_number,
+            'kippnewark' as _dbt_source_project,
+            date '2026-03-01' as plan_start_date,
+            date '2027-03-01' as plan_end_date,
+            true as is_current_plan
+          union all select 2002, 'kippnewark', date '2027-09-01', date '2028-09-01', true
+          union all select 2003, 'kippnewark', date '2026-10-01', date '2027-10-01', true
+          union all select 2004, 'kippnewark', date '2025-01-10', date '2027-01-09', true
+          union all select 2004, 'kippnewark', date '2025-06-01', date '2026-06-01', false
+      - input: ref('int_students__student_enrollment_union')
+        format: sql
+        rows: |
+          select
+            2001 as student_number,
+            'kippnewark' as _dbt_source_project,
+            2025 as academic_year,
+            date '2025-09-01' as entrydate,
+            date '2026-06-30' as exitdate
+          union all select 2001, 'kippnewark', 2026, date '2026-09-01', date '2027-06-30'
+          union all select 2001, 'kippnewark', 2027, cast(null as date), cast(null as date)
+          union all select 2002, 'kippnewark', 2026, date '2026-09-01', date '2027-06-30'
+          union all select 2003, 'kippnewark', 2026, date '2026-09-01', cast(null as date)
+          union all select 2004, 'kippnewark', 2025, date '2025-09-01', date '2026-06-30'
+    expect:
+      format: sql
+      rows: |
+        select
+          'kippnewark' as _dbt_source_project,
+          date '2026-03-01' as effective_date_start_key,
+          date '2026-06-29' as effective_date_end_key,
+          true as is_current_plan,
+          to_hex(md5(concat('2001', '-', 'kippnewark', '-', '2026-03-01', '-', '2026-03-01'))) as student_504_status_key,
+          to_hex(md5('2001')) as student_key,
+          to_hex(md5(concat('2001', '-', 'kippnewark', '-', '2025', '-', '2025-09-01'))) as student_enrollment_key
+        union all select 'kippnewark', date '2026-09-01', date '2027-03-01', true,
+          to_hex(md5(concat('2001', '-', 'kippnewark', '-', '2026-03-01', '-', '2026-09-01'))),
+          to_hex(md5('2001')),
+          to_hex(md5(concat('2001', '-', 'kippnewark', '-', '2026', '-', '2026-09-01')))
+        union all select 'kippnewark', date '2026-10-01', date '2027-10-01', true,
+          to_hex(md5(concat('2003', '-', 'kippnewark', '-', '2026-10-01', '-', '2026-10-01'))),
+          to_hex(md5('2003')),
+          to_hex(md5(concat('2003', '-', 'kippnewark', '-', '2026', '-', '2026-09-01')))
+        union all select 'kippnewark', date '2025-09-01', date '2026-06-29', true,
+          to_hex(md5(concat('2004', '-', 'kippnewark', '-', '2025-01-10', '-', '2025-09-01'))),
+          to_hex(md5('2004')),
+          to_hex(md5(concat('2004', '-', 'kippnewark', '-', '2025', '-', '2025-09-01')))
+        union all select 'kippnewark', date '2025-09-01', date '2026-06-01', false,
+          to_hex(md5(concat('2004', '-', 'kippnewark', '-', '2025-06-01', '-', '2025-09-01'))),
+          to_hex(md5('2004')),
+          to_hex(md5(concat('2004', '-', 'kippnewark', '-', '2025', '-', '2025-09-01')))

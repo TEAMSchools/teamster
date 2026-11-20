@@ -1,6 +1,6 @@
 """A sort's finished explanations, so a stopped sort skips them when run again.
 
-`triage-progress.json` sits in the run folder beside `run.json`. Each finished
+`sort-progress.json` sits in the run folder beside `run.json`. Each finished
 explanation's outcome is kept under a key of what it ran on: the explanation, the
 comparison and bucket, both sides' SQL, and the open items it covered. Only
 counts are kept.
@@ -13,9 +13,9 @@ import json
 from collections.abc import Iterable
 from pathlib import Path
 
-from .checkpoints import TRIAGE_PROGRESS, write_json
+from .checkpoints import SORT_PROGRESS, write_json
 
-FILE = TRIAGE_PROGRESS
+FILE = SORT_PROGRESS
 
 
 def key(

@@ -53,7 +53,7 @@ CUBE = (
 
 
 def _attributed(found) -> bool:
-    """Every row attributed to a step and the counts add up: a lead, not a proof."""
+    """Every row attributed to a step and the counts add up: a lead, not an explanation."""
     return (
         found.n_rows > 0
         and found.unattributed == 0
@@ -434,7 +434,7 @@ def test_a_query_failure_keeps_its_job_and_reason_but_not_its_message():
     assert "12345" not in " ".join(found.evidence())
 
 
-def test_counts_that_do_not_add_up_never_prove_an_item():
+def test_counts_that_do_not_add_up_never_explain_an_item():
     found = trace.ItemTrace("dashboard", 10)
     found.steps["s"] = 10
     found.labels["s"] = "main: s"
@@ -454,7 +454,7 @@ def test_evidence_masks_a_part_its_total_would_give_away():
         "main: s: masked rows",
         "<10 rows unattributed: <10 recovered by no step",
     )
-    # The terminal and triage.json show exact counts.
+    # The terminal and sort.json show exact counts.
     assert found.evidence() == (
         "main: s: 18 rows",
         "7 rows unattributed: 7 recovered by no step",
@@ -648,8 +648,8 @@ def test_a_masked_unattributed_count_masks_its_whole_breakdown():
     assert "10" not in lines[2]
 
 
-def test_a_stop_keeps_the_items_already_proven(duck):
-    # N4: one item is proven at level 0; the stop comes after.
+def test_a_stop_keeps_the_items_already_explained(duck):
+    # N4: one item is explained at level 0; the stop comes after.
     _cube_rows(duck, [(1, "a", "X"), (2, "b", "Y")])
     duck.table("fact", FACT, [(1, "a", "X", False, True)])
     wh = DuckWarehouse(duck)
@@ -667,9 +667,9 @@ def test_a_stop_keeps_the_items_already_proven(duck):
     with pytest.raises(trace.Stopped) as caught:
         _trace(duck, FLAT, groups, wh=wh)
 
-    proven = caught.value.found[trace.item_key(groups[0])]
+    explained = caught.value.found[trace.item_key(groups[0])]
     stopped = caught.value.found[trace.item_key(groups[1])]
-    assert _attributed(proven) and not proven.stopped
+    assert _attributed(explained) and not explained.stopped
     assert stopped.stopped and not _attributed(stopped)
 
 
@@ -737,7 +737,7 @@ PICKED = (
 SRC = "student BIGINT, item VARCHAR, school VARCHAR, d BIGINT, x BOOLEAN"
 
 
-def test_a_filter_ahead_of_a_pick_with_1_candidate_is_still_proven(duck):
+def test_a_filter_ahead_of_a_pick_with_1_candidate_is_still_explained(duck):
     # Student 2's only row fails `x`: relaxing it brings back that row, the
     # only one its pick can keep.
     _cube_rows(duck, [(2, "c", "X")])
@@ -943,7 +943,7 @@ def test_dry_runs_run_at_once_and_keep_each_error_in_order():
                 raise BadRequest("x", errors=[{"reason": "invalidQuery"}])
             return 1.0
 
-    got = trace._dry_runs(Wh(), ["a", "b", "c"])
+    got = trace.dry_runs(Wh(), ["a", "b", "c"])
 
     assert got[0] == 1.0 and got[2] == 1.0 and isinstance(got[1], BadRequest)
     assert len(seen) == 3
