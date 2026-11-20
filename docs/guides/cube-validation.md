@@ -312,11 +312,13 @@ every shared surface.
 - Row-level output stays local: the terminal, `sort.json`, and your local cache.
   Unmatched rows wait in a BigQuery dataset that only the Data Team can read,
   and each table there expires.
-- Everything the validator writes for posting or committing shows a count under
-  10 as `<10`: the review issue, the questions file, the "Still with the
-  analyst" file, and the masked evidence in `sort.json`. A total that would give
-  away a hidden count reads `10+`. Small counts can single out a student, so the
-  owner's questions show every count as a bound.
+- Every count of students or rows the validator writes for posting or committing
+  shows a count under 10 as `<10`: the review issue, the questions file, the
+  "Still with the analyst" file, and the masked evidence in `sort.json`. A total
+  that would give away a hidden count reads `10+`. Small counts can single out a
+  student, so the owner's questions show every count as a bound. The one exact
+  count `decide` commits is how many dashboard cells a formula decision covers,
+  which names no one.
 - A sheet filter on a field outside the reviewed reference columns prints
   "chosen values hidden". The validator never prints or saves those values,
   because a filter's chosen values can name a student or a small group.
