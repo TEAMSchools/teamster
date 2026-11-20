@@ -986,6 +986,17 @@ def test_a_run_json_with_proofs_is_refused_until_compare_runs_again(
     assert cli.main(["sort", str(path), "--no-trace", "--no-explanations"]) == 1
     assert "older validator; `compare` it again" in capsys.readouterr().err
 
+    # Plain `compare` recomposes it from the current results, billing nothing.
+    ran = len(fakes.bq.ran)
+    assert cli.main(["compare", str(path)]) == 0
+    assert "Composing run.json again" in capsys.readouterr().out
+    # Only the locations lookup every command makes; no comparison query bills.
+    lookup = "SELECT abbreviation FROM `kipptaf_marts.dim_locations`"
+    assert fakes.bq.ran[ran:] == [lookup]
+    assert "rebuild_checks" in json.loads(_latest_run(tmp_path).read_text())
+    assert cli.main(["sort", str(path), "--no-trace", "--no-explanations"]) == 0
+    assert set(fakes.bq.ran[ran:]) == {lookup}
+
 
 def test_a_comparison_without_a_rebuild_check_is_skipped_and_the_rest_run(
     fakes, tmp_path, capsys
@@ -5262,7 +5273,7 @@ def test_sort_explains_first_and_traces_only_what_no_explanation_explains(
     order = []
 
     def stored(cfg, run_, d, **k):
-        order.append("proofs")
+        order.append("explanations")
         items = explain._bucket_items(run_, "ada-region", group.bucket)
         found = {i: explain.Outcome(g.n_rows, Counter({"C1": g.n_rows}))
                  for i, g in items}  # fmt: skip
@@ -5281,7 +5292,7 @@ def test_sort_explains_first_and_traces_only_what_no_explanation_explains(
     assert cli.main(["sort", str(path)]) == 0
 
     # The trace's own refusals come before any explanation spends.
-    assert order == ["ready", "proofs", "trace"]
+    assert order == ["ready", "explanations", "trace"]
     items = json.loads((saved.parent / "sort.json").read_text())["items"]
     (item,) = [i for i in items if i["kind"] == "group"]
     assert item["suggestion"] == "cause"

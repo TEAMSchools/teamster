@@ -440,12 +440,16 @@ def _gaps(comparisons: list[Comparison]) -> tuple[list[Gap], list[str]]:
 def last_run(cfg: ViewConfig, cache_root: Path) -> dict | None:
     """The view's last readable `run.json` of `cfg.fact`, or None.
 
-    A run saved before runs recorded their fact is no fact's run (`_saved_run`).
+    A run saved before runs recorded their fact is no fact's run (`_saved_run`),
+    and neither is one `_run_from_json` cannot read: `compare` composes it again
+    from the latest results.
     """
     try:
-        return _saved_run(cfg, cache_root)[0]
-    except Refusal:
+        data = _saved_run(cfg, cache_root)[0]
+        _run_from_json(data)
+    except (Refusal, KeyError, TypeError):
         return None
+    return data
 
 
 def composed_from(
