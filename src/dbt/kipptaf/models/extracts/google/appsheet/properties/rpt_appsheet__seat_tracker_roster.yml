@@ -132,7 +132,8 @@ unit_tests:
     description: >-
       Leader Intent to Return answers map to Not Returning or one of the 3
       Returning lengths; a staff Intent to Return answer keeps its existing
-      label. The placeholder seat rows carry no answer.
+      label. A leader who answered both forms gets one row, labeled from the
+      leader form. The placeholder seat rows carry no answer.
     model: rpt_appsheet__seat_tracker_roster
     given:
       - input: ref('int_surveys__survey_responses')
@@ -160,6 +161,15 @@ unit_tests:
           union all
           select
               305,
+              'I am not sure if I am returning and want to follow up with my manager and/or School Leader.',
+              2026, timestamp '2026-12-01 12:00:00', 'ITR', 'itr_plans'
+          union all
+          select
+              306, 'Committed through SY 27-28 (June 30, 2028)', 2026,
+              timestamp '2026-12-02 12:00:00', 'LITR', 'litr_plans'
+          union all
+          select
+              306,
               'I am not sure if I am returning and want to follow up with my manager and/or School Leader.',
               2026, timestamp '2026-12-01 12:00:00', 'ITR', 'itr_plans'
       - input: ref('int_students__teacher_grade_levels')
@@ -217,6 +227,12 @@ unit_tests:
               'e@example.org', 'e@example.org', 'm@example.org', 'm@example.org',
               date '2020-08-01', 'KIPP Miami', null, 'persone', 'manager',
               'Teaching and Learning', null, 'kippmiami'
+          union all
+          select
+              306, 'Active', 'Person F', 'School A', 'MS', 'School Leader',
+              'f@example.org', 'f@example.org', 'm@example.org', 'm@example.org',
+              date '2020-08-01', 'KIPP Miami', null, 'personf', 'manager',
+              'School Leadership', null, 'kippmiami'
       - input: ref('int_people__location_crosswalk')
         format: sql
         rows: |
@@ -240,6 +256,7 @@ unit_tests:
         - { employee_number: 303, itr_response: Returning 2 Years }
         - { employee_number: 304, itr_response: Returning 2+ Years }
         - { employee_number: 305, itr_response: Not Sure }
+        - { employee_number: 306, itr_response: Returning 1 Year }
         - { employee_number: 999999, itr_response: null }
         - { employee_number: 999998, itr_response: null }
         - { employee_number: 999997, itr_response: null }
