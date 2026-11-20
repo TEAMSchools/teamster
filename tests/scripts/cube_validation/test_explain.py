@@ -1219,12 +1219,16 @@ def test_an_explanation_counts_each_cause_s_students_per_cell_and_cut(
         tmp_path / "mastery__cube_only.sql", "mastery", "cube_only",
         CAUSES, EXPLANATION, {},
     )  # fmt: skip
-    students: list[dict] = []
-
-    found = explain.run_explanation(
-        wh, COMPARISON, SIDES, explanation, [("G1", _group(3))], BUILD, {},
-        students, table=explain.require_saved(wh, CFG, run, COMPARISON),
+    items = [("G1", _group(3))]
+    sql, literals = explain.explanation_sql(
+        wh, COMPARISON, SIDES, explanation, items, BUILD,
+        table=explain.require_saved(wh, CFG, run, COMPARISON), moved={},
+        students=True,
     )  # fmt: skip
+
+    found, students = explain._counted(
+        wh, sql, explanation, items, literals, COMPARISON
+    )
 
     assert found["G1"].counts == {"C1": 2, "C2": 1}
     (cut,) = [label for label, _, _ in pipeline.cut_flags(COMPARISON)]

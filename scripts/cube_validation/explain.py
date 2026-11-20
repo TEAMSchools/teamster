@@ -900,7 +900,7 @@ def explanation_query(
             "CAST(NULL AS STRING) AS __cell, CAST(NULL AS INT64) AS n_students"
         )
     return (
-        # trunk-ignore(bandit/B608): the explanation is the analyst's read-only SQL, vetted by check_sql; cause literals are quoted by pipeline.lit
+        # trunk-ignore(bandit/B608): the explanation is the analyst's read-only SQL, vetted by check_sql; cause literals are quoted by pipeline.lit; the student parts are as _student_parts builds them
         f"{head}__u AS (\n{select}\n),\n__p AS (\n{explanation}\n),\n"
         "__per AS (\n  SELECT __row, COUNT(*) AS __times, "
         f"MIN(IF(cause IN ({allowed}), cause, NULL)) AS cause, "
@@ -1218,55 +1218,6 @@ def explanation_sql(
     return explanation_query(ctes, select, body, literals, count), literals
 
 
-def run_explanation(
-    wh: Warehouse,
-    comparison: Comparison,
-    sides: pipeline.RowSides,
-    explanation: Explanation,
-    items: list[tuple[str, Group]],
-    build: Build,
-    moved: dict[str, bool] | None = None,
-    students: list[dict] | None = None,
-    *,
-    table: str,
-) -> dict[str, Outcome]:
-    """Check, pin, price and run an explanation on the run's saved rows. Call inside
-    `wh.budget`.
-
-    Args:
-        moved: As `explanation_sql` takes it.
-        students: Given, receives the explanation's cause-student counts per cell
-            and cut (`cause_students`), for `sort.json`.
-        table: The comparison's saved rows (`require_saved`).
-
-    Raises:
-        pipeline.Refusal: As `explanation_sql`, a failed outcome check (`outcomes`),
-            or BigQuery refuses it (its message is kept for the terminal).
-        CostCapError: It would pass the run's or the day's cap.
-    """
-    sql, literals = explanation_sql(
-        wh,
-        comparison,
-        sides,
-        explanation,
-        items,
-        build,
-        table=table,
-        moved=moved,
-        students=students is not None,
-    )
-    try:
-        usd = wh.estimate(sql)
-    except GoogleAPIError as exc:
-        raise _refused(explanation.path.name, exc) from exc
-    wh.refuse_past_caps(usd)
-    print(f"Explanation {explanation.path.name}: ${usd:.2f} (dry run).")
-    found, counted = _counted(wh, sql, explanation, items, literals, comparison)
-    if students is not None:
-        students += counted
-    return found
-
-
 def _counted(
     wh: Warehouse,
     sql: str,
@@ -1292,8 +1243,8 @@ def _counted(
 
 
 def _refused(name: str, exc: GoogleAPIError) -> pipeline.Refusal:
-    """Explanation `name`'s refusal for a BigQuery error, in BigQuery's words
-    (`bigquery_said`)."""
+    """The refusal for a BigQuery error on `name` (an explanation's file name,
+    or `-- reproduce <bucket>`), in BigQuery's words (`bigquery_said`)."""
     return pipeline.Refusal(f"{name}: BigQuery refused it ({bigquery_said(exc)})")
 
 
@@ -2133,9 +2084,7 @@ def explain(
             try:
                 usd = wh.estimate(query)
             except GoogleAPIError as exc:
-                raise pipeline.Refusal(
-                    f"-- reproduce {b}: BigQuery refused it ({bigquery_said(exc)})"
-                ) from exc
+                raise _refused(f"-- reproduce {b}", exc) from exc
             print(f"Reproduce {b}: dry run OK, ${usd:.2f} on today's tables.")
         prepared = trace.Prepared(schools=network_schools(wh))
         moment = run.moment_of(target.id)
