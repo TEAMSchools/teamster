@@ -37,21 +37,42 @@ with
                     = 'I am not sure if I am returning and want to follow up with my manager and/or School Leader.'
                 then 'Not Sure'
                 /*
-                 * Leader Intent to Return Survey answers. The SY years are
-                 * for the 2026 round: roll them forward with the form each
-                 * year, or a reused form maps to the wrong length.
+                 * Leader Intent to Return Survey answers, matched on the part
+                 * before any network name so a rebrand doesn't break them. The
+                 * School Year 27-28 and 28-29 prefixes are for the 2026 round:
+                 * roll them forward with the form each year, or a reused form
+                 * maps to the wrong length.
                  */
                 when
                     starts_with(
                         answer, 'This is my last school year in my current role'
                     )
                 then 'Not Returning'
-                when starts_with(answer, 'Committed through SY 27-28')
+                when
+                    starts_with(
+                        answer,
+                        'I am committed to my current role through the end of School Year 27-28'
+                    )
                 then 'Returning 1 Year'
-                when starts_with(answer, 'Committed through SY 28-29')
+                when
+                    starts_with(
+                        answer,
+                        'I am committed to my current role through the end of School Year 28-29'
+                    )
                 then 'Returning 2 Years'
-                when starts_with(answer, 'Committed for the next 2+ years')
+                when
+                    starts_with(
+                        answer,
+                        'I am committed to my current role for the next 2+ years'
+                    )
                 then 'Returning 2+ Years'
+                when
+                    contains_substr(
+                        answer, 'interested in an opportunity at another school'
+                    )
+                then 'Interested in Transfer'
+                when starts_with(answer, 'I am not sure if I am returning')
+                then 'Not Sure'
                 else answer
             end as answer_short,
         -- trunk-ignore-end(sqlfluff/LT05)

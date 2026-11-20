@@ -73,8 +73,8 @@ models:
           academic year. Staff Intent to Return Survey answers map to Returning,
           Interested in Transfer, Not Returning, or Not Sure. Leader Intent to
           Return Survey answers map to Not Returning, Returning 1 Year,
-          Returning 2 Years, or Returning 2+ Years. Null when they have not
-          answered.
+          Returning 2 Years, Returning 2+ Years, Interested in Transfer, or Not
+          Sure. Null when they have not answered.
       - name: certification_renewal_status
         data_type: int64
         description: Placeholder for a future certification feed; always null.
@@ -130,10 +130,11 @@ models:
 unit_tests:
   - name: test_seat_tracker_itr_response_leader_mapping
     description: >-
-      Leader Intent to Return answers map to Not Returning or one of the 3
-      Returning lengths; a staff Intent to Return answer keeps its existing
-      label. A leader who answered both forms gets one row, labeled from the
-      leader form. The placeholder seat rows carry no answer.
+      Leader Intent to Return answers, in the wording recruitment set on the
+      setup page, map to Not Returning, one of the 3 Returning lengths,
+      Interested in Transfer, or Not Sure; a staff Intent to Return answer keeps
+      its existing label. A leader who answered both forms gets one row, labeled
+      from the leader form. The placeholder seat rows carry no answer.
     model: rpt_appsheet__seat_tracker_roster
     given:
       - input: ref('int_surveys__survey_responses')
@@ -141,23 +142,36 @@ unit_tests:
         rows: |
           select
               301 as respondent_employee_number,
-              'This is my last school year in my current role.' as answer,
+              'This is my last school year in my current role. The Recruitment TEAM should definitely hire for my position.'
+              as answer,
               2026 as academic_year,
               timestamp '2026-12-01 12:00:00' as date_submitted,
               'LITR' as term_code,
               'litr_plans' as question_shortname
           union all
           select
-              302, 'Committed through SY 27-28 (June 30, 2028)', 2026,
+              302,
+              'I am committed to my current role through the end of School Year 27-28.  I plan to seek a promotion or leave KIPP NJ | KIPP South Florida, as of June 30, 2028.',
+              2026, timestamp '2026-12-01 12:00:00', 'LITR', 'litr_plans'
+          union all
+          select
+              303,
+              'I am committed to my current role through the end of School Year 28-29.  I plan to seek a promotion or leave KIPP NJ | KIPP South Florida, as of June 30, 2029.',
+              2026, timestamp '2026-12-01 12:00:00', 'LITR', 'litr_plans'
+          union all
+          select
+              304, 'I am committed to my current role for the next 2+ years.', 2026,
               timestamp '2026-12-01 12:00:00', 'LITR', 'litr_plans'
           union all
           select
-              303, 'Committed through SY 28-29 (June 30, 2029)', 2026,
-              timestamp '2026-12-01 12:00:00', 'LITR', 'litr_plans'
+              307,
+              'I am committed to KIPP NJ | KIPP South Florida, but interested in an opportunity at another school and/or in a different role. I will speak to my manager about my interests.',
+              2026, timestamp '2026-12-01 12:00:00', 'LITR', 'litr_plans'
           union all
           select
-              304, 'Committed for the next 2+ years', 2026,
-              timestamp '2026-12-01 12:00:00', 'LITR', 'litr_plans'
+              308,
+              'I am not sure if I am returning and want to follow up with my manager.',
+              2026, timestamp '2026-12-01 12:00:00', 'LITR', 'litr_plans'
           union all
           select
               305,
@@ -165,8 +179,9 @@ unit_tests:
               2026, timestamp '2026-12-01 12:00:00', 'ITR', 'itr_plans'
           union all
           select
-              306, 'Committed through SY 27-28 (June 30, 2028)', 2026,
-              timestamp '2026-12-02 12:00:00', 'LITR', 'litr_plans'
+              306,
+              'I am committed to my current role through the end of School Year 27-28.  I plan to seek a promotion or leave KIPP NJ | KIPP South Florida, as of June 30, 2028.',
+              2026, timestamp '2026-12-02 12:00:00', 'LITR', 'litr_plans'
           union all
           select
               306,
@@ -233,6 +248,18 @@ unit_tests:
               'f@example.org', 'f@example.org', 'm@example.org', 'm@example.org',
               date '2020-08-01', 'KIPP Miami', null, 'personf', 'manager',
               'School Leadership', null, 'kippmiami'
+          union all
+          select
+              307, 'Active', 'Person G', 'School A', 'MS', 'School Leader',
+              'g@example.org', 'g@example.org', 'm@example.org', 'm@example.org',
+              date '2020-08-01', 'KIPP Miami', null, 'persong', 'manager',
+              'School Leadership', null, 'kippmiami'
+          union all
+          select
+              308, 'Active', 'Person H', 'School A', 'MS', 'School Leader',
+              'h@example.org', 'h@example.org', 'm@example.org', 'm@example.org',
+              date '2020-08-01', 'KIPP Miami', null, 'personh', 'manager',
+              'School Leadership', null, 'kippmiami'
       - input: ref('int_people__location_crosswalk')
         format: sql
         rows: |
@@ -257,6 +284,8 @@ unit_tests:
         - { employee_number: 304, itr_response: Returning 2+ Years }
         - { employee_number: 305, itr_response: Not Sure }
         - { employee_number: 306, itr_response: Returning 1 Year }
+        - { employee_number: 307, itr_response: Interested in Transfer }
+        - { employee_number: 308, itr_response: Not Sure }
         - { employee_number: 999999, itr_response: null }
         - { employee_number: 999998, itr_response: null }
         - { employee_number: 999997, itr_response: null }

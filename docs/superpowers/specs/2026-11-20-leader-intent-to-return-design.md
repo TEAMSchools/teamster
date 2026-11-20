@@ -198,3 +198,11 @@ Leader eligibility is active plus primary assignment. The staff intent to return
 survey gains recent hires outside KTAF, which supersedes the anti-goal that
 nobody newly enters the staff population. Every other survey keeps the 3-week
 wait.
+
+## Revision 2026-11-20: transfer and not-sure answers for leaders
+
+Recruitment added 2 answers to the leader question and a transfer section copied
+from the staff form. The seat tracker maps the leader transfer answer to
+Interested in Transfer and the leader not-sure answer to Not Sure, alongside the
+4 mappings in build step 7. Matching uses the wording before any network name,
+so the KIPP South Florida rebrand in the answers doesn't break it.
