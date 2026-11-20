@@ -340,7 +340,7 @@ def render_local(run: RunResult) -> str:
     )
     out += [
         "",
-        "To re-confirm (the SQL changed, or the formula check filed more cells):",
+        "To re-confirm (the SQL changed, or a formula difference's cells did):",
     ]
     out += _bullets([_decision_line(d) for d in run.applied.reconfirm])
     out += ["", "No longer needed (no group matches):"]

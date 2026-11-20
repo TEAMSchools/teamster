@@ -840,6 +840,40 @@ def test_a_bad_recorded_check_cell_count_is_refused(tmp_path, decision, value, m
         load_view_config(_write(tmp_path, text))
 
 
+CELLS_HASH = "0123456789abcdef" * 4
+
+
+def test_a_formula_decision_loads_its_recorded_cells(tmp_path):
+    text = EXAMPLE + FORMULA_DECISION.replace(
+        "def }", f"def, formula_cells: {CELLS_HASH} }}"
+    )
+    (*_, d) = load_view_config(_write(tmp_path, text)).decisions
+    assert d.fingerprints["formula_cells"] == CELLS_HASH
+
+
+@pytest.mark.parametrize(
+    ("decision", "value", "match"),
+    [
+        (FORMULA_DECISION, CELLS_HASH[:-1], "must be a sha256 hex digest"),
+        (FORMULA_DECISION, CELLS_HASH.upper(), "must be a sha256 hex digest"),
+        (FORMULA_DECISION, "'" + "g" * 64 + "'", "must be a sha256 hex digest"),
+        (FORMULA_DECISION, "Newark", "must be a sha256 hex digest"),
+        (FORMULA_DECISION, "[a]", "must be a sha256 hex digest"),
+        (
+            FORMULA_DECISION.replace(
+                "formula: true", "group: { column: x, values: ['1'] }"
+            ),
+            CELLS_HASH,
+            "belongs to a formula decision",
+        ),
+    ],
+)
+def test_a_bad_recorded_cells_hash_is_refused(tmp_path, decision, value, match):
+    text = EXAMPLE + decision.replace("def }", f"def, formula_cells: {value} }}")
+    with pytest.raises(ConfigError, match=rf"fingerprints\.formula_cells: {match}"):
+        load_view_config(_write(tmp_path, text))
+
+
 def test_formula_must_be_true(tmp_path):
     text = EXAMPLE + FORMULA_DECISION.replace("formula: true", "formula: false")
     with pytest.raises(ConfigError, match=r"formula: must be true"):

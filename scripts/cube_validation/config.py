@@ -222,8 +222,14 @@ def explanation_key(comparison: Comparison) -> str | None:
 
 # A formula decision's `fingerprints` key: how many cells the formula check
 # had filed in the diff when it was decided (`CellDiff.matched_only`), as
-# text; absent reads as 0. More filed since sends the decision to re-confirm.
+# text; absent reads as 0. A decision without `FORMULA_CELLS` is sent to
+# re-confirm when more are filed since.
 MATCHED_ONLY = "matched_only"
+# A formula decision's `fingerprints` key: which cells the diff held when it
+# was decided, as `decisions.formula_cells_hash`, a digest of their refs that
+# carries no cell value. Other cells since send the decision to re-confirm.
+FORMULA_CELLS = "formula_cells"
+_SHA256 = re.compile(r"[0-9a-f]{64}")
 
 
 @dataclass(frozen=True)
@@ -246,8 +252,10 @@ class Decision:
     # `fingerprints.explanation` is the explanation file's.
     cause: dict[str, Any] = field(default_factory=dict)
     # Covers the comparison's formula difference, in place of `group`: its
-    # differing cells that hold no unmatched row, whichever they are in a run,
-    # and the cells the formula check filed, up to `fingerprints.matched_only`.
+    # differing cells that hold no unmatched row and the cells the formula
+    # check filed, while they are the cells `fingerprints.formula_cells`
+    # recorded (without it, any cell of the first kind and the second up to
+    # `fingerprints.matched_only`).
     formula: bool = False
     # The call the owner answered a cause decision with; set by
     # `record-answers`, so `ask-owner` asks it no more.
@@ -746,6 +754,15 @@ def _decision(
         if not str(fingerprints[MATCHED_ONLY]).isdecimal():
             reader.child("fingerprints", fingerprints).fail(
                 MATCHED_ONLY, "must be a whole number; `decide` writes it"
+            )
+    if FORMULA_CELLS in fingerprints:
+        if not formula:
+            reader.child("fingerprints", fingerprints).fail(
+                FORMULA_CELLS, "belongs to a formula decision"
+            )
+        if not _SHA256.fullmatch(str(fingerprints[FORMULA_CELLS])):
+            reader.child("fingerprints", fingerprints).fail(
+                FORMULA_CELLS, "must be a sha256 hex digest; `decide` writes it"
             )
     answer = reader.get("answer", str, default="")
     if answer and not cause:

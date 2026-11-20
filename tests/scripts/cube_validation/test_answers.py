@@ -723,6 +723,25 @@ def test_a_formula_decision_records_the_cells_the_check_filed():
     assert none["fingerprints"] == FPS["ada"]
 
 
+def test_a_formula_decision_records_which_cells_it_covers():
+    entry = {"id": "f", "call": "domain_owner", "reason": "r", "item": "ada:formula"}
+    digest = "ab" * 32
+
+    (f,) = approved_decisions(
+        [entry], SORTED, FPS, formula_cells={"ada": 3},
+        formula_hashes={"ada": digest, "other": "cd" * 32},
+    )  # fmt: skip
+    (team,) = approved_decisions(
+        [{"id": "t", "call": "deliberate", "reason": "r", "item": "cut:Team"}],
+        SORTED, FPS, formula_hashes={"ada": digest},
+    )  # fmt: skip
+
+    assert f["fingerprints"] == {
+        **FPS["ada"], "matched_only": "3", "formula_cells": digest,
+    }  # fmt: skip
+    assert "fingerprints" not in team
+
+
 def test_a_cell_set_takes_no_decision():
     entry = {"id": "x", "call": "deliberate", "reason": "r", "item": "ada:cells"}
 

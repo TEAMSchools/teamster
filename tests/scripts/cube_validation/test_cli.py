@@ -42,6 +42,9 @@ from cube_validation.config import ColumnPair, Comparison, load_view_config
 from cube_validation.cube_client import Compiled, CubeError
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+from cube_validation.decisions import formula_cells_hash
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.formula import (
     NO_ROWS,
     NOT_COMPARED,
@@ -4698,7 +4701,13 @@ def test_a_cell_that_gains_a_row_leaves_the_formula_claim(fakes, tmp_path, capsy
                                      "item": "ada-region:formula"}])  # fmt: skip
     assert cli.main(["decide", str(path), str(approved)]) == 0
     (decision,) = load_view_config(path).decisions
-    assert decision.formula and decision.fingerprints == _saved_fingerprints(tmp_path)
+    assert decision.formula
+    assert decision.fingerprints == {
+        **_saved_fingerprints(tmp_path),
+        "formula_cells": formula_cells_hash(
+            json.loads(_latest_run(tmp_path).read_text())["diff_cells"], "ada-region"
+        ),
+    }
 
     # Run 2: an unproven Cube-only group lands in Newark under the default cut.
     fakes.bq.reconcile = NEWARK_MATCHES + [
@@ -4711,7 +4720,7 @@ def test_a_cell_that_gains_a_row_leaves_the_formula_claim(fakes, tmp_path, capsy
 
     saved = json.loads(_latest_run(tmp_path).read_text())
     applied = saved["applied"]
-    (cells,) = applied["open_cells"]
+    cells, formula = applied["open_cells"]
     assert (cells["kind"], cells["counts"]) == ("cells", {"differs": 1})
     kinds = {(c["cut"], c["key"]): c["kind"] for c in saved["diff_cells"]}
     assert kinds == {
@@ -4720,13 +4729,14 @@ def test_a_cell_that_gains_a_row_leaves_the_formula_claim(fakes, tmp_path, capsy
         ('{"Region": "Miami"}', "regions_region_name=Camden"): "formula",
         ('{"Region": "Miami"}', "regions_region_name=Newark"): "formula",
     }
-    ((d, quiet),) = applied["quiet_cells"]
-    assert d["id"] == "which-rate"
-    # Camden under both cuts, Newark under the Miami cut, where it has no row.
-    assert (quiet["kind"], quiet["counts"]) == ("formula", {"differs": 3})
+    # Camden under both cuts, Newark under the Miami cut, where it has no row:
+    # fewer cells than the decision was made on, so it is asked again.
+    assert (formula["kind"], formula["counts"]) == ("formula", {"differs": 3})
+    assert applied["quiet_cells"] == []
+    assert [d["id"] for d in applied["reconfirm"]] == ["which-rate"]
     items = _sorted_items(path, tmp_path)
     assert items["ada-region:cells"]["suggestion"] == "investigate"
-    assert "ada-region:formula" not in items
+    assert "ada-region:formula" in items
 
 
 def test_a_run_saved_before_formula_differences_reads_its_cells_as_cell_sets(
@@ -5633,23 +5643,36 @@ def test_a_formula_decision_is_asked_again_once_the_check_files_more_cells(
     assert cli.main(["decide", str(path), str(approved)]) == 0
 
     (decision,) = [d for d in load_view_config(path).decisions if d.formula]
+    run = json.loads(_latest_run(tmp_path).read_text())
+    cells = formula_cells_hash(run["diff_cells"], "ada-region")
     assert decision.fingerprints == {
         **_saved_fingerprints(tmp_path),
         "matched_only": "2",
+        "formula_cells": cells,
     }
-    applied = json.loads(_latest_run(tmp_path).read_text())["applied"]
-    assert [d["id"] for d, _ in applied["quiet_cells"]] == ["which-rate"]
+    assert [d["id"] for d, _ in run["applied"]["quiet_cells"]] == ["which-rate"]
 
-    # Recorded with fewer cells than the check has filed since (here, as a
-    # decision written before the count was): asked again.
+    def asked_again():
+        assert cli.main(["reapply", str(path)]) == 0
+        applied = json.loads(_latest_run(tmp_path).read_text())["applied"]
+        assert [d["id"] for d in applied["reconfirm"]] == ["which-rate"]
+        assert applied["quiet_cells"] == []
+        assert [d["kind"] for d in applied["open_cells"]] == ["formula"]
+
+    # Recorded on other cells than the run's formula difference holds now.
     text = path.read_text()
-    path.write_text(text.replace("matched_only: '2'", "matched_only: '1'"))
-    assert cli.main(["reapply", str(path)]) == 0
+    path.write_text(text.replace(cells, "ab" * 32))
+    asked_again()
 
-    applied = json.loads(_latest_run(tmp_path).read_text())["applied"]
-    assert [d["id"] for d in applied["reconfirm"]] == ["which-rate"]
-    assert applied["quiet_cells"] == []
-    assert [d["kind"] for d in applied["open_cells"]] == ["formula"]
+    # Recorded before decisions recorded their cells, with fewer cells than
+    # the check has filed since: asked again.
+    older = re.sub(r",?\s*formula_cells: '?[0-9a-f]{64}'?", "", text)
+    path.write_text(older.replace("matched_only: '2'", "matched_only: '1'"))
+    (decision,) = [d for d in load_view_config(path).decisions if d.formula]
+    assert decision.fingerprints == {
+        **_saved_fingerprints(tmp_path), "matched_only": "1",
+    }  # fmt: skip
+    asked_again()
     # Out of the questions while it waits; ask-owner says so on stderr.
     assert "ada-region:formula" in _sorted_items(path, tmp_path)
     capsys.readouterr()

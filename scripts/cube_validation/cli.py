@@ -56,6 +56,7 @@ from .config import (
     write_decision,
 )
 from .cube_client import Cube, CubeError, CubeRefusal
+from .decisions import formula_cells_hash
 from .moment import MomentError, utcnow
 
 EXPOSURES = (
@@ -708,6 +709,11 @@ def _decide(cfg: ViewConfig, path: Path, approved_path: Path) -> int:
         existing=cfg.decisions,
         formula_cells={
             d.comparison_id: d.matched_only
+            for d in run.applied.open_cells
+            if d.kind == "formula"
+        },
+        formula_hashes={
+            d.comparison_id: formula_cells_hash(run.diff_cells, d.comparison_id)
             for d in run.applied.open_cells
             if d.kind == "formula"
         },

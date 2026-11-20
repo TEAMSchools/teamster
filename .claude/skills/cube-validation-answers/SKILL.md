@@ -79,8 +79,8 @@ validation files or runs the validator, and neither does this session.
       difference: both sides hold the same rows and compute the number
       differently, so ask which calculation is right. A formula question the
       owner answered before can come back under new decision ids: the validator
-      found more such cells, which the earlier answer never saw, so tell the
-      owner that before asking it.
+      found other such cells (more, fewer, or different ones), which the earlier
+      answer never saw, so tell the owner that before asking it.
    5. The owner's checks, one per `hand_checks` entry. The dashboard: the sheet
       (`sheet` in `workbook`), every filter to set there (`filters`), the cell
       to read (`dims`, or the total), and the number to expect (`dashboard`)

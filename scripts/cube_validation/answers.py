@@ -26,6 +26,7 @@ from . import coverage, explain, pipeline, sort
 from .config import (
     _TASK,
     CALLS,
+    FORMULA_CELLS,
     MATCHED_ONLY,
     SEPARATED_DIGITS,
     Decision,
@@ -1123,6 +1124,7 @@ def approved_decisions(
     fingerprints: dict[str, dict[str, str]],
     existing: list[Decision] | tuple[Decision, ...] = (),
     formula_cells: dict[str, int] | None = None,
+    formula_hashes: dict[str, str] | None = None,
 ) -> list[dict]:
     """Turn an approved triage batch into decisions, in the file's key order.
 
@@ -1141,9 +1143,11 @@ def approved_decisions(
     Every other item takes its key fields from the triage item's `stub`,
     which holds its real values; a formula difference's is `formula: true`.
     Either kind takes the comparison's `{cube, dashboard}` from the run's
-    fingerprints; a formula difference also records, when there are any,
-    the cells the formula check filed in it (`fingerprints.matched_only`), so
-    more filed later sends it to re-confirm (`decisions.apply`). A missing cut
+    fingerprints; a formula difference also records which cells it holds
+    (`fingerprints.formula_cells`, a digest of their refs) and, when there
+    are any, how many the formula check filed in it
+    (`fingerprints.matched_only`), so other cells later send it to
+    re-confirm (`decisions.apply`). A missing cut
     or filter covers the view, so it takes neither a comparison nor
     fingerprints. A cell set takes no decision.
 
@@ -1161,6 +1165,8 @@ def approved_decisions(
         existing: The file's decisions.
         formula_cells: Per comparison, the cells the formula check filed in
             the run's formula difference (`CellDiff.matched_only`).
+        formula_hashes: Per comparison, which cells the run's formula
+            difference holds (`decisions.formula_cells_hash`).
 
     Returns:
         The decisions to write: new ones, and the file's cause decisions
@@ -1260,6 +1266,13 @@ def approved_decisions(
                 decision["fingerprints"] = fp
             if stub.get("formula") and (n := (formula_cells or {}).get(comparison)):
                 decision["fingerprints"] = {**fp, MATCHED_ONLY: str(n)}
+            if stub.get("formula") and (
+                cells := (formula_hashes or {}).get(comparison)
+            ):
+                decision["fingerprints"] = {
+                    **decision.get("fingerprints", fp),
+                    FORMULA_CELLS: cells,
+                }
             out.append(decision)
             continue
 

@@ -629,8 +629,9 @@ refuses when the view's only run read another fact.
    its decision, so give every entry on one cause the same call. An item is
    decided once every one of its causes is; approving it again changes nothing.
    A formula item becomes a `formula: true` decision, which records in
-   `fingerprints.matched_only` how many cells the formula check had filed in it
-   (no key when none); other items take their key fields from the stub.
+   `fingerprints.formula_cells` which cells it holds (a digest of their refs, no
+   values) and in `fingerprints.matched_only` how many the formula check had
+   filed (no key when none); other items take their key fields from the stub.
    Fingerprints come from the latest run and the explanation. Items still in
    `investigate` wait while the rest are written; `decide` refuses an approved
    entry whose item is itself in `investigate`, or one that would close such an
@@ -676,30 +677,35 @@ refuses when the view's only run read another fact.
    view. A comparison's formula difference takes `formula: true` in place of
    `group`, with its `comparison` and `fingerprints`; in each run it covers only
    that comparison's differing cells that hold no unmatched row, plus the cells
-   the formula check filed, while those number no more than its
-   `fingerprints.matched_only` (absent reads as 0). When the check files more,
-   the decision goes to re-confirm and the formula item opens again, since the
-   new cells were never put to whoever answered: delete the decision, `reapply`
-   and `sort`, then `decide` the item again under a new decision id, never the
-   deleted one's, which records the new count. The owner's session skips a
+   the formula check filed, while they are the cells its
+   `fingerprints.formula_cells` recorded. When any cell differs from those (one
+   more, one fewer, or the same number of others), the decision goes to
+   re-confirm and the formula item opens again, since those cells were never put
+   to whoever answered: delete the decision, `reapply` and `sort`, then `decide`
+   the item again under a new decision id, never the deleted one's, which
+   records the new cells. A decision written before `formula_cells` existed goes
+   to re-confirm only when the check has filed more cells than its
+   `fingerprints.matched_only` (absent reads as 0). The owner's session skips a
    question whose decision ids an earlier answers comment named, so a reused id
-   never reaches the owner. Never raise the count by hand. The loader refuses a
-   `cells:` decision and every renamed key, naming what to write instead. Never
-   hand-write a `group:` decision for an item `sort` holds in `investigate`:
-   `decide` and `ask-owner` refuse while one closes such an item. An explained
-   cause takes `cause: {side, label}` in place of `group`, `label` being the
-   explanation's words with each ID-shaped number written `<n>`, and
-   `fingerprints` adds `explanation`, the explanation's. It names no group: each
-   `sort` re-runs the explanations and marks an item `decided` when every one of
-   its causes has a decision that still holds, so a run never closes one. A
-   decision whose SQL or explanation changed decides nothing until re-approved
-   through `decide`, never by pasting new fingerprints; one the owner answered
-   (`answer:`) is never re-approved: delete it to ask again. `decide` writes
-   these; do not hand-write one. A cause decision and a `group` decision on one
-   group with different calls refuse, in `decide`, `reapply` and `ask-owner`,
-   even after the `group` decision closed the group. That check reads the closed
-   groups the latest `sort` classified, so run `sort --no-trace` after `explain`
-   saves a new explanation and before the next `decide`.
+   never reaches the owner. Never edit `formula_cells` or the count by hand; the
+   loader refuses a `formula_cells` that is not a sha256 hex digest or sits on
+   any other decision. The loader refuses a `cells:` decision and every renamed
+   key, naming what to write instead. Never hand-write a `group:` decision for
+   an item `sort` holds in `investigate`: `decide` and `ask-owner` refuse while
+   one closes such an item. An explained cause takes `cause: {side, label}` in
+   place of `group`, `label` being the explanation's words with each ID-shaped
+   number written `<n>`, and `fingerprints` adds `explanation`, the
+   explanation's. It names no group: each `sort` re-runs the explanations and
+   marks an item `decided` when every one of its causes has a decision that
+   still holds, so a run never closes one. A decision whose SQL or explanation
+   changed decides nothing until re-approved through `decide`, never by pasting
+   new fingerprints; one the owner answered (`answer:`) is never re-approved:
+   delete it to ask again. `decide` writes these; do not hand-write one. A cause
+   decision and a `group` decision on one group with different calls refuse, in
+   `decide`, `reapply` and `ask-owner`, even after the `group` decision closed
+   the group. That check reads the closed groups the latest `sort` classified,
+   so run `sort --no-trace` after `explain` saves a new explanation and before
+   the next `decide`.
 
 8. `ask-owner <files> --domain <domain>` prints the validation issue's body: the
    numbered questions ready for the owner, each with the owner's hand checks,

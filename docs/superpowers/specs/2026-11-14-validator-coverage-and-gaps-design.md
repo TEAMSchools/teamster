@@ -657,3 +657,5 @@ comparison, plus 7 smaller gaps. The owner decided each in conversation.
 - `ask-owner` shows "Still with the analyst" as counts per comparison and
   bucket; the per-group list moves to a file beside the review JSON, and masked
   groups are counted, not listed.
+- A formula decision records which cells it covered (a digest of their refs) and
+  is asked again when those cells change, not only when more are filed.

@@ -524,6 +524,7 @@ def compose_run(
         frozenset(c.id for c in comparisons) - now,
         checks,
     )
+    diff_cells = _diff_cells(sides, formula_cells)
     try:
         applied = decisions.apply(
             cfg.decisions,
@@ -531,6 +532,7 @@ def compose_run(
             sides.fingerprints,
             gaps=gaps,
             cell_diffs=cell_diffs,
+            diff_cells=diff_cells,
         )
     except ValueError as exc:
         raise Refusal(str(exc)) from exc
@@ -581,7 +583,7 @@ def compose_run(
         fingerprints=sides.fingerprints,
         decisions_fingerprint=decisions.decisions_fingerprint(cfg.decisions),
         gaps_unknown=gaps_unknown,
-        diff_cells=_diff_cells(sides, formula_cells),
+        diff_cells=diff_cells,
         cell_sql=sides.cell_sql,
         cell_sql_usd=sides.cell_sql_usd,
         moments={c.id: results[c.id].moment for c in composed},
@@ -871,6 +873,7 @@ def _apply_saved(cfg: ViewConfig, saved: RunResult) -> Applied:
             saved.fingerprints,
             gaps=was.open_gaps + [g for _, g in was.quiet_gaps],
             cell_diffs=was.open_cells + [d for _, d in was.quiet_cells],
+            diff_cells=saved.diff_cells,
         )
     except ValueError as exc:
         raise Refusal(str(exc)) from exc
