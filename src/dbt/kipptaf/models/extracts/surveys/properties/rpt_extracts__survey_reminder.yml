@@ -4,7 +4,10 @@ models:
       One row per staff email with at least one incomplete survey in a round
       that is open now, for the current academic year. Feeds the survey reminder
       list. Gallup Q12 and TNTP Insight are excluded upstream in
-      rpt_tableau__survey_completion.
+      rpt_tableau__survey_completion. The Leader Intent to Return Survey is
+      excluded here because recruitment sends its own reminders from
+      rpt_gsheets__leader_intent_to_return_followup; leaders still appear for
+      their other incomplete surveys.
     columns:
       - name: email
         data_type: string
