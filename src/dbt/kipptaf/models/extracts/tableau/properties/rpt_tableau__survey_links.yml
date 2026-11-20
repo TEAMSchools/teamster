@@ -104,7 +104,11 @@ models:
           reporting terms sheet.
       - name: survey
         data_type: string
-        description: Name of the survey the person is assigned.
+        description: >-
+          Name of the survey the person is assigned. Leaders in
+          int_surveys__leader_intent_to_return_population get the Leader Intent
+          to Return Survey instead of the staff Intent to Return Survey for the
+          same academic year.
       - name: assignment
         data_type: string
         description: >-
@@ -121,9 +125,10 @@ models:
           location, and employee number so responses can be attributed. The
           Staff Info and Certification Update form additionally prefills the
           person's current demographic and education answers so they only have
-          to correct what changed. TNTP Insight and Gallup Q12 link to a help
-          article instead, because those surveys are reached from an emailed
-          link.
+          to correct what changed. Leaders get the leader form's link rather
+          than the staff intent to return form. TNTP Insight and Gallup Q12 link
+          to a help article instead, because those surveys are reached from an
+          emailed link.
         config:
           meta:
             contains_pii: true

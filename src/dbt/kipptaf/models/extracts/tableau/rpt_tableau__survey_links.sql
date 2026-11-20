@@ -218,7 +218,44 @@ with
         inner join
             {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on rt.name = 'Intent to Return Survey'
-        where r.business_unit <> 'KIPP TEAM and Family Schools Inc.'
+        left join
+            {{ ref("int_surveys__leader_intent_to_return_population") }} as lp
+            on r.employee_number = lp.employee_number
+            and rt.academic_year = lp.academic_year
+        where
+            r.business_unit <> 'KIPP TEAM and Family Schools Inc.'
+            and lp.employee_number is null
+
+        union all
+
+        select
+            r.employee_number,
+            r.assignment_status,
+            r.preferred_name_lastfirst,
+            r.business_unit,
+            r.location,
+            r.department,
+            r.job_title,
+            r.hire_date,
+            r.mail,
+            r.google_email,
+            r.report_to_employee_number,
+            r.report_to_preferred_name_lastfirst,
+            r.samaccountname,
+            r.username,
+
+            lp.academic_year,
+            lp.survey_round,
+            lp.is_current,
+
+            'Leader Intent to Return Survey' as survey,
+            'Complete Leader Intent to Return Survey' as `assignment`,
+
+            'TODO(#6251): leader form responder URL' as link,
+        from eligible_roster as r
+        inner join
+            {{ ref("int_surveys__leader_intent_to_return_population") }} as lp
+            on r.employee_number = lp.employee_number
 
         union all
 
