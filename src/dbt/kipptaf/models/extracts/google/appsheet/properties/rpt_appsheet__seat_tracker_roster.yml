@@ -70,8 +70,11 @@ models:
         data_type: string
         description:
           Short label for the staff member's Intent to Return answer this
-          academic year (Returning, Interested in Transfer, Not Returning, Not
-          Sure). Null when they have not answered.
+          academic year. Staff Intent to Return Survey answers map to Returning,
+          Interested in Transfer, Not Returning, or Not Sure. Leader Intent to
+          Return Survey answers map to Not Returning, Returning 1 Year,
+          Returning 2 Years, or Returning 2+ Years. Null when they have not
+          answered.
       - name: certification_renewal_status
         data_type: int64
         description: Placeholder for a future certification feed; always null.
@@ -123,3 +126,122 @@ models:
           School Support managing directors, School Support directors at a
           room-code location, or a Head of Schools title. 1 is the fallback and
           sees nothing.
+
+unit_tests:
+  - name: test_seat_tracker_itr_response_leader_mapping
+    description: >-
+      Leader Intent to Return answers map to Not Returning or one of the 3
+      Returning lengths; a staff Intent to Return answer keeps its existing
+      label. The placeholder seat rows carry no answer.
+    model: rpt_appsheet__seat_tracker_roster
+    given:
+      - input: ref('int_surveys__survey_responses')
+        format: sql
+        rows: |
+          select
+              301 as respondent_employee_number,
+              'This is my last school year in my current role.' as answer,
+              2026 as academic_year,
+              timestamp '2026-12-01 12:00:00' as date_submitted,
+              'LITR' as term_code,
+              'litr_plans' as question_shortname
+          union all
+          select
+              302, 'Committed through SY 27-28 (June 30, 2028)', 2026,
+              timestamp '2026-12-01 12:00:00', 'LITR', 'litr_plans'
+          union all
+          select
+              303, 'Committed through SY 28-29 (June 30, 2029)', 2026,
+              timestamp '2026-12-01 12:00:00', 'LITR', 'litr_plans'
+          union all
+          select
+              304, 'Committed for the next 2+ years', 2026,
+              timestamp '2026-12-01 12:00:00', 'LITR', 'litr_plans'
+          union all
+          select
+              305,
+              'I am not sure if I am returning and want to follow up with my manager and/or School Leader.',
+              2026, timestamp '2026-12-01 12:00:00', 'ITR', 'itr_plans'
+      - input: ref('int_students__teacher_grade_levels')
+        format: sql
+        rows: |
+          select
+              'none' as teachernumber,
+              'none' as _dbt_source_project,
+              1 as grade_level,
+              2026 as academic_year,
+              1 as grade_level_rank
+      - input: ref('int_people__staff_roster')
+        format: sql
+        rows: |
+          select
+              301 as employee_number,
+              'Active' as assignment_status,
+              'Person A' as formatted_name,
+              'School A' as home_work_location_name,
+              'MS' as home_work_location_grade_band,
+              'School Leader' as job_title,
+              'a@example.org' as mail,
+              'a@example.org' as google_email,
+              'm@example.org' as reports_to_mail,
+              'm@example.org' as reports_to_google_email,
+              date '2020-08-01' as worker_original_hire_date,
+              'KIPP Miami' as home_business_unit_name,
+              cast(null as date) as worker_termination_date,
+              'persona' as sam_account_name,
+              'manager' as reports_to_sam_account_name,
+              'School Leadership' as home_department_name,
+              cast(null as string) as powerschool_teacher_number,
+              'kippmiami' as home_work_location_dagster_code_location
+          union all
+          select
+              302, 'Active', 'Person B', 'School A', 'MS', 'School Leader',
+              'b@example.org', 'b@example.org', 'm@example.org', 'm@example.org',
+              date '2020-08-01', 'KIPP Miami', null, 'personb', 'manager',
+              'School Leadership', null, 'kippmiami'
+          union all
+          select
+              303, 'Active', 'Person C', 'School A', 'MS', 'School Leader',
+              'c@example.org', 'c@example.org', 'm@example.org', 'm@example.org',
+              date '2020-08-01', 'KIPP Miami', null, 'personc', 'manager',
+              'School Leadership', null, 'kippmiami'
+          union all
+          select
+              304, 'Active', 'Person D', 'School A', 'MS', 'School Leader',
+              'd@example.org', 'd@example.org', 'm@example.org', 'm@example.org',
+              date '2020-08-01', 'KIPP Miami', null, 'persond', 'manager',
+              'School Leadership', null, 'kippmiami'
+          union all
+          select
+              305, 'Active', 'Person E', 'School A', 'MS', 'Teacher',
+              'e@example.org', 'e@example.org', 'm@example.org', 'm@example.org',
+              date '2020-08-01', 'KIPP Miami', null, 'persone', 'manager',
+              'Teaching and Learning', null, 'kippmiami'
+      - input: ref('int_people__location_crosswalk')
+        format: sql
+        rows: |
+          select
+              'School A' as location_name,
+              'Miami' as location_region,
+              'SA' as location_abbreviation,
+              'Campus A' as campus_name
+      - input: ref('int_performance_management__observations')
+        format: sql
+        rows: |
+          select
+              0 as employee_number,
+              cast(null as int64) as overall_tier,
+              'PMS' as observation_type_abbreviation,
+              1 as rn_employee_type
+    expect:
+      rows:
+        - { employee_number: 301, itr_response: Not Returning }
+        - { employee_number: 302, itr_response: Returning 1 Year }
+        - { employee_number: 303, itr_response: Returning 2 Years }
+        - { employee_number: 304, itr_response: Returning 2+ Years }
+        - { employee_number: 305, itr_response: Not Sure }
+        - { employee_number: 999999, itr_response: null }
+        - { employee_number: 999998, itr_response: null }
+        - { employee_number: 999997, itr_response: null }
+        - { employee_number: 999996, itr_response: null }
+        - { employee_number: 999995, itr_response: null }

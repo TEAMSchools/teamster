@@ -35,13 +35,25 @@ with
                     answer
                     = 'I am not sure if I am returning and want to follow up with my manager and/or School Leader.'
                 then 'Not Sure'
+                /* Leader Intent to Return Survey answers */
+                when
+                    starts_with(
+                        answer, 'This is my last school year in my current role'
+                    )
+                then 'Not Returning'
+                when starts_with(answer, 'Committed through SY 27-28')
+                then 'Returning 1 Year'
+                when starts_with(answer, 'Committed through SY 28-29')
+                then 'Returning 2 Years'
+                when starts_with(answer, 'Committed for the next 2+ years')
+                then 'Returning 2+ Years'
                 else answer
             end as answer_short,
         -- trunk-ignore-end(sqlfluff/LT05)
         from {{ ref("int_surveys__survey_responses") }}
         where
-            term_code = 'ITR'
-            and question_shortname = 'itr_plans'
+            term_code in ('ITR', 'LITR')
+            and question_shortname in ('itr_plans', 'litr_plans')
             and academic_year = {{ var("current_academic_year") }}
         group by respondent_employee_number, answer, academic_year
     ),
