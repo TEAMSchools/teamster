@@ -319,7 +319,7 @@ def sheet_gaps(twb_xml: str, comparison: Comparison) -> SheetGaps:
     columns: dict[str, str] = {}
     for name in cuts | filters:
         formula = (calcs.get(name) or "").strip()
-        # A group or bin is no datasource column: triage cannot value-check it.
+        # A group or bin is no datasource column: the sort cannot value-check it.
         if name not in calcs and name not in groups:
             columns[caption.get(name, name)] = name
         elif (param := _parameter_only(formula)) is not None:

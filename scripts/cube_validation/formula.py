@@ -1081,7 +1081,7 @@ def plan(
             check is kept under.
         wh: The warehouse, for view history, saved labels and columns.
         cube: Cube, for the compiled SQL.
-        prepared: What the triage fetched once; its row SQL is reused.
+        prepared: What the sort fetched once; its row SQL is reused.
 
     Returns:
         None when no cell can be checked (`checkable_cells`); a `Job` holding

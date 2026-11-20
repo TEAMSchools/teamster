@@ -29,7 +29,7 @@ class Build:
     job_id: str
 
     def to_json(self) -> dict:
-        """The build as run state, results and triages store it."""
+        """The build as run state, results and sorts store it."""
         return {
             "start": self.start.isoformat(),
             "end": self.end.isoformat(),

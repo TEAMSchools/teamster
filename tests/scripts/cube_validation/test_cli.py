@@ -2029,7 +2029,7 @@ def test_ask_owner_refuses_a_triage_that_predates_the_formula_check(
     assert cli.main(["ask-owner", str(path), "--domain", "Registrar"]) == 1
 
     err = capsys.readouterr().err
-    assert "v: the triage predates the formula check; run `sort` for" in err
+    assert "v: the sort predates the formula check; run `sort` for" in err
 
 
 def test_decide_refuses_a_triage_that_predates_the_formula_check(
@@ -2045,7 +2045,7 @@ def test_decide_refuses_a_triage_that_predates_the_formula_check(
 
     assert cli.main(["decide", str(path), str(approved)]) == 1
 
-    assert "the triage predates the formula check" in capsys.readouterr().err
+    assert "the sort predates the formula check" in capsys.readouterr().err
     assert load_view_config(path).decisions == []
 
 
@@ -3471,7 +3471,7 @@ def test_review_names_questions_left_without_evidence(fakes, tmp_path, capsys):
 
     assert cli.main(["ask-owner", str(path), "--domain", "Registrar"]) == 0
 
-    assert "Q1: no triage evidence" in capsys.readouterr().err
+    assert "Q1: no sort evidence" in capsys.readouterr().err
 
 
 def test_review_refuses_an_unreadable_triage_file(fakes, tmp_path, capsys):

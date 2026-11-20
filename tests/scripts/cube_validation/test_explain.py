@@ -1957,7 +1957,7 @@ def test_explain_refuses_a_triage_written_before_the_formula_check(
     path.write_text(json.dumps(old))
 
     with pytest.raises(
-        pipeline.Refusal, match="the triage predates the formula check; run `sort`"
+        pipeline.Refusal, match="the sort predates the formula check; run `sort`"
     ):
         _confirm_text(duck, tmp_path, EXPLANATION)
 

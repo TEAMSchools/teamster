@@ -168,7 +168,7 @@ def find_unfinished(
 
 
 def clear(folder: Path, keep_spend_of: str | None = None) -> None:
-    """Remove the folder's checkpoints, run state and triage progress; keep
+    """Remove the folder's checkpoints, run state and sort progress; keep
     its finished results (`run.json`, `result.md`, `sort.json`).
 
     With `keep_spend_of` (a fact table), what an unfinished run of that fact

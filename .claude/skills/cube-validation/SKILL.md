@@ -25,7 +25,7 @@ these files never reach the semantic layer.
 - The tool never posts anything: not to Slack, not to GitHub, not to Asana.
   Claude posts, and only what the analyst approved.
 - Row-level output stays local. Never paste rows into an issue, a comment or a
-  commit. The terminal and local files (`triage.json`, the cache) show exact
+  commit. The terminal and local files (`sort.json`, the cache) show exact
   counts. Text bound for GitHub or a commit (the review issue, decision YAML,
   the result you post) shows row, cell and student counts under 10 as `<10`, and
   hides any count that would give one away: a total beside a hidden part reads
@@ -328,7 +328,7 @@ refuses when the view's only run read another fact.
    changed since its checkpoint is compared again. `cost_usd` adds every
    process's spend.
 
-6. `sort <file>` reads the latest run and writes `triage.json` beside its
+6. `sort <file>` reads the latest run and writes `sort.json` beside its
    `run.json`. It first names each confirmed comparison that was never compared,
    is stale, or that the run skipped (`not compared: <why>`), as
    `<view>: comparison <id> <why>; compare it, then sort.` Such a comparison
@@ -337,7 +337,7 @@ refuses when the view's only run read another fact.
    differences, missing cuts and filters) into one pile (a formula difference
    can sit under row causes, so the check below runs on matched rows):
    `map_filters`, `filters_nothing`, `cause`, then `investigate`, each with its
-   label and its evidence. It lists 25 items per pile; `triage.json` holds them
+   label and its evidence. It lists 25 items per pile; `sort.json` holds them
    all. Run `sort` after every `compare`: `explain`, `decide` and `ask-owner`
    read only the sort beside the latest run and refuse one of another moment,
    one missing any of the run's open items, or one whose explanation changed
@@ -384,9 +384,10 @@ refuses when the view's only run read another fact.
    verdicts stand and `sort` prints
    `Formula check of <id>: kept the stored check; this run fell back: <why>`.
    Any other reason (a cap, a BigQuery or Cube error) is never kept: fix it and
-   `sort` again. `explain`, `decide` and `ask-owner` refuse a triage written
-   before the formula check existed, or one whose posted evidence was masked by
-   an older rule (it lacks the current `posted_version`); `sort` again.
+   `sort` again. `explain`, `decide` and `ask-owner` refuse a sort written
+   before the formula check existed, one whose posted evidence was masked by an
+   older rule (it lacks the current `posted_version`), or an older validator's
+   `triage.json` with no `sort.json` beside it; `sort` again.
 
    The trace leads. `sort` relaxes each step of the other side's SQL (WHERE and
    HAVING conjuncts, INNER JOINs, required LEFT JOINs, down 5 dbt models) and
@@ -409,7 +410,7 @@ refuses when the view's only run read another fact.
    changed since the run, or cannot be built today, waits: `sort` names it
    (above) and leaves its row groups out of the trace; `compare` it, then sort
    again. `sort` prints a progress line after each explanation and each trace
-   level. Counts are exact in the terminal and `triage.json`; `ask-owner` quotes
+   level. Counts are exact in the terminal and `sort.json`; `ask-owner` quotes
    the masked copy (`evidence_posted`).
 
    Explain causes with the analyst, in short turns, not alone:
@@ -553,15 +554,14 @@ refuses when the view's only run read another fact.
    daily cap refuses before any runs. An explanation that cannot run (a failed
    check, its saved rows gone, BigQuery rejecting it) prints why and moves
    nothing; the rest still run. Each finished explanation's outcome is kept in
-   `triage-progress.json` beside `run.json`, so a stopped `sort` started again
-   reuses them ("reused from triage-progress.json"); an edited explanation or a
+   `sort-progress.json` beside `run.json`, so a stopped `sort` started again
+   reuses them ("reused from sort-progress.json"); an edited explanation or a
    changed set of open items runs it again. `--comparison <id>` (repeatable)
-   runs, traces and prints only those comparisons; `triage.json` still holds
-   every item. Re-sort a run whose leads are in hand with `--no-trace`; trace
-   again only when new items appeared. The explanation files are the durable
-   record: commit them with the decisions, in the validation-file commit. They
-   hold SQL only: no values, no names. A formatting-only edit to one re-opens
-   nothing.
+   runs, traces and prints only those comparisons; `sort.json` still holds every
+   item. Re-sort a run whose leads are in hand with `--no-trace`; trace again
+   only when new items appeared. The explanation files are the durable record:
+   commit them with the decisions, in the validation-file commit. They hold SQL
+   only: no values, no names. A formatting-only edit to one re-opens nothing.
    - Investigate: no explained cause yet. It is never asked as a question:
      `ask-owner` counts it under "Still with the analyst" and lists it, with its
      masked count and the trace's lead, in the open items' file (step 8).
@@ -608,15 +608,15 @@ refuses when the view's only run read another fact.
      from step 8, filled in after it is posted.
 
    Draft a reason for every item, so the analyst edits rather than writes: a
-   close quotes the item's `evidence_posted` in `triage.json` (masked), never
-   the terminal's exact counts, since the reason is committed, or names the
-   issue; an owner item names the explained step and the question it leaves,
-   which the owner's session shows them. Show the analyst one batch, numbered
-   across piles in the order above, owner items last; each line has the label,
-   the evidence, the call and the drafted reason. On "approve all" or "approve
-   all but 2 and 6", the excluded items stay unrecorded until the analyst says
-   where they go. Write the approved items, owner items included, to
-   `approved.json` in the session scratchpad: a JSON list of
+   close quotes the item's `evidence_posted` in `sort.json` (masked), never the
+   terminal's exact counts, since the reason is committed, or names the issue;
+   an owner item names the explained step and the question it leaves, which the
+   owner's session shows them. Show the analyst one batch, numbered across piles
+   in the order above, owner items last; each line has the label, the evidence,
+   the call and the drafted reason. On "approve all" or "approve all but 2 and
+   6", the excluded items stay unrecorded until the analyst says where they go.
+   Write the approved items, owner items included, to `approved.json` in the
+   session scratchpad: a JSON list of
    `{"id", "call", "reason", "task", "item", "cause"}`, where `item` is the
    sorted item id, `id` a new decision id not already in the file and never one
    a deleted decision used, `task` empty for `deliberate` and `domain_owner`,
@@ -742,7 +742,7 @@ refuses when the view's only run read another fact.
    lengths. A cause question's example cell needs 10+ of the cause's own
    students in that cell and cut, as the explanations counted them: each
    explanation's counting query also counts distinct students per cause, cell
-   and cut, and `sort` and `explain` keep the counts in `triage.json`
+   and cut, and `sort` and `explain` keep the counts in `sort.json`
    (`cause_students`). A formula question's example is a formula cell. Each
    unanswered `domain_owner` cause is one question, across the comparisons it is
    explained on, with its words, per comparison the count of groups it decides

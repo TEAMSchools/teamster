@@ -923,7 +923,7 @@ def verdict(
     cells: dict[str, int], open_groups: int, open_gaps: int, open_cells: int
 ) -> str:
     """`validated` when every cell passes or is only dashboard-filtered and
-    nothing is left to triage, else `differs`.
+    nothing is left to sort, else `differs`.
 
     Args:
         cells: Cell count per verdict for one measure.

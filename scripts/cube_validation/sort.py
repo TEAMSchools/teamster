@@ -254,7 +254,7 @@ def _open_key(source: Group | Gap | CellDiff) -> str:
 
     An item's id and stub change as its siblings close; this does not. The
     counts are part of it, so a re-run whose rows changed at the same moment
-    re-opens a group or cell set the triage already sorted.
+    re-opens a group or cell set the sort already sorted.
     """
     if isinstance(source, Group):
         raw = [
@@ -278,8 +278,8 @@ def open_keys(run: RunResult) -> list[str]:
 
 
 def _moment(run: RunResult) -> dict:
-    """The run a triage sorted: its moment, and each composed comparison's,
-    so a run composed again from a newer result needs a new triage."""
+    """The run a sort sorted: its moment, and each composed comparison's,
+    so a run composed again from a newer result needs a new sort."""
     return {
         **run.moment.to_json(),
         "moments": {cid: run_stamp(m) for cid, m in run.moments.items()},
@@ -289,8 +289,8 @@ def _moment(run: RunResult) -> dict:
 def formulas_not_compared(loaded: dict) -> dict[str, dict[str, int]]:
     """Per comparison, the cells the formula check left to coverage, by reason.
 
-    Read from the triage's `formulas_not_compared`, not from item evidence,
-    which `explain` can rewrite. A triage without the key, or with a
+    Read from the sort's `formulas_not_compared`, not from item evidence,
+    which `explain` can rewrite. A sort without the key, or with a
     malformed one, gives `{}`; `formula_checked` tells that from a check that
     left nothing uncompared. A comparison whose counts are not all positive
     whole numbers is left out.
@@ -310,15 +310,15 @@ def formulas_not_compared(loaded: dict) -> dict[str, dict[str, int]]:
     }
 
 
-# How the triage's posted lines (`evidence_posted`) are masked (`report.suppress`,
+# How the sort's posted lines (`evidence_posted`) are masked (`report.suppress`,
 # `shown_counts(posted=True)`). `ask-owner` posts them as `sort` stored them,
 # so bump this whenever that masking changes: `load_sort` then refuses a
-# triage written under an older rule until `sort` runs again.
+# sort written under an older rule until `sort` runs again.
 POSTED_VERSION = 1
 
 
 def posted_current(loaded: dict) -> bool:
-    """Whether the triage's posted lines were masked by the current rule
+    """Whether the sort's posted lines were masked by the current rule
     (`POSTED_VERSION`); a missing or older version was not."""
     held = loaded.get("posted_version")
     return (
@@ -327,10 +327,10 @@ def posted_current(loaded: dict) -> bool:
 
 
 def formula_checked(loaded: dict) -> bool:
-    """Whether the triage was written by a `sort` that ran the formula check.
+    """Whether the sort was written by a `sort` that ran the formula check.
 
     `sort` always writes `formulas_not_compared`, empty when the check left
-    nothing uncompared, so a triage without it, or with a malformed one,
+    nothing uncompared, so a sort without it, or with a malformed one,
     predates the check: its cells closed by coverage alone, with nothing to
     say so.
     """
@@ -343,7 +343,7 @@ def comparisons_waiting(
     """Each confirmed comparison still with the analyst, and why, in config order.
 
     A comparison is waiting when the run skipped it (`not compared: <why>`),
-    the run holds no result of it, its result was stale when the triage ran
+    the run holds no result of it, its result was stale when the sort ran
     (`loaded["stale"]`), or its entry changed since the result
     (`latest.entry_fingerprint` against `run.entries`, offline). Nothing
     refuses over them: the rest of the view goes on.
@@ -410,12 +410,10 @@ def load_sort(
     if loaded.get("moment") != _moment(run):
         raise other_moment
     if not formula_checked(loaded):
-        raise pipeline.Refusal(
-            f"{view}: the triage predates the formula check; {again}"
-        )
+        raise pipeline.Refusal(f"{view}: the sort predates the formula check; {again}")
     if not posted_current(loaded):
         raise pipeline.Refusal(
-            f"{view}: the triage's posted evidence was masked by an older rule; {again}"
+            f"{view}: the sort's posted evidence was masked by an older rule; {again}"
         )
     if unseen := len(set(open_keys(run)) - set(loaded.get("open") or [])):
         if for_explain:
@@ -436,12 +434,12 @@ def checked_sort(
     recorded: list[Decision] | None = None,
     base: Path | None = None,
 ) -> dict:
-    """Read the triage of the view's latest run, refusing one that is stale or
+    """Read the sort of the view's latest run, refusing one that is stale or
     whose explained items do not hold.
 
-    The gate is per validation file: it reads only the triage beside that view's
-    latest `run.json`. Decisions written since triage may close items; an
-    item open in the run but absent from the triage refuses. Items still in
+    The gate is per validation file: it reads only the sort beside that view's
+    latest `run.json`. Decisions written since the sort may close items; an
+    item open in the run but absent from the sort refuses. Items still in
     `investigate` do not refuse: they come back under `unsettled`, so
     `ask-owner` lists them, and `decide` decides the rest.
 
@@ -454,11 +452,11 @@ def checked_sort(
             relative to.
 
     Raises:
-        pipeline.Refusal: No triage sits beside the run, it is unreadable or of
+        pipeline.Refusal: No sort sits beside the run, it is unreadable or of
             another moment, it predates the formula check (`formula_checked`)
             or the current posted masking (`posted_current`), the run has an
-            open item the triage did not see,
-            an item sits in a pile this validator does not sort into (a triage
+            open item the sort did not see,
+            an item sits in a pile this validator does not sort into (a sort
             from an older validator), a `cause` item has no cause, a decision
             other than a comparison decision closes an item in `investigate`,
             a row group or cell set in
@@ -467,7 +465,7 @@ def checked_sort(
             one group.
 
     Returns:
-        The triage as `sort.json` holds it, with `unsettled`: its items
+        The sort as `sort.json` holds it, with `unsettled`: its items
         still in `investigate` that no decision closed.
     """
     view = run.view
@@ -536,7 +534,7 @@ def checked_sort(
 
 
 def unsettled(run: RunResult, loaded: dict) -> list[Unsettled]:
-    """The triage's items still in `investigate` and open, as `ask-owner`
+    """The sort's items still in `investigate` and open, as `ask-owner`
     lists them; one a comparison decision closed since is decided.
 
     Each is matched to the run's open item by its `_open_key` for its bucket
@@ -577,7 +575,7 @@ def unsettled(run: RunResult, loaded: dict) -> list[Unsettled]:
 
 
 def _closed(loaded: dict) -> list[dict]:
-    """A copy of the triage's closed groups, which `mark_decided` marks in place."""
+    """A copy of the sort's closed groups, which `mark_decided` marks in place."""
     return copy.deepcopy(loaded.get("closed") or [])
 
 
@@ -585,11 +583,11 @@ def check_closed(run: RunResult, run_json: Path, recorded: list[Decision]) -> No
     """Refuse a cause decision that disagrees with the `group` decision closing a
     group its explanation covers.
 
-    Triage lists no closed group, so `mark_decided` on its items never sees
-    one; the triage's `closed` list (`closed_groups`) says which causes each
+    The sort lists no closed group, so `mark_decided` on its items never sees
+    one; the sort's `closed` list (`closed_groups`) says which causes each
     holds. Called wherever decisions are written, so the disagreement refuses
     then, not once the group decision goes stale and the group reopens. With
-    no readable triage of the run's moment there is nothing to compare.
+    no readable sort of the run's moment there is nothing to compare.
 
     Raises:
         pipeline.Refusal: A holding cause decision and a `group` decision on
@@ -692,9 +690,9 @@ def mark_decided(
 
     Args:
         run: The run the items come from.
-        items: The triage items, or its `closed` groups, marked in place. The
+        items: The sort items, or its `closed` groups, marked in place. The
             group is looked up among the run's open and closed groups, since
-            a re-apply since triage can close an item's.
+            a re-apply since the sort can close an item's.
         recorded: The view's decisions.
         refuse: Raise on a disagreement instead of noting it.
         note: Add why a decision does not hold, and any redundancy or
@@ -829,7 +827,7 @@ def cause_asks(
 
 
 def _explanation_changed(explanation: dict | None, base: Path | None = None) -> bool:
-    """A stored explanation's file is gone, or no longer the explanation triage ran.
+    """A stored explanation's file is gone, or no longer the explanation the sort ran.
 
     The recorded path is relative to the validation file's directory, `base`.
     Compared by `explain.fingerprint`, so a formatting-only edit is no change.
@@ -845,7 +843,7 @@ def _explanation_changed(explanation: dict | None, base: Path | None = None) -> 
 
 
 def posted_sort(loaded: dict) -> dict:
-    """A triage as the review issue may quote it: each item's masked evidence.
+    """A sort as the review issue may quote it: each item's masked evidence.
 
     `evidence` in `sort.json` shows exact counts for the analyst;
     `evidence_posted` holds the same lines masked (`report.shown_counts`).
@@ -1455,7 +1453,7 @@ def closed_groups(run: RunResult, ran: list, cfg: ViewConfig) -> tuple[list, lis
     """Split the explanations' runs over `with_closed(run)` into open and closed groups.
 
     Args:
-        run: The run as triage lists it.
+        run: The run as the sort lists it.
         ran: `explain.run_stored`'s runs over `with_closed(run)`.
         cfg: The view's config, for a dashboard-filtered group's filter.
 

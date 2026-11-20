@@ -65,9 +65,9 @@ class MeasureResult:
     verdict: str
     cells: dict[str, int] = field(default_factory=dict)
     open_groups: int = 0
-    # Missing cuts and filters still to triage on this measure's sheets.
+    # Missing cuts and filters still to sort on this measure's sheets.
     open_gaps: int = 0
-    # Comparisons whose differing cells are still to triage.
+    # Comparisons whose differing cells are still to sort.
     open_cells: int = 0
 
 
@@ -277,7 +277,7 @@ def render_local(run: RunResult) -> str:
         line = f"- `{m.measure}`: {m.verdict}"
         line = f"{line} ({cells})" if cells else line
         # Any open item makes the verdict `differs` (`pipeline.verdict`); each
-        # kind is named with its count so the reader knows what to triage.
+        # kind is named with its count so the reader knows what to sort.
         if m.open_groups:
             plural = "group" if m.open_groups == 1 else "groups"
             line += f"; {m.open_groups} open row {plural} to sort"
@@ -290,7 +290,7 @@ def render_local(run: RunResult) -> str:
         out.append(line)
 
     out += ["", "## Sort", ""]
-    triage = []
+    to_sort = []
     for g in run.applied.open:
         line = (
             f"{_where(g, lambda _column, value: value)} in {g.comparison_id} "
@@ -298,10 +298,10 @@ def render_local(run: RunResult) -> str:
         )
         for clause in run.clauses.get(g.comparison_id, []):
             line += f"; clause: `{clause}`"
-        triage.append(line)
-    out += _bullets(triage, "No open groups.")
+        to_sort.append(line)
+    out += _bullets(to_sort, "No open groups.")
 
-    # A dashboard cut or filter Cube cannot make: triaged like a row group.
+    # A dashboard cut or filter Cube cannot make: sorted like a row group.
     out += ["", "## Missing cuts and filters", ""]
     out += _bullets(
         [_gap_line(g) for g in run.applied.open_gaps] + run.gaps_unknown,
@@ -333,7 +333,7 @@ def render_local(run: RunResult) -> str:
         ]
         + [_decision_line(d) for d, _ in run.applied.quiet if not d.all_groups]
         # A cause decision quiets many groups; it is listed once.
-        # The latest triage says which groups a cause decision decides.
+        # The latest sort says which groups a cause decision decides.
         + [_decision_line(d) for d in run.applied.causes]
         + [_decision_line(d) for d, _ in run.applied.quiet_gaps]
         + [_decision_line(d) for d, _ in run.applied.quiet_cells]
@@ -671,7 +671,7 @@ def _comparison_part(view: str, groups: list[Group]) -> tuple[str, list]:
 @dataclass(frozen=True)
 class CauseAsk:
     """One comparison's part of an owner question on a cause: the decision,
-    the groups it decides in the latest triage, the rows the explanation attributes
+    the groups it decides in the latest sort, the rows the explanation attributes
     to it in them, and the comparison's model-doc lead (`sort.doc_leads`)."""
 
     decision: Decision
@@ -746,9 +746,9 @@ SQL_BROKEN = "its SQL cannot be built today"
 
 @dataclass(frozen=True)
 class Unsettled:
-    """One open item still in triage's `investigate` pile, as `ask-owner` lists it.
+    """One open item still in the sort's `investigate` pile, as `ask-owner` lists it.
 
-    `item` is its triage id, which masks values as the issue does. `what` is
+    `item` is its sort id, which masks values as the issue does. `what` is
     a row group's bucket, else the item's kind. `rows` and `cells` are exact
     here and masked when listed. `lead` is the trace's first lead, masked
     (`evidence_posted`), or empty; `hidden` holds the values it must lose.
@@ -775,7 +775,7 @@ _SCOPE = re.compile(r"(?:^| / )([^\s:/][^\s:]*): ")
 def _posted_lead(lead: str, counts: bool = True) -> str:
     """A trace lead as the issue shows it: each step's scope and, with
     `counts`, the counts; never the step's SQL. The full lead stays in the
-    local triage. Its `of M rows` is the item's row count, so a lead beside
+    local sort. Its `of M rows` is the item's row count, so a lead beside
     a count that is not posted exact must leave `counts` out; and one whose
     `M` is bounded (`suppress`: a part is hidden) leaves them out always,
     since the item's own exact count would pin its parts."""
@@ -876,7 +876,7 @@ def unsettled_detail(items: list[Unsettled], name: str) -> str:
 
     It is posted (the issue links it), so it is masked like the issue: per
     comparison and bucket, each item of `MASK_BELOW` or more rows or cells
-    with its triage id, its count as `still_with_analyst`'s total masks it,
+    with its sort id, its count as `still_with_analyst`'s total masks it,
     and the trace's lead (`_posted_lead`: its steps' scopes, and its counts
     only beside an exact count, since a lead's `of M rows` is the item's
     count) or `no lead yet`. Items under `MASK_BELOW` rows or cells are
@@ -1398,7 +1398,7 @@ def render_review_issue(
                     f"Cube: {definition_text(sides['cube'])}."
                 )
     # The JSON's counts when given: they bound a group's rows beside hidden
-    # evidence, which only the triage it was built from can tell. Matched by
+    # evidence, which only the sort it was built from can tell. Matched by
     # position, so a JSON of other questions refuses rather than post counts
     # it never bounded.
     if questions is not None and len(questions) != len(asked):

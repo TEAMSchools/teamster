@@ -1187,7 +1187,7 @@ def _one_moment(
 
 @dataclass
 class Prepared:
-    """What planning a triage fetches once, for `check_ready`, the stored explanations
+    """What planning a sort fetches once, for `check_ready`, the stored explanations
     and `trace_run` to share: the network's schools, each comparison's row SQL,
     the dbt manifest, and per build, each table checked for a change during
     it. Each comparison's rows were read at its own moment

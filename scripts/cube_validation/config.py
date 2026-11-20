@@ -246,10 +246,10 @@ class Decision:
     # of `group`, and covers the whole view, so it has no `comparison`.
     missing_cut: str = ""
     missing_filter: str = ""
-    # Covers the row groups whose triage cause names this `{side, label}`, in
+    # Covers the row groups whose sort cause names this `{side, label}`, in
     # place of `group`: `label` is the words of a stored explanation's bucket,
     # with each number of 5 or more digits written `<n>`. Which groups it covers
-    # is read from the latest triage, never stored here;
+    # is read from the latest sort, never stored here;
     # `fingerprints.explanation` is the explanation file's.
     cause: dict[str, Any] = field(default_factory=dict)
     # Covers the comparison's formula difference, in place of `group`: its

@@ -6,7 +6,7 @@ access, and the texts go into a GitHub issue, so the example is never one
 person's row: every dimension is a reviewed column and at least `MASK_BELOW`
 students stand behind it.
 
-In: turn an approved triage batch, or the owner's answers comment, into
+In: turn an approved sort batch, or the owner's answers comment, into
 decisions. Their reasons are committed to git, so a note naming a person by
 email or number is refused. This module runs no queries and writes no files;
 it selects and formats saved data.
@@ -114,13 +114,13 @@ def cell_causes(
     """Each differing cell of a comparison, with the causes its rows carry and
     how many students each has in it.
 
-    `recorded` is the triage's `cause_students` for the comparison: the
+    `recorded` is the sort's `cause_students` for the comparison: the
     explanations' own distinct-student counts per cause, cell and cut, used as
     they are. A cause in a cell with no count recorded for it counts 0.
 
     A cell's rows lie in the open groups with a row in it (`coverage.placed`,
     as `sort` links cells; none when the cell cannot be placed); each group
-    carries its triage item's causes (`sort.cause_key`), and a group with
+    carries its sort item's causes (`sort.cause_key`), and a group with
     none carries `""`.
 
     Returns:
@@ -333,9 +333,9 @@ def hand_check(
 
 
 def _covers(d: Decision, stub: dict) -> bool:
-    """True when a triage item's stub is the item `d` covers, by its key fields.
+    """True when a sort item's stub is the item `d` covers, by its key fields.
 
-    A cause decision names no item; the triage marks what it decides. A
+    A cause decision names no item; the sort marks what it decides. A
     `formula` decision covers its comparison's formula item alone.
     """
     if d.cause:
@@ -345,7 +345,7 @@ def _covers(d: Decision, stub: dict) -> bool:
             stub.get("missing_cut", ""),
             stub.get("missing_filter", ""),
         )
-    # No decision covers a cell set: triage closes covered cells itself.
+    # No decision covers a cell set: the sort closes covered cells itself.
     if stub.get("comparison") != d.comparison or stub.get("cells"):
         return False
     if d.formula or stub.get("formula"):
@@ -593,7 +593,7 @@ def questions_json(
     runs: list[RunResult],
     configs: list[ViewConfig],
     definitions: dict,
-    triage: dict[str, dict],
+    sorts: dict[str, dict],
     now: datetime,
     causes: dict[str, list[CauseAsk]] | None = None,
     sources: dict[str, ExplanationSource] | None = None,
@@ -601,15 +601,15 @@ def questions_json(
     """List the review issue's questions for the owner's Claude session.
 
     Every string is text the issue's markdown shows, masked the same way:
-    counts, the reason and definitions come from `report`, and triage evidence
-    is scrubbed like the reason. A triage item's `stub` holds real values, so
+    counts, the reason and definitions come from `report`, and sort evidence
+    is scrubbed like the reason. A sort item's `stub` holds real values, so
     it is read here only to match items to decisions and never copied.
 
     Args:
         runs: The runs the issue renders.
         configs: Their views' configs, for each hand check's column names.
         definitions: Per view, per comparison id, `dashboard` and `cube` text.
-        triage: Per view, its `sort.json`; a view without one has no
+        sorts: Per view, its `sort.json`; a view without one has no
             evidence. Items still in `investigate` are left out, so
             `record-answers` never reads one as an answer.
         now: The current time, to say whether the pinned SQL still runs.
@@ -637,8 +637,8 @@ def questions_json(
     def cells_of(view: str, cid: str) -> list:
         """`cell_causes` of a comparison, worked out once per review."""
         if (view, cid) not in held:
-            loaded = triage.get(view, {})
-            # `sort.checked_sort` refuses a triage written before `sort`
+            loaded = sorts.get(view, {})
+            # `sort.checked_sort` refuses a sort written before `sort`
             # recorded these, so a missing entry is a comparison with none.
             recorded = loaded.get("cause_students", {}).get(cid, [])
             held[view, cid] = cell_causes(
@@ -651,7 +651,7 @@ def questions_json(
         return [
             item
             for d in decisions
-            for item in triage.get(view, {}).get("items", [])
+            for item in sorts.get(view, {}).get("items", [])
             if item.get("suggestion") != "investigate"
             and _covers(d, item.get("stub") or {})
         ]
@@ -1029,7 +1029,7 @@ def _file_cause(d: Decision) -> dict:
 
 
 def _explanations_by_cause(items: list[dict]) -> dict[tuple, set[str]]:
-    """Each cause's explanation files across the triage's explained row groups."""
+    """Each cause's explanation files across the sort's explained row groups."""
     out: dict[tuple, set[str]] = {}
     for item in items:
         if sort.decidable(item):
@@ -1051,7 +1051,7 @@ def _comparison_decision(
     entry: dict,
     where: str,
     decision_id: str,
-    triage: dict,
+    loaded: dict,
     fingerprints: dict[str, dict[str, str]],
     existing: list[Decision] | tuple[Decision, ...],
     batch: list[dict],
@@ -1065,7 +1065,7 @@ def _comparison_decision(
         AnswerError: The entry also names an item, its call is not
             `deliberate`, its reason is empty or carries what
             `NOTE_REFUSALS` keeps out, the run has no fingerprints for the
-            comparison, the triage lists no open row group of it, the id is
+            comparison, the sort lists no open row group of it, the id is
             another decision's, or the comparison already has a comparison
             decision under another id or in this batch.
     """
@@ -1089,7 +1089,7 @@ def _comparison_decision(
         item.get("kind") == "group"
         and (item.get("comparison") or (item.get("stub") or {}).get("comparison"))
         == comparison
-        for item in triage.get("items", [])
+        for item in loaded.get("items", [])
     ):
         raise AnswerError(
             f"{where}: the sort lists no open row group of {comparison!r} to close"
@@ -1121,13 +1121,13 @@ def _comparison_decision(
 
 def approved_decisions(
     approved: list,
-    triage: dict,
+    loaded: dict,
     fingerprints: dict[str, dict[str, str]],
     existing: list[Decision] | tuple[Decision, ...] = (),
     formula_cells: dict[str, int] | None = None,
     formula_hashes: dict[str, str] | None = None,
 ) -> list[dict]:
-    """Turn an approved triage batch into decisions, in the file's key order.
+    """Turn an approved sort batch into decisions, in the file's key order.
 
     An explained row group (a stored explanation's, or the reconcile's for a sheet
     filter) is decided on its causes, never on a column value: an entry
@@ -1141,7 +1141,7 @@ def approved_decisions(
     current ones, unless the owner has answered it. A label's ID-shaped
     numbers are written `<n>`. No order of the entries changes the result.
 
-    Every other item takes its key fields from the triage item's `stub`,
+    Every other item takes its key fields from the sort item's `stub`,
     which holds its real values; a formula difference's is `formula: true`.
     Either kind takes the comparison's `{cube, dashboard}` from the run's
     fingerprints; a formula difference also records which cells it holds
@@ -1158,10 +1158,10 @@ def approved_decisions(
 
     Args:
         approved: `[{"id", "call", "reason", "task", "item", "cause"}]`;
-            `item` is a triage item id, `task` may be empty, and `cause` (the
+            `item` is a sort item id, `task` may be empty, and `cause` (the
             cause's words) is needed only on an item with several causes. Or
             `{"id", "comparison", "call": "deliberate", "reason"}`.
-        triage: The view's `sort.json`, marked by `sort.mark_decided`.
+        loaded: The view's `sort.json`, marked by `sort.mark_decided`.
         fingerprints: The latest run's fingerprints per comparison id.
         existing: The file's decisions.
         formula_cells: Per comparison, the cells the formula check filed in
@@ -1176,7 +1176,7 @@ def approved_decisions(
     Raises:
         AnswerError: An entry is malformed, repeats an id or an (item,
             cause), takes an id the file has, has a reason that carries what
-            `NOTE_REFUSALS` keeps out, names an item the triage does not list,
+            `NOTE_REFUSALS` keeps out, names an item the sort does not list,
             an item still in `investigate`, a cell set, a row group no explanation
             decides, or a cause the item lacks, leaves out `cause` on an item
             with several, names a comparison the run has no fingerprints for,
@@ -1184,7 +1184,7 @@ def approved_decisions(
             with another call, or an answered decision whose SQL or explanation
             changed.
     """
-    items = {item.get("id"): item for item in triage.get("items", [])}
+    items = {item.get("id"): item for item in loaded.get("items", [])}
     explanations = _explanations_by_cause(list(items.values()))
     taken = {d.id for d in existing}
     out: list[dict] = []
@@ -1203,7 +1203,7 @@ def approved_decisions(
         if "comparison" in entry:
             out.append(
                 _comparison_decision(
-                    entry, where, decision_id, triage, fingerprints, existing, out
+                    entry, where, decision_id, loaded, fingerprints, existing, out
                 )
             )
             continue
@@ -1227,7 +1227,7 @@ def approved_decisions(
         task = _text(entry, "task", where, required=False)
         fp: dict[str, str] = {}
         comparison = str(stub.get("comparison") or item.get("comparison") or "")
-        # A missing cut or filter covers the view, wherever triage found it and
+        # A missing cut or filter covers the view, wherever the sort found it and
         # whatever pile it sits in: no comparison, no fingerprints.
         if stub.get("missing_cut") or stub.get("missing_filter"):
             comparison = ""

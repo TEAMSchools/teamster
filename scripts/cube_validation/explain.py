@@ -695,7 +695,7 @@ def unmatched_sql(
     Returns:
         A `WITH` holding the bucket's rows as `__f` (`bucket_rows_sql`), and the
         SELECT that returns `__row` (a row id from the grain keys and the
-        duplicate number), `item_key` (the triage item id of the row's group,
+        duplicate number), `item_key` (the sort item id of the row's group,
         NULL for a row no open group holds), `side` (the side holding the row),
         the group-by columns as text, `__moved` (the row sits in another cell
         on each side), and `__d_<column>` per group-by column (NULL unless that
@@ -970,7 +970,7 @@ def _with_students(
 def cause_students(
     rows: list[dict], explanation: Explanation, comparison: Comparison
 ) -> list[dict]:
-    """The `students` rows of `explanation_query`, as triage keeps them: per cause
+    """The `students` rows of `explanation_query`, as the sort keeps them: per cause
     (`sort.cause_key`), cut label and cell (`dims` as [column, value]
     pairs), `n` distinct students, and the explanation's `bucket`. Rows of causes
     the explanation does not map are left out (`outcomes` refuses those)."""
@@ -997,7 +997,7 @@ def cause_students(
 def keep_students(
     loaded: dict, comparison: str, bucket: str, found: list[dict]
 ) -> None:
-    """Put an explanation's cause-student counts in a triage, per comparison.
+    """Put an explanation's cause-student counts in a sort, per comparison.
 
     They replace the counts an earlier run of the same bucket's explanation left,
     and any count saved without its bucket: a revised explanation's smaller count
@@ -1202,7 +1202,7 @@ def explanation_sql(
     Args:
         table: The comparison's saved rows (`require_saved`).
         moved: The tables already checked for a change during the build, and
-            whether they changed; shared across the explanations of one triage.
+            whether they changed; shared across the explanations of one sort.
         students: Also count each cause's students per cell and cut.
 
     Returns:
@@ -1638,7 +1638,7 @@ def run_stored(
     (`apply_runs` takes the one that explains each group). One that reads a
     column the comparison's `{unmatched}` lacks (`missing_columns`) is
     skipped there with one line, before anything is priced. Each pair's outcome is kept in `progress_dir` (`explain_progress`) as it
-    finishes, and a later triage reuses one whose explanation and open items
+    finishes, and a later sort reuses one whose explanation and open items
     still match, once the comparison's SQL still matches the run
     (`pipeline.row_sides`, compile only) and its saved rows still carry the
     run's labels (`require_saved`). The rest are priced together first, and a
@@ -2044,7 +2044,7 @@ def explain(
     causes: list[str] | None = None,
     items: list[str] | None = None,
 ) -> int:
-    """Run a new or edited explanation once, save it, and re-sort the triage.
+    """Run a new or edited explanation once, save it, and re-run the sort.
 
     The comparison's cell set is linked again (`link_cells`); each cell it
     leaves open prints with why, in the terminal only.
@@ -2055,21 +2055,21 @@ def explain(
         wh: The warehouse.
         cube: Cube, to rebuild the run's row SQL.
         max_usd: The cap for this command.
-        cache_root: The local cache holding the run and its triage.
+        cache_root: The local cache holding the run and its sort.
         comparison: The comparison the explanation covers.
         bucket: One of `EXPLAINABLE`.
         sql: The explanation's SQL; it may carry a `-- cause` block. Defaults to
             the stored explanation, to re-run it after an edit.
         causes: `<bucket>=<side>:<plain words>` per bucket, added to (and
             replacing entries of) the SQL's own block.
-        items: Triage item ids to print; every item of the bucket is explained
+        items: The sort item ids to print; every item of the bucket is explained
             either way.
 
     Returns:
         0.
 
     Raises:
-        pipeline.Refusal: No triage of the latest run; an unknown comparison
+        pipeline.Refusal: No sort of the latest run; an unknown comparison
             or bucket; or an explanation that fails a check.
         CostCapError: The explanation would pass a cap.
     """

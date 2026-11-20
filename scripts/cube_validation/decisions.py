@@ -5,7 +5,7 @@ SQL it was made against. A `group` decision names its groups by one column's
 value. A `formula` decision names its comparison's formula difference: the
 differing cells no unmatched row lies in, and those the formula check filed,
 while they are the cells it recorded. A `cause` decision names an explained
-cause, never a group: the latest triage, which re-runs every stored explanation,
+cause, never a group: the latest sort, which re-runs every stored explanation,
 says which items it decides (`sort.mark_decided`), so `apply` only checks
 its SQL. A comparison decision (`all_groups`) names every row group of its
 comparison that no `group` decision claims, and never cells. Pure: no I/O.
@@ -36,7 +36,7 @@ class Applied:
     quiet_gaps: list[tuple[Decision, Gap]] = field(default_factory=list)
     open_cells: list[CellDiff] = field(default_factory=list)
     quiet_cells: list[tuple[Decision, CellDiff]] = field(default_factory=list)
-    # Cause decisions whose SQL still holds; the triage says what they cover.
+    # Cause decisions whose SQL still holds; the sort says what they cover.
     causes: list[Decision] = field(default_factory=list)
 
 
