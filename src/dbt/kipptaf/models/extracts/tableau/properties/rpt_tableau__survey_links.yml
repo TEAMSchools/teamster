@@ -6,8 +6,10 @@ models:
       link for each assignment and a completion flag derived from the latest
       response for that round, so a person's outstanding surveys can be read
       without joining a second source. Limited to active, primary-assignment
-      staff hired at least three weeks ago, since a brand-new hire has not yet
-      been asked to respond.
+      staff. Most surveys also wait until a person was hired or rehired at least
+      three weeks ago, since a brand-new hire has not yet been asked to respond;
+      the staff and leader intent to return surveys do not wait, because they
+      ask about next year.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

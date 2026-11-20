@@ -189,3 +189,12 @@ on the round code.
   then.
 - The form's responder URL exists only after step 1 of the setup. The build can
   start before that, but the link can't be filled in until then.
+
+## Revision 2026-11-20: no new-hire wait for intent to return
+
+Decided during final review. Neither intent to return survey waits 3 weeks after
+a hire or rehire; both ask about next year, which a new hire is also planning.
+Leader eligibility is active plus primary assignment. The staff intent to return
+survey gains recent hires outside KTAF, which supersedes the anti-goal that
+nobody newly enters the staff population. Every other survey keeps the 3-week
+wait.

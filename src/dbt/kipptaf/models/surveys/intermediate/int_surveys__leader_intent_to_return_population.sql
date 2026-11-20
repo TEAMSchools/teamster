@@ -12,11 +12,8 @@ with
             reports_to_formatted_name as report_to_preferred_name_lastfirst,
             reports_to_mail as report_to_mail,
 
-            -- same eligibility as eligible_roster in rpt_tableau__survey_links
-            assignment_status = 'Active'
-            and primary_indicator
-            and coalesce(worker_rehire_date, worker_original_hire_date)
-            <= date_sub(current_date(), interval 3 week) as is_survey_eligible,
+            -- no 3-week new-hire wait, unlike most staff surveys
+            assignment_status = 'Active' and primary_indicator as is_survey_eligible,
 
             -- recruitment's leader lists for the round, from the setup page
             job_title in (

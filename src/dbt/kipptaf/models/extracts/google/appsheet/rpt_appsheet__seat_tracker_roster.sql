@@ -36,7 +36,11 @@ with
                     answer
                     = 'I am not sure if I am returning and want to follow up with my manager and/or School Leader.'
                 then 'Not Sure'
-                /* Leader Intent to Return Survey answers */
+                /*
+                 * Leader Intent to Return Survey answers. The SY years are
+                 * for the 2026 round: roll them forward with the form each
+                 * year, or a reused form maps to the wrong length.
+                 */
                 when
                     starts_with(
                         answer, 'This is my last school year in my current role'

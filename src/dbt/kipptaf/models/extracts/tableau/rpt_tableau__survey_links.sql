@@ -63,15 +63,15 @@ with
                 'School-based',
                 'Not+school-based'
             ) as loc_type,
+
+            -- intent to return surveys skip this wait; every other survey keeps it
+            coalesce(sr.worker_rehire_date, sr.worker_original_hire_date)
+            <= date_sub(current_date(), interval 3 week) as is_past_new_hire_wait,
         from {{ ref("int_people__staff_roster") }} as sr
         left join
             {{ ref("int_people__staff_roster") }} as mgr
             on sr.reports_to_employee_number = mgr.employee_number
-        where
-            sr.assignment_status = 'Active'
-            and sr.primary_indicator
-            and coalesce(sr.worker_rehire_date, sr.worker_original_hire_date)
-            <= date_sub(current_date(), interval 3 week)
+        where sr.assignment_status = 'Active' and sr.primary_indicator
     ),
 
     final as (
@@ -184,6 +184,7 @@ with
         inner join
             {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on rt.name = 'Staff Info & Certification Update'
+        where r.is_past_new_hire_wait
 
         union all
 
@@ -290,7 +291,8 @@ with
             {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on rt.name = 'KTAF Support Survey'
         where
-            (
+            r.is_past_new_hire_wait
+            and (
                 r.job_title in ('Executive Director', 'Managing Director of Operations')
                 or (
                     r.business_unit <> 'KIPP TEAM and Family Schools Inc.'
@@ -369,6 +371,7 @@ with
         inner join
             {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on rt.name = 'Manager Survey'
+        where r.is_past_new_hire_wait
 
         union all
 
@@ -411,6 +414,7 @@ with
         inner join
             {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on rt.name = 'Support Survey'
+        where r.is_past_new_hire_wait
 
         union all
 
@@ -443,7 +447,7 @@ with
         inner join
             {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on rt.name = 'School Community Diagnostic Staff Survey'
-        where r.loc_type = 'School-based'
+        where r.loc_type = 'School-based' and r.is_past_new_hire_wait
 
         union all
 
@@ -478,6 +482,7 @@ with
         inner join
             {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on rt.name = 'TNTP Insight Survey'
+        where r.is_past_new_hire_wait
 
         union all
 
@@ -512,6 +517,7 @@ with
             {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on current_date('America/New_York') between rt.start_date and rt.end_date
             and rt.name = 'Gallup Q12 Survey'
+        where r.is_past_new_hire_wait
     )
 
 select

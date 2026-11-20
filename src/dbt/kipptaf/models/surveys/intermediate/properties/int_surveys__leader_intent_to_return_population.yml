@@ -2,12 +2,13 @@ models:
   - name: int_surveys__leader_intent_to_return_population
     description: >-
       Staff assigned the Leader Intent to Return Survey, one row per person per
-      leader round. A person is in the population when they meet the survey
-      eligibility every staff survey uses (active, primary assignment, hired or
-      rehired at least 3 weeks ago) and their job title, home department, and
-      home business unit are all on recruitment's lists for the round. This is
-      the only place the leader rule lives; survey assignments, the staff intent
-      to return exclusion, and recruitment's follow-up list all read it.
+      leader round. A person is in the population when they hold an active
+      primary assignment and their job title, home department, and home business
+      unit are all on recruitment's lists for the round. Unlike most staff
+      surveys, recent hires are included: intent to return asks about next year,
+      which a new hire is also planning. This is the only place the leader rule
+      lives; survey assignments, the staff intent to return exclusion, and
+      recruitment's follow-up list all read it.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -85,8 +86,8 @@ unit_tests:
       lists, and who meet survey eligibility, are in. A title and business unit
       match in an unlisted department is out; a KTAF Teaching and Learning
       Director is in; a KTAF Teacher Development Director and the Managing
-      Director of Talent Acquisition are out; a recent hire and a non-primary
-      assignment are out. Only the leader terms row produces rows.
+      Director of Talent Acquisition are out; a recent hire is in; a non-primary
+      assignment is out. Only the leader terms row produces rows.
     model: int_surveys__leader_intent_to_return_population
     given:
       - input: ref('int_people__staff_roster')
@@ -159,6 +160,10 @@ unit_tests:
           survey_round: LITR
           is_current: true
         - employee_number: 103
+          academic_year: 2026
+          survey_round: LITR
+          is_current: true
+        - employee_number: 106
           academic_year: 2026
           survey_round: LITR
           is_current: true
