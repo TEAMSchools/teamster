@@ -1,10 +1,11 @@
 """Command line: `uv run python -m scripts.cube_validation <command> ...`.
 
-Commands: `discover`, `preflight`, `prove`, `check-api`, `run`, `triage`,
-`triage confirm`, `add-decisions`, `reapply`, `review`, `record-answers`, `members`,
-`inventory-workbook`, `inventory`. Exit
-codes: 0 done, 1 refused (the message says why), 2 usage error. This module parses
-arguments and builds the clients; `pipeline.py` does the work. Tests replace
+Commands: `find-field`, `read-sheet`, `rebuild-sheet`, `compare`, `sort`,
+`explain`, `decide`, `reapply`, `ask-owner`, `record-answers`, `describe`,
+`members`, `inventory-workbook`, `inventory`. Exit codes: 0 done, 1 refused
+(the message says why), 2 usage error. This module parses arguments and builds
+the clients; the command modules (`compare`, `results`, `rebuild`, `review`)
+and their shared core, `pipeline`, do the work. Tests replace
 `make_warehouse`, `make_cube`, `tableau_session`, `utcnow` and `cache_root`.
 """
 
@@ -23,7 +24,7 @@ import urllib.parse
 # trunk-ignore(bandit/B405): only ParseError is used; the workbook is parsed in builder
 import xml.etree.ElementTree as ET
 from collections.abc import Iterator
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 
 import tableauserverclient as TSC
@@ -32,14 +33,19 @@ import yaml
 from . import (
     answers,
     builder,
-    confirm,
+    compare,
     describe,
+    explain,
+    find_field,
     pipeline,
-    preflight,
+    read_sheet,
+    rebuild,
     report,
+    results,
+    review,
+    sort,
     tableau,
     trace,
-    triage,
 )
 from .bq import CostCapError, ViewHistoryError, Warehouse
 from .config import (
@@ -51,7 +57,8 @@ from .config import (
     write_decision,
 )
 from .cube_client import Cube, CubeError, CubeRefusal
-from .moment import MomentError
+from .decisions import formula_cells_hash
+from .moment import MomentError, utcnow
 
 EXPOSURES = (
     Path(__file__).resolve().parents[2] / "src/dbt/kipptaf/models/exposures/tableau.yml"
@@ -64,6 +71,17 @@ EMAIL_VAR = "CUBE_VALIDATION_EMAIL"
 CACHE_VAR = "CUBE_VALIDATION_CACHE"
 # Every run on this machine shares 1 daily BigQuery cap (UTC day).
 DAILY_MAX_USD = 3.0
+# Commands renamed to plain words; `main` refuses an old name with its new one.
+OLD_COMMANDS: dict[str, str] = {
+    "discover": "find-field",
+    "preflight": "read-sheet",
+    "prove": "rebuild-sheet",
+    "run": "compare",
+    "triage": "sort",
+    "add-decisions": "decide",
+    "review": "ask-owner",
+}
+OLD_FLAGS: dict[str, str] = {"--no-proofs": "--no-explanations"}
 
 # Errors that mean "stopped on purpose or by a check". Anything else is a bug
 # and keeps its traceback; no message here carries a secret.
@@ -122,10 +140,6 @@ def tableau_session() -> Iterator[tableau.Tableau]:
             print(f"warning: Tableau sign-out failed: {problem}", file=sys.stderr)
 
 
-def utcnow() -> datetime:
-    return datetime.now(timezone.utc)
-
-
 def cache_root() -> Path:
     """The local cache: `CUBE_VALIDATION_CACHE` when set, else `report.CACHE_ROOT`."""
     return Path(os.environ.get(CACHE_VAR) or report.CACHE_ROOT)
@@ -165,12 +179,16 @@ def _moment(value: str) -> datetime:
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="python -m scripts.cube_validation",
-        description="Validate Cube measures against dashboards, anchors and identities.",
+        description="Validate Cube measures against dashboards.",
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    def view_file(p: argparse.ArgumentParser) -> None:
-        p.add_argument("view", type=Path, help="src/cube/validation/<view>.yml")
+    def validation_file(p: argparse.ArgumentParser) -> None:
+        p.add_argument(
+            "view",
+            type=Path,
+            help="the validation file, src/cube/validation/<view>.yml",
+        )
 
     def email(p: argparse.ArgumentParser) -> None:
         p.add_argument("--email", help=f"network-grant email; or set {EMAIL_VAR}")
@@ -184,8 +202,8 @@ def _parser() -> argparse.ArgumentParser:
             help="BigQuery cap across every run today (UTC)",
         )
 
-    p = sub.add_parser("discover", help="rank workbook fields against a measure")
-    view_file(p)
+    p = sub.add_parser("find-field", help="rank workbook fields against a measure")
+    validation_file(p)
     email(p)
     p.add_argument("--measure", required=True, help="Cube measure short name")
     source = p.add_mutually_exclusive_group()
@@ -213,9 +231,9 @@ def _parser() -> argparse.ArgumentParser:
         )
 
     p = sub.add_parser(
-        "preflight", help="list what each sheet needs before prove, offline"
+        "read-sheet", help="list what each sheet needs before rebuild-sheet, offline"
     )
-    view_file(p)
+    validation_file(p)
     p.add_argument(
         "--twb", type=Path, help="the local .twb to read (required); no Tableau sign-in"
     )
@@ -226,40 +244,59 @@ def _parser() -> argparse.ArgumentParser:
         help="check this sheet instead of the comparisons' sheets; repeat it",
     )
 
-    p = sub.add_parser("prove", help="prove a probe against its sheet once")
-    view_file(p)
+    p = sub.add_parser(
+        "rebuild-sheet",
+        help="rebuild a sheet in SQL and match it to the sheet's export once",
+    )
+    validation_file(p)
     fact_dataset(p)
-    which = p.add_mutually_exclusive_group(required=True)
-    which.add_argument(
+    p.add_argument(
         "--comparison",
         action="append",
-        help="comparison id to prove; repeat it to prove several from one export",
-    )
-    which.add_argument(
-        "--check", action="store_true", help="list proofs older than their workbook"
+        required=True,
+        help="comparison id to rebuild; repeat it to rebuild several from one export",
     )
     p.add_argument(
         "--headers",
         action="store_true",
-        help="print each cut's export headers and stop; nothing is probed or written",
+        help="print each cut's export headers and stop; nothing is queried or written",
     )
     max_usd(p)
 
-    p = sub.add_parser("check-api", help="Cube's API equals its compiled SQL")
-    view_file(p)
-    fact_dataset(p)
-    email(p)
-    max_usd(p)
-
-    p = sub.add_parser("run", help="validate a view at one fact build")
-    view_file(p)
+    p = sub.add_parser("compare", help="compare a view with Cube at one fact build")
+    validation_file(p)
     fact_dataset(p)
     p.add_argument("--moment", type=_moment, help="ISO time; the build ending by it")
+    again = p.add_mutually_exclusive_group()
+    again.add_argument(
+        "--resume",
+        action="store_true",
+        help="finish an unfinished run stopped 24 hours to 7 days ago, at its moment",
+    )
+    again.add_argument(
+        "--restart",
+        action="store_true",
+        help="drop an unfinished run's saved comparisons and start a new run",
+    )
+    which = p.add_mutually_exclusive_group()
+    which.add_argument(
+        "--comparison",
+        dest="only",
+        action="append",
+        help="comparison id to compare; repeat it for several (default: the "
+        "stale and the never-compared ones)",
+    )
+    which.add_argument(
+        "--all",
+        dest="every",
+        action="store_true",
+        help="compare every confirmed comparison, current or not",
+    )
     email(p)
     max_usd(p)
 
-    p = sub.add_parser("triage", help="sort each open item of a run into a pile")
-    view_file(p)
+    p = sub.add_parser("sort", help="sort each open item of a run into a pile")
+    validation_file(p)
     fact_dataset(p)
     email(p)
     max_usd(p)
@@ -281,28 +318,35 @@ def _parser() -> argparse.ArgumentParser:
         help="stop the trace after this long, keeping what it found",
     )
     p.add_argument(
-        "--no-proofs",
+        "--no-explanations",
         action="store_true",
-        help="skip re-running the view's stored proofs (`triage confirm`)",
+        help="skip re-running the view's stored explanations (`explain`)",
+    )
+    p.add_argument(
+        "--comparison",
+        action="append",
+        help="run and print only this comparison's explanations and items (repeatable)",
     )
 
-    # `triage confirm ...` on the command line; see `main`.
     p = sub.add_parser(
-        "triage-confirm",
-        help="prove a comparison bucket's row groups with one classification query",
+        "explain",
+        help="explain a comparison bucket's row groups with one classification query",
     )
-    view_file(p)
+    validation_file(p)
     fact_dataset(p)
     email(p)
     max_usd(p)
-    p.add_argument("--comparison", required=True, help="the comparison it proves")
+    p.add_argument("--comparison", required=True, help="the comparison it explains")
     p.add_argument(
-        "--bucket", choices=confirm.PROVABLE, help="the unmatched rows it classifies"
+        "--bucket",
+        required=True,
+        choices=explain.EXPLAINABLE,
+        help="the unmatched rows it classifies",
     )
     p.add_argument(
         "--sql",
         type=Path,
-        help="the proof's SQL; defaults to the stored proof, to re-run an edit",
+        help="the explanation's SQL; defaults to the stored one, to re-run an edit",
     )
     p.add_argument(
         "--cause",
@@ -314,28 +358,25 @@ def _parser() -> argparse.ArgumentParser:
         "--items",
         action="append",
         default=[],
-        help="triage item ids to report (comma-separated); all are proven",
-    )
-    p.add_argument(
-        "--cells",
-        action="store_true",
-        help="confirm the comparison's cell set from its proven groups; no query",
+        help="sorted item ids to report (comma-separated); all are explained",
     )
 
     p = sub.add_parser(
-        "add-decisions", help="write an approved triage batch as decisions"
+        "decide", help="write an approved batch of sorted items as decisions"
     )
-    view_file(p)
+    validation_file(p)
     p.add_argument(
         "approved",
         type=Path,
-        help='JSON list of {"id", "call", "reason", "task", "item"}',
+        help='JSON list of {"id", "call", "reason", "task", "item", "cause"}, or '
+        '{"id", "comparison", "call": "deliberate", "reason"} to close every '
+        "open row group of a comparison",
     )
 
     p = sub.add_parser(
         "reapply", help="apply the file's decisions to the saved run, offline"
     )
-    view_file(p)
+    validation_file(p)
 
     p = sub.add_parser(
         "record-answers", help="write a domain owner's answers comment as decisions"
@@ -349,7 +390,7 @@ def _parser() -> argparse.ArgumentParser:
         "--yes", action="store_true", help="write; without it, only print the changes"
     )
 
-    p = sub.add_parser("review", help="print the domain-owner review issue body")
+    p = sub.add_parser("ask-owner", help="print the domain-owner review issue body")
     p.add_argument("views", type=Path, nargs="+", help="validation files")
     p.add_argument("--domain", required=True, help="domain whose owner reviews")
 
@@ -383,18 +424,18 @@ def _load(path: Path) -> ViewConfig:
 
 
 def _dispatch(args: argparse.Namespace) -> int:
-    if args.command == "review":
+    if args.command == "ask-owner":
         configs = [_load(v) for v in args.views]
         comments: list[str] = []
         print(
-            pipeline.review(
+            review.ask_owner(
                 configs,
                 args.domain,
                 cache_root(),
                 now=utcnow(),
                 view_files=args.views,
                 comments=comments,
-                json_file=pipeline.review_file(args.views, configs, args.domain),
+                json_file=review.review_file(args.views, configs, args.domain),
             )
         )
         if comments:
@@ -434,22 +475,32 @@ def _dispatch(args: argparse.Namespace) -> int:
     if getattr(args, "fact_dataset", None) is not None:
         cfg = with_fact_dataset(cfg, args.fact_dataset)
 
-    if args.command == "run":
+    if args.command == "compare":
         cube = _cube(args)
-        pipeline.run(
-            cfg,
-            wh=_warehouse(args),
-            cube=cube,
-            now=utcnow(),
-            requested=args.moment,
-            max_usd=args.max_usd,
-            cache_root=cache_root(),
-            cube_host=_cube_host(),
-        )
+        wh = _warehouse(args)
+        # Tableau, for the workbook check before any query.
+        with tableau_session() as tbl:
+            compare.compare(
+                cfg,
+                wh=wh,
+                cube=cube,
+                now=utcnow(),
+                requested=args.moment,
+                max_usd=args.max_usd,
+                cache_root=cache_root(),
+                tbl=tbl,
+                cube_host=_cube_host(),
+                resume=args.resume,
+                restart=args.restart,
+                clock=utcnow,
+                ticker=report.Ticker(utcnow, utcnow()),
+                only=args.only,
+                every=args.every,
+            )
         return 0
 
-    if args.command == "triage":
-        triage.run_triage(
+    if args.command == "sort":
+        sort.sort_run(
             cfg,
             wh=_warehouse(args),
             cube=_cube(args),
@@ -458,23 +509,22 @@ def _dispatch(args: argparse.Namespace) -> int:
             trace_rows=not args.no_trace,
             manifest=args.manifest,
             trace_max_minutes=args.trace_max_minutes,
-            proofs=None if args.no_proofs else confirm.proofs_dir(args.view, cfg.view),
+            explanations=(
+                None
+                if args.no_explanations
+                else explain.explanations_dir(args.view, cfg.view)
+            ),
+            comparisons=args.comparison,
+            now=utcnow(),
         )
         return 0
 
-    if args.command == "triage-confirm":
-        if not args.cells and not args.bucket:
-            raise pipeline.Refusal("pass --bucket, or --cells")
-        if args.cells:
-            # No query runs, so no warehouse or Cube is needed.
-            wh, cube = None, None
-        else:
-            wh, cube = _warehouse(args), _cube(args)
-        return confirm.run_confirm(
+    if args.command == "explain":
+        return explain.explain(
             cfg,
             args.view,
-            wh=wh,
-            cube=cube,
+            wh=_warehouse(args),
+            cube=_cube(args),
             max_usd=args.max_usd,
             cache_root=cache_root(),
             comparison=args.comparison,
@@ -482,27 +532,19 @@ def _dispatch(args: argparse.Namespace) -> int:
             sql=args.sql,
             causes=args.cause,
             items=[i for flag in args.items for i in flag.split(",") if i],
-            cells=args.cells,
         )
 
-    if args.command == "add-decisions":
-        return _add_decisions(cfg, args.view, args.approved)
+    if args.command == "decide":
+        return _decide(cfg, args.view, args.approved)
 
     if args.command == "reapply":
         _reapply(cfg)
         return 0
 
-    if args.command == "check-api":
-        cube = _cube(args)
-        pipeline.check_api(
-            cfg, wh=_warehouse(args), cube=cube, clock=utcnow, max_usd=args.max_usd
-        )
-        return 0
+    if args.command == "read-sheet":
+        return _read_sheet(cfg, args.twb, args.sheet)
 
-    if args.command == "preflight":
-        return _preflight(cfg, args.twb, args.sheet)
-
-    if args.command == "discover":
+    if args.command == "find-field":
         cube = _cube(args)
         if args.twb is not None and not args.twb.is_file():
             raise pipeline.Refusal(f"{args.twb}: no such workbook file")
@@ -510,7 +552,7 @@ def _dispatch(args: argparse.Namespace) -> int:
         # measure.
         session = contextlib.nullcontext() if args.twb else tableau_session()
         with session as tbl:
-            pipeline.discover(
+            find_field.find_field(
                 cfg,
                 args.measure,
                 cube=cube,
@@ -523,18 +565,14 @@ def _dispatch(args: argparse.Namespace) -> int:
             )
         return 0
 
-    # prove
-    if args.check:
-        with tableau_session() as tbl:
-            pipeline.prove_check(cfg, tbl=tbl, cube=_cube(args))
-        return 0
+    # rebuild-sheet
     captures: dict = {}
     with tableau_session() as tbl:
         if args.headers:
             refused = _each(
                 args.comparison,
                 tbl,
-                lambda cid: pipeline.prove_headers(
+                lambda cid: rebuild.rebuild_sheet_headers(
                     cfg, args.view, cid, tbl=tbl, captures=captures
                 ),
             )
@@ -543,8 +581,8 @@ def _dispatch(args: argparse.Namespace) -> int:
             refused = _each(
                 args.comparison,
                 tbl,
-                resume=f"prove {args.view}",
-                step=lambda cid: pipeline.prove(
+                resume=f"rebuild-sheet {args.view}",
+                step=lambda cid: rebuild.rebuild_sheet(
                     cfg,
                     args.view,
                     cid,
@@ -560,14 +598,14 @@ def _dispatch(args: argparse.Namespace) -> int:
 
 
 RUN_AGAIN = (
-    "Run `run` again only when the data, the Cube model or the dashboard "
-    "changed, or for new comparisons."
+    "Run `compare` again only when the Cube model or the dashboard changed, or "
+    "for new comparisons; `compare --all` when only the data changed."
 )
 
 
 def _reapply(cfg: ViewConfig) -> None:
     """Re-apply a file's decisions to its saved run and say what is open."""
-    run = pipeline.reapply(cfg, cache_root())
+    run = results.reapply(cfg, cache_root())
     counts = (
         f"{len(run.applied.open)} open groups, {len(run.applied.open_gaps)} open "
         f"gaps, {len(run.applied.open_cells)} open cell diffs"
@@ -584,7 +622,7 @@ def _reapply_written(paths: list[Path]) -> None:
     """Re-apply after a write; a view with no usable run says so and goes on.
 
     The decisions are already written, so a missing or older saved run is not
-    a refusal here: the analyst runs `run` for that view instead.
+    a refusal here: the analyst runs `compare` for that view instead.
     """
     refused = False
     for path in paths:
@@ -609,6 +647,19 @@ def _write_all(writes: list[tuple[Path, dict]]) -> None:
         raise
 
 
+def _write_or_say_nothing(write) -> None:
+    """Run `write`; on a refusal, end stdout with a line saying nothing was written.
+
+    The refusal itself goes to stderr, which a caller reading only stdout
+    misses after the planned changes; `_write_all` has restored every file.
+    """
+    try:
+        write()
+    except REFUSALS:
+        print("Nothing written.")
+        raise
+
+
 def _check_claims(writes: list[tuple[Path, dict]], also=None) -> None:
     """Refuse, before writing, a batch whose decisions would claim one item twice.
 
@@ -628,38 +679,61 @@ def _check_claims(writes: list[tuple[Path, dict]], also=None) -> None:
         for path, copy in copies.items():
             try:
                 rehearsed = load_view_config(copy)
-                pipeline.check_claims(rehearsed, cache_root())
+                results.check_claims(rehearsed, cache_root())
                 if also is not None:
                     also(rehearsed)
             except pipeline.Refusal as exc:
                 raise pipeline.Refusal(f"{path}: {exc}; nothing written") from exc
 
 
-def _add_decisions(cfg: ViewConfig, path: Path, approved_path: Path) -> int:
-    """Write an approved triage batch into the view's `decisions:`.
+def _decide(cfg: ViewConfig, path: Path, approved_path: Path) -> int:
+    """Write an approved batch of sorted items into the view's `decisions:`.
 
-    Stubs and proven causes come from the triage beside the latest run and
+    Stubs and explained causes come from the sort beside the latest run and
     fingerprints from that run; a cause already decided keeps its decision
-    (see `answers.approved_decisions`). Refuses while that triage is stale or
-    holds an unproven item (see `triage.proven_triage`), or when a cause
-    decision would disagree with a `group` decision on one group. The whole
-    batch is written or none of it.
+    (see `answers.approved_decisions`). Items still in `investigate` wait;
+    the batch may not decide one, save through a comparison decision, which
+    closes every open row group of its comparison. Refuses while that sort is
+    stale
+    (`sort.checked_sort`), on an approved item still in `investigate`, or
+    when a cause decision would disagree with a `group` decision on one
+    group. The whole batch is written or none of it.
     """
     approved = _read_json(approved_path, "approved")
-    run, run_json = pipeline.latest_run(cfg, cache_root())
-    saved = triage.proven_triage(run, run_json, cfg.decisions, path.parent)
+    run, run_json = results.latest_run(cfg, cache_root())
+    saved = sort.checked_sort(run, run_json, cfg.decisions, path.parent)
 
     decisions = answers.approved_decisions(
-        approved, saved, run.fingerprints, existing=cfg.decisions
+        approved,
+        saved,
+        run.fingerprints,
+        existing=cfg.decisions,
+        formula_cells={
+            d.comparison_id: d.matched_only
+            for d in run.applied.open_cells
+            if d.kind == "formula"
+        },
+        formula_hashes={
+            d.comparison_id: formula_cells_hash(
+                run.diff_cells,
+                d.comparison_id,
+                run.fingerprints.get(d.comparison_id) or {},
+            )
+            for d in run.applied.open_cells
+            if d.kind == "formula"
+        },
     )
     writes = [(path, d) for d in decisions]
 
     def agree(rehearsed: ViewConfig) -> None:
         items = copy.deepcopy(saved.get("items", []))
-        triage.mark_decided(run, items, rehearsed.decisions, refuse=True)
+        sort.mark_decided(run, items, rehearsed.decisions, refuse=True)
 
-    _check_claims(writes, agree)
-    _write_all(writes)
+    def write() -> None:
+        _check_claims(writes, agree)
+        _write_all(writes)
+
+    _write_or_say_nothing(write)
     had = {d.id for d in cfg.decisions}
     for d in decisions:
         done = "re-approved" if d["id"] in had else "wrote"
@@ -714,14 +788,14 @@ def _record_answers(views: list[Path], comment: Path, author: str, yes: bool) ->
         if c.task[1]:
             decision["task"] = c.task[1]
         if decision.get("cause"):
-            # Answered: `review` asks it no more, and it is never re-approved
-            # on a changed proof.
+            # Answered: `ask-owner` asks it no more, and it is never
+            # re-approved on a changed explanation.
             decision["answer"] = c.call[1]
         writes.append((path, decision))
     if not writes:
         print("Nothing to write; every answer is already recorded.")
         return 0
-    _write_all(writes)
+    _write_or_say_nothing(lambda: _write_all(writes))
     print(f"Wrote {len(writes)} decisions.")
     _reapply_written([Path(p) for p in dict.fromkeys(c.path for c in changes)])
     return 0
@@ -765,22 +839,22 @@ def _saved_members() -> list[builder.Member]:
         raise pipeline.Refusal(f"{saved}: unreadable ({exc!r}); run `members`") from exc
 
 
-def _preflight(cfg: ViewConfig, twb: Path | None, sheets: list[str]) -> int:
-    """Print each sheet's preflight checklist from a local `twb`.
+def _read_sheet(cfg: ViewConfig, twb: Path | None, sheets: list[str]) -> int:
+    """Print each sheet's checklist from a local `twb`.
 
     It never signs in to Tableau: a second sign-in with the shared token can
     end another session's.
     """
     if twb is None:
         raise pipeline.Refusal(
-            "pass --twb <path>: preflight reads only a local workbook; download the "
+            "pass --twb <path>: read-sheet reads only a local workbook; download the "
             ".twb once (the cube-validation runbook) and reuse it"
         )
     if not twb.is_file():
         raise pipeline.Refusal(f"{twb}: no such workbook file")
     members = _saved_members()
     text = twb.read_text(encoding="utf-8")
-    print(preflight.report(cfg, lambda _: (twb.name, text), members, sheets))
+    print(read_sheet.report(cfg, lambda _: (twb.name, text), members, sheets))
     return 0
 
 
@@ -850,12 +924,12 @@ def _each(ids: list[str], tbl: tableau.Tableau, step, resume: str = "") -> int:
     One comparison's refusal or Tableau error does not stop the others. Each
     finished comparison is already written, so when Tableau ends the session
     for good (`tableau.SessionEnded`) the run stops and names the ids left,
-    with the command that proves only those.
+    with the command that rebuilds only those.
 
     Args:
         ids: The comparison ids, in order.
         tbl: The Tableau session; each call signs in again once after a 401.
-        step: Proves one id.
+        step: Rebuilds one id.
         resume: The command before its `--comparison` flags, for the ids left.
 
     Raises:
@@ -870,8 +944,8 @@ def _each(ids: list[str], tbl: tableau.Tableau, step, resume: str = "") -> int:
             left = " ".join(f"--comparison {i}" for i in ids[n:])
             raise pipeline.Refusal(
                 f"{exc} during {cid}. "
-                + (f"Proven and kept: {', '.join(done)}. " if done else "")
-                + (f"Prove the rest with: {resume} {left}" if resume else "")
+                + (f"Matched and kept: {', '.join(done)}. " if done else "")
+                + (f"Rebuild the rest with: {resume} {left}" if resume else "")
             ) from exc
         except TSC.ServerResponseError as exc:
             print(
@@ -896,7 +970,15 @@ def main(argv: list[str]) -> int:
         stderr), 2 for a usage error.
     """
     if argv[:2] == ["triage", "confirm"]:
-        argv = ["triage-confirm", *argv[2:]]
+        print("`triage confirm` is now `explain`", file=sys.stderr)
+        return 2
+    if argv and argv[0] in OLD_COMMANDS:
+        print(f"`{argv[0]}` is now `{OLD_COMMANDS[argv[0]]}`", file=sys.stderr)
+        return 2
+    for old, new in OLD_FLAGS.items():
+        if old in argv:
+            print(f"`{old}` is now `{new}`", file=sys.stderr)
+            return 2
     try:
         args = _parser().parse_args(argv)
     except SystemExit as exc:

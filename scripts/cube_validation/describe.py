@@ -58,7 +58,9 @@ def notes(cfg: ViewConfig) -> list[MeasureNote]:
     """Each measure's deliberate decisions, in the file's order.
 
     A missing cut or filter covers the whole view, so it is listed under every
-    measure of the view's comparisons.
+    measure of the view's comparisons. A comparison decision (`all_groups`)
+    is left out: it closed differences no one explained, so it says nothing
+    Cube's text could state as intended.
     """
     by_id = {c.id: c for c in cfg.comparisons}
     out: dict[str, MeasureNote] = {}
@@ -67,7 +69,7 @@ def notes(cfg: ViewConfig) -> list[MeasureNote]:
         return out.setdefault(measure, MeasureNote(cfg.view, measure))
 
     for d in cfg.decisions:
-        if d.call != "deliberate":
+        if d.call != "deliberate" or d.all_groups:
             continue
         comparisons = (
             [by_id[d.comparison]] if d.comparison in by_id else list(by_id.values())

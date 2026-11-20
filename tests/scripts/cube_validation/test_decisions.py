@@ -1,9 +1,17 @@
+import dataclasses
+
 import pytest
+from cube_validation.config import Decision
+from cube_validation.decisions import (
+    FORMULA_CELLS,
+    MATCHED_ONLY,
+    apply,
+    formula_cells_hash,
+    sql_fingerprint,
+)
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation.compare import CellDiff, Gap, Group
-from cube_validation.config import Decision
-from cube_validation.decisions import apply, sql_fingerprint
+from cube_validation.reconcile import CellDiff, Gap, Group
 
 FP = {"cube": "c1", "dashboard": "d1"}
 
@@ -250,31 +258,204 @@ def test_filling_in_a_task_keeps_the_decisions_fingerprint():
     assert decisions_fingerprint([before]) != decisions_fingerprint([changed])
 
 
-def _cells_decision(fingerprints=None):
+DIFF = CellDiff("enrollment", {"differs": 58}, ("58 cells: values differ",))
+FORMULA = CellDiff(
+    "enrollment", {"differs": 4}, ("4 differing cells hold no unmatched row",),
+    kind="formula",
+)  # fmt: skip
+
+
+def _formula(id="f1", fingerprints=None):
     return Decision(
-        id="cells-1", comparison="enrollment", call="domain_owner", reason="r",
-        fingerprints=dict(FP) if fingerprints is None else fingerprints, cells=True,
+        id, "enrollment", "domain_owner", "which formula?", formula=True,
+        fingerprints=dict(FP) if fingerprints is None else fingerprints,
     )  # fmt: skip
 
 
-DIFF = CellDiff("enrollment", {"differs": 58}, ("58 cells: values differ",))
+def test_a_formula_decision_quiets_its_comparison_s_formula_cells():
+    d = _formula()
+
+    applied = apply([d], [], {"enrollment": FP}, cell_diffs=[DIFF, FORMULA])
+
+    assert applied.quiet_cells == [(d, FORMULA)]
+    assert applied.open_cells == [DIFF]
+    assert applied.reconfirm == applied.no_longer_needed == []
 
 
-def test_cells_decision_quiets_its_comparison_cell_differences():
-    applied = apply([_cells_decision()], [], {"enrollment": FP}, cell_diffs=[DIFF])
-    assert applied.quiet_cells == [(_cells_decision(), DIFF)]
-    assert applied.open_cells == []
+def test_a_formula_decision_reconfirms_when_sql_changed():
+    d = _formula(fingerprints={**FP, "cube": "old"})
+
+    applied = apply([d], [], {"enrollment": FP}, cell_diffs=[FORMULA])
+
+    assert applied.reconfirm == [d] and applied.quiet_cells == []
+    assert applied.open_cells == [FORMULA]
 
 
-def test_cells_decision_reconfirms_when_sql_changed():
-    stale = _cells_decision({"cube": "old", "dashboard": "d1"})
-    applied = apply([stale], [], {"enrollment": FP}, cell_diffs=[DIFF])
-    assert applied.reconfirm == [stale] and applied.open_cells == [DIFF]
+def _checked(n):
+    """The formula diff with `n` cells the formula check filed."""
+    return dataclasses.replace(FORMULA, matched_only=n)
 
 
-def test_cells_decision_with_no_differences_is_no_longer_needed():
-    applied = apply([_cells_decision()], [], {"enrollment": FP}, cell_diffs=[])
-    assert applied.no_longer_needed == [_cells_decision()]
+@pytest.mark.parametrize("now", [2, 1])
+def test_a_formula_decision_quiets_its_diff_while_the_check_filed_no_more(now):
+    d = _formula(fingerprints={**FP, MATCHED_ONLY: "2"})
+    diff = _checked(now)
+
+    applied = apply([d], [], {"enrollment": FP}, cell_diffs=[diff])
+
+    assert applied.quiet_cells == [(d, diff)] and applied.reconfirm == []
+
+
+def test_a_formula_decision_reconfirms_when_the_check_filed_more_cells():
+    d = _formula(fingerprints={**FP, MATCHED_ONLY: "2"})
+    diff = _checked(3)
+
+    applied = apply([d], [], {"enrollment": FP}, cell_diffs=[diff])
+
+    assert applied.reconfirm == [d] and applied.quiet_cells == []
+    assert applied.open_cells == [diff]
+
+
+def test_a_formula_decision_with_no_recorded_count_reads_as_zero():
+    d = _formula()
+    assert MATCHED_ONLY not in d.fingerprints
+
+    filed = apply([d], [], {"enrollment": FP}, cell_diffs=[_checked(1)])
+    assert filed.reconfirm == [d] and filed.quiet_cells == []
+
+    none = apply([d], [], {"enrollment": FP}, cell_diffs=[_checked(0)])
+    assert none.quiet_cells == [(d, _checked(0))] and none.reconfirm == []
+
+
+def _cell(key, kind="formula", comparison="enrollment", cut="Region"):
+    """A cell as run.json's `diff_cells` saves it, values left out."""
+    return {"comparison": comparison, "cut": cut, "key": key, "kind": kind}
+
+
+CELLS = [_cell("Newark"), _cell("Miami")]
+
+
+def _hashed():
+    """A formula decision recording that it covered `CELLS`."""
+    return _formula(
+        fingerprints={
+            **FP, FORMULA_CELLS: formula_cells_hash(CELLS, "enrollment", FP),
+        }
+    )  # fmt: skip
+
+
+def test_the_formula_cells_hash_is_a_salted_digest_of_the_refs():
+    digest = formula_cells_hash(CELLS, "enrollment", FP)
+
+    assert len(digest) == 64 and set(digest) <= set("0123456789abcdef")
+    # Its comparison's formula cells only, in any order.
+    assert digest == formula_cells_hash(
+        [CELLS[1], _cell("Camden", kind="cells"),
+         _cell("Paterson", comparison="other"), CELLS[0]],
+        "enrollment", FP,
+    )  # fmt: skip
+    assert digest != formula_cells_hash(CELLS, "other", FP)
+    # Salted with both SQL fingerprints.
+    assert digest != formula_cells_hash(CELLS, "enrollment", {**FP, "cube": "c2"})
+    assert digest != formula_cells_hash(CELLS, "enrollment", {**FP, "dashboard": "d2"})
+
+
+def test_a_formula_decision_quiets_its_diff_while_its_cells_are_the_same():
+    d = _hashed()
+    # The count no longer decides: the same cells, however many were filed.
+    diff = _checked(2)
+
+    applied = apply(
+        [d], [], {"enrollment": FP}, cell_diffs=[diff], diff_cells=CELLS[::-1]
+    )
+
+    assert applied.quiet_cells == [(d, diff)] and applied.reconfirm == []
+
+
+@pytest.mark.parametrize(
+    "now",
+    [
+        pytest.param([CELLS[0], _cell("Camden")], id="same size, other cells"),
+        pytest.param([CELLS[0]], id="fewer"),
+        pytest.param([*CELLS, _cell("Camden")], id="more"),
+        pytest.param([CELLS[0], _cell("Miami", cut="School")], id="other cut"),
+    ],
+)
+def test_a_formula_decision_reconfirms_when_its_cells_change(now):
+    d = _hashed()
+
+    applied = apply([d], [], {"enrollment": FP}, cell_diffs=[FORMULA], diff_cells=now)
+
+    assert applied.reconfirm == [d] and applied.quiet_cells == []
+    assert applied.open_cells == [FORMULA]
+
+
+def test_a_formula_decision_with_no_recorded_cells_keeps_the_count_rule():
+    # Written before decisions recorded their cells: other cells change
+    # nothing, and any cell the check filed sends it back.
+    d = _formula()
+    other = [_cell("Camden")]
+
+    none = apply([d], [], {"enrollment": FP}, cell_diffs=[FORMULA], diff_cells=other)
+    assert none.quiet_cells == [(d, FORMULA)] and none.reconfirm == []
+
+    filed = apply(
+        [d], [], {"enrollment": FP}, cell_diffs=[_checked(1)], diff_cells=other
+    )
+    assert filed.reconfirm == [d] and filed.quiet_cells == []
+
+
+def test_recorded_cells_leave_older_decisions_fingerprint_unchanged():
+    # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+    from cube_validation.decisions import decisions_fingerprint
+
+    counted = _formula("f", fingerprints={**FP, MATCHED_ONLY: "2"})
+
+    # The digest of this decision before decisions recorded their cells.
+    assert decisions_fingerprint([counted]) == (
+        "aef82d813f60925f61fd678d41a18a5739d37252faaa5ccc32f0870a0d81a846"
+    )
+
+
+def test_a_formula_decision_never_quiets_a_cells_diff():
+    d = _formula()
+
+    applied = apply([d], [], {"enrollment": FP}, cell_diffs=[DIFF])
+
+    # No formula cells this run: the decision covers nothing.
+    assert applied.no_longer_needed == [d]
+    assert applied.open_cells == [DIFF] and applied.quiet_cells == []
+
+
+def test_two_formula_decisions_on_one_comparison_refuse():
+    with pytest.raises(ValueError, match="both claim the formula difference"):
+        apply(
+            [_formula("f1"), _formula("f2")], [], {"enrollment": FP},
+            cell_diffs=[FORMULA],
+        )  # fmt: skip
+
+
+def test_two_formula_decisions_refuse_even_with_no_formula_cells():
+    with pytest.raises(ValueError, match="both claim the formula difference"):
+        apply(
+            [_formula("f1"), _formula("f2")], [], {"enrollment": FP},
+            cell_diffs=[DIFF],
+        )  # fmt: skip
+    stale = {**FP, "cube": "old"}
+    with pytest.raises(ValueError, match="both claim the formula difference"):
+        apply(
+            [_formula("f1", stale), _formula("f2", stale)], [], {"enrollment": FP},
+            cell_diffs=[FORMULA],
+        )  # fmt: skip
+
+
+def test_no_group_decision_quiets_a_comparison_s_cell_differences():
+    d = Decision("d", "enrollment", "deliberate", "r",
+                 {"column": "x", "values": ["1"]}, fingerprints=dict(FP))  # fmt: skip
+
+    applied = apply([d], [], {"enrollment": FP}, cell_diffs=[DIFF])
+
+    assert applied.open_cells == [DIFF] and applied.quiet_cells == []
 
 
 # --- cause decisions (T17) ---------------------------------------------------
@@ -290,7 +471,9 @@ def _cause(id="c1", call="deliberate", fingerprints=None):
         call=call,
         reason="known",
         cause={"side": "cube", "label": "score has no section"},
-        fingerprints={**FP, "proof": "p1"} if fingerprints is None else fingerprints,
+        fingerprints={**FP, "explanation": "p1"}
+        if fingerprints is None
+        else fingerprints,
     )
 
 
@@ -298,9 +481,9 @@ def test_cause_state_names_what_changed():
     d = _cause()
 
     assert cause_state(d, "p1", FP) == "holds"
-    assert cause_state(d, "p2", FP) == "proof"
+    assert cause_state(d, "p2", FP) == "explanation"
     assert cause_state(d, "p1", {**FP, "cube": "c2"}) == "sql"
-    assert cause_state(_cause(fingerprints=dict(FP)), "p1", FP) == "proof"
+    assert cause_state(_cause(fingerprints=dict(FP)), "p1", FP) == "explanation"
 
 
 def test_apply_never_quiets_a_group_from_a_cause_decision():
@@ -308,13 +491,13 @@ def test_apply_never_quiets_a_group_from_a_cause_decision():
 
     applied = apply([_cause()], [group], {"enrollment": FP})
 
-    # The latest triage, not the run, says which groups a cause decides.
+    # The latest sort, not the run, says which groups a cause decides.
     assert applied.open == [group] and applied.quiet == []
     assert applied.causes == [_cause()] and applied.reconfirm == []
 
 
-def test_apply_reconfirms_a_cause_decision_whose_sql_changed_or_has_no_proof():
-    stale = _cause(fingerprints={**FP, "cube": "old", "proof": "p1"})
+def test_apply_reconfirms_a_cause_decision_whose_sql_changed_or_has_no_explanation():
+    stale = _cause(fingerprints={**FP, "cube": "old", "explanation": "p1"})
     bare = _cause("c2", fingerprints=dict(FP))
 
     applied = apply([stale, bare], [_group()], {"enrollment": FP})
@@ -327,3 +510,99 @@ def test_group_and_cause_decisions_coexist_in_apply():
 
     assert [d.id for d, _ in applied.quiet] == ["d1"]
     assert [d.id for d in applied.causes] == ["c1"]
+
+
+# --- comparison-level decisions ----------------------------------------------
+
+
+def _whole(id="w1", comparison="enrollment", fingerprints=None):
+    return Decision(
+        id, comparison, "deliberate", "an old sheet", all_groups=True,
+        fingerprints=dict(FP) if fingerprints is None else fingerprints,
+    )  # fmt: skip
+
+
+def test_a_comparison_decision_closes_every_open_group_of_its_comparison():
+    newark, camden = _group("Newark"), _group("Camden")
+    other = _group("Newark", comparison_id="attendance")
+    d = _whole()
+
+    applied = apply([d], [newark, camden, other], {"enrollment": FP})
+
+    assert applied.quiet == [(d, newark), (d, camden)]
+    assert applied.open == [other]
+    assert applied.reconfirm == applied.no_longer_needed == []
+
+
+def test_a_comparison_decision_leaves_a_group_decision_s_groups_to_it():
+    newark, camden = _group("Newark"), _group("Camden")
+    by_group, whole = _decision(), _whole()
+
+    # In either order: the group decision keeps its group, no double claim.
+    for recorded in ([by_group, whole], [whole, by_group]):
+        applied = apply(recorded, [newark, camden], {"enrollment": FP})
+        assert sorted((d.id, g.dims) for d, g in applied.quiet) == [
+            ("d1", newark.dims),
+            ("w1", camden.dims),
+        ]
+        assert applied.open == []
+
+
+def test_a_comparison_decision_leaves_a_stale_group_decision_s_groups_open():
+    newark, camden = _group("Newark"), _group("Camden")
+    stale = _decision(fingerprints={**FP, "cube": "old"})
+    whole = _whole()
+
+    applied = apply([stale, whole], [newark, camden], {"enrollment": FP})
+
+    # Newark waits for its own decision's re-confirmation, never this one.
+    assert applied.reconfirm == [stale]
+    assert applied.quiet == [(whole, camden)]
+    assert applied.open == [newark]
+
+
+def test_a_comparison_decision_never_quiets_cells():
+    applied = apply([_whole()], [], {"enrollment": FP}, cell_diffs=[DIFF, FORMULA])
+
+    assert applied.open_cells == [DIFF, FORMULA] and applied.quiet_cells == []
+    # Nothing open to close: it is no longer needed.
+    assert applied.no_longer_needed == [_whole()]
+
+
+def test_a_comparison_decision_reconfirms_when_sql_changed():
+    stale = _whole(fingerprints={**FP, "dashboard": "old"})
+    group = _group()
+
+    applied = apply([stale], [group], {"enrollment": FP})
+
+    assert applied.reconfirm == [stale]
+    assert applied.open == [group] and applied.quiet == []
+
+
+def test_two_comparison_decisions_on_one_comparison_refuse():
+    with pytest.raises(ValueError, match="both claim every open row group"):
+        apply([_whole(), _whole("w2")], [_group()], {"enrollment": FP})
+
+
+def test_comparison_decisions_leave_the_decisions_fingerprint_unchanged():
+    # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+    from cube_validation.decisions import decisions_fingerprint
+
+    recorded = [
+        Decision("g", "enrollment", "deliberate", "known",
+                 {"column": "region", "values": ["Newark"]}, fingerprints=dict(FP)),
+        Decision("f", "enrollment", "domain_owner", "which formula?", formula=True,
+                 fingerprints=dict(FP)),
+        Decision("c", "enrollment", "deliberate", "known",
+                 cause={"side": "cube", "label": "x"},
+                 fingerprints={**FP, "explanation": "p1"}),
+        Decision("m", "", "deliberate", "known", missing_filter="School"),
+    ]  # fmt: skip
+
+    # The digest of these decisions before comparison decisions existed.
+    assert decisions_fingerprint(recorded) == (
+        "5464f8110d229d0b1b340ea6b4cd8c7b34865836d65a7e2e032a053eaf88f3f1"
+    )
+    assert decisions_fingerprint([*recorded, _whole()]) != decisions_fingerprint(
+        recorded
+    )

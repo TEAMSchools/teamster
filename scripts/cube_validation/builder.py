@@ -15,10 +15,11 @@ import xml.etree.ElementTree as ET
 from collections import defaultdict
 from dataclasses import dataclass
 
-from . import discover as finder
-from .cube_client import _FACT, Cube, CubeError, CubeRefusal, bind
+from . import find_field as finder
+from .cube_client import FACT_TABLE, Cube, CubeError, CubeRefusal, bind
 from .decisions import sql_fingerprint
-from .pipeline import _measure_expression
+from .pipeline import measure_expression
+from .tableau import bare_name, unquote
 
 
 @dataclass(frozen=True)
@@ -71,13 +72,13 @@ def members(cube: Cube, skipped: list[dict] | None = None) -> list[Member]:
 
             try:
                 compiled = cube.compiled({"measures": [name]})
-                sql = _measure_expression(bind(compiled), owner, short)
+                sql = measure_expression(bind(compiled), owner, short)
             except (CubeError, CubeRefusal) as exc:
                 if skipped is not None:
                     skipped.append({"name": name, "reason": str(exc)})
                 continue
 
-            facts = _FACT.findall(compiled.sql)
+            facts = FACT_TABLE.findall(compiled.sql)
             found.append(
                 Member(
                     name=name,
@@ -117,11 +118,6 @@ def same_sql(found: list[Member]) -> list[list[Member]]:
     ]
 
 
-def same_name(found: list[Member], name: str) -> list[Member]:
-    """Every member named `name` (the part after the cube) on any cube."""
-    return [m for m in found if m.name.split(".", 1)[1] == name]
-
-
 @dataclass(frozen=True)
 class FieldUse:
     """One workbook field and every worksheet that uses it.
@@ -159,20 +155,19 @@ def _sheet_uses(ws: ET.Element, groups: set[str]) -> dict[tuple[str, str], str]:
             uses[key] = role
 
     roles = {
-        finder._bare(col.get("name") or ""): col.get("role")
-        for col in ws.iter("column")
+        bare_name(col.get("name") or ""): col.get("role") for col in ws.iter("column")
     }
     for col in ws.iter("column"):
         if col.get("param-domain-type"):
-            add(("", finder._bare(col.get("name") or "")), "parameter")
+            add(("", bare_name(col.get("name") or "")), "parameter")
 
     def field_of(ref: str) -> tuple[tuple[str, str], str] | None:
         m = finder.FIELD_REF.search(ref)
         if m is None:
             name = finder.filter_field(ref, groups)
             return (("", name), "cut") if name else None
-        if m["deriv"] in finder._AGG_PREFIXES:
-            return (finder._AGG_PREFIXES[m["deriv"]], m["name"]), "measure"
+        if m["deriv"] in finder.AGG_PREFIXES:
+            return (finder.AGG_PREFIXES[m["deriv"]], m["name"]), "measure"
         if m["deriv"] == "usr":
             # `usr` is also in AGGREGATES: it marks a calculation, whose role
             # says whether it aggregates.
@@ -205,7 +200,7 @@ def _sheet_uses(ws: ET.Element, groups: set[str]) -> dict[tuple[str, str], str]:
             if top is not None and top.get("function") == "except":
                 continue
             for member in filter_el.iter("groupfilter"):
-                if found := field_of(finder._unquote(member.get("member"))):
+                if found := field_of(unquote(member.get("member"))):
                     add(found[0], "measure")
             continue
         found = field_of(column)
@@ -230,9 +225,9 @@ def workbook_inventory(twb_xml: str) -> list[FieldUse]:
     """
     # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
     root = ET.fromstring(twb_xml)
-    calcs = {finder._bare(c.name): c.formula for c in finder.calculated_fields(twb_xml)}
+    calcs = {bare_name(c.name): c.formula for c in finder.calculated_fields(twb_xml)}
     raw = {
-        (c.formula.split("(", 1)[0], finder._bare(c.name)): c.formula
+        (c.formula.split("(", 1)[0], bare_name(c.name)): c.formula
         for c in finder.aggregated_fields(twb_xml)
     }
     found_bins = finder.bins(twb_xml)
@@ -347,7 +342,7 @@ class InventoryRow:
 
 
 _AGG_CAPTION = re.compile(
-    "(?:" + "|".join(finder._AGG_PREFIXES.values()) + r")\((.*)\)", re.IGNORECASE
+    "(?:" + "|".join(finder.AGG_PREFIXES.values()) + r")\((.*)\)", re.IGNORECASE
 )
 _CATALOG_STATUSES = ("cube-covered", "mart-ready", "mart-missing", "workbook-only")
 _MEMBER_REF = re.compile(r"`(\w+\.\w+)`")

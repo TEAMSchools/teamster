@@ -3,23 +3,23 @@ import json
 import re
 from datetime import datetime, timezone
 
+import pytest
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+from cube_validation import compare, pipeline, report
+
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.answers import questions_json
-
-# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation.checks import Finding
-
-# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation.compare import CellDiff, Gap, Group
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.config import ColumnPair, Comparison, Decision, ViewConfig
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.decisions import Applied
+from cube_validation.moment import Build
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation.moment import Build
+from cube_validation.reconcile import CellDiff, Gap, Group
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.report import (
@@ -32,6 +32,9 @@ from cube_validation.report import (
     save_local,
     suppress,
 )
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+
 
 START = datetime(2026, 10, 27, 6, 0, tzinfo=timezone.utc)
 END = datetime(2026, 10, 27, 6, 5, 30, tzinfo=timezone.utc)
@@ -74,29 +77,16 @@ def _run(**overrides):
         view="enrollment_view",
         moment=Build(START, END, "job-1"),
         measures=[
-            MeasureResult("enrolled", "matches a dashboard", "validated", {"pass": 12}),
-            MeasureResult(
-                "withdrawn",
-                "matches a dashboard",
-                "differs",
-                {"pass": 10, "differs": 1},
-            ),
-            MeasureResult(
-                "seats", "anchored to a source", "judge the anchor", {"pass": 1}
-            ),
-            MeasureResult("ratio", "consistent only", "not validated", {}),
-            MeasureResult("misc", "none", "not validated", {}),
+            MeasureResult("enrolled", "validated", {"pass": 12}),
+            MeasureResult("withdrawn", "differs", {"pass": 10, "differs": 1}),
+            MeasureResult("seats", "differs", {"pass": 1, "differs": 1}),
         ],
         applied=applied,
-        findings=[
-            Finding("anchor", "seats", "seats vs state", 7.0, 1234.5, False),
-            Finding("identity", "ratio", "ratio identity", 1.0, 1.0, True),
-        ],
         live_sources=["kipptaf_extracts.rpt_enrollment"],
         changed_dims=["dim_students"],
         scopes=["region = Newark"],
         cost_usd=0.42,
-        proofs={"enrollment": "2026-10-20"},
+        rebuild_checks={"enrollment": "2026-10-20"},
         browser_cuts=["Region = Newark, Grade = 9"],
         clauses={"enrollment": ["WHERE grade_level > 8"]},
     )
@@ -109,25 +99,16 @@ def test_mask_small_counts():
     assert mask(0) == "<10"
 
 
-def test_consistent_only_measure_reads_not_validated():
-    text = render_local(_run())
-    assert "not validated (consistent only)" in text
-    assert "misc" in text and "(consistent only)" not in text.split("misc")[1]
-
-
 def test_measure_line_names_open_row_groups():
     measures = [
-        MeasureResult("enrolled", "matches a dashboard", "validated", {"pass": 135}, 2),
-        MeasureResult("left", "matches a dashboard", "validated", {"pass": 3}, 1),
-        MeasureResult("clean", "matches a dashboard", "validated", {"pass": 4}),
+        MeasureResult("enrolled", "validated", {"pass": 135}, 2),
+        MeasureResult("left", "validated", {"pass": 3}, 1),
+        MeasureResult("clean", "validated", {"pass": 4}),
     ]
     text = render_local(_run(measures=measures))
-    assert (
-        "- `enrolled`: matches a dashboard; validated (pass 135); "
-        "2 open row groups to triage"
-    ) in text
-    assert "validated (pass 3); 1 open row group to triage" in text
-    assert "- `clean`: matches a dashboard; validated (pass 4)\n" in text
+    assert ("- `enrolled`: validated (pass 135); 2 open row groups to sort") in text
+    assert "validated (pass 3); 1 open row group to sort" in text
+    assert "- `clean`: validated (pass 4)\n" in text
 
 
 def test_local_result_names_partly_stale_values():
@@ -159,23 +140,23 @@ def test_local_result_lists_live_sources_and_changed_dims():
     assert "0.42" in text
 
 
-def test_local_result_section_order_and_triage():
+def test_local_result_section_order_and_sort():
     text = render_local(_run())
     heads = [
         "## Measures",
-        "## Triage",
+        "## Sort",
         "## Decisions",
         "## Sources read live",
         "## Dimensions that changed",
         "## Scopes",
-        "## Cuts to prove in the browser",
+        "## Cuts to check in the browser",
         "## Cost",
     ]
     positions = [text.index(h) for h in heads]
     assert positions == sorted(positions)
     assert "WHERE grade_level > 8" in text
     assert "40" in text and "38" in text
-    assert "123456" not in text  # not a triage group, so not listed
+    assert "123456" not in text  # not a sort group, so not listed
 
 
 def test_local_result_is_not_masked():
@@ -186,9 +167,10 @@ def test_local_result_is_not_masked():
 
 def test_review_issue_has_no_raw_small_counts():
     body = render_review_issue("Registrar", [_run()])
-    assert "40 rows, 12 students" in body
-    assert "<10 rows, <10 students" in body
-    assert "1234.5" in body
+    # Every count an owner question posts is a bound.
+    assert "<10 row groups, 10+ rows, 10+ students" in body
+    assert "<10 row groups, <10 rows, <10 students" in body
+    assert "40 rows" not in body and "12 students" not in body
     assert "Camden" not in body  # deliberate group, not domain owner
 
 
@@ -205,7 +187,7 @@ def test_review_issue_structure_and_redaction():
     assert "withdrawn" not in body and "enrolled" not in body
 
 
-def _issue_with(group, reason="ok", findings=None, measures=None):
+def _issue_with(group, reason="ok", measures=None):
     d = Decision(
         "dx",
         "enrollment",
@@ -214,8 +196,6 @@ def _issue_with(group, reason="ok", findings=None, measures=None):
         {"column": group.dims[0][0], "values": [group.dims[0][1]]},
     )
     run = _run(applied=Applied(quiet=[(d, group)]))
-    if findings is not None:
-        run.findings = findings
     if measures is not None:
         run.measures = measures
     return render_review_issue("Registrar", [run])
@@ -317,27 +297,6 @@ def test_separated_ids_in_reason_redacted():
     )
 
 
-def test_passing_anchor_not_listed_and_count_masking():
-    measures = [
-        MeasureResult("count_seats", "anchored to a source", "judge the anchor"),
-        MeasureResult("rate", "anchored to a source", "judge the anchor"),
-        MeasureResult("fine", "anchored to a source", "judge the anchor"),
-    ]
-    findings = [
-        Finding("anchor", "count_seats", "d", 7.0, 8.0, False),
-        Finding("anchor", "rate", "d", 7.0, 8.0, False),
-        Finding("anchor", "fine", "d", 1.0, 1.0, True),
-    ]
-    g = Group("enrollment", (("region", "Newark"),), "value_differs", 40, 12)
-    body = _issue_with(g, findings=findings, measures=measures)
-    assert (
-        "`count_seats` in `enrollment_view`: Cube shows <10, the source shows <10."
-        in body
-    )
-    assert "`rate` in `enrollment_view`: Cube shows 7, the source shows 8." in body
-    assert "`fine`" not in body
-
-
 def test_save_local_writes_under_moment(tmp_path):
     run = _run()
     path = save_local(run, "hello", root=tmp_path)
@@ -359,13 +318,6 @@ def test_review_issue_names_every_dim_and_masks_each():
     assert "Reason: Camden <redacted> rows" in body
 
 
-def test_local_result_says_anchors_read_current_data():
-    caveat = "Anchors and identities read Cube's data as it is now"
-    assert caveat not in render_local(_run(findings=[]))
-    findings = [Finding("anchor", "rate", "d", 7.0, 8.0, False)]
-    assert caveat in render_local(_run(findings=findings))
-
-
 GAP_TEAM = Gap("cut", "Team", ("Roster",), ("tardy-roster", "absent-roster"))
 GAP_ENROLL = Gap("filter", "Enroll Status", ("Roster",), ("tardy-roster",), True)
 
@@ -379,7 +331,7 @@ def _gap_decision(call="domain_owner"):
 
 def test_local_result_lists_missing_cuts_and_filters():
     run = _run(applied=Applied(open_gaps=[GAP_TEAM, GAP_ENROLL]))
-    run.gaps_unknown = ["ada: missing cuts and filters unknown; re-prove"]
+    run.gaps_unknown = ["ada: missing cuts and filters unknown; re-run `rebuild-sheet`"]
     text = render_local(run)
     section = text.split("## Missing cuts and filters", 1)[1].split("## ", 1)[0]
     assert (
@@ -389,13 +341,13 @@ def test_local_result_lists_missing_cuts_and_filters():
     assert (
         "`Enroll Status` (filter, set to chosen values, not All) on Roster" in section
     )
-    assert "ada: missing cuts and filters unknown; re-prove" in section
+    assert "ada: missing cuts and filters unknown; re-run `rebuild-sheet`" in section
 
 
 def test_measure_line_counts_open_missing_cuts():
     run = _run()
     run.measures[0].open_gaps = 2
-    assert "2 missing cuts or filters to triage" in render_local(run)
+    assert "2 missing cuts or filters to sort" in render_local(run)
 
 
 def test_gap_decision_line_names_the_field():
@@ -478,12 +430,14 @@ def test_review_issue_skips_definitions_with_no_owner_question():
     assert "Definitions side by side" not in body
 
 
-def test_proof_dates_sit_apart_from_browser_cuts():
-    text = render_local(_run(browser_cuts=[], proofs={"ada": "2026-10-27T19:00"}))
-    cuts = text.split("## Cuts to prove in the browser", 1)[1].split("## ", 1)[0]
+def test_rebuild_check_dates_sit_apart_from_browser_cuts():
+    text = render_local(
+        _run(browser_cuts=[], rebuild_checks={"ada": "2026-10-27T19:00"})
+    )
+    cuts = text.split("## Cuts to check in the browser", 1)[1].split("## ", 1)[0]
     assert "ada" not in cuts and "None." in cuts
-    proofs = text.split("## Proofs", 1)[1].split("## ", 1)[0]
-    assert "ada: last proven 2026-10-27T19:00" in proofs
+    rebuild_checks = text.split("## Rebuild checks", 1)[1].split("## ", 1)[0]
+    assert "ada: last matched 2026-10-27T19:00" in rebuild_checks
 
 
 def test_local_result_lists_domain_owner_decisions_without_a_task():
@@ -510,25 +464,87 @@ def test_local_result_lists_cell_differences_with_candidate_causes():
     section = text.split("## Cell differences", 1)[1].split("## ", 1)[0]
     assert "enrollment: 58 differ, 3 dashboard only" in section
     assert "  - 58 cells: values differ beyond rounding" in section
-    assert "cell differences to triage in 1 comparison" in text
+    assert "cell differences to sort in 1 comparison" in text
 
 
-def test_review_issue_carries_domain_owner_cell_differences():
-    d = Decision(
-        "cells-1", "enrollment", "domain_owner", "owner picks codes", cells=True
-    )
-    run = _run(applied=Applied(quiet_cells=[(d, TARDY_DIFF)]))
+def _formula(id, comparison, reason, **kw):
+    return Decision(id, comparison, "domain_owner", reason, formula=True, **kw)
+
+
+def _formula_diff(comparison, n):
+    return CellDiff(comparison, {"differs": n}, kind="formula")
+
+
+FORMULA_ASK = "cells differ while every row in them matches; which definition is right?"
+
+
+def test_a_formula_question_shows_both_definitions_and_masks_its_count():
+    d = _formula("formula-1", "enrollment", "owner picks codes")
+    small = dataclasses.replace(TARDY_DIFF, kind="formula")
+    run = _run(applied=Applied(quiet_cells=[(d, small)]))
     body = render_review_issue(
         "Registrar", [run], definitions={"enrollment_view": TARDY_DEFS}
     )
-    assert (
-        "`enrollment` in `enrollment_view`: 61 cells differ between Cube and the dashboard"
-        in body
-    )
+    assert f"- Q1. `enrollment` in `enrollment_view`: 10+ {FORMULA_ASK} Reason:" in body
     assert "Reason: owner picks codes" in body
-    assert "Definitions side by side" in body
+    section = body.split("Definitions side by side", 1)[1]
+    assert "Dashboard: codes ET, T" in section and "Cube: codes T%" in section
     # Candidate causes stay local: they can name a cut or a value.
     assert "values differ beyond rounding" not in body
+    assert "Formula differences: 1" in body
+
+    few = Applied(quiet_cells=[(d, _formula_diff("enrollment", 4))])
+    body = render_review_issue("Registrar", [_run(applied=few)])
+    assert f"`enrollment` in `enrollment_view`: <10 {FORMULA_ASK}" in body
+    assert "4 cells" not in body
+    q = report.owner_questions([_run(applied=few)])[0]
+    assert q["kinds"] == ["formula"]
+    assert report.defined_comparisons([q], "enrollment_view") == {"enrollment"}
+
+
+def test_review_question_says_its_sheet_is_on_no_published_dashboard():
+    d = _formula("formula-1", "enrollment", "owner picks codes")
+    run = _run(applied=Applied(quiet_cells=[(d, _formula_diff("enrollment", 40))]))
+
+    body = render_review_issue(
+        "Registrar", [run], unpublished={"enrollment_view": {"enrollment"}}
+    )
+    assert "`enrollment`'s sheet is on no published dashboard" in body
+    other = render_review_issue(
+        "Registrar", [run], unpublished={"enrollment_view": {"other"}}
+    )
+    assert "no published dashboard" not in other
+
+
+def test_group_and_cause_questions_say_their_sheet_is_on_no_published_dashboard():
+    # A domain-owner row group on `enrollment`.
+    group = render_review_issue(
+        "Registrar", [_run()], unpublished={"enrollment_view": {"enrollment"}}
+    )
+    (line,) = [x for x in group.splitlines() if "Q1." in x]
+    assert line.endswith(" Note: `enrollment`'s sheet is on no published dashboard.")
+
+    run = _run(applied=Applied())
+    causes = _cause_asks(["Team filter was set by hand"])
+    cause = render_review_issue(
+        "Registrar",
+        [run],
+        causes=causes,
+        unpublished={"enrollment_view": {"cmp-1"}},
+    )
+    (line,) = [x for x in cause.splitlines() if "Q1." in x]
+    assert line.endswith(" Note: `cmp-1`'s sheet is on no published dashboard.")
+
+
+def test_a_formula_decision_reads_as_such_locally():
+    d = _formula("formula-1", "enrollment", "owner picks codes")
+    text = render_local(_run(applied=Applied(quiet_cells=[(d, TARDY_DIFF)])))
+    assert "`formula-1` (enrollment formula, domain_owner): owner picks codes" in text
+    open_formula = dataclasses.replace(TARDY_DIFF, kind="formula")
+    text = render_local(_run(applied=Applied(open_cells=[TARDY_DIFF, open_formula])))
+    section = text.split("## Cell differences", 1)[1].split("## ", 1)[0]
+    assert "- enrollment: 58 differ, 3 dashboard only\n" in section
+    assert "- enrollment formula difference: 58 differ, 3 dashboard only" in section
 
 
 ENROLLED_REASON = "The dashboard counts enrolled students only (enroll_status = 0)"
@@ -554,7 +570,7 @@ def test_review_issue_prints_one_bullet_per_decision():
     bullets = [x for x in body.splitlines() if x.startswith("- Q1. `dashboard_filter`")]
     assert bullets == [
         "- Q1. `dashboard_filter` = `enroll_status` in tardy-roster of `enrollment_view` "
-        "(dashboard_filtered): 13 row groups, 130 rows, at least 10 students. "
+        "(dashboard_filtered): 10+ row groups, 10+ rows, at least 10 students. "
         "Reason: " + ENROLLED_REASON + "."
     ]
 
@@ -570,13 +586,13 @@ def test_review_issue_keeps_reviewed_values_in_a_reason():
 
 def test_review_issue_adds_no_period_after_a_question():
     q = "Should TD count as tardy?"
-    d = Decision("td", "enrollment", "domain_owner", q, cells=True)
-    diff = CellDiff("enrollment", {"differs": 58})
+    d = _formula("td", "enrollment", q)
+    diff = _formula_diff("enrollment", 58)
     body = render_review_issue(
         "Registrar", [_run(applied=Applied(quiet_cells=[(d, diff)]))]
     )
     assert f"Reason: {q}\n" in body + "\n" and "?." not in body
-    tasked = Decision("td", "enrollment", "domain_owner", q, task="#6200", cells=True)
+    tasked = _formula("td", "enrollment", q, task="#6200")
     body = render_review_issue(
         "Registrar", [_run(applied=Applied(quiet_cells=[(tasked, diff)]))]
     )
@@ -584,20 +600,18 @@ def test_review_issue_adds_no_period_after_a_question():
 
 
 def test_review_issue_counts_questions_and_lists_every_decision():
-    cells = Decision(
-        "tardy-cells", "tardy-roster", "domain_owner", "codes?", cells=True
-    )
+    cells = _formula("tardy-cells", "tardy-roster", "codes?")
     gap = _gap_decision()
     run = _run(
         applied=Applied(
             quiet=_enrolled_only(),
-            quiet_cells=[(cells, CellDiff("tardy-roster", {"differs": 58}))],
+            quiet_cells=[(cells, _formula_diff("tardy-roster", 58))],
             quiet_gaps=[(gap, GAP_TEAM)],
         )
     )
     body = render_review_issue("Registrar", [run])
-    # 3 decisions, however many groups they cover, plus the 1 anchor finding.
-    assert "owns the rule behind 4 questions" in body
+    # 3 decisions, however many groups they cover.
+    assert "owns the rule behind 3 questions" in body
     fold = body.split("<summary>For Claude</summary>", 1)[1]
     for decision_id in ("tardy-enrolled", "tardy-cells", "g1"):
         assert f"`{decision_id}`" in fold
@@ -645,8 +659,8 @@ def test_review_issue_merges_decisions_that_share_a_reason():
     bullets = [x for x in body.splitlines() if LEFT in x]
     assert bullets == [
         "- Q1. `dashboard_filter` = `enroll_status` in absences-roster, tardy-roster of "
-        "`enrollment_view` (dashboard_filtered): 2 row groups, 400 rows, "
-        "at least 20 students in one comparison. "
+        "`enrollment_view` (dashboard_filtered): <10 row groups, 10+ rows, "
+        "at least 10 students in one comparison. "
         "Reason: " + LEFT
     ]
     fold = body.split("<summary>For Claude</summary>", 1)[1]
@@ -684,7 +698,7 @@ def test_decisions_with_different_reasons_stay_apart():
     )
 
 
-def test_review_issue_merges_missing_fields_and_cells_that_share_a_reason():
+def test_review_issue_merges_missing_fields_and_formula_differences_on_a_reason():
     reason = "Cube has no student filters for these."
     gaps = [
         (Decision(f"g-{f}", "", "domain_owner", reason, missing_filter=f),
@@ -692,20 +706,18 @@ def test_review_issue_merges_missing_fields_and_cells_that_share_a_reason():
         for f in ("Gender", "Ethnicity")
     ]  # fmt: skip
     cells = [
-        (Decision(f"c-{c}", c, "domain_owner", "Codes differ?", cells=True),
-         CellDiff(c, {"differs": 30}))
+        (_formula(f"c-{c}", c, "Codes differ?"), _formula_diff(c, 30))
         for c in ("tardy-roster", "oss-roster")
     ]  # fmt: skip
     run = _run(applied=Applied(quiet_gaps=gaps, quiet_cells=cells))
-    run.findings = []
     body = render_review_issue("Registrar", [run])
     assert (
         "- Q2. `Gender`, `Ethnicity` on `Roster` in `enrollment_view`: sheet filters "
         "Cube has no member for. Reason: " + reason
     ) in body
     assert (
-        "- Q1. `tardy-roster`, `oss-roster` in `enrollment_view`: 60 cells differ "
-        "between Cube and the dashboard. Reason: Codes differ?"
+        f"- Q1. `tardy-roster`, `oss-roster` in `enrollment_view`: 10+ {FORMULA_ASK} "
+        "Reason: Codes differ?"
     ) in body
     assert "owns the rule behind 2 questions" in body
 
@@ -746,22 +758,21 @@ OOD = "Board YOY leaves out out-of-district students"
 def test_one_reason_across_decision_kinds_is_one_bullet():
     rows = Decision("ood-rows", "board", "domain_owner", OOD,
                     {"column": "region", "values": ["Newark"]})  # fmt: skip
-    cells = Decision("ood-cells", "board", "domain_owner", OOD, cells=True)
+    cells = _formula("ood-cells", "board", OOD)
     run = _run(
         applied=Applied(
             quiet=[
                 (rows, Group("board", (("region", "Newark"),), "cube_only", 400, 40))
             ],
-            quiet_cells=[(cells, CellDiff("board", {"differs": 3}))],
+            quiet_cells=[(cells, _formula_diff("board", 3))],
         )
     )
-    run.findings = []
     body = render_review_issue("Registrar", [run])
     bullets = [x for x in body.splitlines() if OOD in x]
     assert bullets == [
-        "- Q1. `region` = `Newark` in board of `enrollment_view` (cube_only): 1 row group, "
-        "400 rows, 40 students; `board` in `enrollment_view`: <10 cells differ "
-        "between Cube and the dashboard. Reason: " + OOD + "."
+        "- Q1. `region` = `Newark` in board of `enrollment_view` (cube_only): <10 row "
+        f"groups, 10+ rows, 10+ students; `board` in `enrollment_view`: <10 {FORMULA_ASK} "
+        "Reason: " + OOD + "."
     ]
     assert "owns the rule behind 1 question" in body
 
@@ -774,7 +785,6 @@ def test_one_reason_across_files_is_one_bullet():
                      missing_filter="Enroll Status")  # fmt: skip
         g = Gap("filter", "Enroll Status", ("Roster",), ("c",))
         r = _run(view=view, applied=Applied(quiet_gaps=[(d, g)]))
-        r.findings = []
         return r
 
     body = render_review_issue(
@@ -793,8 +803,8 @@ def test_one_reason_across_files_is_one_bullet():
 def test_review_footnote_names_students_and_staff():
     body = render_review_issue("Registrar", [_run()])
     assert (
-        "Counts under 10 show as `<10`, and identifiers of students and staff "
-        "are hidden." in body
+        "Row, cell and student counts under 10 show as `<10`, and identifiers of "
+        "students and staff are hidden." in body
     )
 
 
@@ -850,15 +860,15 @@ def test_review_issue_ends_with_fenced_json_in_details():
 
 
 def test_suppress_hides_a_lone_small_part_and_its_next_smallest():
-    # 25 = 18 + 7: masking 7 alone leaves it as 25 - 18. With both masked,
-    # the total gives only their sum, which holds 10 or more.
-    assert suppress(25, [18, 7]) == ("25", ["masked", "<10"])
+    # 25 = 18 + 7: masking 7 alone leaves it as 25 - 18. With both masked and
+    # the total bounded, nothing gives either.
+    assert suppress(25, [18, 7]) == ("10+", ["masked", "<10"])
 
 
 def test_suppress_rules():
     assert suppress(40, [20, 20]) == ("40", ["20", "20"])
-    assert suppress(48, [30, 13, 5]) == ("48", ["30", "masked", "<10"])
-    assert suppress(15, [9, 6]) == ("masked", ["<10", "<10"])
+    assert suppress(48, [30, 13, 5]) == ("10+", ["30", "masked", "<10"])
+    assert suppress(15, [9, 6]) == ("10+", ["<10", "<10"])
     assert suppress(5, [5]) == ("<10", ["<10"])
     assert suppress(120, [100, 20]) == ("120", ["100", "20"])
 
@@ -866,30 +876,157 @@ def test_suppress_rules():
 def test_suppress_never_lets_a_sum_pin_the_small_parts():
     # 18 over two `<10` parts is 9 and 9; 48 - 30 leaves 18 for two `<10`
     # parts, the same. A `masked` part, or a hidden total, breaks the pin.
-    assert suppress(18, [9, 9]) == ("masked", ["<10", "<10"])
-    assert suppress(27, [9, 9, 9]) == ("masked", ["<10", "<10", "<10"])
-    assert suppress(48, [30, 9, 9]) == ("48", ["masked", "<10", "<10"])
+    assert suppress(18, [9, 9]) == ("10+", ["<10", "<10"])
+    assert suppress(27, [9, 9, 9]) == ("10+", ["<10", "<10", "<10"])
+    assert suppress(48, [30, 9, 9]) == ("10+", ["masked", "<10", "<10"])
 
 
 def test_suppress_masks_until_the_masked_parts_hold_10_together():
     # Two `<10` parts summing to under 10: the total minus the shown parts
     # would give their sum, so the next-smallest part is masked too.
-    assert suppress(30, [22, 4, 4]) == ("30", ["masked", "<10", "<10"])
-    assert suppress(40, [25, 3, 2]) == ("40", ["masked", "<10", "<10"])
-    assert suppress(50, [30, 11, 5, 4]) == ("50", ["30", "masked", "<10", "<10"])
-    assert suppress(12, [11, 1]) == ("12", ["masked", "<10"])
+    assert suppress(30, [22, 4, 4]) == ("10+", ["masked", "<10", "<10"])
+    assert suppress(40, [25, 3, 2]) == ("10+", ["masked", "<10", "<10"])
+    assert suppress(50, [30, 11, 5, 4]) == ("10+", ["30", "masked", "<10", "<10"])
+
+
+def test_suppress_bounds_a_total_beside_any_hidden_part():
+    # 11 beside `masked` (10 or more) and `<10` (1 or more) pins 10 and 1.
+    assert suppress(11, [10, 1]) == ("10+", ["masked", "<10"])
+    assert suppress(12, [11, 1]) == ("10+", ["masked", "<10"])
+    assert suppress(8, [5, 3]) == ("<10", ["<10", "<10"])
+    # Every part exact: the total stays exact.
+    assert suppress(70, [20, 50]) == ("70", ["20", "50"])
+    assert report.shown_counts(11, [10, 1], posted=False) == ("11", ["10", "1"])
+
+
+@pytest.mark.parametrize(
+    "groups, who",
+    [
+        # One row per student: an exact 11 students would pin the 11 rows.
+        ([("c", "A", 11, 11)], "<10 row groups, 10+ rows, 10+ students"),
+        ([("c", "A", 11, 4)], "<10 row groups, 10+ rows, <10 students"),
+        ([("c", "A", 11, 11), ("c", "B", 12, 12)],
+         "<10 row groups, 10+ rows, at least 10 students"),
+        ([("c", "A", 11, 11), ("d", "A", 12, 12)],
+         "<10 row groups, 10+ rows, at least 10 students in one comparison"),
+        ([("c", "A", 11, 4), ("c", "B", 12, 3)],
+         "<10 row groups, 10+ rows, at least <10 students"),
+        ([("c", "A", 4, 4)], "<10 row groups, <10 rows, <10 students"),
+    ],
+)  # fmt: skip
+def test_a_group_part_posts_every_count_as_a_bound(groups, who):
+    decision = Decision("d", "c", "domain_owner", "r", {"column": "school",
+                        "values": ["A", "B"]})  # fmt: skip
+    found = [Group(cid, (("school", v),), "cube_only", rows, students)
+             for cid, v, rows, students in groups]  # fmt: skip
+
+    part, _ = report._group_part("v", [decision], found)
+
+    assert part.endswith(who)
+
+
+# As an earlier review's "Still with the analyst" file listed them: 40, 25
+# and a masked 10 rows, and "fewer than 10 more" of 1 row each.
+LISTED_EARLIER = [40, 25, 10] + [1] * 9
+
+
+def _earlier_groups():
+    return [Group("cmp", (("school", f"S{i}"),), "cube_only", n, min(n, 10))
+            for i, n in enumerate(LISTED_EARLIER)]  # fmt: skip
+
+
+def test_a_comparison_decision_posts_only_bounds():
+    # Exact 12 groups and 84 rows would give 12 - 3 listed = 9 small items and
+    # 84 - 40 - 25 = 19 = 10 + 9, pinning every count the file withheld.
+    part, _ = report._comparison_part("v", _earlier_groups())
+
+    assert part == (
+        "every open row group of `cmp` in `v` (cube_only): 10+ row groups, "
+        "10+ rows, at least 10 students"
+    )
+    small = [Group("cmp", (("school", "S"),), "cube_only", 4, 2)]
+    assert report._comparison_part("v", small)[0].endswith(
+        "<10 row groups, <10 rows, at least <10 students"
+    )
+
+
+def test_also_decided_bounds_a_group_decision_s_counts():
+    decision = Decision("d", "cmp", "deliberate", "an old rule",
+                        {"column": "school", "values": ["x"]})  # fmt: skip
+    run = dataclasses.replace(
+        _run(), view="v",
+        applied=Applied(quiet=[(decision, g) for g in _earlier_groups()]),
+    )  # fmt: skip
+
+    (line,) = report.also_decided([run])
+
+    assert "10+ row groups, 10+ rows, at least 10 students" in line
+    assert not re.search(r"\b(12|84|19)\b", line)
+
+
+def test_owner_questions_post_only_bounds_beside_an_earlier_listing():
+    # Exact "12 row groups, 84 rows" less the earlier file's 40 and 25 pins
+    # the masked 10 and the 9 one-row items it withheld.
+    groups = _earlier_groups()
+    owner = Decision("d", "cmp", "domain_owner", "which rule?",
+                     {"column": "school", "values": ["x"]})  # fmt: skip
+    group_part, _ = report._group_part("v", [owner], groups)
+    cause = Decision("c", "cmp", "domain_owner", "which rule?",
+                     cause={"side": "cube", "label": "a rule"})  # fmt: skip
+    cause_part, _ = report._cause_part(
+        "v", report.CauseAsk(cause, groups, sum(LISTED_EARLIER))
+    )
+
+    assert group_part.endswith("10+ row groups, 10+ rows, at least 10 students")
+    assert cause_part == "`cmp` in `v` (cube_only): 10+ row groups, 10+ rows"
+    for part in (group_part, cause_part):
+        assert not re.search(r"\b(12|84|19|9)\b", part)
+    # A bound reads plural, even over 1 group.
+    one = [Group("cmp", (("school", "S"),), "cube_only", 4, 2)]
+    assert report._group_part("v", [owner], one)[0].endswith(
+        "<10 row groups, <10 rows, <10 students"
+    )
+    assert report._cause_part("v", report.CauseAsk(cause, one, 4))[0].endswith(
+        "<10 row groups, <10 rows"
+    )
+
+
+def test_a_review_refuses_questions_json_that_does_not_match_its_questions():
+    run = _run()
+    asked = report.owner_questions([run])
+    assert asked
+
+    with pytest.raises(ValueError, match="questions JSON"):
+        render_review_issue("Registrar", [run], questions=[])
+
+
+def test_a_lead_posts_its_counts_only_when_its_total_is_exact():
+    lead = "lead: relaxing scores: a = 1 brings back {} of {} rows"
+    items = [
+        _open("c1", "cube_only", rows=11, item="c1:a",
+              lead=lead.format("masked", "10+")),
+        _open("c1", "cube_only", rows=50, item="c1:b", lead=lead.format(20, 50)),
+    ]  # fmt: skip
+
+    detail = report.unsettled_detail(items, "v")
+
+    # Beside the item's own exact 11, a bounded lead's parts would pin again.
+    assert "- `c1:a`, 11 rows; lead: relaxing a step in scores\n" in detail
+    assert (
+        "- `c1:b`, 50 rows; lead: relaxing a step in scores brings back 20 of 50 rows\n"
+    ) in detail
 
 
 def test_a_hidden_value_is_redacted_only_as_a_whole_value():
-    from cube_validation.report import _safe_reason
+    from cube_validation.report import safe_reason
 
-    text = _safe_reason("grade 1 lost 414 rows; see Q1 and 1.5", ["1"])
+    text = safe_reason("grade 1 lost 414 rows; see Q1 and 1.5", ["1"])
 
     assert text == "grade <redacted> lost 414 rows; see Q1 and 1.5"
 
 
 def _cause_asks(reasons):
-    """One cause proven on a comparison per reason, each decided on its own."""
+    """One cause explained on a comparison per reason, each decided on its own."""
     asks = []
     for n, reason in enumerate(reasons, start=1):
         d = Decision(
@@ -904,7 +1041,6 @@ def _cause_asks(reasons):
 
 def _cause_review(reasons):
     run = _run(applied=Applied())
-    run.findings = []
     causes = _cause_asks(reasons)
     cfg = ViewConfig(view="enrollment_view", fact="d.t", comparisons=[])
     questions = questions_json([run], [cfg], {}, {}, START, causes=causes)
@@ -933,3 +1069,512 @@ def test_a_cause_question_with_one_reason_is_unchanged():
     assert questions[0]["reason"] == "Team filter was set by hand"
     assert "reasons" not in questions[0]
     assert "Reasons" not in body.split("## Proposed approach")[0]
+
+
+def test_a_measure_with_an_open_item_reads_differs():
+    assert pipeline.verdict({"pass": 3}, 1, 0, 0) == "differs"
+    assert pipeline.verdict({"pass": 3}, 0, 0, 0) == "validated"
+    assert (
+        pipeline.verdict({"pass": 2, "dashboard_filtered": 1}, 0, 0, 0) == "validated"
+    )
+    assert pipeline.verdict({"pass": 2, "differs": 1}, 0, 0, 0) == "differs"
+
+
+def test_a_ticker_line_shows_clock_elapsed_step_and_spend(capsys):
+    t = report.Ticker(
+        lambda: datetime(2026, 11, 14, 15, 4, 5, tzinfo=timezone.utc),
+        datetime(2026, 11, 14, 13, 2, 0, tzinfo=timezone.utc),
+    )
+
+    line = t.say("sort", "c1", 0.5)
+
+    assert line == "[15:04:05 UTC +2h02m05s] sort c1: $0.50 spent"
+    assert capsys.readouterr().out == line + "\n"
+
+
+def test_a_ticker_under_an_hour_shows_minutes_and_seconds():
+    t = report.Ticker(
+        lambda: datetime(2026, 11, 14, 13, 9, 7, tzinfo=timezone.utc),
+        datetime(2026, 11, 14, 13, 2, 0, tzinfo=timezone.utc),
+    )
+
+    assert t.say("compare", "c1", 12.345) == (
+        "[13:09:07 UTC +7m07s] compare c1: $12.35 spent"
+    )
+
+
+EARLIER = Build(
+    datetime(2026, 10, 24, 6, 0, tzinfo=timezone.utc),
+    datetime(2026, 10, 24, 6, 5, tzinfo=timezone.utc),
+    "job-0",
+)
+
+
+def test_local_result_names_one_moment_when_every_comparison_shares_it():
+    run = _run(moments={"enrollment": Build(START, END, "job-1")})
+
+    text = render_local(run)
+
+    assert "Moment: 2026-10-27 06:00 to 2026-10-27 06:05 UTC, job `job-1`." in text
+    assert "Moments:" not in text
+
+
+def test_local_result_lists_each_comparison_s_moment_when_they_differ():
+    run = _run(moments={"enrollment": EARLIER, "withdrawn": Build(START, END, "job-1")})
+
+    text = render_local(run)
+
+    assert "Moment: " not in text
+    assert (
+        "Moments:\n\n"
+        "- enrollment: 2026-10-24 06:00 to 2026-10-24 06:05 UTC\n"
+        "- withdrawn: 2026-10-27 06:00 to 2026-10-27 06:05 UTC\n"
+    ) in text
+    assert run.moment_of("enrollment") == EARLIER
+    assert run.moment_of("never-composed") == run.moment
+
+
+def test_local_result_names_comparisons_with_no_result():
+    text = render_local(_run(missing=["seats-check"]))
+
+    assert "Not compared yet: seats-check." in text
+
+
+def test_review_issue_lists_each_comparison_s_moment():
+    shared = render_review_issue(
+        "Registrar", [_run(moments={"enrollment": Build(START, END, "job-1")})]
+    )
+    differ = render_review_issue(
+        "Registrar",
+        [_run(moments={"enrollment": EARLIER, "withdrawn": Build(START, END, "j")})],
+    )
+
+    assert "Moment: 2026-10-27 06:00 to 2026-10-27 06:05 UTC." in shared
+    assert (
+        "Moments:\n\n"
+        "- enrollment: 2026-10-24 06:00 to 2026-10-24 06:05 UTC\n"
+        "- withdrawn: 2026-10-27 06:00 to 2026-10-27 06:05 UTC"
+    ) in differ
+
+
+# --- still with the analyst --------------------------------------------------
+
+# trunk-ignore(pyright/reportAttributeAccessIssue): conftest.py registers cube_validation
+from cube_validation import sort  # noqa: E402
+
+
+def _left_in_investigate(run, evidence):
+    """Each of `compare`'s open row groups as a sort item still in `investigate`,
+    its stub holding the group's real values as `sort.json` does."""
+    return {
+        "items": [
+            {
+                **dataclasses.asdict(item),
+                "suggestion": "investigate",
+                "evidence": [evidence],
+                "evidence_posted": [evidence],
+                "candidates": [],
+                "cause": None,
+                "explanation": None,
+            }
+            for item in sort.open_items(run)
+            if item.kind == "group"
+        ]
+    }
+
+
+def _still(run, loaded, waiting=None):
+    return report.still_with_analyst(sort.unsettled(run, loaded), waiting or {})
+
+
+def _detail(run, loaded):
+    """The per-item file's lines that list items (`- `)."""
+    text = report.unsettled_detail(sort.unsettled(run, loaded), "enrollment_view")
+    return [line[2:] for line in text.splitlines() if line.startswith("- ")]
+
+
+def _open(comparison, what, rows=None, cells=None, item=None, lead=""):
+    return report.Unsettled(
+        "v", comparison, item or f"{comparison}:{what}:{rows or cells}", what,
+        rows=rows, cells=cells, lead=lead,
+    )  # fmt: skip
+
+
+SPREAD = [
+    _open("c1", "value_differs", rows=40, item="c1:a"),
+    _open("c1", "value_differs", rows=12, item="c1:b"),
+    _open("c1", "value_differs", rows=3, item="c1:c"),
+    _open("c1", "cube_only", rows=5, item="c1:d"),
+    _open("c2", "value", cells=30, item="c2:cells"),
+    _open("c2", "group", item="c2:gone"),
+]
+
+
+def test_still_with_the_analyst_counts_open_items_per_comparison_and_bucket():
+    lines = report.still_with_analyst(SPREAD, {"v": {"c3": "never compared"}})
+
+    # The total and its parts are masked together (`suppress`), so the file's
+    # listed counts never give away the small ones.
+    assert lines == [
+        "`c1` in `v` (value_differs): 2 listed items, plus fewer than 10 under 10 "
+        "rows or cells, 10+ rows",
+        "`c1` in `v` (cube_only): 0 listed items, plus fewer than 10 under 10 rows "
+        "or cells, <10 rows",
+        "`c2` in `v` (value): 1 listed item, 30 cells",
+        "`c2` in `v` (group): 1 listed item",
+        "`c3` in `v`: never compared",
+    ]
+
+
+def test_unsettled_detail_lists_items_of_10_or_more_and_counts_the_rest():
+    text = report.unsettled_detail(SPREAD, "v")
+
+    assert text.startswith("# Still with the analyst: `v`\n\n")
+    assert (
+        "## `c1` in `v` (value_differs)\n\n"
+        "- `c1:a`, 40 rows; no lead yet\n"
+        "- `c1:b`, masked rows; no lead yet\n"
+        "- Fewer than 10 more items, each under 10 rows or cells, are not listed.\n"
+    ) in text
+    assert (
+        "## `c1` in `v` (cube_only)\n\n"
+        "- Fewer than 10 more items, each under 10 rows or cells, are not listed.\n"
+    ) in text
+    assert "- `c2:cells`, 30 cells; no lead yet\n" in text
+    assert "- `c2:gone`; no lead yet\n" in text
+    assert "c1:c" not in text and "c1:d" not in text
+    assert "3 rows" not in text and "5 rows" not in text and "12" not in text
+
+
+def test_a_review_with_over_1000_open_groups_stays_under_the_cap():
+    items = [
+        _open(f"c{i % 4}", ("cube_only", "dashboard_only")[i % 2], rows=i % 25 + 1,
+              item=f"c{i % 4}:region=<redacted>:{i}",
+              lead="lead: relaxing main: x = 1 brings back <10 of 40 rows")
+        for i in range(2_600)
+    ]  # fmt: skip
+    run = _run()
+
+    body = render_review_issue(
+        "Registrar", [run], still=report.still_with_analyst(items, {}),
+        still_link="https://github.com/o/r/blob/abc/v-still-with-analyst.md",
+    )  # fmt: skip
+
+    assert len(body) <= report.BODY_WARN_CHARS
+    section = body.split("## Still with the analyst\n", 1)[1].split("Also decided")[0]
+    assert "[v-still-with-analyst.md](https://github.com/o/r/blob/abc/" in section
+    assert (
+        "`c0` in `v` (cube_only): 416 listed items, plus 234 under 10 rows or cells, "
+    ) in section
+    detail = report.unsettled_detail(items, "v")
+    listed = [line for line in detail.splitlines() if line.startswith("- `")]
+    assert listed and all(", <10 rows" not in line for line in listed)
+    assert len(listed) < len(items)
+
+
+@pytest.mark.parametrize(
+    "big, small", [(1, 9), (8, 1), (9, 1), (12, 1), (12, 9), (0, 3), (12, 3)]
+)
+def test_the_issue_and_the_file_never_give_away_the_small_items_by_subtraction(
+    big, small
+):
+    # Each listed item carries a lead whose "of M rows" is its exact count.
+    lead = "lead: relaxing main: x = 1 brings back <10 of {} rows"
+    items = [_open("c1", "cube_only", rows=20 + i, item=f"c1:big{i}",
+                   lead=lead.format(20 + i)) for i in range(big)]  # fmt: skip
+    items += [_open("c1", "cube_only", rows=1 + i, item=f"c1:small{i}",
+                    lead=lead.format(1 + i)) for i in range(small)]  # fmt: skip
+    small_rows = sum(1 + i for i in range(small))
+    run = _run()
+
+    body = render_review_issue(
+        "Registrar", [run], still=report.still_with_analyst(items, {}),
+        still_link="https://github.com/o/r/blob/abc/v-still-with-analyst.md",
+    )  # fmt: skip
+    detail = report.unsettled_detail(items, "v")
+
+    (line,) = [x for x in body.splitlines() if x.startswith("- `c1` in `v`")]
+    head = re.fullmatch(
+        r"- `c1` in `v` \(cube_only\): (\d+) listed items?, plus (.+) under 10 rows "
+        r"or cells, (\S+) rows",
+        line,
+    )
+    assert head is not None
+    listed = [x for x in detail.splitlines() if x.startswith("- `c1:")]
+    assert int(head[1]) == len(listed) == big
+    assert not any("small" in x for x in listed)
+    # Neither output bounds the small items beyond "1 to 9": no total of all
+    # items, no count of the small ones.
+    assert head[2] == "fewer than 10"
+    assert (
+        "- Fewer than 10 more items, each under 10 rows or cells, are not listed.\n"
+    ) in detail
+    numbers = re.findall(r"\d+", line.split(":", 1)[1])
+    assert numbers == [str(big), "10", "10", *re.findall(r"\d+", head[3])]
+    assert not re.search(r"\b\d+ items\b", detail)
+    # The rows: a masked item's lead gives no count either, so the total less
+    # every exact count posted leaves a masked part, never the small rows.
+    for x in listed:
+        if "masked rows" in x:
+            assert " of " not in x and "brings back" not in x
+    exact = [int(m) for m in re.findall(r", (\d+) rows;", detail)]
+    exact += [
+        int(m)
+        for x in listed
+        if "masked rows" in x
+        for m in re.findall(r"of (\d+) rows", x)
+    ]
+    if head[3].isdigit():
+        assert int(head[3]) - sum(exact) != small_rows
+
+
+@pytest.mark.parametrize(
+    "word, listed, small, total",
+    [
+        # 61 less the exact 50 leaves 11 = 10 + 1: the floors pin both.
+        ("rows", [10, 50], [1], "10+ rows"),
+        ("rows", [10, 50], [1] * 10, "10+ rows"),
+        ("cells", [10, 40], [1], "10+ cells"),
+        ("rows", [14, 50], [3], "10+ rows"),
+        ("rows", [], [2, 3], "<10 rows"),
+        # Every part posted exact: the total is exact too.
+        ("rows", [20, 50], [], "70 rows"),
+        ("cells", [12], [], "12 cells"),
+    ],
+)
+def test_no_exact_total_is_posted_beside_a_hidden_count(word, listed, small, total):
+    what = "value" if word == "cells" else "cube_only"
+    items = [
+        _open("c1", what, item=f"c1:l{i}", **{word: n}) for i, n in enumerate(listed)
+    ]
+    items += [
+        _open("c1", what, item=f"c1:s{i}", **{word: n}) for i, n in enumerate(small)
+    ]
+
+    (line,) = report.still_with_analyst(items, {})
+    detail = report.unsettled_detail(items, "v")
+
+    assert line.endswith(f", {total}")
+    hidden = small or "masked" in detail
+    if hidden:
+        assert not re.search(rf", \d+ {word}$", line)
+        assert str(sum(listed) + sum(small)) not in line + detail
+    else:
+        assert all(f", {n} {word};" in detail for n in listed)
+
+
+def test_an_exact_count_of_small_items_is_stated_once_it_is_10_or_more():
+    items = [_open("c1", "cube_only", rows=20, item=f"c1:big{i}") for i in range(3)]
+    items += [_open("c1", "cube_only", rows=2, item=f"c1:s{i}") for i in range(11)]
+
+    (line,) = report.still_with_analyst(items, {})
+    detail = report.unsettled_detail(items, "v")
+
+    assert line.startswith(
+        "`c1` in `v` (cube_only): 3 listed items, plus 11 under 10 rows or cells, "
+    )
+    assert "- Under 10 rows or cells each, not listed: 11 items.\n" in detail
+
+
+def test_a_posted_lead_shows_its_counts_only_beside_an_exact_count():
+    lead = "lead: relaxing main: x = 1 brings back <10 of {} rows"
+    items = [
+        _open("c1", "cube_only", rows=20, item="c1:a", lead=lead.format(20)),
+        _open("c1", "cube_only", rows=50, item="c1:b",
+              lead="lead: relaxing main: x = 1 brings back 30 of 50 rows"),
+        _open("c1", "cube_only", rows=3, item="c1:c", lead=lead.format(3)),
+        _open("c1", "group", item="c1:gone", lead=lead.format(30)),
+    ]  # fmt: skip
+
+    detail = report.unsettled_detail(items, "v")
+
+    assert "- `c1:a`, masked rows; lead: relaxing a step in main\n" in detail
+    assert (
+        "- `c1:b`, 50 rows; lead: relaxing a step in main brings back 30 of 50 rows\n"
+    ) in detail
+    assert "- `c1:gone`; lead: relaxing a step in main\n" in detail
+
+
+def test_still_with_the_analyst_lists_formulas_not_compared_masked():
+    lines = report.still_with_analyst(
+        [], {}, {"v": {"c1": {"no rows both sides hold": 3}}}
+    )
+
+    assert lines == [
+        "`c1` in `v`: formulas not compared: no rows both sides hold; "
+        "<10 cells closed by coverage only"
+    ]
+
+
+def test_still_with_the_analyst_sorts_formulas_not_compared():
+    lines = report.still_with_analyst(
+        [], {}, {"v": {"c2": {"b": 12, "a": 1}, "c1": {"z": 10}}}
+    )
+
+    assert [line.split(":")[0] for line in lines] == ["`c1` in `v`"] + [
+        "`c2` in `v`"
+    ] * 2
+    assert lines[1].endswith("a; <10 cells closed by coverage only")
+    assert lines[2].endswith("b; 12 cells closed by coverage only")
+
+
+def test_formulas_not_compared_reads_the_key_or_nothing():
+    assert sort.formulas_not_compared({}) == {}
+    assert sort.formulas_not_compared({"formulas_not_compared": "x"}) == {}
+    assert (
+        sort.formulas_not_compared({"formulas_not_compared": {"c": {"r": "x"}}}) == {}
+    )
+    loaded = {"formulas_not_compared": {"c": {"r": 2}}}
+    assert sort.formulas_not_compared(loaded) == {"c": {"r": 2}}
+    for n in (0, -3):
+        held = {"formulas_not_compared": {"c": {"r": n}, "d": {"r": 2}}}
+        assert sort.formulas_not_compared(held) == {"d": {"r": 2}}, n
+
+
+def test_still_with_the_analyst_redacts_a_long_digit_run_in_a_reason():
+    lines = report.still_with_analyst(
+        [], {}, {"v": {"c1": {"dry run failed for student 1234567": 12}}}
+    )
+
+    assert lines == [
+        "`c1` in `v`: formulas not compared: dry run failed for student "
+        "<redacted>; 12 cells closed by coverage only"
+    ]
+
+
+def test_formula_checked_tells_an_empty_key_from_a_missing_one():
+    # Empty: the check left nothing uncompared. Missing: no check ran.
+    # Malformed: fail closed, as if none ran.
+    assert sort.formula_checked({"formulas_not_compared": {}})
+    assert not sort.formula_checked({})
+    assert not sort.formula_checked({"formulas_not_compared": "x"})
+
+
+def test_review_posts_ready_questions_and_lists_unsettled_items():
+    run = _run()
+    lead = "lead: relaxing main: school_id IN (1, 2) brings back 30 of 40 rows"
+    still = _still(
+        run, _left_in_investigate(run, lead), {run.view: {"seats": "never compared"}}
+    )
+
+    body = render_review_issue("Registrar", [run], still=still)
+
+    head, section = body.split("## Still with the analyst\n", 1)
+    assert "Q1. " in head
+    section = section.split("Also decided")[0]
+    assert "not explained yet" in section and "comment" in section
+    assert (
+        "- `enrollment` in `enrollment_view` (value_differs): 1 listed item, 40 rows\n"
+    ) in section
+    assert "school_id" not in body
+    assert "- `seats` in `enrollment_view`: never compared" in section
+    assert body.index("## Still with the analyst") < body.index("Also decided")
+    assert "SELECT" not in section
+    assert _detail(run, _left_in_investigate(run, lead)) == [
+        "`enrollment:grade_level=9`, 40 rows; lead: relaxing a step in main brings "
+        "back 30 of 40 rows"
+    ]
+
+
+def test_unsettled_counts_under_10_are_masked():
+    small = Group("enrollment", (("region", "Paterson"),), "cube_only", 7, 3)
+    run = _run(applied=Applied(open=[small]))
+
+    loaded = _left_in_investigate(run, "not traced (`sort --no-trace`)")
+
+    (line,) = _still(run, loaded)
+    assert line == (
+        "`enrollment` in `enrollment_view` (cube_only): 0 listed items, plus fewer "
+        "than 10 under 10 rows or cells, <10 rows"
+    )
+    assert _detail(run, loaded) == [
+        "Fewer than 10 more items, each under 10 rows or cells, are not listed."
+    ]
+
+
+def test_unsettled_cells_and_reasons_are_posted_without_their_detail():
+    diff = CellDiff("enrollment", {"differs": 4, "cube_blank": 2})
+    run = _run(applied=Applied(open_cells=[diff]))
+    loaded = {
+        "items": [
+            {
+                **dataclasses.asdict(item),
+                "suggestion": "investigate",
+                "evidence": ["no description or ai_context answers it"],
+            }
+            for item in sort.open_items(run)
+        ]
+    }
+    waiting = {
+        run.view: {"seats": "its SQL cannot be built today: SELECT x FROM t_12345"}
+    }
+
+    still = _still(run, loaded, waiting)
+
+    assert still == [
+        "`enrollment` in `enrollment_view` (cells): 0 listed items, plus fewer than "
+        "10 under 10 rows or cells, <10 cells",
+        "`seats` in `enrollment_view`: its SQL cannot be built today",
+    ]
+
+
+def test_local_result_names_the_comparisons_skipped():
+    text = render_local(
+        _run(
+            skipped=[
+                {
+                    "comparison": "seats",
+                    "why": "no rebuild check; run `rebuild-sheet` first",
+                }
+            ]
+        )
+    )
+
+    assert (
+        "Skipped this run, each keeping its latest result: seats (no rebuild "
+        "check; run "
+        "`rebuild-sheet` first)."
+    ) in text
+
+
+def test_a_posted_lead_names_each_step_s_scope_never_its_sql():
+    run = _run()
+    lead = (
+        "lead: relaxing enrolled: x / 2 > 1 / kipptaf_int.int_e/main: INNER JOIN "
+        "t AS t ON a = b brings back <10 of 40 rows"
+    )
+
+    (line,) = _detail(run, _left_in_investigate(run, lead))
+
+    # A hidden step count (`<10`) posts the lead's scope only.
+    assert line.endswith("; lead: relaxing a step in enrolled, kipptaf_int.int_e/main")
+    assert "JOIN" not in line and "x / 2" not in line
+
+
+def test_an_expired_hand_check_says_to_compare_every_comparison():
+    # Changed data alone is not stale: a plain `compare` would compare nothing.
+    check = {
+        "view": "v", "comparison": "c", "cut": "{}", "dims": [],
+        "dashboard": "1", "cube": "2", "dashboard_sql": "S", "cube_sql": "T",
+        "dashboard_usd": 0.01, "cube_usd": 0.01, "expires": "2026-11-06",
+        "expired": True, "workbook": "w", "sheet": "s", "filters": {},
+        "mixed": False,
+    }  # fmt: skip
+    text = "\n".join(report._hand_check_lines("Q1", check))
+    assert "re-run `compare --all` for a fresh moment" in text
+
+
+def test_a_bigquery_skip_posts_its_fixed_words_and_no_message():
+    from google.api_core.exceptions import BadRequest
+
+    exc = BadRequest(
+        "No matching signature for value 'Student 12345'",
+        errors=[{"reason": "invalidQuery"}],
+    )
+    exc.job_id = "job_x"
+
+    skip = compare._bigquery_skip("c2", "a query", exc)
+
+    assert report._posted_why(skip.why) == (
+        "a query failed in BigQuery (job job_x, invalidQuery); compare it again later"
+    )

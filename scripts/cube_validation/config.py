@@ -1,9 +1,8 @@
 """Load and validate the per-view Cube validation files.
 
 Each file at `src/cube/validation/<view>.yml` records the dashboard-to-Cube
-comparisons for one Cube view, the anchors and identities that check it, and
-the decisions made about differences. Cube loads only `src/cube/model/`, so
-these files never reach the semantic layer.
+comparisons for one Cube view and the decisions made about differences. Cube
+loads only `src/cube/model/`, so these files never reach the semantic layer.
 """
 
 from __future__ import annotations
@@ -12,6 +11,7 @@ import json
 import os
 import re
 import tempfile
+import textwrap
 from dataclasses import asdict, dataclass, field, replace
 from datetime import date
 from pathlib import Path
@@ -20,7 +20,7 @@ from typing import Any, NoReturn
 import yaml
 
 CALLS = ("deliberate", "fix_dashboard", "fix_cube", "fix_source", "domain_owner")
-# A domain-owner decision's task is the review issue, which `review` drafts
+# A domain-owner decision's task is the review issue, which `ask-owner` drafts
 # from the decisions, so its task is filled in after the issue posts. A
 # `fix_source` task is the issue opened for the source data's owner.
 CALLS_NEEDING_TASK = ("fix_dashboard", "fix_cube", "fix_source")
@@ -35,7 +35,7 @@ CAUSE_SIDES = ("dashboard", "cube")
 _ID_RUN = re.compile(r"\d+(?:[-.,/:]\d+)*")
 _YEAR_OR_DATE = re.compile(r"\d{4}-(?:\d{2}|\d{4})|\d{4}-\d{2}-\d{2}")
 # Digits split by spaces, dashes, commas or dots, for scrubbing free text
-# (`report._safe_reason`, `answers.NOTE_REFUSALS`).
+# (`report.safe_reason`, `answers.NOTE_REFUSALS`).
 SEPARATED_DIGITS = re.compile(r"\d[\d\-\s,.]{3,}\d")
 
 
@@ -56,16 +56,20 @@ def mask_digits(text: str) -> str:
     return _ID_RUN.sub(masked, text)
 
 
-_TASK = re.compile(r"https://\S+|#\d+")
+TASK_REF = re.compile(r"https://\S+|#\d+")
 # Filter operators for `scope` (Cube side) and `dashboard_filters` (dashboard
 # side). The comparisons take exactly 1 number; `set` means not null.
 SCOPE_OPERATORS = ("equals", "not_equals", "gt", "gte", "lt", "lte", "set")
 COMPARE_OPERATORS = ("gt", "gte", "lt", "lte")
 # A dashboard filter's days past the coming Sunday, in place of `values`.
 WEEK_END_KEY = "days_from_week_end"
-# How `prove` treats export rows that share every mapped dim: `refuse` fails
-# the proof; `sum` adds them, which is right only for a field that adds up.
+# How `rebuild-sheet` treats export rows that share every mapped dim: `refuse`
+# fails the rebuild check; `sum` adds them, which is right only for a field
+# that adds up.
 SPLIT_ROWS = ("refuse", "sum")
+# How `rows.reduce` cuts the dashboard rows to one per grain key: `latest`
+# keeps the row with the latest value of the `by` column.
+REDUCE_RULES = ("latest",)
 
 # Every config value the SQL builders interpolate must pass one of these, so a
 # validation file cannot carry SQL text into a query.
@@ -93,38 +97,44 @@ class RowSpec:
     values: list[ColumnPair]
     # Dashboard-side row filters (`dashboard_filters` entries) for the
     # reconcile's dashboard rows only, mirroring a `scope` Cube applies: the
-    # probe and the cells keep every row, so a cell with no rows in scope
+    # sheet query and the cells keep every row, so a cell with no rows in scope
     # still shows (blank) on both.
     dashboard_scope: list[dict[str, Any]] = field(default_factory=list)
+    # `{rule, by}`: one dashboard row per grain key before the reconcile, for a
+    # dashboard that stores 1 row per key per day. Empty keeps every row.
+    reduce: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
-class Proof:
+class RebuildCheck:
     fingerprint: str
     cells: Any
-    proven_at: str
+    matched_at: str
     workbook_updated_at: str = ""
-    probe_fingerprint: str = ""
-    # `tableau.source_fingerprint` of the sheet; "" when the proof predates it.
+    sheet_query_fingerprint: str = ""
+    # `tableau.source_fingerprint` of the sheet; "" when the check predates it.
     source_fingerprint: str = ""
-    # The cut labels the REST export proved; None when the proof predates them.
+    # The cut labels the REST export matched; None when the check predates them.
     cuts: list[str] | None = None
-    # Total rows the export showed and the proof skipped; None when the proof
+    # Total rows the export showed and the check skipped; None when the check
     # predates the count.
     totals_skipped: int | None = None
     # Sheet fields with no Cube member, by caption: cuts on the sheet's shelves,
-    # filters, and the filters that narrow the sheet now. None when the proof
+    # filters, and the filters that narrow the sheet now. None when the check
     # predates them.
     missing_cuts: list[str] | None = None
     missing_filters: list[str] | None = None
     restricting_filters: list[str] | None = None
     # Why a missing field needs no Cube member, by caption: `copy of <mapped
     # caption>` or `display switch on <parameter caption>`; and the datasource
-    # column behind a plain missing field. None when the proof predates them.
+    # column behind a plain missing field. None when the check predates them.
     filter_notes: dict[str, str] | None = None
     missing_columns: dict[str, str] | None = None
-    # The reshape the proof's copy carried; the probe fingerprint covers it.
+    # The reshape the rebuild copy carried; the sheet query fingerprint covers it.
     shelves: dict[str, Any] | None = None
+    # Whether a dashboard viewer can see the sheet (`tableau.published_sheets`);
+    # None when the check predates it.
+    published: bool | None = None
 
 
 @dataclass(frozen=True)
@@ -135,8 +145,8 @@ class Comparison:
     workbook: str | None = None
     sheet: str | None = None
     dashboard_view: str | None = None
-    probe: str | None = None
-    probe_sql: str | None = None
+    sheet_query: str | None = None
+    sheet_query_sql: str | None = None
     decimals: int | None = None
     dims: list[ColumnPair] = field(default_factory=list)
     filters: dict[str, ColumnPair] = field(default_factory=dict)
@@ -144,7 +154,7 @@ class Comparison:
     cuts: list[dict[str, Any]] = field(default_factory=list)
     scope: list[dict[str, Any]] = field(default_factory=list)
     rows: RowSpec | None = None
-    proof: Proof | None = None
+    rebuild_check: RebuildCheck | None = None
     # The sheet field to compare, by its exported caption: a column header, or
     # a `Measure Names` value in a long export.
     sheet_field: str | None = None
@@ -155,12 +165,12 @@ class Comparison:
     # What each side counts, in a sentence or code list, for a domain owner to
     # compare in the review issue: `{dashboard: ..., cube: ...}`.
     definitions: dict[str, str] = field(default_factory=dict)
-    # Workbook parameters set on the proof copy, `{caption: member}`, for a
+    # Workbook parameters set on the rebuild copy, `{caption: member}`, for a
     # field the sheet shows only behind a parameter value.
     parameters: dict[str, str] = field(default_factory=dict)
-    # A reshape of the proof copy's rows and columns, for a sheet field Cube has
+    # A reshape of the rebuild copy's rows and columns, for a sheet field Cube has
     # no member for: `{drop: [caption], add: {rows: [caption], cols: [caption]}}`.
-    # Tableau recomputes the measure at the new grain, so the proof covers that
+    # Tableau recomputes the measure at the new grain, so the check covers that
     # grain, not the sheet's own.
     shelves: dict[str, Any] = field(default_factory=dict)
     # Columns computed over `dashboard_view`, `{name: SQL expression}`, for a
@@ -168,51 +178,59 @@ class Comparison:
     # as plain columns. Name one after the calc (`Calculation_<id>`) and the
     # export header with the calc's caption maps to it.
     dashboard_columns: dict[str, str] = field(default_factory=dict)
+    # Compare a sheet no dashboard viewer sees (`tableau.published_sheets`);
+    # `rebuild-sheet` refuses one otherwise.
+    unpublished: bool = False
 
 
-# The keys that decide which rows a comparison reconciles and which of them
-# match; `dims` only group the rows, and the rest shape the cells.
-_POPULATION = (
-    "dashboard_view",
-    "rows",
-    "filters",
-    "defaults",
-    "cuts",
-    "scope",
-    "dashboard_filters",
-    "dashboard_columns",
-)
+def fingerprint_data(comparison: Comparison) -> dict:
+    """What a comparison's entry and checkpoint fingerprints hash.
+
+    Its `definitions` are left out: words for the owner change no result.
+    `unpublished` when False and `rebuild_check.published` when None are left
+    out too, so a file written before those keys keeps the fingerprints, and
+    every saved result, it already has.
+    """
+    data = asdict(replace(comparison, definitions={}))
+    if not comparison.unpublished:
+        del data["unpublished"]
+    if data["rebuild_check"] is not None and data["rebuild_check"]["published"] is None:
+        del data["rebuild_check"]["published"]
+    return data
 
 
-def row_population(comparison: Comparison) -> str | None:
-    """A key shared by the comparisons that reconcile the same rows, or None.
+def explanation_key(comparison: Comparison) -> str | None:
+    """A key shared by the comparisons that read one model at one row grain, or None.
 
-    Comparisons with the same key usually hold the same unmatched rows,
-    grouped by their own `dims`, so one proof can classify them all. A dim
-    from another cube adds a join that can drop or repeat rows; a proof run
-    on each comparison's own rows refuses then, as for any proof.
+    Comparisons with the same key can share one stored explanation, which each
+    runs on its own saved rows: filters, defaults, cuts, scope and dashboard
+    columns change which rows a comparison holds, not the model's logic that
+    explains them. A comparison without `rows` has no key.
     """
     if comparison.rows is None:
         return None
-    data = asdict(comparison)
-    return json.dumps([data[k] for k in _POPULATION], sort_keys=True, default=str)
+    return json.dumps(
+        [
+            comparison.dashboard_view,
+            [(p.cube, p.dashboard) for p in comparison.rows.grain],
+            list(comparison.rows.values),
+        ],
+        sort_keys=True,
+        default=str,
+    )
 
 
-@dataclass(frozen=True)
-class Anchor:
-    measure: str
-    value: float
-    source: str
-    as_of: Any = None
-    date_range: list[Any] = field(default_factory=list)
-    filters: dict[str, Any] = field(default_factory=dict)
-
-
-@dataclass(frozen=True)
-class Identity:
-    name: str
-    left: str
-    right: str
+# A formula decision's `fingerprints` key: how many cells the formula check
+# had filed in the diff when it was decided (`CellDiff.matched_only`), as
+# text; absent reads as 0. A decision without `FORMULA_CELLS` is sent to
+# re-confirm when more are filed since.
+MATCHED_ONLY = "matched_only"
+# A formula decision's `fingerprints` key: which cells the diff held when it
+# was decided, as `decisions.formula_cells_hash`, a digest of their refs
+# salted with the decision's SQL fingerprints; it carries no cell value. A
+# changed set of cells sends the decision to re-confirm.
+FORMULA_CELLS = "formula_cells"
+_SHA256 = re.compile(r"[0-9a-f]{64}")
 
 
 @dataclass(frozen=True)
@@ -228,17 +246,25 @@ class Decision:
     # of `group`, and covers the whole view, so it has no `comparison`.
     missing_cut: str = ""
     missing_filter: str = ""
-    # Covers the comparison's cell differences instead of a row group.
-    cells: bool = False
-    # Covers the row groups whose triage cause names this `{side, label}`, in
-    # place of `group`: `label` is the words of a stored proof's bucket, with
-    # each number of 5 or more digits written `<n>`. Which groups it covers is
-    # read from the latest triage, never stored here; `fingerprints.proof` is
-    # the proof file's.
+    # Covers the row groups whose sort cause names this `{side, label}`, in
+    # place of `group`: `label` is the words of a stored explanation's bucket,
+    # with each number of 5 or more digits written `<n>`. Which groups it covers
+    # is read from the latest sort, never stored here;
+    # `fingerprints.explanation` is the explanation file's.
     cause: dict[str, Any] = field(default_factory=dict)
+    # Covers the comparison's formula difference, in place of `group`: its
+    # differing cells that hold no unmatched row and the cells the formula
+    # check filed, while they are the cells `fingerprints.formula_cells`
+    # recorded (without it, any cell of the first kind and the second up to
+    # `fingerprints.matched_only`).
+    formula: bool = False
     # The call the owner answered a cause decision with; set by
-    # `record-answers`, so `review` asks it no more.
+    # `record-answers`, so `ask-owner` asks it no more.
     answer: str = ""
+    # Covers every row group of its comparison no `group` decision closes,
+    # explained or not, in place of `group`; never cells. Only `deliberate`,
+    # and only `decide` writes it.
+    all_groups: bool = False
 
 
 @dataclass(frozen=True)
@@ -246,12 +272,12 @@ class ViewConfig:
     view: str
     fact: str
     comparisons: list[Comparison]
-    email: str | None = None
     time_dimension: str | None = None
-    anchors: list[Anchor] = field(default_factory=list)
-    identities: list[Identity] = field(default_factory=list)
     decisions: list[Decision] = field(default_factory=list)
     tasks: dict[str, str] = field(default_factory=dict)
+    # Facts other than `fact` that the view's members read. Cube reads them at
+    # the build end like `fact`; `compare` refuses one that changed during the build.
+    also_facts: list[str] = field(default_factory=list)
 
 
 class _Reader:
@@ -300,7 +326,7 @@ def _identifier(reader: _Reader, key: str, *, required=False) -> str | None:
 
 
 def with_fact_dataset(cfg: ViewConfig, dataset: str) -> ViewConfig:
-    """Point `cfg.fact` at `dataset`, keeping its table.
+    """Point `cfg.fact` and each of `cfg.also_facts` at `dataset`, keeping its table.
 
     Raises:
         ConfigError: `dataset` is neither `kipptaf_marts` nor a dev build's
@@ -313,7 +339,11 @@ def with_fact_dataset(cfg: ViewConfig, dataset: str) -> ViewConfig:
             f"got {dataset!r}"
         )
 
-    return replace(cfg, fact=f"{dataset}.{cfg.fact.split('.', 1)[1]}")
+    return replace(
+        cfg,
+        fact=f"{dataset}.{cfg.fact.split('.', 1)[1]}",
+        also_facts=[f"{dataset}.{f.split('.', 1)[1]}" for f in cfg.also_facts],
+    )
 
 
 def _table_ref(reader: _Reader, key: str, *, required=False) -> str | None:
@@ -322,6 +352,18 @@ def _table_ref(reader: _Reader, key: str, *, required=False) -> str | None:
     if value is not None and not _TABLE_REF.fullmatch(value):
         reader.fail(key, f"must be dataset.table of plain identifiers; got {value!r}")
     return value
+
+
+def _table_refs(reader: _Reader, key: str) -> list[str]:
+    """A list of `dataset.table` strings, each safe to interpolate into SQL."""
+    values = reader.get(key, list, default=[])
+    for i, value in enumerate(values):
+        if not isinstance(value, str) or not _TABLE_REF.fullmatch(value):
+            reader.fail(
+                f"{key}[{i}]",
+                f"must be dataset.table of plain identifiers; got {value!r}",
+            )
+    return values
 
 
 def _list_of(reader: _Reader, key: str) -> list[_Reader]:
@@ -340,11 +382,47 @@ def _pairs(reader: _Reader, key: str) -> list[ColumnPair]:
     return [_pair(item) for item in _list_of(reader, key)]
 
 
+def _reduce(reader: _Reader) -> dict[str, str]:
+    if reader.data.get("reduce") is None:
+        return {}
+    spec = reader.child("reduce", reader.data["reduce"])
+    for key in spec.data:
+        if key not in ("rule", "by"):
+            spec.fail(key, "unknown key; `reduce` takes only rule and by")
+    rule = spec.get("rule", str, required=True)
+    if rule not in REDUCE_RULES:
+        spec.fail("rule", f"must be one of {', '.join(REDUCE_RULES)}; got {rule!r}")
+    by = _identifier(spec, "by", required=True)
+    if by.startswith("__"):
+        spec.fail("by", "must not start with __; that prefix is the tool's own")
+    return {"rule": rule, "by": by}
+
+
+# Comparison keys renamed to plain words; an old key is refused, never read.
+RENAMED_KEYS = {
+    "probe": "sheet_query",
+    "probe_sql": "sheet_query_sql",
+    "proof": "rebuild_check",
+}
+
+
+# `rebuild_check:` keys renamed the same way.
+RENAMED_CHECK_KEYS = {
+    "proven_at": "matched_at",
+    "probe_fingerprint": "sheet_query_fingerprint",
+}
+
+
 def _comparison(reader: _Reader) -> Comparison:
-    probe = reader.get("probe", str)
-    probe_sql = reader.get("probe_sql", str)
-    if probe and probe_sql:
-        reader.fail("probe", "set either probe or probe_sql, not both")
+    for old, new in RENAMED_KEYS.items():
+        if old in reader.data:
+            reader.fail(old, f"renamed; write it as {new}")
+    sheet_query = reader.get("sheet_query", str)
+    sheet_query_sql = reader.get("sheet_query_sql", str)
+    if sheet_query and sheet_query_sql:
+        reader.fail(
+            "sheet_query", "set either sheet_query or sheet_query_sql, not both"
+        )
 
     filters = {}
     for caption, spec in reader.get("filters", dict, default={}).items():
@@ -353,6 +431,8 @@ def _comparison(reader: _Reader) -> Comparison:
     rows = None
     if reader.data.get("rows") is not None:
         rows_reader = reader.child("rows", reader.data["rows"])
+        if "cell" in rows_reader.data:
+            rows_reader.fail("cell", "delete it; cells close by coverage")
         rows = RowSpec(
             grain=_pairs(rows_reader, "grain"),
             values=_pairs(rows_reader, "values"),
@@ -360,30 +440,37 @@ def _comparison(reader: _Reader) -> Comparison:
                 _filter_entry(r, "dashboard")
                 for r in _list_of(rows_reader, "dashboard_scope")
             ],
+            reduce=_reduce(rows_reader),
         )
 
-    proof = None
-    if reader.data.get("proof") is not None:
-        proof_reader = reader.child("proof", reader.data["proof"])
-        cuts = proof_reader.get("cuts", list)
-        totals_skipped = proof_reader.get("totals_skipped", int)
+    rebuild_check = None
+    if reader.data.get("rebuild_check") is not None:
+        check_reader = reader.child("rebuild_check", reader.data["rebuild_check"])
+        for old, new in RENAMED_CHECK_KEYS.items():
+            if old in check_reader.data:
+                check_reader.fail(old, f"renamed; write it as {new}")
+        cuts = check_reader.get("cuts", list)
+        totals_skipped = check_reader.get("totals_skipped", int)
         if totals_skipped is not None and totals_skipped < 0:
-            proof_reader.fail("totals_skipped", "must be 0 or more")
-        proof = Proof(
+            check_reader.fail("totals_skipped", "must be 0 or more")
+        rebuild_check = RebuildCheck(
             cuts=None if cuts is None else [str(c) for c in cuts],
-            fingerprint=proof_reader.get("fingerprint", str, required=True),
-            cells=proof_reader.data.get("cells"),
-            proven_at=str(proof_reader.data.get("proven_at", "")),
-            workbook_updated_at=str(proof_reader.data.get("workbook_updated_at", "")),
-            probe_fingerprint=str(proof_reader.data.get("probe_fingerprint", "")),
-            source_fingerprint=str(proof_reader.data.get("source_fingerprint", "")),
+            fingerprint=check_reader.get("fingerprint", str, required=True),
+            cells=check_reader.data.get("cells"),
+            matched_at=str(check_reader.data.get("matched_at", "")),
+            workbook_updated_at=str(check_reader.data.get("workbook_updated_at", "")),
+            sheet_query_fingerprint=str(
+                check_reader.data.get("sheet_query_fingerprint", "")
+            ),
+            source_fingerprint=str(check_reader.data.get("source_fingerprint", "")),
             totals_skipped=totals_skipped,
-            missing_cuts=_captions(proof_reader, "missing_cuts"),
-            missing_filters=_captions(proof_reader, "missing_filters"),
-            restricting_filters=_captions(proof_reader, "restricting_filters"),
-            filter_notes=_caption_map(proof_reader, "filter_notes"),
-            missing_columns=_caption_map(proof_reader, "missing_columns"),
-            shelves=proof_reader.get("shelves", dict),
+            missing_cuts=_captions(check_reader, "missing_cuts"),
+            missing_filters=_captions(check_reader, "missing_filters"),
+            restricting_filters=_captions(check_reader, "restricting_filters"),
+            filter_notes=_caption_map(check_reader, "filter_notes"),
+            missing_columns=_caption_map(check_reader, "missing_columns"),
+            shelves=check_reader.get("shelves", dict),
+            published=check_reader.get("published", bool),
         )
 
     dims = _pairs(reader, "dims")
@@ -400,8 +487,8 @@ def _comparison(reader: _Reader) -> Comparison:
         workbook=reader.get("workbook", str),
         sheet=reader.get("sheet", str),
         dashboard_view=_table_ref(reader, "dashboard_view"),
-        probe=probe,
-        probe_sql=probe_sql,
+        sheet_query=sheet_query,
+        sheet_query_sql=sheet_query_sql,
         decimals=reader.get("decimals", int),
         dims=dims,
         filters=filters,
@@ -409,7 +496,7 @@ def _comparison(reader: _Reader) -> Comparison:
         cuts=reader.get("cuts", list, default=[]),
         scope=[_scope_entry(r) for r in _list_of(reader, "scope")],
         rows=rows,
-        proof=proof,
+        rebuild_check=rebuild_check,
         sheet_field=reader.get("sheet_field", str),
         split_rows=split_rows,
         dashboard_filters=[
@@ -422,6 +509,7 @@ def _comparison(reader: _Reader) -> Comparison:
         },
         shelves=_shelves(reader, dims, filters),
         dashboard_columns=_dashboard_columns(reader),
+        unpublished=reader.get("unpublished", bool, default=False),
     )
 
 
@@ -454,8 +542,8 @@ def _shelves(
 ) -> dict[str, Any]:
     """Read `shelves`; each added caption must name a dim.
 
-    `clear_filters` names sheet filters the proof copy resets to keep every
-    member, so the proof covers values the sheet filters out.
+    `clear_filters` names sheet filters the rebuild copy resets to keep
+    every member, so the check covers values the sheet filters out.
 
     A caption names a dim when a `filters:` caption maps it to the dim's
     dashboard column, or when it is that column's name, as is or in Tableau's
@@ -561,25 +649,6 @@ def _filter_entry(reader: _Reader, side: str) -> dict[str, Any]:
     return {side: column, "operator": operator, "values": values}
 
 
-def _anchor(reader: _Reader) -> Anchor:
-    return Anchor(
-        measure=reader.get("measure", str, required=True),
-        value=reader.get("value", (int, float), required=True),
-        source=reader.get("source", str, required=True),
-        as_of=reader.data.get("as_of"),
-        date_range=reader.get("date_range", list, default=[]),
-        filters=reader.get("filters", dict, default={}),
-    )
-
-
-def _identity(reader: _Reader) -> Identity:
-    return Identity(
-        name=reader.get("name", str, required=True),
-        left=reader.get("left", str, required=True),
-        right=reader.get("right", str, required=True),
-    )
-
-
 def _child_node(node: yaml.Node | None, key: str | int) -> yaml.Node | None:
     """One key of a mapping node or one item of a sequence node, else None."""
     if isinstance(node, yaml.MappingNode) and isinstance(key, str):
@@ -616,7 +685,7 @@ def _decision_values(group: _Reader, texts: list[str | None]) -> None:
                 f"values[{i}]",
                 f"YAML read {text if text is not None else value!r} as "
                 f"{type(value).__name__} {value!r}; quote it exactly as the "
-                "triage line shows it",
+                "sort line shows it",
             )
 
 
@@ -631,18 +700,32 @@ def _decision(
         reader.fail("task", f"is required when call is {call}")
     # The review issue posts `task` to GitHub as written, so it may only be a
     # link, never free text that could name a person.
-    if task and not _TASK.fullmatch(task):
+    if task and not TASK_REF.fullmatch(task):
         reader.fail("task", f"must be an https:// link or #<issue>; got {task!r}")
+    if "cells" in reader.data:
+        reader.fail(
+            "cells",
+            "delete this decision; covered cells need none, and a formula "
+            "difference takes formula: true",
+        )
     missing_cut = reader.get("missing_cut", str, default="")
     missing_filter = reader.get("missing_filter", str, default="")
-    keys = ("group", "missing_cut", "missing_filter", "cells", "cause")
+    formula = reader.get("formula", bool, default=False)
+    if "formula" in reader.data and not formula:
+        reader.fail("formula", "must be true; delete the key otherwise")
+    all_groups = reader.get("all_groups", bool, default=False)
+    if "all_groups" in reader.data and not all_groups:
+        reader.fail("all_groups", "must be true; delete the key otherwise")
+    keys = ("group", "missing_cut", "missing_filter", "formula", "cause", "all_groups")
     named = [k for k in keys if reader.data.get(k)]
     if len(named) > 1:
         reader.fail(
             named[1],
-            "set only one of group, missing_cut, missing_filter, cells and cause",
+            "set only one of group, missing_cut, missing_filter, formula, cause and "
+            "all_groups",
         )
-    cells = reader.get("cells", bool, default=False)
+    if all_groups:
+        _comparison_decision(reader, call)
     if missing_cut or missing_filter:
         # A sheet field Cube lacks is missing from the view, not one comparison.
         for key in ("comparison", "fingerprints"):
@@ -658,6 +741,30 @@ def _decision(
     cause = reader.get("cause", dict, default={})
     if cause:
         _cause(reader.child("cause", cause))
+    fingerprints = reader.get("fingerprints", dict, default={})
+    if "proof" in fingerprints:
+        reader.child("fingerprints", fingerprints).fail(
+            "proof", "renamed; write it as explanation"
+        )
+    if MATCHED_ONLY in fingerprints:
+        if not formula:
+            reader.child("fingerprints", fingerprints).fail(
+                MATCHED_ONLY, "belongs to a formula decision"
+            )
+        # `isdecimal`, not `isdigit`: `int` refuses a digit such as '²'.
+        if not str(fingerprints[MATCHED_ONLY]).isdecimal():
+            reader.child("fingerprints", fingerprints).fail(
+                MATCHED_ONLY, "must be a whole number; `decide` writes it"
+            )
+    if FORMULA_CELLS in fingerprints:
+        if not formula:
+            reader.child("fingerprints", fingerprints).fail(
+                FORMULA_CELLS, "belongs to a formula decision"
+            )
+        if not _SHA256.fullmatch(str(fingerprints[FORMULA_CELLS])):
+            reader.child("fingerprints", fingerprints).fail(
+                FORMULA_CELLS, "must be a sha256 hex digest; `decide` writes it"
+            )
     answer = reader.get("answer", str, default="")
     if answer and not cause:
         reader.fail("answer", "belongs to a cause decision")
@@ -670,13 +777,31 @@ def _decision(
         reason=reader.get("reason", str, required=True),
         group=group,
         task=task,
-        fingerprints=reader.get("fingerprints", dict, default={}),
+        fingerprints=fingerprints,
         missing_cut=missing_cut,
         missing_filter=missing_filter,
-        cells=bool(cells),
         cause=cause,
+        formula=formula,
         answer=answer,
+        all_groups=all_groups,
     )
+
+
+def _comparison_decision(reader: _Reader, call: str) -> None:
+    """Check a comparison decision (`all_groups`): deliberate, with a reason
+    and both SQL fingerprints, as `decide` writes it."""
+    if call != "deliberate":
+        reader.fail(
+            "call",
+            f"a comparison decision (all_groups) is deliberate; got {call!r}. "
+            "Decide a cause instead to ask for a fix or the owner",
+        )
+    if not str(reader.data.get("reason") or "").strip():
+        reader.fail("reason", "a comparison decision (all_groups) needs a reason")
+    fingerprints = reader.get("fingerprints", dict, default={})
+    for side in ("cube", "dashboard"):
+        if not fingerprints.get(side):
+            reader.fail(f"fingerprints.{side}", "is required; `decide` writes it")
 
 
 def _cause(reader: _Reader) -> None:
@@ -709,7 +834,7 @@ def _tasks(root: _Reader) -> dict[str, str]:
         value = reader.get(key, str)
         if value is None:
             continue
-        if not _TASK.fullmatch(value):
+        if not TASK_REF.fullmatch(value):
             reader.fail(key, f"must be an https:// link or #<issue>; got {value!r}")
         tasks[key] = value
     return tasks
@@ -755,105 +880,263 @@ def load_view_config(path: Path) -> ViewConfig:
         if ids.count(cid) > 1:
             root.fail(f"comparisons[{i}].id", f"duplicate comparison id {cid!r}")
 
-    anchors = [_anchor(r) for r in _list_of(root, "anchors")]
+    if "email" in root.data:
+        root.fail(
+            "email",
+            "delete it; nothing committed may hold an email. Pass `--email` or "
+            "set CUBE_VALIDATION_EMAIL when you run the command",
+        )
+    for key in ("anchors", "identities"):
+        if key in root.data:
+            root.fail(
+                key,
+                "delete this block; the validator checks Cube against dashboards only",
+            )
     time_dimension = _identifier(root, "time_dimension")
     # Row comparisons cast the time dimension to DATE on both sides; without
     # it a date grain joins TIMESTAMP text to DATE text and nothing matches.
-    if not time_dimension and (anchors or any(c.rows for c in comparisons)):
-        root.fail(
-            "time_dimension", "is required when anchors or comparison rows are set"
-        )
+    if not time_dimension and any(c.rows for c in comparisons):
+        root.fail("time_dimension", "is required when comparison rows are set")
 
     return ViewConfig(
         view=_identifier(root, "view", required=True),
         fact=_table_ref(root, "fact", required=True),
-        email=root.get("email", str),
         time_dimension=time_dimension,
         comparisons=comparisons,
-        anchors=anchors,
-        identities=[_identity(r) for r in _list_of(root, "identities")],
         decisions=[
             _decision(r, set(ids), _value_texts(tree, i))
             for i, r in enumerate(_list_of(root, "decisions"))
         ],
         tasks=_tasks(root),
+        also_facts=_table_refs(root, "also_facts"),
     )
 
 
-def write_proof(path: Path, comparison_id: str, proof: dict[str, Any]) -> None:
-    """Rewrite one comparison's `proof:` key, leaving the rest of the file as is.
+def _indent(line: str) -> int:
+    return len(line) - len(line.lstrip())
 
-    The edit is line-based so comments and layout elsewhere survive.
+
+_FLOW_ITEM = re.compile(r"\s*- \{")
+
+
+def _flow_item(lines: list[str], start: int, stop: int) -> dict | None:
+    """The mapping a flow-style item (`- {id: x, ...}`) holds, or None.
+
+    The item may span lines, as the commit hook's formatter wraps a long one.
+    """
+    if not _FLOW_ITEM.match(lines[start]):
+        return None
+    try:
+        loaded = yaml.safe_load(textwrap.dedent("\n".join(lines[start:stop])))
+    except yaml.YAMLError:
+        return None
+    if isinstance(loaded, list) and len(loaded) == 1 and isinstance(loaded[0], dict):
+        return loaded[0]
+    return None
+
+
+def _list_item(
+    lines: list[str], head: int, end: int, item_id: str
+) -> tuple[int, int, int] | None:
+    """Find the block-list item whose id is `item_id`.
+
+    The `id:` may be the item's first line (`- id: x`) or any later line at the
+    item's key indent, as when a `<<: *anchor` merge key comes first. A
+    flow-style item (`- {id: x, ...}`, on one line or wrapped) matches on the
+    `id` it loads with; `_flow_item` tells the caller which it found.
+
+    Args:
+        lines: The file's lines.
+        head: Index of the block's key line.
+        end: Index after the block's last line.
+        item_id: The id to find.
+
+    Returns:
+        The item's first line, the line after it, and its key indent; or
+        None when no item matches. Trailing blank lines and comments at or
+        below the item's indent belong to what follows, not to the item.
+    """
+    item_indent = next(
+        (
+            _indent(lines[i])
+            for i in range(head + 1, end)
+            if re.match(r"\s*- ", lines[i])
+        ),
+        None,
+    )
+    if item_indent is None:
+        return None
+    key_indent = item_indent + 2
+    marker = re.compile(rf"\s{{{item_indent}}}- ")
+    wanted = re.compile(
+        rf"(?:\s{{{item_indent}}}- |\s{{{key_indent}}})id:\s*['\"]?"
+        rf"{re.escape(item_id)}['\"]?\s*(?:#.*)?"
+    )
+    starts = [i for i in range(head + 1, end) if marker.match(lines[i])]
+    for n, start in enumerate(starts):
+        stop = starts[n + 1] if n + 1 < len(starts) else end
+        for i in range(start + 1, stop):
+            if (
+                lines[i].strip()
+                and not _is_comment(lines[i])
+                and _indent(lines[i]) < key_indent
+            ):
+                stop = i
+                break
+        flow = _flow_item(lines, start, stop)
+        if (
+            flow.get("id") == item_id
+            if flow is not None
+            else any(wanted.fullmatch(lines[i]) for i in range(start, stop))
+        ):
+            while stop > start + 1 and (
+                not lines[stop - 1].strip()
+                or (
+                    _is_comment(lines[stop - 1])
+                    and _indent(lines[stop - 1]) <= item_indent
+                )
+            ):
+                stop -= 1
+            return start, stop, key_indent
+    return None
+
+
+def comparison_item(
+    lines: list[str], comparison_id: str
+) -> tuple[int, int, int] | None:
+    """Find a comparison's item in the top-level `comparisons:` block.
+
+    Returns:
+        The item's first line, the line after it, and its key indent; or
+        None when the block is missing, is not a block list, or holds no item
+        with that id. Decisions are never searched.
+    """
+    head = next(
+        (i for i, line in enumerate(lines) if re.match(r"comparisons\s*:", line)), None
+    )
+    if head is None:
+        return None
+    end = next(
+        (i for i in range(head + 1, len(lines)) if re.match(r"[^\s#-]", lines[i])),
+        len(lines),
+    )
+    return _list_item(lines, head, end, comparison_id)
+
+
+def _editable_comparison(
+    path: Path, lines: list[str], comparison_id: str
+) -> tuple[int, int, int]:
+    """`comparison_item`, or the reason a line edit cannot reach the comparison.
+
+    Raises:
+        ConfigError: The comparison sits inside a flow list, so no item of a
+            block list carries it; or no comparison has that id.
+    """
+    found = comparison_item(lines, comparison_id)
+    if found is not None:
+        return found
+    try:
+        comparisons = (yaml.safe_load("\n".join(lines)) or {}).get("comparisons")
+    except (yaml.YAMLError, AttributeError):
+        comparisons = None
+    if isinstance(comparisons, list) and any(
+        isinstance(c, dict) and c.get("id") == comparison_id for c in comparisons
+    ):
+        raise ConfigError(
+            f"{path}: comparisons: {comparison_id!r} cannot be edited by line; "
+            "write it as a block list (`- id: ...` items)"
+        )
+    raise ConfigError(f"{path}: comparisons: no comparison with id {comparison_id!r}")
+
+
+def find_comparison(path: Path, comparison_id: str) -> None:
+    """Check that a line edit can find a comparison's item.
+
+    Raises:
+        ConfigError: No item of the `comparisons:` block list carries that id,
+            so `write_rebuild_check` could not write it. The message says when
+            the comparison exists inside a flow list.
+    """
+    _editable_comparison(path, Path(path).read_text().splitlines(), comparison_id)
+
+
+def write_rebuild_check(path: Path, comparison_id: str, check: dict[str, Any]) -> None:
+    """Rewrite one comparison's `rebuild_check:` key, leaving the rest of the
+    file as is.
+
+    The edit is line-based so comments and layout elsewhere survive. A
+    comparison written as a flow mapping is rewritten as a block item from
+    the values it loads with, so a comment inside it (the formatter's
+    wrapped flow mapping can hold one) is dropped; the file must then load,
+    or it is restored.
 
     Args:
         path: The validation file.
         comparison_id: The `id` of the comparison to update.
-        proof: The new proof (`fingerprint`, `cells`, `proven_at`,
-            `workbook_updated_at`, `probe_fingerprint`, `cuts`,
-            `totals_skipped`, `missing_cuts`, `missing_filters`,
-            `restricting_filters`).
+        check: The new rebuild check, as `rebuild.rebuild_sheet` builds it;
+            `RebuildCheck` holds the keys the loader reads back.
 
     Raises:
-        ConfigError: No comparison has that id.
+        ConfigError: No comparison has that id, or it sits inside a flow list
+            (see `find_comparison`); or a flow comparison rewritten does not
+            load (the original text is restored).
     """
     path = Path(path)
-    lines = path.read_text().splitlines()
+    original = path.read_text()
+    lines = original.splitlines()
 
-    start = next(
-        (
-            i
-            for i, line in enumerate(lines)
-            if re.fullmatch(
-                rf"\s*- id:\s*['\"]?{re.escape(comparison_id)}['\"]?\s*", line
-            )
-        ),
-        None,
-    )
-    if start is None:
-        raise ConfigError(
-            f"{path}: comparisons: no comparison with id {comparison_id!r}"
+    start, end, key_indent = _editable_comparison(path, lines, comparison_id)
+    flow = _flow_item(lines, start, end)
+    if flow is not None:
+        block = yaml.safe_dump(
+            [{**flow, "rebuild_check": check}],
+            default_flow_style=False,
+            sort_keys=False,
         )
+        lines[start:end] = [
+            " " * (key_indent - 2) + line for line in block.splitlines()
+        ]
+        replace_text(path, "\n".join(lines) + "\n")
+        try:
+            load_view_config(path)
+        except BaseException as exc:
+            replace_text(path, original)
+            if isinstance(exc, ConfigError):
+                raise ConfigError(
+                    f"{exc} (not written; the file is unchanged)"
+                ) from exc
+            raise
+        return
 
-    item_indent = len(lines[start]) - len(lines[start].lstrip())
-    key_indent = item_indent + 2
-
-    # The comparison ends at the next line indented at or below its `- ` marker.
-    end = len(lines)
-    for i in range(start + 1, len(lines)):
-        line = lines[i]
-        if line.strip() and len(line) - len(line.lstrip()) <= item_indent:
-            end = i
-            break
-
-    proof_at = next(
+    check_at = next(
         (
             i
             for i in range(start + 1, end)
-            if re.match(rf"\s{{{key_indent}}}proof:", lines[i])
+            if re.match(rf"\s{{{key_indent}}}rebuild_check:", lines[i])
         ),
         None,
     )
-    block = yaml.safe_dump(proof, default_flow_style=False, sort_keys=False)
-    new = [" " * key_indent + "proof:"] + [
+    block = yaml.safe_dump(check, default_flow_style=False, sort_keys=False)
+    new = [" " * key_indent + "rebuild_check:"] + [
         " " * (key_indent + 2) + line for line in block.splitlines()
     ]
 
-    if proof_at is None:
+    if check_at is None:
         # Insert after the last non-blank line of the comparison.
         insert = end
         while insert > start + 1 and not lines[insert - 1].strip():
             insert -= 1
         lines[insert:insert] = new
     else:
-        proof_end = proof_at + 1
-        while proof_end < end and (
-            not lines[proof_end].strip()
-            or len(lines[proof_end]) - len(lines[proof_end].lstrip()) > key_indent
+        check_end = check_at + 1
+        while check_end < end and (
+            not lines[check_end].strip()
+            or len(lines[check_end]) - len(lines[check_end].lstrip()) > key_indent
         ):
-            proof_end += 1
-        while not lines[proof_end - 1].strip():
-            proof_end -= 1
-        lines[proof_at:proof_end] = new
+            check_end += 1
+        while not lines[check_end - 1].strip():
+            check_end -= 1
+        lines[check_at:check_end] = new
 
     path.write_text("\n".join(lines) + "\n")
 
@@ -920,11 +1203,11 @@ def _holds(d: Decision, asked: dict[str, Any]) -> bool:
         and d.task == asked.get("task", "")
         and d.comparison == asked.get("comparison", "")
         and d.group == asked.get("group", {})
-        and d.cells == bool(asked.get("cells", False))
         and d.missing_cut == asked.get("missing_cut", "")
         and d.missing_filter == asked.get("missing_filter", "")
         and d.cause == asked.get("cause", {})
         and d.answer == asked.get("answer", "")
+        and d.all_groups == asked.get("all_groups", False)
         and d.fingerprints == asked.get("fingerprints", {})
     )
 
@@ -932,9 +1215,11 @@ def _holds(d: Decision, asked: dict[str, Any]) -> bool:
 def write_decision(path: Path, decision: dict[str, Any]) -> None:
     """Replace the `decisions:` item with `decision`'s id, or append it.
 
-    The edit is line-based like `write_proof`, so comments and layout outside
-    that item survive. Values YAML would rewrite (`9.50`, `010`, `no`) are
-    written quoted.
+    The edit is line-based like `write_rebuild_check`, so comments and layout outside
+    that item survive. The item is written in block style, so the next line
+    edit finds its `id:` line; a flow-style item written before is found too
+    and replaced in block style, dropping any comment inside it. Values YAML
+    would rewrite (`9.50`, `010`, `no`) are written quoted.
 
     Args:
         path: The validation file.
@@ -944,8 +1229,8 @@ def write_decision(path: Path, decision: dict[str, Any]) -> None:
         ConfigError: The file does not load afterwards, or does not hold the
             values asked for (the original text is restored either way);
             `decisions:` is not a block list (see `_decisions_block`); or a
-            decision with that id exists but its item does not start with
-            `- id: <id>`, so a line edit cannot find it.
+            decision with that id loads but no list item carries it, so a
+            line edit cannot find it.
     """
     path = Path(path)
     decision_id = decision.get("id")
@@ -963,25 +1248,15 @@ def write_decision(path: Path, decision: dict[str, Any]) -> None:
         if first_item is not None
         else 2
     )
-    block = yaml.safe_dump([decision], default_flow_style=None, sort_keys=False)
+    block = yaml.safe_dump([decision], default_flow_style=False, sort_keys=False)
     new = [" " * indent + line for line in block.splitlines()]
 
-    start = next(
-        (
-            i
-            for i in range(head + 1, end)
-            if re.fullmatch(
-                rf"\s{{{indent}}}- id:\s*['\"]?{re.escape(decision_id)}['\"]?\s*(#.*)?",
-                lines[i],
-            )
-        ),
-        None,
-    )
-    if start is None:
+    found = _list_item(lines, head, end, decision_id)
+    if found is None:
         if any(d.id == decision_id for d in load_view_config(path).decisions):
             raise ConfigError(
-                f"{path}: decisions: {decision_id!r} does not start with "
-                f"`- id: {decision_id}`; edit it by hand"
+                f"{path}: decisions: no list item carries {decision_id!r} where "
+                "a line edit can find it; edit it by hand"
             )
         # Append after the block's last item line, before trailing blanks and
         # column-0 comments that lead into the next key.
@@ -992,27 +1267,7 @@ def write_decision(path: Path, decision: dict[str, Any]) -> None:
             insert -= 1
         lines[insert:insert] = new
     else:
-        # The item ends at the next key or item indented at or below its `- `
-        # marker. A comment there may sit between the item's own keys, so it
-        # ends nothing; one that trails the item leads into what follows.
-        stop = next(
-            (
-                i
-                for i in range(start + 1, end)
-                if lines[i].strip()
-                and not _is_comment(lines[i])
-                and len(lines[i]) - len(lines[i].lstrip()) <= indent
-            ),
-            end,
-        )
-        while stop > start + 1 and (
-            not lines[stop - 1].strip()
-            or (
-                _is_comment(lines[stop - 1])
-                and len(lines[stop - 1]) - len(lines[stop - 1].lstrip()) <= indent
-            )
-        ):
-            stop -= 1
+        start, stop, _ = found
         lines[start:stop] = new
 
     replace_text(path, "\n".join(lines) + "\n")

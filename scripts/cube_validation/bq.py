@@ -1,23 +1,23 @@
 """Read-only BigQuery access: table kinds, view history, dry-run pricing.
 
-Only SELECTs, dry runs and session temp tables (`Warehouse.freeze`) are
-issued. `Warehouse` is the catalog `as_of` needs.
+Only SELECTs, dry runs and the validator's saved tables in
+`saved.SCRATCH_DATASET` (`Warehouse.script`) are issued. `Warehouse` is the
+catalog `as_of` needs.
 """
 
 from __future__ import annotations
 
 import json
-import os
 import re
-import tempfile
 from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from google.api_core.exceptions import GoogleAPIError
+from google.api_core.exceptions import GoogleAPIError, NotFound
 from google.cloud import bigquery
 
+from .checkpoints import write_json
 from .timetravel import PROJECT, TableInfo, closing_paren, utc_literal
 
 USD_PER_TIB = 6.25
@@ -58,10 +58,6 @@ class Warehouse:
         self._cache_dir: Path | None = None
         self._ledger_dir: Path | None = None
         self._daily_cap: float | None = None
-        # The open session's id and its temp tables, inside `session`.
-        self._session_id: str | None = None
-        self._in_session = False
-        self._frozen = 0
 
     def configure_local(
         self, cache_dir: Path, daily_cap: float | None, ledger_dir: Path | None = None
@@ -92,16 +88,21 @@ class Warehouse:
         return self._tables[key]
 
     def table(self, dataset: str, name: str) -> TableInfo:
-        """Return the kind of `dataset.name` and, for a view, its SQL when first read."""
+        """Return the kind of `dataset.name`; a view's SQL as of a moment is
+        `view_sql_as_of`'s."""
         t = self._get_table(dataset, name)
 
         if t.table_type == "VIEW":
-            return TableInfo("VIEW", t.view_query)
+            return TableInfo("VIEW")
 
         if t.table_type == "EXTERNAL":
-            return TableInfo("EXTERNAL", None)
+            return TableInfo("EXTERNAL")
 
-        return TableInfo("TABLE", None)
+        return TableInfo("TABLE")
+
+    def columns(self, dataset: str, name: str) -> set[str]:
+        """Return the field names of `dataset.name`'s schema; no query runs."""
+        return {f.name for f in self._get_table(dataset, name).schema}
 
     def view_sql_as_of(self, dataset: str, name: str, ts: datetime) -> str:
         """Return the SQL body of view `dataset.name` as it stood at `ts`.
@@ -144,7 +145,7 @@ class Warehouse:
     def _save_views(self) -> None:
         if self._cache_dir is None:
             return
-        _write_json(
+        write_json(
             self._cache_dir / _VIEWS_FILE,
             {
                 f"{dataset}.{name}": [
@@ -200,72 +201,16 @@ class Warehouse:
     def estimate(self, sql: str) -> float:
         """Return the USD cost of `sql` from a dry run, counted against no cap.
 
-        For a query someone else runs outside the validator; `price` is the
-        one that counts.
+        The price a command sums before it runs anything (`compare`,
+        `explain`, the trace's dry runs), to refuse the total up front
+        (`refuse_past_caps`); each query then counts what it bills (`rows`).
+        It also checks and prices a query nothing here runs: `explain`'s
+        reproduce queries, which the owner pastes into BigQuery. `price`
+        instead counts the dry run's cost as spent.
         """
-        config = bigquery.QueryJobConfig(
-            dry_run=True, use_query_cache=False, **self._session_settings(sql)
-        )
+        config = bigquery.QueryJobConfig(dry_run=True, use_query_cache=False)
         job = self._client.query(sql, job_config=config)
         return (job.total_bytes_processed or 0) / _TIB * USD_PER_TIB
-
-    def _session_settings(self, sql: str) -> dict:
-        """The open session, for a query that reads one of its temp tables.
-
-        Only those join it: a session runs 1 query at a time, and the rest
-        (the trace's dry runs among them) run concurrently.
-        """
-        if self._session_id is None or _SESSION_REF not in sql:
-            return {}
-        return {
-            "connection_properties": [
-                bigquery.ConnectionProperty("session_id", self._session_id)
-            ]
-        }
-
-    @contextmanager
-    def session(self) -> Iterator[None]:
-        """Let `freeze` keep temp tables until the block ends, then drop them.
-
-        BigQuery ends an abandoned session itself after 24 hours idle.
-        """
-        self._in_session = True
-        try:
-            yield
-        finally:
-            self._in_session = False
-            session_id, self._session_id = self._session_id, None
-            if session_id is not None:
-                config = bigquery.QueryJobConfig(
-                    connection_properties=[
-                        bigquery.ConnectionProperty("session_id", session_id)
-                    ]
-                )
-                try:
-                    self._client.query(
-                        "CALL BQ.ABORT_SESSION()", job_config=config
-                    ).result()
-                except GoogleAPIError:
-                    pass
-
-    def freeze(self, sql: str, timeout_s: float | None = None) -> str:
-        """Save `sql`'s rows in a temp table of the session; return its name.
-
-        The rows stay in BigQuery and are read back by name in later queries
-        of the session (`rows`, `estimate`), each time without running `sql`
-        again. Call inside `session`, and price `sql` first: it bills as
-        `rows` does.
-
-        Raises:
-            RuntimeError: Called outside `session`.
-            CostCapError: As `rows`.
-        """
-        if not self._in_session:
-            raise RuntimeError("freeze needs an open session (Warehouse.session)")
-        self._frozen += 1
-        name = f"{_SESSION_REF}unmatched_{self._frozen}"
-        self.rows(f"CREATE TEMP TABLE {name} AS\n{sql}", timeout_s)
-        return name
 
     def price(self, sql: str) -> float:
         """Return the USD cost of `sql` from a dry run, without running it.
@@ -331,12 +276,31 @@ class Warehouse:
         path = self._ledger / _SPEND_FILE
         ledger = _read_json(path, {})
         ledger[_today()] = ledger.get(_today(), 0.0) + usd
-        _write_json(path, ledger)
+        write_json(path, ledger)
 
     @property
     def spent(self) -> float:
         """USD priced or billed since the latest `budget` opened."""
         return self._spent
+
+    def script(self, statements: list[str]) -> list[dict]:
+        """Run `statements` as one multi-statement job and return the last one's
+        rows.
+
+        The job is capped and billed as a whole, as `rows` caps and bills one
+        query. Used to save a comparison's unmatched rows and count them in the
+        same job (`reconcile.reconcile_script`).
+        """
+        return self.rows(";\n".join(statements))
+
+    def saved_labels(self, table_id: str) -> dict[str, str] | None:
+        """A saved table's labels, or None when the table is gone (expired or
+        dropped)."""
+        try:
+            table = self._client.get_table(table_id)
+        except NotFound:
+            return None
+        return dict(table.labels or {})
 
     def rows(self, sql: str, timeout_s: float | None = None) -> list[dict]:
         """Run `sql` and return its rows.
@@ -365,15 +329,10 @@ class Warehouse:
             if usd <= 0:
                 raise CostCapError(f"nothing is left under {which}")
             settings["maximum_bytes_billed"] = int(usd / USD_PER_TIB * _TIB)
-        settings |= self._session_settings(sql)
-        if self._in_session and self._session_id is None and _SESSION_REF in sql:
-            settings["create_session"] = True
         config = bigquery.QueryJobConfig(**settings) if settings else None
         job = self._client.query(sql, job_config=config)
         try:
             out = [dict(r.items()) for r in job.result()]
-            if settings.get("create_session"):
-                self._session_id = getattr(job.session_info, "session_id", None)
         except GoogleAPIError as exc:
             # A job stopped mid-run (a timeout) still bills what it read.
             self._count_billed(job)
@@ -432,13 +391,23 @@ class Warehouse:
 
 
 _VIEWS_FILE = "view-history.json"
-# How a query names a temp table of its session.
-_SESSION_REF = "_SESSION."
 # BigQuery's reason for a query over its `maximum_bytes_billed`.
 _OVER_LIMIT = "bytesBilledLimitExceeded"
 _SPEND_FILE = "spend.json"
 # The attribute `rows` sets on a query's error: its BigQuery job id.
 JOB_ID = "job_id"
+
+
+def failure_reason(exc: GoogleAPIError) -> str:
+    """A BigQuery error's reason code, such as `invalidQuery`: its message can
+    quote values."""
+    errors = getattr(exc, "errors", None) or [{}]
+    return errors[0].get("reason") or type(exc).__name__
+
+
+def job_failure(exc: GoogleAPIError) -> str:
+    """A BigQuery error as its job and reason: its message can quote values."""
+    return f"job {getattr(exc, JOB_ID, '') or '?'}, {failure_reason(exc)}"
 
 
 def _today() -> str:
@@ -450,15 +419,6 @@ def _read_json(path: Path, default):
         return json.loads(path.read_text())
     except FileNotFoundError:
         return default
-
-
-def _write_json(path: Path, data) -> None:
-    """Replace `path` whole, so a reader never sees half a file."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fd, tmp = tempfile.mkstemp(dir=path.parent, suffix=".tmp")
-    with os.fdopen(fd, "w") as f:
-        json.dump(data, f)
-    os.replace(tmp, path)
 
 
 def _close_paren(text: str, open_at: int) -> int:

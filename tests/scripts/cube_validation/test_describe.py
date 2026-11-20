@@ -41,7 +41,7 @@ def _cause(id, comparison, label, call="deliberate"):
 def test_a_cause_decided_deliberate_drafts_one_line_per_measure():
     cfg = _cfg(
         _cause("d1", "mastery-school", "the dashboard drops WPP modules"),
-        # The same cause proven on the region comparison: one line, 2 ids.
+        # The same cause explained on the region comparison: one line, 2 ids.
         _cause("d2", "mastery-region", "the dashboard drops WPP modules"),
         _cause("d3", "mastery-school", "not this one", call="domain_owner"),
     )
@@ -60,6 +60,18 @@ def test_a_cause_decided_deliberate_drafts_one_line_per_measure():
         "Differs from DDI Suite on purpose: the dashboard drops WPP modules "
         "(dashboard side)."
     )
+
+
+def test_a_comparison_decision_drafts_no_cube_text():
+    whole = Decision("w", "mastery-school", "deliberate", "an old sheet",
+                     all_groups=True)  # fmt: skip
+
+    # Its groups were left unexplained, not explained as intended.
+    assert describe.notes(_cfg(whole)) == []
+    (note,) = describe.notes(
+        _cfg(whole, _cause("d1", "mastery-school", "the dashboard drops WPP"))
+    )
+    assert [ids for _, _, ids in note.lines] == [["d1"]]
 
 
 def test_a_missing_filter_reads_under_every_measure_and_values_stay_out():

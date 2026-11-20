@@ -6,7 +6,7 @@ access, and the texts go into a GitHub issue, so the example is never one
 person's row: every dimension is a reviewed column and at least `MASK_BELOW`
 students stand behind it.
 
-In: turn an approved triage batch, or the owner's answers comment, into
+In: turn an approved sort batch, or the owner's answers comment, into
 decisions. Their reasons are committed to git, so a note naming a person by
 email or number is refused. This module runs no queries and writes no files;
 it selects and formats saved data.
@@ -22,40 +22,47 @@ from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any
 
-from .config import _TASK, CALLS, Decision, ViewConfig, mask_digits
-from .cube_client import _literal
+from . import coverage, explain, pipeline, sort
+from .config import (
+    CALLS,
+    FORMULA_CELLS,
+    MATCHED_ONLY,
+    SEPARATED_DIGITS,
+    TASK_REF,
+    Decision,
+    ViewConfig,
+    mask_digits,
+)
+from .cube_client import sql_literal
 from .decisions import cause_state
+from .pipeline import Refusal
 from .report import (
-    _SEPARATED_DIGITS,
     MASK_BELOW,
     CauseAsk,
     RunResult,
-    _is_identifier,
-    _questions,
-    _safe_reason,
+    bounded,
     defined_comparisons,
     definition_text,
+    is_identifier,
     mask,
+    owner_questions,
     question_parts,
     question_reason,
     question_reasons,
+    safe_reason,
     without_sql,
 )
 
 # BigQuery keeps table history this long, so an as-of query stops working then.
 TIME_TRAVEL_DAYS = 7
 
-NO_REPRODUCE = (
-    "no count query yet: the proof has no `-- reproduce {bucket}:` block for it"
-)
-
 
 @dataclass(frozen=True)
-class ProofSource:
-    """Where a view's stored proofs live, for an owner to reproduce a cause.
+class ExplanationSource:
+    """Where a view's stored explanations live, for an owner to reproduce a cause.
 
     `view_file` is the validation file as a command names it (repo-relative
-    when known); `base` its directory, which proof paths are relative to;
+    when known); `base` its directory, which explanation paths are relative to;
     `blob` the branch URL of that directory, or None outside a GitHub clone.
     """
 
@@ -65,7 +72,7 @@ class ProofSource:
 
 
 # A hand check whose pinned SQL is longer on either side leaves it out: too
-# long to paste into the BigQuery console, or to keep in the review file.
+# long to paste into the BigQuery console, or to keep in the questions JSON.
 MAX_POSTED_SQL = 20_000
 NO_EXAMPLE = (
     "no group cell with 10+ students differs; find an example under your own access"
@@ -92,17 +99,9 @@ class HandCheck:
     filters: dict[str, Any] = field(default_factory=dict)
     # A cause's example that also holds other causes' rows.
     mixed: bool = False
-    # The fewest students the cause surely has in the cell (`cell_causes`).
+    # The cause's students in the cell, as its explanations counted them
+    # (`cell_causes`).
     cause_students: int | None = None
-
-
-# The side whose rows a group's bucket counts, in `RunResult.cell_rows`.
-_ROWS_SIDE = {
-    "cube_only": "c",
-    "dashboard_filtered": "c",
-    "value_differs": "c",
-    "dashboard_only": "d",
-}
 
 
 def cell_causes(
@@ -110,67 +109,27 @@ def cell_causes(
     cfg: ViewConfig,
     comparison: str,
     items: list[dict],
-    recorded: list[dict] | None = None,
+    recorded: list[dict],
 ) -> list[tuple[dict, dict[str, int]]]:
     """Each differing cell of a comparison, with the causes its rows carry and
     how many students each has in it.
 
-    `recorded` is the triage's `cause_students` for the comparison: the
-    proofs' own distinct-student counts per cause, cell and cut, used as
-    they are. A triage saved before them gives None, and the count is then
-    the floor below.
+    `recorded` is the sort's `cause_students` for the comparison: the
+    explanations' own distinct-student counts per cause, cell and cut, used as
+    they are. A cause in a cell with no count recorded for it counts 0.
 
-    A cell's rows lie in the groups whose columns agree with its dims and cut
-    (`confirm._in_cut`, `confirm._in_cells`, as `--cells` links them); each
-    group carries its triage item's causes (`triage.cause_key`), and a group
-    with none carries `""`.
-
-    A cause's students in a cell are not recorded: a group's `n_students`
-    covers all its causes and every cut. So the count is a floor: the most
-    students of one group that carries only that cause, splits by every one
-    of the cell's dims with the cell's values, and has all its rows in the
-    cell's cut (the run's per-cut sums, `RunResult.cell_rows`). A cause with
-    no such group counts 0. Never a sum, which could count a student twice.
+    A cell's rows lie in the open groups with a row in it (`coverage.placed`,
+    as `sort` links cells; none when the cell cannot be placed); each group
+    carries its sort item's causes (`sort.cause_key`), and a group with
+    none carries `""`.
 
     Returns:
         `[(cell, {cause: students})]` in `run.diff_cells` order.
     """
-    from . import compare, confirm, pipeline
-    from . import triage as triage_mod
-
     spec = next((c for c in cfg.comparisons if c.id == comparison), None)
-    single_cut = spec is not None and len(pipeline._cuts(spec)) == 1
-    entries: dict[tuple, list[dict]] = {}
-    for e in run.cell_rows.get(comparison) or []:
-        key = (e["bucket"], frozenset((k, v) for k, v in e["dims"]))
-        entries.setdefault(key, []).append(e)
-
-    def whole_in(g, cell) -> bool:
-        """Whether every row of `g` lies in `cell`: its dims and its cut."""
-        mine = {
-            k: (None if k in g.nulls else v)
-            for k, v in g.dims
-            if not k.startswith(compare.DASH_PREFIX) and k != "dashboard_filter"
-        }
-        for column, value in cell["dims"]:
-            if column not in mine or pipeline._key(mine[column]) != pipeline._key(
-                value
-            ):
-                return False
-        side = _ROWS_SIDE.get(g.bucket)
-        found = entries.get((g.bucket, frozenset(mine.items())), [])
-        if side is None or len(found) != 1:
-            return False
-        (e,) = found
-        cuts = e.get("cuts") or {}
-        if not cuts:
-            return single_cut and e[side]["rows"] > 0
-        held = cuts.get(cell.get("cut", "{}"))
-        return held is not None and 0 < held[side]["rows"] == e[side]["rows"]
-
     by_key = {
         item.get("key"): frozenset(
-            triage_mod.cause_key(c.get("side", ""), c.get("label") or "")
+            sort.cause_key(c.get("side", ""), c.get("label") or "")
             for c in item.get("cause") or []
         )
         or frozenset({""})
@@ -179,40 +138,34 @@ def cell_causes(
     }
     groups = [
         (key, g)
-        for key, g in triage_mod._groups_by_key(run).items()
+        for key, g in sort.groups_by_key(run).items()
         if g.comparison_id == comparison
     ]
     counted: dict[tuple, dict[str, int]] = {}
-    for e in recorded or []:
-        key = (e["cut"], tuple(pipeline._key(v) for _, v in e["dims"]))
+    for e in recorded:
+        key = (e["cut"], tuple(pipeline.value_key(v) for _, v in e["dims"]))
         counted.setdefault(key, {})[e["cause"]] = int(e["n"])
     out = []
     for cell in run.diff_cells:
         if cell["comparison"] != comparison:
             continue
         held: dict[str, int] = {}
-        if recorded is not None:
-            dims = {k: v for k, v in cell["dims"]}
-            names = [p.cube for p in pipeline.group_dims(spec)] if spec else []
-            key = (
-                cell.get("cut", "{}"),
-                tuple(pipeline._key(dims.get(n)) for n in names),
-            )
-            # Only a cell whose dims are the counted columns has a count.
-            if set(dims) == set(names):
-                held = dict(counted.get(key, {}))
+        dims = {k: v for k, v in cell["dims"]}
+        names = [p.cube for p in pipeline.group_dims(spec)] if spec else []
+        key = (
+            cell.get("cut", "{}"),
+            tuple(pipeline.value_key(dims.get(n)) for n in names),
+        )
+        # Only a cell whose dims are the counted columns has a count.
+        if set(dims) == set(names):
+            held = dict(counted.get(key, {}))
+        pool = [g for _, g in groups]
+        inside = (coverage.placed(cell, pool, spec) if spec else None) or []
         for key, g in groups:
-            if not (
-                confirm._in_cut(g, spec, cell.get("cut", "{}"))
-                and any(confirm._in_cells(g, cell))
-            ):
+            if not any(g is p for p in inside):
                 continue
-            causes = by_key.get(key, frozenset({""}))
-            for cause in causes:
+            for cause in by_key.get(key, frozenset({""})):
                 held.setdefault(cause, 0)
-            if recorded is None and len(causes) == 1 and whole_in(g, cell):
-                (cause,) = causes
-                held[cause] = max(held[cause], g.n_students)
         out.append((cell, held))
     return out
 
@@ -222,17 +175,23 @@ def example_cell(
     comparison: str,
     cause: str | None = None,
     cells: list | None = None,
+    kind: str | None = None,
 ) -> dict | None:
     """Pick the differing cell an owner can check without seeing a person.
 
     Args:
         run: The saved run.
         comparison: The comparison id.
-        cause: A cause question's cause (`triage.cause_key`): the cell must
+        cause: A cause question's cause (`sort.cause_key`): the cell must
             hold `MASK_BELOW` or more of its students (`cell_causes`), so the
             question's words cannot single one out; the most wins.
         cells: `cell_causes` for the comparison; without it, `cause` is
             not used.
+        kind: Only cells of this `kind` (`formula` or `cells`, as `compare` saved
+            it; a cell saved without one is `cells`), so a formula question's
+            example is a formula cell: one where every row matched, or one
+            the formula check filed, whose 2 numbers can still include its
+            unmatched rows.
 
     Returns:
         The cell with the largest absolute difference whose dims are all
@@ -246,7 +205,8 @@ def example_cell(
         c
         for c in run.diff_cells
         if c["comparison"] == comparison
-        and not any(_is_identifier(column) for column, _ in c["dims"])
+        and kind in (None, c.get("kind", "cells"))
+        and not any(is_identifier(column) for column, _ in c["dims"])
         and c["n_students"] is not None
         and c["n_students"] >= MASK_BELOW
         and c["dashboard"] is not None
@@ -281,24 +241,24 @@ def example_cell(
 
 
 def _predicate(column: str, key: str) -> str:
-    """Match a column against the text `pipeline._key` made of its value.
+    """Match a column against the text `pipeline.value_key` made of its value.
 
     `_key` writes NULL as '', numbers as plain decimals and booleans as
-    True/False, so a bare `column = '7'` fails on a number and `= ''` misses a
+    true/false, so a bare `column = '7'` fails on a number and `= ''` misses a
     NULL. A date or text key compares as a string literal, which BigQuery
     coerces against a DATE or TIMESTAMP column.
     """
     if key == "":
         return f"{column} IS NULL"
     if key.lower() in ("true", "false"):
-        return f"LOWER(CAST({column} AS STRING)) = {_literal(key.lower())}"
+        return f"LOWER(CAST({column} AS STRING)) = {sql_literal(key.lower())}"
     try:
         number = Decimal(key)
     except InvalidOperation:
         number = None
     if number is not None and number.is_finite():
         return f"SAFE_CAST({column} AS NUMERIC) = {format(number.normalize(), 'f')}"
-    return f"{column} = {_literal(key)}"
+    return f"{column} = {sql_literal(key)}"
 
 
 def _pinned(sql: str, pairs: list[tuple[str, str]]) -> str:
@@ -317,6 +277,7 @@ def hand_check(
     now: datetime,
     cause: str | None = None,
     cells: list | None = None,
+    kind: str | None = None,
 ) -> HandCheck | None:
     """Wrap each side's saved as-of SQL to return just the example cell.
 
@@ -330,12 +291,13 @@ def hand_check(
         now: The current time, to decide whether the as-of SQL still runs.
         cause: For a cause question, its cause; see `example_cell`.
         cells: `cell_causes` for the comparison, with `cause`.
+        kind: The cell kind the example must have; see `example_cell`.
 
     Returns:
         None when there is no example cell, no saved SQL or `cell_sql_usd`
         entry for its cut, or a dim the comparison does not map.
     """
-    cell = example_cell(run, comparison, cause, cells)
+    cell = example_cell(run, comparison, cause, cells, kind)
     cmp = next((c for c in cfg.comparisons if c.id == comparison), None)
     sql = run.cell_sql.get(comparison, {}).get(cell["cut"]) if cell else None
     usd = run.cell_sql_usd.get(comparison, {}).get(cell["cut"]) if cell else None
@@ -346,7 +308,7 @@ def hand_check(
         return None
     cube_pairs = [(member, value) for member, value in cell["dims"]]
     dash_pairs = [(names[member], value) for member, value in cell["dims"]]
-    expires = run.moment.start + timedelta(days=TIME_TRAVEL_DAYS)
+    expires = run.moment_of(comparison).start + timedelta(days=TIME_TRAVEL_DAYS)
     # The cut is `pipeline.cut_label` JSON; the round trip writes a YAML date
     # default as the text the issue's JSON block can carry.
     filters = json.loads(
@@ -373,9 +335,10 @@ def hand_check(
 
 
 def _covers(d: Decision, stub: dict) -> bool:
-    """True when a triage item's stub is the item `d` covers, by its key fields.
+    """True when a sort item's stub is the item `d` covers, by its key fields.
 
-    A cause decision names no item; the triage marks what it decides.
+    A cause decision names no item; the sort marks what it decides. A
+    `formula` decision covers its comparison's formula item alone.
     """
     if d.cause:
         return False
@@ -384,10 +347,11 @@ def _covers(d: Decision, stub: dict) -> bool:
             stub.get("missing_cut", ""),
             stub.get("missing_filter", ""),
         )
-    if stub.get("comparison") != d.comparison:
+    # No decision covers a cell set: the sort closes covered cells itself.
+    if stub.get("comparison") != d.comparison or stub.get("cells"):
         return False
-    if d.cells:
-        return stub.get("cells") is True
+    if d.formula or stub.get("formula"):
+        return d.formula and stub.get("formula") is True
     group = stub.get("group") or {}
     return group.get("column") == (d.group.get("column") or "") and bool(
         {str(v) for v in group.get("values", [])}
@@ -396,12 +360,10 @@ def _covers(d: Decision, stub: dict) -> bool:
 
 
 def _cause_evidence(asks: list[tuple[str, CauseAsk]]) -> list[str]:
-    """A cause question's evidence: its words, each part's counts, the leads.
+    """A cause question's evidence: its words and the leads.
 
-    The counts are the bullet's own, each comparison's share of its groups'
-    rows, so the issue never shows 2 totals whose difference is another
-    cause's. The leads name the model docs on each comparison, never a member
-    description.
+    No counts: the question's `counts` (the bullet's own) carry them. The
+    leads name the model docs on each comparison, never a member description.
     """
     d = asks[0][1].decision
     return [
@@ -428,7 +390,9 @@ def _check_json(view: str, check: HandCheck) -> dict:
     """A hand check as JSON, its two numbers masked like the issue's counts.
 
     Two whole numbers that differ by under 10 both read `<masked>`: their
-    difference would post a small count of the cell's students.
+    difference would post a small count of the cell's students. The cause's
+    students post as a bound: for a measure that counts students, the two
+    numbers less an exact cause count would post the other causes' students.
     """
     dashboard, cube = _shown_number(check.dashboard), _shown_number(check.cube)
     d, c = check.dashboard, check.cube
@@ -446,19 +410,20 @@ def _check_json(view: str, check: HandCheck) -> dict:
         "dims": [list(pair) for pair in check.dims],
         "dashboard": dashboard,
         "cube": cube,
+        "cause_students": (
+            None if check.cause_students is None else bounded(check.cause_students)
+        ),
         "expires": check.expires.isoformat(),
     }
 
 
 def _cube_query(cfg: ViewConfig, check: HandCheck) -> dict:
     """The example cell as a Cube `load` query: its cut, with its dims pinned."""
-    from . import pipeline
-
     comparison = next(c for c in cfg.comparisons if c.id == check.comparison)
     query = pipeline.cell_query(cfg.view, comparison, json.loads(check.cut or "{}"))
     query["filters"] = query["filters"] + [
         {
-            "member": pipeline._member(cfg.view, member),
+            "member": pipeline.member_name(cfg.view, member),
             "operator": "equals",
             "values": [value],
         }
@@ -472,7 +437,7 @@ def reproduce_json(
     ask: CauseAsk,
     run: RunResult,
     cfg: ViewConfig,
-    source: ProofSource | None,
+    source: ExplanationSource | None,
     now: datetime,
     cells: list | None = None,
 ) -> dict:
@@ -483,14 +448,12 @@ def reproduce_json(
 
     Returns:
         `comparison`, `cube` (the example cell as a `load` query and where to
-        read the dashboard's, or None without an example cell), and `proofs`:
-        per stored proof and cause bucket, its `reproduce` query on today's
-        tables (None without one), the `confirm` command that re-proves it
+        read the dashboard's, or None without an example cell), and `explanations`:
+        per stored explanation and cause bucket, its `reproduce` query on today's
+        tables (None without one), the `explain` command that re-explains it
         at the run's moment until `expires`, the `after` commands once that
-        has passed, and the proof file's `path` and branch `url`.
+        has passed, and the explanation file's `path` and branch `url`.
     """
-    from . import confirm
-
     cid = ask.decision.comparison
     check = hand_check(run, cfg, cid, now, _ask_cause(ask), cells)
     cube = None
@@ -501,63 +464,61 @@ def reproduce_json(
             where.pop(key)
         cube = {"query": _cube_query(cfg, check), "dashboard": where}
     file = source.view_file if source else f"<{view} validation file>"
-    proofs = []
-    for path, bucket in ask.proofs:
+    explanations = []
+    for path, bucket in ask.explanations:
         stored = (source.base / path) if source else None
         try:
-            proof = confirm.read_proof(stored) if stored else None
-        except (OSError, confirm.pipeline.Refusal):
-            proof = None
-        proofs.append(
+            explanation = explain.read_explanation(stored) if stored else None
+        except (OSError, Refusal):
+            explanation = None
+        explanations.append(
             {
                 "bucket": bucket,
-                "reproduce": _checked_reproduce(cfg, proof, bucket),
-                "confirm": (
-                    f"triage confirm {file} --comparison "
-                    f"{proof.comparison if proof else cid} --bucket "
-                    f"{proof.bucket if proof else '<bucket>'}"
+                "reproduce": _checked_reproduce(cfg, explanation, bucket),
+                "explain": (
+                    f"explain {file} --comparison "
+                    f"{explanation.comparison if explanation else cid} --bucket "
+                    f"{explanation.bucket if explanation else '<bucket>'}"
                 ),
-                "after": [f"run {file}", f"triage {file}"],
+                "after": [f"compare {file} --all", f"sort {file}"],
                 "expires": (
-                    run.moment.start + timedelta(days=TIME_TRAVEL_DAYS)
+                    run.moment_of(cid).start + timedelta(days=TIME_TRAVEL_DAYS)
                 ).isoformat(),
                 "path": path,
                 "url": f"{source.blob}/{path}" if source and source.blob else None,
             }
         )
-    return {"view": view, "comparison": cid, "cube": cube, "proofs": proofs}
+    return {"view": view, "comparison": cid, "cube": cube, "explanations": explanations}
 
 
-def _checked_reproduce(cfg: ViewConfig, proof, bucket: str) -> str | None:
-    """A proof's reproduce query for one bucket, checked again before it posts.
+def _checked_reproduce(cfg: ViewConfig, explanation, bucket: str) -> str | None:
+    """An explanation's reproduce query for one bucket, checked again before it posts.
 
-    `triage confirm` checks it, but the block is comment lines, which a
-    proof's fingerprint ignores: an edit after confirm would post unchecked.
-    A query that fails the check is left out, as if the proof had none.
+    `explain` checks it, but the block is comment lines, which an
+    explanation's fingerprint ignores: an edit after `explain` would post
+    unchecked.
+    A query that fails the check is left out, as if the explanation had none.
     """
-    from . import confirm
-
-    sql = proof.reproduce.get(bucket) if proof else None
+    sql = explanation.reproduce.get(bucket) if explanation else None
     comparison = next(
-        (c for c in cfg.comparisons if proof and c.id == proof.comparison), None
+        (c for c in cfg.comparisons if explanation and c.id == explanation.comparison),
+        None,
     )
     if sql is None or comparison is None:
         return None
     try:
-        confirm.check_reproduce(
-            sql, confirm.grain_names(comparison), confirm.identifying(comparison)
+        explain.check_reproduce(
+            sql, explain.grain_names(comparison), explain.identifying(comparison)
         )
-    except confirm.pipeline.Refusal:
+    except Refusal:
         return None
     return sql
 
 
 def _ask_cause(ask: CauseAsk) -> str:
     """A cause question's cause, as `cell_causes` names it."""
-    from . import triage as triage_mod
-
     cause = ask.decision.cause
-    return triage_mod.cause_key(cause.get("side", ""), cause.get("label") or "")
+    return sort.cause_key(cause.get("side", ""), cause.get("label") or "")
 
 
 def _rank(check: HandCheck) -> tuple:
@@ -572,12 +533,13 @@ def merged_reproduce(
     """A cause question's `reproduce_json` parts, each thing said once.
 
     Returns:
-        `queries`: each distinct count query, as `bucket` and `sql`. `proofs`:
-        per proof file and cause bucket, `bucket`, `query` (its index in
+        `queries`: each distinct count query, as `bucket` and `sql`.
+        `explanations`:
+        per explanation file and cause bucket, `bucket`, `query` (its index in
         `queries`, None without one), `path` (relative to the validation
-        file's directory) and `confirm` (the commands that re-prove it, which
+        file's directory) and `explain` (the commands that re-explain it, which
         the posted JSON leaves out). `blob`: the branch link `<blob>/<path>`
-        opens a proof file at, or None. `cube`: per
+        opens an explanation file at, or None. `cube`: per
         comparison with an example cell (only those in `examples`, as
         `(view, comparison)`, when given), its `view`, `comparison` and
         `query`; the question's hand check for that comparison says where to
@@ -585,7 +547,7 @@ def merged_reproduce(
         it has passed, per validation file).
     """
     queries: list[dict] = []
-    proofs: dict[tuple, dict] = {}
+    explanations: dict[tuple, dict] = {}
     cube, after, expires, blob = [], [], None, None
     for part in parts:
         shown = examples is None or (part["view"], part["comparison"]) in examples
@@ -597,7 +559,7 @@ def merged_reproduce(
                     "query": part["cube"]["query"],
                 }
             )
-        for p in part["proofs"]:
+        for p in part["explanations"]:
             query = None
             if p["reproduce"]:
                 entry = {"bucket": p["bucket"], "sql": p["reproduce"]}
@@ -606,22 +568,22 @@ def merged_reproduce(
                 query = queries.index(entry)
             if p["url"]:
                 blob = p["url"][: -len(p["path"]) - 1]
-            merged = proofs.setdefault(
+            merged = explanations.setdefault(
                 (p["path"], p["bucket"]),
                 {
                     "bucket": p["bucket"],
                     "query": query,
                     "path": p["path"],
-                    "confirm": [],
+                    "explain": [],
                 },
             )
-            if p["confirm"] not in merged["confirm"]:
-                merged["confirm"].append(p["confirm"])
+            if p["explain"] not in merged["explain"]:
+                merged["explain"].append(p["explain"])
             after += [a for a in p["after"] if a not in after]
             expires = min(expires or p["expires"], p["expires"])
     return {
         "queries": queries,
-        "proofs": list(proofs.values()),
+        "explanations": list(explanations.values()),
         "blob": blob,
         "cube": cube,
         "expires": expires,
@@ -633,39 +595,40 @@ def questions_json(
     runs: list[RunResult],
     configs: list[ViewConfig],
     definitions: dict,
-    triage: dict[str, dict],
+    sorts: dict[str, dict],
     now: datetime,
     causes: dict[str, list[CauseAsk]] | None = None,
-    sources: dict[str, ProofSource] | None = None,
+    sources: dict[str, ExplanationSource] | None = None,
 ) -> list[dict]:
     """List the review issue's questions for the owner's Claude session.
 
     Every string is text the issue's markdown shows, masked the same way:
-    counts, the reason and definitions come from `report`, and triage evidence
-    is scrubbed like the reason. A triage item's `stub` holds real values, so
+    counts, the reason and definitions come from `report`, and sort evidence
+    is scrubbed like the reason. A sort item's `stub` holds real values, so
     it is read here only to match items to decisions and never copied.
 
     Args:
         runs: The runs the issue renders.
         configs: Their views' configs, for each hand check's column names.
         definitions: Per view, per comparison id, `dashboard` and `cube` text.
-        triage: Per view, its `triage.json`; a view without one has no
-            evidence.
+        sorts: Per view, its `sort.json`; a view without one has no
+            evidence. Items still in `investigate` are left out, so
+            `record-answers` never reads one as an answer.
         now: The current time, to say whether the pinned SQL still runs.
-        causes: Per view, the owner's cause questions (`triage.cause_asks`).
-        sources: Per view, where its stored proofs live, for a cause
+        causes: Per view, the owner's cause questions (`sort.cause_asks`).
+        sources: Per view, where its stored explanations live, for a cause
             question's `reproduce` block.
 
     Returns:
         One dict per question in the issue's order: `id` (`Q1`, ...),
         `reason`, `decisions` (ids), `views`, `definitions` (`dashboard` and
         `cube`, one `<comparison> in <view>: <text>` line each), `evidence`,
-        `counts` (the masked parts of its bullet), `hand_checks` (one per
-        comparison with an example cell, and per view 1 `none` entry listing
+        `counts` (the bounded parts of its bullet), `hand_checks` (one per
+        comparison and kind with an example cell, and per view 1 `none` entry listing
         the `comparisons` without one, to find an example locally; a cause
         question, one rule, has 1 example across its comparisons, or the
         `none` entries), and the
-        earliest `moment` among its views with when its pinned SQL `expires`
+        earliest `moment` among its comparisons with when its pinned SQL `expires`
         and whether it has `expired`; a cause question also has `reproduce`
         (`merged_reproduce` over the comparisons it covers).
     """
@@ -676,19 +639,27 @@ def questions_json(
     def cells_of(view: str, cid: str) -> list:
         """`cell_causes` of a comparison, worked out once per review."""
         if (view, cid) not in held:
-            loaded = triage.get(view, {})
-            recorded = (
-                loaded["cause_students"].get(cid, [])
-                if "cause_students" in loaded
-                else None
-            )
+            loaded = sorts.get(view, {})
+            # `sort.checked_sort` refuses a sort written before `sort`
+            # recorded these, so a missing entry is a comparison with none.
+            recorded = loaded.get("cause_students", {}).get(cid, [])
             held[view, cid] = cell_causes(
                 by_run[view], by_cfg[view], cid, loaded.get("items", []), recorded
             )
         return held[view, cid]
 
+    def covered(view: str, decisions) -> list[dict]:
+        # An item still in `investigate` is with the analyst, never evidence.
+        return [
+            item
+            for d in decisions
+            for item in sorts.get(view, {}).get("items", [])
+            if item.get("suggestion") != "investigate"
+            and _covers(d, item.get("stub") or {})
+        ]
+
     out = []
-    for n, q in enumerate(_questions(runs, causes), start=1):
+    for n, q in enumerate(owner_questions(runs, causes), start=1):
         views = list(dict.fromkeys(view for view, _ in q["decisions"]))
 
         defs: dict[str, list[str]] = {"dashboard": [], "cube": []}
@@ -701,18 +672,11 @@ def questions_json(
                             f"`{cid}` in `{view}`: {definition_text(sides[side])}"
                         )
 
-        items = [
-            item
-            for view, d in q["decisions"]
-            for item in triage.get(view, {}).get("items", [])
-            if _covers(d, item.get("stub") or {})
-        ]
+        items = [item for view, d in q["decisions"] for item in covered(view, [d])]
         lines = [line for item in items for line in item.get("evidence", [])]
         if "asks" in q:
             lines = _cause_evidence(q["asks"])
-        evidence = list(
-            dict.fromkeys(_safe_reason(line, q["hidden"]) for line in lines)
-        )
+        evidence = list(dict.fromkeys(safe_reason(line, q["hidden"]) for line in lines))
 
         # A cause question's example holds that cause's rows.
         asked = {
@@ -720,7 +684,7 @@ def questions_json(
             for view, ask in q.get("asks", [])
         }
         found, none = [], {}
-        for view, cid, _ in q["comparisons"]:
+        for view, cid, kind in q["comparisons"]:
             cfg = by_cfg.get(view)
             cause = asked.get((view, cid))
             check = (
@@ -731,13 +695,18 @@ def questions_json(
                     now,
                     cause,
                     cells_of(view, cid) if cause else None,
+                    # A formula question's example is a formula cell.
+                    "formula" if kind == "formula" else None,
                 )
                 if cfg
                 else None
             )
+            # A comparison with a group part and a formula part gets 2
+            # examples, or one when both pick the same cell.
             if check:
-                found.append((view, check))
-            else:
+                if (view, check) not in found:
+                    found.append((view, check))
+            elif cid not in none.get(view, []):
                 none.setdefault(view, []).append(cid)
         if asked and found:
             # One rule asked once: one example, the cell holding the cause's
@@ -756,7 +725,13 @@ def questions_json(
             for view, cids in none.items()
         ]
 
-        moment = min((by_run[v].moment for v in views), key=lambda m: m.start)
+        # Each comparison's rows were read at its own moment; a question with
+        # no comparison (a missing cut or filter) reads its views'.
+        moment = min(
+            [by_run[v].moment_of(cid) for v, cid, _ in q["comparisons"] if v in by_run]
+            or [by_run[v].moment for v in views],
+            key=lambda m: m.start,
+        )
         expires = moment.start + timedelta(days=TIME_TRAVEL_DAYS)
         extra = {}
         if "asks" in q:
@@ -790,11 +765,7 @@ def questions_json(
                 "evidence": evidence,
                 "counts": question_parts(q),
                 "hand_checks": checks,
-                "moment": {
-                    "start": moment.start.isoformat(),
-                    "end": moment.end.isoformat(),
-                    "job_id": moment.job_id,
-                },
+                "moment": moment.to_json(),
                 "expires": expires.isoformat(),
                 "expired": now >= expires,
                 **extra,
@@ -848,7 +819,7 @@ _CITED_DATES = (
 NOTE_REFUSALS = (
     ("an email address", re.compile(r"\S+@\S+\.\w+"), 0),
     ("a run of 5 or more digits", re.compile(r"\d{5,}"), 0),
-    ("a number of 7 or more digits", _SEPARATED_DIGITS, 7),
+    ("a number of 7 or more digits", SEPARATED_DIGITS, 7),
     ("5 or more digits joined by spaces or dashes", re.compile(r"\d[\d\s-]*\d"), 5),
 )
 
@@ -921,7 +892,7 @@ def parse_answers(body: str) -> list[Answer]:
             raise AnswerError(f"{where}: fix_source needs a task")
         if task and call != "fix_source":
             raise AnswerError(f"{where}: only fix_source takes a task; got {call}")
-        if task and not _TASK.fullmatch(task):
+        if task and not TASK_REF.fullmatch(task):
             raise AnswerError(
                 f"{where}: task must be an https:// link or #<issue>; got {task!r}"
             )
@@ -1037,19 +1008,7 @@ def answer_changes(
     return out
 
 
-_STUB_KEYS = ("comparison", "group", "cells", "missing_cut", "missing_filter")
-
-
-def _is_cause_item(item: dict) -> bool:
-    """A proven row group, which cause decisions decide (`triage.decidable`)."""
-    proof = item.get("proof") or {}
-    return (
-        item.get("kind") == "group"
-        and item.get("suggestion") == "cause"
-        and bool(item.get("cause"))
-        and proof.get("kind") in ("query", "reconcile")
-        and bool(proof.get("fingerprint"))
-    )
+_STUB_KEYS = ("comparison", "formula", "missing_cut", "missing_filter")
 
 
 def _file_cause(d: Decision) -> dict:
@@ -1069,11 +1028,11 @@ def _file_cause(d: Decision) -> dict:
     return out
 
 
-def _proofs_by_cause(items: list[dict]) -> dict[tuple, set[str]]:
-    """Each cause's proof files across the triage's proven row groups."""
+def _explanations_by_cause(items: list[dict]) -> dict[tuple, set[str]]:
+    """Each cause's explanation files across the sort's explained row groups."""
     out: dict[tuple, set[str]] = {}
     for item in items:
-        if _is_cause_item(item):
+        if sort.decidable(item):
             for c in item["cause"]:
                 key = (
                     item["comparison"],
@@ -1081,45 +1040,134 @@ def _proofs_by_cause(items: list[dict]) -> dict[tuple, set[str]]:
                     mask_digits(c.get("label", "")),
                 )
                 # A reconcile has no file; its filter's fingerprint stands in.
-                proof = item["proof"]
+                explanation = item["explanation"]
                 out.setdefault(key, set()).add(
-                    proof.get("path") or proof["fingerprint"]
+                    explanation.get("path") or explanation["fingerprint"]
                 )
     return out
 
 
+def _comparison_decision(
+    entry: dict,
+    where: str,
+    decision_id: str,
+    loaded: dict,
+    fingerprints: dict[str, dict[str, str]],
+    existing: list[Decision] | tuple[Decision, ...],
+    batch: list[dict],
+) -> dict:
+    """An approved `{id, comparison, call, reason}` entry as a comparison
+    decision (`all_groups`), which closes every open row group of the
+    comparison, explained or not. The file's comparison decision on it is
+    re-approved under its own id on the run's fingerprints.
+
+    Raises:
+        AnswerError: The entry also names an item, its call is not
+            `deliberate`, its reason is empty or carries what
+            `NOTE_REFUSALS` keeps out, the run has no fingerprints for the
+            comparison, the sort lists no open row group of it, the id is
+            another decision's, or the comparison already has a comparison
+            decision under another id or in this batch.
+    """
+    if "item" in entry:
+        raise AnswerError(f"{where}: name either `item` or `comparison`, not both")
+    comparison = _text(entry, "comparison", where)
+    call = _text(entry, "call", where)
+    if call != "deliberate":
+        raise AnswerError(
+            f"{where}: a comparison decision is deliberate, not {call}; to ask "
+            "for a fix or the owner, explain and decide the causes instead"
+        )
+    reason = _text(entry, "reason", where)
+    if what := note_refusal(reason):
+        raise AnswerError(f"{where}: the reason has {what}; reword it")
+    task = _text(entry, "task", where, required=False)
+    fp = fingerprints.get(comparison) or {}
+    if not (fp.get("cube") and fp.get("dashboard")):
+        raise AnswerError(f"{where}: the run has no fingerprints for {comparison!r}")
+    if not any(
+        item.get("kind") == "group"
+        and (item.get("comparison") or (item.get("stub") or {}).get("comparison"))
+        == comparison
+        for item in loaded.get("items", [])
+    ):
+        raise AnswerError(
+            f"{where}: the sort lists no open row group of {comparison!r} to close"
+        )
+    if any(d.get("all_groups") and d["comparison"] == comparison for d in batch):
+        raise AnswerError(f"{where}: {comparison!r} is approved twice")
+    was = next(
+        (d for d in existing if d.all_groups and d.comparison == comparison), None
+    )
+    if was is not None and was.id != decision_id:
+        raise AnswerError(
+            f"{where}: {was.id!r} already decides every open row group of "
+            f"{comparison!r}; approve it under that id to re-approve it"
+        )
+    if was is None and any(d.id == decision_id for d in existing):
+        raise AnswerError(
+            f"{where}: decisions already has {decision_id!r}; pick a new id"
+        )
+    return {
+        "id": decision_id,
+        "comparison": comparison,
+        "all_groups": True,
+        "call": call,
+        "reason": reason,
+        **({"task": task} if task else {}),
+        "fingerprints": {"cube": fp["cube"], "dashboard": fp["dashboard"]},
+    }
+
+
 def approved_decisions(
     approved: list,
-    triage: dict,
+    loaded: dict,
     fingerprints: dict[str, dict[str, str]],
     existing: list[Decision] | tuple[Decision, ...] = (),
+    formula_cells: dict[str, int] | None = None,
+    formula_hashes: dict[str, str] | None = None,
 ) -> list[dict]:
-    """Turn an approved triage batch into decisions, in the file's key order.
+    """Turn an approved sort batch into decisions, in the file's key order.
 
-    A proven row group (a stored proof's, or the reconcile's for a sheet
+    An explained row group (a stored explanation's, or the reconcile's for a sheet
     filter) is decided on its causes, never on a column value: an entry
     decides one cause of one item, `{comparison, cause: {side, label}, call,
     reason, task, fingerprints}`, whose fingerprints are the comparison's and
-    the proof's. An item with several causes takes one entry per cause, each
+    the explanation's. An item with several causes takes one entry per cause, each
     naming it in `cause`, so each cause gets its own call; the item is
     decided once every cause is. A cause already decided keeps its decision,
     which must have the entry's call; entries on one cause merge into one
-    decision. One whose SQL or proof changed since is re-approved on the
+    decision. One whose SQL or explanation changed since is re-approved on the
     current ones, unless the owner has answered it. A label's ID-shaped
     numbers are written `<n>`. No order of the entries changes the result.
 
-    Every other item takes its key fields from the triage item's `stub`,
-    which holds its real values. Either kind takes the comparison's
-    `{cube, dashboard}` from the run's fingerprints. A missing cut or filter
-    covers the view, so it takes neither a comparison nor fingerprints.
+    Every other item takes its key fields from the sort item's `stub`,
+    which holds its real values; a formula difference's is `formula: true`.
+    Either kind takes the comparison's `{cube, dashboard}` from the run's
+    fingerprints; a formula difference also records which cells it holds
+    (`fingerprints.formula_cells`, a digest of their refs salted with those
+    fingerprints) and, when there are any, how many the formula check filed
+    in it (`fingerprints.matched_only`), so a changed set of cells later
+    sends it to re-confirm (`decisions.apply`). A missing cut
+    or filter covers the view, so it takes neither a comparison nor
+    fingerprints. A cell set takes no decision.
+
+    An entry naming a `comparison` in place of an `item` is a comparison
+    decision (`_comparison_decision`): `deliberate` only, it closes every
+    open row group of the comparison, those still in `investigate` too.
 
     Args:
         approved: `[{"id", "call", "reason", "task", "item", "cause"}]`;
-            `item` is a triage item id, `task` may be empty, and `cause` (the
-            cause's words) is needed only on an item with several causes.
-        triage: The view's `triage.json`, marked by `triage.mark_decided`.
+            `item` is a sort item id, `task` may be empty, and `cause` (the
+            cause's words) is needed only on an item with several causes. Or
+            `{"id", "comparison", "call": "deliberate", "reason"}`.
+        loaded: The view's `sort.json`, marked by `sort.mark_decided`.
         fingerprints: The latest run's fingerprints per comparison id.
         existing: The file's decisions.
+        formula_cells: Per comparison, the cells the formula check filed in
+            the run's formula difference (`CellDiff.matched_only`).
+        formula_hashes: Per comparison, which cells the run's formula
+            difference holds (`decisions.formula_cells_hash`).
 
     Returns:
         The decisions to write: new ones, and the file's cause decisions
@@ -1128,15 +1176,16 @@ def approved_decisions(
     Raises:
         AnswerError: An entry is malformed, repeats an id or an (item,
             cause), takes an id the file has, has a reason that carries what
-            `NOTE_REFUSALS` keeps out, names an item the triage does not list,
-            a row group no proof decides, or a cause the item lacks, leaves
-            out `cause` on an item with several, names a comparison the run has
-            no fingerprints for, or has a cause with no words, words 2 proofs
-            share, a decision with another call, or an answered decision whose
-            SQL or proof changed.
+            `NOTE_REFUSALS` keeps out, names an item the sort does not list,
+            an item still in `investigate`, a cell set, a row group no explanation
+            decides, or a cause the item lacks, leaves out `cause` on an item
+            with several, names a comparison the run has no fingerprints for,
+            or has a cause with no words, words 2 explanations share, a decision
+            with another call, or an answered decision whose SQL or explanation
+            changed.
     """
-    items = {item.get("id"): item for item in triage.get("items", [])}
-    proofs = _proofs_by_cause(list(items.values()))
+    items = {item.get("id"): item for item in loaded.get("items", [])}
+    explanations = _explanations_by_cause(list(items.values()))
     taken = {d.id for d in existing}
     out: list[dict] = []
     # Each cause's decision as this batch leaves it, by (comparison, side, words).
@@ -1151,10 +1200,23 @@ def approved_decisions(
         if decision_id in ids:
             raise AnswerError(f"{where}: id {decision_id!r} repeats")
         ids.add(decision_id)
+        if "comparison" in entry:
+            out.append(
+                _comparison_decision(
+                    entry, where, decision_id, loaded, fingerprints, existing, out
+                )
+            )
+            continue
         item_id = _text(entry, "item", where)
         if item_id not in items:
-            raise AnswerError(f"{where}: triage lists no item {item_id!r}")
+            raise AnswerError(f"{where}: the sort lists no item {item_id!r}")
         item = items[item_id]
+        if item.get("suggestion") == "investigate":
+            raise AnswerError(
+                f"{where}: item {item_id!r} is still in `investigate`; run `explain` "
+                "on it (see `explain` in the cube-validation skill), then re-run "
+                "`sort`"
+            )
         named = _text(entry, "cause", where, required=False)
         stub = item.get("stub") or {}
         call = _text(entry, "call", where)
@@ -1165,7 +1227,7 @@ def approved_decisions(
         task = _text(entry, "task", where, required=False)
         fp: dict[str, str] = {}
         comparison = str(stub.get("comparison") or item.get("comparison") or "")
-        # A missing cut or filter covers the view, wherever triage found it and
+        # A missing cut or filter covers the view, wherever the sort found it and
         # whatever pile it sits in: no comparison, no fingerprints.
         if stub.get("missing_cut") or stub.get("missing_filter"):
             comparison = ""
@@ -1177,12 +1239,18 @@ def approved_decisions(
                 )
             fp = {"cube": fp["cube"], "dashboard": fp["dashboard"]}
 
-        if item.get("kind") == "group" and not _is_cause_item(item):
+        if item.get("kind") == "cells" or stub.get("cells"):
             raise AnswerError(
-                f"{where}: item {item_id!r} is a row group no proof decides; a "
-                "row group is decided only on a proven cause"
+                f"{where}: item {item_id!r} is a cell set; a cell set takes no "
+                "decision, since `sort` closes it once every group in its cells "
+                "is decided"
             )
-        if not _is_cause_item(item):
+        if item.get("kind") == "group" and not sort.decidable(item):
+            raise AnswerError(
+                f"{where}: item {item_id!r} is a row group no explanation decides; a "
+                "row group is decided only on an explained cause"
+            )
+        if not sort.decidable(item):
             if (item_id, "") in seen:
                 raise AnswerError(f"{where}: item {item_id!r} is approved twice")
             seen.add((item_id, ""))
@@ -1197,10 +1265,19 @@ def approved_decisions(
                 decision["task"] = task
             if fp:
                 decision["fingerprints"] = fp
+            if stub.get("formula") and (n := (formula_cells or {}).get(comparison)):
+                decision["fingerprints"] = {**fp, MATCHED_ONLY: str(n)}
+            if stub.get("formula") and (
+                cells := (formula_hashes or {}).get(comparison)
+            ):
+                decision["fingerprints"] = {
+                    **decision.get("fingerprints", fp),
+                    FORMULA_CELLS: cells,
+                }
             out.append(decision)
             continue
 
-        proof = item["proof"].get("fingerprint", "")
+        explanation = item["explanation"].get("fingerprint", "")
         causes = item["cause"]
         if named:
             causes = [
@@ -1226,39 +1303,30 @@ def approved_decisions(
                     f"{where}: item {item_id!r} has a cause with no words"
                 )
             key = (comparison, side, label)
-            if len(proofs.get(key, ())) > 1:
+            if len(explanations.get(key, ())) > 1:
                 raise AnswerError(
-                    f"{where}: {len(proofs[key])} proof files name the {side} cause "
-                    f"{label!r}; give each its own words"
+                    f"{where}: {len(explanations[key])} explanation files name the {side} "
+                    f"cause {label!r}; give each its own words"
                 )
             target = decided.get(key)
             if target is None:
-                found = next(
-                    (
-                        d
-                        for d in existing
-                        if d.cause
-                        and (d.comparison, d.cause.get("side"), d.cause.get("label"))
-                        == key
-                    ),
-                    None,
-                )
+                found = sort.cause_decision(existing, comparison, side, label)
                 if found is not None:
                     target = decided[key] = _file_cause(found)
-                    state = cause_state(found, proof, fp)
+                    state = cause_state(found, explanation, fp)
                     if state != "holds":
                         if found.answer:
                             raise AnswerError(
                                 f"{where}: the owner answered {found.id!r} before "
-                                f"its {'SQL' if state == 'sql' else 'proof'} "
+                                f"its {'SQL' if state == 'sql' else 'explanation'} "
                                 f"changed; delete it to ask again"
                             )
-                        # Re-approved on the current SQL and proof.
+                        # Re-approved on the current SQL and explanation.
                         target.update(call=call, reason=reason)
                         target.pop("task", None)
                         if task:
                             target["task"] = task
-                        target["fingerprints"] = {**fp, "proof": proof}
+                        target["fingerprints"] = {**fp, "explanation": explanation}
                         out.append(target)
             if target is None:
                 new += 1
@@ -1274,7 +1342,7 @@ def approved_decisions(
                     "call": call,
                     "reason": reason,
                     **({"task": task} if task else {}),
-                    "fingerprints": {**fp, "proof": proof},
+                    "fingerprints": {**fp, "explanation": explanation},
                 }
                 out.append(target)
             elif target["call"] != call:
@@ -1282,9 +1350,9 @@ def approved_decisions(
                     f"{where}: the {side} cause {label!r} is decided "
                     f"{target['call']} in {target['id']!r}, not {call}"
                 )
-            elif target["fingerprints"].get("proof") != proof:
+            elif target["fingerprints"].get("explanation") != explanation:
                 raise AnswerError(
                     f"{where}: {target['id']!r} was approved on another version of "
-                    "the proof; re-run `triage`"
+                    "the explanation; re-run `sort`"
                 )
     return out

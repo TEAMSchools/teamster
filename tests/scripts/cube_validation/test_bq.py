@@ -1,10 +1,11 @@
 from datetime import datetime, timedelta, timezone
+from types import SimpleNamespace
 
 import pytest
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.bq import JOB_ID, CostCapError, ViewHistoryError, Warehouse
-from google.api_core.exceptions import BadRequest
+from google.api_core.exceptions import BadRequest, NotFound
 
 TS = datetime(2026, 10, 22, 19, 0, 0, tzinfo=timezone.utc)
 TIB = 2**40
@@ -170,8 +171,7 @@ def test_table_kind_maps_bigquery_types():
     assert wh.table("ds", "t").kind == "EXTERNAL"
 
     wh = Warehouse(client=FakeClient(FakeTable("VIEW", "select 1")))
-    info = wh.table("ds", "v")
-    assert (info.kind, info.view_sql) == ("VIEW", "select 1")
+    assert wh.table("ds", "v").kind == "VIEW"
 
     wh = Warehouse(client=FakeClient(FakeTable("TABLE", None)))
     assert wh.table("ds", "t").kind == "TABLE"
@@ -476,65 +476,36 @@ def test_a_query_that_fails_mid_run_still_counts_what_it_billed(tmp_path):
     assert wh.spent_today() == pytest.approx(0.5, abs=0.001)
 
 
-# --- session temp tables --------------------------------------------------------------
+# --- scripts and saved tables ---------------------------------------------------------
 
 
-class SessionClient:
-    """Records each query's session settings; the first `create_session`
-    query opens session `s1`."""
+def test_a_script_runs_as_one_job_and_returns_its_last_rows():
+    client = FakeClient(rows=[{"n": 2}])
 
-    def __init__(self):
-        self.queries: list[tuple[str, dict]] = []
+    got = Warehouse(client=client).script(
+        ["CREATE TEMP TABLE a AS SELECT 1", "SELECT 2 AS n"]
+    )
 
-    def query(self, sql, job_config=None):
-        props = getattr(job_config, "connection_properties", None) or []
-        self.queries.append(
-            (
-                sql,
-                {
-                    "dry": bool(job_config and job_config.dry_run),
-                    "create": bool(job_config and job_config.create_session),
-                    "session": next((p.value for p in props), None),
-                },
-            )
-        )
-        job = FakeJob([], 0)
-        job.total_bytes_billed = 0
-        job.session_info = type("Info", (), {"session_id": "s1"})()
-        return job
+    assert got == [{"n": 2}]
+    assert client.queries == [
+        ("CREATE TEMP TABLE a AS SELECT 1;\nSELECT 2 AS n", False)
+    ]
 
 
-def test_freeze_opens_one_session_and_only_its_readers_join_it():
-    client = SessionClient()
-    wh = Warehouse(client=client)
+def test_saved_labels_read_a_table_and_none_for_a_missing_one():
+    table = SimpleNamespace(labels={"view": "v"})
+    assert Warehouse(client=FakeClient(table)).saved_labels("p.d.t") == {"view": "v"}
 
-    with wh.session():
-        first = wh.freeze("SELECT 1 AS x")
-        second = wh.freeze("SELECT 2 AS x")
-        wh.estimate(f"SELECT * FROM {first}")
-        wh.rows(f"SELECT * FROM {second}")
-        wh.rows("SELECT 3")
+    class Gone(FakeClient):
+        def get_table(self, ref):
+            raise NotFound(ref)
 
-    assert first != second and first.startswith("_SESSION.")
-    (f1, s1), (f2, s2), (dry, sd), (read, sr), (plain, sp), (end, se) = client.queries
-    assert f1.startswith(f"CREATE TEMP TABLE {first} AS")
-    assert s1["create"] and s1["session"] is None
-    assert not s2["create"] and s2["session"] == "s1"
-    assert sd == {"dry": True, "create": False, "session": "s1"}
-    assert sr["session"] == "s1"
-    # A query that reads no temp table runs outside the session, so it may
-    # run beside another.
-    assert plain == "SELECT 3" and sp["session"] is None
-    assert end == "CALL BQ.ABORT_SESSION()" and se["session"] == "s1"
+    assert Warehouse(client=Gone()).saved_labels("p.d.t") is None
 
 
-def test_freeze_refuses_outside_a_session():
-    with pytest.raises(RuntimeError, match="open session"):
-        Warehouse(client=SessionClient()).freeze("SELECT 1")
+def test_columns_reads_the_schema_without_a_query():
+    schema = [SimpleNamespace(name="student_number"), SimpleNamespace(name="day")]
+    client = FakeClient(SimpleNamespace(schema=schema))
 
-
-def test_a_session_that_froze_nothing_ends_without_a_query():
-    client = SessionClient()
-    with Warehouse(client=client).session():
-        pass
+    assert Warehouse(client=client).columns("ds", "t") == {"student_number", "day"}
     assert client.queries == []

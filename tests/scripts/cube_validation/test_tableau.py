@@ -1,23 +1,24 @@
 import re
 import xml.etree.ElementTree as ET
 import zipfile
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
+from decimal import Decimal
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+from cube_validation import pipeline, rebuild
 from cube_validation.config import ColumnPair, Comparison
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation.discover import sheet_shape
+from cube_validation.find_field import sheet_shape
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.tableau import (
     RefreshMovedError,
     Tableau,
-    _key_text,
     _number,
     _parse_shelf,
     _shelf_text,
@@ -25,9 +26,11 @@ from cube_validation.tableau import (
     drop_number_formats,
     expose_sheet,
     formula_fingerprint,
-    prove,
+    match_export,
+    published_sheets,
     set_shelves,
     split_cuts,
+    value_key,
 )
 
 FIXTURE = Path(__file__).parent / "fixtures" / "sheet_formats.twb"
@@ -119,6 +122,58 @@ def test_expose_sheet_refuses_a_duplicate_window():
         expose_sheet(src, "Rate by Region")
 
 
+PUBLISHED = """\
+<?xml version='1.0' encoding='utf-8' ?>
+<workbook>
+  <worksheets>
+    <worksheet name='A' />
+    <worksheet name='B' />
+    <worksheet name='C' />
+    <worksheet name='D' />
+  </worksheets>
+  <dashboards>
+    <dashboard name='Overview'>
+      <zones>
+        <zone id='1' type-v2='layout-basic'>
+          <zone id='2' type-v2='layout-flow'>
+            <zone id='3' name='A' />
+          </zone>
+        </zone>
+      </zones>
+    </dashboard>
+  </dashboards>
+  <windows>
+    <window class='dashboard' name='Overview' />
+    <window class='worksheet' hidden='true' name='A' />
+    <window class='worksheet' name='B' />
+    <window class='worksheet' hidden='true' name='C' />
+  </windows>
+</workbook>
+"""
+
+
+def test_published_sheets_reads_the_server_views():
+    # A sits in a (nested) zone of Overview, published only when Overview is
+    # a view. B's window is visible, yet it is published only as a view.
+    assert published_sheets(PUBLISHED, {"Overview"}) == {"Overview", "A"}
+    assert published_sheets(PUBLISHED, {"B"}) == {"B"}
+    # Visible windows and dashboards publish nothing the server does not list.
+    assert published_sheets(PUBLISHED, set()) == set()
+
+
+def test_published_sheets_counts_a_sheet_a_published_story_point_captures():
+    story = PUBLISHED.replace(
+        "</dashboards>",
+        "<dashboard name='Tour' type='storyboard'><zones><zone id='9' />"
+        "<story-points><story-point captured-sheet='C' id='1' />"
+        "<story-point captured-sheet='Overview' id='2' />"
+        "</story-points></zones></dashboard></dashboards>",
+    )
+    # The story shows C, and Overview, whose zone shows A.
+    assert published_sheets(story, {"Tour"}) == {"Tour", "C", "Overview", "A"}
+    assert published_sheets(story, {"B"}) == {"B"}
+
+
 def test_displayed_decimals_cases():
     assert displayed_decimals("p0.0%") == 3
     assert displayed_decimals("p0%") == 2
@@ -149,44 +204,48 @@ def _rows(values: dict[str, float | str | None]) -> list[dict]:
     return [{"region": k, "value": v} for k, v in values.items()]
 
 
-def test_prove_fails_on_one_mismatch():
+def test_rebuild_check_fails_on_one_mismatch():
     exports = _rows({"North": "0.9123", "South": "0.8504", "East": "0.7001"})
     probe = _rows({"North": 0.91249, "South": 0.85, "East": 0.7012})
 
-    proof = prove(_comparison(), exports, probe, twb_xml=_twb(), now=NOW)
+    rebuild_check = match_export(_comparison(), exports, probe, twb_xml=_twb(), now=NOW)
 
-    assert proof.cells == 3
-    assert len(proof.failures) == 1
-    assert "region=East" in proof.failures[0]
-    assert not proof.proven
-    assert proof.proven_at == NOW
-    assert proof.fingerprint == formula_fingerprint(_twb(), "Rate by Region")
+    assert rebuild_check.cells == 3
+    assert len(rebuild_check.failures) == 1
+    assert "region=East" in rebuild_check.failures[0]
+    assert not rebuild_check.matched
+    assert rebuild_check.matched_at == NOW
+    assert rebuild_check.fingerprint == formula_fingerprint(_twb(), "Rate by Region")
 
 
-def test_prove_passes_when_all_cells_round_equal():
+def test_rebuild_check_passes_when_all_cells_round_equal():
     exports = _rows({"North": "0.9123", "South": "0.8504"})
     probe = _rows({"North": 0.91249, "South": 0.85})
 
-    proof = prove(_comparison(), exports, probe, twb_xml=_twb(), now=NOW)
+    rebuild_check = match_export(_comparison(), exports, probe, twb_xml=_twb(), now=NOW)
 
-    assert proof.failures == []
-    assert proof.proven
-    assert proof.cells == 2
+    assert rebuild_check.failures == []
+    assert rebuild_check.matched
+    assert rebuild_check.cells == 2
 
 
-def test_prove_one_sided_and_empty_exports_fail():
+def test_rebuild_check_one_sided_and_empty_exports_fail():
     exports = _rows({"North": "0.9", "South": "0.8"})
     probe = _rows({"North": 0.9, "West": 0.8})
-    proof = prove(_comparison(), exports, probe, twb_xml=_twb(), now=NOW)
-    assert proof.cells == 1
-    assert any("region=South" in f and "export only" in f for f in proof.failures)
-    assert any("region=West" in f and "probe only" in f for f in proof.failures)
+    rebuild_check = match_export(_comparison(), exports, probe, twb_xml=_twb(), now=NOW)
+    assert rebuild_check.cells == 1
+    assert any(
+        "region=South" in f and "export only" in f for f in rebuild_check.failures
+    )
+    assert any(
+        "region=West" in f and "sheet query only" in f for f in rebuild_check.failures
+    )
 
-    empty = prove(_comparison(), [], [], twb_xml=_twb(), now=NOW)
-    assert not empty.proven and empty.cells == 0
+    empty = match_export(_comparison(), [], [], twb_xml=_twb(), now=NOW)
+    assert not empty.matched and empty.cells == 0
 
 
-def test_prove_matches_numeric_dims_across_types_and_cut_keys():
+def test_rebuild_check_matches_numeric_dims_across_types_and_cut_keys():
     comparison = _comparison(dims=[ColumnPair("academic_year", "dates_academic_year")])
     exports = [
         {"cut": "0", "academic_year": "2026", "value": "0.5"},
@@ -196,13 +255,13 @@ def test_prove_matches_numeric_dims_across_types_and_cut_keys():
         {"cut": "1", "academic_year": 2026, "value": 0.6},
         {"cut": "0", "academic_year": 2026.0, "value": 0.5},
     ]
-    proof = prove(comparison, exports, probe, twb_xml=_twb(), now=NOW)
-    assert proof.proven and proof.cells == 2
+    rebuild_check = match_export(comparison, exports, probe, twb_xml=_twb(), now=NOW)
+    assert rebuild_check.matched and rebuild_check.cells == 2
 
 
-def test_prove_refuses_formatted_values_and_missing_decimals():
+def test_rebuild_check_refuses_formatted_values_and_missing_decimals():
     with pytest.raises(ValueError, match="number format"):
-        prove(
+        match_export(
             _comparison(),
             _rows({"North": "$91.20"}),
             _rows({"North": 91.2}),
@@ -210,7 +269,7 @@ def test_prove_refuses_formatted_values_and_missing_decimals():
         )
     # A percent rounded to the comparison's decimals is a format left behind.
     with pytest.raises(ValueError, match="number format"):
-        prove(
+        match_export(
             _comparison(),
             _rows({"North": "91.2%", "South": "50%"}),
             _rows({"North": 0.912, "South": 0.5}),
@@ -218,14 +277,14 @@ def test_prove_refuses_formatted_values_and_missing_decimals():
         )
     # A percent-of-total calc keeps its % at full precision; an exact cell
     # beside it reads too.
-    assert prove(
+    assert match_export(
         _comparison(),
         _rows({"North": "91.234567891%", "South": "50%"}),
         _rows({"North": 0.91234567891, "South": 0.5}),
         twb_xml=_twb(),
-    ).proven
+    ).matched
     with pytest.raises(ValueError, match="decimals"):
-        prove(_comparison(decimals=None), [], [], twb_xml=_twb())
+        match_export(_comparison(decimals=None), [], [], twb_xml=_twb())
 
 
 def test_parameter_cuts_go_to_the_browser_list():
@@ -234,14 +293,14 @@ def test_parameter_cuts_go_to_the_browser_list():
     assert exportable == [{}, {"Region": "South"}]
     assert browser == [{"Basis": "Year end"}]
 
-    proof = prove(
+    rebuild_check = match_export(
         _comparison(cuts=cuts),
         _rows({"North": "0.9"}),
         _rows({"North": 0.9}),
         twb_xml=_twb(),
         now=NOW,
     )
-    assert proof.browser == [{"Basis": "Year end"}]
+    assert rebuild_check.browser == [{"Basis": "Year end"}]
 
 
 def test_fingerprint_follows_formulas_and_filters_not_formats():
@@ -533,6 +592,13 @@ def test_publish_copy_refuses_an_edit_that_flattens_crlf():
     assert server.published == []
 
 
+def test_view_names_lists_the_workbook_s_views():
+    server = FakeServer(_twb())
+
+    assert Tableau(server).view_names("wb-luid") == {"Rate by Region", "Other"}
+    assert ("get_by_id", "wb-luid") in server.calls
+
+
 def test_export_applies_view_filters_and_parses_csv():
     server = FakeServer(_twb())
     rows = Tableau(server).export(
@@ -621,7 +687,7 @@ def test_csv_bom_is_stripped():
     assert Tableau(server).export("copy-luid", "Rate by Region", {}) == [{"A": "1"}]
 
 
-# --- parameters on the proof copy ----------------------------------------------
+# --- parameters on the rebuild copy --------------------------------------------
 
 PARAM_TWB = (Path(__file__).parent / "fixtures" / "sheet_formats.twb").read_text()
 
@@ -658,7 +724,7 @@ def test_sign_out_returns_a_sign_in_error_instead_of_raising():
     assert "401002" in (Tableau(Server()).sign_out() or "")
 
 
-# --- shelves on the proof copy ---------------------------------------------------
+# --- shelves on the rebuild copy -------------------------------------------------
 
 SHELVES_TWB = (Path(__file__).parent / "fixtures" / "shelves.twb").read_text()
 RESHAPE = {
@@ -711,16 +777,182 @@ def test_set_shelves_fills_an_empty_shelf_and_keeps_its_attributes():
     assert "<cols onLeft='true'>[federated.0ddi (copy)].[none:school:nk]</cols>" in out
 
 
-def test_proof_keys_read_an_export_date_as_the_probe_date():
+def test_rebuild_check_keys_read_an_export_date_as_the_probe_date():
     # Tableau's export writes M/D/YYYY; the probe returns a DATE.
     assert (
-        _key_text("9/21/2026")
-        == _key_text(datetime(2026, 9, 21).date())
+        value_key("9/21/2026", export=True)
+        == value_key(datetime(2026, 9, 21).date(), export=True)
         == "2026-09-21"
     )
-    assert _key_text("2026-09-21") == "2026-09-21"
-    assert _key_text("1,234") == "1234"
-    assert _key_text("13/45/2026") == "13/45/2026"
+    assert value_key("2026-09-21", export=True) == "2026-09-21"
+    assert value_key("1,234", export=True) == "1234"
+    assert value_key("13/45/2026", export=True) == "13/45/2026"
+
+
+# Each input with its cell key in compare, coverage, formula and the answers.
+# These keys feed stored state (answers keys, formula cell fingerprints), so
+# every one must stay byte-identical.
+VALUE_KEYS = [
+    (date(2026, 9, 21), "2026-09-21"),
+    (datetime(2026, 9, 21), "2026-09-21"),
+    (datetime(2026, 9, 21, 8, 30), "2026-09-21T08:30:00"),
+    (datetime(2026, 9, 21, tzinfo=timezone.utc), "2026-09-21"),
+    (datetime(2026, 9, 21, 8, 30, tzinfo=timezone.utc), "2026-09-21T08:30:00"),
+    ("9/21/2026", "2026-09-21"),
+    ("09/07/2026", "2026-09-07"),
+    (" 9/21/2026", "9/21/2026"),
+    ("13/45/2026", "13/45/2026"),
+    ("9/21", "9/21"),
+    ("2026-09-21", "2026-09-21"),
+    ("2026-09-21 00:00:00", "2026-09-21"),
+    ("2026-09-21T00:00:00.000", "2026-09-21"),
+    ("2026-09-21 08:30:00", "2026-09-21T08:30:00"),
+    ("2026-09-21T08:30:00+00:00", "2026-09-21T08:30:00"),
+    ("2026-09-21x", "2026-09-21x"),
+    (True, "true"),
+    (False, "false"),
+    ("TRUE", "true"),
+    ("true", "true"),
+    ("True", "true"),
+    ("False", "false"),
+    (" false ", "false"),
+    (2026, "2026"),
+    (0, "0"),
+    (-7, "-7"),
+    (2026.0, "2026"),
+    (0.5, "0.5"),
+    (-1.25, "-1.25"),
+    (Decimal("1.50"), "1.5"),
+    (Decimal("-0"), "-0"),
+    (Decimal("1E+3"), "1000"),
+    ("2026", "2026"),
+    ("2026.0", "2026"),
+    ("-1.250", "-1.25"),
+    ("1,234", "1,234"),
+    ("-1,234.50", "-1,234.50"),
+    ("12,34", "12,34"),
+    ("1,234,567", "1,234,567"),
+    (" 1,234 ", "1,234"),
+    ("1e3", "1000"),
+    ("NaN", "NaN"),
+    ("Infinity", "Infinity"),
+    (None, ""),
+    ("", ""),
+    ("  ", ""),
+    ("Newark", "Newark"),
+    (" Newark ", "Newark"),
+    ("007", "7"),
+    ("00", "0"),
+    ("0.10", "0.1"),
+    ("N/A", "N/A"),
+]
+
+
+@pytest.mark.parametrize(("value", "key"), VALUE_KEYS)
+def test_cell_key_text_is_pinned(value, key):
+    assert pipeline.value_key(value) == key
+
+
+@pytest.mark.parametrize(
+    ("value", "key"),
+    [
+        (date(2026, 9, 21), "2026-09-21"),
+        ("9/21/2026", "2026-09-21"),
+        ("09/07/2026", "2026-09-07"),
+        (" 9/21/2026", "2026-09-21"),
+        ("13/45/2026", "13/45/2026"),
+        ("9/21", "9/21"),
+        ("2026-09-21", "2026-09-21"),
+        ("2026-09-21x", "2026-09-21x"),
+        ("true", "true"),
+        (" false ", "false"),
+        (2026, "2026"),
+        (0, "0"),
+        (-7, "-7"),
+        (2026.0, "2026"),
+        (0.5, "0.5"),
+        (-1.25, "-1.25"),
+        (Decimal("1.50"), "1.5"),
+        (Decimal("-0"), "-0"),
+        (Decimal("1E+3"), "1000"),
+        ("2026", "2026"),
+        ("2026.0", "2026"),
+        ("-1.250", "-1.25"),
+        ("1,234", "1234"),
+        ("-1,234.50", "-1234.5"),
+        ("12,34", "12,34"),
+        ("1,234,567", "1234567"),
+        (" 1,234 ", "1234"),
+        ("1e3", "1000"),
+        ("NaN", "NaN"),
+        ("Infinity", "Infinity"),
+        (None, ""),
+        ("", ""),
+        ("  ", ""),
+        ("Newark", "Newark"),
+        (" Newark ", "Newark"),
+        ("007", "7"),
+        ("00", "0"),
+        ("0.10", "0.1"),
+        ("N/A", "N/A"),
+    ],
+)
+def test_rebuild_check_key_text_is_pinned(value, key):
+    assert value_key(value, export=True) == key
+
+
+@pytest.mark.parametrize(
+    ("value", "key"),
+    [
+        (True, "true"),
+        (False, "false"),
+        ("TRUE", "true"),
+        ("True", "true"),
+        ("False", "false"),
+    ],
+)
+def test_rebuild_check_keys_a_boolean_in_lower_case(value, key):
+    assert value_key(value, export=True) == key
+
+
+@pytest.mark.parametrize(
+    ("value", "key"),
+    [
+        (datetime(2026, 9, 21), "2026-09-21"),
+        (datetime(2026, 9, 21, 8, 30), "2026-09-21T08:30:00"),
+        (datetime(2026, 9, 21, tzinfo=timezone.utc), "2026-09-21"),
+        (datetime(2026, 9, 21, 8, 30, tzinfo=timezone.utc), "2026-09-21T08:30:00"),
+    ],
+)
+def test_rebuild_check_keys_a_midnight_datetime_as_its_day_else_a_naive_iso_stamp(
+    value, key
+):
+    assert value_key(value, export=True) == key
+
+
+@pytest.mark.parametrize(
+    ("value", "key"),
+    [
+        ("2026-09-21 00:00:00", "2026-09-21"),
+        ("2026-09-21T00:00:00.000", "2026-09-21"),
+        ("2026-09-21 08:30:00", "2026-09-21T08:30:00"),
+        ("2026-09-21T08:30:00+00:00", "2026-09-21T08:30:00"),
+    ],
+)
+def test_rebuild_check_keys_an_iso_timestamp_string_as_its_day_else_a_naive_iso_stamp(
+    value, key
+):
+    assert value_key(value, export=True) == key
+
+
+def test_rebuild_check_matches_a_midnight_datetime_dim_to_the_export_date():
+    comparison = _comparison(dims=[ColumnPair("week_start", "dates_week_start")])
+    exports = [{"week_start": "9/21/2026", "value": "0.5"}]
+    probe = [{"week_start": datetime(2026, 9, 21), "value": 0.5}]
+
+    rebuild_check = match_export(comparison, exports, probe, twb_xml=_twb(), now=NOW)
+
+    assert rebuild_check.matched and rebuild_check.cells == 1
 
 
 def test_shelf_parser_reads_the_cross_operator():
@@ -758,6 +990,78 @@ def test_set_shelves_crosses_added_rows_in_front_of_a_dual_axis():
         f"<rows onTop='true'>(({ds}.[none:school:nk] / "
         f"{ds}.[none:grade_level:ok]) * {measures})</rows>"
     ) in out
+
+
+def _cross_sheet(rows_expr: str) -> str:
+    ds = "[federated.0ddi (copy)]"
+    return SHELVES_TWB.replace(
+        f"<rows onTop='true'>({ds}.[none:Calculation_4901:nk] / "
+        f"{ds}.[none:week_start_monday:ok])</rows>",
+        f"<rows onTop='true'>{rows_expr}</rows>",
+    ).replace(
+        f"<cols onLeft='true'>({ds}.[none:module_code:nk] / "
+        f"{ds}.[none:school:nk])</cols>",
+        f"<cols onLeft='true'>{ds}.[none:week_start_monday:ok]</cols>",
+    )
+
+
+def test_set_shelves_nests_into_the_last_dimension_of_a_multi_cross():
+    ds = "[federated.0ddi (copy)]"
+    measures = f"({ds}.[avg:is_mastery_int:qk] + {ds}.[avg:is_mastery_int:qk])"
+    school, module = f"{ds}.[none:school:nk]", f"{ds}.[none:module_code:nk]"
+    src = _cross_sheet(f"({school} * {module} * {measures})")
+
+    out = set_shelves(
+        src,
+        "Mastery Grid",
+        {"drop": ["Week Start Monday"], "add": {"rows": ["Grade Level"]}},
+    ).xml
+
+    ET.fromstring(out)
+    assert (
+        f"<rows onTop='true'>({school} * ({module} / {ds}.[none:grade_level:ok]) "
+        f"* {measures})</rows>"
+    ) in out
+
+
+def test_set_shelves_refuses_a_shelf_that_mixes_nest_and_cross():
+    ds = "[federated.0ddi (copy)]"
+    measures = f"({ds}.[avg:is_mastery_int:qk] + {ds}.[avg:is_mastery_int:qk])"
+    school, module = f"{ds}.[none:school:nk]", f"{ds}.[none:module_code:nk]"
+    src = _cross_sheet(f"({school} / {module} * {measures})")
+
+    with pytest.raises(ValueError, match="mixes / and \\*"):
+        set_shelves(
+            src,
+            "Mastery Grid",
+            {"drop": ["Week Start Monday"], "add": {"rows": ["Grade Level"]}},
+        )
+
+
+def test_set_shelves_refuses_a_shelf_that_joins_fields_with_plus():
+    # A `+` group of fields that are not all measures: nesting it under the
+    # added field would change what the sheet shows.
+    ds = "[federated.0ddi (copy)]"
+    school, module = f"{ds}.[none:school:nk]", f"{ds}.[none:module_code:nk]"
+    src = _cross_sheet(f"({school} + {module})")
+
+    with pytest.raises(ValueError, match="mixes \\+"):
+        set_shelves(
+            src,
+            "Mastery Grid",
+            {"drop": ["Week Start Monday"], "add": {"rows": ["Grade Level"]}},
+        )
+
+
+def test_export_date_reads_m_d_yyyy_only():
+    from datetime import date
+
+    from cube_validation.tableau import export_date
+
+    assert export_date("9/21/2026") == date(2026, 9, 21)
+    assert export_date("13/45/2026") is None
+    assert export_date("2026-09-21") is None
+    assert export_date("9/21") is None
 
 
 def test_set_shelves_refuses_a_drop_off_the_shelves_and_an_unknown_add():
@@ -1192,7 +1496,203 @@ def test_export_number_reads_a_percent_of_total_as_a_fraction():
     assert _number("1,234.5%") == pytest.approx(12.345)
 
 
-@pytest.mark.parametrize("text", ["$12.50", "12 pts", "%", "12%%", "nan", "inf"])
+@pytest.mark.parametrize("text", ["$12.50", "12 pts", "12%%"])
 def test_export_number_still_refuses_other_formats(text):
     with pytest.raises(ValueError, match="still carries a number format"):
         _number(text)
+
+
+@pytest.mark.parametrize("text", ["met", "%", "nan", "inf"])
+def test_export_number_calls_a_word_a_text_measure(text):
+    with pytest.raises(ValueError, match="text measures are not compared"):
+        tableau_mod._number(text)
+
+
+def test_export_number_still_calls_a_digit_format_a_number_format():
+    with pytest.raises(ValueError, match="still carries a number format"):
+        tableau_mod._number("12K")
+
+
+# --- export matching: blanks, star totals, dual-axis repeats ------------------
+
+
+def test_match_export_skips_export_only_blanks_and_query_only_nulls():
+    exports = [{"region": "A", "value": "0.5"}, {"region": "B", "value": ""}]
+    query = [{"region": "A", "value": 0.5}, {"region": "C", "value": None}]
+
+    rebuild_check = match_export(_comparison(), exports, query, twb_xml=_twb(), now=NOW)
+
+    assert (
+        rebuild_check.matched
+        and rebuild_check.cells == 1
+        and rebuild_check.blanks_skipped == 2
+    )
+
+
+def test_match_export_still_fails_a_blank_against_a_value():
+    exports = [{"region": "A", "value": ""}]
+    query = [{"region": "A", "value": 0.5}]
+
+    rebuild_check = match_export(_comparison(), exports, query, twb_xml=_twb(), now=NOW)
+
+    assert not rebuild_check.matched
+    assert rebuild_check.cells == 1 and len(rebuild_check.failures) == 1
+
+
+def _rebuild_comparison() -> Comparison:
+    return Comparison(
+        id="c", measure="m", dims=[ColumnPair(dashboard="school", cube="school")]
+    )
+
+
+def test_export_cells_skips_a_star_total_row_on_a_shelf_dim():
+
+    cells, totals, _ = rebuild._export_cells(
+        _rebuild_comparison(),
+        [{"School": "*", "v": "9"}, {"School": "A", "v": "1"}],
+        {"School": "school"},
+        "v",
+        [],
+        [{"school": "A"}],
+        shelf_dims={"school"},
+        ignored=set(),
+    )
+
+    assert totals == 1 and [x["school"] for x in cells] == ["A"]
+
+
+def test_export_cells_keeps_a_star_row_on_a_detail_dim():
+
+    cells, totals, _ = rebuild._export_cells(
+        _rebuild_comparison(),
+        [{"School": "*", "v": "9"}],
+        {"School": "school"},
+        "v",
+        [],
+        [{"school": "A"}],
+        shelf_dims=set(),
+        ignored=set(),
+    )
+
+    assert totals == 0 and [x["school"] for x in cells] == ["*"]
+
+
+def test_export_cells_keeps_a_star_row_when_the_sheet_query_has_a_real_star():
+
+    cells, totals, _ = rebuild._export_cells(
+        _rebuild_comparison(),
+        [{"School": "*", "v": "9"}],
+        {"School": "school"},
+        "v",
+        [],
+        [{"school": "*"}],
+        shelf_dims={"school"},
+        ignored=set(),
+    )
+
+    assert totals == 0 and len(cells) == 1
+
+
+def test_export_cells_drops_a_dual_axis_repeat_that_differs_only_in_a_table_calc():
+
+    rows = [
+        {"School": "A", "v": "1", "Rank": "1"},
+        {"School": "A", "v": "1", "Rank": "2"},
+    ]
+    cells, _, _ = rebuild._export_cells(
+        _rebuild_comparison(),
+        rows,
+        {"School": "school"},
+        "v",
+        [],
+        [],
+        shelf_dims={"school"},
+        ignored={"Rank"},
+    )
+
+    assert len(cells) == 1
+
+
+def test_export_cells_keeps_two_marks_that_differ_in_another_column():
+
+    rows = [
+        {"School": "A", "v": "1", "Teacher": "X"},
+        {"School": "A", "v": "1", "Teacher": "Y"},
+    ]
+    comparison = _comparison(dims=[ColumnPair(dashboard="school", cube="school")])
+    cells, _, _ = rebuild._export_cells(
+        comparison,
+        rows,
+        {"School": "school"},
+        "v",
+        [],
+        [],
+        shelf_dims={"school"},
+        ignored=set(),
+    )
+
+    assert len(cells) == 2
+    # Teacher splits the mark but no dim carries it, so the match refuses the
+    # pair rather than compare either row.
+    rebuild_check = match_export(
+        comparison, cells, [{"school": "A", "value": 1}], twb_xml=_twb(), now=NOW
+    )
+    assert not rebuild_check.matched
+    assert rebuild_check.failures == ["school=A: more than 1 export row"]
+
+
+_SHELF_TWB = """<?xml version='1.0' encoding='utf-8' ?>
+<workbook>
+  <worksheets>
+    <worksheet name='S'>
+      <table>
+        <view>
+          <datasource-dependencies datasource='federated.x'>
+            <column caption='Campus' name='[school]' role='dimension' />
+            <column caption='Grade' name='[grade_level]' role='dimension' />
+          </datasource-dependencies>
+        </view>
+        <rows>[federated.x].[none:school:nk]</rows>
+        <cols />
+      </table>
+    </worksheet>
+  </worksheets>
+</workbook>
+"""
+
+
+def test_shelf_dims_matches_a_dim_by_its_column_caption_alone():
+    comparison = Comparison(
+        id="c",
+        measure="m",
+        dims=[
+            ColumnPair(dashboard="school", cube="school"),
+            ColumnPair(dashboard="grade_level", cube="grade_level"),
+        ],
+    )
+    # The shelf shows `Campus`; only the column list ties it to `school`.
+    columns = [
+        ET.fromstring("<column caption='Campus' name='[school]' role='dimension' />"),
+        ET.fromstring(
+            "<column caption='Grade' name='[grade_level]' role='dimension' />"
+        ),
+    ]
+
+    assert rebuild._shelf_dims(comparison, _SHELF_TWB, "S", columns) == {"school"}
+    assert rebuild._shelf_dims(comparison, _SHELF_TWB, "S", []) == set()
+
+
+def test_ignored_headers_matches_an_aggregate_caption_across_its_spellings():
+    columns = [
+        ET.fromstring(
+            "<column caption='AVG(x)' name='[Calculation_1]' role='measure' />"
+        ),
+        ET.fromstring("<column caption='Rate' name='[rate]' role='measure' />"),
+    ]
+    headers = ["School", "Rate", "Avg. x", "Teacher"]
+
+    ignored = rebuild._ignored_headers(
+        headers, {"School": "school"}, "Rate", columns, []
+    )
+
+    assert ignored == {"Avg. x"}

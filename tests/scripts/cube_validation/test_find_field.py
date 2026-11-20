@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from cube_validation.discover import (
+from cube_validation.find_field import (
     Calc,
     calculated_fields,
     rank,

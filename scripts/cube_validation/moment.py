@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Protocol
 
 from .timetravel import PROJECT, utc_literal
@@ -17,11 +17,33 @@ class MomentError(RuntimeError):
     """No usable build to pin the validation to."""
 
 
+def utcnow() -> datetime:
+    """The current time in UTC, the `now` a moment is picked against."""
+    return datetime.now(timezone.utc)
+
+
 @dataclass(frozen=True)
 class Build:
     start: datetime
     end: datetime
     job_id: str
+
+    def to_json(self) -> dict:
+        """The build as run state, results and sorts store it."""
+        return {
+            "start": self.start.isoformat(),
+            "end": self.end.isoformat(),
+            "job_id": self.job_id,
+        }
+
+    @classmethod
+    def from_json(cls, data: dict) -> Build:
+        """The build `to_json` wrote."""
+        return cls(
+            datetime.fromisoformat(data["start"]),
+            datetime.fromisoformat(data["end"]),
+            data["job_id"],
+        )
 
 
 class _Rows(Protocol):
@@ -92,19 +114,24 @@ def pick_moment(
     return chosen
 
 
-def fingerprint(wh: _Rows, table: str, ts: datetime) -> int:
-    """Return an order-independent hash of every row of `dataset.table` at `ts`.
+def fingerprint_sql(table: str, ts: datetime) -> str:
+    """The query `fingerprint` runs, so a caller can price it first.
 
     XOR cancels a pair of identical rows, so the row count is hashed in too.
     """
     ds, name = table.split(".")
-    rows = wh.rows(
+    return (
         # trunk-ignore(bandit/B608): identifiers are validated in config.py and values are bound or literal-escaped
         "SELECT farm_fingerprint(format('%d:%d', "
         "coalesce(bit_xor(farm_fingerprint(to_json_string(t))), 0), count(*))) AS f "
         f"FROM `{PROJECT}`.`{ds}`.`{name}` AS t "
         f"FOR SYSTEM_TIME AS OF TIMESTAMP '{utc_literal(ts)}'"
     )
+
+
+def fingerprint(wh: _Rows, table: str, ts: datetime) -> int:
+    """Return an order-independent hash of every row of `dataset.table` at `ts`."""
+    rows = wh.rows(fingerprint_sql(table, ts))
 
     return int(rows[0]["f"] or 0)
 

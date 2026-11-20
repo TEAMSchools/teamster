@@ -13,15 +13,16 @@ from __future__ import annotations
 
 import json
 import re
+from collections import Counter
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import timezone
+from datetime import datetime, timezone
 from pathlib import Path
 
-from .checks import Finding
-from .compare import Gap, Group
 from .config import SEPARATED_DIGITS, Decision
 from .decisions import Applied
 from .moment import Build
+from .reconcile import Gap, Group
 
 CACHE_ROOT = Path.home() / ".cache" / "cube-validation"
 MASK_BELOW = 10
@@ -53,24 +54,20 @@ _SHOWN_COLUMNS = frozenset(
 )
 
 
-def _is_identifier(column: str) -> bool:
+def is_identifier(column: str) -> bool:
     """True for every column not on the reviewed list, so unknowns fail closed."""
     return column not in _SHOWN_COLUMNS
-
-
-_SEPARATED_DIGITS = SEPARATED_DIGITS
 
 
 @dataclass
 class MeasureResult:
     measure: str
-    strongest: str
     verdict: str
     cells: dict[str, int] = field(default_factory=dict)
     open_groups: int = 0
-    # Missing cuts and filters still to triage on this measure's sheets.
+    # Missing cuts and filters still to sort on this measure's sheets.
     open_gaps: int = 0
-    # Comparisons whose differing cells are still to triage.
+    # Comparisons whose differing cells are still to sort.
     open_cells: int = 0
 
 
@@ -80,27 +77,27 @@ class RunResult:
     moment: Build
     measures: list[MeasureResult]
     applied: Applied
-    findings: list[Finding] = field(default_factory=list)
     live_sources: list[str] = field(default_factory=list)
     changed_dims: list[str] = field(default_factory=list)
     scopes: list[str] = field(default_factory=list)
     cost_usd: float = 0.0
-    proofs: dict[str, str] = field(default_factory=dict)
+    # Comparison id to its rebuild check's `matched_at`.
+    rebuild_checks: dict[str, str] = field(default_factory=dict)
     browser_cuts: list[str] = field(default_factory=list)
-    # Total rows the proofs' exports showed but no proof compared.
+    # Total rows the rebuild checks' exports showed but no check compared.
     totals: list[str] = field(default_factory=list)
-    # Comparison id to the reshape its proof's copy carried (`dropped ...;
-    # added ...`): that proof covers the reshaped grain, not the sheet's own.
+    # Comparison id to the reshape its rebuild copy carried (`dropped ...;
+    # added ...`): that check covers the reshaped grain, not the sheet's own.
     reshaped: dict[str, str] = field(default_factory=dict)
     clauses: dict[str, list[str]] = field(default_factory=dict)
     fingerprints: dict[str, dict[str, str]] = field(default_factory=dict)
-    # The `decisions:` block the run applied; `review` refuses a changed one.
+    # The `decisions:` block the run applied; `ask-owner` refuses a changed one.
     decisions_fingerprint: str = ""
-    # Comparisons whose proof predates missing cuts and filters.
+    # Comparisons whose rebuild check predates missing cuts and filters.
     gaps_unknown: list[str] = field(default_factory=list)
     # Each comparison's `dashboard_filters`, as the SQL the dashboard side ran.
     dashboard_filters: list[str] = field(default_factory=list)
-    # What the result was proven against: the Cube server's host and the
+    # What the result was compared against: the Cube server's host and the
     # `dataset.table` fact, so an analyst can say so in a PR description.
     cube_host: str = ""
     fact: str = ""
@@ -112,9 +109,22 @@ class RunResult:
     diff_cells: list[dict] = field(default_factory=list)
     cell_sql: dict[str, dict[str, list[str]]] = field(default_factory=dict)
     cell_sql_usd: dict[str, dict[str, list[float]]] = field(default_factory=dict)
-    # Per comparison with `rows`, each reconcile row's rows and value sums per
-    # side (`compare.cell_rows_from`), to size a rate cell; counts only.
-    cell_rows: dict[str, list[dict]] = field(default_factory=dict)
+    # Each comparison's latest result is kept at its own moment (`latest`):
+    # per composed comparison, the moment its rows were read and its
+    # `latest.entry_fingerprint` then. `moment` stays this compare process's
+    # build, which names its folder and its cost. `missing` lists the
+    # confirmed comparisons with no result yet.
+    moments: dict[str, Build] = field(default_factory=dict)
+    entries: dict[str, str] = field(default_factory=dict)
+    missing: list[str] = field(default_factory=list)
+    # The comparisons this compare process skipped, each `{comparison, why}`
+    # (`pipeline.Skip`); each keeps its latest result from before.
+    skipped: list[dict] = field(default_factory=list)
+
+    def moment_of(self, comparison_id: str) -> Build:
+        """The moment the comparison's rows were read: its own, or the run's
+        for a run saved before each comparison kept one."""
+        return self.moments.get(comparison_id, self.moment)
 
 
 def mask(n: int) -> str:
@@ -137,13 +147,18 @@ SUPPRESSED = "masked"
 def suppress(total: int, parts: list[int]) -> tuple[str, list[str]]:
     """Mask a total and its parts so no small part can be worked out.
 
-    Each part under `MASK_BELOW` reads `<10`. The total minus the shown parts
-    gives the masked parts' sum, so the masked parts must hold `MASK_BELOW` or
-    more together and include at least one `masked` part with no upper bound:
-    `<10` parts alone are pinned by their sum (18 over two `<10` parts is 9
-    and 9). Until both hold, the next-smallest shown part reads `masked` too.
-    When no part is left to mask, the total reads `masked`, or `<10` when it
-    is under `MASK_BELOW`.
+    Each part under `MASK_BELOW` reads `<10`. The masked parts must hold
+    `MASK_BELOW` or more together and include at least one `masked` part with
+    no upper bound: `<10` parts alone are pinned by their sum (18 over two
+    `<10` parts is 9 and 9). Until both hold, the next-smallest shown part
+    reads `masked` too.
+
+    The total is exact only when every part is: beside any hidden part it
+    reads `10+` (`<10` under `MASK_BELOW`). A `masked` part is at least
+    `MASK_BELOW` and a `<10` part at least 1, so an exact total less the
+    shown parts can equal those floors and pin every hidden one (11 beside
+    `masked` and `<10` is 10 and 1). Every posted total built from masked
+    parts goes through here (`shown_counts`), so none can.
 
     Returns:
         The total's text and each part's, in order.
@@ -163,9 +178,15 @@ def suppress(total: int, parts: list[int]) -> tuple[str, list[str]]:
         mask(n) if i in hidden else SUPPRESSED if i in extra else str(n)
         for i, n in enumerate(parts)
     ]
-    if hidden and not extra and total >= MASK_BELOW:
-        return SUPPRESSED, texts
+    if hidden:
+        return bounded(total), texts
     return mask(total), texts
+
+
+def bounded(n: int) -> str:
+    """A count posted as a bound: `10+`, or `<10` under `MASK_BELOW`. For a
+    total beside a hidden part, and every count an owner question posts."""
+    return f"{MASK_BELOW}+" if n >= MASK_BELOW else mask(n)
 
 
 def shown_counts(total: int, parts: list[int], posted: bool) -> tuple[str, list[str]]:
@@ -180,12 +201,6 @@ def shown_counts(total: int, parts: list[int], posted: bool) -> tuple[str, list[
     return str(total), [str(n) for n in parts]
 
 
-def _verdict_text(m: MeasureResult) -> str:
-    if m.verdict == "not validated" and m.strongest == "consistent only":
-        return "not validated (consistent only)"
-    return m.verdict
-
-
 def _bullets(items: list[str], empty: str = "None.") -> list[str]:
     return [f"- {i}" for i in items] if items else [empty]
 
@@ -196,13 +211,15 @@ def _decision_line(d: Decision) -> str:
             f"`{d.id}` ({d.comparison}, {d.cause.get('side')} cause "
             f"`{_clean(str(d.cause.get('label')))}`, {d.call}): {d.reason}"
         )
-    if d.cells:
-        return f"`{d.id}` ({d.comparison} cells, {d.call}): {d.reason}"
     if d.missing_cut or d.missing_filter:
         kind, name = (
             ("cut", d.missing_cut) if d.missing_cut else ("filter", d.missing_filter)
         )
         return f"`{d.id}` (missing {kind} `{name}`, {d.call}): {d.reason}"
+    if d.formula:
+        return f"`{d.id}` ({d.comparison} formula, {d.call}): {d.reason}"
+    if d.all_groups:
+        return f"`{d.id}` ({d.comparison} every open row group, {d.call}): {d.reason}"
     return f"`{d.id}` ({d.comparison}, {d.call}): {d.reason}"
 
 
@@ -215,14 +232,14 @@ def untasked(decisions) -> list[str]:
     )
 
 
-_CELL_WORDS = {
+CELL_WORDS = {
     "differs": "differ",
     "cube_only": "Cube only",
     "dashboard_only": "dashboard only",
 }
 
 
-def _gap_line(g: Gap) -> str:
+def gap_line(g: Gap) -> str:
     kind = "filter, set to chosen values, not All" if g.restricting else g.kind
     return (
         f"`{_clean(g.field)}` ({kind}) on {', '.join(g.sheets)}: Cube has no "
@@ -241,53 +258,53 @@ def render_local(run: RunResult) -> str:
         and values are not masked.
     """
     out = [f"# Validation result: {run.view}", ""]
-    out.append(
-        f"Moment: {run.moment.start:%Y-%m-%d %H:%M} to "
-        f"{run.moment.end:%Y-%m-%d %H:%M} UTC, job `{run.moment.job_id}`."
-    )
+    moments = set(run.moments.values()) or {run.moment}
+    if len(moments) == 1:
+        (one,) = moments
+        out.append(f"Moment: {_span(one)}, job `{one.job_id}`.")
+    else:
+        out += _moment_lines(run.moments)
+    if run.missing:
+        out += ["", f"Not compared yet: {', '.join(run.missing)}."]
+    if run.skipped:
+        skips = "; ".join(f"{s['comparison']} ({s['why']})" for s in run.skipped)
+        out += ["", f"Skipped this run, each keeping its latest result: {skips}."]
     out += ["", f"Cube: {run.cube_host}", "", f"Fact: {run.fact}"]
 
     out += ["", "## Measures", ""]
     for m in run.measures:
         cells = ", ".join(f"{k} {v}" for k, v in sorted(m.cells.items()))
-        line = f"- `{m.measure}`: {m.strongest}; {_verdict_text(m)}"
+        line = f"- `{m.measure}`: {m.verdict}"
         line = f"{line} ({cells})" if cells else line
-        # The verdict reads cells only; row groups still open are named so
-        # "validated" never hides them.
+        # Any open item makes the verdict `differs` (`pipeline.verdict`); each
+        # kind is named with its count so the reader knows what to sort.
         if m.open_groups:
             plural = "group" if m.open_groups == 1 else "groups"
-            line += f"; {m.open_groups} open row {plural} to triage"
+            line += f"; {m.open_groups} open row {plural} to sort"
         if m.open_gaps:
             plural = "cut or filter" if m.open_gaps == 1 else "cuts or filters"
-            line += f"; {m.open_gaps} missing {plural} to triage"
+            line += f"; {m.open_gaps} missing {plural} to sort"
         if m.open_cells:
             plural = "comparison" if m.open_cells == 1 else "comparisons"
-            line += f"; cell differences to triage in {m.open_cells} {plural}"
+            line += f"; cell differences to sort in {m.open_cells} {plural}"
         out.append(line)
 
-    if run.findings:
-        out += [
-            "",
-            "Anchors and identities read Cube's data as it is now, not at the "
-            "moment above.",
-        ]
-
-    out += ["", "## Triage", ""]
-    triage = []
+    out += ["", "## Sort", ""]
+    to_sort = []
     for g in run.applied.open:
         line = (
-            f"{_where(g, lambda _column, value: value)} in {g.comparison_id} "
+            f"{name_group(g, lambda _column, value: value)} in {g.comparison_id} "
             f"({g.bucket}): {g.n_rows} rows, {g.n_students} students"
         )
         for clause in run.clauses.get(g.comparison_id, []):
             line += f"; clause: `{clause}`"
-        triage.append(line)
-    out += _bullets(triage, "No open groups.")
+        to_sort.append(line)
+    out += _bullets(to_sort, "No open groups.")
 
-    # A dashboard cut or filter Cube cannot make: triaged like a row group.
+    # A dashboard cut or filter Cube cannot make: sorted like a row group.
     out += ["", "## Missing cuts and filters", ""]
     out += _bullets(
-        [_gap_line(g) for g in run.applied.open_gaps] + run.gaps_unknown,
+        [gap_line(g) for g in run.applied.open_gaps] + run.gaps_unknown,
         "None open.",
     )
 
@@ -297,22 +314,34 @@ def render_local(run: RunResult) -> str:
         out.append("None open.")
     for diff in run.applied.open_cells:
         counts = ", ".join(
-            f"{n} {_CELL_WORDS.get(verdict, verdict)}"
+            f"{n} {CELL_WORDS.get(verdict, verdict)}"
             for verdict, n in diff.counts.items()
         )
-        out.append(f"- {diff.comparison_id}: {counts}")
+        what = " formula difference" if diff.kind == "formula" else ""
+        out.append(f"- {diff.comparison_id}{what}: {counts}")
         out += [f"  - {cause}" for cause in diff.causes]
 
     out += ["", "## Decisions", "", "Applied:"]
+    # A comparison decision closes many groups; it is listed once, with how many.
+    closes = Counter(d.id for d, _ in run.applied.quiet if d.all_groups)
+    whole = {d.id: d for d, _ in run.applied.quiet if d.all_groups}
     out += _bullets(
-        [_decision_line(d) for d, _ in run.applied.quiet]
+        [
+            f"{_decision_line(d)} ({closes[i]} row "
+            f"{'group' if closes[i] == 1 else 'groups'})"
+            for i, d in whole.items()
+        ]
+        + [_decision_line(d) for d, _ in run.applied.quiet if not d.all_groups]
         # A cause decision quiets many groups; it is listed once.
-        # The latest triage says which groups a cause decision decides.
+        # The latest sort says which groups a cause decision decides.
         + [_decision_line(d) for d in run.applied.causes]
         + [_decision_line(d) for d, _ in run.applied.quiet_gaps]
         + [_decision_line(d) for d, _ in run.applied.quiet_cells]
     )
-    out += ["", "To re-confirm (the SQL changed):"]
+    out += [
+        "",
+        "To re-confirm (the SQL changed, or a formula difference's cells did):",
+    ]
     out += _bullets([_decision_line(d) for d in run.applied.reconfirm])
     out += ["", "No longer needed (no group matches):"]
     out += _bullets([_decision_line(d) for d in run.applied.no_longer_needed])
@@ -371,21 +400,21 @@ def render_local(run: RunResult) -> str:
             "",
         ]
     out += _bullets(run.scopes)
-    out += ["", "## Cuts to prove in the browser", ""]
+    out += ["", "## Cuts to check in the browser", ""]
     out += _bullets(run.browser_cuts)
-    out += ["", "## Proofs", ""]
+    out += ["", "## Rebuild checks", ""]
     out += _bullets(
         [
-            f"{comparison}: last proven {at}"
+            f"{comparison}: last matched {at}"
             + (
-                f"; proven on a reshaped copy: {run.reshaped[comparison]}"
+                f"; matched on a reshaped copy: {run.reshaped[comparison]}"
                 if comparison in run.reshaped
                 else ""
             )
-            for comparison, at in sorted(run.proofs.items())
+            for comparison, at in sorted(run.rebuild_checks.items())
         ]
     )
-    out += ["", "## Totals not proven", ""]
+    out += ["", "## Totals not matched", ""]
     out += _bullets(run.totals)
     out += [
         "",
@@ -396,6 +425,66 @@ def render_local(run: RunResult) -> str:
         "",
     ]
     return "\n".join(out)
+
+
+def _span(moment: Build) -> str:
+    return f"{moment.start:%Y-%m-%d %H:%M} to {moment.end:%Y-%m-%d %H:%M} UTC"
+
+
+def _moment_lines(moments: dict[str, Build]) -> list[str]:
+    """One line per comparison and the moment its rows were read."""
+    return ["Moments:", ""] + [f"- {cid}: {_span(m)}" for cid, m in moments.items()]
+
+
+def run_stamp(moment: Build) -> str:
+    """A run's moment as its folder and saved tables name it: the build end, UTC."""
+    end = moment.end
+    if end.tzinfo is not None:
+        end = end.astimezone(timezone.utc)
+    return end.strftime("%Y-%m-%dT%H%M%SZ")
+
+
+def run_dir(root: Path, view: str, moment: Build) -> Path:
+    """The folder a run of `view` at `moment` keeps its results and
+    checkpoints in."""
+    return root / view / run_stamp(moment)
+
+
+class Ticker:
+    """Progress lines for a long command: the clock, the time since it began,
+    the step, the comparison and the spend so far.
+
+    A line names only a step and a comparison id, never a row value, so it is
+    safe wherever the command's output goes.
+    """
+
+    def __init__(self, clock: Callable[[], datetime], started: datetime) -> None:
+        self._clock, self._started = clock, started
+
+    def say(self, step: str, comparison: str, spent: float) -> str:
+        """Print and return one progress line, flushed so a watcher sees it now.
+
+        Args:
+            step: What just finished, such as `compare`.
+            comparison: The comparison's id.
+            spent: USD spent so far.
+
+        Returns:
+            `[HH:MM:SS UTC +<elapsed>] <step> <comparison>: $<spent> spent`,
+            the elapsed time as `7m07s`, or `2h02m05s` from 1 hour.
+        """
+        now = self._clock().astimezone(timezone.utc)
+        seconds = max(0, int((now - self._started).total_seconds()))
+        hours, rest = divmod(seconds, 3600)
+        minutes, secs = divmod(rest, 60)
+        elapsed = (
+            f"{hours}h{minutes:02d}m{secs:02d}s" if hours else f"{minutes}m{secs:02d}s"
+        )
+        line = (
+            f"[{now:%H:%M:%S} UTC +{elapsed}] {step} {comparison}: ${spent:.2f} spent"
+        )
+        print(line, flush=True)
+        return line
 
 
 def save_local(run: RunResult, text: str, root: Path | None = None) -> Path:
@@ -409,21 +498,10 @@ def save_local(run: RunResult, text: str, root: Path | None = None) -> Path:
     Returns:
         The path of `result.md`.
     """
-    end = run.moment.end
-    if end.tzinfo is not None:
-        end = end.astimezone(timezone.utc)
-    stamp = end.strftime("%Y-%m-%dT%H%M%SZ")
-    path = (root or CACHE_ROOT) / run.view / stamp / "result.md"
+    path = run_dir(root or CACHE_ROOT, run.view, run.moment) / "result.md"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text)
     return path
-
-
-def _num(measure: str, x: float) -> str:
-    """Mask a count anchor (`count_` measures) under 10; show other figures."""
-    if measure.startswith("count_") and float(x).is_integer():
-        return mask(int(x))
-    return f"{x:g}"
 
 
 def _clean(text: str) -> str:
@@ -431,21 +509,21 @@ def _clean(text: str) -> str:
     return " ".join(text.replace("`", "").split())
 
 
-def _where(g: Group, show) -> str:
+def name_group(g: Group, show) -> str:
     """Name a group by its columns; `show(column, value)` gives the text shown."""
     if not g.dims:
         return "the whole comparison"
     return ", ".join(f"`{c}` = `{show(c, v)}`" for c, v in g.dims)
 
 
-def _shown_value(g: Group, column: str, value: str) -> str:
+def shown_value(g: Group, column: str, value: str) -> str:
     """Show a value only for a reviewed column of a group with 10+ students."""
-    if g.n_students < MASK_BELOW or _is_identifier(column):
+    if g.n_students < MASK_BELOW or is_identifier(column):
         return "<redacted>"
     return _clean(value)
 
 
-def _safe_reason(reason: str, values: list) -> str:
+def safe_reason(reason: str, values: list) -> str:
     """Keep a decision's reason but strip digit runs and the group's values.
 
     `values` may hold YAML numbers from a decision's `group.values`.
@@ -457,7 +535,7 @@ def _safe_reason(reason: str, values: list) -> str:
         text = re.sub(
             rf"(?<![\w.]){re.escape(_clean(value))}(?![\w.])", "<redacted>", text
         )
-    text = _SEPARATED_DIGITS.sub(
+    text = SEPARATED_DIGITS.sub(
         lambda m: (
             "<redacted>" if sum(c.isdigit() for c in m.group()) >= 5 else m.group()
         ),
@@ -469,7 +547,7 @@ def _safe_reason(reason: str, values: list) -> str:
 
 def _with_task(reason: str, task: str) -> str:
     """End a reason once, then add the task: no `?.` after a question."""
-    reason = reason if reason.endswith(("?", "!", ".")) else f"{reason}."
+    reason = _ended(reason)
     return f"{reason} Task: {task}" if task else reason
 
 
@@ -494,6 +572,12 @@ def _group_part(
     view: str, decisions: list[Decision], groups: list[Group]
 ) -> tuple[str, list]:
     """The row-group part of a question, and the values its reason must lose.
+
+    Every count is a bound (`bounded`: `10+`, or `<10` under 10): the groups,
+    their rows and the students of the largest group. An earlier review may
+    have listed these groups in its "Still with the analyst" file with the
+    small ones and the bucket's total withheld, and an exact count here, less
+    the counts that file posted, would pin them.
 
     The decision's column shows each value only for a reviewed column, and only
     when one of that value's groups holds 10 or more students. A reason loses whatever
@@ -523,46 +607,80 @@ def _group_part(
     # A value shows only when one group alone has 10 of its students.
     shown = (
         set()
-        if _is_identifier(column)
+        if is_identifier(column)
         else {v for (_, v), n in per_value.items() if n >= MASK_BELOW}
     )
     values = ", ".join(
         dict.fromkeys(_clean(v) if v in shown else "<redacted>" for v in found)
     )
     where = f"`{column}` = `{values}`" if column else "the whole comparison"
-    hidden = [v for g in groups for c, v in g.dims if _is_identifier(c)]
+    hidden = [v for g in groups for c, v in g.dims if is_identifier(c)]
     hidden += [
         v
         for v in [*found, *(v for d in decisions for v in d.group.get("values", []))]
         if str(v) not in shown
     ]
-    plural = "group" if len(groups) == 1 else "groups"
     if len(groups) == 1:
-        who = f"{mask(students)} students"
-    elif len(per_comparison) == 1:
-        who = f"at least {mask(students)} students"
+        who = f"{bounded(students)} students"
     else:
-        who = f"at least {mask(students)} students in one comparison"
+        # "at least" already bounds it: the bound's own `+` would say it twice.
+        least = bounded(students).removesuffix("+")
+        who = f"at least {least} students"
+        if len(per_comparison) > 1:
+            who += " in one comparison"
     return (
         f"{where} in {', '.join(sorted(per_comparison))} of "
         f"`{view}` ({', '.join(sorted({g.bucket for g in groups}))}): "
-        f"{len(groups)} row {plural}, {mask(rows)} rows, {who}"
+        f"{bounded(len(groups))} row groups, {bounded(rows)} rows, {who}"
+    ), hidden
+
+
+def _comparison_part(view: str, groups: list[Group]) -> tuple[str, list]:
+    """What a comparison decision closes, for the review, and the values its
+    reason must lose.
+
+    It names no group's values, and every count is a bound (`bounded`,
+    `10+` or `<10`): the groups, their rows, and the students of the
+    largest group, the count surely there. An earlier review listed these
+    groups in its "Still with the analyst" file, with the small ones and a
+    bucket's total withheld; an exact count here, less the counts it
+    posted, would pin them. A reason loses every identifier column's values
+    and a reviewed column's value no group with 10 or more students holds.
+    """
+    (cid,) = {g.comparison_id for g in groups}
+    students = max(g.n_students for g in groups)
+    per_value: dict[tuple[str, str], int] = {}
+    hidden = []
+    for g in groups:
+        for c, v in g.dims:
+            if is_identifier(c):
+                hidden.append(v)
+            else:
+                per_value[c, v] = max(per_value.get((c, v), 0), g.n_students)
+    hidden += [v for (_, v), n in per_value.items() if n < MASK_BELOW]
+    buckets = ", ".join(sorted({g.bucket for g in groups}))
+    # "at least" already bounds it: the bound's own `+` would say it twice.
+    least = bounded(students).removesuffix("+")
+    return (
+        f"every open row group of `{cid}` in `{view}` ({buckets}): "
+        f"{bounded(len(groups))} row groups, "
+        f"{bounded(sum(g.n_rows for g in groups))} rows, at least {least} students"
     ), hidden
 
 
 @dataclass(frozen=True)
 class CauseAsk:
     """One comparison's part of an owner question on a cause: the decision,
-    the groups it decides in the latest triage, the rows the proof attributes
-    to it in them, and the comparison's model-doc lead (`triage.doc_leads`)."""
+    the groups it decides in the latest sort, the rows the explanation attributes
+    to it in them, and the comparison's model-doc lead (`sort.doc_leads`)."""
 
     decision: Decision
     groups: list[Group]
     rows: int
     lead: str = ""
-    # Each stored proof that proves the cause in these groups, as its path
+    # Each stored explanation that explains the cause in these groups, as its path
     # relative to the validation file's directory and the cause's bucket.
-    proofs: tuple[tuple[str, str], ...] = ()
+    explanations: tuple[tuple[str, str], ...] = ()
 
 
 def _cause_head(ask: CauseAsk) -> str:
@@ -579,16 +697,16 @@ def _cause_part(view: str, ask: CauseAsk) -> tuple[str, list]:
 
     It names the comparison, never a group's values. Its row count is the
     cause's own share, so no two posted totals differ by another cause's rows.
+    Both counts are bounds, as in `_group_part`.
     """
     d, groups = ask.decision, ask.groups
-    plural = "group" if len(groups) == 1 else "groups"
     hidden = [
-        v for g in groups for c, v in g.dims if _shown_value(g, c, v) == "<redacted>"
+        v for g in groups for c, v in g.dims if shown_value(g, c, v) == "<redacted>"
     ]
     return (
         f"`{d.comparison}` in `{view}` "
         f"({', '.join(sorted({g.bucket for g in groups}))}): "
-        f"{mask(len(groups))} row {plural}, {mask(ask.rows)} rows"
+        f"{bounded(len(groups))} row groups, {bounded(ask.rows)} rows"
     ), hidden
 
 
@@ -621,24 +739,253 @@ def _gap_part(view: str, gaps: list[Gap]) -> str:
     )
 
 
-def _questions(
-    runs: list[RunResult], causes: dict[str, list[CauseAsk]] | None = None
+# Why a comparison's SQL cannot be built (`results.stale_comparisons`). The
+# error after it can quote SQL, so the review issue stops at these words.
+SQL_BROKEN = "its SQL cannot be built today"
+
+
+@dataclass(frozen=True)
+class Unsettled:
+    """One open item still in the sort's `investigate` pile, as `ask-owner` lists it.
+
+    `item` is its sort id, which masks values as the issue does. `what` is
+    a row group's bucket, else the item's kind. `rows` and `cells` are exact
+    here and masked when listed. `lead` is the trace's first lead, masked
+    (`evidence_posted`), or empty; `hidden` holds the values it must lose.
+    """
+
+    view: str
+    comparison: str
+    item: str
+    what: str
+    rows: int | None = None
+    cells: int | None = None
+    lead: str = ""
+    hidden: tuple[str, ...] = ()
+
+
+# A trace lead (`trace.ItemTrace.leads`): its step labels and counts. A label
+# is `<scope>: <SQL>`, several joined by ` / ` (`sqlsteps.Step`).
+_LEAD = re.compile(
+    r"^lead: relaxing (?P<label>.*) brings back (?P<n>\S+) of (?P<of>\S+) rows$"
+)
+_SCOPE = re.compile(r"(?:^| / )([^\s:/][^\s:]*): ")
+
+
+def _posted_lead(lead: str, counts: bool = True) -> str:
+    """A trace lead as the issue shows it: each step's scope and, with
+    `counts`, the counts; never the step's SQL. The full lead stays in the
+    local sort. Its `of M rows` is the item's row count, so a lead beside
+    a count that is not posted exact must leave `counts` out; and one whose
+    `M` is bounded (`suppress`: a part is hidden) leaves them out always,
+    since the item's own exact count would pin its parts."""
+    found = _LEAD.match(lead)
+    if found is None:
+        return "a trace lead; ask the analyst"
+    scopes = list(dict.fromkeys(_SCOPE.findall(found["label"])))
+    where = f" in {', '.join(scopes)}" if scopes else ""
+    if not counts or not (found["n"].isdigit() and found["of"].isdigit()):
+        return f"lead: relaxing a step{where}"
+    return (
+        f"lead: relaxing a step{where} brings back {found['n']} of {found['of']} rows"
+    )
+
+
+def _posted_why(why: str) -> str:
+    """Why a comparison waits, as the issue shows it: no SQL, no long digits."""
+    at = why.find(SQL_BROKEN)
+    if at != -1:
+        why = why[: at + len(SQL_BROKEN)]
+    return safe_reason(why, [])
+
+
+@dataclass(frozen=True)
+class _Bucket:
+    """One comparison's open items of one bucket or kind, with each item's
+    count and the bucket's totals masked together (`suppress`), so the
+    listed counts never give away the ones left out. A total is exact only
+    when every part of it is posted exact (`suppress`)."""
+
+    head: str
+    items: list[tuple[Unsettled, str | None]]
+    totals: list[str]
+
+    @property
+    def small(self) -> int:
+        """How many items `unsettled_detail` leaves out (`_small`)."""
+        return sum(1 for u, _ in self.items if _small(u))
+
+    @property
+    def count(self) -> str:
+        """The issue's count of the bucket's items, saying no more than the
+        linked file does.
+
+        It gives the items the file lists (anyone can count those lines) and
+        the items it leaves out as the file states them: their number at
+        `MASK_BELOW` or more, else only that there are fewer than
+        `MASK_BELOW`. It never gives a total of all items, which less the
+        listed lines would pin a masked number.
+        """
+        listed = len(self.items) - self.small
+        out = f"{listed} listed item{'' if listed == 1 else 's'}"
+        if self.small >= MASK_BELOW:
+            out += f", plus {self.small} under {MASK_BELOW} rows or cells"
+        elif self.small:
+            out += f", plus fewer than {MASK_BELOW} under {MASK_BELOW} rows or cells"
+        return out
+
+
+def _buckets(items: list[Unsettled]) -> list[_Bucket]:
+    by: dict[tuple[str, str, str], list[Unsettled]] = {}
+    for u in items:
+        by.setdefault((u.view, u.comparison, u.what), []).append(u)
+    out = []
+    for (view, comparison, what), us in by.items():
+        shown: dict[int, str] = {}
+        totals = []
+        for word in ("rows", "cells"):
+            counted = [(i, getattr(u, word)) for i, u in enumerate(us)]
+            counted = [(i, n) for i, n in counted if n is not None]
+            if not counted:
+                continue
+            total, texts = suppress(sum(n for _, n in counted), [n for _, n in counted])
+            totals.append(f"{total} {word}")
+            shown.update(
+                {
+                    i: f"{text} {word}"
+                    for (i, _), text in zip(counted, texts, strict=True)
+                }
+            )
+        out.append(
+            _Bucket(
+                f"`{comparison}` in `{view}` ({what})",
+                [(u, shown.get(i)) for i, u in enumerate(us)],
+                totals,
+            )
+        )
+    return out
+
+
+def _small(u: Unsettled) -> bool:
+    """An item under `MASK_BELOW` rows or cells, counted but never listed."""
+    return any(n is not None and n < MASK_BELOW for n in (u.rows, u.cells))
+
+
+def unsettled_detail(items: list[Unsettled], name: str) -> str:
+    """The file beside the review JSON that lists the open items one by one.
+
+    It is posted (the issue links it), so it is masked like the issue: per
+    comparison and bucket, each item of `MASK_BELOW` or more rows or cells
+    with its sort id, its count as `still_with_analyst`'s total masks it,
+    and the trace's lead (`_posted_lead`: its steps' scopes, and its counts
+    only beside an exact count, since a lead's `of M rows` is the item's
+    count) or `no lead yet`. Items under `MASK_BELOW` rows or cells are
+    never listed; their number is stated only when it is `MASK_BELOW` or
+    more, and the issue says no more (`_Bucket.count`), so no count here and
+    there gives away a masked one. No stub value and no SQL.
+
+    Args:
+        items: The items in `investigate` (`sort.unsettled`).
+        name: What the review covers (its view, or its domain across views).
+    """
+    out = [
+        f"# Still with the analyst: `{_clean(name)}`",
+        "",
+        "The open items behind the review issue's counts, not explained yet. "
+        f"Row and cell counts under {MASK_BELOW} show as `{mask(0)}`, and a "
+        "total beside a hidden count as a bound; an item under "
+        f"{MASK_BELOW} rows or cells is not listed.",
+    ]
+    for bucket in _buckets(items):
+        out += ["", f"## {bucket.head}", ""]
+        for u, count in bucket.items:
+            if _small(u):
+                continue
+            exact = bool(count) and count.split(" ", 1)[0].isdigit()
+            lead = (
+                safe_reason(_posted_lead(u.lead, counts=exact), list(u.hidden))
+                if u.lead
+                else "no lead yet"
+            )
+            out.append(
+                "- "
+                + ", ".join([f"`{_clean(u.item)}`", *([count] if count else [])])
+                + f"; {lead}"
+            )
+        # Stated only when it needs no mask; see `_Bucket.count`.
+        if bucket.small >= MASK_BELOW:
+            out.append(
+                f"- Under {MASK_BELOW} rows or cells each, not listed: "
+                f"{bucket.small} items."
+            )
+        elif bucket.small:
+            out.append(
+                f"- Fewer than {MASK_BELOW} more items, each under {MASK_BELOW} "
+                "rows or cells, are not listed."
+            )
+    return "\n".join(out) + "\n"
+
+
+def nothing_unsettled(name: str) -> str:
+    """`unsettled_detail`'s file when no item is open: one line saying so."""
+    return (
+        f"# Still with the analyst: `{_clean(name)}`\n\nNothing is with the analyst.\n"
+    )
+
+
+def still_with_analyst(
+    items: list[Unsettled],
+    waiting: dict[str, dict[str, str]],
+    unchecked: dict[str, dict[str, dict[str, int]]] | None = None,
+) -> list[str]:
+    """The review's lines for what is not settled yet, never asked as questions.
+
+    One line per comparison and bucket (or kind) of the items in
+    `investigate`: the items listed and left out, as the file says
+    (`_Bucket.count`), and their masked row and cell totals. The items one by one go to `unsettled_detail`'s file, since a
+    view can hold thousands. Then one line per comparison in `waiting` (per
+    view, id to why: missing, stale or skipped, `sort.comparisons_waiting`).
+    No stub value and no SQL. Then, given `unchecked` (per view, comparison
+    and reason, the cells the formula check left to coverage,
+    `sort.formulas_not_compared`), one masked line per comparison and
+    reason, sorted.
+    """
+    out = [f"{b.head}: " + ", ".join([b.count, *b.totals]) for b in _buckets(items)]
+    out += [
+        f"`{cid}` in `{view}`: {_posted_why(why)}"
+        for view, whys in waiting.items()
+        for cid, why in whys.items()
+    ]
+    out += [
+        f"`{cid}` in `{view}`: formulas not compared: {safe_reason(reason, [])}; "
+        f"{mask(cells)} cells closed by coverage only"
+        for view, comparisons in sorted((unchecked or {}).items())
+        for cid, reasons in sorted(comparisons.items())
+        for reason, cells in sorted(reasons.items())
+    ]
+    return out
+
+
+def owner_questions(
+    runs: list[RunResult],
+    causes: dict[str, list[CauseAsk]] | None = None,
 ) -> list[dict]:
     """Group the runs' domain-owner decisions into the review's questions.
 
     One question per reason and task, across decision kinds and files: each
     kind and view adds a part to its bullet, and the reason prints once. A
-    cause in `causes` (per view, `triage.cause_asks`) is its own question,
+    cause in `causes` (per view, `sort.cause_asks`) is its own question,
     whatever its reason: one per side, words and task, never one per school
-    or comparison, with a part per comparison it covers.
+    or comparison, with a part per comparison it covers. Every count a part
+    posts is a bound (`bounded`), never exact (`_group_part`).
 
     Returns:
         In the order the issue asks them, dicts of `reason`, `task`, `parts`
-        (the masked count text per kind and view; a cause question's per
+        (the bounded count text per kind and view; a cause question's per
         comparison, after its `head`), `kinds`, `hidden` (values
         the reason and any evidence must lose), `decisions` as (view,
         Decision) pairs and `comparisons` as (view, comparison id, kind)
-        triples, each listed once; a cause question also has `asks`, (view,
+        triples, each listed once per kind; a cause question also has `asks`, (view,
         `CauseAsk`) pairs.
     """
     questions: dict[tuple, dict] = {}
@@ -663,8 +1010,10 @@ def _questions(
         q["hidden"] += hidden
         q["decisions"] += [(view, x) for x in decisions]
         q["reasons"] += [x.reason for x in decisions if x.reason not in q["reasons"]]
+        # Once per kind: a formula part keeps its own example (a formula
+        # cell) beside a group part's on the same comparison.
         for cid in comparisons:
-            if (view, cid) not in [(v, c) for v, c, _ in q["comparisons"]]:
+            if (view, cid, kind) not in q["comparisons"]:
                 q["comparisons"].append((view, cid, kind))
 
     for run in runs:
@@ -681,19 +1030,20 @@ def _questions(
         for ask in (causes or {}).get(run.view, []):
             part, hidden = _cause_part(run.view, ask)
             d = ask.decision
-            # One rule proven on several comparisons is one question.
+            # One rule explained on several comparisons is one question.
             key = ("cause", d.cause.get("side"), d.cause.get("label"), d.task)
             add(run.view, "cause", [d], part, hidden, [d.comparison], key=key)
             questions[key].setdefault("asks", []).append((run.view, ask))
             questions[key]["head"] = _cause_head(ask)
+        # Only a `formula` decision quiets cells: a formula difference.
         for decisions, diffs in _by_reason(run.applied.quiet_cells):
             add(
                 run.view,
-                "cells",
+                "formula",
                 decisions,
                 f"{', '.join(f'`{c.comparison_id}`' for c in diffs)} in `{run.view}`: "
-                f"{mask(sum(n for c in diffs for n in c.counts.values()))} cells "
-                "differ between Cube and the dashboard",
+                f"{bounded(sum(n for c in diffs for n in c.counts.values()))} cells "
+                "differ while every row in them matches; which definition is right?",
                 [],
                 [c.comparison_id for c in diffs],
             )
@@ -724,8 +1074,10 @@ def also_decided(
     """One line per decision the analyst made that the owner only sees.
 
     Every call but `domain_owner`, masked like the questions: what it covers
-    (a cause once across its comparisons, else the question's part), the call,
-    the reason and the task. `decided` is per view, `triage.cause_asks` for
+    (a cause once across its comparisons, else its row groups with every
+    count a bound, `10+` or `<10`: a comparison decision's by
+    `_comparison_part`, a `group` decision's by `_group_part`), the call,
+    the reason and the task. `decided` is per view, `sort.cause_asks` for
     those calls. Never part of the questions JSON, so `record-answers` cannot
     take one for an answer.
     """
@@ -743,16 +1095,25 @@ def also_decided(
             key = ("cause", d.cause.get("side"), d.cause.get("label"), d.call,
                    d.reason, d.task)  # fmt: skip
             add(key, _cause_head(ask), [(run.view, d.comparison)], d, hidden)
-        for decisions, groups in _by_reason(run.applied.quiet, owner=False):
+        by_group = [(d, g) for d, g in run.applied.quiet if not d.all_groups]
+        for decisions, groups in _by_reason(by_group, owner=False):
             part, hidden = _group_part(run.view, decisions, groups)
             d = decisions[0]
             add(("group", run.view, part, d.call), part, [], d, hidden)
+        # A comparison decision is always deliberate: listed, never asked.
+        whole: dict[str, tuple[Decision, list[Group]]] = {}
+        for d, g in run.applied.quiet:
+            if d.all_groups:
+                whole.setdefault(d.id, (d, []))[1].append(g)
+        for d, groups in whole.values():
+            part, hidden = _comparison_part(run.view, groups)
+            add(("comparison", run.view, d.id), part, [], d, hidden)
         for decisions, diffs in _by_reason(run.applied.quiet_cells, owner=False):
             part = (
                 f"{', '.join(f'`{c.comparison_id}`' for c in diffs)} in "
-                f"`{run.view}`: cell differences"
+                f"`{run.view}`: a formula difference"
             )
-            add(("cells", part, decisions[0].call), part, [], decisions[0], [])
+            add(("formula", part, decisions[0].call), part, [], decisions[0], [])
         for decisions, gaps in _by_reason(run.applied.quiet_gaps, owner=False):
             part = _gap_part(run.view, gaps)
             add(("gap", part, decisions[0].call), part, [], decisions[0], [])
@@ -776,7 +1137,7 @@ def also_decided(
     for m in merged.values():
         d = m["d"]
         call = CALL_WORDS.get(d.call, d.call)
-        reason = _with_task(_safe_reason(d.reason, m["hidden"]), d.task)
+        reason = _with_task(safe_reason(d.reason, m["hidden"]), d.task)
         out.append(f"{' and '.join(m['heads'])}: {call} (`{d.call}`). Reason: {reason}")
     return out
 
@@ -784,11 +1145,11 @@ def also_decided(
 def question_reasons(q: dict) -> list[str]:
     """Every distinct reason behind a question, scrubbed, in decision order.
 
-    A cause proven on several comparisons is one question, and each
+    A cause explained on several comparisons is one question, and each
     comparison's decision may carry its own reason.
     """
     raw = q["reasons"] or [q["reason"]]
-    return list(dict.fromkeys(_safe_reason(r, q["hidden"]) for r in raw))
+    return list(dict.fromkeys(safe_reason(r, q["hidden"]) for r in raw))
 
 
 def question_reason(q: dict) -> str:
@@ -797,26 +1158,26 @@ def question_reason(q: dict) -> str:
     reasons = question_reasons(q)
     if len(reasons) == 1:
         return reasons[0]
-    return " ".join(r if r.endswith(("?", "!", ".")) else f"{r}." for r in reasons)
+    return " ".join(_ended(r) for r in reasons)
 
 
 def defined_comparisons(questions: list[dict], view: str) -> set[str]:
     """The view's comparisons whose definitions the issue shows.
 
-    Those are the comparisons with a domain-owner row group, cause or cell
-    difference.
+    Those are the comparisons with a domain-owner row group, cause or
+    formula difference.
     """
     return {
         cid
         for q in questions
         for v, cid, kind in q["comparisons"]
-        if v == view and kind in ("group", "cause", "cells")
+        if v == view and kind in ("group", "cause", "formula")
     }
 
 
 def definition_text(text: str) -> str:
     """A comparison's definition as the issue shows it, scrubbed like a reason."""
-    return _safe_reason(text, [])
+    return safe_reason(text, [])
 
 
 def _dashboard_location(check: dict) -> str:
@@ -859,17 +1220,23 @@ def _hand_check_lines(question_id: str, check: dict) -> list[str]:
         f"{check['dashboard']}, Cube shows {check['cube']}. "
     )
     if check.get("cause_students"):
-        line += (
-            f"At least {check['cause_students']} students' rows in it have "
-            "this cause"
-            + ("; other causes' rows are in it too. " if check.get("mixed") else ". ")
+        students = check["cause_students"]
+        if isinstance(students, int):
+            students = bounded(students)
+        said = (
+            f"{MASK_BELOW} or more"
+            if students == f"{MASK_BELOW}+"
+            else f"Fewer than {MASK_BELOW}"
+        )
+        line += f"{said} students' rows in it have this cause" + (
+            "; other causes' rows are in it too. " if check.get("mixed") else ". "
         )
     if check.get("dashboard_sql") is None:
         pass
     elif check["expired"]:
         line += (
-            f"The pinned SQL stopped working at {check['expires']}; re-run `run` "
-            "for a fresh moment."
+            f"The pinned SQL stopped working at {check['expires']}; re-run "
+            "`compare --all` for a fresh moment."
         )
     else:
         line += f"The pinned SQL works until {check['expires']}."
@@ -914,7 +1281,7 @@ def _hand_check_lines(question_id: str, check: dict) -> list[str]:
 def _reproduce_lines(question_id: str, block: dict) -> list[str]:
     """A cause question's folded Reproduce block (`answers.merged_reproduce`):
     each example cell as a Cube query, each count query on today's tables
-    once, then each proof file with the commands that re-prove it."""
+    once, then each explanation file with the commands that re-explain it."""
     out = ["<details>", f"<summary>Reproduce {question_id}</summary>", ""]
     for cube in block["cube"]:
         out += [
@@ -940,27 +1307,33 @@ def _reproduce_lines(question_id: str, block: dict) -> list[str]:
             "```",
             "",
         ]
-    for proof in block["proofs"]:
-        name = proof["path"].rsplit("/", 1)[-1]
+    for explanation in block["explanations"]:
+        name = explanation["path"].rsplit("/", 1)[-1]
         blob = block.get("blob")
-        link = f"[`{name}`]({blob}/{proof['path']})" if blob else f"`{proof['path']}`"
-        if proof["query"] is None:
+        link = (
+            f"[`{name}`]({blob}/{explanation['path']})"
+            if blob
+            else f"`{explanation['path']}`"
+        )
+        if explanation["query"] is None:
             count = " (no count query yet)"
         else:
-            count = f" (count query {proof['query'] + 1})" if several else ""
-        commands = "; ".join(f"`{c}`" for c in proof["confirm"])
-        out += [f"- Cause `{_clean(proof['bucket'])}` in {link}{count}: {commands}"]
+            count = f" (count query {explanation['query'] + 1})" if several else ""
+        commands = "; ".join(f"`{c}`" for c in explanation["explain"])
+        out += [
+            f"- Cause `{_clean(explanation['bucket'])}` in {link}{count}: {commands}"
+        ]
     after = " then ".join(f"`{a}`" for a in block["after"])
     out += [
         "",
-        "Each command re-proves its cause at the run's moment, in Claude in VS "
+        "Each command re-explains its cause at the run's moment, in Claude in VS "
         f"Code in this repository, until {block['expires']}; after that, {after}.",
         "",
     ]
     return out + ["</details>", ""]
 
 
-# GitHub caps an issue body and a comment at 65,536 characters. `review` keeps
+# GitHub caps an issue body and a comment at 65,536 characters. `ask-owner` keeps
 # under it with room for small edits; the body is re-rendered, not hand-edited.
 GITHUB_CAP = 65_536
 BODY_WARN_CHARS = GITHUB_CAP - 2_000
@@ -975,47 +1348,45 @@ def render_review_issue(
     comments: list[str] | None = None,
     decided: dict[str, list[CauseAsk]] | None = None,
     json_link: str | None = None,
+    still: list[str] | None = None,
+    unpublished: dict[str, set[str]] | None = None,
+    still_link: str | None = None,
 ) -> str:
     """Render the issue body asking a domain owner to judge open items.
 
     Args:
         domain: The domain whose owner reviews (for example `Registrar`).
         runs: Validation runs; only domain-owner groups, domain-owner missing
-            cuts and filters (by caption, never a value), and anchor findings
-            for measures that read `judge the anchor` are kept.
+            cuts and filters (by caption, never a value) are kept.
         definitions: Per view, per comparison id, what each side counts
             (`dashboard`, `cube`). Shown side by side for a comparison with a
             domain-owner group, scrubbed like a reason.
         questions: `answers.questions_json` for the same runs. When given, each
             question's hand checks follow the bullets, and the body ends with
             the list as a fenced JSON block for the owner's Claude session.
-        causes: Per view, the owner's cause questions (`triage.cause_asks`).
+        causes: Per view, the owner's cause questions (`sort.cause_asks`).
         comments: Given, and the body would pass `BODY_WARN_CHARS` with
             every cause question's Reproduce block, the blocks move out of
             the body into this list instead, as follow-up comments each under
             the cap, in question order; the body says they follow.
         decided: Per view, the cause decisions with any other call
-            (`triage.cause_asks` with `owner=False`), for `also_decided`.
+            (`sort.cause_asks` with `owner=False`), for `also_decided`.
         json_link: Where the questions JSON is committed (`posted_json` of
             `questions`); the body links it instead of carrying the block.
+        still: What is not settled yet (`still_with_analyst`), listed after
+            the questions under its own heading and never asked.
+        unpublished: Per view, the comparisons that opted in to a sheet on no
+            published dashboard; a question naming one ends with a note.
+        still_link: Where `unsettled_detail`'s file is committed; the "Still
+            with the analyst" section links it.
 
     Returns:
         Markdown in the feature-request structure. Every count is masked and
         values outside the reviewed reference columns read `<redacted>`.
     """
-    asked = _questions(runs, causes)
+    asked = owner_questions(runs, causes)
     kinds = [k for q in asked for k in q["kinds"]]
     asked_ids = [d.id for q in asked for _, d in q["decisions"]]
-    anchor_lines: list[str] = []
-    for run in runs:
-        judged = {m.measure for m in run.measures if m.verdict == "judge the anchor"}
-        for f in run.findings:
-            if f.kind == "anchor" and f.measure in judged and not f.passed:
-                anchor_lines.append(
-                    f"`{f.measure}` in `{run.view}`: Cube shows {_num(f.measure, f.left)}, "
-                    f"the source shows {_num(f.measure, f.right)}."
-                )
-
     definition_lines = []
     for run in runs:
         shown = defined_comparisons(asked, run.view)
@@ -1026,13 +1397,38 @@ def render_review_issue(
                     f"Dashboard: {definition_text(sides['dashboard'])}. "
                     f"Cube: {definition_text(sides['cube'])}."
                 )
+    # The JSON's counts when given: they bound a group's rows beside hidden
+    # evidence, which only the sort it was built from can tell. Matched by
+    # position, so a JSON of other questions refuses rather than post counts
+    # it never bounded.
+    if questions is not None and len(questions) != len(asked):
+        raise ValueError(
+            f"the questions JSON holds {len(questions)} questions, the runs ask "
+            f"{len(asked)}; build both from the same runs"
+        )
+    counts = (
+        [q["counts"] for q in questions]
+        if questions is not None
+        else [question_parts(q) for q in asked]
+    )
     # Numbered like the JSON's question ids, so a hand check names its bullet.
     question_lines = [
-        f"Q{n}. {'; '.join(question_parts(q))}. "
+        f"Q{n}. {_ended('; '.join(counts[n - 1]))} "
         f"Reason: {_with_task(question_reason(q), q['task'])}"
+        + "".join(
+            f" Note: `{cid}`'s sheet is on no published dashboard."
+            for cid in sorted(
+                {
+                    cid
+                    for view, ids in (unpublished or {}).items()
+                    for cid in defined_comparisons([q], view) & ids
+                }
+            )
+        )
         for n, q in enumerate(asked, start=1)
     ]
     also = also_decided(runs, decided)
+    moment_lines = _review_moments(runs)
 
     def render(shown: list[dict] | None, moved: int) -> tuple[str, list[str]]:
         """The body from `shown` questions, and the comments it moved out:
@@ -1056,9 +1452,10 @@ def render_review_issue(
             if out_block:
                 blocks.append((q["id"], out_block))
         body = _review_body(
-            domain, question_lines, anchor_lines, definition_lines, check_lines,
+            domain, question_lines, definition_lines, check_lines,
             asked_ids, kinds, shown, also, moved=moved if blocks else 0,
-            json_link=json_link,
+            json_link=json_link, moment_lines=moment_lines, still=still,
+            still_link=still_link,
         )  # fmt: skip
         return body, _comment_chunks(blocks, moved) if moved and blocks else []
 
@@ -1077,19 +1474,39 @@ def render_review_issue(
     return body
 
 
+def _review_moments(runs: list[RunResult]) -> list[str]:
+    """When each comparison's rows were read: 1 line when they share a
+    moment, else 1 per comparison, named with its view when there are
+    several."""
+    by: dict[str, Build] = {}
+    for run in runs:
+        if not run.moments:  # saved before each comparison kept its own
+            by[run.view] = run.moment
+        for cid, m in run.moments.items():
+            by[cid if len(runs) == 1 else f"{cid} in {run.view}"] = m
+    if len(set(by.values())) == 1:
+        return [f"Moment: {_span(next(iter(by.values())))}."]
+    return _moment_lines(by)
+
+
+def _ended(text: str) -> str:
+    """`text` closed by a period, unless it already ends a sentence."""
+    return text if text.endswith(("?", "!", ".")) else f"{text}."
+
+
 def posted_json(questions: list[dict]) -> list[dict]:
     """The questions as the owner's session reads them: a cause question's
-    reproduce without the analyst's commands (`confirm`, `after`), which only
+    reproduce without the analyst's commands (`explain`, `after`), which only
     the prose shows."""
     out = []
     for q in questions:
         if q.get("reproduce"):
-            proofs = [
-                {k: v for k, v in p.items() if k != "confirm"}
-                for p in q["reproduce"]["proofs"]
+            explanations = [
+                {k: v for k, v in p.items() if k != "explain"}
+                for p in q["reproduce"]["explanations"]
             ]
             kept = {k: v for k, v in q["reproduce"].items() if k != "after"}
-            q = {**q, "reproduce": {**kept, "proofs": proofs}}
+            q = {**q, "reproduce": {**kept, "explanations": explanations}}
         out.append(q)
     return out
 
@@ -1146,7 +1563,6 @@ def _comment_chunks(blocks: list[tuple[str, list[str]]], moved: int = 1) -> list
 def _review_body(
     domain: str,
     question_lines: list[str],
-    anchor_lines: list[str],
     definition_lines: list[str],
     check_lines: list[str],
     asked_ids: list[str],
@@ -1155,23 +1571,43 @@ def _review_body(
     also: list[str],
     moved: int,
     json_link: str | None = None,
+    moment_lines: list[str] | None = None,
+    still: list[str] | None = None,
+    still_link: str | None = None,
 ) -> str:
     """The review body from its rendered parts; `moved` says the Reproduce
     blocks follow in comments (2: the hand checks too); `questions` is the
-    JSON to post, without the `confirm` commands, which are the analyst's."""
-    # One question per bullet and per anchor finding.
+    JSON to post, without the `explain` commands, which are the analyst's."""
+    link_lines = (
+        [
+            f"Each open item, masked: [{still_link.rsplit('/', 1)[-1]}]({still_link}).",
+            "",
+        ]
+        if still_link
+        else []
+    )
     ids = sorted(set(asked_ids))
-    n = len(question_lines) + len(anchor_lines)
+    n = len(question_lines)
     plural = "question" if n == 1 else "questions"
     out = [
         "## What and why",
         "",
         f"The {domain} team owns the rule behind {n} {plural} in the Cube validation.",
-        "Cube and the dashboard disagree on them, or Cube disagrees with a source outside the dashboards.",
-        f"Counts under {MASK_BELOW} show as `{mask(0)}`, and identifiers of students and staff are hidden.",
+        "Cube and the dashboard disagree on them.",
+        f"Row, cell and student counts under {MASK_BELOW} show as `{mask(0)}`, and identifiers of students and staff are hidden.",
         "",
     ]
-    out += _bullets(question_lines + anchor_lines, "Nothing needs review.")
+    out += _bullets(question_lines, "Nothing needs review.")
+    if still:
+        out += [
+            "",
+            "## Still with the analyst",
+            "",
+            "These differences are not explained yet, so they are not questions. "
+            "If one looks familiar, say so in a comment.",
+            "",
+            *link_lines,
+        ] + _bullets(still)
     if also:
         out += [
             "",
@@ -1181,6 +1617,8 @@ def _review_body(
         ] + _bullets(also)
     if definition_lines:
         out += ["", "Definitions side by side:", ""] + _bullets(definition_lines)
+    if moment_lines:
+        out += [""] + moment_lines
     if check_lines:
         out += [
             "",
@@ -1218,9 +1656,8 @@ def _review_body(
         else f"Decisions with call `domain_owner`: {', '.join(f'`{i}`' for i in ids) or 'none'}.",
         f"Questions: {len(question_lines)}. Row-group parts: {kinds.count('group')}. "
         f"Cause parts: {kinds.count('cause')}. "
-        f"Cell differences: {kinds.count('cells')}. "
-        f"Missing cuts and filters: {kinds.count('gap')}. "
-        f"Anchor findings: {len(anchor_lines)}.",
+        f"Formula differences: {kinds.count('formula')}. "
+        f"Missing cuts and filters: {kinds.count('gap')}.",
         "",
         "</details>",
         "",

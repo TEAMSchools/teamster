@@ -1,3 +1,4 @@
+import dataclasses
 import itertools
 import json
 import re
@@ -10,6 +11,7 @@ from cube_validation.answers import (
     Answer,
     AnswerError,
     HandCheck,
+    _covers,
     approved_decisions,
     cell_causes,
     example_cell,
@@ -20,16 +22,22 @@ from cube_validation.answers import (
 )
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation.compare import CellDiff, Group
-
-# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation.config import ColumnPair, Comparison, Decision, ViewConfig
+from cube_validation.config import (
+    ColumnPair,
+    Comparison,
+    Decision,
+    RowSpec,
+    ViewConfig,
+)
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.decisions import Applied, apply
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.moment import Build
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+from cube_validation.reconcile import CellDiff, Group
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.report import RunResult, render_review_issue
@@ -65,7 +73,7 @@ def _run(cells):
     )
 
 
-def _cfg(dashboard_region="regions_region_name"):
+def _cfg(dashboard_region="regions_region_name", rows=None):
     cmp = Comparison(
         id="enrollment",
         measure="student_count",
@@ -76,6 +84,7 @@ def _cfg(dashboard_region="regions_region_name"):
         workbook="Attendance",
         sheet="Enrollment by Region",
         defaults={"Academic Year": "2026", "Grade": ["6", "7", "8"]},
+        rows=rows,
     )
     return ViewConfig(view="enrollment", fact="d.t", comparisons=[cmp])
 
@@ -84,6 +93,46 @@ def test_example_cell_is_biggest_difference_with_reviewed_dims_only():
     run = _run([_cell("a", 10, 12), _cell("b", 10, 20), _cell("c", 10, 15)])
 
     assert example_cell(run, "enrollment")["key"] == "b"
+
+
+def test_a_formula_question_s_hand_check_names_a_formula_cell():
+    # A wide cell holding unmatched rows and a narrow one where every row
+    # matched: the formula question's example is the narrow one.
+    wide = {**_cell("wide", 10, 90), "kind": "cells"}
+    narrow = {**_cell("narrow", 10, 25), "kind": "formula"}
+    run = _owner_run([wide, narrow])
+    run.applied.quiet = []
+
+    (q,) = _questions(run)
+
+    (check,) = q["hand_checks"]
+    assert (check["dashboard"], check["cube"]) == ("10", "25")
+    assert example_cell(run, "enrollment")["key"] == "wide"
+    assert example_cell(run, "enrollment", kind="formula")["key"] == "narrow"
+    # A run saved before cells carried a kind holds no formula cell.
+    old = _run([_cell("old", 10, 12)])
+    assert example_cell(old, "enrollment", kind="formula") is None
+    assert example_cell(old, "enrollment", kind="cells")["key"] == "old"
+
+
+def test_a_formula_part_merged_with_a_group_part_keeps_a_formula_example():
+    # The formula decision shares the group decisions' reason, so one
+    # question holds a group part and a formula part on one comparison: the
+    # group part's example is the widest cell, the formula part's a formula
+    # cell.
+    wide = {**_cell("wide", 10, 90), "kind": "cells"}
+    narrow = {**_cell("narrow", 10, 25), "kind": "formula"}
+    run = _owner_run([wide, narrow])
+    (d, diff), = run.applied.quiet_cells  # fmt: skip
+    group_reason = run.applied.quiet[0][0].reason
+    run.applied.quiet_cells = [(dataclasses.replace(d, reason=group_reason), diff)]
+
+    (q,) = _questions(run)
+
+    assert sorted((c["dashboard"], c["cube"]) for c in q["hand_checks"]) == [
+        ("10", "25"),
+        ("10", "90"),
+    ]
 
 
 def test_example_cell_ties_go_to_the_lowest_key():
@@ -117,43 +166,21 @@ def test_a_cause_s_example_needs_10_of_its_own_students_and_the_most_wins():
     assert example_cell(run, "enrollment", "C3", cells) is None
 
 
-def _floor_run(groups, rows):
+# The row grain a comparison needs before its groups can be placed in a cell.
+FLOOR_ROWS = RowSpec(grain=[ColumnPair("student_number", "student_number")], values=[])
+
+
+def _floor_run(groups):
     run = _run([_cell("a", 10, 20)])
     run.applied = Applied(open=list(groups))
-    run.cell_rows = {"enrollment": rows}
     return run
 
 
-def _rows(bucket, c_rows, in_cut, cut=CUT):
-    side = {"rows": c_rows, "n": [0], "sum": [0.0]}
-    shown = {"rows": in_cut, "n": [0], "sum": [0.0]}
-    none = {"rows": 0, "n": [0], "sum": [0.0]}
-    return {"bucket": bucket, "dims": [list(d) for d in DIMS], "dash_dims": None,
-            "c": side, "d": none, "cuts": {cut: {"c": shown, "d": none}}}  # fmt: skip
-
-
-def test_a_cause_s_students_in_a_cell_are_only_what_its_groups_prove():
-    g = Group("enrollment", tuple(map(tuple, DIMS)), "cube_only", 30, 25)
-
-    def floor(groups, rows, causes):
-        run = _floor_run(groups, rows)
-        items = [
-            {"key": it.key, "kind": "group",
-             "cause": [{"side": "cube", "label": c} for c in causes]}
-            for it in triage_mod.open_items(run)
-        ]  # fmt: skip
-        ((_, held),) = cell_causes(run, _cfg(), "enrollment", items)
-        return held
-
-    # All 30 rows in the cell's cut, 1 cause: its 25 students count.
-    assert floor([g], [_rows("cube_only", 30, 30)], ["C1"]) == {"cube: C1": 25}
-    # Rows in another cut too: which students are in this one is unknown.
-    assert floor([g], [_rows("cube_only", 30, 12)], ["C1"]) == {"cube: C1": 0}
-    # 2 causes share the group's students: neither count is known.
-    assert floor([g], [_rows("cube_only", 30, 30)], ["C1", "C2"]) == {
-        "cube: C1": 0,
-        "cube: C2": 0,
-    }
+def _floor_group(bucket, in_cut, n_rows=30, cut=CUT):
+    """A group of `n_rows` rows, `in_cut` of them under `cut` on its own side."""
+    rows = (cut, 0, in_cut) if bucket == "dashboard_only" else (cut, in_cut, 0)
+    return Group("enrollment", tuple(map(tuple, DIMS)), bucket, n_rows, 25,
+                 cut_rows=(rows, ('{"Grade": "8"}', 0, 0)))  # fmt: skip
 
 
 def test_example_cell_skips_cells_under_10_students():
@@ -235,11 +262,11 @@ def _cfg_for(dims):
 
 
 def test_typed_dims_get_predicates_valid_for_their_column_type():
-    # Keys are `pipeline._key` text: '7', 'True', '' and an ISO date.
+    # Keys are `pipeline.value_key` text: '7', 'true', '' and an ISO date.
     assert _where([["regions_region_name", "1.50"]]) == (
         "SAFE_CAST(regions_region_name AS NUMERIC) = 1.5"
     )
-    assert _where([["regions_region_name", "True"]]) == (
+    assert _where([["regions_region_name", "true"]]) == (
         "LOWER(CAST(regions_region_name AS STRING)) = 'true'"
     )
     assert _where([["regions_region_name", ""]]) == "regions_region_name IS NULL"
@@ -283,7 +310,7 @@ def _owner_run(diff_cells, measure_cells=3):
             {"column": "region", "values": [value]},
         )  # fmt: skip
 
-    cells = Decision("c1", "enrollment", "domain_owner", "Codes differ?", cells=True)
+    cells = Decision("c1", "enrollment", "domain_owner", "Codes differ?", formula=True)
     applied = Applied(
         quiet=[
             (group_decision("d-newark", "Newark"),
@@ -291,14 +318,19 @@ def _owner_run(diff_cells, measure_cells=3):
             (group_decision("d-camden", "Camden"),
              Group("enrollment", (("region", "Camden"),), "value_differs", 5, 5)),
         ],
-        quiet_cells=[(cells, CellDiff("enrollment", {"differs": measure_cells}))],
+        quiet_cells=[
+            (cells, CellDiff("enrollment", {"differs": measure_cells}, kind="formula"))
+        ],
     )  # fmt: skip
     run = _run(diff_cells)
     run.applied = applied
     return run
 
 
-TRIAGE = {
+FORMULA_EVIDENCE = (
+    "<10 differing cells hold no unmatched row: every row in them matched on both sides"
+)
+SORTED = {
     "enrollment": {
         "view": "enrollment",
         "items": [
@@ -326,6 +358,16 @@ TRIAGE = {
                 "candidates": [],
             },
             {
+                "id": "enrollment:formula",
+                "kind": "formula",
+                "comparison": "enrollment",
+                "label": "f",
+                "stub": {"comparison": "enrollment", "formula": True},
+                "suggestion": "cause",
+                "evidence": [FORMULA_EVIDENCE],
+                "candidates": [],
+            },
+            {
                 "id": "other:cells",
                 "kind": "cells",
                 "comparison": "other",
@@ -341,8 +383,70 @@ TRIAGE = {
 DEFS = {"enrollment": {"enrollment": {"dashboard": "codes ET, T", "cube": "codes T%"}}}
 
 
-def _questions(run, cfg=None, triage=TRIAGE):
-    return questions_json([run], [cfg or _cfg()], DEFS, triage, START)
+def _questions(run, cfg=None, sorts=SORTED):
+    return questions_json([run], [cfg or _cfg()], DEFS, sorts, START)
+
+
+# `SORTED` is bound again further down, for the decisions-in tests.
+OWNER_SORTED = SORTED
+
+
+@pytest.mark.parametrize(
+    "rows, evidence, total",
+    [
+        # 11 beside `masked` (10+) and `<10` (1+) would pin both.
+        (11, ["scores: a = 1: masked rows", "scores: b = 1: <10 rows"], "10+ rows"),
+        # Bounded beside exact evidence too: an earlier review's open-items
+        # file may have listed the group's parts with some withheld.
+        (50, ["scores: a = 1: 20 rows", "scores: b = 1: 30 rows"], "10+ rows"),
+    ],
+)
+def test_a_group_question_bounds_its_rows_beside_hidden_evidence(rows, evidence, total):
+    d = Decision("d-newark", "enrollment", "domain_owner", REASON,
+                 {"column": "region", "values": ["Newark"]})  # fmt: skip
+    run = _run([_cell()])
+    group = Group("enrollment", (("region", "Newark"),), "value_differs", rows, 12)
+    run.applied = Applied(quiet=[(d, group)])
+    item = {
+        "id": "enrollment:region=Newark", "kind": "group", "comparison": "enrollment",
+        "label": "x", "suggestion": "cause", "evidence": evidence, "candidates": [],
+        "stub": {"comparison": "enrollment",
+                 "group": {"column": "region", "values": ["Newark"]}},
+    }  # fmt: skip
+    sorts = {"enrollment": {"view": "enrollment", "items": [item]}}
+
+    (q,) = _questions(run, sorts=sorts)
+    body = render_review_issue("Registrar", [run], questions=[q])
+
+    assert f", {total}, " in q["counts"][0]
+    assert f"{rows} rows" not in " ".join(q["counts"])
+    (line,) = [x for x in body.splitlines() if x.startswith("- Q1. ")]
+    assert f", {total}, " in line
+
+
+def test_unsettled_items_are_not_in_the_questions_json():
+    run = _owner_run([_cell(cube=25.0)])
+    left = {
+        "id": "enrollment:region=<redacted>#2",
+        "kind": "group",
+        "comparison": "enrollment",
+        "label": "w",
+        # The same stub as a group an owner decision covers.
+        "stub": {
+            "comparison": "enrollment",
+            "group": {"column": "region", "values": ["Camden"]},
+        },
+        "suggestion": "investigate",
+        "evidence": ["lead: relaxing UNSETTLED brings back 3 of 5 rows"],
+        "candidates": [],
+    }
+    items = [*OWNER_SORTED["enrollment"]["items"], left]
+    sorts = {"enrollment": {**OWNER_SORTED["enrollment"], "items": items}}
+
+    questions = _questions(run, sorts=sorts)
+
+    assert "UNSETTLED" not in json.dumps(questions)
+    assert [q["id"] for q in questions] == ["Q1", "Q2"]
 
 
 def test_questions_json_matches_markdown_questions_one_to_one():
@@ -365,7 +469,8 @@ def test_questions_json_matches_markdown_questions_one_to_one():
         "cube": ["`enrollment` in `enrollment`: codes T%"],
     }
     assert questions[0]["evidence"] == ["note on <redacted>, student <redacted>"]
-    assert questions[1]["evidence"] == ["no description or ai_context answers it"]
+    # Only the formula item lends its evidence: no decision covers a cell set.
+    assert questions[1]["evidence"] == [FORMULA_EVIDENCE]
     assert questions[0]["moment"] == {
         "start": START.isoformat(),
         "end": END.isoformat(),
@@ -408,7 +513,7 @@ def test_questions_json_hides_what_the_markdown_hides():
     assert "Camden" not in text and "1234567" not in text
     assert "UNRELATED" not in text
     assert "<10 cells differ" in text and "3 cells" not in text
-    assert "45 rows" in text and " 5 rows" not in text
+    assert "10+ rows" in text and "45 rows" not in text and " 5 rows" not in text
     # A count measure's value under 10 is masked like any count.
     check = _questions(run, cfg)[0]["hand_checks"][0]
     assert (check["dashboard"], check["cube"]) == ("<10", "25")
@@ -417,7 +522,7 @@ def test_questions_json_hides_what_the_markdown_hides():
 
 def test_question_without_example_cell_says_find_one_locally():
     run = _owner_run([_cell(n=9)])
-    questions = _questions(run, triage={})
+    questions = _questions(run, sorts={})
 
     assert questions[0]["hand_checks"] == [
         {
@@ -576,12 +681,15 @@ def test_note_refusal_lets_dates_and_small_numbers_through(note):
     assert note_refusal(note) is None
 
 
-TRIAGE = {
+SORTED = {
     "items": [
-        {"id": "ada:region=Miami", "stub": {"comparison": "ada",
+        {"id": "ada:region=Miami", "kind": "group", "stub": {"comparison": "ada",
          "group": {"column": "regions_region_name", "values": ["Miami"]}}},
         {"id": "cut:Team", "stub": {"missing_cut": "Team"}},
-        {"id": "ada:cells", "stub": {"comparison": "ada", "cells": True}},
+        {"id": "ada:cells", "kind": "cells",
+         "stub": {"comparison": "ada", "cells": True}},
+        {"id": "ada:formula", "kind": "formula",
+         "stub": {"comparison": "ada", "formula": True}},
     ]
 }  # fmt: skip
 FPS = {"ada": {"cube": "c1", "dashboard": "d1"}}
@@ -589,38 +697,77 @@ FPS = {"ada": {"cube": "c1", "dashboard": "d1"}}
 
 def test_approved_decisions_take_the_stub_and_the_run_fingerprints():
     approved = [
-        {"id": "miami", "call": "fix_cube", "reason": "r1", "task": "#1",
-         "item": "ada:region=Miami"},
         {"id": "team", "call": "deliberate", "reason": "r2", "task": "",
          "item": "cut:Team"},
-        {"id": "cells", "call": "domain_owner", "reason": "r3", "item": "ada:cells"},
+        {"id": "formula", "call": "domain_owner", "reason": "r3",
+         "item": "ada:formula"},
     ]  # fmt: skip
 
-    miami, team, cells = approved_decisions(approved, TRIAGE, FPS)
+    team, formula = approved_decisions(approved, SORTED, FPS)
 
-    assert miami == {
-        "id": "miami",
-        "comparison": "ada",
-        "group": {"column": "regions_region_name", "values": ["Miami"]},
-        "call": "fix_cube",
-        "reason": "r1",
-        "task": "#1",
-        "fingerprints": {"cube": "c1", "dashboard": "d1"},
-    }
     assert team == {"id": "team", "missing_cut": "Team", "call": "deliberate",
                     "reason": "r2"}  # fmt: skip
-    assert cells["cells"] is True and cells["fingerprints"] == FPS["ada"]
+    assert formula == {"id": "formula", "comparison": "ada", "formula": True,
+                       "call": "domain_owner", "reason": "r3",
+                       "fingerprints": FPS["ada"]}  # fmt: skip
+
+
+def test_a_formula_decision_records_the_cells_the_check_filed():
+    entry = {"id": "f", "call": "domain_owner", "reason": "r", "item": "ada:formula"}
+
+    (filed,) = approved_decisions([entry], SORTED, FPS, formula_cells={"ada": 3})
+    (none,) = approved_decisions([entry], SORTED, FPS, formula_cells={"ada": 0})
+
+    assert filed["fingerprints"] == {**FPS["ada"], "matched_only": "3"}
+    # None filed reads as 0 with the key left out, as before the count existed.
+    assert none["fingerprints"] == FPS["ada"]
+
+
+def test_a_formula_decision_records_which_cells_it_covers():
+    entry = {"id": "f", "call": "domain_owner", "reason": "r", "item": "ada:formula"}
+    digest = "ab" * 32
+
+    (f,) = approved_decisions(
+        [entry], SORTED, FPS, formula_cells={"ada": 3},
+        formula_hashes={"ada": digest, "other": "cd" * 32},
+    )  # fmt: skip
+    (team,) = approved_decisions(
+        [{"id": "t", "call": "deliberate", "reason": "r", "item": "cut:Team"}],
+        SORTED, FPS, formula_hashes={"ada": digest},
+    )  # fmt: skip
+
+    assert f["fingerprints"] == {
+        **FPS["ada"], "matched_only": "3", "formula_cells": digest,
+    }  # fmt: skip
+    assert "fingerprints" not in team
+
+
+def test_a_cell_set_takes_no_decision():
+    entry = {"id": "x", "call": "deliberate", "reason": "r", "item": "ada:cells"}
+
+    with pytest.raises(AnswerError, match="a cell set takes no decision"):
+        approved_decisions([entry], SORTED, FPS)
+
+
+def test_a_formula_decision_covers_only_its_comparison_s_formula_item():
+    d = Decision("f", "ada", "domain_owner", "r", formula=True)
+
+    assert _covers(d, {"comparison": "ada", "formula": True})
+    assert not _covers(d, {"comparison": "other", "formula": True})
+    assert not _covers(d, {"comparison": "ada", "cells": True})
+    group = Decision("g", "ada", "deliberate", "r", {"column": "x", "values": ["1"]})
+    assert not _covers(group, {"comparison": "ada", "formula": True})
 
 
 def test_a_missing_filter_in_cause_is_decided_across_the_view():
-    # As triage writes it: a comparison it was found on, and the sheet filter
-    # as its proven cause.
+    # As the sort writes it: a comparison it was found on, and the sheet filter
+    # as its explained cause.
     item = {
         "id": "filter:Exclude Future", "kind": "gap", "suggestion": "cause",
         "comparison": "ada", "stub": {"missing_filter": "Exclude Future"},
         "cause": [{"side": "dashboard", "step": "sheet filter Exclude Future",
                    "label": "sheet filter Exclude Future", "n_rows": None}],
-        "proof": {"kind": "workbook"},
+        "explanation": {"kind": "workbook"},
     }  # fmt: skip
     approved = [{"id": "future", "call": "deliberate", "reason": "a display filter",
                  "item": item["id"]}]  # fmt: skip
@@ -637,18 +784,85 @@ def test_a_missing_filter_in_cause_is_decided_across_the_view():
     [
         ({"id": "x", "call": "deliberate", "reason": "r", "item": "nope"}, "nope"),
         ({"id": "x", "call": "deliberate", "item": "cut:Team"}, "reason"),
+        # A row group as `sort` writes it: decided only on an explained cause.
+        (
+            {"id": "x", "call": "fix_cube", "reason": "r", "item": "ada:region=Miami"},
+            "a row group no explanation decides",
+        ),
     ],
 )
 def test_approved_decisions_refuse(entry, match):
     with pytest.raises(AnswerError, match=match):
-        approved_decisions([entry], TRIAGE, FPS)
+        approved_decisions([entry], SORTED, FPS)
 
 
 def test_approved_decisions_refuse_a_comparison_the_run_has_no_fingerprints_for():
-    entry = {"id": "x", "call": "deliberate", "reason": "r", "item": "ada:cells"}
+    entry = {"id": "x", "call": "deliberate", "reason": "r", "item": "ada:formula"}
 
     with pytest.raises(AnswerError, match="fingerprints"):
-        approved_decisions([entry], TRIAGE, {})
+        approved_decisions([entry], SORTED, {})
+
+
+WHOLE = {"id": "old", "comparison": "ada", "call": "deliberate",
+         "reason": "an old sheet no one reads"}  # fmt: skip
+# A row group still in `investigate`: a comparison decision may close it.
+UNEXPLAINED = {
+    "items": [
+        {"id": "ada:g1", "kind": "group", "comparison": "ada",
+         "suggestion": "investigate", "stub": {"comparison": "ada"}},
+        *SORTED["items"],
+    ]
+}  # fmt: skip
+
+
+def test_approved_decisions_decide_a_whole_comparison():
+    (decision,) = approved_decisions([WHOLE], UNEXPLAINED, FPS)
+
+    assert decision == {"id": "old", "comparison": "ada", "all_groups": True,
+                        "call": "deliberate", "reason": "an old sheet no one reads",
+                        "fingerprints": FPS["ada"]}  # fmt: skip
+
+
+def test_approved_decisions_re_approve_a_comparison_decision_on_new_sql():
+    was = Decision("old", "ada", "deliberate", "before", all_groups=True,
+                   fingerprints={"cube": "c0", "dashboard": "d0"})  # fmt: skip
+
+    (decision,) = approved_decisions([WHOLE], UNEXPLAINED, FPS, existing=[was])
+
+    assert decision["fingerprints"] == FPS["ada"]
+    assert decision["reason"] == "an old sheet no one reads"
+
+    # Under another id it would be a second claim on the comparison.
+    with pytest.raises(AnswerError, match="'old' already decides every open row"):
+        approved_decisions([{**WHOLE, "id": "new"}], UNEXPLAINED, FPS, existing=[was])
+
+
+@pytest.mark.parametrize(
+    "entry, loaded, match",
+    [
+        ({**WHOLE, "call": "domain_owner"}, UNEXPLAINED,
+         "a comparison decision is deliberate"),
+        ({**WHOLE, "call": "fix_cube", "task": "#1"}, UNEXPLAINED,
+         "a comparison decision is deliberate"),
+        ({**WHOLE, "reason": "  "}, UNEXPLAINED, "`reason` must be non-empty"),
+        ({k: v for k, v in WHOLE.items() if k != "reason"}, UNEXPLAINED, "reason"),
+        ({**WHOLE, "item": "ada:g1"}, UNEXPLAINED, "either `item` or `comparison`"),
+        ({**WHOLE, "comparison": "nope"}, UNEXPLAINED, "no fingerprints for 'nope'"),
+        # No open row group of the comparison to close.
+        (WHOLE, {"items": [i for i in SORTED["items"] if i.get("kind") != "group"]},
+         "the sort lists no open row group of 'ada'"),
+    ],
+)  # fmt: skip
+def test_approved_decisions_refuse_a_bad_comparison_decision(entry, loaded, match):
+    with pytest.raises(AnswerError, match=match):
+        approved_decisions([entry], loaded, {**FPS, "nope": {}})
+
+
+def test_approved_decisions_refuse_a_taken_id_for_a_comparison_decision():
+    taken = Decision("old", "ada", "deliberate", "r", {"column": "x", "values": ["1"]})
+
+    with pytest.raises(AnswerError, match="decisions already has 'old'"):
+        approved_decisions([WHOLE], UNEXPLAINED, FPS, existing=[taken])
 
 
 def test_parse_answers_reads_a_crlf_comment():
@@ -672,18 +886,18 @@ def test_approved_decisions_refuse_a_reason_a_note_could_not_carry():
              "item": "cut:Team"}  # fmt: skip
 
     with pytest.raises(AnswerError, match="email"):
-        approved_decisions([entry], TRIAGE, FPS)
+        approved_decisions([entry], SORTED, FPS)
 
 
 # --- cause decisions (T17) ---------------------------------------------------
 
 # trunk-ignore(pyright/reportAttributeAccessIssue): conftest.py registers cube_validation
-from cube_validation import triage as triage_mod  # noqa: E402
+from cube_validation import sort as sort_mod  # noqa: E402
 
 NO_SECTION = "score has no section on the anchor date"
 LATE = "score dated after week 20250701"
 CAUSE_FPS = {"enrollment": {"cube": "c1", "dashboard": "d1"}}
-PROOF = {"kind": "query", "path": "proofs/v/enrollment__dashboard_only.sql",
+EXPLANATION = {"kind": "query", "path": "explanations/v/enrollment__dashboard_only.sql",
          "fingerprint": "p1"}  # fmt: skip
 
 
@@ -691,11 +905,11 @@ def _cause_entry(label, side="cube", n_rows=20):
     return {"side": side, "step": "b", "label": label, "n_rows": n_rows}
 
 
-def _cause_item(item_id, *causes, proof=PROOF, key=""):
+def _cause_item(item_id, *causes, explanation=EXPLANATION, key=""):
     return {"id": item_id, "key": key, "kind": "group", "comparison": "enrollment",
             "label": "l", "stub": {"comparison": "enrollment"},
             "suggestion": "cause", "evidence": ["proof line"], "candidates": [],
-            "cause": list(causes), "proof": proof}  # fmt: skip
+            "cause": list(causes), "explanation": explanation}  # fmt: skip
 
 
 def _ok(id, item, call="domain_owner", reason="r", cause=""):
@@ -703,15 +917,15 @@ def _ok(id, item, call="domain_owner", reason="r", cause=""):
     return {**out, "cause": cause} if cause else out
 
 
-def _existing(id="no-section", label=NO_SECTION, call="domain_owner", proof="p1",
+def _existing(id="no-section", label=NO_SECTION, call="domain_owner", explanation="p1",
               cube="c1", **kw):  # fmt: skip
     return Decision(id, "enrollment", call, "kept reason",
                     cause={"side": "cube", "label": label},
-                    fingerprints={"cube": cube, "dashboard": "d1", "proof": proof},
+                    fingerprints={"cube": cube, "dashboard": "d1", "explanation": explanation},
                     **kw)  # fmt: skip
 
 
-def test_a_proven_group_becomes_a_decision_on_its_cause():
+def test_an_explained_group_becomes_a_decision_on_its_cause():
     item = _cause_item("k1", _cause_entry(LATE))
 
     (decision,) = approved_decisions([_ok("late", "k1")], {"items": [item]}, CAUSE_FPS)
@@ -723,7 +937,7 @@ def test_a_proven_group_becomes_a_decision_on_its_cause():
         "cause": {"side": "cube", "label": "score dated after week <n>"},
         "call": "domain_owner",
         "reason": "r",
-        "fingerprints": {"cube": "c1", "dashboard": "d1", "proof": "p1"},
+        "fingerprints": {"cube": "c1", "dashboard": "d1", "explanation": "p1"},
     }
     assert "20250701" not in json.dumps(decision)
 
@@ -748,9 +962,9 @@ def test_a_cause_already_decided_writes_nothing_more():
     )
 
 
-def test_a_cause_decision_on_a_changed_proof_is_re_approved():
+def test_a_cause_decision_on_a_changed_explanation_is_re_approved():
     item = _cause_item("k2", _cause_entry(NO_SECTION))
-    stale = _existing(proof="old")
+    stale = _existing(explanation="old")
 
     (decision,) = approved_decisions(
         [_ok("new", "k2", call="fix_cube", reason="fresh")], {"items": [item]},
@@ -759,7 +973,11 @@ def test_a_cause_decision_on_a_changed_proof_is_re_approved():
 
     assert (decision["id"], decision["call"], decision["reason"]) == (
         "no-section", "fix_cube", "fresh")  # fmt: skip
-    assert decision["fingerprints"] == {"cube": "c1", "dashboard": "d1", "proof": "p1"}
+    assert decision["fingerprints"] == {
+        "cube": "c1",
+        "dashboard": "d1",
+        "explanation": "p1",
+    }
 
 
 def _d2_d4():
@@ -796,18 +1014,18 @@ def test_a_split_group_is_decided_only_once_every_cause_is():
     group = Group("enrollment", (("region", "Newark"),), "dashboard_only", 12, 12)
     run.applied = apply([], [group], CAUSE_FPS)
     run.fingerprints = CAUSE_FPS
-    (it,) = triage_mod.open_items(run)
+    (it,) = sort_mod.open_items(run)
     mixed = {**items[0], "id": it.id, "key": it.key}
 
     only_d2 = [Decision(**d) for d in approved_decisions(
         [entries[2] | {"item": "mixed"}], {"items": items}, CAUSE_FPS)]  # fmt: skip
-    triage_mod.mark_decided(run, [mixed], only_d2)
+    sort_mod.mark_decided(run, [mixed], only_d2)
     assert mixed["decided"] is False
 
     both = [
         Decision(**d) for d in approved_decisions(entries, {"items": items}, CAUSE_FPS)
     ]
-    triage_mod.mark_decided(run, [mixed], both)
+    sort_mod.mark_decided(run, [mixed], both)
     assert mixed["decided"] is True
 
 
@@ -815,7 +1033,11 @@ def test_a_split_group_is_decided_only_once_every_cause_is():
     "existing, entry, match",
     [
         (_existing(call="fix_cube", task="#1"), {}, "decided fix_cube"),
-        (_existing(proof="old", answer="fix_cube"), {}, "answered.*proof changed"),
+        (
+            _existing(explanation="old", answer="fix_cube"),
+            {},
+            "answered.*explanation changed",
+        ),
         (_existing(cube="old", answer="deliberate"), {}, "answered.*SQL changed"),
         (_existing(id="taken", label="other"), {"id": "taken"}, "already has"),
     ],
@@ -832,20 +1054,24 @@ def test_cause_approvals_refuse_bad_batches():
     one = _cause_item("k1", _cause_entry(NO_SECTION))
     two = _cause_item("k2", _cause_entry(NO_SECTION))
     other_proof = _cause_item("k3", _cause_entry(NO_SECTION),
-                              proof={**PROOF, "path": "proofs/v/x.sql", "fingerprint": "p9"})  # fmt: skip
+                              explanation={**EXPLANATION, "path": "explanations/v/x.sql",
+                                     "fingerprint": "p9"})  # fmt: skip
     blank = _cause_item("k4", _cause_entry(""))
     split = _cause_item("k5", _cause_entry(NO_SECTION), _cause_entry(LATE))
-    unproven = {**_cause_item("k6", _cause_entry(NO_SECTION)), "proof": None}
+    unexplained = {**_cause_item("k6", _cause_entry(NO_SECTION)), "explanation": None}
+    waiting = {**_cause_item("k7"), "suggestion": "investigate", "cause": None,
+               "explanation": None}  # fmt: skip
 
     for approved, items, match in [
         ([_ok("a", "k1"), _ok("b", "k2", call="deliberate")], [one, two], "domain_owner"),
         ([_ok("a", "k1"), _ok("b", "k1")], [one], "twice"),
         ([_ok("a", "k1"), _ok("b", "k1", cause=NO_SECTION)], [one], "twice"),
-        ([_ok("a", "k1")], [one, other_proof], "2 proof"),
+        ([_ok("a", "k1")], [one, other_proof], "2 explanation"),
         ([_ok("a", "k4")], [blank], "no words"),
         ([_ok("a", "k5")], [split], "2 causes; approve each"),
         ([_ok("a", "k5", cause="nothing like it")], [split], "has no cause"),
-        ([_ok("a", "k6")], [unproven], "no proof decides"),
+        ([_ok("a", "k6")], [unexplained], "no explanation decides"),
+        ([_ok("a", "k7")], [waiting], "still in `investigate`"),
     ]:  # fmt: skip
         with pytest.raises(AnswerError, match=match):
             approved_decisions(approved, {"items": items}, CAUSE_FPS)
@@ -858,12 +1084,10 @@ def _review(groups, items, decisions, runs_extra=()):
     run = _run([])
     run.applied = apply(decisions, groups, CAUSE_FPS)
     run.fingerprints = CAUSE_FPS
-    triage_mod.mark_decided(run, items, decisions)
+    sort_mod.mark_decided(run, items, decisions)
     loaded = {"view": "enrollment", "items": items}
     causes = {
-        "enrollment": triage_mod.cause_asks(
-            run, loaded, decisions, {"enrollment": LEAD}
-        )
+        "enrollment": sort_mod.cause_asks(run, loaded, decisions, {"enrollment": LEAD})
     }
     questions = questions_json(
         [run], [_cfg()], DEFS, {"enrollment": loaded}, START, causes
@@ -872,7 +1096,7 @@ def _review(groups, items, decisions, runs_extra=()):
 
 
 def _ddi():
-    """3 schools x 2 proven causes: each school has a group of each cause."""
+    """3 schools x 2 explained causes: each school has a group of each cause."""
     groups = [
         Group("enrollment", (("region", s), ("grade_level", grade)),
               "dashboard_only", 30, 12)
@@ -880,7 +1104,7 @@ def _ddi():
     ]  # fmt: skip
     run = _run([])
     run.applied = apply([], groups, CAUSE_FPS)
-    opened = triage_mod.open_items(run)
+    opened = sort_mod.open_items(run)
     items = [
         _cause_item(it.id, _cause_entry(NO_SECTION if g.value_of("grade_level") == "7"
                                         else LATE, n_rows=30), key=it.key)
@@ -889,7 +1113,7 @@ def _ddi():
     return groups, items
 
 
-def test_review_asks_one_question_per_cause_not_per_school():
+def test_ask_owner_asks_one_question_per_cause_not_per_school():
     groups, items = _ddi()
     approved = [
         _ok(f"school-{i}", item["id"], reason=f"Which rule holds at school {i}?")
@@ -908,13 +1132,13 @@ def test_review_asks_one_question_per_cause_not_per_school():
     assert no_section["evidence"] == [f"cause (cube side): {NO_SECTION}", LEAD]
     assert no_section["counts"] == [
         f"cause `{NO_SECTION}` on the cube side",
-        "`enrollment` (dashboard_only): <10 row groups, 90 rows",
+        "`enrollment` (dashboard_only): <10 row groups, 10+ rows",
     ]
     assert late["evidence"][0] == "cause (cube side): score dated after week <n>"
     assert "20250701" not in body
     bullets = [x for x in body.split("## Proposed")[0].splitlines() if "Reason:" in x]
     assert len(bullets) == 2
-    assert f"`{NO_SECTION}`" in bullets[0] and "<10 row groups, 90 rows" in bullets[0]
+    assert f"`{NO_SECTION}`" in bullets[0] and "<10 row groups, 10+ rows" in bullets[0]
 
 
 def _decided_ddi():
@@ -934,17 +1158,17 @@ def test_a_long_body_moves_the_reproduce_blocks_to_comments(monkeypatch):
     run = _run([])
     run.applied = apply(decisions, groups, CAUSE_FPS)
     run.fingerprints = CAUSE_FPS
-    triage_mod.mark_decided(run, items, decisions)
+    sort_mod.mark_decided(run, items, decisions)
     loaded = {"view": "enrollment", "items": items}
-    causes = {"enrollment": triage_mod.cause_asks(run, loaded, decisions)}
+    causes = {"enrollment": sort_mod.cause_asks(run, loaded, decisions)}
     questions = questions_json(
         [run], [_cfg()], DEFS, {"enrollment": loaded}, START, causes
     )
     for q in questions:
         q["reproduce"] = {
             "queries": [{"bucket": "C1", "sql": "SELECT 1 AS n_rows" + " " * 400}],
-            "proofs": [], "cube": [], "expires": "2026-11-06",
-            "after": ["run v.yml", "triage v.yml"],
+            "explanations": [], "cube": [], "expires": "2026-11-06",
+            "after": ["compare v.yml --all", "sort v.yml"],
         }  # fmt: skip
     inline = render_review_issue("Registrar", [run], DEFS, questions, causes, [])
     # Every block fits 1 comment, but not the body and a block together.
@@ -979,10 +1203,10 @@ def test_other_calls_show_once_each_as_also_decided_never_as_questions():
     run = _run([])
     run.applied = apply(decisions, groups, CAUSE_FPS)
     run.fingerprints = CAUSE_FPS
-    triage_mod.mark_decided(run, items, decisions)
+    sort_mod.mark_decided(run, items, decisions)
     loaded = {"view": "enrollment", "items": items}
-    causes = {"enrollment": triage_mod.cause_asks(run, loaded, decisions)}
-    decided = {"enrollment": triage_mod.cause_asks(run, loaded, decisions, owner=False)}
+    causes = {"enrollment": sort_mod.cause_asks(run, loaded, decisions)}
+    decided = {"enrollment": sort_mod.cause_asks(run, loaded, decisions, owner=False)}
     questions = questions_json(
         [run], [_cfg()], DEFS, {"enrollment": loaded}, START, causes
     )
@@ -1007,19 +1231,26 @@ def test_other_calls_show_once_each_as_also_decided_never_as_questions():
 def test_pinned_sql_too_long_to_post_is_left_out_before_anything_else(monkeypatch):
     from cube_validation import report as report_mod
 
+    # One owner question, so the JSON below matches the questions the run asks.
+    run = _run([])
+    run.applied = Applied(quiet=[(
+        Decision("d", "enrollment", "domain_owner", REASON,
+                 {"column": "region", "values": ["Newark"]}),
+        Group("enrollment", (("region", "Newark"),), "value_differs", 40, 12),
+    )])  # fmt: skip
     questions = [
-        {"id": "Q1", "hand_checks": [{
+        {"id": "Q1", "counts": ["a part"], "hand_checks": [{
             "view": "v", "comparison": "c", "cut": "{}", "dims": [],
             "dashboard": "1", "cube": "2", "dashboard_sql": "S" * 5000,
             "cube_sql": "T" * 7000, "dashboard_usd": 0.01, "cube_usd": 0.01,
             "expires": "2026-11-06", "expired": False, "workbook": "w",
             "sheet": "s", "filters": {}, "mixed": False}]},
     ]  # fmt: skip
-    full = render_review_issue("Registrar", [_run([])], DEFS, questions, None, [])
+    full = render_review_issue("Registrar", [run], DEFS, questions, None, [])
     monkeypatch.setattr(report_mod, "BODY_WARN_CHARS", len(full) - 1000)
     comments: list[str] = []
 
-    body = render_review_issue("Registrar", [_run([])], DEFS, questions, None, comments)
+    body = render_review_issue("Registrar", [run], DEFS, questions, None, comments)
 
     assert "S" * 5000 not in body and comments == []
     assert "The pinned BigQuery SQL is left out (5,000 and 7,000 characters" in body
@@ -1027,16 +1258,15 @@ def test_pinned_sql_too_long_to_post_is_left_out_before_anything_else(monkeypatc
 
 
 def test_recorded_cause_students_are_used_as_counted():
-    g = Group("enrollment", tuple(map(tuple, DIMS)), "cube_only", 30, 25)
-    run = _floor_run([g], [_rows("cube_only", 30, 12)])
+    run = _floor_run([_floor_group("cube_only", 12)])
     items = [{"key": it.key, "kind": "group", "cause": [{"side": "cube", "label": "C1"}]}
-             for it in triage_mod.open_items(run)]  # fmt: skip
+             for it in sort_mod.open_items(run)]  # fmt: skip
     counted = [{"cause": "cube: C1", "cut": CUT, "dims": DIMS, "n": 14}]
 
-    ((_, held),) = cell_causes(run, _cfg(), "enrollment", items, counted)
+    ((_, held),) = cell_causes(run, _cfg(rows=FLOOR_ROWS), "enrollment", items, counted)
     assert held == {"cube: C1": 14}
     # Counted, and none in this cell: 0, though the group agrees with it.
-    ((_, held),) = cell_causes(run, _cfg(), "enrollment", items, [])
+    ((_, held),) = cell_causes(run, _cfg(rows=FLOOR_ROWS), "enrollment", items, [])
     assert held == {"cube: C1": 0}
 
 
@@ -1052,7 +1282,7 @@ def test_one_cause_on_several_comparisons_is_one_question():
     items = [
         {**_cause_item(it.id, _cause_entry(NO_SECTION, n_rows=30), key=it.key),
          "comparison": it.comparison, "stub": {"comparison": it.comparison}}
-        for it in triage_mod.open_items(run)
+        for it in sort_mod.open_items(run)
     ]  # fmt: skip
     decisions = [
         Decision(**d)
@@ -1060,9 +1290,9 @@ def test_one_cause_on_several_comparisons_is_one_question():
             [_ok("a", items[0]["id"]), _ok("b", items[1]["id"])], {"items": items}, fps
         )
     ]
-    triage_mod.mark_decided(run, items, decisions)
+    sort_mod.mark_decided(run, items, decisions)
     loaded = {"view": "enrollment", "items": items}
-    causes = {"enrollment": triage_mod.cause_asks(run, loaded, decisions)}
+    causes = {"enrollment": sort_mod.cause_asks(run, loaded, decisions)}
 
     (question,) = questions_json(
         [run], [_cfg()], DEFS, {"enrollment": loaded}, START, causes
@@ -1072,8 +1302,8 @@ def test_one_cause_on_several_comparisons_is_one_question():
     # The cause once, then each comparison's share; 1 view, so no view names.
     assert question["counts"] == [
         f"cause `{NO_SECTION}` on the cube side",
-        "`enrollment` (dashboard_only): <10 row group, 30 rows",
-        "`other` (dashboard_only): <10 row group, 30 rows",
+        "`enrollment` (dashboard_only): <10 row groups, 10+ rows",
+        "`other` (dashboard_only): <10 row groups, 10+ rows",
     ]
     assert question["evidence"] == [f"cause (cube side): {NO_SECTION}"]
 
@@ -1085,7 +1315,7 @@ def test_a_split_group_shows_only_each_causes_own_rows():
     ]
     run = _run([])
     run.applied = apply([], groups, CAUSE_FPS)
-    newark, camden = triage_mod.open_items(run)
+    newark, camden = sort_mod.open_items(run)
     items = [
         # Newark's 30 rows split 27 and 3 across the 2 causes.
         _cause_item(newark.id, _cause_entry(NO_SECTION, n_rows=27),
@@ -1104,26 +1334,27 @@ def test_a_split_group_shows_only_each_causes_own_rows():
     questions, body = _review(groups, items, decisions)
 
     posted = body.split("<summary>Questions for Claude")[0] + json.dumps(questions)
-    # The bullet and the evidence both give the cause's own 57 rows; the
-    # groups' whole 60 never shows, so nothing gives the other cause's 3 away.
-    numbers = set(re.findall(r"(?<![<\d])\d+ rows", posted))
-    assert numbers == {"57 rows"}
+    # The bullet gives the cause's own share as a bound; neither its 57 rows
+    # nor the groups' whole 60 shows, so nothing gives the other cause's 3 away.
+    numbers = set(re.findall(r"(?<![<\d])\d+\+? rows", posted))
+    assert numbers == {"10+ rows"}
 
 
 # --- reproducing a cause ---------------------------------------------------------------
 
 from dataclasses import replace as _replace  # noqa: E402
 
-from cube_validation import confirm as confirm_mod  # noqa: E402
+from cube_validation import explain as explain_mod  # noqa: E402
 from cube_validation import pipeline as pipeline_mod  # noqa: E402
+from cube_validation import review as review_mod  # noqa: E402
 from cube_validation.answers import (  # noqa: E402
-    ProofSource,
+    ExplanationSource,
     merged_reproduce,
     reproduce_json,
 )
 from cube_validation.report import CauseAsk, _reproduce_lines  # noqa: E402
 
-PROOF_SQL = (
+EXPLANATION_SQL = (
     "SELECT u.__row, CASE WHEN TRUE THEN 'C1' ELSE 'UNEXPLAINED' END AS cause "
     "FROM {unmatched} AS u"
 )
@@ -1141,7 +1372,7 @@ def _cause_cfg():
     return ViewConfig(view="enrollment", fact="d.t", comparisons=[cmp])
 
 
-def _ask(proofs):
+def _ask(explanations):
     decision = Decision(
         id="c1",
         comparison="enrollment",
@@ -1149,22 +1380,26 @@ def _ask(proofs):
         reason="r",
         cause={"side": "dashboard", "label": "the sheet drops WPP"},
     )
-    return CauseAsk(decision, [], 30, "", proofs)
+    return CauseAsk(decision, [], 30, "", explanations)
 
 
-def _stored_proof(tmp_path, reproduce):
-    directory = tmp_path / "proofs" / "enrollment"
+def _stored_explanation(tmp_path, reproduce):
+    directory = tmp_path / "explanations" / "enrollment"
     directory.mkdir(parents=True)
-    path = confirm_mod.proof_path(directory, "enrollment", "cube_only")
+    path = explain_mod.explanation_path(directory, "enrollment", "cube_only")
     path.write_text(
-        confirm_mod.compose({"C1": ("dashboard", "drops WPP")}, PROOF_SQL, reproduce)
+        explain_mod.compose(
+            {"C1": ("dashboard", "drops WPP")}, EXPLANATION_SQL, reproduce
+        )
     )
-    return "proofs/enrollment/enrollment__cube_only.sql"
+    return "explanations/enrollment/enrollment__cube_only.sql"
 
 
-def test_a_cause_reproduces_through_cube_a_count_query_and_the_proof(tmp_path):
-    path = _stored_proof(tmp_path, {"C1": LIVE})
-    source = ProofSource("src/cube/validation/e.yml", tmp_path, "https://x/blob/b/dir")
+def test_a_cause_reproduces_through_cube_a_count_query_and_the_explanation(tmp_path):
+    path = _stored_explanation(tmp_path, {"C1": LIVE})
+    source = ExplanationSource(
+        "src/cube/validation/e.yml", tmp_path, "https://x/blob/b/dir"
+    )
     run = _run([_cell("b", 10, 20)])
 
     part = reproduce_json(
@@ -1175,22 +1410,21 @@ def test_a_cause_reproduces_through_cube_a_count_query_and_the_proof(tmp_path):
     assert query["measures"] == ["enrollment.student_count"]
     assert {"member": "enrollment.grade_level", "operator": "equals",
             "values": ["7"]} in query["filters"]  # fmt: skip
-    (proof,) = part["proofs"]
-    assert proof["reproduce"] == LIVE
-    assert proof["confirm"] == (
-        "triage confirm src/cube/validation/e.yml --comparison enrollment "
-        "--bucket cube_only"
+    (explanation,) = part["explanations"]
+    assert explanation["reproduce"] == LIVE
+    assert explanation["explain"] == (
+        "explain src/cube/validation/e.yml --comparison enrollment --bucket cube_only"
     )
-    assert proof["after"] == [
-        "run src/cube/validation/e.yml",
-        "triage src/cube/validation/e.yml",
+    assert explanation["after"] == [
+        "compare src/cube/validation/e.yml --all",
+        "sort src/cube/validation/e.yml",
     ]
-    assert proof["url"] == f"https://x/blob/b/dir/{path}"
+    assert explanation["url"] == f"https://x/blob/b/dir/{path}"
 
     block = merged_reproduce([part])
     assert block["queries"] == [{"bucket": "C1", "sql": LIVE}]
-    assert block["proofs"] == [
-        {"bucket": "C1", "query": 0, "path": path, "confirm": [proof["confirm"]]},
+    assert block["explanations"] == [
+        {"bucket": "C1", "query": 0, "path": path, "explain": [explanation["explain"]]},
     ]  # fmt: skip
     assert block["blob"] == "https://x/blob/b/dir"
     text = "\n".join(_reproduce_lines("Q1", block))
@@ -1206,33 +1440,35 @@ def test_a_cause_reproduces_through_cube_a_count_query_and_the_proof(tmp_path):
 
 
 def test_a_reproduce_block_edited_after_confirm_is_checked_before_it_posts(tmp_path):
-    # Comment lines never stale a proof, so `review` checks the block again.
-    path = _stored_proof(tmp_path, {"C1": "SELECT * FROM d.t"})
-    source = ProofSource("v.yml", tmp_path)
+    # Comment lines never stale an explanation, so `ask-owner` checks the block again.
+    path = _stored_explanation(tmp_path, {"C1": "SELECT * FROM d.t"})
+    source = ExplanationSource("v.yml", tmp_path)
 
     part = reproduce_json(
         "enrollment", _ask(((path, "C1"),)), _run([]), _cause_cfg(), source, START
     )
 
-    assert part["proofs"][0]["reproduce"] is None
+    assert part["explanations"][0]["reproduce"] is None
 
 
 def test_a_cause_with_no_reproduce_block_says_so(tmp_path):
-    path = _stored_proof(tmp_path, None)
-    source = ProofSource("v.yml", tmp_path)
+    path = _stored_explanation(tmp_path, None)
+    source = ExplanationSource("v.yml", tmp_path)
 
     part = reproduce_json(
         "enrollment", _ask(((path, "C1"),)), _run([]), _cause_cfg(), source, START
     )
 
-    assert part["cube"] is None and part["proofs"][0]["reproduce"] is None
+    assert part["cube"] is None and part["explanations"][0]["reproduce"] is None
     block = merged_reproduce([part])
     assert block["queries"] == [] and block["cube"] == []
     text = "\n".join(_reproduce_lines("Q2", block))
     assert f"- Cause `C1` in `{path}` (no count query yet)" in text
 
 
-def test_a_proof_source_links_the_branch_and_never_the_remote_s_credentials(tmp_path):
+def test_an_explanation_source_links_the_branch_and_never_the_remote_s_credentials(
+    tmp_path,
+):
     import subprocess
 
     def git(*args):
@@ -1246,18 +1482,18 @@ def test_a_proof_source_links_the_branch_and_never_the_remote_s_credentials(tmp_
     view.parent.mkdir(parents=True)
     view.write_text("")
 
-    source = pipeline_mod.proof_source(view)
+    source = review_mod.explanation_source(view)
 
     assert source.view_file == "src/cube/validation/v.yml"
     assert source.blob == "https://github.com/org/repo/blob/feat/x/src/cube/validation"
     assert "secret" not in source.blob
 
 
-def test_a_proof_source_outside_git_has_no_link(tmp_path):
+def test_an_explanation_source_outside_git_has_no_link(tmp_path):
     view = tmp_path / "v.yml"
     view.write_text("")
 
-    source = pipeline_mod.proof_source(view)
+    source = review_mod.explanation_source(view)
 
     assert source.blob is None and source.base == tmp_path
 
@@ -1279,37 +1515,67 @@ def test_the_review_file_is_linked_only_once_committed_and_pushed(tmp_path):
     view.parent.mkdir()
     view.write_text("")
     cfg = ViewConfig(view="v", fact="d.t", comparisons=[])
-    path = pipeline_mod.review_file([view], [cfg], "DDI")
+    path = review_mod.review_file([view], [cfg], "DDI")
     assert path == tmp_path / "src" / "reviews" / "v.json"
     data = [{"id": "Q1", "counts": ["<10 rows"]}]
 
     with pytest.raises(pipeline_mod.Refusal, match="wrote .*commit and push it"):
-        pipeline_mod._review_file(path, data)
+        review_mod._review_file(path, data)
     assert json.loads(path.read_text()) == data
     with pytest.raises(pipeline_mod.Refusal, match="not committed and pushed"):
-        pipeline_mod._review_file(path, data)
+        review_mod._review_file(path, data)
 
     git("add", ".")
     git("commit", "-q", "-m", "review")
     with pytest.raises(pipeline_mod.Refusal, match="not committed and pushed"):
-        pipeline_mod._review_file(path, data)  # committed, not pushed
+        review_mod._review_file(path, data)  # committed, not pushed
 
     git("update-ref", "refs/remotes/origin/feat/x", "HEAD")
     sha = git("rev-parse", "HEAD")
     link = f"https://github.com/org/repo/blob/{sha}/src/reviews/v.json"
-    assert pipeline_mod._review_file(path, data) == link
+    assert review_mod._review_file(path, data) == link
     # The commit hook's formatting is no change; other questions are.
     path.write_text(json.dumps(data, indent=4))
     git("commit", "-q", "-am", "fmt")
     git("update-ref", "refs/remotes/origin/feat/x", "HEAD")
-    assert pipeline_mod._review_file(path, data).endswith("/src/reviews/v.json")
+    assert review_mod._review_file(path, data).endswith("/src/reviews/v.json")
     with pytest.raises(pipeline_mod.Refusal, match="wrote"):
-        pipeline_mod._review_file(path, [{"id": "Q2"}])
+        review_mod._review_file(path, [{"id": "Q2"}])
+
+
+def test_a_text_review_file_ignores_rewrapping_and_sits_beside_the_json(tmp_path):
+    path = review_mod.still_file(tmp_path / "reviews" / "v.json")
+    assert path == tmp_path / "reviews" / "v-still-with-analyst.md"
+    text = "# Still\n\n- `a`, 40 rows; no lead yet\n"
+
+    with pytest.raises(pipeline_mod.Refusal, match="wrote .*commit and push it"):
+        review_mod._review_file(path, text)
+    assert path.read_text() == text
+    # The formatter's rewrapping is no change: only the commit check refuses.
+    path.write_text("# Still\n\n- `a`, 40 rows;\n  no lead yet\n")
+    with pytest.raises(pipeline_mod.Refusal, match="not committed and pushed"):
+        review_mod._review_file(path, text)
+    with pytest.raises(pipeline_mod.Refusal, match="wrote"):
+        review_mod._review_file(path, text.replace("40", "41"))
+
+
+def test_review_files_writes_each_changed_file_before_refusing(tmp_path):
+    reviews = tmp_path / "reviews"
+    files = [(reviews / "v.json", [{"id": "Q1"}]),
+             (reviews / "v-still-with-analyst.md", "# Still\n")]  # fmt: skip
+
+    with pytest.raises(pipeline_mod.Refusal) as exc:
+        review_mod._review_files(files)
+
+    assert str(reviews / "v.json") in str(exc.value)
+    assert str(reviews / "v-still-with-analyst.md") in str(exc.value)
+    assert json.loads((reviews / "v.json").read_text()) == [{"id": "Q1"}]
+    assert (reviews / "v-still-with-analyst.md").read_text() == "# Still\n"
 
 
 def test_a_review_across_views_is_named_for_its_domain(tmp_path):
     cfgs = [ViewConfig(view=v, fact="d.t", comparisons=[]) for v in ("a", "b")]
-    path = pipeline_mod.review_file([tmp_path / "a.yml"], cfgs, "Data & Analytics")
+    path = review_mod.review_file([tmp_path / "a.yml"], cfgs, "Data & Analytics")
     assert path == tmp_path / "reviews" / "data-analytics.json"
 
 
@@ -1333,3 +1599,37 @@ def test_a_hand_check_never_posts_2_counts_whose_difference_is_under_10(
     )
     posted = _check_json("v", check)
     assert (posted["dashboard"], posted["cube"]) == shown
+
+
+def test_a_hand_check_posts_its_cause_s_students_as_a_bound():
+    """For a count-of-students measure, the two numbers less an exact cause
+    count would post the other causes' students: 57 - 40 - 12 = 5."""
+    # trunk-ignore(pyright/reportAttributeAccessIssue): conftest.py registers cube_validation
+    from cube_validation import report
+
+    # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+    from cube_validation.answers import _check_json
+
+    check = HandCheck(
+        "enrollment", "{}", (), 40.0, 57.0, "", "", 0.0, 0.0, START, False,
+        mixed=True, cause_students=12,
+    )  # fmt: skip
+    posted = _check_json("v", check)
+    assert posted["cause_students"] == "10+"
+    text = "\n".join(report._hand_check_lines("Q1", posted))
+    assert "10 or more students' rows in it have this cause" in text
+    assert "12" not in text
+
+
+def test_a_question_reads_its_comparison_s_own_moment():
+    earlier = Build(START - timedelta(days=3), END - timedelta(days=3), "j0")
+    run = dataclasses.replace(
+        _owner_run([_cell(cube=25.0)]), moments={"enrollment": earlier}
+    )
+
+    questions = _questions(run)
+    check = hand_check(run, _cfg(), "enrollment", START)
+
+    assert questions[0]["moment"]["job_id"] == "j0"
+    assert questions[0]["expires"] == (earlier.start + timedelta(days=7)).isoformat()
+    assert check.expires == earlier.start + timedelta(days=7)

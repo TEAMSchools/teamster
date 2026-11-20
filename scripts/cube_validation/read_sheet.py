@@ -1,11 +1,14 @@
-"""Read a sheet's workbook XML before proving it, offline.
+"""Read a sheet's workbook XML before rebuilding it, offline.
 
-For each sheet a validation file names, `preflight` lists what the proof will
-meet: the shelf fields and the Cube member each maps to, table calculations,
+For each sheet a validation file names, `read-sheet` lists what the rebuild
+will meet: the shelf fields and the Cube member each maps to, table calculations,
 filters (context, code group, relative date, parameter-driven), the parameters
 the sheet reads, and whether `sheet_field` is on the sheet. It ends with the
-items to settle before `prove`. It reads a local `.twb` and the `members`
-cache, and prints no filter or parameter value.
+items to settle before `rebuild-sheet`. It reads a local `.twb` and the
+`members` cache, and prints a filter's chosen values only for a field on
+`find_field.SHOWN_FILTER_FIELDS` (one that cannot identify a person). It prints
+no parameter value. Whether the server publishes a sheet takes its views
+list, so it says that is not checked.
 """
 
 from __future__ import annotations
@@ -17,7 +20,8 @@ import xml.etree.ElementTree as ET
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from . import discover as finder
+from . import coverage
+from . import find_field as finder
 from . import tableau
 from .builder import Member
 from .config import Comparison, ViewConfig
@@ -28,10 +32,17 @@ _PARAMETER = re.compile(r"\[Parameters\]\.\[([^\[\]]+)\]")
 # What a wide export or a Measure Names value puts before an aggregated
 # field's caption: `Avg. Is Mastery Int`, `SUM(Membership)`.
 _AGG_PREFIX = re.compile(
-    r"^(?:(?:avg|sum|count|countd|min|max|median|attr|agg)\.?(?:\s+of)?\s+)",
+    r"^(?:(?:avg|sum|distinct\s+count|count|countd|min|max|median|attr|agg)\.?(?:\s+of)?\s+)",
     re.IGNORECASE,
 )
 _AGG_CALL = re.compile(r"^\w+\((.*)\)$")
+# A count of a string field is a number: `COUNTD(x)`, `Distinct count of x`.
+# Only a whole aggregate call or the export's `count of` prefix counts, so a
+# text field captioned `Count Type` is still text.
+_COUNT_FIELD = re.compile(
+    r"^\s*(?:(?:count|countd|cnt|cntd)\(.*\)\s*$|(?:distinct\s+)?count\s+of\s)",
+    re.IGNORECASE,
+)
 _ENCODINGS = {"lod": "detail"}
 SHOWN_SHARED = 5
 
@@ -63,12 +74,15 @@ class SheetFilter:
     source: str
     columns: tuple[str, ...] = ()
     parameters: tuple[str, ...] = ()
+    null_mode: str | None = None
+    # The chosen values, only for a field that cannot identify a person.
+    shown: str = ""
 
 
 @dataclass(frozen=True)
 class Parameter:
     """A parameter the sheet reads. Its current value is a member value, so
-    preflight never reads it."""
+    `read-sheet` never reads it."""
 
     name: str
     caption: str
@@ -76,7 +90,7 @@ class Parameter:
 
 @dataclass(frozen=True)
 class Sheet:
-    """What `preflight` reads from one worksheet."""
+    """What `read-sheet` reads from one worksheet."""
 
     shelf_fields: list[ShelfField]
     table_calcs: list[tableau.TableCalc]
@@ -84,6 +98,8 @@ class Sheet:
     parameters: list[Parameter]
     # Each value field as the sheet shows it, with the names an export gives it.
     values: dict[str, set[str]]
+    # Export names of the value fields that are text, not numbers.
+    text_values: frozenset[str] = frozenset()
 
 
 def _plain(text: str) -> str:
@@ -98,15 +114,15 @@ def read_sheet(twb_xml: str, sheet: str) -> Sheet:
     """
     # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
     root = ET.fromstring(twb_xml)
-    ws = finder.worksheet(root, sheet)
+    ws = tableau.worksheet(root, sheet)
     if ws is None:
         raise ValueError(f"the workbook has no worksheet {sheet!r}")
     caption, personal = finder.sheet_fields(ws)
     for col in root.iter("column"):
-        name = finder._bare(col.get("name") or "")
+        name = tableau.bare_name(col.get("name") or "")
         caption.setdefault(name, col.get("caption") or name)
     formulas = {
-        finder._bare(c.name): c.formula for c in finder.calculated_fields(twb_xml)
+        tableau.bare_name(c.name): c.formula for c in finder.calculated_fields(twb_xml)
     }
     groups = finder.group_fields(root)
     calcs = tableau.table_calcs(ws)
@@ -135,19 +151,7 @@ def read_sheet(twb_xml: str, sheet: str) -> Sheet:
                 )
 
     def reads(name: str) -> list[str]:
-        """`name` and every calculation it reads, through other calculations."""
-        seen, todo = [], [name]
-        while todo:
-            current = todo.pop()
-            if current in seen:
-                continue
-            seen.append(current)
-            todo += [
-                r
-                for r in _BRACKETED.findall(formulas.get(current, ""))
-                if r in formulas
-            ]
-        return seen
+        return finder.calc_chain(name, formulas)
 
     def readable(formula: str) -> str:
         return _plain(_BRACKETED.sub(lambda m: f"[{caption.get(m[1], m[1])}]", formula))
@@ -161,10 +165,8 @@ def read_sheet(twb_xml: str, sheet: str) -> Sheet:
                 )
 
     params = {
-        finder._bare(col.get("name") or ""): col
-        for ds in root.iter("datasource")
-        if ds.get("name") == "Parameters"
-        for col in ds.findall("column")
+        tableau.bare_name(col.get("name") or ""): col
+        for col in tableau.parameter_columns(root)
     }
 
     def param_caption(name: str) -> str:
@@ -203,6 +205,7 @@ def read_sheet(twb_xml: str, sheet: str) -> Sheet:
                 # A relative-date filter has no members or range to read; it
                 # always narrows the sheet to a window.
                 restricting=finder.restricts(el) or el.get("class") == "relative-date",
+                null_mode=finder.null_mode(el),
                 formula=formula,
                 group=group,
                 shared_with=tuple(
@@ -210,16 +213,9 @@ def read_sheet(twb_xml: str, sheet: str) -> Sheet:
                 ),
                 source=_group_source(root, name) if name in groups else "",
                 columns=tuple(
-                    dict.fromkeys(
-                        [name]
-                        + [
-                            r
-                            for n in chain
-                            for r in _BRACKETED.findall(formulas.get(n, ""))
-                            if r not in formulas and r != "Parameters"
-                        ]
-                    )
+                    dict.fromkeys([name, *finder.columns_read(name, formulas)])
                 ),
+                shown=finder.shown_values(el, name, formulas) or "",
                 parameters=tuple(
                     dict.fromkeys(
                         param_caption(p)
@@ -230,7 +226,7 @@ def read_sheet(twb_xml: str, sheet: str) -> Sheet:
             )
         )
     read = [
-        finder._bare(col.get("name") or "")
+        tableau.bare_name(col.get("name") or "")
         for deps in ws.iter("datasource-dependencies")
         if deps.get("datasource") == "Parameters"
         for col in deps.findall("column")
@@ -244,7 +240,14 @@ def read_sheet(twb_xml: str, sheet: str) -> Sheet:
         if name in params
     ]
 
-    return Sheet(list(fields.values()), calcs, filters, parameters, values)
+    return Sheet(
+        list(fields.values()),
+        calcs,
+        filters,
+        parameters,
+        values,
+        frozenset(finder.text_values(twb_xml, sheet)),
+    )
 
 
 def _value_names(
@@ -256,11 +259,11 @@ def _value_names(
         return calc.caption, {calc.caption.lower()}
     name = m["name"]
     shown = caption.get(name) or name
-    agg = finder._AGG_PREFIXES.get(m["deriv"])
+    agg = finder.AGG_PREFIXES.get(m["deriv"])
     return (f"{agg}({shown})" if agg else shown), {shown.lower()}
 
 
-def _export_name(field: str) -> str:
+def export_name(field: str) -> str:
     """`Avg. Is Mastery Int` or `AVG(Is Mastery Int)` as `is mastery int`."""
     field = field.strip()
     if call := _AGG_CALL.match(field):
@@ -272,8 +275,8 @@ def _group_source(root: ET.Element, name: str) -> str:
     """The column a code group's codes come from."""
     for col in root.iter("column"):
         calc = col.find("calculation")
-        if finder._bare(col.get("name") or "") == name and calc is not None:
-            return finder._bare(calc.get("column") or "")
+        if tableau.bare_name(col.get("name") or "") == name and calc is not None:
+            return tableau.bare_name(calc.get("column") or "")
     return ""
 
 
@@ -385,14 +388,17 @@ def _filter_lines(out: _Checklist, comparison: Comparison | None, facts: Sheet) 
     # The columns a week-end dashboard filter compares; one handles only a
     # relative-date filter that reads its column.
     week_end = {str(e.get("dashboard")) for e in entries if "days_from_week_end" in e}
-    probe_sql = (comparison.probe_sql or "") if comparison else ""
+    # The columns a not-null dashboard filter keeps; one handles a non-null
+    # filter on any calculation that reads its column.
+    not_null = [str(e.get("dashboard")) for e in entries if e.get("operator") == "set"]
+    sheet_query_sql = (comparison.sheet_query_sql or "") if comparison else ""
     set_here = set(comparison.parameters) if comparison else set()
 
-    def in_probe(columns: tuple[str, ...]) -> bool:
-        # The probe must name the column and a rolling date; a fixed bound on
+    def in_sheet_query(columns: tuple[str, ...]) -> bool:
+        # The sheet query must name the column and a rolling date; a fixed bound on
         # the column is not the sheet's window.
-        return "CURRENT_DATE" in probe_sql.upper() and any(
-            re.search(rf"\b{re.escape(c)}\b", probe_sql) for c in columns
+        return "CURRENT_DATE" in sheet_query_sql.upper() and any(
+            re.search(rf"\b{re.escape(c)}\b", sheet_query_sql) for c in columns
         )
 
     # A code group's source column, defaulted through its `filters:` caption.
@@ -416,12 +422,12 @@ def _filter_lines(out: _Checklist, comparison: Comparison | None, facts: Sheet) 
         elif "relative date" in f.kinds:
             if week_end & set(f.columns):
                 lines.append((f"{f.caption}: dashboard_filters days_from_week_end", ""))
-            elif in_probe(f.columns):
-                lines.append((f"{f.caption}: in probe_sql", ""))
+            elif in_sheet_query(f.columns):
+                lines.append((f"{f.caption}: in sheet_query_sql", ""))
             else:
                 need = (
                     f"{f.caption}: relative date; needs dashboard_filters with "
-                    "days_from_week_end or a probe filter"
+                    "days_from_week_end or a sheet query filter"
                 )
                 lines.append((need, need))
         elif "code group" in f.kinds:
@@ -437,6 +443,24 @@ def _filter_lines(out: _Checklist, comparison: Comparison | None, facts: Sheet) 
             lines.append((f"{f.caption}: dashboard_filters", ""))
         elif "parameter-driven" in f.kinds and set(f.parameters) <= set_here:
             lines.append((f"{f.caption}: its parameter is set under parameters:", ""))
+        elif f.null_mode == "non-null" and (
+            read := [c for c in not_null if c in f.columns]
+        ):
+            lines.append(
+                (
+                    f"{f.caption}: dashboard_filters operator: set on {', '.join(read)}",
+                    "",
+                )
+            )
+        elif f.null_mode:
+            # `operator: set` means not null; no operator expresses null only.
+            how = (
+                "add dashboard_filters with operator: set on its column"
+                if f.null_mode == "non-null"
+                else "decide how to map it"
+            )
+            need = f"{f.caption}: keeps {f.null_mode} values only; {how}"
+            lines.append((need, need))
         elif "parameter-driven" in f.kinds:
             need = (
                 f"{f.caption}: driven by a parameter; set it under parameters: or "
@@ -457,9 +481,36 @@ def _filter_lines(out: _Checklist, comparison: Comparison | None, facts: Sheet) 
         out.add(f"    - {line}", blocking)
 
 
+def text_measure(facts: Sheet, sheet_field: str | None) -> str | None:
+    """The blocking line when the compared measure is text, else None."""
+    if sheet_field:
+        # `text_values` holds export names, so a count of a field the sheet also
+        # shows as `attr` shares its name.
+        if _COUNT_FIELD.match(sheet_field):
+            return None
+        # Read as written too: `export_name` strips a leading `Count ` as an
+        # aggregate, which would miss a text field captioned `Count Type`.
+        named = {sheet_field.strip().lower(), export_name(sheet_field)}
+        if named & facts.text_values:
+            return f"sheet_field {sheet_field!r}: {tableau.TEXT_MEASURE}"
+        return None
+    # A count shares its field's export name but is a number, so the sheet's
+    # measure is text only when every value it shows is text and no count.
+    texts = [
+        not _COUNT_FIELD.match(shown) and all(n in facts.text_values for n in names)
+        for shown, names in facts.values.items()
+    ]
+    if texts and all(texts):
+        return f"the sheet's measure: {tableau.TEXT_MEASURE}"
+    return None
+
+
 def _measure_line(out: _Checklist, comparison: Comparison | None, facts: Sheet) -> None:
     shown = ", ".join(facts.values) or "none"
     wanted = comparison.sheet_field if comparison else None
+    if text := text_measure(facts, wanted):
+        out.add(f"  Measure: {text}", text)
+        return
     if not wanted:
         if len(facts.values) > 1:
             out.add(
@@ -469,7 +520,7 @@ def _measure_line(out: _Checklist, comparison: Comparison | None, facts: Sheet) 
         else:
             out.add(f"  Measure: sheet_field not set; the sheet shows {shown}")
         return
-    name = _export_name(wanted)
+    name = export_name(wanted)
     found = [s for s, names in facts.values.items() if name in names]
     if found:
         out.add(f"  Measure: sheet_field {wanted!r} is on the sheet ({found[0]})")
@@ -481,7 +532,8 @@ def _measure_line(out: _Checklist, comparison: Comparison | None, facts: Sheet) 
 
 
 def _sheet_lines(label: str, sheet: str, facts: Sheet) -> list[str]:
-    lines = [f"{sheet} ({label})"]
+    # Offline, so never guessed from the .twb (`tableau.published_sheets`).
+    lines = [f"{sheet} ({label}); {tableau.NOT_CHECKED}"]
     if facts.table_calcs:
         lines.append("  Table calculations:")
         lines += [f"    - {c.label}" for c in facts.table_calcs]
@@ -493,10 +545,13 @@ def _sheet_lines(label: str, sheet: str, facts: Sheet) -> list[str]:
         if f.formula:
             kinds += f" ({f.formula})"
         state = "restricting" if f.restricting else "keeps all"
+        if f.null_mode:
+            state = f"{f.null_mode} values only"
         line = f"    - {f.caption}: {kinds}; {state}"
         if "relative date" in f.kinds:
             line += (
-                "; needs dashboard_filters with days_from_week_end or a probe filter"
+                "; needs dashboard_filters with days_from_week_end or a sheet query "
+                "filter"
             )
         if "code group" in f.kinds:
             line += (
@@ -511,6 +566,9 @@ def _sheet_lines(label: str, sheet: str, facts: Sheet) -> list[str]:
                 f"; shared through filter-group {f.group} with {len(f.shared_with)} "
                 f"other sheets ({names})"
             )
+        # A null mode's shown text repeats the state already on the line.
+        if f.restricting and f.shown and not f.null_mode:
+            line += f"; shows {f.shown}"
         lines.append(line)
     if not facts.filters:
         lines[-1] = "  Filters: none"
@@ -561,7 +619,7 @@ def check(
     _measure_line(inner, comparison, shaped or facts)
     wanted = comparison.sheet_field if comparison else None
     for shelf, captions in (reshaped.recomputed if reshaped else {}).items():
-        if wanted and _export_name(wanted) in {c.lower() for c in captions}:
+        if wanted and export_name(wanted) in {c.lower() for c in captions}:
             inner.before.append(
                 f"sheet_field {wanted!r}: recomputes along the new {shelf} on the "
                 "reshaped copy, a number the dashboard never shows"
@@ -576,11 +634,13 @@ def report(
     members: list[Member],
     sheets: list[str] | None = None,
 ) -> str:
-    """The preflight checklist for each sheet the file's comparisons name, or
+    """The `read-sheet` checklist for each sheet the file's comparisons name, or
     for `sheets`.
 
     `workbook` returns a comparison workbook's label and XML; it is called
-    with None for a sheet no comparison names.
+    with None for a sheet no comparison names. A comparison whose differing
+    cells coverage cannot place (`coverage.unplaceable`) says why; it does
+    not block.
     """
     wanted = sheets or list(dict.fromkeys(c.sheet for c in cfg.comparisons if c.sheet))
     blocks = []
@@ -597,9 +657,11 @@ def report(
             checklist, before = check(cfg.view, xml, sheet, comparison, members)
             lines += checklist
             if before:
-                lines.append("    Before prove:")
+                lines.append("    Before rebuild-sheet:")
                 lines += [f"      - {b}" for b in dict.fromkeys(before)]
             else:
-                lines.append("    Before prove: nothing blocks")
+                lines.append("    Before rebuild-sheet: nothing blocks")
+            if comparison and (why := coverage.unplaceable(comparison)):
+                lines.append(f"    Cells cannot be covered: {why}")
         blocks.append("\n".join(lines))
     return "\n\n".join(blocks)

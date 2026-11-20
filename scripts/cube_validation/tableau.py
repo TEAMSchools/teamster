@@ -1,9 +1,10 @@
-"""Prove a workbook formula once: Tableau copy, number formats, exports, proof.
+"""Rebuild a sheet once: Tableau copy, number formats, exports, rebuild check.
 
 Tableau is written to in one place only: a copy named `ZZ-VALIDATE <workbook>`
 in the `TEMP-CB` project, published with Overwrite. Nothing is deleted. The
 copy drops the compared measures' number formats so its CSV exports carry raw
-values, and unhides the compared sheet so it publishes as a view; `prove` compares those exports with the probe's values at the
+values, and unhides the compared sheet so it publishes as a view;
+`rebuild-sheet` compares those exports with the sheet query's values at the
 sheet's displayed decimals.
 
 XML edits are anchored text surgery, not an ElementTree round trip, so the
@@ -26,9 +27,9 @@ import tempfile
 # trunk-ignore(bandit/B405): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
 import xml.etree.ElementTree as ET
 import zipfile
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any
@@ -36,8 +37,8 @@ from typing import Any
 import tableauserverclient as TSC
 from tableauserverclient.server.endpoint.exceptions import FailedSignInError
 
-from .compare import cell_verdict
 from .config import Comparison
+from .reconcile import cell_verdict
 
 TEMP_PROJECT = "TEMP-CB"
 COPY_PREFIX = "ZZ-VALIDATE "
@@ -66,6 +67,12 @@ _STYLE_RULE = re.compile(
 )
 _ATTR = re.compile(r"""([\w:.-]+)=(?:'([^']*)'|"([^"]*)")""")
 _DEFAULT_FORMAT = re.compile(r"""\s+default-format=(?:'[^']*'|"[^"]*")""")
+TEXT_MEASURE = (
+    "text measures are not compared; compare the numeric measure it is built from"
+)
+NOT_PUBLISHED = "not on a published dashboard"
+# Only Tableau Server's views list says which sheets are published.
+NOT_CHECKED = "published: not checked; `rebuild-sheet` and `compare` ask Tableau Server"
 _THOUSANDS = re.compile(r"[-+]?\d{1,3}(?:,\d{3})+(?:\.\d+)?")
 _PLAIN_NUMBER = re.compile(r"[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?")
 _INSTANCE_SUFFIXES = {"nk", "ok", "qk"}
@@ -92,8 +99,30 @@ def _attrs(tag: str) -> dict[str, str]:
     return {m[1]: html.unescape(m[2] or m[3] or "") for m in _ATTR.finditer(tag)}
 
 
-def _bare(name: str) -> str:
+def bare_name(name: str) -> str:
+    """A field name without its one pair of brackets: `[x]` reads `x`."""
     return name[1:-1] if name.startswith("[") and name.endswith("]") else name
+
+
+def unquote(text: str | None) -> str:
+    """A member value without its one pair of double quotes; None reads ""."""
+    text = text or ""
+    return text[1:-1] if len(text) > 1 and text[0] == text[-1] == '"' else text
+
+
+def worksheet(root: ET.Element, sheet: str) -> ET.Element | None:
+    """The workbook's worksheet named `sheet`, or None."""
+    return next((w for w in root.iter("worksheet") if w.get("name") == sheet), None)
+
+
+def parameter_columns(root: ET.Element) -> list[ET.Element]:
+    """The columns of the workbook's `Parameters` datasource: its parameters."""
+    return [
+        col
+        for ds in root.iter("datasource")
+        if ds.get("name") == "Parameters"
+        for col in ds.findall("column")
+    ]
 
 
 def _field_column(field_ref: str) -> str:
@@ -117,10 +146,10 @@ def _target_columns(root: ET.Element, measures: list[str]) -> set[str]:
     missing = []
     for measure in measures:
         found = {
-            _bare(col.get("name") or "")
+            bare_name(col.get("name") or "")
             for col in root.iter("column")
             if measure
-            in (col.get("caption"), col.get("name"), _bare(col.get("name") or ""))
+            in (col.get("caption"), col.get("name"), bare_name(col.get("name") or ""))
         }
         if not found:
             missing.append(measure)
@@ -164,7 +193,7 @@ def drop_number_formats(twb_xml: str, measures: list[str]) -> str:
     want_defaults = sum(
         1
         for col in root.iter("column")
-        if _bare(col.get("name") or "") in targets
+        if bare_name(col.get("name") or "") in targets
         and col.get("default-format") is not None
     )
     want_rules = sum(
@@ -179,7 +208,7 @@ def drop_number_formats(twb_xml: str, measures: list[str]) -> str:
     def column_tag(m: re.Match) -> str:
         nonlocal dropped_defaults
         tag = m.group(0)
-        if _bare(_attrs(tag).get("name", "")) not in targets:
+        if bare_name(_attrs(tag).get("name", "")) not in targets:
             return tag
         new, n = _DEFAULT_FORMAT.subn("", tag)
         dropped_defaults += n
@@ -216,6 +245,39 @@ def drop_number_formats(twb_xml: str, measures: list[str]) -> str:
     if _empty_rules(ET.fromstring(out)) > _empty_rules(root):
         raise ValueError("the edit left an empty style-rule")
     return out
+
+
+def published_sheets(twb_xml: str | ET.Element, views: Iterable[str]) -> set[str]:
+    """The sheets and dashboards a viewer of the published workbook can see.
+
+    Tableau publishes only the sheets chosen at publish time, and the `.twb`
+    does not record that choice, so `views` (the workbook's views as Tableau
+    Server lists them, `Tableau.view_names`) decides. A sheet is seen when it
+    is a view, or when a seen dashboard holds it in a zone (zones nest; every
+    level counts) or a seen story's point captures it (`captured-sheet`).
+    `twb_xml` may be the workbook already parsed.
+    """
+    root = (
+        twb_xml
+        if isinstance(twb_xml, ET.Element)
+        # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
+        else ET.fromstring(twb_xml)
+    )
+    holds = {
+        dashboard.get("name") or "": {
+            z.get("name") or "" for z in dashboard.iter("zone")
+        }
+        | {p.get("captured-sheet") or "" for p in dashboard.iter("story-point")}
+        for dashboard in root.iter("dashboard")
+    }
+    seen = set(views)
+    # A story point can capture a dashboard, whose zones are then seen too.
+    todo = list(seen)
+    while todo:
+        for name in holds.get(todo.pop(), set()) - seen - {""}:
+            seen.add(name)
+            todo.append(name)
+    return seen
 
 
 def expose_sheet(twb_xml: str, sheet: str) -> str:
@@ -309,10 +371,7 @@ def formula_fingerprint(twb_xml: str, sheet: str) -> str:
     """
     # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
     root = ET.fromstring(twb_xml)
-    ws = next(
-        (w for w in root.iter("worksheet") if w.get("name") == sheet),
-        None,
-    )
+    ws = worksheet(root, sheet)
     if ws is None:
         raise ValueError(f"the workbook has no worksheet {sheet!r}")
 
@@ -348,10 +407,7 @@ def source_fingerprint(twb_xml: str, sheet: str) -> str:
     """
     # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
     root = ET.fromstring(twb_xml)
-    ws = next(
-        (w for w in root.iter("worksheet") if w.get("name") == sheet),
-        None,
-    )
+    ws = worksheet(root, sheet)
     if ws is None:
         raise ValueError(f"the workbook has no worksheet {sheet!r}")
     used = {d.get("datasource") or "" for d in ws.iter("datasource-dependencies")} - {
@@ -384,7 +440,7 @@ _COLUMN_BLOCK = re.compile(r"<column\b[^>]*?(?:/>|>.*?</column>)", re.DOTALL)
 def set_parameters(twb_xml: str, values: dict[str, str]) -> str:
     """Set workbook parameters' current values, so the sheet exports them.
 
-    The REST export cannot pass a parameter, so the proof copy carries it:
+    The REST export cannot pass a parameter, so the rebuild copy carries it:
     each parameter's `value` and its calculation's formula become the chosen
     member's stored text. Only the matched column's 2 attributes change.
 
@@ -405,11 +461,11 @@ def set_parameters(twb_xml: str, values: dict[str, str]) -> str:
         names = []
         for column in _COLUMN_BLOCK.finditer(block):
             attrs = _attrs(column.group(0).split(">", 1)[0])
-            names.append(attrs.get("caption") or _bare(attrs.get("name", "")))
+            names.append(attrs.get("caption") or bare_name(attrs.get("name", "")))
             if wanted_name in (
                 attrs.get("caption"),
                 attrs.get("name"),
-                _bare(attrs.get("name", "")),
+                bare_name(attrs.get("name", "")),
             ):
                 found = column
                 break
@@ -419,7 +475,7 @@ def set_parameters(twb_xml: str, values: dict[str, str]) -> str:
             )
         text = found.group(0)
         members = {
-            _unquote(html.unescape(m[1])): m[1]
+            unquote(html.unescape(m[1])): m[1]
             for m in re.finditer(r"<member\b[^>]*?\bvalue='([^']*)'", text)
         }
         if not members:
@@ -443,10 +499,6 @@ def set_parameters(twb_xml: str, values: dict[str, str]) -> str:
         )
         block = block.replace(text, f"{start}>{rest}", 1)
     return twb_xml[: block_match.start()] + block + twb_xml[block_match.end() :]
-
-
-def _unquote(text: str) -> str:
-    return text[1:-1] if len(text) > 1 and text[0] == text[-1] == '"' else text
 
 
 # A shelf: `<rows onTop='true'>(A / (B / C))</rows>`, or empty as `<rows />`.
@@ -573,16 +625,34 @@ def _is_measures(node: _Group | str | None) -> bool:
 def _nested_under(node: _Group | str | None, ref: str) -> _Group | str:
     """The shelf with `ref` nested innermost, as Tableau writes `(A / (B / C))`.
 
-    Measures stay last: a dimension added to a shelf of measures crosses in
-    front of them (`(A / B) * (M1 + M2)`), as Tableau writes a dimension
-    against a dual axis.
+    Measures stay last: in a group of crossed fields the added field nests
+    into the last field that is not measures (`A * (B / C) * (M1 + M2)`), and
+    a shelf of measures alone gets it crossed in front, as Tableau writes a
+    dimension against a dual axis. A group that mixes `/` and `*`, or joins a
+    field that is not a measure with `+`, is refused.
+
+    Raises:
+        ValueError: A group the added field cannot nest into as Tableau would.
     """
     if node is None:
         return ref
     if _is_measures(node):
         return _Group([ref, node], ["*"])
-    if isinstance(node, _Group) and node.ops == ["*"] and _is_measures(node.items[-1]):
-        return _Group([_nested_under(node.items[0], ref), node.items[-1]], ["*"])
+    if isinstance(node, _Group) and "+" in node.ops:
+        raise ValueError(
+            f"cannot add {ref} to a shelf that mixes + with a field that is not a "
+            "measure; reshape the sheet by hand"
+        )
+    if isinstance(node, _Group) and set(node.ops) == {"*"}:
+        for i in range(len(node.items) - 1, -1, -1):
+            if not _is_measures(node.items[i]):
+                items = list(node.items)
+                items[i] = _nested_under(items[i], ref)
+                return _Group(items, node.ops)
+    if isinstance(node, _Group) and {"/", "*"} <= set(node.ops):
+        raise ValueError(
+            f"cannot add {ref} to a shelf that mixes / and *; reshape the sheet by hand"
+        )
     if isinstance(node, _Group) and set(node.ops) == {"/"}:
         return _Group([*node.items[:-1], _nested_under(node.items[-1], ref)], node.ops)
     return _Group([node, ref], ["/"])
@@ -653,7 +723,7 @@ def table_calcs(ws: ET.Element) -> list[TableCalc]:
     """
     caption = {}
     for col in ws.iter("column"):
-        name = _bare(col.get("name") or "")
+        name = bare_name(col.get("name") or "")
         caption.setdefault(name, col.get("caption") or name)
     found = []
     for deps in ws.iter("datasource-dependencies"):
@@ -664,7 +734,7 @@ def table_calcs(ws: ET.Element) -> list[TableCalc]:
             kind = calc.get("type") or ""
             derivation = instance.get("derivation") or ""
             agg = "" if derivation in ("", "None", "User") else f"{derivation}. "
-            column = _bare(instance.get("column") or "")
+            column = bare_name(instance.get("column") or "")
             words = _TABLE_CALC_WORDS.get(kind, f"{kind} of")
             found.append(
                 TableCalc(
@@ -742,7 +812,7 @@ def set_shelves(twb_xml: str, sheet: str, shelves: dict[str, Any]) -> Reshaped:
     """
     # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
     root = ET.fromstring(twb_xml)
-    ws = next((w for w in root.iter("worksheet") if w.get("name") == sheet), None)
+    ws = worksheet(root, sheet)
     blocks = [
         m
         for m in _WORKSHEET.finditer(twb_xml)
@@ -756,7 +826,7 @@ def set_shelves(twb_xml: str, sheet: str, shelves: dict[str, Any]) -> Reshaped:
 
     caption = {}
     for col in ws.iter("column"):
-        name = _bare(col.get("name") or "")
+        name = bare_name(col.get("name") or "")
         caption.setdefault(name, col.get("caption") or name)
 
     def shown(ref: str) -> str:
@@ -816,7 +886,7 @@ def set_shelves(twb_xml: str, sheet: str, shelves: dict[str, Any]) -> Reshaped:
             ds_name, col, listed = _added_column(
                 wanted, sheet, dependencies, datasources
             )
-            name = _bare(col.get("name") or "")
+            name = bare_name(col.get("name") or "")
             if col.get("role") == "measure":
                 raise ValueError(f"{wanted!r} is a measure; add a dimension")
             if col.find("calculation") is not None and not listed:
@@ -1064,7 +1134,9 @@ def _clear_filter(
 
 def _named(columns: list[ET.Element], wanted: str) -> list[ET.Element]:
     return [
-        c for c in columns if wanted in (c.get("caption"), _bare(c.get("name") or ""))
+        c
+        for c in columns
+        if wanted in (c.get("caption"), bare_name(c.get("name") or ""))
     ]
 
 
@@ -1116,7 +1188,7 @@ def _dimension_instance(
         {
             "column": name,
             "derivation": "None",
-            "name": f"[none:{_bare(name)}:{_INSTANCE_SUFFIX.get(kind, 'nk')}]",
+            "name": f"[none:{bare_name(name)}:{_INSTANCE_SUFFIX.get(kind, 'nk')}]",
             "pivot": "key",
             "type": kind,
         },
@@ -1127,19 +1199,16 @@ def _parameter_names(twb_xml: str) -> set[str]:
     # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
     root = ET.fromstring(twb_xml)
     names: set[str] = set()
-    for ds in root.iter("datasource"):
-        if ds.get("name") != "Parameters":
-            continue
-        for col in ds.findall("column"):
-            names |= {
-                n
-                for n in (
-                    col.get("caption"),
-                    col.get("name"),
-                    _bare(col.get("name") or ""),
-                )
-                if n
-            }
+    for col in parameter_columns(root):
+        names |= {
+            n
+            for n in (
+                col.get("caption"),
+                col.get("name"),
+                bare_name(col.get("name") or ""),
+            )
+            if n
+        }
     return names
 
 
@@ -1148,7 +1217,7 @@ def split_cuts(
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """Split cuts into those a REST export can take and those it cannot.
 
-    A cut that sets a workbook parameter is proven in the browser: the server
+    A cut that sets a workbook parameter is checked in the browser: the server
     rejects parameter values on export here.
 
     Args:
@@ -1165,46 +1234,90 @@ def split_cuts(
     return exportable, browser
 
 
-# --- the proof ---------------------------------------------------------------
+# --- the rebuild check -------------------------------------------------------
 
 
 @dataclass(frozen=True)
-class Proof:
-    """The outcome of proving one comparison's probe against the sheet.
+class RebuildResult:
+    """The outcome of matching one comparison's sheet query to the sheet.
 
     Attributes:
-        fingerprint: `formula_fingerprint` of the sheet the proof covers.
+        fingerprint: `formula_fingerprint` of the sheet the check covers.
         cells: Cells present on both sides and compared.
         failures: One line per cell that differs or is on one side only.
-        proven_at: When the comparison ran.
-        browser: Cuts that set a parameter, to prove in the browser.
+        matched_at: When the comparison ran.
+        browser: Cuts that set a parameter, to check in the browser.
+        blanks_skipped: Keys blank in the export and absent from the sheet
+            query, or NULL in the sheet query and absent from the export.
     """
 
     fingerprint: str
     cells: int
     failures: list[str]
-    proven_at: datetime
+    matched_at: datetime
     browser: list[dict[str, Any]] = field(default_factory=list)
+    blanks_skipped: int = 0
 
     @property
-    def proven(self) -> bool:
+    def matched(self) -> bool:
         """True when at least 1 cell was compared and none failed."""
         return self.cells > 0 and not self.failures
 
 
-def _key_text(value: Any) -> str:
-    """Key text that treats 2026, 2026.0 and '2026' alike, and reads the
-    export's M/D/YYYY date (the server's en-US format) as the probe's ISO date.
+def export_date(text: str) -> date | None:
+    """The date of an M/D/YYYY export value (the server's en-US format), or None
+    for any other text, an impossible date included.
     """
+    if not re.fullmatch(r"\d{1,2}/\d{1,2}/\d{4}", text):
+        return None
+    try:
+        return datetime.strptime(text, "%m/%d/%Y").date()
+    except ValueError:
+        return None
+
+
+def value_key(value: Any, *, export: bool = False) -> str:
+    """Cell key text: dates by day, booleans as `true`/`false`, numbers by
+    value, else the text.
+
+    Tableau's export writes a date as M/D/YYYY (the server's en-US format),
+    the sheet query and Cube as ISO, so both read as the same day. A boolean
+    reads as BigQuery casts it, whatever its case, so a group label
+    (`reconcile._label`) keys as its cell does; `reconcile._cell_key` is
+    this rule in SQL. Numbers key by value, so 2026, 2026.0 and '2026' match.
+
+    Args:
+        value: A dim value from any side.
+        export: Also read text as Tableau's export writes it: trimmed before
+            its date is read, and with thousands separators, so `1,234` keys
+            as 1234. The rebuild check keys both of its sides this way. Off
+            for compare's keys, which answers and formula fingerprints store.
+
+    Returns:
+        The key text; NULL keys as the empty string.
+    """
+    if export and isinstance(value, str):
+        value = value.strip()
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, str) and re.match(r"\d{4}-\d{2}-\d{2}", value):
+        try:
+            value = datetime.fromisoformat(value)
+        except ValueError:
+            pass
+    elif isinstance(value, str) and (day := export_date(value)) is not None:
+        value = day
+    if isinstance(value, datetime):
+        stamp = value.replace(tzinfo=None)
+        return stamp.date().isoformat() if stamp.time() == time() else stamp.isoformat()
+    if isinstance(value, date):
+        return value.isoformat()
     if value is None:
         return ""
     text = str(value).strip()
-    if re.fullmatch(r"\d{1,2}/\d{1,2}/\d{4}", text):
-        try:
-            return datetime.strptime(text, "%m/%d/%Y").date().isoformat()
-        except ValueError:
-            return text
-    if _THOUSANDS.fullmatch(text):
+    if text.lower() in ("true", "false"):
+        return text.lower()
+    if export and _THOUSANDS.fullmatch(text):
         text = text.replace(",", "")
     try:
         number = Decimal(text)
@@ -1247,6 +1360,11 @@ def _number(value: Any) -> float | None:
     if _THOUSANDS.fullmatch(body):
         body = body.replace(",", "")
     if not _PLAIN_NUMBER.fullmatch(body):
+        # Any value with no digit reads as text, so a "Null" or "N/A" cell in
+        # a number measure refuses as a text measure too. That fails closed:
+        # the check stops rather than guess a number for the cell.
+        if not any(c.isdigit() for c in body):
+            raise ValueError(f"export value {text!r} is text; {TEXT_MEASURE}")
         raise ValueError(
             f"export value {text!r} still carries a number format; "
             "publish the copy through drop_number_formats"
@@ -1264,7 +1382,7 @@ def _index(
         if missing:
             raise ValueError(f"{side} row lacks {', '.join(missing)}")
         others = sorted(k for k in row if k != "value")
-        key = tuple((k, _key_text(row[k])) for k in others)
+        key = tuple((k, value_key(row[k], export=True)) for k in others)
         label = ", ".join(f"{k}={row[k]}" for k in others)
         if key in values:
             failures.append(f"{label}: more than 1 {side} row")
@@ -1274,34 +1392,37 @@ def _index(
     return values, labels
 
 
-def prove(
+def match_export(
     comparison: Comparison,
     exports: list[dict[str, Any]],
-    probe_values: list[dict[str, Any]],
+    query_values: list[dict[str, Any]],
     *,
     twb_xml: str,
     now: datetime | None = None,
-) -> Proof:
-    """Check that the probe reproduces every exported cell of the sheet.
+) -> RebuildResult:
+    """Check that the sheet query reproduces every exported cell of the sheet.
 
     Rows on each side are matched on every key except `value`: the
     comparison's dashboard dims, plus any key the caller adds to tell cuts
     apart (such as `cut`). Numeric keys match across types (2026, 2026.0 and
     '2026'). A combination on one side only fails, and so does each matched
-    pair that `cell_verdict` does not pass at `comparison.decimals`.
+    pair that `cell_verdict` does not pass at `comparison.decimals`. A key
+    that is blank in the export and missing from the sheet query, or NULL in
+    the sheet query and missing from the export, is skipped and counted in
+    `blanks_skipped`, not in `cells`: a blank cell has no value to compare.
 
     Args:
         comparison: The comparison; needs `sheet` and `decimals`.
         exports: Export rows mapped to dashboard dim names plus `value`, from
             a copy with the measure's number format dropped.
-        probe_values: Probe rows in the same shape, from the dashboard view
+        query_values: Sheet query rows in the same shape, from the dashboard view
             rebuilt as of the refresh the exports read.
         twb_xml: The production workbook XML, for the fingerprint and the
             parameter cuts.
-        now: The proof time; defaults to the current UTC time.
+        now: The check time; defaults to the current UTC time.
 
     Returns:
-        The proof. It is proven only with at least 1 cell and no failures;
+        The result. It matched only with at least 1 cell and no failures;
         parameter cuts are listed in `browser`, not failed.
 
     Raises:
@@ -1321,32 +1442,41 @@ def prove(
     dims = [p.dashboard for p in comparison.dims]
     failures: list[str] = []
     dash, dash_labels = _index(exports, dims, "export", failures)
-    probe, probe_labels = _index(probe_values, dims, "probe", failures)
+    query, query_labels = _index(query_values, dims, "sheet query", failures)
 
     cells = 0
-    for key in sorted(dash.keys() | probe.keys()):
-        if key not in probe:
+    blanks = 0
+    for key in sorted(dash.keys() | query.keys()):
+        if key not in query:
+            if dash[key] is None:
+                blanks += 1
+                continue
             failures.append(f"{dash_labels[key]}: in the export only")
             continue
         if key not in dash:
-            failures.append(f"{probe_labels[key]}: in the probe only")
+            if query[key] is None:
+                blanks += 1
+                continue
+            failures.append(f"{query_labels[key]}: in the sheet query only")
             continue
         cells += 1
-        verdict = cell_verdict(dash[key], probe[key], comparison.decimals)
+        verdict = cell_verdict(dash[key], query[key], comparison.decimals)
         if verdict != "pass":
             failures.append(
-                f"{dash_labels[key]}: export {dash[key]!r}, probe {probe[key]!r} "
+                f"{dash_labels[key]}: export {dash[key]!r}, sheet query "
+                f"{query[key]!r} "
                 f"at {comparison.decimals} decimals ({verdict})"
             )
     if not exports:
         failures.append("the export has no rows")
 
-    return Proof(
+    return RebuildResult(
         fingerprint=formula_fingerprint(twb_xml, comparison.sheet),
         cells=cells,
         failures=failures,
-        proven_at=now or datetime.now(timezone.utc),
+        matched_at=now or datetime.now(timezone.utc),
         browser=split_cuts(comparison.cuts, twb_xml)[1],
+        blanks_skipped=blanks,
     )
 
 
@@ -1406,7 +1536,7 @@ class Snapshot:
     """Exports taken with no extract refresh starting in between.
 
     Attributes:
-        refresh_started: Start of the refresh the exports read; the probe
+        refresh_started: Start of the refresh the exports read; the sheet query
             runs over the dashboard view rebuilt as of this moment.
         copy_luid: The `TEMP-CB` copy the exports came from.
         exports: One list of CSV rows per cut, in the order given.
@@ -1418,7 +1548,7 @@ class Snapshot:
 
 
 class Tableau:
-    """The Tableau reads and the 1 copy a proof needs.
+    """The Tableau reads and the 1 copy a rebuild needs.
 
     Args:
         server: A signed-in `tableauserverclient.Server` (see
@@ -1519,6 +1649,19 @@ class Tableau:
     def workbook_updated(self, luid: str) -> datetime:
         """Return when a workbook was last published."""
         return self._call(lambda s: s.workbooks.get_by_id(luid).updated_at)
+
+    def _views(self, luid: str) -> list:
+        def views(s: Any) -> list:
+            wb = s.workbooks.get_by_id(luid)
+            s.workbooks.populate_views(wb)
+            return list(wb.views)
+
+        return self._call(views)
+
+    def view_names(self, luid: str) -> set[str]:
+        """Return the names of a workbook's views, the sheets and dashboards
+        it publishes (`published_sheets`)."""
+        return {v.name for v in self._views(luid)}
 
     def refresh_started(
         self, workbook_luid: str, since: datetime | None = None
@@ -1685,12 +1828,7 @@ class Tableau:
                 in the workbook does not publish as a view.
         """
 
-        def views(s: Any) -> list:
-            wb = s.workbooks.get_by_id(copy_luid)
-            s.workbooks.populate_views(wb)
-            return list(wb.views)
-
-        view = next((v for v in self._call(views) if v.name == sheet), None)
+        view = next((v for v in self._views(copy_luid) if v.name == sheet), None)
         if view is None:
             raise LookupError(
                 f"no view {sheet!r} on the copy; a hidden sheet is not published"

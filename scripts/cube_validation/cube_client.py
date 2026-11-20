@@ -5,6 +5,7 @@ validation run honest. Stdlib only; auth mirrors `src/cube/mcp/server.py`.
 from __future__ import annotations
 
 import base64
+import copy
 import hashlib
 import hmac
 import json
@@ -13,18 +14,18 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from typing import Any, Protocol
 
 TIMEOUT_SECONDS = 60
 # A fact table in any `<prefix>kipptaf_marts` dataset: prod's, an analyst's dev
-# build (`zz_<user>_kipptaf_marts`), or one named some other way. `_FACT` yields
-# table names; `_FACT_REF` yields (dataset, table), so each dataset is compared
+# build (`zz_<user>_kipptaf_marts`), or one named some other way. `FACT_TABLE` yields
+# table names; `FACT_REF` yields (dataset, table), so each dataset is compared
 # exactly and a second fact cannot hide behind an unfamiliar prefix.
 _MARTS = r"\w*kipptaf_marts"
-_FACT = re.compile(rf"{_MARTS}`?\.`?(fct_\w+)", re.IGNORECASE)
-_FACT_REF = re.compile(rf"({_MARTS})`?\.`?(fct_\w+)", re.IGNORECASE)
+FACT_TABLE = re.compile(rf"{_MARTS}`?\.`?(fct_\w+)", re.IGNORECASE)
+FACT_REF = re.compile(rf"({_MARTS})`?\.`?(fct_\w+)", re.IGNORECASE)
 _LOOPBACK = {"localhost", "127.0.0.1"}
 _STR = r"'(?:\\.|[^'\\])*'"
 _STRING = re.compile(_STR)
@@ -163,6 +164,11 @@ class Cube:
         self._fetch = fetch
         self._sleep = sleep
         self._clock = clock
+        # What `compiled` and `meta` answered, so one run asks Cube once per
+        # query. Kept on the instance, never across clients or runs; an error
+        # is never kept, so it is asked again.
+        self._compiled: dict[str, Compiled] = {}
+        self._meta: dict | None = None
 
     def _call(self, method: str, path: str, body: dict | None = None) -> Any:
         deadline = self._clock() + TIMEOUT_SECONDS
@@ -190,15 +196,20 @@ class Cube:
             CubeError: Cube could not compile the query.
         """
         q = urllib.parse.quote(json.dumps(_utc(query)))
-        out = self._call("GET", f"/sql?query={q}")
-        sql = out["sql"]
+        if q not in self._compiled:
+            out = self._call("GET", f"/sql?query={q}")
+            sql = out["sql"]
 
-        if sql.get("error"):
-            raise CubeError(f"Cube GET /sql: {sql['error']}")
+            if sql.get("error"):
+                raise CubeError(f"Cube GET /sql: {sql['error']}")
 
-        text, params = sql["sql"]
+            text, params = sql["sql"]
+            self._compiled[q] = Compiled(
+                text, list(params), list(sql.get("preAggregations") or [])
+            )
 
-        return Compiled(text, list(params), list(sql.get("preAggregations") or []))
+        # A copy, so a caller that edits its lists never edits the kept one.
+        return copy.deepcopy(self._compiled[q])
 
     def load(self, query: dict) -> list[dict]:
         """Run `query` and return its rows."""
@@ -208,7 +219,13 @@ class Cube:
 
     def meta(self) -> dict:
         """Return Cube's `/meta` response: every cube and view this viewer sees."""
-        return self._call("GET", "/meta")
+        meta = self._meta
+        if meta is None:
+            # Any 200 reply is kept as returned, only a raised error is not:
+            # a run reads /meta once, so a bad reply costs a re-run, never a stale one.
+            meta = self._meta = self._call("GET", "/meta")
+
+        return copy.deepcopy(meta)
 
 
 @dataclass(frozen=True)
@@ -218,7 +235,6 @@ class MemberDoc:
     name: str
     title: str
     description: str
-    ai_context: str
     kind: str  # measure, dimension or segment
 
 
@@ -240,7 +256,6 @@ def member_docs(meta: dict, view: str) -> dict[str, MemberDoc]:
                     name=name,
                     title=m.get("title") or "",
                     description=m.get("description") or "",
-                    ai_context=(m.get("meta") or {}).get("ai_context") or "",
                     kind=kind,
                 )
 
@@ -259,7 +274,7 @@ def _utc(query: dict) -> dict:
 _ESCAPES = {"\\": "\\\\", "'": "\\'", "\n": "\\n", "\r": "\\r", "\t": "\\t"}
 
 
-def _literal(value: Any) -> str:
+def sql_literal(value: Any) -> str:
     if value is None:
         return "NULL"
 
@@ -273,7 +288,7 @@ def _literal(value: Any) -> str:
         return "'" + "".join(_ESCAPES.get(c, c) for c in value) + "'"
 
     if isinstance(value, (list, tuple)):
-        return "[" + ", ".join(_literal(v) for v in value) + "]"
+        return "[" + ", ".join(sql_literal(v) for v in value) + "]"
 
     raise CubeError(f"Unsupported parameter type {type(value).__name__}")
 
@@ -313,7 +328,7 @@ def bind(compiled: Compiled) -> str:
     params = iter(compiled.params)
 
     return "".join(
-        t if lit else re.sub(r"\?", lambda _: _literal(next(params)), t)
+        t if lit else re.sub(r"\?", lambda _: sql_literal(next(params)), t)
         for lit, t in pieces
     )
 
@@ -350,26 +365,43 @@ def sort_school_filters(sql: str) -> str:
 
 
 def refuse_unless_safe(
-    compiled: Compiled, *, view_fact: str, network_schools: set[str]
+    compiled: Compiled,
+    *,
+    view_fact: str,
+    network_schools: set[str],
+    also_facts: Iterable[str] = (),
 ) -> None:
     """Refuse a compiled query that would not match a raw rebuild.
 
+    Args:
+        compiled: Cube's compiled query.
+        view_fact: The fact the run's moment is a build of.
+        network_schools: Every school abbreviation the network scope covers.
+        also_facts: Other facts the view reads, listed in its validation file;
+            `compare` checks each did not change during the build.
+
     Raises:
         CubeRefusal: a pre-aggregation answered it, it reads a fact other than
-            `view_fact`, or its school filter is missing, a
+            `view_fact` and `also_facts`, or its school filter is missing, a
             default-deny, or not exactly `network_schools`.
     """
     if compiled.pre_aggregations:
         raise CubeRefusal(
-            "Cube served this from a pre-aggregation, which is stored data "
-            "rather than the fact the view reads."
+            "Cube served this from a pre-aggregation, stored data rather than "
+            "the fact the view reads; add a Cube-only `scope` on a never-null "
+            "member the rollup does not carry, such as the fact's primary key, "
+            "with `operator: set`"
         )
 
-    facts = {f"{ds}.{name}".lower() for ds, name in _FACT_REF.findall(compiled.sql)}
-    others = facts - {view_fact.lower()}
+    facts = {f"{ds}.{name}".lower() for ds, name in FACT_REF.findall(compiled.sql)}
+    allowed = [view_fact, *also_facts]
+    others = facts - {f.lower() for f in allowed}
 
     if others:
-        raise CubeRefusal(f"SQL reads facts other than {view_fact}: {sorted(others)}")
+        raise CubeRefusal(
+            f"SQL reads facts other than {', '.join(allowed)}: {sorted(others)}. "
+            "List a fact the view reads under `also_facts:` in its validation file."
+        )
 
     bound = bind(compiled)
     code = "".join(t for lit, t in _split(bound) if not lit)

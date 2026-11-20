@@ -114,6 +114,43 @@ def test_queries_default_to_utc_and_keep_an_explicit_zone():
     assert seen[1]["timezone"] == "America/New_York"
 
 
+def test_compiled_and_meta_are_asked_once_per_client():
+    calls = []
+
+    def fetch(method, url, headers, body=None):
+        calls.append(url)
+        if url.endswith("/meta"):
+            return {"cubes": [{"name": "v"}]}
+        return {"sql": {"sql": ["SELECT ?", ["a"]]}}
+
+    cube = Cube("https://c/api", "s", "x@y", fetch=fetch)
+    first = cube.compiled({"measures": ["m"]})
+    first.params.append("edited")
+
+    assert cube.compiled({"measures": ["m"]}) == Compiled("SELECT ?", ["a"], [])
+    cube.compiled({"measures": ["other"]})
+    cube.meta()["cubes"].clear()
+    assert cube.meta() == {"cubes": [{"name": "v"}]}
+    assert len(calls) == 3
+    # Another client asks Cube again.
+    Cube("https://c/api", "s", "x@y", fetch=fetch).compiled({"measures": ["m"]})
+    assert len(calls) == 4
+
+
+def test_a_compile_error_is_asked_again():
+    answers = iter(
+        [
+            {"sql": {"error": "no member m"}},
+            {"sql": {"sql": ["SELECT 1", []]}},
+        ]
+    )
+    cube = Cube("https://c/api", "s", "x@y", fetch=lambda *a, **k: next(answers))
+
+    with pytest.raises(CubeError, match="no member m"):
+        cube.compiled({"measures": ["m"]})
+    assert cube.compiled({"measures": ["m"]}) == Compiled("SELECT 1", [], [])
+
+
 def test_bind_escapes_quotes():
     assert bind(Compiled("x = ?", ["O'Neil"], [])) == "x = 'O\\'Neil'"
 
@@ -159,6 +196,31 @@ def test_second_fact_is_refused():
             view_fact=f"kipptaf_marts.{FACT}",
             network_schools=ALL,
         )
+
+
+def test_a_listed_second_fact_passes():
+    sql = _sql() + " JOIN kipptaf_marts.fct_other o ON 1=1"
+
+    refuse_unless_safe(
+        Compiled(sql, ["A", "B", "C"], []),
+        view_fact=f"kipptaf_marts.{FACT}",
+        network_schools=ALL,
+        also_facts=["kipptaf_marts.fct_other"],
+    )
+
+
+def test_a_fact_outside_the_listed_ones_is_still_refused():
+    sql = _sql() + " JOIN kipptaf_marts.fct_other o ON 1=1 JOIN kipptaf_marts.fct_x"
+
+    with pytest.raises(CubeRefusal, match="fct_x") as info:
+        refuse_unless_safe(
+            Compiled(sql, ["A", "B", "C"], []),
+            view_fact=f"kipptaf_marts.{FACT}",
+            network_schools=ALL,
+            also_facts=["kipptaf_marts.fct_other"],
+        )
+
+    assert "fct_other'" not in str(info.value)
 
 
 def test_short_school_list_is_refused():
@@ -442,7 +504,7 @@ def test_meta_calls_meta_endpoint():
     assert calls == [("GET", "https://c/cubejs-api/v1/meta")]
 
 
-def test_member_docs_reads_description_and_ai_context_for_one_view():
+def test_member_docs_reads_description_for_one_view():
     meta = {
         "cubes": [
             {
@@ -472,7 +534,19 @@ def test_member_docs_reads_description_and_ai_context_for_one_view():
     docs = member_docs(meta, "v")
 
     assert set(docs) == {"pct_tardy", "grade_level"}
-    assert docs["pct_tardy"].ai_context == "Codes T*."
-    assert docs["grade_level"].ai_context == ""
+    assert docs["pct_tardy"].description == "Share tardy."
     assert docs["grade_level"].kind == "dimension"
     assert docs["pct_tardy"].kind == "measure"
+
+
+def test_pre_aggregation_refusal_names_the_scope_remedy():
+    with pytest.raises(CubeRefusal) as exc:
+        refuse_unless_safe(
+            Compiled(_sql(), ["A", "B", "C"], [{"id": "r"}]),
+            view_fact=VF,
+            network_schools=ALL,
+        )
+
+    text = str(exc.value)
+    assert "scope" in text and "operator: set" in text and "primary key" in text
+    assert not text.endswith(".")

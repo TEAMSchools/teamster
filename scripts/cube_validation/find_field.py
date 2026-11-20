@@ -3,8 +3,9 @@
 Reads the dbt Tableau exposures and each workbook's calculated fields and
 aggregated raw fields, then ranks them by how many name tokens they share with
 the measure and its SQL. It also reads a sheet's shape: shelves, export form,
-filters and displayed decimals. Nothing is written: `discover` prints the
-candidates and the analyst confirms each one.
+filters and displayed decimals. `find_field` runs the `find-field` command.
+Nothing is written: it prints the candidates and each listed sheet's shape, and
+the analyst confirms each one.
 """
 
 from __future__ import annotations
@@ -13,12 +14,27 @@ import re
 
 # trunk-ignore(bandit/B405): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
 import xml.etree.ElementTree as ET
+import zipfile
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
 
+import tableauserverclient as TSC
 import yaml
 
-from .tableau import displayed_decimals
+from .config import ViewConfig
+from .cube_client import Cube
+from .pipeline import Refusal, measure_expression, member_name
+from .tableau import (
+    NOT_CHECKED,
+    NOT_PUBLISHED,
+    Tableau,
+    bare_name,
+    displayed_decimals,
+    published_sheets,
+    unquote,
+    worksheet,
+)
 
 TOP_N = 5
 MIN_TOKEN_LENGTH = 3
@@ -68,11 +84,11 @@ _AGG_NAMES = {
     "Sum": "SUM", "Avg": "AVG", "Count": "COUNT", "CountD": "COUNTD",
     "Min": "MIN", "Max": "MAX", "Median": "MEDIAN",
 }  # fmt: skip
-_AGG_PREFIXES = {
+AGG_PREFIXES = {
     "sum": "SUM", "avg": "AVG", "cnt": "COUNT", "ctd": "COUNTD",
     "min": "MIN", "max": "MAX", "med": "MEDIAN",
 }  # fmt: skip
-# Filter fields whose chosen values `discover` prints. Any other field's values
+# Filter fields whose chosen values `find-field` prints. Any other field's values
 # stay hidden: they can name a person, and a printed value gets copied.
 SHOWN_FILTER_FIELDS = frozenset(
     {
@@ -83,8 +99,16 @@ SHOWN_FILTER_FIELDS = frozenset(
         "school_level",
         "school_abbreviation",
         "term",
+        "response_type",
+        "module_type",
+        "is_normed_scope",
     }
 )
+_BRACKETED = re.compile(r"\[([^\[\]]+)\]")
+# A calculation that hands its arguments to the database or an external script
+# returns values the bracketed columns do not account for.
+_PASS_THROUGH = re.compile(r"\b(RAWSQL\w*|SCRIPT_\w+)\s*\(", re.IGNORECASE)
+_PARAMETER_REF = re.compile(r"\[Parameters\]\.\[[^\[\]]+\]")
 
 
 @dataclass(frozen=True)
@@ -158,7 +182,16 @@ def _dig(node: object, *keys: str) -> object:
     return node
 
 
-def calculated_fields(twb_xml: str) -> list[Calc]:
+def parse_workbook(twb_xml: str | ET.Element) -> ET.Element:
+    """A workbook's root element. A root passed in comes back as is, so a
+    caller reading several sheets of one workbook parses it once."""
+    if isinstance(twb_xml, ET.Element):
+        return twb_xml
+    # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
+    return ET.fromstring(twb_xml)
+
+
+def calculated_fields(twb_xml: str | ET.Element) -> list[Calc]:
     """List a workbook's calculated fields and the worksheets that use them.
 
     A calculated field is a `<column>` holding a `<calculation>` under a
@@ -167,13 +200,12 @@ def calculated_fields(twb_xml: str) -> list[Calc]:
     by the parser.
 
     Args:
-        twb_xml: The text of a `.twb` file.
+        twb_xml: The text of a `.twb` file, or its parsed root.
 
     Returns:
         One `Calc` per distinct calculated field, ordered by caption.
     """
-    # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
-    root = ET.fromstring(twb_xml)
+    root = parse_workbook(twb_xml)
 
     used_by: dict[str, set[str]] = {}
     for sheet in root.iter("worksheet"):
@@ -199,15 +231,6 @@ def calculated_fields(twb_xml: str) -> list[Calc]:
     return sorted(found.values(), key=lambda c: c.caption)
 
 
-def _bare(name: str) -> str:
-    return name[1:-1] if name.startswith("[") and name.endswith("]") else name
-
-
-def _unquote(text: str | None) -> str:
-    text = text or ""
-    return text[1:-1] if len(text) > 1 and text[0] == text[-1] == '"' else text
-
-
 def bins(twb_xml: str) -> dict[str, str]:
     """Map each categorical bin (a code group) to its groups and codes.
 
@@ -222,11 +245,11 @@ def bins(twb_xml: str) -> dict[str, str]:
         if calc is None or calc.get("class") != "categorical-bin":
             continue
         groups = [
-            f"{_unquote(b.get('value'))} = "
-            + ", ".join(_unquote(v.text) for v in b.findall("value"))
+            f"{unquote(b.get('value'))} = "
+            + ", ".join(unquote(v.text) for v in b.findall("value"))
             for b in calc.findall("bin")
         ]
-        out.setdefault(_bare(column.get("name") or ""), "; ".join(groups))
+        out.setdefault(bare_name(column.get("name") or ""), "; ".join(groups))
     return out
 
 
@@ -264,7 +287,7 @@ def aggregated_fields(twb_xml: str) -> list[Calc]:
     return sorted(
         (
             Calc(
-                f"{agg}({captions.get(column, _bare(column))})",
+                f"{agg}({captions.get(column, bare_name(column))})",
                 f"{agg}({column})",
                 sorted(sheets),
                 column,
@@ -290,7 +313,7 @@ GROUP_CLASSES = frozenset({"categorical-bin", "bin"})
 def group_fields(ws: ET.Element) -> set[str]:
     """Bare names of the sheet's group and bin fields."""
     return {
-        _bare(col.get("name") or "")
+        bare_name(col.get("name") or "")
         for col in ws.iter("column")
         if (calc := col.find("calculation")) is not None
         and calc.get("class") in GROUP_CLASSES
@@ -308,10 +331,20 @@ def filter_field(column: str, groups: set[str]) -> str | None:
     return name if name in groups else None
 
 
+def null_mode(filter_el: ET.Element) -> str | None:
+    """`non-null` or `null` for a quantitative filter set to one, else None."""
+    if filter_el.get("class") != "quantitative":
+        return None
+    mode = filter_el.get("included-values")
+    return mode if mode in ("non-null", "null") else None
+
+
 def restricts(filter_el: ET.Element) -> bool:
-    """True when a filter is set to chosen values or a range, not All."""
+    """True when a filter is set to chosen values, a range or a null mode, not All."""
     if filter_el.get("class") == "quantitative":
-        return any(c.tag in ("min", "max") for c in filter_el)
+        return null_mode(filter_el) is not None or any(
+            c.tag in ("min", "max") for c in filter_el
+        )
     top = filter_el.find("groupfilter")
     if top is None:
         return False
@@ -329,16 +362,12 @@ class SheetShape:
     decimals: dict[str, int] = field(default_factory=dict)
 
 
-def worksheet(root: ET.Element, sheet: str) -> ET.Element | None:
-    return next((w for w in root.iter("worksheet") if w.get("name") == sheet), None)
-
-
 def sheet_fields(ws: ET.Element) -> tuple[dict[str, str], set[str]]:
     """A worksheet's field captions by bare name, and its identity-based fields."""
     caption: dict[str, str] = {}
     personal: set[str] = set()
     for col in ws.iter("column"):
-        name = _bare(col.get("name") or "")
+        name = bare_name(col.get("name") or "")
         caption.setdefault(name, col.get("caption") or name)
         calc = col.find("calculation")
         if calc is not None and USER_FUNCTION.search(calc.get("formula") or ""):
@@ -351,22 +380,135 @@ def _ref_caption(m: re.Match, caption: dict[str, str]) -> str | None:
     name = caption.get(m["name"], m["name"])
     if m["deriv"] in ("usr", "none", ""):
         return name
-    agg = _AGG_PREFIXES.get(m["deriv"])
+    agg = AGG_PREFIXES.get(m["deriv"])
     return f"{agg}({name})" if agg else None
 
 
-def sheet_shape(twb_xml: str, sheet: str) -> SheetShape:
+def calc_chain(name: str, formulas: dict[str, str]) -> list[str]:
+    """`name` and every calculation it reads, through other calculations, each
+    once, in the order reached.
+
+    Every bracketed name in `formulas` is followed, including one inside a
+    parameter ref when a calculation shares its name. A check that refuses on
+    what it finds (`_chain_unresolvable`) wants that reach; `columns_read`
+    passes formulas with parameter refs removed, since a column it names can
+    let a filter's values print.
+
+    Args:
+        name: The field's bare name.
+        formulas: Each calculation's formula by bare name.
+    """
+    seen: list[str] = []
+    todo = [name]
+    while todo:
+        current = todo.pop()
+        if current in seen:
+            continue
+        seen.append(current)
+        todo += [
+            r for r in _BRACKETED.findall(formulas.get(current, "")) if r in formulas
+        ]
+    return seen
+
+
+def columns_read(name: str, formulas: dict[str, str]) -> tuple[str, ...]:
+    """The datasource columns `name` reads through calculations, parameters left
+    out; `name` itself when it is no calculation.
+    """
+    if name not in formulas:
+        return (name,)
+    # A parameter's name can match a calculation's; never follow it there.
+    bare = {k: _PARAMETER_REF.sub("", v) for k, v in formulas.items()}
+    return tuple(
+        dict.fromkeys(
+            ref
+            for current in calc_chain(name, bare)
+            for ref in _BRACKETED.findall(bare.get(current, ""))
+            if ref not in formulas
+        )
+    )
+
+
+def _chain_unresolvable(name: str, formulas: dict[str, str]) -> bool:
+    # `]]` escapes a `]` in a name, which `_BRACKETED` would cut short.
+    return any(
+        USER_FUNCTION.search(formula)
+        or _PASS_THROUGH.search(formula)
+        or "]]" in formula
+        for formula in (formulas.get(n, "") for n in calc_chain(name, formulas))
+    )
+
+
+def _level_field(level: str | None) -> str | None:
+    """The bare field a groupfilter's `level` names, derivation stripped:
+    `[none:region:nk]` and `[ds].[region]` both name `region`."""
+    if not level:
+        return None
+    last = "[" + level.rsplit("].[", 1)[-1] if "].[" in level else level
+    m = FIELD_REF.fullmatch(last)
+    return m["name"] if m is not None else bare_name(last)
+
+
+def shown_values(
+    filter_el: ET.Element, field_name: str, formulas: dict[str, str]
+) -> str | None:
+    """A restricting filter's chosen values, or None when they stay hidden.
+
+    Values print only when the field, or every column a calculation reads, is in
+    `SHOWN_FILTER_FIELDS`. A calculation whose columns cannot be worked out, or
+    that reads the viewer's identity or passes columns to RAWSQL or a script, stays
+    hidden, as does a filter holding a member of any level but `field_name`.
+    """
+    columns = columns_read(field_name, formulas)
+    if not columns or not all(c in SHOWN_FILTER_FIELDS for c in columns):
+        return None
+    if field_name in formulas and _chain_unresolvable(field_name, formulas):
+        return None
+    if any(
+        _level_field(g.get("level")) != field_name
+        for g in filter_el.iter("groupfilter")
+        if g.get("member") is not None or g.get("level") is not None
+    ):
+        return None
+    if filter_el.get("class") == "quantitative":
+        if mode := null_mode(filter_el):
+            return f"{mode} values only"
+        bounds = {
+            c.tag: (c.text or "").strip() for c in filter_el if c.tag in ("min", "max")
+        }
+        low, high = bounds.get("min"), bounds.get("max")
+        if low and high:
+            return f"from {low} to {high}"
+        if low:
+            return f"from {low}"
+        if high:
+            return f"up to {high}"
+        return None
+    members = ", ".join(
+        unquote(g.get("member")) for g in filter_el.iter("groupfilter")
+        if g.get("member") is not None
+    )  # fmt: skip
+    if not members:
+        return None
+    top = filter_el.find("groupfilter")
+    if top is not None and top.get("function") == "except":
+        return f"all except {members}"
+    return members
+
+
+def sheet_shape(twb_xml: str | ET.Element, sheet: str) -> SheetShape:
     """Read a sheet's shelves, export form, filters and displayed decimals.
 
-    A filter set to chosen values shows them only for a field in
-    `SHOWN_FILTER_FIELDS`; any other field's values stay hidden. Permission
-    fields and filters on aggregated values are left out.
+    A filter set to chosen values or a range prints them only for a field in
+    `SHOWN_FILTER_FIELDS` (a calculation: only when every column it reads is
+    there); any other field's values stay hidden. Permission
+    fields and filters on aggregated values are left out. `twb_xml` may be
+    the workbook already parsed (`parse_workbook`).
 
     Raises:
         ValueError: The workbook has no such worksheet.
     """
-    # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
-    root = ET.fromstring(twb_xml)
+    root = parse_workbook(twb_xml)
     ws = worksheet(root, sheet)
     if ws is None:
         raise ValueError(f"the workbook has no worksheet {sheet!r}")
@@ -395,6 +537,7 @@ def sheet_shape(twb_xml: str, sheet: str) -> SheetShape:
         if shown and fmt.get("value"):
             decimals.setdefault(shown, displayed_decimals(fmt.get("value") or ""))
 
+    formulas = {bare_name(c.name): c.formula for c in calculated_fields(root)}
     filters = []
     for filter_el in ws.iter("filter"):
         field_name = filter_field(filter_el.get("column") or "", groups)
@@ -403,21 +546,16 @@ def sheet_shape(twb_xml: str, sheet: str) -> SheetShape:
         name = caption.get(field_name, field_name)
         if not restricts(filter_el):
             filters.append(f"{name}: All")
+        elif (shown := shown_values(filter_el, field_name, formulas)) is not None:
+            filters.append(f"{name}: {shown} (narrows the sheet)")
+        elif mode := null_mode(filter_el):
+            filters.append(f"{name}: {mode} values only (narrows the sheet)")
         elif filter_el.get("class") == "quantitative":
             filters.append(f"{name}: a range (narrows the sheet)")
-        elif field_name in SHOWN_FILTER_FIELDS:
-            top = filter_el.find("groupfilter")
-            members = ", ".join(
-                _unquote(g.get("member")) for g in filter_el.iter("groupfilter")
-                if g.get("member") is not None
-            )  # fmt: skip
-            if top is not None and top.get("function") == "except":
-                members = f"all except {members}"
-            filters.append(f"{name}: {members} (narrows the sheet)")
         else:
             filters.append(
                 f"{name}: chosen values hidden (narrows the sheet); "
-                "decide whether the probe needs it"
+                "decide whether the sheet query needs it"
             )
 
     return SheetShape(
@@ -430,7 +568,39 @@ def sheet_shape(twb_xml: str, sheet: str) -> SheetShape:
     )
 
 
-def _tokens(text: str) -> set[str]:
+def text_values(twb_xml: str, sheet: str) -> set[str]:
+    """Export names (lowercase) of the sheet's value fields that are text.
+
+    A string field read as `attr` shows a word, not a number. A count of one
+    (`cnt`, `ctd`, `cntd`) is numeric whatever the field's type.
+
+    Raises:
+        ValueError: The workbook has no such worksheet.
+    """
+    # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
+    root = ET.fromstring(twb_xml)
+    ws = worksheet(root, sheet)
+    if ws is None:
+        raise ValueError(f"the workbook has no worksheet {sheet!r}")
+    caption, _ = sheet_fields(ws)
+    datatype: dict[str, str] = {}
+    for col in [*root.iter("column"), *ws.iter("column")]:
+        name = bare_name(col.get("name") or "")
+        caption.setdefault(name, col.get("caption") or name)
+        datatype[name] = col.get("datatype") or datatype.get(name, "")
+    refs = [el.text or "" for tag in ("rows", "cols") for el in ws.iter(tag)]
+    refs += [el.get("column") or "" for enc in ws.iter("encodings") for el in enc]
+    return {
+        (caption.get(m["name"]) or m["name"]).lower()
+        for text in refs
+        for m in FIELD_REF.finditer(text)
+        if is_value(m)
+        and m["deriv"] not in ("cnt", "ctd", "cntd")
+        and datatype.get(m["name"]) == "string"
+    }
+
+
+def name_tokens(text: str) -> set[str]:
     parts = re.split(r"[^A-Za-z0-9]+", text.lower())
     return {p for p in parts if len(p) >= MIN_TOKEN_LENGTH and p not in SQL_KEYWORDS}
 
@@ -465,12 +635,12 @@ def rank(
         Up to `limit` candidates with a score above 0, best first, ties by
         caption.
     """
-    wanted = _tokens(measure) | _tokens(member_sql)
+    wanted = name_tokens(measure) | name_tokens(member_sql)
     if not wanted and not caption:
         return []
     scored = []
     for calc in calcs:
-        shared = wanted & (_tokens(calc.caption) | _tokens(calc.formula))
+        shared = wanted & (name_tokens(calc.caption) | name_tokens(calc.formula))
         boost = 1.0 if caption and caption.lower() in calc.caption.lower() else 0.0
         if shared or boost:
             scored.append(
@@ -485,3 +655,143 @@ def rank(
             )
     scored.sort(key=lambda c: (-c.score, c.caption))
     return scored if limit is None else scored[:limit]
+
+
+def find_field(
+    cfg: ViewConfig,
+    measure: str,
+    *,
+    cube: Cube,
+    tbl: Tableau | None,
+    exposures_path: Path,
+    only: list[str],
+    caption: str | None = None,
+    limit: int | None = TOP_N,
+    twb_path: Path | None = None,
+) -> list[Candidate]:
+    """Print workbook fields ranked against a measure, then each listed sheet's
+    shape: shelves, export form, displayed decimals and filters.
+
+    Calculated fields and aggregated raw fields both rank; a formula that uses a
+    code group shows its codes. `caption` boosts the dashboard's name for the
+    measure; `limit` None prints every candidate. With `twb_path` the one local
+    workbook is read instead of the exposures' downloads, and `tbl` is unused.
+    """
+    compiled = cube.compiled({"measures": [member_name(cfg.view, measure)]})
+    member_sql = measure_expression(compiled.sql, cfg.view, measure)
+
+    found: list[Candidate] = []
+    twbs: dict[str, str] = {}
+    workbooks = (
+        [(str(twb_path), twb_path.name, twb_path.read_text(encoding="utf-8"))]
+        if twb_path is not None
+        else _exposure_workbooks(tbl, exposures_path, only)
+    )
+    for luid, label, twb in workbooks:
+        twbs[luid] = twb
+        found += rank(
+            measure,
+            member_sql,
+            calculated_fields(twb) + aggregated_fields(twb),
+            workbook_luid=luid,
+            workbook_label=label,
+            caption=caption,
+            limit=None,
+        )
+
+    found.sort(key=lambda c: (-c.score, c.workbook_label, c.caption))
+    found = found if limit is None else found[:limit]
+    if not found:
+        print(f"No candidates for {measure}.")
+    for c in found:
+        formula = explain_bins(" ".join(c.formula.split()), bins(twbs[c.workbook_luid]))
+        print(
+            f"{c.score:.2f}  {c.workbook_label} ({c.workbook_luid})  "
+            f"{c.caption!r} on {', '.join(c.worksheets) or 'no sheet'}: {formula}"
+        )
+    # A local workbook's views are not on the server: published is not checked.
+    views = tbl.view_names if twb_path is None and tbl is not None else None
+    _print_sheets(found, twbs, views)
+    return found
+
+
+def _exposure_workbooks(
+    tbl: Tableau | None, exposures_path: Path, only: list[str]
+) -> Iterator[tuple[str, str, str]]:
+    """Download each Tableau exposure's workbook: luid, label and XML."""
+    if tbl is None:
+        raise Refusal("find-field needs a Tableau session or a local --twb")
+    exposures = tableau_exposures(exposures_path)
+    if exposures.skipped:
+        print(
+            f"Skipped exposures without a luid or models: {', '.join(exposures.skipped)}"
+        )
+    for exposure in exposures:
+        if only and exposure.name not in only:
+            continue
+        if not exposure.luid:
+            print(f"Skipped {exposure.name}: empty luid")
+            continue
+        try:
+            twb = tbl.download_twb(exposure.luid)
+        except (
+            TSC.ServerResponseError,
+            zipfile.BadZipFile,
+            ValueError,
+            OSError,
+        ) as exc:
+            print(f"Could not read {exposure.label}: {type(exc).__name__}: {exc}")
+            continue
+        yield exposure.luid, exposure.label, twb
+
+
+def _print_sheets(
+    found: list[Candidate],
+    twbs: dict[str, str],
+    views: Callable[[str], set[str]] | None = None,
+) -> None:
+    """Print each listed sheet's shape. `views` lists a workbook's views on
+    the server; without it (a local workbook) published is not checked."""
+    sheets = list(
+        dict.fromkeys(
+            (c.workbook_luid, c.workbook_label, s) for c in found for s in c.worksheets
+        )
+    )
+    if not sheets:
+        return
+    print("\nSheets:" if views else f"\nSheets ({NOT_CHECKED}):")
+    roots = {
+        luid: parse_workbook(twbs[luid])
+        for luid in dict.fromkeys(luid for luid, _, _ in sheets)
+    }
+    # Per workbook, its published sheets or why they could not be asked.
+    published: dict[str, set[str] | str] = {}
+    for luid, root in roots.items():
+        if views is None:
+            continue
+        try:
+            published[luid] = published_sheets(root, views(luid))
+        except TSC.ServerResponseError as exc:
+            published[luid] = f"Tableau answered {exc.code} {exc.summary}"
+    for luid, label, sheet in sheets:
+        shape = sheet_shape(roots[luid], sheet)
+        print(
+            f"  {sheet} ({label}): rows {', '.join(shape.rows) or 'none'}; "
+            f"columns {', '.join(shape.cols) or 'none'}"
+        )
+        seen = published.get(luid)
+        if isinstance(seen, str):
+            print(f"    published: not checked: {seen}")
+        elif seen is not None and sheet not in seen:
+            print(f"    {NOT_PUBLISHED}")
+        export = (
+            "long (set sheet_field to a Measure Names value)"
+            if shape.long_export
+            else "wide"
+        )
+        print(f"    export: {export}")
+        if shape.decimals:
+            shown = ", ".join(f"{k} {v}" for k, v in shape.decimals.items())
+            print(f"    decimals: {shown}")
+        for line in shape.filters:
+            print(f"    filter {line}")

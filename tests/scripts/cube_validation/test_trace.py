@@ -13,9 +13,6 @@ from cube_validation import pipeline, trace
 from cube_validation.bq import JOB_ID, Warehouse
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation.compare import Group
-
-# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.config import ColumnPair, Comparison, RowSpec, ViewConfig
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
@@ -23,6 +20,9 @@ from cube_validation.decisions import Applied
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.moment import Build
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+from cube_validation.reconcile import Group
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.report import RunResult
@@ -52,8 +52,8 @@ CUBE = (
 )
 
 
-def _proven(found) -> bool:
-    """Every row attributed to a step and the counts add up: a lead, not a proof."""
+def _attributed(found) -> bool:
+    """Every row attributed to a step and the counts add up: a lead, not an explanation."""
     return (
         found.n_rows > 0
         and found.unattributed == 0
@@ -93,7 +93,7 @@ class DuckWarehouse:
         return self.duck.rows(sql)
 
     def table(self, dataset, name):
-        return TableInfo("TABLE", None)
+        return TableInfo("TABLE")
 
 
 def _manifest(tmp_path, models):
@@ -160,7 +160,7 @@ def test_one_step_two_steps_and_none_row_by_row(duck):
     assert found.steps == {"dashboard:main:1": 1}
     # (2, b) needs both steps: no single step brings it back.
     assert found.needs_more == {"the dashboard SQL": 1}
-    assert found.none == 1 and not _proven(found) and found.consistent
+    assert found.none == 1 and not _attributed(found) and found.consistent
     assert (
         "2 rows unattributed: 1 lead: no single step brings it back, in the "
         "dashboard SQL; 1 recovered by no step"
@@ -216,7 +216,7 @@ def test_a_row_missing_from_a_table_descends_to_the_step_that_drops_it(duck, tmp
         trace.item_key(_group(1))
     ]
 
-    assert _proven(found)
+    assert _attributed(found)
     assert found.steps == {"dashboard:fact/main:1": 1}
     assert found.labels["dashboard:fact/main:1"] == "fact/main: keep"
 
@@ -271,10 +271,10 @@ def test_steps_of_one_scope_each_recovering_a_row_are_one_cause(duck):
     one = _trace(duck, UNION, [_group(1)])[trace.item_key(_group(1))]
     two = _trace(duck, SPLIT, [_group(1)])[trace.item_key(_group(1))]
 
-    assert _proven(one)
+    assert _attributed(one)
     assert [one.labels[k] for k in one.steps] == ["u: covers / u: covers"]
     # Across scopes the same rows stay unattributed.
-    assert not _proven(two) and two.many == 1
+    assert not _attributed(two) and two.many == 1
     assert "recovered by steps in 2 or more scopes" in two.evidence()[-1]
 
 
@@ -284,7 +284,7 @@ def test_a_grain_the_other_side_holds_twice_is_never_attributed(duck):
 
     found = _trace(duck, FLAT, [_group(1)])[trace.item_key(_group(1))]
 
-    assert found.duplicates == 1 and not _proven(found)
+    assert found.duplicates == 1 and not _attributed(found)
     assert "duplicate grain on the other side" in found.evidence()[-1]
 
 
@@ -346,7 +346,7 @@ def test_rows_the_unrelaxed_sql_already_returns_are_never_attributed(duck):
 
     found = bucket.run()[trace.item_key(_group(1))]
 
-    assert found.unreproduced == {"dashboard": 1} and not _proven(found)
+    assert found.unreproduced == {"dashboard": 1} and not _attributed(found)
 
 
 # --- refusals, caps, stops and failures ----------------------------------------
@@ -370,7 +370,7 @@ class FakeWarehouse:
         return self.answer(sql)
 
     def table(self, dataset, name):
-        return TableInfo("TABLE", None)
+        return TableInfo("TABLE")
 
 
 class _DryClient:
@@ -405,7 +405,7 @@ def test_a_level_past_the_cap_stops_and_keeps_what_was_found():
 
     found = caught.value.found[trace.item_key(_group(5))]
     assert "would pass the $1.00 cap" in caught.value.reason
-    assert found.unknown == 5 and found.stopped and not _proven(found)
+    assert found.unknown == 5 and found.stopped and not _attributed(found)
     assert "trace stopped: " in found.evidence()[-1]
 
 
@@ -429,18 +429,18 @@ def test_a_query_failure_keeps_its_job_and_reason_but_not_its_message():
 
     found = _canned(wh=Failing(None)).run()[trace.item_key(_group(5))]
 
-    assert found.unknown == 5 and not _proven(found)
+    assert found.unknown == 5 and not _attributed(found)
     assert found.failed == ("the side's own SQL: job job-9, invalidQuery",)
     assert "12345" not in " ".join(found.evidence())
 
 
-def test_counts_that_do_not_add_up_never_prove_an_item():
+def test_counts_that_do_not_add_up_never_explain_an_item():
     found = trace.ItemTrace("dashboard", 10)
     found.steps["s"] = 10
     found.labels["s"] = "main: s"
     found.none = 2
 
-    assert not found.consistent and not _proven(found)
+    assert not found.consistent and not _attributed(found)
     assert "trace counts do not add up; trace it by hand" in found.evidence()
 
 
@@ -454,7 +454,7 @@ def test_evidence_masks_a_part_its_total_would_give_away():
         "main: s: masked rows",
         "<10 rows unattributed: <10 recovered by no step",
     )
-    # The terminal and triage.json show exact counts.
+    # The terminal and sort.json show exact counts.
     assert found.evidence() == (
         "main: s: 18 rows",
         "7 rows unattributed: 7 recovered by no step",
@@ -508,7 +508,9 @@ def test_a_table_whose_compiled_sql_does_not_run_is_skipped_and_named(tmp_path):
         trace.item_key(_group(5))
     ]
 
-    assert found.below == ("fact",)
+    # Never tested, so not below it: its rows are not traced.
+    assert found.below == () and not found.none
+    assert found.skipped == {"fact skipped (BadRequest)": 5}
 
 
 def _answer_row(step_id, n):
@@ -516,7 +518,7 @@ def _answer_row(step_id, n):
 
 
 @pytest.mark.parametrize(
-    "first", ["trace", "sqlsteps", "triage", "confirm", "pipeline", "cli"]
+    "first", ["trace", "sqlsteps", "sort", "explain", "pipeline", "cli"]
 )
 def test_each_module_imports_first(first):
     scripts = Path(trace.__file__).resolve().parents[1]
@@ -589,7 +591,7 @@ def test_a_row_two_levels_drop_never_descends_to_a_stand_in(duck, tmp_path):
         trace.item_key(_group(1))
     ]
 
-    assert not _proven(found) and not found.steps
+    assert not _attributed(found) and not found.steps
     assert found.needs_more and not found.none
 
 
@@ -628,7 +630,7 @@ def test_a_row_a_row_pick_drops_never_descends_to_a_stand_in(duck, tmp_path):
         trace.item_key(_group(1))
     ]
 
-    assert not _proven(found) and not found.steps
+    assert not _attributed(found) and not found.steps
     assert not found.none
 
 
@@ -646,8 +648,8 @@ def test_a_masked_unattributed_count_masks_its_whole_breakdown():
     assert "10" not in lines[2]
 
 
-def test_a_stop_keeps_the_items_already_proven(duck):
-    # N4: one item is proven at level 0; the stop comes after.
+def test_a_stop_keeps_the_items_already_explained(duck):
+    # N4: one item is explained at level 0; the stop comes after.
     _cube_rows(duck, [(1, "a", "X"), (2, "b", "Y")])
     duck.table("fact", FACT, [(1, "a", "X", False, True)])
     wh = DuckWarehouse(duck)
@@ -665,10 +667,10 @@ def test_a_stop_keeps_the_items_already_proven(duck):
     with pytest.raises(trace.Stopped) as caught:
         _trace(duck, FLAT, groups, wh=wh)
 
-    proven = caught.value.found[trace.item_key(groups[0])]
+    explained = caught.value.found[trace.item_key(groups[0])]
     stopped = caught.value.found[trace.item_key(groups[1])]
-    assert _proven(proven) and not proven.stopped
-    assert stopped.stopped and not _proven(stopped)
+    assert _attributed(explained) and not explained.stopped
+    assert stopped.stopped and not _attributed(stopped)
 
 
 def test_a_dry_run_error_partway_stops_with_its_job_and_reason(duck):
@@ -735,7 +737,7 @@ PICKED = (
 SRC = "student BIGINT, item VARCHAR, school VARCHAR, d BIGINT, x BOOLEAN"
 
 
-def test_a_filter_ahead_of_a_pick_with_1_candidate_is_still_proven(duck):
+def test_a_filter_ahead_of_a_pick_with_1_candidate_is_still_explained(duck):
     # Student 2's only row fails `x`: relaxing it brings back that row, the
     # only one its pick can keep.
     _cube_rows(duck, [(2, "c", "X")])
@@ -743,7 +745,7 @@ def test_a_filter_ahead_of_a_pick_with_1_candidate_is_still_proven(duck):
 
     found = _trace(duck, PICKED, [_group(1)])[trace.item_key(_group(1))]
 
-    assert _proven(found)
+    assert _attributed(found)
     assert [found.labels[k] for k in found.steps] == ["f: x"]
 
 
@@ -790,7 +792,7 @@ def test_a_count_is_never_carried_through_an_except(duck):
 
     found = _trace(duck, EXCEPT_PICK, [_group(1)])[trace.item_key(_group(1))]
 
-    assert not _proven(found) and not found.steps
+    assert not _attributed(found) and not found.steps
     assert not any("__cand" in sql for sql in duck.ran)
 
 
@@ -802,7 +804,7 @@ def test_a_row_only_a_row_pick_drops_says_so(duck):
 
     found = _trace(duck, PICKED, [_group(1)])[trace.item_key(_group(1))]
 
-    assert not _proven(found) and not found.steps and not found.needs_more
+    assert not _attributed(found) and not found.steps and not found.needs_more
     assert found.evidence()[-1] == (
         "1 rows unattributed: 1 a row pick drops it; the row is in the "
         "tables the dashboard SQL reads"
@@ -811,7 +813,8 @@ def test_a_row_only_a_row_pick_drops_says_so(duck):
 
 def test_masked_cells_of_a_breakdown_hold_10_or_more_together():
     # P-old-2: 40 = 10 + (25 + 3 + 2). With the 25 shown, 40 - 10 - 25 gives
-    # the two small cells' sum; so the 25 is masked too, and the 30 may show.
+    # the two small cells' sum; so the 25 is masked too, and the 30, a total
+    # beside hidden parts, reads as a bound.
     found = trace.ItemTrace("dashboard", 40)
     found.steps["a"] = 10
     found.labels["a"] = "main: a"
@@ -824,7 +827,7 @@ def test_masked_cells_of_a_breakdown_hold_10_or_more_together():
 
     assert lines[0] == "main: a: 10 rows"
     assert lines[1] == (
-        "30 rows unattributed: masked recovered by steps in 2 or more scopes "
+        "10+ rows unattributed: masked recovered by steps in 2 or more scopes "
         "(main: b, main: c); <10 a row pick drops it; the row is in the tables "
         "the dashboard SQL reads; <10 recovered by no step"
     )
@@ -940,7 +943,7 @@ def test_dry_runs_run_at_once_and_keep_each_error_in_order():
                 raise BadRequest("x", errors=[{"reason": "invalidQuery"}])
             return 1.0
 
-    got = trace._dry_runs(Wh(), ["a", "b", "c"])
+    got = trace.dry_runs(Wh(), ["a", "b", "c"])
 
     assert got[0] == 1.0 and got[2] == 1.0 and isinstance(got[1], BadRequest)
     assert len(seen) == 3
@@ -999,7 +1002,7 @@ def test_a_child_whose_check_is_too_long_is_skipped_without_a_dry_run(
         wh=Wh(lambda sql: [_answer_row("", 5)]), levels=1, manifest=manifest
     ).run()[trace.item_key(_group(5))]
 
-    assert found.below == ("fact",)
+    assert found.below == () and found.skipped == {"fact skipped (SQL too long)": 5}
     assert max(seen) <= 50_000
 
 
@@ -1047,3 +1050,390 @@ def test_a_side_too_long_at_level_0_stops_only_its_bucket(monkeypatch):
 
     assert "alone is too long" in result.items[trace.item_key(cube_only)].stopped
     assert not result.items[trace.item_key(dash_only)].stopped
+
+
+# --- a model the trace cannot read is skipped, not the bucket (#6181) ------------
+
+TWO = (
+    "SELECT u.student, u.item, u.school FROM ("
+    "SELECT student, item, school FROM `teamster-332318.d.int_a` UNION ALL "
+    "SELECT student, item, school FROM `teamster-332318.d.int_b`) AS u"
+)
+KEPT = "student BIGINT, item VARCHAR, school VARCHAR, keep BOOLEAN"
+
+
+def _two_models(duck, tmp_path):
+    """Rows 1 and 2 are missing from `int_a` and `int_b`; each model's `keep`
+    drops one of them."""
+    _cube_rows(duck, [(1, "a", "X"), (2, "b", "X")])
+    duck.table("raw_a", KEPT, [(1, "a", "X", False)])
+    duck.table("raw_b", KEPT, [(2, "b", "X", False)])
+    duck.table("int_a", "student BIGINT, item VARCHAR, school VARCHAR", [])
+    duck.table("int_b", "student BIGINT, item VARCHAR, school VARCHAR", [])
+    return _manifest(
+        tmp_path,
+        {
+            name: (
+                "select student, item, school "
+                f"from `teamster-332318`.`d`.`raw_{name[-1]}` where keep",
+                [],
+            )
+            for name in ("int_a", "int_b")
+        },
+    )
+
+
+def _bucket(duck, dash, groups, *, levels, manifest, wh):
+    return trace._Bucket(
+        _side(dash),
+        groups,
+        wh=wh,
+        manifest=manifest,
+        levels=levels,
+        end_tables=set(),
+        moved={},
+        meter=trace._Meter(None),
+    )
+
+
+def _holds_a(sql):
+    # Every level-1 query that reads int_a's own SQL names its variant.
+    return "'!int_a'" in sql
+
+
+def test_a_model_whose_query_fails_is_skipped_and_the_others_descend(duck, tmp_path):
+    manifest = _two_models(duck, tmp_path)
+    wh = DuckWarehouse(duck)
+
+    def rows(sql, timeout_s=None):
+        if _holds_a(sql):
+            raise BadRequest(
+                "Bad int64 value: 12345", errors=[{"reason": "resourcesExceeded"}]
+            )
+        return duck.rows(sql)
+
+    wh.rows = rows
+    bucket = _bucket(duck, TWO, [_group(2)], levels=1, manifest=manifest, wh=wh)
+
+    found = bucket.run()[trace.item_key(_group(2))]
+
+    assert found.steps == {"dashboard:int_b/main:1": 1}
+    assert bucket.blocked == {"int_a": "resourcesExceeded"}
+    assert found.consistent and not found.stopped
+
+
+def test_a_model_whose_dry_run_fails_is_skipped_not_the_bucket(duck, tmp_path):
+    manifest = _two_models(duck, tmp_path)
+    wh = DuckWarehouse(duck)
+
+    def estimate(sql):
+        if _holds_a(sql):
+            raise BadRequest("x", errors=[{"reason": "invalidQuery"}])
+        return 0.0
+
+    wh.estimate = estimate
+    bucket = _bucket(duck, TWO, [_group(2)], levels=1, manifest=manifest, wh=wh)
+
+    found = bucket.run()[trace.item_key(_group(2))]
+
+    assert found.steps == {"dashboard:int_b/main:1": 1}
+    assert bucket.blocked == {"int_a": "invalidQuery"}
+    assert not found.stopped
+
+
+def test_rows_past_the_depth_keep_their_below_names_beside_a_skipped_model(
+    duck, tmp_path
+):
+    # int_a's queries fail, so it is skipped. int_b descends: its `keep`
+    # drops row 2. Rows 1 and 3 are in no table int_b reads, at the deepest
+    # level with raw_b, a model, past it; int_a, skipped, may hold them too.
+    _cube_rows(duck, [(1, "a", "X"), (2, "b", "X"), (3, "c", "X")])
+    duck.table("raw_a", KEPT, [(1, "a", "X", False)])
+    duck.table("raw_b", KEPT, [(2, "b", "X", False)])
+    duck.table("int_a", "student BIGINT, item VARCHAR, school VARCHAR", [])
+    duck.table("int_b", "student BIGINT, item VARCHAR, school VARCHAR", [])
+    manifest = _manifest(
+        tmp_path,
+        {
+            **{
+                name: (
+                    "select student, item, school "
+                    f"from `teamster-332318`.`d`.`raw_{name[-1]}` where keep",
+                    [f"raw_{name[-1]}"],
+                )
+                for name in ("int_a", "int_b")
+            },
+            "raw_a": ("select 1", []),
+            "raw_b": ("select 1", []),
+        },
+    )
+    wh = DuckWarehouse(duck)
+
+    def rows(sql, timeout_s=None):
+        if _holds_a(sql):
+            raise BadRequest("x", errors=[{"reason": "resourcesExceeded"}])
+        return duck.rows(sql)
+
+    wh.rows = rows
+    bucket = _bucket(duck, TWO, [_group(3)], levels=1, manifest=manifest, wh=wh)
+
+    found = bucket.run()[trace.item_key(_group(3))]
+
+    assert found.steps == {"dashboard:int_b/main:1": 1}
+    assert bucket.lost == {"int_a": "resourcesExceeded"}
+    reading = "int_a skipped (resourcesExceeded), or missing below raw_b"
+    assert found.skipped == {reading: 2} and found.consistent
+    assert any(f"2 not traced: {reading}" in line for line in found.evidence())
+
+
+def test_a_stopped_bucket_prints_its_model_chain(duck, tmp_path, capsys):
+    _cube_rows(duck, [(424242, "a", "X")])
+    duck.table("raw_x", KEPT, [(424242, "a", "X", False)])
+    duck.table("int_x", "student BIGINT, item VARCHAR, school VARCHAR", [])
+    manifest = _manifest(
+        tmp_path,
+        {
+            "int_x": (
+                "select student, item, school "
+                "from `teamster-332318`.`d`.`raw_x` where keep",
+                [],
+            )
+        },
+    )
+    dash = "SELECT x.student, x.item, x.school FROM `teamster-332318.d.int_x` AS x"
+    wh = DuckWarehouse(duck)
+
+    def rows(sql, timeout_s=None):
+        if "'!int_x'" in sql:
+            raise BadRequest(
+                "Bad int64 value: 424242", errors=[{"reason": "resourcesExceeded"}]
+            )
+        return duck.rows(sql)
+
+    wh.rows = rows
+    bucket = _bucket(duck, dash, [_group(1)], levels=1, manifest=manifest, wh=wh)
+
+    bucket.run()
+
+    out = capsys.readouterr().out
+    assert "Trace mastery cube_only chain: " in out
+    assert "the dashboard SQL > int_x: resourcesExceeded" in out
+    assert bucket.chain() == ["the dashboard SQL > int_x: resourcesExceeded"]
+    assert "424242" not in out
+
+
+def test_the_trace_descends_up_to_5_levels(duck, tmp_path):
+    _cube_rows(duck, [(1, "a", "X")])
+    cols = "student BIGINT, item VARCHAR, school VARCHAR"
+    duck.table("raw", KEPT, [(1, "a", "X", False)])
+    for i in range(1, 6):
+        duck.table(f"m{i}", cols, [])
+    models = {
+        f"m{i}": (
+            f"select student, item, school from `teamster-332318`.`d`.`m{i + 1}`",
+            [f"m{i + 1}"],
+        )
+        for i in range(1, 5)
+    }
+    models["m5"] = (
+        "select student, item, school from `teamster-332318`.`d`.`raw` where keep",
+        [],
+    )
+    manifest = _manifest(tmp_path, models)
+    dash = "SELECT m.student, m.item, m.school FROM `teamster-332318.d.m1` AS m"
+
+    shallow = _trace(duck, dash, [_group(1)], levels=4, manifest=manifest)
+    deep = _trace(duck, dash, [_group(1)], levels=trace.MAX_LEVELS, manifest=manifest)
+
+    assert trace.MAX_LEVELS == 5
+    assert not shallow[trace.item_key(_group(1))].steps
+    found = deep[trace.item_key(_group(1))]
+    assert _attributed(found)
+    assert list(found.labels.values()) == ["m5/main: keep"]
+
+
+def test_a_cap_still_stops_the_whole_bucket(duck, tmp_path, capsys):
+    from cube_validation.bq import CostCapError
+
+    manifest = _two_models(duck, tmp_path)
+    wh = DuckWarehouse(duck)
+    wh.estimate = lambda sql: 5.0 if _holds_a(sql) else 0.0
+
+    def refuse(usd):
+        if usd >= 5.0:
+            raise CostCapError("these queries would pass the $1.00 cap")
+
+    wh.refuse_past_caps = refuse
+    wh.spent = 0.0
+    bucket = _bucket(duck, TWO, [_group(2)], levels=1, manifest=manifest, wh=wh)
+    bucket.ticker = ticks = _Ticks()
+
+    with pytest.raises(trace.Stopped) as caught:
+        bucket.run()
+
+    assert "cap" in caught.value.reason
+    assert "int_a" not in bucket.blocked
+    assert caught.value.found[trace.item_key(_group(2))].stopped
+    out = capsys.readouterr().out
+    assert (
+        "Trace mastery cube_only chain: the dashboard SQL > int_a: "
+        "these queries would pass the $1.00 cap"
+    ) in out
+    # Level 0, then the stop at level 1: a watcher sees the stop.
+    assert len(ticks.said) == 2
+
+
+class _Ticks:
+    def __init__(self):
+        self.said = []
+
+    def say(self, step, comparison, spent):
+        self.said.append((step, comparison, spent))
+
+
+def test_each_trace_level_prints_a_progress_line(duck, tmp_path, monkeypatch):
+    side = _side(FLAT)
+    monkeypatch.setattr(trace, "network_schools", lambda wh: set())
+    monkeypatch.setattr(pipeline, "row_sides", lambda *a, **k: side.sides)
+    _cube_rows(duck, [(1, "a", "X")])
+    duck.table("fact", FACT, [(1, "a", "X", False, True)])
+    run = RunResult(
+        view="v", moment=BUILD, measures=[], applied=Applied(open=[_group(1)])
+    )
+    wh = DuckWarehouse(duck)
+    wh.spent = 0.5
+    ticks = _Ticks()
+
+    trace.trace_run(CFG, run, wh=wh, cube=None, levels=0, ticker=ticks)
+
+    assert ticks.said == [("sort trace", "mastery cube_only", 0.5)]
+
+
+def test_a_skipped_model_is_named_not_read_as_unrecoverable(duck, tmp_path):
+    manifest = _two_models(duck, tmp_path)
+    wh = DuckWarehouse(duck)
+
+    def estimate(sql):
+        if _holds_a(sql):
+            raise BadRequest("x", errors=[{"reason": "invalidQuery"}])
+        return 0.0
+
+    wh.estimate = estimate
+    bucket = _bucket(duck, TWO, [_group(2)], levels=1, manifest=manifest, wh=wh)
+
+    found = bucket.run()[trace.item_key(_group(2))]
+
+    posted = " ".join(found.leads(posted=True))
+    assert "not traced: int_a skipped (invalidQuery)" in posted
+    assert "recovered by no step" not in posted
+    assert found.below == () and found.consistent
+    assert any("invalidQuery" in f for f in found.failed)
+
+
+def test_a_lone_skipped_model_reads_as_one_with_a_sibling_does(duck, tmp_path):
+    _cube_rows(duck, [(1, "a", "X")])
+    duck.table("raw_a", KEPT, [(1, "a", "X", False)])
+    duck.table("int_a", "student BIGINT, item VARCHAR, school VARCHAR", [])
+    manifest = _manifest(
+        tmp_path,
+        {
+            "int_a": (
+                "select student, item, school "
+                "from `teamster-332318`.`d`.`raw_a` where keep",
+                [],
+            )
+        },
+    )
+    dash = "SELECT a.student, a.item, a.school FROM `teamster-332318.d.int_a` AS a"
+    wh = DuckWarehouse(duck)
+
+    def rows(sql, timeout_s=None):
+        if _holds_a(sql):
+            raise BadRequest("Bad", errors=[{"reason": "resourcesExceeded"}])
+        return duck.rows(sql)
+
+    wh.rows = rows
+    bucket = _bucket(duck, dash, [_group(1)], levels=1, manifest=manifest, wh=wh)
+
+    found = bucket.run()[trace.item_key(_group(1))]
+
+    posted = " ".join(found.leads(posted=True))
+    assert "not traced: int_a skipped (resourcesExceeded)" in posted
+    assert "a trace query failed or stopped" not in posted
+    assert not found.unknown and found.consistent
+
+
+def test_a_bucket_stopped_at_level_0_still_ticks(monkeypatch):
+    side = _side(FLAT)
+    monkeypatch.setattr(trace, "network_schools", lambda wh: set())
+    monkeypatch.setattr(pipeline, "row_sides", lambda *a, **k: side.sides)
+    run = RunResult(
+        view="v", moment=BUILD, measures=[], applied=Applied(open=[_group(5)])
+    )
+
+    class Failing(FakeWarehouse):
+        spent = 0.0
+
+        def estimate(self, sql):
+            raise _refused()
+
+    ticks = _Ticks()
+
+    trace.trace_run(CFG, run, wh=Failing(lambda sql: []), cube=None, levels=0,
+                    ticker=ticks)  # fmt: skip
+
+    assert ticks.said == [("sort trace", "mastery cube_only", 0.0)]
+
+
+def test_a_model_whose_read_in_place_check_fails_is_skipped_not_gone_past(tmp_path):
+    class Stale(FakeWarehouse):
+        def estimate(self, sql):
+            if "raw" in sql and "'?'" not in sql and "!" not in sql:
+                raise BadRequest("Unrecognized name: 12345",
+                                 errors=[{"reason": "invalidQuery"}])  # fmt: skip
+            return 0.0
+
+    manifest = _manifest(
+        tmp_path, {"fact": ("select * from `teamster-332318`.`d`.`raw`", [])}
+    )
+
+    found = _canned(
+        wh=Stale(lambda sql: [_answer_row("", 5)]), levels=1, manifest=manifest
+    ).run()[trace.item_key(_group(5))]
+
+    posted = " ".join(found.leads(posted=True))
+    assert "not traced: fact skipped (invalidQuery)" in posted
+    assert "recovered by no step" not in posted and found.below == ()
+    assert "12345" not in posted
+
+
+def test_a_model_past_max_levels_still_reads_below(tmp_path):
+    manifest = _manifest(
+        tmp_path, {"fact": ("select * from `teamster-332318`.`d`.`raw`", [])}
+    )
+
+    found = _canned(
+        wh=FakeWarehouse(lambda sql: [_answer_row("", 5)]), levels=0, manifest=manifest
+    ).run()[trace.item_key(_group(5))]
+
+    posted = " ".join(found.leads(posted=True))
+    assert "recovered by no step (below fact)" in posted
+    assert "not traced" not in posted
+
+
+@pytest.mark.parametrize(
+    "steps, n_rows, total",
+    [({"a": 10, "b": 1}, 11, "10+"), ({"a": 12, "b": 3}, 15, "10+"),
+     ({"a": 20, "b": 30}, 50, "50")],
+)  # fmt: skip
+def test_a_posted_lead_bounds_its_total_beside_a_hidden_part(steps, n_rows, total):
+    from collections import Counter
+
+    found = trace.ItemTrace(
+        "cube_only", n_rows, Counter(steps), {k: f"scores: {k} = 1" for k in steps}
+    )
+
+    posted = found.leads(posted=True)
+
+    assert all(line.endswith(f" of {total} rows") for line in posted)
+    assert all(line.endswith(f" of {n_rows} rows") for line in found.leads())
