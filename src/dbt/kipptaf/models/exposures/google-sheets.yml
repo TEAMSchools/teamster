@@ -307,6 +307,26 @@ exposures:
         dagster:
           kinds:
             - googlesheets
+  - name: leader_intent_to_return_sheet
+    label: Leader Intent to Return Reminders and Responses
+    type: application
+    description: >-
+      Recruitment's Connected Sheet for the leader survey. Its reminder tab
+      lists leaders with completion 0 in the open round from
+      rpt_tableau__survey_completion and feeds their Zapier reminder. Its
+      responses tab reads rpt_tableau__survey_responses, which holds a round's
+      answers only after the round closes.
+    owner:
+      name: Data Team
+    url: https://docs.google.com/spreadsheets/d/1iDLJ9DAiGOIP_0u42VE11ua6khYwEoG-CcSHYmbhyjY
+    depends_on:
+      - ref("rpt_tableau__survey_completion")
+      - ref("rpt_tableau__survey_responses")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - googlesheets
   - name: survey_tracking_v3p0
     label: Survey Tracking v3.0
     type: application

@@ -97,5 +97,9 @@ left join
 where
     orr.term_code is null
     -- the surveys the Survey Dashboard reports on
-    and sr.survey_title
-    in ('Intent to Return Survey', 'KTAF Support Survey', 'Support Survey')
+    and sr.survey_title in (
+        'Intent to Return Survey',
+        'Leader Intent to Return Survey',
+        'KTAF Support Survey',
+        'Support Survey'
+    )

@@ -4,6 +4,7 @@ with
             respondent_employee_number as employee_number,
             answer,
             academic_year,
+            term_code,
             max(date_submitted) as last_date_submitted,
             -- trunk-ignore-begin(sqlfluff/LT05)
             case
@@ -35,15 +36,53 @@ with
                     answer
                     = 'I am not sure if I am returning and want to follow up with my manager and/or School Leader.'
                 then 'Not Sure'
+                /*
+                 * Leader Intent to Return Survey answers, matched on the part
+                 * before any network name so a rebrand doesn't break them. The
+                 * School Year 27-28 and 28-29 prefixes are for the 2026 round:
+                 * roll them forward with the form each year, or a reused form
+                 * maps to the wrong length.
+                 */
+                when
+                    starts_with(
+                        answer, 'This is my last school year in my current role'
+                    )
+                then 'Not Returning'
+                when
+                    starts_with(
+                        answer,
+                        'I am committed to my current role through the end of School Year 27-28'
+                    )
+                then 'Returning 1 Year'
+                when
+                    starts_with(
+                        answer,
+                        'I am committed to my current role through the end of School Year 28-29'
+                    )
+                then 'Returning 2 Years'
+                when
+                    starts_with(
+                        answer,
+                        'I am committed to my current role for the next 2+ years'
+                    )
+                then 'Returning 2+ Years'
+                when
+                    contains_substr(
+                        answer, 'interested in an opportunity at another school'
+                    )
+                then 'Interested in Transfer'
+                when starts_with(answer, 'I am not sure if I am returning')
+                then 'Not Sure'
                 else answer
             end as answer_short,
         -- trunk-ignore-end(sqlfluff/LT05)
         from {{ ref("int_surveys__survey_responses") }}
         where
-            term_code = 'ITR'
-            and question_shortname = 'itr_plans'
+            term_code in ('ITR', 'LITR')
+            and question_shortname in ('itr_plans', 'litr_plans')
+            and round_rn = 1
             and academic_year = {{ var("current_academic_year") }}
-        group by respondent_employee_number, answer, academic_year
+        group by respondent_employee_number, answer, academic_year, term_code
     ),
 
     teacher_grade_levels as (
@@ -74,7 +113,8 @@ select
     sr.reports_to_sam_account_name as tableau_manager_username,
 
     /* future feeds from other data sources*/
-    ir.answer_short as itr_response,
+    -- a leader's answer on the leader form wins over one on the staff form
+    coalesce(lr.answer_short, ir.answer_short) as itr_response,
 
     null as certification_renewal_status,
 
@@ -162,7 +202,14 @@ from {{ ref("int_people__staff_roster") }} as sr
 inner join
     {{ ref("int_people__location_crosswalk") }} as lc
     on sr.home_work_location_name = lc.location_name
-left join itr_response as ir on sr.employee_number = ir.employee_number
+left join
+    itr_response as ir
+    on sr.employee_number = ir.employee_number
+    and ir.term_code = 'ITR'
+left join
+    itr_response as lr
+    on sr.employee_number = lr.employee_number
+    and lr.term_code = 'LITR'
 left join
     {{ ref("int_performance_management__observations") }} as pm
     on sr.employee_number = pm.employee_number

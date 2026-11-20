@@ -112,6 +112,11 @@ with
                         'Intent to Return Survey', 'Intent to Return', 'Staff Retention'
                     ),
                     struct(
+                        'Leader Intent to Return Survey',
+                        'Intent to Return',
+                        'Staff Retention'
+                    ),
+                    struct(
                         'Staff Info & Certification Update',
                         'Staff Information',
                         'Staff Demographics'

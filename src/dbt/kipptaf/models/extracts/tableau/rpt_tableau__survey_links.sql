@@ -63,15 +63,69 @@ with
                 'School-based',
                 'Not+school-based'
             ) as loc_type,
+
+            -- intent to return surveys skip this wait; every other survey keeps it
+            coalesce(sr.worker_rehire_date, sr.worker_original_hire_date)
+            <= date_sub(current_date(), interval 3 week) as is_past_new_hire_wait,
+
+            -- recruitment's leader lists for the round, from the setup page
+            sr.job_title in (
+                'Achievement Director',
+                'Assistant School Leader',
+                'Assistant School Leader, SPED',
+                'Assistant School Leader, School Culture',
+                'Associate Director',
+                'Associate Director of Academic Operations',
+                'Associate Director of School Operations',
+                'Dean of Students',
+                'Deputy Chief',
+                'Deputy Head of Schools',
+                'Director',
+                'Director Campus Operations',
+                'Director Math Achievement',
+                'Director of Social Work',
+                'Director School Operations',
+                'Head of Schools',
+                'Managing Director',
+                'Managing Director of Operations',
+                'Managing Director of School Operations',
+                'Managing Director of Teaching & Learning',
+                'School Leader',
+                'School Leader in Residence'
+            )
+            and sr.home_department_name in (
+                'KIPP Forward',
+                'Marketing, Comms, and Enrollment',
+                'Operations',
+                'School Leadership',
+                'School Support',
+                'Special Education',
+                'Student Support',
+                'Teaching and Learning'
+            )
+            and sr.home_business_unit_name in (
+                'TEAM Academy Charter School',
+                'KIPP Cooper Norcross Academy',
+                'KIPP Miami',
+                'KIPP Paterson',
+                'KIPP TEAM and Family Schools Inc.'
+            ) as is_leader_role,
         from {{ ref("int_people__staff_roster") }} as sr
         left join
             {{ ref("int_people__staff_roster") }} as mgr
             on sr.reports_to_employee_number = mgr.employee_number
-        where
-            sr.assignment_status = 'Active'
-            and sr.primary_indicator
-            and coalesce(sr.worker_rehire_date, sr.worker_original_hire_date)
-            <= date_sub(current_date(), interval 3 week)
+        where sr.assignment_status = 'Active' and sr.primary_indicator
+    ),
+
+    leader_population as (
+        select
+            r.employee_number, rt.academic_year, rt.code as survey_round, rt.is_current,
+        from eligible_roster as r
+        inner join
+            {{ ref("stg_google_sheets__reporting__terms") }} as rt
+            on rt.name = 'Leader Intent to Return Survey'
+            and rt.type = 'SURVEY'
+        where r.is_leader_role
     ),
 
     final as (
@@ -184,6 +238,7 @@ with
         inner join
             {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on rt.name = 'Staff Info & Certification Update'
+        where r.is_past_new_hire_wait
 
         union all
 
@@ -218,7 +273,44 @@ with
         inner join
             {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on rt.name = 'Intent to Return Survey'
-        where r.business_unit <> 'KIPP TEAM and Family Schools Inc.'
+        left join
+            leader_population as lp
+            on r.employee_number = lp.employee_number
+            and rt.academic_year = lp.academic_year
+        where
+            r.business_unit <> 'KIPP TEAM and Family Schools Inc.'
+            and lp.employee_number is null
+
+        union all
+
+        select
+            r.employee_number,
+            r.assignment_status,
+            r.preferred_name_lastfirst,
+            r.business_unit,
+            r.location,
+            r.department,
+            r.job_title,
+            r.hire_date,
+            r.mail,
+            r.google_email,
+            r.report_to_employee_number,
+            r.report_to_preferred_name_lastfirst,
+            r.samaccountname,
+            r.username,
+
+            lp.academic_year,
+            lp.survey_round,
+            lp.is_current,
+
+            'Leader Intent to Return Survey' as survey,
+            'Complete Leader Intent to Return Survey' as `assignment`,
+
+            -- trunk-ignore(sqlfluff/LT05)
+            'https://docs.google.com/forms/d/e/1FAIpQLSdjfdSX21xtoS6NqQD8rEnuUC97CPHAr36e0oaCo6OuChg98A/viewform'
+            as link,
+        from eligible_roster as r
+        inner join leader_population as lp on r.employee_number = lp.employee_number
 
         union all
 
@@ -253,7 +345,8 @@ with
             {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on rt.name = 'KTAF Support Survey'
         where
-            (
+            r.is_past_new_hire_wait
+            and (
                 r.job_title in ('Executive Director', 'Managing Director of Operations')
                 or (
                     r.business_unit <> 'KIPP TEAM and Family Schools Inc.'
@@ -332,6 +425,7 @@ with
         inner join
             {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on rt.name = 'Manager Survey'
+        where r.is_past_new_hire_wait
 
         union all
 
@@ -374,6 +468,7 @@ with
         inner join
             {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on rt.name = 'Support Survey'
+        where r.is_past_new_hire_wait
 
         union all
 
@@ -406,7 +501,7 @@ with
         inner join
             {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on rt.name = 'School Community Diagnostic Staff Survey'
-        where r.loc_type = 'School-based'
+        where r.loc_type = 'School-based' and r.is_past_new_hire_wait
 
         union all
 
@@ -441,6 +536,7 @@ with
         inner join
             {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on rt.name = 'TNTP Insight Survey'
+        where r.is_past_new_hire_wait
 
         union all
 
@@ -475,6 +571,7 @@ with
             {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on current_date('America/New_York') between rt.start_date and rt.end_date
             and rt.name = 'Gallup Q12 Survey'
+        where r.is_past_new_hire_wait
     )
 
 select
