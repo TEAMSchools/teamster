@@ -22,24 +22,24 @@ what each step does and why. The step-by-step runbooks are linked under
   or edits its files.
 - Claude runs the commands and drafts the text. The validator itself never posts
   anything to GitHub, Slack, or Asana. Claude posts only what the analyst
-  approved.
+  approved, or, in the owner's session, what the owner confirmed.
 
 To start, ask Claude Code to "validate `<view>` in Cube". The `cube-validation`
 skill runs each command for you. Commands that need Tableau or Cube credentials
 run through a short test file that Claude writes and deletes, so you do not run
 them by hand.
 
-Each Cube view has one validation file, `src/cube/validation/<view>.yml`. It
-holds the comparisons (one sheet and one measure each), the decisions, and the
-links to the review issue. Cube never loads these files.
+Each Cube view has 1 validation file, `src/cube/validation/<view>.yml`. It holds
+the comparisons (1 sheet and 1 measure each), the decisions, and the links to
+the review issue. Cube never loads these files.
 
 ## What a validation checks
 
-A comparison checks one dashboard sheet against one Cube measure at 3 levels:
+A comparison checks 1 dashboard sheet against 1 Cube measure at 3 levels:
 
 - Rows. The validator rebuilds the dashboard's rows in SQL and matches them, row
-  by row, to the rows Cube counts. A row that only one side holds is an
-  unmatched row.
+  by row, to the rows Cube counts. A row that only 1 side holds is an unmatched
+  row.
 - Cells. Each number the sheet shows (a cell) is compared with Cube's number for
   the same filters.
 - Formulas. A cell can differ even when every row in it matched on both sides.
@@ -54,9 +54,9 @@ A validation does not check everything:
 - It checks the sheets and filter choices you configured, not every view of the
   dashboard. A filter choice that no export covered is listed under "Cuts to
   check in the browser", for you to check by hand.
-- It checks one moment: the data as of one fact build in the last 7 days. New
-  data alone does not make a result stale. Run `compare --all` to check again
-  after a data change.
+- It checks 1 moment: the data as of 1 fact build in the last 7 days. New data
+  alone does not make a result stale. Run `compare --all` to check again after a
+  data change.
 - A comparison with a `scope` checks a narrower number than a plain Cube query
   returns. Say so when you report that measure.
 - A source read as it is now, such as a Google Sheet, cannot be pinned to the
@@ -75,25 +75,33 @@ its options: `uv run python -m scripts.cube_validation <command> --help`.
    and runs no BigQuery query.
 2. Read the sheet: `read-sheet` reads the chosen sheet from a downloaded
    workbook, offline. It lists the sheet's fields, filters, and table
-   calculations, and anything that blocks the next step.
-3. Write the comparison into the validation file, with Claude.
-4. Rebuild the sheet: `rebuild-sheet` rebuilds the sheet in SQL and checks that
-   the SQL reproduces every cell of the sheet's export. A match is saved as the
+   calculations, and anything that blocks the next step. It needs the list of
+   Cube's members that `members` saves, so Claude runs `members` first.
+3. Write the comparison into the validation file, with Claude. It includes the
+   sheet query, the SQL that rebuilds the sheet.
+4. Rebuild the sheet: `rebuild-sheet` runs the sheet query and checks that it
+   reproduces every cell of the sheet's export. A match is saved as the
    comparison's rebuild check. Tableau changes go only to a copy in the
    `TEMP-CB` project.
-5. Compare: `compare` compares each comparison with Cube at one fact build. It
-   prices every query first. It saves each comparison's unmatched rows for the
+5. Compare: `compare` compares each comparison with Cube at 1 fact build. It
+   prices its queries first. It saves each comparison's unmatched rows for the
    next steps.
 6. Sort: `sort` puts every open item into a pile (see
    [The sort piles](#the-sort-piles)) and writes `sort.json` beside the run's
    `run.json`. Run `sort` after every `compare`.
 7. Explain: `explain` saves an explanation, a SQL query that names a cause for
-   each unmatched row. You and Claude write it together, one cluster of rows at
-   a time. Explanations are saved under `src/cube/validation/explanations/`.
+   each unmatched row. You and Claude write it together, 1 cluster of rows at a
+   time. Explanations are saved under `src/cube/validation/explanations/`. After
+   `explain` saves a new explanation, run `sort --no-trace` before the next
+   `decide`.
 8. Decide: `decide` writes the batch of decisions the analyst approved into the
    validation file. See [Decisions](#decisions).
 9. Ask the owner: `ask-owner` drafts the body of the review issue, "Validate
-   `<dashboard>` in Cube". Claude posts it after the analyst reads it.
+   `<dashboard>` in Cube". It runs twice. The first run writes the questions
+   file, `reviews/<view>.json`, and the "Still with the analyst" file, then
+   stops. Read both, then commit and push them with the explanations. The second
+   run prints the body. Claude posts it after the analyst reads it, then writes
+   the issue number into each `domain_owner` decision's `task`.
 10. The owner answers in 1 comment on that issue. See
     [The owner's side](#the-owners-side).
 11. Record the answers: `record-answers` reads that comment and writes each
@@ -112,9 +120,10 @@ The examples on this page are made up. Say the analyst validates `books_read` on
 an invented Reading Club dashboard. `compare` finds 30 rows that only Cube
 counts. `sort` traces them and prints a lead: relaxing the dashboard's
 `status != 'archived'` filter brings back 30 of 30 rows. The analyst writes an
-explanation that files those rows under one cause, "dashboard: the dashboard
-drops archived records". That cause is a question only the owner can answer, so
-`ask-owner` asks it: should archived records count?
+explanation that files those rows under 1 cause, "dashboard: the dashboard drops
+archived records". That cause is a question only the owner can answer, so the
+analyst decides it `domain_owner`, and `ask-owner` asks it: should archived
+records count?
 
 ## Reading a result
 
@@ -136,10 +145,16 @@ and ask the owner what is ready.
 
 ### A cause
 
-A cause is the step that explains, row by row, why rows sit on one side only.
-Only 3 things can supply a cause: a saved explanation, a filter in the workbook,
-or a filter the comparison applies to the dashboard side. A trace lead, a Cube
-member's description, or a pattern in the cells is a lead, not a cause.
+A cause is the step that explains why rows sit on 1 side only, or why a cell
+differs. A cause comes from 1 of these:
+
+- a saved explanation, which names a cause row by row
+- a filter or cut in the workbook that Cube does not have
+- a filter the comparison applies to the dashboard side (`dashboard_filters`)
+- for a formula difference, the run's own matched rows, with no explanation
+
+A trace lead, a Cube member's description, or a pattern in the cells is a lead,
+not a cause.
 
 A trace lead reads like `lead: relaxing <step> brings back 30 of 30 rows`. It
 points at the SQL step to test next. It proves nothing on its own.
@@ -147,7 +162,7 @@ points at the SQL step to test next. It proves nothing on its own.
 ### A formula difference
 
 Each comparison's formula cells form 1 item, `<comparison>:formula`. Its cause
-reads one of 2 ways:
+reads 1 of 2 ways:
 
 - `differing cells hold no unmatched row`: every row in those cells matched, so
   the 2 sides compute the number differently.
@@ -198,10 +213,11 @@ the analyst decides a whole comparison is not worth explaining further, 1
 
 ## When a comparison is skipped
 
-`compare` checks every comparison before it spends anything. A comparison with a
-problem prints `Skipping <id>: <why>.` and keeps its previous result. The rest
-are compared. Then `sort` names it as `not compared: <why>`, and the review
-issue lists it under "Still with the analyst".
+`compare` checks every comparison before it spends anything, and skips a few
+more while it runs. A comparison with a problem prints `Skipping <id>: <why>.`
+and keeps its previous result. The rest are compared. Then `sort` names it as
+`not compared: <why>`, and the review issue lists it under "Still with the
+analyst".
 
 | The reason says                                                   | What to do                                                                            |
 | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
@@ -209,7 +225,7 @@ issue lists it under "Still with the analyst".
 | A member that Cube's model lacks                                  | Fix the member name in the validation file, or the Cube model                         |
 | The sheet is not on a published dashboard                         | Set `unpublished: true` only if you mean to compare that sheet                        |
 | Cube answered from a pre-aggregation                              | Add a Cube-only `scope` on a never-null member the rollup lacks, with `operator: set` |
-| A table changed during the build                                  | Compare again after the next build                                                    |
+| A table changed during the build                                  | Pick another build with `--moment`                                                    |
 | The dims put 2 rows in the same cell                              | Fix the dims so each cell is 1 row                                                    |
 | A BigQuery error, with a job id                                   | Look the job up in BigQuery for the message                                           |
 
@@ -228,7 +244,7 @@ no code.
 2. Claude asks 1 question at a time, in policy words, such as "Should archived
    records count as books read?"
 3. For each question, Claude shows both definitions side by side, who differs
-   and by how much, and what the validator found.
+   and by how much (as bounds, such as `10+`), and what the validator found.
 4. Claude shows the owner's own checks: the dashboard cell to read, and SQL to
    paste into the BigQuery console, with its price. The owner runs them, not
    Claude.
@@ -244,10 +260,11 @@ no code.
 | The source data is wrong  | `fix_source`        |
 | Something else, in words  | `domain_owner`      |
 
-The pinned SQL in a check stops working 7 days after the run, when BigQuery's
-history ends. A cause question also carries reproduce queries on today's data,
-which keep working. The owner can use those, or ask the analyst to run the
-validation again.
+The pinned SQL in a check stops working 7 days after the start of the fact build
+the run compared, when BigQuery's history ends. The owner's session says when. A
+cause question also carries reproduce queries on today's data, which keep
+working. The owner can use those, or ask the analyst to run the validation
+again.
 
 The analyst then runs `record-answers` on the owner's comment. The review issue
 closes when every question has a decision, every fix has its issue or task, and
@@ -255,16 +272,28 @@ nothing is left with the analyst.
 
 ## What it costs
 
-The validator spends money only on BigQuery queries, and it prices them before
-it runs them.
+The validator spends money only on BigQuery queries, and every query runs under
+2 caps:
 
-- `rebuild-sheet`, `compare`, `sort`, and `explain` dry-run every query first
-  and print a total, such as `Compare: 12 queries, $0.40 (dry run)`. They refuse
-  to run when the total is over a cap.
-- `--max-usd` caps 1 command. `--max-usd-per-day` caps every run on your machine
-  for the UTC day. Each command's `--help` shows the current defaults.
-- `sort` traces unmatched rows down through the dbt models. The caps and
-  `--trace-max-minutes` bound the trace, and `--no-trace` skips it.
+- `--max-usd` caps 1 command.
+- `--max-usd-per-day` caps every run on your machine for the day, in Coordinated
+  Universal Time (UTC).
+
+The defaults are set in `scripts/cube_validation/cli.py`. Each command applies
+the caps in 1 of 2 ways:
+
+- `compare`, `explain`, and `sort` (its explanations and its formula check)
+  dry-run their queries first and print a total, such as
+  `Compare: 12 queries, $0.40 (dry run)`. They refuse to run when the total is
+  over a cap.
+- `rebuild-sheet` and the `sort` trace price as they go. BigQuery refuses any
+  query that would bill more than what is left under the caps. The trace prices
+  its first level, then each deeper query before it runs. A cap or
+  `--trace-max-minutes` stops only that trace bucket, which keeps what it found.
+  `--no-trace` skips the trace.
+
+Some work costs nothing:
+
 - Work that already ran is reused, not paid for again. `sort` keeps finished
   explanations in `sort-progress.json`, a formula check that ran is kept while
   its result stands, and a plain `compare` runs only the comparisons that are
@@ -283,19 +312,24 @@ every shared surface.
 - Row-level output stays local: the terminal, `sort.json`, and your local cache.
   Unmatched rows wait in a BigQuery dataset that only the Data Team can read,
   and each table there expires.
-- Anything posted or committed shows a count under 10 as `<10`. A total that
-  would give away a hidden count reads `10+`. Small counts can single out a
-  student, so the owner's questions show every count as a bound.
+- Everything the validator writes for posting or committing shows a count under
+  10 as `<10`: the review issue, the questions file, the "Still with the
+  analyst" file, and the masked evidence in `sort.json`. A total that would give
+  away a hidden count reads `10+`. Small counts can single out a student, so the
+  owner's questions show every count as a bound.
 - A sheet filter on a field outside the reviewed reference columns prints
-  "chosen values hidden". The validator never reads or copies those values,
+  "chosen values hidden". The validator never prints or saves those values,
   because a filter's chosen values can name a student or a small group.
 - Explanations hold SQL only. `explain` refuses a query that compares a literal
   value with a column that names or reaches a person, and an ID-like number or
   email in the query's text.
-- `decide` and `record-answers` refuse an email or an ID-like number in a
-  reason. Neither can detect a name, so read every reason and definition before
-  it is written. The review issue promises that student and staff identifiers
-  are hidden, and that promise holds only if no reason names a person.
+- Decision reasons and the owner's notes are free text, and the validator does
+  not mask them. `decide` and `record-answers` refuse only an email or an
+  ID-like number in one. In a reason, quote the masked evidence from
+  `sort.json`, never a count from the terminal. Neither command can detect a
+  name, so read every reason and definition before it is written. The review
+  issue promises that student and staff identifiers are hidden, and that promise
+  holds only if no reason names a person.
 - Example students the owner asks to see come from the owner's own BigQuery
   access and stay in the owner's chat. Nothing posted carries a student's name,
   number, or row.
