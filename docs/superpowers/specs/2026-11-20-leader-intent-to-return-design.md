@@ -209,9 +209,10 @@ so the KIPP South Florida rebrand in the answers doesn't break it.
 
 ## Revision 2026-11-20: Connected Sheet instead of extracts
 
-Recruitment's reminder list and responses view are one Connected Sheet
-with custom queries, so it could exist before this change deploys. The reminder
-tab reads `rpt_tableau__survey_completion` (leader survey, open round,
-completion 0); the responses tab reads `int_surveys__survey_responses`. Build
+Recruitment's reminder list and responses view are one Connected Sheet with
+custom queries, so it could exist before this change deploys. The reminder tab
+reads `rpt_tableau__survey_completion` (leader survey, open round, completion
+0); the responses tab reads `rpt_tableau__survey_responses` (latest submission
+per person), which shows a round's answers only after the round closes. Build
 steps 5 and 6 are replaced by one exposure for that Sheet; no new extract model
 ships.
