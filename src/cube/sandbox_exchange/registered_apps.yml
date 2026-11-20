@@ -1,0 +1,4 @@
+# One entry per Builder Brain app allowed to use the exchange: `client_id` (the
+# app's AuthKit client id) and `name` (what the app is called). Never a
+# person's name or email.
+apps: []
