@@ -5713,6 +5713,53 @@ def test_a_formula_decision_is_asked_again_once_the_check_files_more_cells(
     assert decision.fingerprints["matched_only"] == "2"
 
 
+def test_a_formula_decision_reads_re_confirm_after_compare_until_a_full_sort(
+    fakes, tmp_path
+):
+    # A mixed formula difference: Newark differs with every row matched, and
+    # Miami, whose group a decision closes, still differs on matched rows.
+    fakes.bq.sheet_query = [{"region": "Newark", "value": 0.9123},
+                            {"region": "Miami", "value": 0.5}]  # fmt: skip
+    fakes.bq.cells = [{"regions_region_name": "Newark", "value": 0.95},
+                      {"regions_region_name": "Miami", "value": 0.95}]  # fmt: skip
+    assert cli.main(["compare", str(_file(tmp_path))]) == 0
+    path = _with_decision(_saved_fingerprints(tmp_path), tmp_path, call="fix_cube")
+    assert cli.main(["reapply", str(path)]) == 0
+    fakes.bq.formula = {
+        "dashboard": [{"region": "Newark", "value": 0.9123},
+                      {"region": "Miami", "value": 0.6}],
+        "cube": [{"regions_region_name": "Newark", "value": 0.91234},
+                 {"regions_region_name": "Miami", "value": 0.95}],
+    }  # fmt: skip
+    assert "ada-region:formula" in _sorted_items(path, tmp_path)
+    approved = _approved(tmp_path, [{"id": "which-rate", "call": "domain_owner",
+                                     "reason": "Which rate is right?",
+                                     "item": "ada-region:formula"}])  # fmt: skip
+    assert cli.main(["decide", str(path), str(approved)]) == 0
+
+    def state():
+        applied = json.loads(_latest_run(tmp_path).read_text())["applied"]
+        return (
+            [d["id"] for d in applied["reconfirm"]],
+            [d["id"] for d, _ in applied["quiet_cells"]],
+        )
+
+    applied = json.loads(_latest_run(tmp_path).read_text())["applied"]
+    ((_, diff),) = applied["quiet_cells"]
+    # Both kinds of cell: some the check filed, some with no unmatched row.
+    assert 0 < diff["matched_only"] < sum(diff["counts"].values())
+    assert state() == ([], ["which-rate"])
+
+    # The same data compared again: the new result drops the kept check, so
+    # its cells read as cell sets and the decision as re-confirm...
+    assert cli.main(["compare", str(path), "--all"]) == 0
+    assert state() == (["which-rate"], [])
+
+    # ...until a full sort files them again.
+    assert "ada-region:formula" not in _sorted_items(path, tmp_path)
+    assert state() == ([], ["which-rate"])
+
+
 def test_sort_reuses_a_stored_check_without_spending(fakes, tmp_path):
     path = _miami_differs(fakes, tmp_path)
     assert cli.main(["sort", str(path), "--no-trace"]) == 0
