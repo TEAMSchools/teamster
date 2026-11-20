@@ -1,14 +1,15 @@
 import re
 import xml.etree.ElementTree as ET
 import zipfile
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
+from decimal import Decimal
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation import rebuild
+from cube_validation import pipeline, rebuild
 from cube_validation.config import ColumnPair, Comparison
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
@@ -786,6 +787,161 @@ def test_rebuild_check_keys_read_an_export_date_as_the_probe_date():
     assert _key_text("2026-09-21") == "2026-09-21"
     assert _key_text("1,234") == "1234"
     assert _key_text("13/45/2026") == "13/45/2026"
+
+
+# Each input with its cell key in compare, coverage, formula and the answers.
+# These keys feed stored state (answers keys, formula cell fingerprints), so
+# every one must stay byte-identical.
+VALUE_KEYS = [
+    (date(2026, 9, 21), "2026-09-21"),
+    (datetime(2026, 9, 21), "2026-09-21"),
+    (datetime(2026, 9, 21, 8, 30), "2026-09-21T08:30:00"),
+    (datetime(2026, 9, 21, tzinfo=timezone.utc), "2026-09-21"),
+    (datetime(2026, 9, 21, 8, 30, tzinfo=timezone.utc), "2026-09-21T08:30:00"),
+    ("9/21/2026", "2026-09-21"),
+    ("09/07/2026", "2026-09-07"),
+    (" 9/21/2026", "9/21/2026"),
+    ("13/45/2026", "13/45/2026"),
+    ("9/21", "9/21"),
+    ("2026-09-21", "2026-09-21"),
+    ("2026-09-21 00:00:00", "2026-09-21"),
+    ("2026-09-21T00:00:00.000", "2026-09-21"),
+    ("2026-09-21 08:30:00", "2026-09-21T08:30:00"),
+    ("2026-09-21T08:30:00+00:00", "2026-09-21T08:30:00"),
+    ("2026-09-21x", "2026-09-21x"),
+    (True, "true"),
+    (False, "false"),
+    ("TRUE", "true"),
+    ("true", "true"),
+    ("True", "true"),
+    ("False", "false"),
+    (" false ", "false"),
+    (2026, "2026"),
+    (0, "0"),
+    (-7, "-7"),
+    (2026.0, "2026"),
+    (0.5, "0.5"),
+    (-1.25, "-1.25"),
+    (Decimal("1.50"), "1.5"),
+    (Decimal("-0"), "-0"),
+    (Decimal("1E+3"), "1000"),
+    ("2026", "2026"),
+    ("2026.0", "2026"),
+    ("-1.250", "-1.25"),
+    ("1,234", "1,234"),
+    ("-1,234.50", "-1,234.50"),
+    ("12,34", "12,34"),
+    ("1,234,567", "1,234,567"),
+    (" 1,234 ", "1,234"),
+    ("1e3", "1000"),
+    ("NaN", "NaN"),
+    ("Infinity", "Infinity"),
+    (None, ""),
+    ("", ""),
+    ("  ", ""),
+    ("Newark", "Newark"),
+    (" Newark ", "Newark"),
+    ("007", "7"),
+    ("00", "0"),
+    ("0.10", "0.1"),
+    ("N/A", "N/A"),
+]
+
+
+@pytest.mark.parametrize(("value", "key"), VALUE_KEYS)
+def test_cell_key_text_is_pinned(value, key):
+    assert pipeline.value_key(value) == key
+
+
+@pytest.mark.parametrize(
+    ("value", "key"),
+    [
+        (date(2026, 9, 21), "2026-09-21"),
+        ("9/21/2026", "2026-09-21"),
+        ("09/07/2026", "2026-09-07"),
+        (" 9/21/2026", "2026-09-21"),
+        ("13/45/2026", "13/45/2026"),
+        ("9/21", "9/21"),
+        ("2026-09-21", "2026-09-21"),
+        ("2026-09-21x", "2026-09-21x"),
+        ("true", "true"),
+        (" false ", "false"),
+        (2026, "2026"),
+        (0, "0"),
+        (-7, "-7"),
+        (2026.0, "2026"),
+        (0.5, "0.5"),
+        (-1.25, "-1.25"),
+        (Decimal("1.50"), "1.5"),
+        (Decimal("-0"), "-0"),
+        (Decimal("1E+3"), "1000"),
+        ("2026", "2026"),
+        ("2026.0", "2026"),
+        ("-1.250", "-1.25"),
+        ("1,234", "1234"),
+        ("-1,234.50", "-1234.5"),
+        ("12,34", "12,34"),
+        ("1,234,567", "1234567"),
+        (" 1,234 ", "1234"),
+        ("1e3", "1000"),
+        ("NaN", "NaN"),
+        ("Infinity", "Infinity"),
+        (None, ""),
+        ("", ""),
+        ("  ", ""),
+        ("Newark", "Newark"),
+        (" Newark ", "Newark"),
+        ("007", "7"),
+        ("00", "0"),
+        ("0.10", "0.1"),
+        ("N/A", "N/A"),
+    ],
+)
+def test_rebuild_check_key_text_is_pinned(value, key):
+    assert _key_text(value) == key
+
+
+@pytest.mark.parametrize(
+    ("value", "key"),
+    [
+        (True, "True"),
+        (False, "False"),
+        ("TRUE", "TRUE"),
+        ("True", "True"),
+        ("False", "False"),
+    ],
+)
+def test_rebuild_check_keys_a_boolean_in_its_written_case(value, key):
+    assert _key_text(value) == key
+
+
+@pytest.mark.parametrize(
+    ("value", "key"),
+    [
+        (datetime(2026, 9, 21), "2026-09-21 00:00:00"),
+        (datetime(2026, 9, 21, 8, 30), "2026-09-21 08:30:00"),
+        (datetime(2026, 9, 21, tzinfo=timezone.utc), "2026-09-21 00:00:00+00:00"),
+        (
+            datetime(2026, 9, 21, 8, 30, tzinfo=timezone.utc),
+            "2026-09-21 08:30:00+00:00",
+        ),
+    ],
+)
+def test_rebuild_check_keys_a_datetime_as_python_prints_it(value, key):
+    assert _key_text(value) == key
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "2026-09-21 00:00:00",
+        "2026-09-21T00:00:00.000",
+        "2026-09-21 08:30:00",
+        "2026-09-21T08:30:00+00:00",
+    ],
+)
+def test_rebuild_check_keys_an_iso_timestamp_string_as_written(value):
+    assert _key_text(value) == value
 
 
 def test_shelf_parser_reads_the_cross_operator():
