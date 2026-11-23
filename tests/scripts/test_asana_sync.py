@@ -432,3 +432,25 @@ def test_work_items_under_a_pr_are_not_reported_as_rows(mod, monkeypatch, capsys
     monkeypatch.setattr(mod, "get_all", get_all)
     assert mod.main(["--only", D]) == 0
     assert "Rows with no kind tag" not in capsys.readouterr().out
+
+
+def test_main_tags_an_untagged_used_by_row_under_a_pr(mod, monkeypatch):
+    writes = _stub_main(mod, monkeypatch)
+    inner = mod.get_all
+    field = {
+        "gid": "9000000000000011",
+        "name": "Quiz number",
+        "completed": False,
+        "notes": f"Used by: https://app.asana.com/0/0/{D}/f",
+        "tags": [],
+        "dependencies": [],
+    }
+
+    def get_all(path, params):
+        if path == f"/tasks/{PR}/subtasks":
+            return inner(path, params) + [field]
+        return inner(path, params)
+
+    monkeypatch.setattr(mod, "get_all", get_all)
+    assert mod.main(["--only", D]) == 0
+    assert "[dimension] Quiz number: add 'dimension' tag" in writes

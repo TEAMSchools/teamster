@@ -606,7 +606,12 @@ def main(argv):
             if c.get("num_subtasks") and not TABLE.match(c["name"])
         }
         nested, _ = rows_under({"gid": dash}, children, grandchildren)
-        plan = [(r, row_kind(r), parent) for r, parent in nested if parent is not None]
+        # an untagged row under a PR task or holder is there by its `Used by:` line: a dimension
+        plan = [
+            (r, row_kind(r) or "dimension", parent)
+            for r, parent in nested
+            if parent is not None
+        ]
         # direct rows: tagged, or the legacy measure rows with a `Status:` line
         plan += [
             (r, row_kind(r) or "measure", None)
