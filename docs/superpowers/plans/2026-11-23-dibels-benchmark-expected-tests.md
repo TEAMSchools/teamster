@@ -95,16 +95,16 @@ before Task 2.
 - Produces:
   - `int_assessments__dibels_benchmark_goals`: same grain and columns as the
     staging model, All-students columns only (no `_iep`, no `_mll`).
-  - `dim_dibels_benchmark_school_goals`: key `dibels_benchmark_school_goal_key`
-    =
+  - `dim_dibels_benchmark_school_goals`: key `dibels_benchmark_school_goal_key`,
+    hashed as
     `generate_surrogate_key(academic_year, region, school, assessment_grade_int, period)`;
     columns `academic_year`, `region`, `school`, `grade_level`
     (`assessment_grade_int`), `administration_period` (`period`), `n_students`,
     `n_students_at_above`, `n_students_below_well_below`,
     `n_students_at_above_expected`, `n_students_at_above_gap` (the 5
     `n_admin_season_school_gl_*` columns, in that order).
-  - `dim_dibels_benchmark_region_goals`: key `dibels_benchmark_region_goal_key`
-    =
+  - `dim_dibels_benchmark_region_goals`: key `dibels_benchmark_region_goal_key`,
+    hashed as
     `generate_surrogate_key(academic_year, region, assessment_grade_int, period)`;
     columns `academic_year`, `region`, `grade_level`, `administration_period`,
     `goal_season` (`benchmark_goal_season`), `grade_goal`, `grade_range_goal`,
