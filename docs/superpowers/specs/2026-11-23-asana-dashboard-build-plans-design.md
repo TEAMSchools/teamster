@@ -234,3 +234,12 @@ untagged subtasks, so the page is unchanged. Its rows are still on
 - The order of subtasks under a dashboard. The API appends; reordering is
   cosmetic.
 - How to test both tools against a copy of the project before step 1 ships.
+
+## Revision 2026-11-23: the sync stays manual
+
+No Asana token is stored in teamster, so nothing schedules the sync script.
+Asana writes stay as they are today: the analyst runs
+`uv run --with requests python scripts/asana_sync.py` from their own terminal,
+with their own `ASANA_PAT`. This replaces the _Schedule_ bullet in _Order of
+work_ step 1. The cost: a row's status on the build status page changes only
+after someone runs the sync, so the page can lag the work.
