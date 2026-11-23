@@ -18,6 +18,7 @@ anyone trusts it.
 - The PM branches cannot match prod's row count, and should not
 - A student's two grade columns can disagree -- known, and not fixable
 - A stale dev relation will hide a filter you removed
+- Comparing two builds: one roster row can flip, and one query cannot hold both
 
 ## Explain a gap before reporting it
 
@@ -531,3 +532,22 @@ Watch for orphaned relations from renames too -- `__dibels__` (double
 underscore) renames left single-underscore copies of both by-levels models in
 the dev and PR schemas. They resolve, they hold stale data, and nothing points
 at them.
+
+## Comparing two builds: one roster row can flip, and one query cannot hold both
+
+Two things look like a regression in a dev-versus-prod comparison and are not.
+
+One roster row can differ between two reads of the same data. The roster keeps
+one row per round with a pick ordered by exit date only, and its join to
+`int_amplify__all_assessments` is at measure grain. When that model carries two
+different `actual_row_count` values inside one round, the surviving value is
+arbitrary. Before tracing a lone `actual_row_count` or `round_test_status`
+difference, run the query under _The roster's actual count is arbitrary_ in the
+reference document's _Known issues_. A student it returns is this case.
+
+A query that references `rpt_tableau__dibels_dashboard` twice fails with "query
+is too complex", so a full join or `except` between two builds will not run. Run
+one query per build and compare a row fingerprint by `model_type` and
+`academic_year`: `sum(cast(farm_fingerprint(to_json_string(t)) as bignumeric))`.
+Equal sums with equal row counts mean identical rows. To narrow a difference,
+repeat it with the suspect students filtered out of both builds.

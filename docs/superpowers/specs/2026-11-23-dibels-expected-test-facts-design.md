@@ -397,3 +397,49 @@ skips `claude-review` and dbt Cloud CI.
   10 read `<10`.
 - Dates: Benchmark targets Nov 30. PM and aimline fall back to the Dec 4
   checkpoint on the hub.
+
+## Revision 2026-11-23: Step 0 is deferred, and the intermediates read the spine
+
+Step 0 was built and compared with prod, then held. Its logic is equivalent to
+the old read. Its timing has 3 effects on the live dashboard:
+
+- A student whose stint changed after the spine's 01:00 rebuild loses their
+  round status on the dashboard, and their PM round verdict with it, because
+  both criteria models inner join the roster.
+- PowerSchool's full nightly refresh runs at 02:00, between the spine's rebuild
+  and the dashboard's 05:00 refresh, so that happens every night.
+- The roster then inlines the enrollment view, and the dashboard model expands
+  the roster 5 times. One read of the dashboard model bills about 2.4 times as
+  much, and a query that references the dashboard model twice no longer plans.
+
+The Step 0 code is parked on branch
+`anthonygwalters/refactor/claude-dibels-roster-off-spine`, with no PR. Whether
+to ship it, to exempt the facts from A12 with `config.meta.standard_exempt`, to
+rework it onto `int_students__student_enrollment_union`, or to move the spine's
+or the PowerSchool refresh's schedule is deferred to an issue for the
+data-engineer reviewer, linked from #6473.
+
+Until that issue is decided, this design changes as follows.
+
+- PM0 leaves the sequence. PM1 to PM3 do not wait on it.
+- The 3 intermediates, their drift tests and the goal dimensions are built and
+  merged. A12 applies to marts only, so an intermediate may read the roster and
+  the criteria models as they are.
+- The 3 facts are built in dev, so PR PM4 can be written against them. They
+  merge once the issue is decided.
+- The intermediates read enrollment from
+  `int_extracts__student_enrollments_subjects`, as the dashboard model does, not
+  from `int_students__student_enrollments`. The roster reads the spine, so an
+  intermediate that read enrollment live would disagree with the roster for a
+  student whose stint changed after the spine's rebuild, and would carry a blank
+  round status. Keep the enrollment read in 1 CTE in each intermediate, so it is
+  a 1-line change if Step 0 ships.
+- With enrollment from the spine, the intermediates see the dashboard's own
+  enrollment. The _Enrollment timing_ entry under _Where the facts cannot match
+  the dashboard_ does not apply, and a drift test has no timing rows to scope
+  out.
+- Each drift test references the dashboard model once and its intermediate, a
+  table, once. Do not write one that references the dashboard model twice.
+- The nightly tick only has to follow the spine's 01:00 rebuild. Keep it as late
+  before 05:00 as the build's run time allows, so scores match what the
+  dashboard shows that day.

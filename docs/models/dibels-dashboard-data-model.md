@@ -328,9 +328,10 @@ The Tableau workbook is the `literacy_dashboard` exposure in
   expected to sit in each Benchmark administration and PM round, the score if
   they sat it, whether they tested, and their verdicts against each goal.
 - Grain: one row per student, expected measure standard, administration or
-  round, and method (`model_type`). Rows are not guaranteed unique: the ELA
-  course join can match more than one section, and overlapping enrollment stints
-  can repeat a row.
+  round, and method (`model_type`). Rows are not guaranteed unique: a student
+  who sat a Benchmark measure at two grades gets a row per sitting, and a few PM
+  keys repeat as identical rows. See _Duplicate dashboard rows_ under _Known
+  issues_.
 - Reads: the enrollment spine (`int_extracts__student_enrollments_subjects`,
   Reading only, enrolled statuses 0, 2 and 3, not self-contained, not out of
   district), then one `UNION ALL` branch per method, below. All three branches
@@ -829,11 +830,13 @@ group by academic_year, region, admin_season
 
 ### Duplicate dashboard rows
 
-Two overlapping enrollment stints repeat a row, and more than one matching ELA
-section repeats a row on every branch. The Benchmark branch has the most
-repeated keys; it uses the same `between` check on enrollment stints as the PM
-branches. The fix is one shared enrollment date predicate, applied to all three
-branches together.
+On the Benchmark branch, a student who sat a measure at two grades in one
+administration gets a row per sitting, because the score join has no grade. On
+the PM branches a few keys repeat as identical rows; the cause is not yet
+traced. No repeated key differs by ELA section or by enrollment stint: the
+section join returns at most one section per row (`rn_core_subject_year` is
+numbered within source project, year, school, student and core subject), and the
+stint pick keeps one stint. The model's uniqueness test warns on these keys.
 
 ```sql
 with
@@ -950,6 +953,44 @@ from `teamster-332318`.kipptaf_amplify.int_amplify__all_assessments
 where
     assessment_type = 'PM'
     and safe_cast(assessment_grade as int64) != assessment_grade_int
+group by academic_year, model_type
+```
+
+### The roster's actual count is arbitrary when a round's scores disagree
+
+`int_amplify__all_assessments` repeats `actual_row_count` on every scored row of
+a round. For a rare student and round, those rows carry two different values.
+The roster keeps one row per round with a pick ordered by enrollment exit date
+only, so which value survives can change from one read to the next, and
+`round_test_status` can change with it. Start from how `actual_row_count` is
+counted in `int_amplify__all_assessments`.
+
+```sql
+with
+    per_round as (
+        select
+            academic_year,
+            region,
+            student_number,
+            assessment_grade_int,
+            model_type,
+            `period`,
+            round_number,
+            count(distinct coalesce(actual_row_count, -1)) as n_counts,
+        from `teamster-332318`.kipptaf_amplify.int_amplify__all_assessments
+        group by
+            academic_year,
+            region,
+            student_number,
+            assessment_grade_int,
+            model_type,
+            `period`,
+            round_number
+    )
+
+select academic_year, model_type, count(*) as rounds_with_two_counts,
+from per_round
+where n_counts > 1
 group by academic_year, model_type
 ```
 
