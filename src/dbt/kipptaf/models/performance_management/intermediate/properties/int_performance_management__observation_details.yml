@@ -1,57 +1,142 @@
 models:
   - name: int_performance_management__observation_details
+    description: >-
+      Performance management observations at one row per observation per
+      measurement item. UNION of two branches. The first carries SchoolMint Grow
+      observations from academic year 2024 on, from
+      int_performance_management__observations joined to each observation's
+      measurement scores. The second carries the frozen pre-2024 archive from
+      stg_performance_management__observation_details_archive, where a
+      measurement can repeat within an observation.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - observation_id
+              - measurement_name
+          config:
+            severity: error
+            # The frozen pre-2024 archive has no row-level key.
+            where: academic_year >= 2024
     columns:
       - name: observation_id
         data_type: string
+        description: >-
+          Observation identifier. A SchoolMint Grow observation id on the Grow
+          branch; the archived observation id on the archive branch.
       - name: rubric_name
         data_type: string
+        description: Name of the form (rubric) the observation was recorded on.
       - name: observation_score
         data_type: float64
+        description: >-
+          Overall score of the observation, as stored by Grow or the archive.
       - name: glows
         data_type: string
+        description: Free-text strengths the observer recorded.
+        config:
+          meta:
+            contains_pii: true
       - name: grows
         data_type: string
+        description: Free-text growth areas the observer recorded.
+        config:
+          meta:
+            contains_pii: true
       - name: locked
         data_type: boolean
+        description: TRUE if the observation is locked against further edits.
       - name: observed_at_timestamp
         data_type: timestamp
+        description: Timestamp the observation took place.
       - name: observed_at
         data_type: date
+        description: Local date the observation took place.
       - name: academic_year
         data_type: int64
+        description: Academic year of the observation, by its start year.
       - name: observation_type
         data_type: string
+        description: Display name of the observation type.
       - name: observation_type_abbreviation
         data_type: string
+        description: >-
+          Short code for the observation type, such as PMS (score form), PMC
+          (comments form), or TR (teacher reflection). Archive rows carry PM.
       - name: term_code
         data_type: string
+        description: >-
+          Performance management round the observation falls in, such as PM1 or
+          PM2, from the reporting terms sheet.
       - name: term_name
         data_type: string
+        description: Display name of the performance management round.
       - name: employee_number
         data_type: int64
+        description: Employee number of the staff member observed.
+        config:
+          meta:
+            contains_pii: true
       - name: observer_employee_number
         data_type: int64
+        description: Employee number of the observer.
+        config:
+          meta:
+            contains_pii: true
       - name: eval_date
         data_type: date
+        description: >-
+          Evaluation date assigned to the observation's performance management
+          round.
       - name: overall_tier
         data_type: float64
+        description: Performance tier banded from the observation score.
       - name: observation_notes
         data_type: string
+        description: >-
+          Grow's free-text observation notes. Null on the archive branch.
+        config:
+          meta:
+            contains_pii: true
       - name: etr_score
         data_type: float64
+        description: >-
+          Archived Excellent Teaching Rubric score. Null on the Grow branch.
       - name: etr_tier
         data_type: float64
+        description: >-
+          Archived Excellent Teaching Rubric tier. Null on the Grow branch.
       - name: so_score
         data_type: float64
+        description: Archived Self & Others score. Null on the Grow branch.
       - name: so_tier
         data_type: int64
+        description: Archived Self & Others tier. Null on the Grow branch.
       - name: row_score
         data_type: float64
+        description: Score given on the measurement item.
       - name: measurement_dropdown_selection
         data_type: string
+        description: >-
+          Dropdown option chosen on the measurement item in Grow. Null on the
+          archive branch.
       - name: measurement_name
         data_type: string
+        description: Display name of the measurement item (the form question).
       - name: strand_name
         data_type: string
+        description: >-
+          Measurement group (strand) the item belongs to on its form, such as
+          Practice or Values.
+      - name: measurement_form_position
+        data_type: int64
+        description: >-
+          1-based position of the measurement item on its Grow form, from
+          stg_schoolmint_grow__rubrics__measurement_groups__measurements. Null
+          on the archive branch, which has no Grow rubric.
       - name: measurement_comments
         data_type: string
+        description: Free-text response entered on the measurement item.
+        config:
+          meta:
+            contains_pii: true

@@ -25,6 +25,7 @@ select
     m.name as measurement_name,
 
     mgm.measurement_group_name as strand_name,
+    mgm.measurement_form_position,
 
     null as etr_score,
     null as etr_tier,
@@ -72,6 +73,9 @@ select
     text_box as measurement_comments,
     measurement_name,
     measurement_group_name as strand_name,
+
+    cast(null as int64) as measurement_form_position,
+
     etr_score,
     etr_tier,
     so_score,

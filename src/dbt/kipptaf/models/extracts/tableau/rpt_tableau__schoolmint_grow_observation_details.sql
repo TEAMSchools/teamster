@@ -82,6 +82,7 @@ select
     od.row_score,
     od.strand_name,
     od.measurement_name,
+    od.measurement_form_position,
     od.overall_tier,
     od.observation_notes,
 
@@ -252,6 +253,7 @@ select
     od.row_score,
     od.strand_name,
     od.measurement_name,
+    od.measurement_form_position,
     od.overall_tier,
     od.observation_notes,
 
