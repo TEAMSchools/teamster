@@ -670,8 +670,8 @@ def questions_json(
             ]
         return [
             line
-            for held, diff in by_run[view].applied.quiet_cells
-            if held == d
+            for quieted, diff in by_run[view].applied.quiet_cells
+            if quieted is d
             for line in sort.formula_evidence(by_run[view], diff)[2]
         ]
 
@@ -689,9 +689,11 @@ def questions_json(
                             f"`{cid}` in `{view}`: {definition_text(sides[side])}"
                         )
 
-        lines = [line for view, d in q["decisions"] for line in evidence_of(view, d)]
-        if "asks" in q:
-            lines = _cause_evidence(q["asks"])
+        lines = (
+            _cause_evidence(q["asks"])
+            if "asks" in q
+            else [line for view, d in q["decisions"] for line in evidence_of(view, d)]
+        )
         evidence = list(dict.fromkeys(safe_reason(line, q["hidden"]) for line in lines))
 
         # A cause question's example holds that cause's rows.

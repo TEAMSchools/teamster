@@ -93,6 +93,7 @@ _BLOCK = re.compile(
 _UNCHANGED = re.compile(
     r"--\s*unchanged\s+(?P<bucket>[A-Za-z][A-Za-z0-9_]*)\s+since\s+(?P<fp>[0-9a-f]{64})\s*"
 )
+_SAVED = re.compile(r"--\s*saved\s+(?P<fp>[0-9a-f]{64})\s*")
 _STRINGS = (
     TokenType.STRING,
     TokenType.RAW_STRING,
@@ -139,6 +140,11 @@ class Explanation:
     # <fingerprint>`, written by `explain`): a decision made on one of them
     # still holds for the cause (`decisions.cause_state`).
     unchanged: dict[str, tuple[str, ...]] = field(default_factory=dict)
+    # The fingerprint `explain` wrote into the file when it saved it (`-- saved
+    # <fingerprint>`), or None for a file saved before the line existed. A file
+    # whose own fingerprint differs was edited after the save, so the version
+    # its decisions were made on is gone.
+    saved: str | None = None
 
     @property
     def text(self) -> str:
@@ -181,14 +187,15 @@ def compose(
     unchanged: dict[str, tuple[str, ...]] | None = None,
 ) -> str:
     """The explanation file: the lint opt-outs, its bucket map, each cause's
-    earlier fingerprints with the same rows, each cause's reproduce query as
-    comment lines, then the SQL."""
+    earlier fingerprints with the same rows, its own fingerprint, each cause's
+    reproduce query as comment lines, then the SQL."""
     block = [f"-- cause {b} = {side}: {words}" for b, (side, words) in causes.items()]
     block += [
         f"-- unchanged {b} since {fp}"
         for b, fps in (unchanged or {}).items()
         for fp in fps
     ]
+    block.append(f"-- saved {fingerprint(causes, body)}")
     for b, sql in (reproduce or {}).items():
         block.append(f"-- reproduce {b}:")
         block += [f"--  {line}" if line.strip() else "--" for line in sql.splitlines()]
@@ -220,8 +227,9 @@ def split_explanation(
             bucket, side, words = _cause(line)
             causes[bucket] = (side, words)
             current = None
-        elif line.startswith("-- unchanged"):
-            # Read by `unchanged_of`; not part of what the explanation explains.
+        elif line.startswith(("-- unchanged", "-- saved")):
+            # Read by `unchanged_of` and `saved_of`; not part of what the
+            # explanation explains.
             current = None
         elif line.startswith("-- reproduce"):
             m = _REPRODUCE.fullmatch(line)
@@ -267,6 +275,26 @@ def unchanged_of(text: str) -> dict[str, tuple[str, ...]]:
         if m["bucket"] in causes and m["fp"] not in found.get(m["bucket"], ()):
             found[m["bucket"]] = (*found.get(m["bucket"], ()), m["fp"])
     return found
+
+
+def saved_of(text: str) -> str | None:
+    """The fingerprint on an explanation's `-- saved` line, or None without one.
+
+    Raises:
+        pipeline.Refusal: The line holds no fingerprint.
+    """
+    _, _, body = split_explanation(text)
+    for line in text[: len(text) - len(body)].splitlines():
+        line = line.strip()
+        if line.startswith("-- saved"):
+            m = _SAVED.fullmatch(line)
+            if not m:
+                raise pipeline.Refusal(
+                    "cannot read the `-- saved` line: `explain` writes "
+                    "`-- saved <fingerprint>`; restore the file as `explain` saved it"
+                )
+            return m["fp"]
+    return None
 
 
 def _cause(line: str) -> tuple[str, str, str]:
@@ -334,7 +362,14 @@ def read_explanation(path: Path) -> Explanation:
     text = path.read_text()
     causes, reproduce, body = split_explanation(text)
     return Explanation(
-        path, comparison, bucket, causes, body, reproduce, unchanged_of(text)
+        path,
+        comparison,
+        bucket,
+        causes,
+        body,
+        reproduce,
+        unchanged_of(text),
+        saved_of(text),
     )
 
 
@@ -2180,7 +2215,9 @@ def explain(
         comparison: The comparison the explanation covers.
         bucket: One of `EXPLAINABLE`.
         sql: The explanation's SQL; it may carry a `-- cause` block. Defaults to
-            the stored explanation, to re-run it after an edit.
+            the stored explanation, to re-run it unchanged; an edit comes here
+            as a draft, since the stored file must stay the version `explain`
+            saved.
         causes: `<bucket>=<side>:<plain words>` per bucket, added to (and
             replacing entries of) the SQL's own block.
         items: The sort item ids to print; every item of the bucket is explained
@@ -2191,7 +2228,8 @@ def explain(
 
     Raises:
         pipeline.Refusal: No sort of the latest run; an unknown comparison
-            or bucket; or an explanation that fails a check.
+            or bucket; a stored file edited since `explain` saved it; or an
+            explanation that fails a check.
         CostCapError: The explanation would pass a cap.
     """
     run, run_json = results.latest_run(cfg, cache_root)
@@ -2213,6 +2251,21 @@ def explain(
         b, side, words = parse_cause_flag(flag)
         block[b] = (side, words)
     explanation = Explanation(stored, comparison, bucket, block, body, reproduce)
+    # An edit keeps the decisions on each cause whose rows it leaves alone: both
+    # versions run on the same rows (`unchanged_causes`), so the stored file
+    # must still be the version `explain` saved.
+    old = _stored_version(stored)
+    if old is not None and old.saved not in (None, old.fingerprint):
+        raise pipeline.Refusal(
+            f"{stored.name} was edited since `explain` saved it, so the version "
+            "its decisions were made on is gone and the rows check cannot run. "
+            f"Restore the saved version (`git checkout -- {stored}` if it is "
+            "committed), put the edit in a draft file and pass `--sql <draft>`. "
+            "Or delete its `-- saved` line to run it anyway: every decision on "
+            "it is then asked again"
+        )
+    if old is None and stored.is_file():
+        print(f"{_NO_ROWS_CHECK}: the stored version cannot be read")
     for b, query in reproduce.items():
         if b not in block:
             raise pipeline.Refusal(
@@ -2253,9 +2306,6 @@ def explain(
             moved=prepared.moved_at(moment),
             students=True,
         )
-        # An edit keeps the decisions on each cause whose rows it leaves alone:
-        # both versions run on the same rows (`unchanged_causes`).
-        old = _stored_version(stored)
         same = None
         if old is not None and old.fingerprint != explanation.fingerprint:
             try:

@@ -652,6 +652,85 @@ def test_a_cause_that_takes_another_causes_rows_re_opens_only_that_cause(
     )
 
 
+@pytest.mark.parametrize(
+    ("via_draft", "earlier"),
+    [
+        # The runbook's re-run: edit the stored file, run `explain` again.
+        (False, None),
+        # Its `-- unchanged` lines were written for the version before it.
+        (False, "a" * 64),
+        # The stored file was edited too, so it is not what was decided on.
+        (True, None),
+    ],
+)
+def test_an_explanation_edited_in_place_refuses_and_keeps_every_decision(
+    duck, tmp_path, monkeypatch, offline, via_draft, earlier
+):
+    run, cfg, sort_json, stored, old = _decided_on_old(tmp_path, monkeypatch, duck)
+    if earlier:
+        stored.write_text(
+            explain.compose(CAUSES, EXPLANATION, unchanged={"C2": (earlier,)})
+        )
+    # C2's rows move to C3; the edit keeps the saved fingerprint line.
+    edited = (
+        stored.read_text()
+        .replace("THEN 'C2'", "THEN 'C3'")
+        .replace(
+            f"-- cause C2 = {CAUSES['C2'][0]}: {CAUSES['C2'][1]}",
+            f"-- cause C2 = {CAUSES['C2'][0]}: {CAUSES['C2'][1]}\n"
+            "-- cause C3 = cube: the rows move here",
+        )
+    )
+    assert edited != stored.read_text()
+    stored.write_text(edited)
+    before = sort_json.read_text()
+    draft = None
+    if via_draft:
+        draft = tmp_path / "draft.sql"
+        draft.write_text(explain.compose(CAUSES, EXPLANATION))
+
+    with pytest.raises(pipeline.Refusal, match="edited since `explain` saved it"):
+        explain.explain(
+            cfg,
+            tmp_path / "validation" / "v.yml",
+            wh=_saved_wh(duck, run, cfg),
+            cube=None,
+            max_usd=1.0,
+            cache_root=tmp_path,
+            comparison="mastery",
+            bucket="cube_only",
+            sql=draft,
+        )
+
+    assert stored.read_text() == edited
+    assert sort_json.read_text() == before
+
+
+def test_an_explanation_saved_before_the_stamp_still_re_runs_in_place(
+    duck, tmp_path, monkeypatch, offline
+):
+    run, cfg, sort_json, stored, old = _decided_on_old(tmp_path, monkeypatch, duck)
+    unstamped = "\n".join(
+        line
+        for line in stored.read_text().splitlines()
+        if not line.startswith("-- saved")
+    )
+    stored.write_text(unstamped + "\n")
+
+    explain.explain(
+        cfg,
+        tmp_path / "validation" / "v.yml",
+        wh=_saved_wh(duck, run, cfg),
+        cube=None,
+        max_usd=1.0,
+        cache_root=tmp_path,
+        comparison="mastery",
+        bucket="cube_only",
+    )
+
+    assert explain.read_explanation(stored).saved == old
+
+
 def test_an_unchanged_line_survives_a_round_trip_and_never_moves_the_fingerprint(
     tmp_path,
 ):
@@ -663,6 +742,8 @@ def test_an_unchanged_line_survives_a_round_trip_and_never_moves_the_fingerprint
     saved = explain.read_explanation(path)
 
     assert f"-- unchanged C1 since {fp}\n" in text
+    assert f"-- saved {saved.fingerprint}\n" in text
+    assert saved.saved == saved.fingerprint
     assert saved.unchanged == {"C1": (fp,)}
     assert saved.causes == CAUSES and saved.body == EXPLANATION.strip()
     assert saved.fingerprint == explain.fingerprint(CAUSES, EXPLANATION)

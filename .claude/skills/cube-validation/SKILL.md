@@ -496,7 +496,9 @@ refuses when the view's only run read another fact.
       rest stay, with "explanation <file> leaves N rows unexplained". It then
       links the comparison's cells again and prints each cell left open, with
       why; those lines are unmasked: keep them out of GitHub. `--items <ids>`
-      narrows the printout only. After an edit, run it again without `--sql`. An
+      narrows the printout only. To edit a saved explanation, copy it to a
+      draft, edit the draft and pass `--sql <draft>`; never edit the stored file
+      (step 7 says why). Run it without `--sql` only to re-run it unchanged. An
       explanation reads its comparison's unmatched rows from the table `compare`
       saved, so it never rebuilds both sides. A missing table, or one whose
       labels name another run or SQL, refuses and names the next step:
@@ -714,17 +716,20 @@ refuses when the view's only run read another fact.
    changed, or whose cause's rows an explanation edit moved, decides nothing
    until re-approved through `decide`, never by pasting new fingerprints; one
    the owner answered (`answer:`) is never re-approved: delete it to ask again.
-   An edit saved through `explain` keeps the decisions on each cause whose rows
-   it left alone: `explain` runs the stored and the new version on the same rows
-   and writes `-- unchanged <bucket> since <fingerprint>` under the cause block
-   for each such cause. Never write or edit those lines by hand; an edit saved
-   outside `explain`, or one whose rows check is skipped (it says why), re-opens
-   every decision on the file. `decide` writes these; do not hand-write one. A
-   cause decision and a `group` decision on one group with different calls
-   refuse, in `decide`, `reapply` and `ask-owner`, even after the `group`
-   decision closed the group. That check reads the closed groups the latest
-   `sort` classified, so run `sort --no-trace` after `explain` saves a new
-   explanation and before the next `decide`.
+   An edit passed to `explain` as `--sql <draft>` keeps the decisions on each
+   cause whose rows it left alone: `explain` runs the stored and the draft
+   version on the same rows and writes
+   `-- unchanged <bucket> since <fingerprint>` under the cause block for each
+   such cause. Never write or edit those lines, or the `-- saved` line, by hand.
+   Never edit the stored file itself: `explain` refuses a stored file that
+   differs from its `-- saved` line, since the version its decisions were made
+   on is gone. A rows check that is skipped (it says why) re-opens every
+   decision on the file. `decide` writes these; do not hand-write one. A cause
+   decision and a `group` decision on one group with different calls refuse, in
+   `decide`, `reapply` and `ask-owner`, even after the `group` decision closed
+   the group. That check reads the closed groups the latest `sort` classified,
+   so run `sort --no-trace` after `explain` saves a new explanation and before
+   the next `decide`.
 
 8. `ask-owner <files> --domain <domain>` prints the validation issue's body: the
    numbered questions ready for the owner, each with the owner's hand checks,
