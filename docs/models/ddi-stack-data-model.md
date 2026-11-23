@@ -21,8 +21,10 @@ them; the stack fans the results out to:
 
 "Internal assessment" here means an Illuminate assessment someone tagged in the
 AppSheet — the tag is literally what makes it internal (see Terms). The stack
-covers the three NJ regions. Miami's final year on it is SY25-26; Miami returns
-when Focus assessment data is ingested, and there is no interim exception.
+covers the three NJ regions through Illuminate. Miami's Illuminate data ends
+with SY25-26; from SY26-27 on, Miami's Focus Apex assessments enter the same
+internal branch (the scaffold and the response rollup), with rows only for
+students who tested.
 
 Owner: Anthony Walters, Director, Data. Marya Shukla owns assessment-tagging
 quality control in the AppSheet and the standard-domains lookup; achievement
@@ -537,9 +539,9 @@ state testing results, both, or eventually Focus Assessments.
 - **NJ state history is capped at 7 years in the fact; FL is not.**
 - **5x/day star, daily Cube pre-agg.** Intraday rebuilds serve Tableau; Cube
   users see daily data.
-- **Miami exit.** Miami's Illuminate feed ended with SY25-26. Its historical
-  rows stay; nothing new lands until Focus assessment data is ingested, at which
-  point the internal branch grows a Focus source (decided 2026-09-30).
+- **Miami exit.** Miami's Illuminate feed ended with SY25-26, and its historical
+  rows stay. From SY26-27 on, the internal branch reads Miami's Focus Apex
+  assessments instead (decided 2026-09-30).
 
 ## Support themes
 
@@ -626,9 +628,6 @@ Found during the documentation run, not yet tracked separately:
   `int_assessments__academic_goals` and are masked downstream by
   `dim_assessment_goals`' highest-school-goal-wins dedupe. Check: `group by` the
   5 goal keys `having count(*) > 1`.
-- `rpt_tableau__assessment_dashboard`'s description carries a stale Miami row
-  count and says Miami AY2026 rows have "not landed upstream yet"; prod holds
-  zero Miami rows in any year and none will land — Miami left the stack.
 - `dim_assessments` documentation points at
   `bridge_assessment_administration_members` as the member drill-down, but that
   bridge is disabled with zero consumers.
