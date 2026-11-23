@@ -15,8 +15,8 @@ For each row on a table task (a subtask with a `Used by:` line of dashboard link
 `cube:` / `view:` stage):
   - its owner is the earliest-due dashboard its `Used by:` names; a dashboard with no due date sorts last,
     and a tie goes to the older dashboard task. A row whose owner is outside --section stays put.
-  - a done row stays on its table, which then stays too; an open row whose notes have a line starting
-    `Deferred:` moves directly under the owner dashboard.
+  - a done row moves under the owner's `Already in Cube` task, made the first time it is needed; an open
+    row whose notes have a line starting `Deferred:` moves directly under the owner dashboard.
   - an open row moves under the owner's PR task for that table: an open `PR (dbt|Cube): ...` subtask that
     names the table after its ` · ` (the Cube PR when both do), else a new
     `PR (dbt|Cube): open fields · <table>`, dbt when the table has an open `mart:` stage, its notes say
@@ -26,8 +26,8 @@ Another dashboard that uses the same row gets nothing: the builder's inventory f
 the run moves no row off is left alone, unless it is in the run (the whole project, or --section's own
 tables) and nothing is open on it: then it is deleted, or reported when an open stage is all that is left.
 On a table it does touch, an open subtask with no `Used by:` line stays put and is reported. Once nothing
-open is left on a table, the table task is deleted with its stages, unless it holds a done measure or
-dimension row (the status page counts it there) or an open stage has no PR to take its work (reported). A table holding a synced `#NNNN |` task is never deleted: the
+open is left on a table, the table task is deleted with its stages, unless a done row owned outside the
+run is still on it or an open stage has no PR to take its work (reported). A table holding a synced `#NNNN |` task is never deleted: the
 report names the task to move off first. GitHub, not Asana, records what shipped.
 """
 
@@ -39,6 +39,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 STAGE = re.compile(r"^(mart|cube|view):")
 DEFERRED = re.compile(r"^\s*Deferred:", re.M)
+ALREADY_IN_CUBE = "Already in Cube"
 SYNCED = re.compile(r"^#\d+\s*\|")  # a TEAMster task Zapier syncs from GitHub
 GID = re.compile(r"\b(\d{16})\b")
 
@@ -104,6 +105,27 @@ def plan(dashboards, tables, children_of, scope, section=None):
 
     creates, moves, unlinks, deletes, reports = {}, [], [], [], []
 
+    def already_in_cube(dash):
+        """The owner's `Already in Cube` task, made the first time a done row needs it."""
+        found = next(
+            (c for c in children_of.get(dash, []) if c["name"] == ALREADY_IN_CUBE), None
+        )
+        if found:
+            return found["gid"]
+        key = f"built:{dash}"
+        creates.setdefault(
+            key,
+            {
+                "op": "create",
+                "key": key,
+                "parent": dash,
+                "name": ALREADY_IN_CUBE,
+                "notes": "Measures and dimensions this dashboard needs first that are already "
+                "live in Cube. The status page counts them as ready.",
+            },
+        )
+        return f"new:{key}"
+
     for t in tables:
         subs = t["subtasks"]
         stages = [s for s in subs if stage_kind(s["name"])]
@@ -111,11 +133,30 @@ def plan(dashboards, tables, children_of, scope, section=None):
         left = []  # names of what stays on the table
         unclaimed = []  # open subtasks no dashboard claims: reported if the run touches the table
         touched = False  # the run moves at least 1 row off this table
+        kept_done = []  # done rows this run cannot move: they keep the table
         open_by_owner = {}
         for s in subs:
-            if s["gid"] in stage_gids or s.get("completed"):
-                continue  # a done row stays on its table, and keeps the table
+            if s["gid"] in stage_gids:
+                continue
             dashes = used_by(s) & by_gid.keys()
+            if s.get("completed"):
+                if dashes or sync.row_kind(s):
+                    owner = owner_of(dashes, by_gid)
+                    if owner and in_scope(owner):
+                        touched = True
+                        moves.append(
+                            {
+                                "op": "move",
+                                "task": s["gid"],
+                                "parent": already_in_cube(owner),
+                                "name": s["name"],
+                            }
+                        )
+                    else:
+                        kept_done.append(
+                            s["name"]
+                        )  # owned outside this run: the table stays
+                continue  # any other done subtask goes with its table
             if not dashes:
                 left.append(s["name"])
                 unclaimed.append(s["name"])
@@ -185,18 +226,9 @@ def plan(dashboards, tables, children_of, scope, section=None):
             if SYNCED.match(x["name"]) and x["gid"] not in moved_here
         ]
 
-        # a done measure or dimension row keeps its table: the status page counts it there
-        done_rows = [
-            x
-            for x in subs
-            if x.get("completed")
-            and x["gid"] not in stage_gids
-            and (sync.row_kind(x) or used_by(x))
-        ]
-
         def drop(why):
             """Delete the table with its stages, unless a done row or a synced task sits on it."""
-            if t.get("completed") or done_rows:
+            if t.get("completed") or kept_done:
                 return
             if synced:
                 reports.append(

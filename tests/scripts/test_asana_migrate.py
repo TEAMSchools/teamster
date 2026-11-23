@@ -77,7 +77,7 @@ def test_owner_is_the_earliest_due_and_undated_sorts_last(mig):
     assert mig.owner_of({"9999999999999999"}, by_gid) is None
 
 
-def test_a_table_holding_a_done_row_is_kept(mig):
+def test_a_done_row_moves_to_its_owners_already_in_cube_and_the_table_goes(mig):
     table = {
         "gid": "T1",
         "name": "dim_regions",
@@ -85,12 +85,20 @@ def test_a_table_holding_a_done_row_is_kept(mig):
         "subtasks": [row("R1", "Region", [STAT, DDI], done=True)],
     }
     actions = mig.plan(DASHES, [table], {d["gid"]: [] for d in DASHES}, None)
-    assert not ops(actions, "create")
-    assert not ops(actions, "move")
-    assert not ops(actions, "delete")
+    creates = ops(actions, "create")
+    assert [(c["parent"], c["name"]) for c in creates] == [(DDI, "Already in Cube")]
+    assert ops(actions, "move") == [
+        {
+            "op": "move",
+            "task": "R1",
+            "parent": f"new:{creates[0]['key']}",
+            "name": "Region",
+        }
+    ]
+    assert [a["task"] for a in ops(actions, "delete")] == ["T1"]
 
 
-def test_a_table_whose_rows_moved_but_holds_a_done_row_is_kept(mig):
+def test_a_done_row_reuses_an_existing_already_in_cube(mig):
     table = {
         "gid": "T31",
         "name": "fct_sight_words",
@@ -100,8 +108,36 @@ def test_a_table_whose_rows_moved_but_holds_a_done_row_is_kept(mig):
             row("R32", "Quiz number", [LIT], done=True, tags=("measure",)),
         ],
     }
-    actions = mig.plan(DASHES, [table], {d["gid"]: [] for d in DASHES}, None)
-    assert [a["task"] for a in ops(actions, "move")] == ["R31"]
+    children = {d["gid"]: [] for d in DASHES} | {
+        LIT: [{"gid": "H9", "name": "Already in Cube", "completed": False}]
+    }
+    actions = mig.plan(DASHES, [table], children, None)
+    assert {
+        "op": "move",
+        "task": "R32",
+        "parent": "H9",
+        "name": "Quiz number",
+    } in actions
+    assert not [c for c in ops(actions, "create") if c["name"] == "Already in Cube"]
+    assert [a["task"] for a in ops(actions, "delete")] == ["T31"]
+
+
+def test_a_done_row_owned_outside_the_section_keeps_its_table(mig):
+    table = {
+        "gid": "T32",
+        "name": "dim_students",
+        "notes": "",
+        "memberships": [{"section": {"name": "1 · Assessments"}}],
+        "subtasks": [row("R33", "Student name", [DDI], done=True)],
+    }
+    actions = mig.plan(
+        DASHES,
+        [table],
+        {d["gid"]: [] for d in DASHES},
+        {STAT},
+        section="1 · Assessments",
+    )
+    assert not ops(actions, "move")
     assert not ops(actions, "delete")
 
 
@@ -239,7 +275,7 @@ def test_scope_leaves_rows_owned_outside_it(mig):
     assert "T8" not in [a["task"] for a in ops(actions, "delete")]
 
 
-def test_an_existing_pr_is_reused_and_nothing_is_created(mig):
+def test_an_existing_pr_and_already_in_cube_are_reused(mig):
     table = {
         "gid": "T9",
         "name": "dim_student_enrollments",
@@ -251,6 +287,7 @@ def test_an_existing_pr_is_reused_and_nothing_is_created(mig):
     }
     children = {d["gid"]: [] for d in DASHES} | {
         DDI: [
+            {"gid": "H1", "name": "Already in Cube"},
             {
                 "gid": "P9",
                 "name": "PR (dbt): DDI student flags · dim_student_enrollments",
@@ -259,7 +296,8 @@ def test_an_existing_pr_is_reused_and_nothing_is_created(mig):
     }
     actions = mig.plan(DASHES, [table], children, None)
     assert ops(actions, "move") == [
-        {"op": "move", "task": "R10", "parent": "P9", "name": "Magoosh"}
+        {"op": "move", "task": "R9", "parent": "H1", "name": "SIPPS"},
+        {"op": "move", "task": "R10", "parent": "P9", "name": "Magoosh"},
     ]
     assert not ops(actions, "create")
 
