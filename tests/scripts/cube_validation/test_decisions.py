@@ -484,6 +484,9 @@ def test_cause_state_names_what_changed():
     assert cause_state(d, "p2", FP) == "explanation"
     assert cause_state(d, "p1", {**FP, "cube": "c2"}) == "sql"
     assert cause_state(_cause(fingerprints=dict(FP)), "p1", FP) == "explanation"
+    # An edit that left the cause's rows alone keeps a decision made before it.
+    assert cause_state(d, "p2", FP, ["p0", "p1"]) == "holds"
+    assert cause_state(d, "p2", {**FP, "cube": "c2"}, ["p1"]) == "sql"
 
 
 def test_apply_never_quiets_a_group_from_a_cause_decision():

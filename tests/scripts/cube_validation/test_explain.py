@@ -551,6 +551,124 @@ def test_explain_refreshes_the_decision_marks(duck, tmp_path, monkeypatch, offli
     assert set(item["decisions"].values()) == {"d0", "d1"}
 
 
+# A row Cube holds and the dashboard's table lacks: the explanation's first WHEN.
+MISSING = (4, "d", "Y")
+
+
+def _decided_on_old(tmp_path, monkeypatch, duck):
+    """A stored explanation with C1 and C2 decided on it (C2 answered by the
+    owner), and a run whose school Y row no cause of it explains."""
+    _tables(duck, cube_rows=[*CUBE_ROWS, MISSING])
+    run = _run([_group(3), _group(1, "Y")])
+    run.fingerprints = {"mastery": {"cube": "c", "dashboard": "d"}}
+    sort_json = _saved(tmp_path, monkeypatch, run)
+    directory = tmp_path / "validation" / "explanations" / "v"
+    directory.mkdir(parents=True)
+    stored = explain.explanation_path(directory, "mastery", "cube_only")
+    stored.write_text(explain.compose(CAUSES, EXPLANATION))
+    old = explain.fingerprint(CAUSES, EXPLANATION)
+    decided = [
+        Decision(f"d{i}", "mastery", "deliberate", "r",
+                 cause={"side": side, "label": words},
+                 fingerprints={"cube": "c", "dashboard": "d", "explanation": old},
+                 answer="fix_dashboard" if i else "")
+        for i, (side, words) in enumerate(CAUSES.values())
+    ]  # fmt: skip
+    cfg = ViewConfig(view="v", fact="m.fct", comparisons=[COMPARISON],
+                     decisions=decided)  # fmt: skip
+    return run, cfg, sort_json, stored, old
+
+
+def _labels(item):
+    return {c["label"] for c in item.get("cause") or []}
+
+
+def _explain_edit(tmp_path, duck, run, cfg, causes, body):
+    draft = tmp_path / "draft.sql"
+    draft.write_text(explain.compose(causes, body))
+    explain.explain(
+        cfg,
+        tmp_path / "validation" / "v.yml",
+        wh=_saved_wh(duck, run, cfg),
+        cube=None,
+        max_usd=1.0,
+        cache_root=tmp_path,
+        comparison="mastery",
+        bucket="cube_only",
+        sql=draft,
+    )
+
+
+def test_adding_a_cause_keeps_the_decisions_on_the_causes_whose_rows_held(
+    duck, tmp_path, monkeypatch, offline
+):
+    run, cfg, sort_json, stored, old = _decided_on_old(tmp_path, monkeypatch, duck)
+    causes = {**CAUSES, "C3": ("cube", "the dashboard's table lacks the row")}
+    body = EXPLANATION.replace(
+        "WHEN f.student IS NULL THEN 'UNEXPLAINED'", "WHEN f.student IS NULL THEN 'C3'"
+    )
+
+    _explain_edit(tmp_path, duck, run, cfg, causes, body)
+
+    saved = explain.read_explanation(stored)
+    assert saved.unchanged == {"C1": (old,), "C2": (old,)}
+    assert saved.fingerprint == explain.fingerprint(causes, body)
+    items = json.loads(sort_json.read_text())["items"]
+    (held,) = [i for i in items if _labels(i) == {CAUSES["C1"][1], CAUSES["C2"][1]}]
+    (new,) = [i for i in items if _labels(i) == {causes["C3"][1]}]
+    # C2 was answered by the owner: it holds, so nobody is asked again.
+    assert held["decided"] is True
+    assert set(held["decisions"].values()) == {"d0", "d1"}
+    assert not any("re-approve" in line for line in held["evidence"])
+    # The new cause's item waits for its own decision.
+    assert new["suggestion"] == "cause"
+    assert new["decisions"] == {f"cube: {causes['C3'][1]}": None}
+
+
+def test_a_cause_that_takes_another_causes_rows_re_opens_only_that_cause(
+    duck, tmp_path, monkeypatch, offline
+):
+    run, cfg, sort_json, stored, old = _decided_on_old(tmp_path, monkeypatch, duck)
+    causes = {**CAUSES, "C3": ("dashboard", "the dashboard drops rows failing both")}
+    # Before C1's WHEN, so it takes the row failing both checks from C1.
+    body = EXPLANATION.replace(
+        "WHEN NOT f.ok1 THEN 'C1'",
+        "WHEN NOT f.ok1 AND NOT f.ok2 THEN 'C3'\n    WHEN NOT f.ok1 THEN 'C1'",
+    )
+
+    _explain_edit(tmp_path, duck, run, cfg, causes, body)
+
+    assert explain.read_explanation(stored).unchanged == {"C2": (old,)}
+    item = next(
+        i
+        for i in json.loads(sort_json.read_text())["items"]
+        if CAUSES["C2"][1] in _labels(i)
+    )
+    assert item["decisions"][f"dashboard: {CAUSES['C2'][1]}"] == "d1"
+    assert item["decisions"][f"dashboard: {CAUSES['C1'][1]}"] is None
+    assert (
+        "decision d0: the explanation changed since the decision; re-approve"
+        in item["evidence"]
+    )
+
+
+def test_an_unchanged_line_survives_a_round_trip_and_never_moves_the_fingerprint(
+    tmp_path,
+):
+    fp = "a" * 64
+    text = explain.compose(CAUSES, EXPLANATION, unchanged={"C1": (fp,)})
+    path = tmp_path / "mastery__cube_only.sql"
+    path.write_text(text)
+
+    saved = explain.read_explanation(path)
+
+    assert f"-- unchanged C1 since {fp}\n" in text
+    assert saved.unchanged == {"C1": (fp,)}
+    assert saved.causes == CAUSES and saved.body == EXPLANATION.strip()
+    assert saved.fingerprint == explain.fingerprint(CAUSES, EXPLANATION)
+    assert saved.text == text
+
+
 # --- the tool counts: rows dropped, repeated or named by a value refuse --------------
 
 

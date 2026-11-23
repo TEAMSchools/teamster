@@ -1318,6 +1318,9 @@ def approved_decisions(
                 raise AnswerError(
                     f"{where}: item {item_id!r} has a cause with no words"
                 )
+            # A decision made on an earlier version that gave this cause the
+            # same rows still holds (`explain.unchanged_causes`).
+            same = tuple(c.get("unchanged") or ())
             key = (comparison, side, label)
             if len(explanations.get(key, ())) > 1:
                 raise AnswerError(
@@ -1329,7 +1332,7 @@ def approved_decisions(
                 found = sort.cause_decision(existing, comparison, side, label)
                 if found is not None:
                     target = decided[key] = _file_cause(found)
-                    state = cause_state(found, explanation, fp)
+                    state = cause_state(found, explanation, fp, same)
                     if state != "holds":
                         if found.answer:
                             raise AnswerError(
@@ -1366,7 +1369,7 @@ def approved_decisions(
                     f"{where}: the {side} cause {label!r} is decided "
                     f"{target['call']} in {target['id']!r}, not {call}"
                 )
-            elif target["fingerprints"].get("explanation") != explanation:
+            elif target["fingerprints"].get("explanation") not in (explanation, *same):
                 raise AnswerError(
                     f"{where}: {target['id']!r} was approved on another version of "
                     "the explanation; re-run `sort`"

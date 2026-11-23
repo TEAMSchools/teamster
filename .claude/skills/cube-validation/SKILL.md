@@ -48,8 +48,10 @@ these files never reach the semantic layer.
 Tableau and `CUBE_API_SECRET` come only from the pytest secrets fixture, and
 only the MAIN checkout's devcontainer template holds the Cube secret. So
 `find-field`, `rebuild-sheet`, `compare`, `sort`, `explain` and `members` go
-through a throwaway `tests/test_zz_cube_validation.py` in
-`/workspaces/teamster`, never a worktree copy:
+through a throwaway `tests/test_zz_cube_validation_<view>.py` in
+`/workspaces/teamster`, never a worktree copy. Name it for the view: sessions
+validating other views share that folder, and one session's runner must not
+replace another's between commands.
 
 1. Write the runner, filling in the worktree path, the URL (the Cube Cloud REST
    base ending `/cubejs-api/v1`; never commit it) and the arguments:
@@ -78,7 +80,7 @@ through a throwaway `tests/test_zz_cube_validation.py` in
 
 2. Run it from `/workspaces/teamster`, where the secrets load, with the
    validator worktree's environment, so the branch's sqlglot is used:
-   `uv run --project <worktree> pytest tests/test_zz_cube_validation.py -s --tb=short`.
+   `uv run --project <worktree> pytest tests/test_zz_cube_validation_<view>.py -s --tb=short`.
    Then delete the file.
 
 `ask-owner`, `decide`, `reapply`, `record-answers`, `read-sheet` and `describe`
@@ -708,12 +710,18 @@ refuses when the view's only run read another fact.
    words with each ID-shaped number written `<n>`, and `fingerprints` adds
    `explanation`, the explanation's. It names no group: each `sort` re-runs the
    explanations and marks an item `decided` when every one of its causes has a
-   decision that still holds, so a run never closes one. A decision whose SQL or
-   explanation changed decides nothing until re-approved through `decide`, never
-   by pasting new fingerprints; one the owner answered (`answer:`) is never
-   re-approved: delete it to ask again. `decide` writes these; do not hand-write
-   one. A cause decision and a `group` decision on one group with different
-   calls refuse, in `decide`, `reapply` and `ask-owner`, even after the `group`
+   decision that still holds, so a run never closes one. A decision whose SQL
+   changed, or whose cause's rows an explanation edit moved, decides nothing
+   until re-approved through `decide`, never by pasting new fingerprints; one
+   the owner answered (`answer:`) is never re-approved: delete it to ask again.
+   An edit saved through `explain` keeps the decisions on each cause whose rows
+   it left alone: `explain` runs the stored and the new version on the same rows
+   and writes `-- unchanged <bucket> since <fingerprint>` under the cause block
+   for each such cause. Never write or edit those lines by hand; an edit saved
+   outside `explain`, or one whose rows check is skipped (it says why), re-opens
+   every decision on the file. `decide` writes these; do not hand-write one. A
+   cause decision and a `group` decision on one group with different calls
+   refuse, in `decide`, `reapply` and `ask-owner`, even after the `group`
    decision closed the group. That check reads the closed groups the latest
    `sort` classified, so run `sort --no-trace` after `explain` saves a new
    explanation and before the next `decide`.

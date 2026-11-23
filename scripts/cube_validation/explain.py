@@ -31,7 +31,7 @@ import hashlib
 import json
 import re
 from collections import Counter
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 import sqlglot
@@ -90,6 +90,9 @@ _REPRODUCE = re.compile(r"--\s*reproduce\s+(?P<bucket>[A-Za-z][A-Za-z0-9_]*)\s*:
 _BLOCK = re.compile(
     r"--\s*cause\s+(?P<bucket>\S+)\s*=\s*(?P<side>\S+?)\s*:\s*(?P<words>.*\S)\s*"
 )
+_UNCHANGED = re.compile(
+    r"--\s*unchanged\s+(?P<bucket>[A-Za-z][A-Za-z0-9_]*)\s+since\s+(?P<fp>[0-9a-f]{64})\s*"
+)
 _STRINGS = (
     TokenType.STRING,
     TokenType.RAW_STRING,
@@ -131,10 +134,15 @@ class Explanation:
     # Per cause bucket, an aggregate query on today's tables an owner can run
     # (`-- reproduce <bucket>:`); not part of what the explanation explains.
     reproduce: dict[str, str] = field(default_factory=dict)
+    # Per cause bucket, the earlier versions' fingerprints under which that
+    # cause gave the same rows as this version (`-- unchanged <bucket> since
+    # <fingerprint>`, written by `explain`): a decision made on one of them
+    # still holds for the cause (`decisions.cause_state`).
+    unchanged: dict[str, tuple[str, ...]] = field(default_factory=dict)
 
     @property
     def text(self) -> str:
-        return compose(self.causes, self.body, self.reproduce)
+        return compose(self.causes, self.body, self.reproduce, self.unchanged)
 
     @property
     def recorded(self) -> str:
@@ -170,10 +178,17 @@ def compose(
     causes: dict[str, tuple[str, str]],
     body: str,
     reproduce: dict[str, str] | None = None,
+    unchanged: dict[str, tuple[str, ...]] | None = None,
 ) -> str:
     """The explanation file: the lint opt-outs, its bucket map, each cause's
-    reproduce query as comment lines, then the SQL."""
+    earlier fingerprints with the same rows, each cause's reproduce query as
+    comment lines, then the SQL."""
     block = [f"-- cause {b} = {side}: {words}" for b, (side, words) in causes.items()]
+    block += [
+        f"-- unchanged {b} since {fp}"
+        for b, fps in (unchanged or {}).items()
+        for fp in fps
+    ]
     for b, sql in (reproduce or {}).items():
         block.append(f"-- reproduce {b}:")
         block += [f"--  {line}" if line.strip() else "--" for line in sql.splitlines()]
@@ -205,6 +220,9 @@ def split_explanation(
             bucket, side, words = _cause(line)
             causes[bucket] = (side, words)
             current = None
+        elif line.startswith("-- unchanged"):
+            # Read by `unchanged_of`; not part of what the explanation explains.
+            current = None
         elif line.startswith("-- reproduce"):
             m = _REPRODUCE.fullmatch(line)
             if not m or m["bucket"] in reproduce:
@@ -224,6 +242,31 @@ def split_explanation(
         i += 1
     queries = {b: "\n".join(q).strip() for b, q in reproduce.items()}
     return causes, queries, "\n".join(lines[i:]).strip()
+
+
+def unchanged_of(text: str) -> dict[str, tuple[str, ...]]:
+    """An explanation's `-- unchanged <bucket> since <fingerprint>` lines, per
+    bucket of its `-- cause` block, in file order.
+
+    Raises:
+        pipeline.Refusal: An `-- unchanged` line names no bucket or no
+            fingerprint.
+    """
+    causes, _, body = split_explanation(text)
+    found: dict[str, tuple[str, ...]] = {}
+    for line in text[: len(text) - len(body)].splitlines():
+        line = line.strip()
+        if not line.startswith("-- unchanged"):
+            continue
+        m = _UNCHANGED.fullmatch(line)
+        if not m:
+            raise pipeline.Refusal(
+                "cannot read an `-- unchanged` line: `explain` writes "
+                "`-- unchanged <bucket> since <fingerprint>`; delete the line"
+            )
+        if m["bucket"] in causes and m["fp"] not in found.get(m["bucket"], ()):
+            found[m["bucket"]] = (*found.get(m["bucket"], ()), m["fp"])
+    return found
 
 
 def _cause(line: str) -> tuple[str, str, str]:
@@ -288,8 +331,11 @@ def read_explanation(path: Path) -> Explanation:
         raise pipeline.Refusal(
             f"{path.name}: name an explanation <comparison>__<{'|'.join(EXPLAINABLE)}>.sql"
         )
-    causes, reproduce, body = split_explanation(path.read_text())
-    return Explanation(path, comparison, bucket, causes, body, reproduce)
+    text = path.read_text()
+    causes, reproduce, body = split_explanation(text)
+    return Explanation(
+        path, comparison, bucket, causes, body, reproduce, unchanged_of(text)
+    )
 
 
 # --- the checks -------------------------------------------------------------------
@@ -1201,6 +1247,22 @@ def explanation_sql(
             as of the moment, or reads a table that changed during the build at
             the build end.
     """
+    body, literals = _pinned(wh, comparison, sides, explanation, build, moved)
+    ctes, select = unmatched_sql(comparison, explanation.bucket, items, table)
+    count = _student_count(comparison, explanation.bucket) if students else None
+    return explanation_query(ctes, select, body, literals, count), literals
+
+
+def _pinned(
+    wh: Warehouse,
+    comparison: Comparison,
+    sides: pipeline.RowSides,
+    explanation: Explanation,
+    build: Build,
+    moved: dict[str, bool] | None,
+) -> tuple[str, set[str]]:
+    """An explanation's checked SQL, its tables read as `explanation_sql` says,
+    and its string literals."""
     literals = check_sql(
         explanation.body, grain_names(comparison), identifying(comparison)
     )
@@ -1213,9 +1275,94 @@ def explanation_sql(
         wh,
         doing=f"read in {explanation.path.name}",
     )
-    ctes, select = unmatched_sql(comparison, explanation.bucket, items, table)
-    count = _student_count(comparison, explanation.bucket) if students else None
-    return explanation_query(ctes, select, body, literals, count), literals
+    return body, literals
+
+
+def same_rows_sql(
+    wh: Warehouse,
+    comparison: Comparison,
+    sides: pipeline.RowSides,
+    old: Explanation,
+    new: Explanation,
+    items: list[tuple[str, Group]],
+    build: Build,
+    *,
+    table: str,
+    moved: dict[str, bool] | None = None,
+) -> str:
+    """A query that runs 2 versions of an explanation on the same saved rows
+    and returns only counts: per pair of causes (`old_cause`, `new_cause`),
+    the rows the old version gives the first and the new version the second
+    (`n`). Runs no priced query.
+
+    Raises:
+        pipeline.Refusal: Either version fails `_pinned`.
+    """
+    old_body, _ = _pinned(wh, comparison, sides, old, build, moved)
+    new_body, _ = _pinned(wh, comparison, sides, new, build, moved)
+    ctes, select = unmatched_sql(comparison, new.bucket, items, table)
+    head = f"{ctes},\n" if ctes else "WITH "
+    return (
+        # trunk-ignore(bandit/B608): both explanations are the analyst's read-only SQL, vetted by check_sql; no values are interpolated
+        f"{head}__u AS (\n{select}\n),\n"
+        f"__o AS (\n{old_body.replace(PLACEHOLDER, '__u')}\n),\n"
+        f"__n AS (\n{new_body.replace(PLACEHOLDER, '__u')}\n)\n"
+        "SELECT o.cause AS old_cause, n.cause AS new_cause, COUNT(*) AS n\n"
+        "FROM __u AS u LEFT JOIN __o AS o ON o.__row = u.__row "
+        "LEFT JOIN __n AS n ON n.__row = u.__row\n"
+        "GROUP BY o.cause, n.cause"
+    )
+
+
+_NO_ROWS_CHECK = (
+    "Rows check skipped, so every decision on this explanation is asked again"
+)
+
+
+def _stored_version(path: Path) -> Explanation | None:
+    """The explanation stored at `path` before an edit, or None when there is
+    none or it cannot be read."""
+    try:
+        return read_explanation(path) if path.is_file() else None
+    except (OSError, pipeline.Refusal):
+        return None
+
+
+def unchanged_causes(
+    old: Explanation, new: Explanation, rows: list[dict] | None
+) -> dict[str, tuple[str, ...]]:
+    """Per cause of `new`, the fingerprints under which it gave the same rows.
+
+    A cause of `new` matches the cause of `old` with the same side and words
+    (`sort.cause_key`). With `rows` (`same_rows_sql`), it gave the same rows
+    when every row the old version gave its match the new version gives it,
+    and no other row: it keeps the match's fingerprints and adds the old
+    version's. With no rows (the same fingerprint, nothing to compare), it
+    keeps the match's fingerprints only. A cause with no match, or whose rows
+    moved, has none.
+    """
+
+    def key(e: Explanation, b: str) -> str:
+        return sort.cause_key(*e.causes[b])
+
+    match = {key(old, a): a for a in old.causes}
+    out: dict[str, tuple[str, ...]] = {}
+    for b in new.causes:
+        a = match.get(key(new, b))
+        if a is None:
+            continue
+        fps = old.unchanged.get(a, ())
+        if rows is not None:
+            if any(
+                int(r["n"] or 0)
+                for r in rows
+                if (r["old_cause"] == a) != (r["new_cause"] == b)
+            ):
+                continue
+            fps = (*fps, old.fingerprint)
+        if kept := tuple(dict.fromkeys(f for f in fps if f != new.fingerprint)):
+            out[b] = kept
+    return out
 
 
 def _counted(
@@ -1297,6 +1444,11 @@ def apply_outcomes(
                         "step": b,
                         "label": explanation.causes[b][1],
                         "n_rows": n,
+                        **(
+                            {"unchanged": list(explanation.unchanged[b])}
+                            if explanation.unchanged.get(b)
+                            else {}
+                        ),
                     }
                     for b, n in outcome.counts.most_common()
                 ],
@@ -2088,17 +2240,31 @@ def explain(
             print(f"Reproduce {b}: dry run OK, ${usd:.2f} on today's tables.")
         prepared = trace.Prepared(schools=network_schools(wh))
         moment = run.moment_of(target.id)
+        sides = prepared.row_sides(cfg, target, run, wh, cube)
+        table = require_saved(wh, cfg, run, target)
         query, literals = explanation_sql(
             wh,
             target,
-            prepared.row_sides(cfg, target, run, wh, cube),
+            sides,
             explanation,
             bucket_items,
             moment,
-            table=require_saved(wh, cfg, run, target),
+            table=table,
             moved=prepared.moved_at(moment),
             students=True,
         )
+        # An edit keeps the decisions on each cause whose rows it leaves alone:
+        # both versions run on the same rows (`unchanged_causes`).
+        old = _stored_version(stored)
+        same = None
+        if old is not None and old.fingerprint != explanation.fingerprint:
+            try:
+                same = same_rows_sql(
+                    wh, target, sides, old, explanation, bucket_items, moment,
+                    table=table, moved=prepared.moved_at(moment),
+                )  # fmt: skip
+            except pipeline.Refusal as exc:
+                print(f"{_NO_ROWS_CHECK}: the stored version {exc}")
         # The comparisons on the same model and grain with no explanation of
         # their own run every sibling's, this one included. A refusal there
         # keeps this explanation.
@@ -2106,26 +2272,60 @@ def explain(
             cfg, run, stored.parent, explanation, target, wh, cube, prepared
         )
         # Every query is priced before any runs, under one cap check.
-        price, *prices = trace.dry_runs(wh, [query, *(j[2] for j in jobs)])
+        price, *prices = trace.dry_runs(
+            wh, [query, *(j[2] for j in jobs), *([same] if same else [])]
+        )
         if isinstance(price, GoogleAPIError):
             raise _refused(explanation.path.name, price) from price
         print(f"Explanation {explanation.path.name}: ${price:.2f} (dry run).")
+        same_price = prices.pop() if same else 0.0
+        if isinstance(same_price, GoogleAPIError):
+            print(
+                f"{_NO_ROWS_CHECK}: BigQuery refused it ({bigquery_said(same_price)})"
+            )
+            same, same_price = None, 0.0
+        elif same:
+            print(
+                f"Rows check against the stored version: ${same_price:.2f} (dry run)."
+            )
         ready, also = _price_jobs(jobs, prices)
         if ready:
             print(
                 f"On the comparisons sharing its rows: {len(ready)} to run, "
                 f"${also:.2f} (dry run)."
             )
-        wh.refuse_past_caps(price + also)
+        wh.refuse_past_caps(price + also + same_price)
         found, students = _counted(
             wh, query, explanation, bucket_items, literals, target
         )
+        same_rows = None
+        if same:
+            try:
+                same_rows = wh.rows(same, timeout_s=TIMEOUT_S)
+            except GoogleAPIError as exc:
+                print(f"{_NO_ROWS_CHECK}: BigQuery refused it ({bigquery_said(exc)})")
         for job in ready:
             _run_job(wh, *job)
         for ran in shared:
             if ran.why:
                 print(ran.why)
 
+    if old is not None and (
+        same_rows is not None or old.fingerprint == explanation.fingerprint
+    ):
+        explanation = replace(
+            explanation, unchanged=unchanged_causes(old, explanation, same_rows)
+        )
+        if kept := sorted(explanation.unchanged):
+            print(
+                f"Rows unchanged for {', '.join(kept)}: the decisions made on them "
+                "still hold."
+            )
+        # The siblings' items read the same file.
+        shared = [
+            replace(r, explanation=explanation) if r.explanation.path == stored else r
+            for r in shared
+        ]
     stored.parent.mkdir(parents=True, exist_ok=True)
     stored.write_text(explanation.text)
     apply_outcomes(all_items, explanation, found)

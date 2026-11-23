@@ -1010,6 +1010,23 @@ def test_a_cause_decision_on_a_changed_explanation_is_re_approved():
     }
 
 
+def test_an_answered_cause_decision_holds_on_an_edit_that_left_its_rows_alone():
+    # The edit added another cause; `explain` found this cause's rows unchanged.
+    same = {**_cause_entry(NO_SECTION), "unchanged": ["old"]}
+    items = [_cause_item("k2", same), _cause_item("k3", same)]
+    answered = _existing(explanation="old", answer="fix_dashboard")
+
+    assert (
+        approved_decisions(
+            [_ok("new", "k2"), _ok("again", "k3")],
+            {"items": items},
+            CAUSE_FPS,
+            existing=[answered],
+        )  # fmt: skip
+        == []
+    )
+
+
 def _d2_d4():
     """A D2+D4 group beside a pure D2 and a pure D4 group, as DDI has."""
     d2, d4 = "no subject section covers the date", "the enrollment key has no row"
