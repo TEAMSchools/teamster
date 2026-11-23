@@ -348,3 +348,28 @@ def test_a_deferred_row_goes_to_the_deferred_holder(mig):
         "name": "MTSS enrollment",
     } in actions
     assert not [c for c in ops(actions, "create") if c["name"].startswith("PR ")]
+
+
+def test_an_open_row_prefers_the_cube_pr_when_both_name_the_table(mig):
+    table = {
+        "gid": "T13",
+        "name": "fct_sight_words",
+        "notes": "",
+        "subtasks": [row("R15", "Quiz number", [LIT])],
+    }
+    children = {d["gid"]: [] for d in DASHES} | {
+        LIT: [
+            {"gid": "PD", "name": "PR SW1 (dbt): fct_sight_words"},
+            {
+                "gid": "PC",
+                "name": "PR SW2 (Cube): sight_words cube over fct_sight_words",
+            },
+        ]
+    }
+    actions = mig.plan(DASHES, [table], children, None)
+    assert {
+        "op": "move",
+        "task": "R15",
+        "parent": "PC",
+        "name": "Quiz number",
+    } in actions

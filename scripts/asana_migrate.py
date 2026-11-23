@@ -167,8 +167,15 @@ def plan(dashboards, tables, children_of, scope):
 
         pr_refs = []
         for owner, rows in open_by_owner.items():
-            found = existing(
-                owner, lambda n, table=t["name"]: bool(sync.pr_type(n)) and table in n
+            # a row sits under the PR that ships its Cube member: the Cube PR when a dbt PR comes first
+            named = [
+                c
+                for c in children_of.get(owner, [])
+                if sync.pr_type(c["name"]) and t["name"] in c["name"]
+            ]
+            found = next(
+                (c for c in named if sync.pr_type(c["name"]) == "cube"),
+                named[0] if named else None,
             )
             if found:
                 ref = found["gid"]
