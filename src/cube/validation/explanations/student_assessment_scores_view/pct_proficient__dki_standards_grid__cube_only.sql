@@ -7,6 +7,15 @@
 -- cause D4 = dashboard: the student is in an out-of-district placement (not co.is_out_of_district)
 -- cause D5 = dashboard: the dashboard drops WPP modules (r.module_type != 'WPP')
 -- cause D6 = dashboard: the dashboard keeps grades 0 to 12 only
+-- cause D7 = dashboard: the dashboard drops assessments with no module type (r.module_type != 'WPP' is not true for a null)
+-- unchanged C2 since 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4
+-- unchanged D1 since 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4
+-- unchanged D2 since 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4
+-- unchanged D3 since 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4
+-- unchanged D4 since 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4
+-- unchanged D5 since 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4
+-- unchanged D6 since 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4
+-- saved 52acbccac9b3c2a0ac68952679ec03046e2965256713891eeef3f7d168b4d1bc
 
 WITH rollup_rows AS (
   SELECT
@@ -21,7 +30,11 @@ WITH rollup_rows AS (
   WHERE rr.academic_year >= 2025
 ),
 per_score AS (
-  SELECT student, assessment, LOGICAL_OR(module_type = 'WPP') AS is_wpp
+  SELECT
+    student,
+    assessment,
+    LOGICAL_OR(module_type = 'WPP') AS is_wpp,
+    LOGICAL_AND(module_type IS NULL) AS is_untagged
   FROM rollup_rows
   GROUP BY student, assessment
 ),
@@ -66,6 +79,7 @@ SELECT
     WHEN NOT w.status_ok THEN 'D3'
     WHEN NOT w.district_ok THEN 'D4'
     WHEN p.is_wpp THEN 'D5'
+    WHEN p.is_untagged THEN 'D7'
     WHEN NOT w.grade_ok THEN 'D6'
     ELSE 'UNEXPLAINED'
   END AS cause
