@@ -257,11 +257,34 @@ the owner's walkthrough or a workbook download.
 - **Worth knowing**:
   - Population: `rn_year = 1`, `grade_level != 99`, current and prior academic
     year only.
-  - Miami holds **zero rows in prod** in every year (measured 2026-10-02): the
-    rollup still carries Miami AY2025 responses, but none survive this model's
-    enrollment join after the Focus cutover.
+  - Miami rows from SY26-27 on are Focus Apex assessments. Focus Apex holds a
+    row only for a student who tested, so Miami has no assigned-but-not-taken
+    rows and its Module Dashboard completion reads about 100%.
   - `power_standard_goal`, `is_power_standard`, `standard_domain` are hardcoded
     null — retired fields kept so the workbook's field list does not break.
+  - Module Dashboard completion is computed in the workbook. An assignment is
+    one student and one assessment: its `overall` row when taken, its
+    null-`response_type` row when not. An assignment is counted once its
+    `administered_at` is today or earlier, and taken when its `overall` row has
+    a `percent_correct`. Completion is taken over counted assignments, counted
+    distinctly per student and assessment, in a cell of academic year, school,
+    subject area, module type, module number, replacement flag and heatmap
+    column. An assessment not yet due has no counted assignments, so its
+    completion is null and the dashboard's completion filter hides it.
+  - The Module Dashboard reads the null-`response_type` rows only for
+    completion. Its `response_type` filter keeps the `overall` rows on every
+    sheet, as an ordinary filter rather than a context filter, so the `FIXED`
+    completion calcs still see the not-taken rows. Where a mark covers several
+    cells (the summary row, the Assessments Over Time tooltip), completion is
+    pooled: taken over counted across those cells. A cell where nobody has a
+    score shows no mark and is left out of a pooled number. Untagged assessments
+    have no not-taken rows, so their completion reads 100% wherever it is shown,
+    the Assessment Dashboard included.
+  - The Module Dashboard's `Heatmap Columns` control puts either grade level or,
+    for grades 9 to 12, the assessment's `subject_area` across the top of its
+    two heatmaps; grades K to 8 keep their grade either way. The control is
+    workbook-wide, so in Course Subject mode a high school's completion cell is
+    one subject across all its grades on every sheet that shows completion.
 
 ### rpt_tableau__ddi_dashboard
 
