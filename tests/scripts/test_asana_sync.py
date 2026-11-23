@@ -83,3 +83,92 @@ def test_want_status_ignores_done_blockers(mod):
         mod.want_status(live=False, stage_blockers=[done_mart], needs_line="cube")
         == "needs-cube"
     )
+
+
+def _tags(*names):
+    return [{"name": n} for n in names]
+
+
+def test_pr_type_from_bracket(mod):
+    assert mod.pr_type("PR SW1 (dbt): fct_sight_words") == "dbt"
+    assert mod.pr_type("PR SW2 (Cube): sight_words cube and sight_words_view") == "cube"
+
+
+def test_pr_type_from_synced_name(mod):
+    assert mod.pr_type("#6461 | feat(cube): build Literacy Dashboard in Cube") == "cube"
+    assert (
+        mod.pr_type("#6394 | feat(dbt,cube): make assessment tagging checks possible")
+        == "dbt"
+    )
+    assert mod.pr_type("Validate Literacy Dashboard in Cube") is None
+    assert mod.pr_type("Already in Cube") is None
+
+
+def test_rows_under_finds_both_depths(mod):
+    dash = {"gid": "D"}
+    direct = {"gid": "m1", "name": "% Proficient", "tags": _tags("measure")}
+    pr = {"gid": "P", "name": "PR L1 (Cube): percentile", "tags": []}
+    work = {"gid": "w", "name": "PM design: answer", "tags": []}
+    dim = {"gid": "d1", "name": "national_percentile", "tags": _tags("dimension")}
+    rows, untagged = mod.rows_under(dash, [direct, pr, work], {"P": [dim]})
+    assert rows == [(direct, None), (dim, pr)]
+    assert untagged == []
+
+
+def test_rows_under_skips_table_tasks(mod):
+    table = {"gid": "T", "name": "fct_sight_words", "tags": []}
+    row = {"gid": "r", "name": "Sight word", "tags": _tags("dimension")}
+    rows, untagged = mod.rows_under({"gid": "D"}, [table], {"T": [row]})
+    assert rows == [] and untagged == []
+
+
+def test_untagged_row_under_dashboard_is_reported(mod):
+    pr = {"gid": "P", "name": "PR SW2 (Cube): sight_words cube", "tags": []}
+    holder = {"gid": "H", "name": "Already in Cube", "tags": []}
+    a = {"gid": "a", "name": "quiz number", "tags": []}
+    b = {"gid": "b", "name": "value group", "tags": []}
+    rows, untagged = mod.rows_under({"gid": "D"}, [pr, holder], {"P": [a], "H": [b]})
+    assert rows == []
+    assert untagged == [a, b]
+
+
+def test_open_dbt_blocker_is_needs_data(mod):
+    parent = {"name": "PR PM4 (Cube): PM cubes", "completed": False}
+    dbt = {"name": "PR PM1 to PM3 (dbt): DIBELS PM facts", "completed": False}
+    done_dbt = dict(dbt, completed=True)
+    assert (
+        mod.want_status_pr(live=False, parent=parent, parent_blockers=[dbt])
+        == "needs-data"
+    )
+    assert (
+        mod.want_status_pr(live=False, parent=parent, parent_blockers=[done_dbt])
+        == "needs-cube"
+    )
+    assert (
+        mod.want_status_pr(live=False, parent=parent, parent_blockers=[])
+        == "needs-cube"
+    )
+
+
+def test_open_dbt_parent_is_needs_data(mod):
+    parent = {"name": "PR SW1 (dbt): fct_sight_words", "completed": False}
+    assert (
+        mod.want_status_pr(live=False, parent=parent, parent_blockers=[])
+        == "needs-data"
+    )
+
+
+def test_merged_parent_not_live_is_needs_cube(mod):
+    parent = {"name": "PR L1 (Cube): national_percentile", "completed": True}
+    assert (
+        mod.want_status_pr(live=False, parent=parent, parent_blockers=[])
+        == "needs-cube"
+    )
+
+
+def test_live_row_and_holders_have_no_status(mod):
+    parent = {"name": "PR L1 (Cube): national_percentile", "completed": False}
+    assert mod.want_status_pr(live=True, parent=parent, parent_blockers=[]) is None
+    for holder in ("Already in Cube", "Deferred"):
+        h = {"name": holder, "completed": False}
+        assert mod.want_status_pr(live=False, parent=h, parent_blockers=[]) is None

@@ -14,10 +14,16 @@ Needs ASANA_PAT, your own personal access token, in the environment for both mod
 developer console (app.asana.com/0/my-apps), then load it without echoing it or saving it to history:
   read -rs ASANA_PAT && export ASANA_PAT
 
-Dashboards are the project's top-level tasks tagged `dashboard`. Rows are a dashboard task's measure subtasks
-(notes carry a `Status:` line) and dimension rows: subtasks of table tasks, other than `mart:` / `cube:` / `view:`
-stages, whose notes carry a `Used by:` line of dashboard task links. One dimension row lives on the table its
-column comes from. Each run:
+Dashboards are the project's top-level tasks tagged `dashboard`. Rows are:
+  - a dashboard task's measure subtasks (tagged `measure`, or notes carrying a `Status:` line);
+  - rows tagged `measure` or `dimension` under a dashboard's PR tasks (`PR <id> (dbt|Cube): ...`, or a synced
+    `#NNNN | <type>(<scope>): ...` task) and its `Already in Cube` / `Deferred` holders. With no stage
+    blockers left, such a row's status comes from its parent: needs-data while the parent is an open dbt PR
+    or an open dbt PR blocks it, needs-cube otherwise, none under a holder. Untagged subtasks of a PR task or
+    a holder are reported, since the status page drops a row with no kind tag;
+  - dimension rows: subtasks of table tasks, other than `mart:` / `cube:` / `view:` stages, whose notes carry
+    a `Used by:` line of dashboard task links. One dimension row lives on the table its column comes from.
+Each run:
   1. Chains stages inside every table task: `mart:` blocks `cube:`, `cube:` blocks `view:` (adds only missing links).
      1b. Makes each table task block every dashboard a dimension row on it names in `Used by:` (adds only missing
      links). A table, not each column, blocks the dashboard: Asana caps a task at 30 dependencies plus dependents.
@@ -133,6 +139,68 @@ def want_status(*, live, stage_blockers, needs_line):
     return None
 
 
+HOLDERS = ("Already in Cube", "Deferred")
+PR_BRACKET = re.compile(r"\((dbt|cube)\)", re.I)
+SYNCED_SCOPE = re.compile(r"^#\d+\s*\|\s*\w+\(([^)]*)\)")
+
+
+def pr_type(name):
+    """'dbt' or 'cube' for a PR task, from `(dbt)` / `(Cube)` or a synced task's commit scope.
+
+    A synced `#NNNN | feat(dbt,cube): ...` PR changes the data first, so dbt wins when both appear.
+    """
+    if m := PR_BRACKET.search(name or ""):
+        return m.group(1).lower()
+    if m := SYNCED_SCOPE.match(name or ""):
+        scopes = {x.strip().lower() for x in m.group(1).split(",")}
+        if "dbt" in scopes:
+            return "dbt"
+        if "cube" in scopes:
+            return "cube"
+    return None
+
+
+def rows_under(dashboard, children, grandchildren):
+    """Rows under one dashboard task, each with its parent, and the untagged tasks that look like rows.
+
+    A row is a task tagged `measure` or `dimension`: a direct subtask of the dashboard (parent None) or a
+    subtask of a PR task, holder or other work item under it (parent = that subtask). Table tasks under a
+    dashboard keep their own path. An untagged subtask of a PR task or a holder is reported: without its
+    kind tag it drops off the status page.
+    """
+    rows, untagged = [], []
+    for c in children:
+        if TABLE.match(c["name"]):
+            continue
+        if row_kind(c):
+            rows.append((c, None))
+            continue
+        kids = grandchildren.get(c["gid"], [])
+        for g in kids:
+            if row_kind(g):
+                rows.append((g, c))
+            elif pr_type(c["name"]) or c["name"] in HOLDERS:
+                untagged.append(g)
+    return rows, untagged
+
+
+def want_status_pr(*, live, parent, parent_blockers):
+    """The status tag for a row under a PR task or a holder.
+
+    needs-data while the parent is an open dbt PR or an open dbt PR blocks it; otherwise needs-cube, including
+    a merged parent whose members are not on a public view yet. Holders give none.
+    """
+    if live or parent["name"] in HOLDERS:
+        return None
+    if pr_type(parent["name"]) == "dbt" and not parent.get("completed"):
+        return "needs-data"
+    if any(
+        pr_type(b["name"]) == "dbt" and not b.get("completed") for b in parent_blockers
+    ):
+        return "needs-data"
+    return "needs-cube"
+
+
 def view_includes(yml):
     """(include name, exposed name) for each member of one view file.
 
@@ -239,8 +307,12 @@ def ensure_tag(name):
 
 
 # ---------------------------------------------------------------- one row
-def sync_row(r, kind):
-    """Steps 2-6 for one measure row or one dimension row."""
+def sync_row(r, kind, parent=None, parent_blockers=()):
+    """Steps 2-6 for one measure row or one dimension row.
+
+    A row under a PR task or a holder (parent given) takes its status from that parent while it has no
+    stage blockers left; a row still linked to table stages keeps the stage rule.
+    """
     notes = r.get("notes") or ""
     rid, name = r["gid"], f"[{kind}] {r['name'][:64]}"
     have = {t["gid"] for t in r.get("tags", [])}
@@ -328,11 +400,16 @@ def sync_row(r, kind):
         )
     # 3. status tag: what an open row still needs; a blocker outranks the notes' `Needs:` line
     needs = NEEDS.search(notes)
-    want = want_status(
-        live=live,
-        stage_blockers=blockers,
-        needs_line=needs.group(1) if needs else None,
-    )
+    if parent is not None and not blockers:
+        want = want_status_pr(
+            live=live, parent=parent, parent_blockers=list(parent_blockers)
+        )
+    else:
+        want = want_status(
+            live=live,
+            stage_blockers=blockers,
+            needs_line=needs.group(1) if needs else None,
+        )
     for n in STATUS:
         if n != want and status_gid[n] in have:
             write(
@@ -478,11 +555,31 @@ def main(argv):
 
     # ------------------------------------------------------------ 2-6. measure and dimension rows
     print("\n2-6. Measure and dimension rows")
-    report_odd_dash_blockers = []
+    report_odd_dash_blockers, report_untagged = [], []
     for dash in dashboards:
         if ONLY and dash != ONLY:
             continue
-        rows = get_all(f"/tasks/{dash}/subtasks", {"opt_fields": ROWF})
+        rows = get_all(
+            f"/tasks/{dash}/subtasks", {"opt_fields": ROWF + ",num_subtasks"}
+        )
+        # rows under the dashboard's PR tasks and holders
+        grandchildren = {
+            c["gid"]: get_all(f"/tasks/{c['gid']}/subtasks", {"opt_fields": ROWF})
+            for c in rows
+            if c.get("num_subtasks") and not TABLE.match(c["name"])
+        }
+        nested, untagged = rows_under({"gid": dash}, rows, grandchildren)
+        report_untagged += [f"{dash}: {u['name'][:70]} ({u['gid']})" for u in untagged]
+        blockers_of = {}
+        for r, parent in nested:
+            if parent is None:
+                continue  # direct rows sync below, with the legacy `Status:` rows
+            if parent["gid"] not in blockers_of:
+                blockers_of[parent["gid"]] = get_all(
+                    f"/tasks/{parent['gid']}/dependencies",
+                    {"opt_fields": "name,completed"},
+                )
+            sync_row(r, row_kind(r), parent, blockers_of[parent["gid"]])
         # with no verdict for any row, --apply would strip the whole dashboard's 'validated' tags
         if (
             ONLY
@@ -494,9 +591,11 @@ def main(argv):
                 f"latest.json has no verdict for any row of {ONLY}: merge this run's verdicts first."
             )
         for r in rows:
-            if "Status:" in (r.get("notes") or ""):
-                sync_row(r, "measure")
-            # anything else (checklist steps etc.) is not a row
+            if TABLE.match(r["name"]):
+                continue
+            if row_kind(r) or "Status:" in (r.get("notes") or ""):
+                sync_row(r, row_kind(r) or "measure")
+            # anything else (PR tasks, holders, checklist steps) is not a row
         # 1b. every table holding a dimension row this dashboard uses blocks the dashboard (adds only missing links)
         deps = get_all(f"/tasks/{dash}/dependencies", {"opt_fields": "name"})
         need = sorted(uses.get(dash, set()) - {d["gid"] for d in deps})
@@ -546,6 +645,11 @@ def main(argv):
     if report_unknown_used_by:
         print(f"\n`Used by:` names a task that is not tagged '{DASHBOARD_TAG}':")
         print("\n".join("  " + x for x in report_unknown_used_by))
+    if report_untagged:
+        print(
+            "\nRows with no kind tag (tag each `measure` or `dimension`, or the status page drops it):"
+        )
+        print("\n".join("  " + x for x in report_untagged))
     if report_unverified:
         print("\nBlockers done but not verified on main (left open):")
         print("\n".join("  " + x for x in report_unverified))
