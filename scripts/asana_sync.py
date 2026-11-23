@@ -268,6 +268,15 @@ def member(x):
 
 
 # ---------------------------------------------------------------- Asana and git
+def connect(token):
+    """Open the Asana session that call() and get_all() use."""
+    global s
+    import requests
+
+    s = requests.Session()
+    s.headers.update({"Authorization": f"Bearer {token}"})
+
+
 def call(method, path, data=None, params=None):
     if s is None:
         raise RuntimeError("main() opens the session before any call")
@@ -453,7 +462,7 @@ def sync_row(r, kind, parent=None, parent_blockers=()):
 
 # ---------------------------------------------------------------- the run
 def main(argv):
-    global APPLY, ONLY, s, validation, validated_gid
+    global APPLY, ONLY, validation, validated_gid
 
     APPLY = "--apply" in argv
     ONLY = argv[argv.index("--only") + 1] if "--only" in argv[:-1] else None
@@ -470,10 +479,7 @@ def main(argv):
     token = (os.environ.get("ASANA_PAT") or "").strip()
     if not token:
         sys.exit("Set ASANA_PAT first: read -rs ASANA_PAT && export ASANA_PAT")
-    import requests
-
-    s = requests.Session()
-    s.headers.update({"Authorization": f"Bearer {token}"})
+    connect(token)
 
     # ------------------------------------------------------------ shipped Cube members on main
     git("fetch", "origin", "main", "-q")
