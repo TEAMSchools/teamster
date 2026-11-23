@@ -12,9 +12,11 @@ and the table tasks for the work.
 The change makes each dashboard task hold its own dated build plan. A build that
 serves several dashboards is planned under the dashboard that needs it first.
 Every later dashboard gets a "Confirm" item, so reused work is checked instead
-of overlooked. The end state has no table tasks. Each dashboard task holds PR
-tasks, and each PR task holds rows named for the Cube measures and dimensions it
-ships. The semantic layer build status page reads those rows.
+of overlooked. The end state has no open table tasks and no open `mart:`,
+`cube:` or `view:` stage tasks; both are closed, not deleted, so their history
+stays. Each dashboard task holds PR tasks, and each PR task holds rows named for
+the Cube measures and dimensions it ships. The semantic layer build status page
+reads those rows.
 
 ## Goals
 
@@ -170,8 +172,12 @@ rows serve 4 dashboards, already planned as 4 PRs.
   way.
 - **Stage subtasks (builder's call).** When a row moves to a PR task, the
   builder removes the row's blocked-by links to the table's `mart:`, `cube:` and
-  `view:` stages, so status comes from the PR alone. When the last row leaves a
-  table task, its stage subtasks close with it.
+  `view:` stages, so status comes from the PR alone. The PR tasks take over both
+  jobs the stages did: a dbt PR blocks the Cube PR that reads it, and the parent
+  PR sets the row's status. A stage that is done closes with its table task. A
+  stage with work left becomes a PR task under the earliest-due dashboard that
+  needs it, and only closes once it is empty. A table task closes when it has no
+  rows and no open stages.
 - **Promotion.** After the builder opens a PR, it waits for the synced `#NNNN |`
   task (up to a few minutes). It moves that task under the dashboard, gives it
   the placeholder's due date and owner, moves the placeholder's rows under it,
