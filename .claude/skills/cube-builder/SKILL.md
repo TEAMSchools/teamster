@@ -28,8 +28,8 @@ holds the package. Keep the builder's working files in
 - Claude posts and edits only what the analyst approved: the build issue, Asana
   edits, pull requests.
 - Asana mirrors the approved build plan: the dashboard task holds the plan's PR
-  tasks, decisions, deferred rows and Validate task (_Plan_ step 3). Show each
-  change in the build issue first; make it after the analyst approves.
+  tasks, deferred rows and Validate task (_Plan_ step 3). Show each change in
+  the build issue first; make it after the analyst approves.
 - GitHub text carries field and member names and counts, never a student's or
   staff member's name, number or row; counts under 10 read `<10`.
 - A new student-level column (a tier, a bucket, a flag) is PII: tag it
@@ -141,8 +141,8 @@ _Build_ step 4.
      owner. Only the dashboard task carries a due date. The tables after the `·`
      (comma-separated) are the table tasks its rows came from; the sync reads
      the type and `scripts/asana_migrate.py` matches on the tables. A dbt PR
-     blocks the Cube PR that reads its columns. Each decision is a subtask with
-     an owner.
+     blocks the Cube PR that reads its columns. An open decision goes in the
+     notes of the PR task it blocks, or on the hub issue; never its own task.
    - A `Validate <dashboard> in Cube` task blocked by every PR task, never by
      rows (Asana caps a task at 30 dependencies plus dependents).
    - Move the hub issue's synced `#NNNN |` task under the dashboard.
