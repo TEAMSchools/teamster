@@ -658,6 +658,23 @@ def questions_json(
             and _covers(d, item.get("stub") or {})
         ]
 
+    def evidence_of(view: str, d: Decision) -> list[str]:
+        """A decision's posted evidence lines.
+
+        A holding `formula` decision quiets its cells, so a `sort` after it
+        lists no item for them: their evidence comes from the run itself.
+        """
+        if not d.formula:
+            return [
+                line for item in covered(view, [d]) for line in item.get("evidence", [])
+            ]
+        return [
+            line
+            for held, diff in by_run[view].applied.quiet_cells
+            if held == d
+            for line in sort.formula_evidence(by_run[view], diff)[2]
+        ]
+
     out = []
     for n, q in enumerate(owner_questions(runs, causes), start=1):
         views = list(dict.fromkeys(view for view, _ in q["decisions"]))
@@ -672,8 +689,7 @@ def questions_json(
                             f"`{cid}` in `{view}`: {definition_text(sides[side])}"
                         )
 
-        items = [item for view, d in q["decisions"] for item in covered(view, [d])]
-        lines = [line for item in items for line in item.get("evidence", [])]
+        lines = [line for view, d in q["decisions"] for line in evidence_of(view, d)]
         if "asks" in q:
             lines = _cause_evidence(q["asks"])
         evidence = list(dict.fromkeys(safe_reason(line, q["hidden"]) for line in lines))

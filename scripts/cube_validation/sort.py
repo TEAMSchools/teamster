@@ -982,7 +982,7 @@ _FORMULA_CAUSE = {
 }
 
 
-def _formula_evidence(
+def formula_evidence(
     run: RunResult, diff: CellDiff
 ) -> tuple[list[dict], tuple[str, ...], tuple[str, ...]]:
     """A formula difference's cause, local evidence and posted evidence.
@@ -1200,7 +1200,7 @@ def suggest(
                     "cause",
                     _formula_explanation(run, source.comparison_id),
                 )
-                cause, evidence, posted = _formula_evidence(run, source)
+                cause, evidence, posted = formula_evidence(run, source)
 
         if not call:
             call = "investigate"
