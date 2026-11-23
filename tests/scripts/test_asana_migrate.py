@@ -77,7 +77,7 @@ def test_owner_is_the_earliest_due_and_undated_sorts_last(mig):
     assert mig.owner_of({"9999999999999999"}, by_gid) is None
 
 
-def test_a_done_row_goes_with_its_deleted_table(mig):
+def test_a_table_holding_a_done_row_is_kept(mig):
     table = {
         "gid": "T1",
         "name": "dim_regions",
@@ -87,7 +87,22 @@ def test_a_done_row_goes_with_its_deleted_table(mig):
     actions = mig.plan(DASHES, [table], {d["gid"]: [] for d in DASHES}, None)
     assert not ops(actions, "create")
     assert not ops(actions, "move")
-    assert [a["task"] for a in ops(actions, "delete")] == ["T1"]
+    assert not ops(actions, "delete")
+
+
+def test_a_table_whose_rows_moved_but_holds_a_done_row_is_kept(mig):
+    table = {
+        "gid": "T31",
+        "name": "fct_sight_words",
+        "notes": "",
+        "subtasks": [
+            row("R31", "Sight word", [LIT]),
+            row("R32", "Quiz number", [LIT], done=True, tags=("measure",)),
+        ],
+    }
+    actions = mig.plan(DASHES, [table], {d["gid"]: [] for d in DASHES}, None)
+    assert [a["task"] for a in ops(actions, "move")] == ["R31"]
+    assert not ops(actions, "delete")
 
 
 def test_open_row_goes_to_an_existing_pr_that_names_its_table(mig):
@@ -435,7 +450,14 @@ def test_a_completed_pr_is_never_a_match(mig):
 
 
 def test_a_table_holding_a_synced_task_is_reported_not_deleted(mig):
-    synced = row("W9", "#4176 | feat(dbt): head of school", [], done=True)
+    synced = {
+        "gid": "W9",
+        "name": "#4176 | feat(dbt): head of school",
+        "completed": True,
+        "notes": "https://github.com/TEAMSchools/teamster/issues/4176",
+        "tags": [],
+        "dependencies": [],
+    }
     table = empty_table("T30", "dim_locations", "1 · Assessments", [synced])
     actions = mig.plan(DASHES, [table], {d["gid"]: [] for d in DASHES}, None)
     assert not ops(actions, "delete")

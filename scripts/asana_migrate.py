@@ -15,7 +15,7 @@ For each row on a table task (a subtask with a `Used by:` line of dashboard link
 `cube:` / `view:` stage):
   - its owner is the earliest-due dashboard its `Used by:` names; a dashboard with no due date sorts last,
     and a tie goes to the older dashboard task. A row whose owner is outside --section stays put.
-  - a done row stays on its table and is deleted with it; an open row whose notes have a line starting
+  - a done row stays on its table, which then stays too; an open row whose notes have a line starting
     `Deferred:` moves directly under the owner dashboard.
   - an open row moves under the owner's PR task for that table: an open `PR (dbt|Cube): ...` subtask that
     names the table after its ` · ` (the Cube PR when both do), else a new
@@ -26,8 +26,8 @@ Another dashboard that uses the same row gets nothing: the builder's inventory f
 the run moves no row off is left alone, unless it is in the run (the whole project, or --section's own
 tables) and nothing is open on it: then it is deleted, or reported when an open stage is all that is left.
 On a table it does touch, an open subtask with no `Used by:` line stays put and is reported. Once nothing
-open is left on a table, the table task is deleted with its stages and done rows (kept and reported when
-an open stage has no PR to take its work). A table holding a synced `#NNNN |` task is never deleted: the
+open is left on a table, the table task is deleted with its stages, unless it holds a done measure or
+dimension row (the status page counts it there) or an open stage has no PR to take its work (reported). A table holding a synced `#NNNN |` task is never deleted: the
 report names the task to move off first. GitHub, not Asana, records what shipped.
 """
 
@@ -114,7 +114,7 @@ def plan(dashboards, tables, children_of, scope, section=None):
         open_by_owner = {}
         for s in subs:
             if s["gid"] in stage_gids or s.get("completed"):
-                continue  # a done row stays on its table and goes with it
+                continue  # a done row stays on its table, and keeps the table
             dashes = used_by(s) & by_gid.keys()
             if not dashes:
                 left.append(s["name"])
@@ -185,9 +185,18 @@ def plan(dashboards, tables, children_of, scope, section=None):
             if SYNCED.match(x["name"]) and x["gid"] not in moved_here
         ]
 
+        # a done measure or dimension row keeps its table: the status page counts it there
+        done_rows = [
+            x
+            for x in subs
+            if x.get("completed")
+            and x["gid"] not in stage_gids
+            and (sync.row_kind(x) or used_by(x))
+        ]
+
         def drop(why):
-            """Delete the table with its stages and done rows, unless a synced task sits on it."""
-            if t.get("completed"):
+            """Delete the table with its stages, unless a done row or a synced task sits on it."""
+            if t.get("completed") or done_rows:
                 return
             if synced:
                 reports.append(
