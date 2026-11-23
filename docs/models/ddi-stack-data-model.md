@@ -272,14 +272,15 @@ the owner's walkthrough or a workbook download.
     column. An assessment not yet due has no counted assignments, so its
     completion is null and the dashboard's completion filter hides it.
   - The Module Dashboard reads the null-`response_type` rows only for
-    completion. Its `response_type` filter keeps the `overall` rows on every
-    sheet, as an ordinary filter rather than a context filter, so the `FIXED`
-    completion calcs still see the not-taken rows. Where a mark covers several
-    cells (the summary row, the Assessments Over Time tooltip), completion is
-    pooled: taken over counted across those cells. A cell where nobody has a
-    score shows no mark and is left out of a pooled number. Untagged assessments
-    have no not-taken rows, so their completion reads 100% wherever it is shown,
-    the Assessment Dashboard included.
+    completion. On the sheets that use the completion calcs, the `response_type`
+    filter still shows only the `overall` rows, but as an ordinary filter rather
+    than a context filter, so the `FIXED` completion calcs see the not-taken
+    rows. Where a mark covers several cells (the summary row, the Assessments
+    Over Time tooltip), completion is pooled: taken over counted across those
+    cells. A cell where nobody has a score shows no mark and is left out of a
+    pooled number. Untagged assessments have no not-taken rows, so their
+    completion reads 100% wherever it is shown, the Assessment Dashboard
+    included.
   - The Module Dashboard's `Heatmap Columns` control puts either grade level or,
     for grades 9 to 12, the assessment's `subject_area` across the top of its
     two heatmaps; grades K to 8 keep their grade either way. The control is
