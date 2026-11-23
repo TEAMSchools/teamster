@@ -21,6 +21,7 @@ grain hazards that have bitten.
 - Filtering PM rows: `assessment_type` and `model_type` say the same thing
 - The OR criteria is spelled NULL, and it is live on history
 - all_assessments changed grain -- every consumer must NAME its model_type
+- The roster reads enrollment live, the dashboard spine reads it nightly
 - TODO -- shared active/current schools model needs more eyes
 
 ## Benchmark is not per data model -- it must be single-sourced
@@ -645,6 +646,44 @@ way rather than inferring the method from a column that happens to differ.
 `overall_probe_eligible` would discriminate today -- `'Yes'` on every Internal
 PM row, the composite level on every Aimline one -- until someone changes what
 the aimline branch projects into it.
+
+## The roster reads enrollment live, the dashboard spine reads it nightly
+
+Two models in the family read enrollment from different places:
+
+| Model                                       | Enrollment source                                                     |
+| ------------------------------------------- | --------------------------------------------------------------------- |
+| `rpt_tableau__dibels_dashboard`             | `int_extracts__student_enrollments_subjects`, a table rebuilt nightly |
+| `int_students__dibels_participation_roster` | `int_students__student_enrollments`, a view, read live                |
+
+The spine is built from that same enrollment model through left joins only, with
+no filter on enrollment rows. So a stint that differs between the two changed
+after the spine's last rebuild. Nothing else can make them differ.
+
+**Do not move the roster back onto the spine.** Both criteria models read the
+roster, and the marts read the criteria models. A mart may not reach an
+`int_extracts__` model directly or through an intermediate (A12), so the roster
+is the one place that edge has to stay cut.
+
+When the roster and the dashboard disagree for a handful of students, treat it
+as refresh timing until shown otherwise, and check that before reading any
+logic. Compare each student's stints (`entrydate`, `exitdate`, `region`,
+`grade_level`, `enroll_status`) between the spine's ELA rows and
+`int_students__student_enrollments`, and compare the 4 eligibility columns
+between the spine and `int_amplify__benchmark_student_summary`. A student who
+differs on neither is not a timing case.
+
+One cause looks like timing and is not. The roster keeps one row per round with
+a pick ordered by exit date only, and its join to `int_amplify__all_assessments`
+is at measure grain. When that model carries two different `actual_row_count`
+values inside one round, the surviving value is arbitrary and can differ between
+two reads of the same data. The query for it is under _Known issues_ in the
+reference document.
+
+Comparing two builds of `rpt_tableau__dibels_dashboard` in one query fails with
+"query is too complex". Run one query per build and compare a row fingerprint:
+`sum(cast(farm_fingerprint(to_json_string(t)) as bignumeric))` by `model_type`
+and `academic_year`.
 
 ## TODO -- shared active/current schools model needs more eyes
 
