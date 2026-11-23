@@ -278,3 +278,30 @@ def test_main_asks_for_no_umbrella_task(mod, monkeypatch):
     monkeypatch.setattr(mod, "get_all", get_all)
     assert mod.main(["--only", D]) == 0
     assert not [p for p in seen if p.startswith("/tasks/1219235117880911")]
+
+
+def test_measure_row_on_a_table_keeps_its_measure_tag(mod, monkeypatch):
+    writes = _stub_main(mod, monkeypatch)
+    table = "9000000000000003"
+    row = {
+        "gid": "9000000000000004",
+        "name": "% sight words mastered",
+        "completed": False,
+        "notes": f"Used by: https://app.asana.com/0/0/{D}/f",
+        "tags": [{"name": "measure", "gid": mod.MEASURE_TAG}],
+        "dependencies": [],
+    }
+    inner = mod.get_all
+
+    def get_all(path, params):
+        if path == f"/projects/{mod.PROJECT}/tasks":
+            return inner(path, params) + [
+                {"gid": table, "name": "fct_sight_words", "tags": []}
+            ]
+        if path == f"/tasks/{table}/subtasks":
+            return [row]
+        return inner(path, params)
+
+    monkeypatch.setattr(mod, "get_all", get_all)
+    assert mod.main(["--only", D]) == 0
+    assert not [w for w in writes if "% sight words mastered" in w and "dimension" in w]

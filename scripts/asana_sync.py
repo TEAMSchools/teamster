@@ -617,7 +617,8 @@ def main(argv):
                 )
 
     for r in only_dim_rows:
-        sync_row(r, "dimension")
+        # a table-task row keeps its own kind tag; an untagged one is a dimension
+        sync_row(r, row_kind(r) or "dimension")
     report_unknown_used_by = sorted(
         f"{r['name'][:60]} ({r['gid']}): {g}"
         for r in dim_rows
