@@ -243,3 +243,15 @@ Asana writes stay as they are today: the analyst runs
 with their own `ASANA_PAT`. This replaces the _Schedule_ bullet in _Order of
 work_ step 1. The cost: a row's status on the build status page changes only
 after someone runs the sync, so the page can lag the work.
+
+## Revision 2026-11-23: ownership follows the open work
+
+A build belongs to the earliest-due dashboard that still needs its open work,
+not to the row's first user. A row whose shipped part served an earlier
+dashboard, but whose missing part only a later dashboard needs, sits under the
+later dashboard's PR. Performance band is the first case: Illuminate bands
+shipped for DDI Suite, and the state test bands sit under STAT's PR S1. The
+row's `Used by:` line keeps counting it for every dashboard. The sync no longer
+links table tasks to dashboards, and it no longer reports untagged subtasks: an
+untagged subtask with a `Used by:` line is tagged `dimension`, and any other is
+a work item.

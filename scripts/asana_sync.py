@@ -22,8 +22,8 @@ Dashboards are the project's top-level tasks tagged `dashboard`. Rows are:
     `#NNNN | <type>(<scope>): ...` task) and its `Already in Cube` / `Deferred` holders. With no stage
     blockers left, such a row's status comes from its parent: needs-data while the parent is an open dbt PR
     or an open dbt PR blocks it, needs-cube otherwise, none under a holder. An untagged subtask there whose
-    notes carry a `Used by:` line is tagged `dimension`; any other untagged subtask of a PR task or a holder
-    is reported, since the status page drops a row with no kind tag;
+    notes carry a `Used by:` line is tagged `dimension`; any other untagged subtask there is a work item,
+    not a row;
   - dimension rows: subtasks of table tasks, other than `mart:` / `cube:` / `view:` stages, whose notes carry
     a `Used by:` line of dashboard task links. One dimension row lives on the table its column comes from.
 Each run:
@@ -585,7 +585,6 @@ def main(argv):
 
     # ------------------------------------------------------------ 2-6. measure and dimension rows
     print("\n2-6. Measure and dimension rows")
-    report_untagged = []
     # Gather every dashboard's rows before any write, so the --only guard below sees them all.
     plans = []  # (dashboard gid, [(row, kind, parent or None)])
     for dash in dashboards:
@@ -600,8 +599,7 @@ def main(argv):
             for c in children
             if c.get("num_subtasks") and not TABLE.match(c["name"])
         }
-        nested, untagged = rows_under({"gid": dash}, children, grandchildren)
-        report_untagged += [f"{dash}: {u['name'][:70]} ({u['gid']})" for u in untagged]
+        nested, _ = rows_under({"gid": dash}, children, grandchildren)
         plan = [(r, row_kind(r), parent) for r, parent in nested if parent is not None]
         # direct rows: tagged, or the legacy measure rows with a `Status:` line
         plan += [
@@ -661,11 +659,6 @@ def main(argv):
     if report_unknown_used_by:
         print(f"\n`Used by:` names a task that is not tagged '{DASHBOARD_TAG}':")
         print("\n".join("  " + x for x in report_unknown_used_by))
-    if report_untagged:
-        print(
-            "\nRows with no kind tag (tag each `measure` or `dimension`, or the status page drops it):"
-        )
-        print("\n".join("  " + x for x in report_untagged))
     if report_unverified:
         print("\nBlockers done but not verified on main (left open):")
         print("\n".join("  " + x for x in report_unverified))

@@ -410,3 +410,25 @@ def test_section_limits_the_run(mod, monkeypatch):
 
     monkeypatch.setattr(mod, "get_all", get_all)
     assert mod.main(["--section", "1 · Assessments"]) == 0
+
+
+def test_work_items_under_a_pr_are_not_reported_as_rows(mod, monkeypatch, capsys):
+    _stub_main(mod, monkeypatch)
+    inner = mod.get_all
+    item = {
+        "gid": "9000000000000010",
+        "name": "#4393 | feat(dbt): an earlier PR",
+        "completed": True,
+        "notes": "",
+        "tags": [],
+        "dependencies": [],
+    }
+
+    def get_all(path, params):
+        if path == f"/tasks/{PR}/subtasks":
+            return inner(path, params) + [item]
+        return inner(path, params)
+
+    monkeypatch.setattr(mod, "get_all", get_all)
+    assert mod.main(["--only", D]) == 0
+    assert "Rows with no kind tag" not in capsys.readouterr().out
