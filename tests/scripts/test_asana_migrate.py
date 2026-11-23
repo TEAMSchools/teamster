@@ -284,3 +284,67 @@ def test_existing_holder_and_confirm_are_reused(mig):
         if c["name"] in ("Already in Cube",) and c["parent"] == DDI
     ]
     assert not [c for c in ops(actions, "create") if c["name"].startswith("Confirm")]
+
+
+def test_a_section_run_ignores_tables_it_does_not_touch(mig):
+    item = {
+        "gid": "W2",
+        "name": "Rules: weekly behavior rollups",
+        "completed": False,
+        "notes": "",
+        "tags": [],
+        "dependencies": [],
+    }
+    table = {
+        "gid": "T10",
+        "name": "fct_behavior_points",
+        "notes": "",
+        "subtasks": [
+            row("R11", "Points", [DDI]),
+            stage("S10", "cube: behavior_points"),
+            item,
+        ],
+    }
+    actions = mig.plan(DASHES, [table], {d["gid"]: [] for d in DASHES}, {STAT})
+    assert not ops(actions, "report")
+    assert not ops(actions, "close")
+
+
+def test_stages_stay_open_while_rows_remain_on_the_table(mig):
+    table = {
+        "gid": "T11",
+        "name": "fct_assessment_scores_enrollment_scoped",
+        "notes": "",
+        "subtasks": [
+            row("R12", "Lexile", [STAT]),
+            row("R13", "Scale score", [DDI], done=True),
+            stage("S11", "cube: assessment_expectations_enrollment_scoped"),
+        ],
+    }
+    actions = mig.plan(DASHES, [table], {d["gid"]: [] for d in DASHES}, {STAT})
+    assert "S11" not in [a["task"] for a in ops(actions, "close")]
+    assert "T11" not in [a["task"] for a in ops(actions, "close")]
+
+
+def test_a_deferred_row_goes_to_the_deferred_holder(mig):
+    deferred = row("R14", "MTSS enrollment", [LIT], tags=("dimension", "needs-data"))
+    deferred["notes"] += "\nDeferred: no current-year MTSS data."
+    table = {
+        "gid": "T12",
+        "name": "dim_student_enrollments",
+        "notes": "",
+        "subtasks": [deferred],
+    }
+    actions = mig.plan(DASHES, [table], {d["gid"]: [] for d in DASHES}, None)
+    holder = [
+        c
+        for c in ops(actions, "create")
+        if c["parent"] == LIT and c["name"] == "Deferred"
+    ][0]
+    assert {
+        "op": "move",
+        "task": "R14",
+        "parent": f"new:{holder['key']}",
+        "name": "MTSS enrollment",
+    } in actions
+    assert not [c for c in ops(actions, "create") if c["name"].startswith("PR ")]

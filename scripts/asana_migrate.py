@@ -15,15 +15,17 @@ For each row on a table task (a subtask with a `Used by:` line of dashboard link
 `cube:` / `view:` stage):
   - its owner is the earliest-due dashboard its `Used by:` names; a dashboard with no due date sorts last,
     and a tie goes to the older dashboard task. A row whose owner is outside --section stays put.
-  - a done row moves under the owner's `Already in Cube` holder.
+  - a done row moves under the owner's `Already in Cube` holder; an open row whose notes have a line
+    starting `Deferred:` moves under the owner's `Deferred` holder.
   - an open row moves under the owner's PR task for that table: an existing `PR ...` subtask whose name
     names the table, else a new `PR <table> (dbt|Cube): <table>`, dbt when the table has an open `mart:`
     stage, its notes say "New mart", or one of the rows carries needs-data. Its links to the table's
     stages are removed.
   - each other dashboard that uses an open row gets `Confirm <table> shipped with <owner>`, due on the
     owner's due date and blocked by the owner's PR task.
-Every dashboard in scope gets the 2 holders. An open stage closes once its table has a PR task; a table
-task closes once nothing is left on it. Anything left behind is reported.
+Every dashboard in scope gets the 2 holders. A table the run moves no row off is left alone. On a table it
+does touch, an open subtask with no `Used by:` line stays put and is reported. Once nothing is left on a
+table, its open stages close (or are reported when no PR took its work) and the table task closes.
 """
 
 import importlib.util
@@ -39,6 +41,7 @@ HOLDERS = {
     "dimension tag and its Used by: line.",
 }
 STAGE = re.compile(r"^(mart|cube|view):")
+DEFERRED = re.compile(r"^\s*Deferred:", re.M)
 GID = re.compile(r"\b(\d{16})\b")
 
 
@@ -127,6 +130,8 @@ def plan(dashboards, tables, children_of, scope):
         stages = [s for s in subs if stage_kind(s["name"])]
         stage_gids = {s["gid"] for s in stages}
         left = []  # names of what stays on the table
+        unclaimed = []  # open subtasks no dashboard claims: reported if the run touches the table
+        touched = False  # the run moves at least 1 row off this table
         open_by_owner = {}
         for s in subs:
             if s["gid"] in stage_gids:
@@ -135,23 +140,20 @@ def plan(dashboards, tables, children_of, scope):
             if not dashes:
                 if not s.get("completed"):
                     left.append(s["name"])
-                    reports.append(
-                        {
-                            "op": "report",
-                            "text": f"{t['name']}: left on the table: {s['name']}",
-                        }
-                    )
+                    unclaimed.append(s["name"])
                 continue
             owner = owner_of(dashes, by_gid)
             if not in_scope(owner):
                 left.append(s["name"])
                 continue
-            if s.get("completed"):
+            touched = True
+            if s.get("completed") or DEFERRED.search(s.get("notes") or ""):
+                where = "Already in Cube" if s.get("completed") else "Deferred"
                 moves.append(
                     {
                         "op": "move",
                         "task": s["gid"],
-                        "parent": holder(owner, "Already in Cube"),
+                        "parent": holder(owner, where),
                         "name": s["name"],
                     }
                 )
@@ -217,6 +219,14 @@ def plan(dashboards, tables, children_of, scope):
                 }
                 blocks.append({"op": "block", "task": f"new:{key}", "deps": [ref]})
 
+        if not touched:
+            continue  # a table this run leaves alone gets no reports and no closes
+        reports += [
+            {"op": "report", "text": f"{t['name']}: left on the table: {name}"}
+            for name in unclaimed
+        ]
+        if left:
+            continue  # stages stay open while anything is left on the table
         for s in stages:
             if s.get("completed"):
                 continue
