@@ -124,7 +124,7 @@ rows serve 4 dashboards, already planned as 4 PRs.
 <Dashboard>                                  tag: dashboard (top-level, domain section)
 ├── #NNNN | <hub issue title>                synced hub task, moved here
 ├── <Decision>                                owner, due
-├── PR <id> (<dbt|Cube>): <scope>            owner, due; blocked by the PRs it needs
+├── PR (<dbt|Cube>): <what> · <table>        owner, due; blocked by the PRs it needs
 │   ├── <row named for a measure>             tag: measure; notes: Use:, Used by:, member names
 │   └── <row named for a dimension>           tag: dimension
 ├── Confirm <build> shipped with <dashboard>  due: that dashboard's due date; blocked by <build>

@@ -17,10 +17,10 @@ For each row on a table task (a subtask with a `Used by:` line of dashboard link
     and a tie goes to the older dashboard task. A row whose owner is outside --section stays put.
   - a done row moves under the owner's `Already in Cube` holder; an open row whose notes have a line
     starting `Deferred:` moves under the owner's `Deferred` holder.
-  - an open row moves under the owner's PR task for that table: an existing `PR ...` subtask whose name
-    names the table, else a new `PR <table> (dbt|Cube): <table>`, dbt when the table has an open `mart:`
-    stage, its notes say "New mart", or one of the rows carries needs-data. Its links to the table's
-    stages are removed.
+  - an open row moves under the owner's PR task for that table: an open `PR (dbt|Cube): ...` subtask that
+    names the table after its ` · ` (the Cube PR when both do), else a new
+    `PR (dbt|Cube): open fields · <table>`, dbt when the table has an open `mart:` stage, its notes say
+    "New mart", or one of the rows carries needs-data. Its links to the table's stages are removed.
   - each other dashboard that uses an open row gets `Confirm <table> shipped with <owner>`, due on the
     owner's due date and blocked by the owner's PR task.
 Every dashboard in scope gets the 2 holders. A table the run moves no row off is left alone. On a table it
@@ -73,6 +73,13 @@ def used_by(task):
 
 def _tags(task):
     return {t["name"].lower() for t in task.get("tags") or []}
+
+
+def pr_tables(name):
+    """The tables a PR task names after its last ` · `, e.g. `PR (dbt): grade fields · dim_a, dim_b`."""
+    if " · " not in name:
+        return []
+    return [x.strip() for x in name.rsplit(" · ", 1)[1].split(",") if x.strip()]
 
 
 def owner_of(gids, by_gid):
@@ -171,7 +178,9 @@ def plan(dashboards, tables, children_of, scope):
             named = [
                 c
                 for c in children_of.get(owner, [])
-                if sync.pr_type(c["name"]) and t["name"] in c["name"]
+                if not c.get("completed")
+                and sync.pr_type(c["name"])
+                and t["name"] in pr_tables(c["name"])
             ]
             found = next(
                 (c for c in named if sync.pr_type(c["name"]) == "cube"),
@@ -193,7 +202,7 @@ def plan(dashboards, tables, children_of, scope):
                     "op": "create",
                     "key": key,
                     "parent": owner,
-                    "name": f"PR {t['name']} ({'dbt' if dbt else 'Cube'}): {t['name']}",
+                    "name": f"PR ({'dbt' if dbt else 'Cube'}): open fields · {t['name']}",
                     "notes": f"The open work on {t['name']} that {by_gid[owner]['name']} needs first. "
                     "The rows below are the fields it ships.",
                     "due_on": by_gid[owner].get("due_on"),
@@ -355,7 +364,9 @@ def main(argv):
         if sync.TABLE.match(t["name"])
     ]
     children_of = {
-        d["gid"]: sync.get_all(f"/tasks/{d['gid']}/subtasks", {"opt_fields": "name"})
+        d["gid"]: sync.get_all(
+            f"/tasks/{d['gid']}/subtasks", {"opt_fields": "name,completed"}
+        )
         for d in dashboards
         if scope is None or d["gid"] in scope
     }

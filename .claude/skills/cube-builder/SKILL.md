@@ -136,10 +136,12 @@ _Build_ step 4.
    - A build belongs to the earliest-due dashboard that needs it; on a tie, the
      dashboard whose build issue opened first. A build an earlier dashboard owns
      is not planned again.
-   - Each PR is a subtask `PR <id> (<dbt|Cube>): <scope>` with an owner and a
-     due date on or before the dashboard's. A dbt PR is due before the Cube PR
-     that reads its columns and blocks it. Each decision is a subtask with an
-     owner and a due date.
+   - Each PR is a subtask `PR (<dbt|Cube>): <what it builds> · <table>` with an
+     owner and a due date on or before the dashboard's. The tables after the `·`
+     (comma-separated) are the table tasks its rows came from; the sync reads
+     the type and `scripts/asana_migrate.py` matches on the tables. A dbt PR is
+     due before the Cube PR that reads its columns and blocks it. Each decision
+     is a subtask with an owner and a due date.
    - Each build another dashboard owns gets
      `Confirm <build> shipped with <dashboard>`, due on that dashboard's due
      date, blocked by the build's task, with the reused members in its notes.

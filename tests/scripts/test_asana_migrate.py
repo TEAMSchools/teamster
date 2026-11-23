@@ -111,7 +111,7 @@ def test_open_row_goes_to_an_existing_pr_that_names_its_table(mig):
     }
     pr = {
         "gid": "P1",
-        "name": "PR S1 (dbt): score columns on fct_assessment_scores_enrollment_scoped",
+        "name": "PR (dbt): score columns · fct_assessment_scores_enrollment_scoped",
     }
     children = {d["gid"]: [] for d in DASHES} | {STAT: [pr]}
     actions = mig.plan(DASHES, [table], children, None)
@@ -142,7 +142,7 @@ def test_open_row_with_no_pr_gets_a_new_pr_typed_by_its_open_mart_stage(mig):
             "op": "create",
             "key": pr[0]["key"],
             "parent": STAT,
-            "name": "PR fct_iready_lessons (dbt): fct_iready_lessons",
+            "name": "PR (dbt): open fields · fct_iready_lessons",
             "notes": pr[0]["notes"],
             "due_on": "2026-12-11",
         }
@@ -165,7 +165,7 @@ def test_new_pr_with_only_cube_work_is_a_cube_pr(mig):
     actions = mig.plan(DASHES, [table], {d["gid"]: [] for d in DASHES}, None)
     assert [
         c["name"] for c in ops(actions, "create") if c["name"].startswith("PR ")
-    ] == ["PR dim_assessments (Cube): dim_assessments"]
+    ] == ["PR (Cube): open fields · dim_assessments"]
 
 
 def test_a_later_dashboard_gets_a_confirm_item_for_shared_open_work(mig):
@@ -265,7 +265,7 @@ def test_existing_holder_and_confirm_are_reused(mig):
             {"gid": "H1", "name": "Already in Cube"},
             {
                 "gid": "P9",
-                "name": "PR B (dbt): DDI student flags on dim_student_enrollments",
+                "name": "PR (dbt): DDI student flags · dim_student_enrollments",
             },
         ],
         STAT: [
@@ -359,10 +359,10 @@ def test_an_open_row_prefers_the_cube_pr_when_both_name_the_table(mig):
     }
     children = {d["gid"]: [] for d in DASHES} | {
         LIT: [
-            {"gid": "PD", "name": "PR SW1 (dbt): fct_sight_words"},
+            {"gid": "PD", "name": "PR (dbt): sight-words mart · fct_sight_words"},
             {
                 "gid": "PC",
-                "name": "PR SW2 (Cube): sight_words cube over fct_sight_words",
+                "name": "PR (Cube): sight-words cube and view · fct_sight_words",
             },
         ]
     }
@@ -373,3 +373,56 @@ def test_an_open_row_prefers_the_cube_pr_when_both_name_the_table(mig):
         "parent": "PC",
         "name": "Quiz number",
     } in actions
+
+
+def test_a_pr_matches_only_the_tables_after_its_dot(mig):
+    table = {
+        "gid": "T14",
+        "name": "dim_students",
+        "notes": "",
+        "subtasks": [row("R16", "Most recent grade level", [STAT])],
+    }
+    children = {d["gid"]: [] for d in DASHES} | {
+        STAT: [
+            {
+                "gid": "PX",
+                "name": "PR (dbt): student flags on dim_students_extra · dim_student_enrollments",
+            },
+            {
+                "gid": "PY",
+                "name": "PR (dbt): grade fields · dim_student_enrollments, dim_students",
+            },
+        ]
+    }
+    actions = mig.plan(DASHES, [table], children, None)
+    assert {
+        "op": "move",
+        "task": "R16",
+        "parent": "PY",
+        "name": "Most recent grade level",
+    } in actions
+
+
+def test_a_completed_pr_is_never_a_match(mig):
+    table = {
+        "gid": "T15",
+        "name": "dim_assessments",
+        "notes": "",
+        "subtasks": [row("R17", "Discipline", [STAT])],
+    }
+    children = {d["gid"]: [] for d in DASHES} | {
+        STAT: [
+            {
+                "gid": "PZ",
+                "name": "PR (dbt): band sets · dim_assessments",
+                "completed": True,
+            },
+        ]
+    }
+    actions = mig.plan(DASHES, [table], children, None)
+    assert not [a for a in ops(actions, "move") if a["parent"] == "PZ"]
+    assert [
+        c
+        for c in ops(actions, "create")
+        if c["name"] == "PR (Cube): open fields · dim_assessments"
+    ]

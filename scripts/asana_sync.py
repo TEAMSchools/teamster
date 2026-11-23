@@ -18,7 +18,7 @@ developer console (app.asana.com/0/my-apps), then load it without echoing it or 
 
 Dashboards are the project's top-level tasks tagged `dashboard`. Rows are:
   - a dashboard task's measure subtasks (tagged `measure`, or notes carrying a `Status:` line);
-  - rows tagged `measure` or `dimension` under a dashboard's PR tasks (`PR <id> (dbt|Cube): ...`, or a synced
+  - rows tagged `measure` or `dimension` under a dashboard's PR tasks (`PR (dbt|Cube): <what> · <table>`, or a synced
     `#NNNN | <type>(<scope>): ...` task) and its `Already in Cube` / `Deferred` holders. With no stage
     blockers left, such a row's status comes from its parent: needs-data while the parent is an open dbt PR
     or an open dbt PR blocks it, needs-cube otherwise, none under a holder. An untagged subtask there whose
