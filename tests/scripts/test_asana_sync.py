@@ -123,14 +123,32 @@ def test_rows_under_skips_table_tasks(mod):
     assert rows == [] and untagged == []
 
 
-def test_untagged_row_under_dashboard_is_reported(mod):
+def test_untagged_subtask_of_a_pr_is_reported_and_of_a_work_item_is_not(mod):
     pr = {"gid": "P", "name": "PR SW2 (Cube): sight_words cube", "tags": []}
-    holder = {"gid": "H", "name": "Already in Cube", "tags": []}
+    item = {"gid": "H", "name": "Already in Cube", "tags": []}
     a = {"gid": "a", "name": "quiz number", "tags": []}
     b = {"gid": "b", "name": "value group", "tags": []}
-    rows, untagged = mod.rows_under({"gid": "D"}, [pr, holder], {"P": [a], "H": [b]})
+    rows, untagged = mod.rows_under({"gid": "D"}, [pr, item], {"P": [a], "H": [b]})
     assert rows == []
-    assert untagged == [a, b]
+    assert untagged == [a]
+
+
+def test_direct_rows_include_an_untagged_used_by_child_as_a_dimension(mod):
+    deferred = {
+        "gid": "d",
+        "name": "MTSS enrollment",
+        "tags": [],
+        "notes": "Used by: https://app.asana.com/0/0/1213823922716082/f\nDeferred: no data.",
+    }
+    legacy = {"gid": "m", "name": "% proficient", "tags": [], "notes": "Status: open"}
+    tagged = {"gid": "t", "name": "Tier", "tags": _tags("measure"), "notes": ""}
+    pr = {"gid": "p", "name": "PR (dbt): open fields · fct_a", "tags": [], "notes": ""}
+    table = {"gid": "T", "name": "fct_a", "tags": _tags("dimension"), "notes": ""}
+    assert mod.direct_rows([deferred, legacy, tagged, pr, table]) == [
+        (deferred, "dimension"),
+        (legacy, "measure"),
+        (tagged, "measure"),
+    ]
 
 
 def test_open_dbt_blocker_is_needs_data(mod):
@@ -167,12 +185,9 @@ def test_merged_parent_not_live_is_needs_cube(mod):
     )
 
 
-def test_live_row_and_holders_have_no_status(mod):
+def test_live_row_has_no_status(mod):
     parent = {"name": "PR L1 (Cube): national_percentile", "completed": False}
     assert mod.want_status_pr(live=True, parent=parent, parent_blockers=[]) is None
-    for holder in ("Already in Cube", "Deferred"):
-        h = {"name": holder, "completed": False}
-        assert mod.want_status_pr(live=False, parent=h, parent_blockers=[]) is None
 
 
 # ---------------------------------------------------------------- main() with git and Asana stubbed

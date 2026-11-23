@@ -77,7 +77,7 @@ def test_owner_is_the_earliest_due_and_undated_sorts_last(mig):
     assert mig.owner_of({"9999999999999999"}, by_gid) is None
 
 
-def test_done_row_goes_to_the_owners_already_in_cube_holder(mig):
+def test_a_done_row_stays_on_its_table_and_the_table_closes(mig):
     table = {
         "gid": "T1",
         "name": "dim_regions",
@@ -85,18 +85,9 @@ def test_done_row_goes_to_the_owners_already_in_cube_holder(mig):
         "subtasks": [row("R1", "Region", [STAT, DDI], done=True)],
     }
     actions = mig.plan(DASHES, [table], {d["gid"]: [] for d in DASHES}, None)
-    creates = ops(actions, "create")
-    holder = [
-        c for c in creates if c["parent"] == DDI and c["name"] == "Already in Cube"
-    ]
-    assert holder
-    assert {
-        "op": "move",
-        "task": "R1",
-        "parent": f"new:{holder[0]['key']}",
-        "name": "Region",
-    } in actions
-    assert not [c for c in creates if c["name"].startswith("Confirm")]
+    assert not ops(actions, "create")
+    assert not ops(actions, "move")
+    assert [a["task"] for a in ops(actions, "close")] == ["T1"]
 
 
 def test_open_row_goes_to_an_existing_pr_that_names_its_table(mig):
@@ -144,7 +135,6 @@ def test_open_row_with_no_pr_gets_a_new_pr_typed_by_its_open_mart_stage(mig):
             "parent": STAT,
             "name": "PR (dbt): open fields · fct_iready_lessons",
             "notes": pr[0]["notes"],
-            "due_on": "2026-12-11",
         }
     ]
     assert {
@@ -168,7 +158,7 @@ def test_new_pr_with_only_cube_work_is_a_cube_pr(mig):
     ] == ["PR (Cube): open fields · dim_assessments"]
 
 
-def test_a_later_dashboard_gets_a_confirm_item_for_shared_open_work(mig):
+def test_shared_open_work_gets_no_confirm_item(mig):
     table = {
         "gid": "T5",
         "name": "dim_student_enrollments",
@@ -179,24 +169,10 @@ def test_a_later_dashboard_gets_a_confirm_item_for_shared_open_work(mig):
     }
     actions = mig.plan(DASHES, [table], {d["gid"]: [] for d in DASHES}, None)
     creates = ops(actions, "create")
-    pr = [c for c in creates if c["name"].startswith("PR ")][0]
-    assert pr["parent"] == DDI
-    confirm = [c for c in creates if c["name"].startswith("Confirm")]
-    assert confirm == [
-        {
-            "op": "create",
-            "key": confirm[0]["key"],
-            "parent": STAT,
-            "name": "Confirm dim_student_enrollments shipped with DDI Suite",
-            "notes": confirm[0]["notes"],
-            "due_on": "2026-12-01",
-        }
+    assert [(c["parent"], c["name"]) for c in creates] == [
+        (DDI, "PR (dbt): open fields · dim_student_enrollments")
     ]
-    assert {
-        "op": "block",
-        "task": f"new:{confirm[0]['key']}",
-        "deps": [f"new:{pr['key']}"],
-    } in actions
+    assert not ops(actions, "block")
 
 
 def test_stages_close_and_an_emptied_table_closes(mig):
@@ -250,7 +226,7 @@ def test_scope_leaves_rows_owned_outside_it(mig):
     assert "T8" not in [a["task"] for a in ops(actions, "close")]
 
 
-def test_existing_holder_and_confirm_are_reused(mig):
+def test_an_existing_pr_is_reused_and_nothing_is_created(mig):
     table = {
         "gid": "T9",
         "name": "dim_student_enrollments",
@@ -262,28 +238,17 @@ def test_existing_holder_and_confirm_are_reused(mig):
     }
     children = {d["gid"]: [] for d in DASHES} | {
         DDI: [
-            {"gid": "H1", "name": "Already in Cube"},
             {
                 "gid": "P9",
                 "name": "PR (dbt): DDI student flags · dim_student_enrollments",
             },
         ],
-        STAT: [
-            {
-                "gid": "C1",
-                "name": "Confirm dim_student_enrollments shipped with DDI Suite",
-            }
-        ],
     }
     actions = mig.plan(DASHES, [table], children, None)
-    assert {"op": "move", "task": "R9", "parent": "H1", "name": "SIPPS"} in actions
-    assert {"op": "move", "task": "R10", "parent": "P9", "name": "Magoosh"} in actions
-    assert not [
-        c
-        for c in ops(actions, "create")
-        if c["name"] in ("Already in Cube",) and c["parent"] == DDI
+    assert ops(actions, "move") == [
+        {"op": "move", "task": "R10", "parent": "P9", "name": "Magoosh"}
     ]
-    assert not [c for c in ops(actions, "create") if c["name"].startswith("Confirm")]
+    assert not ops(actions, "create")
 
 
 def test_a_section_run_ignores_tables_it_does_not_touch(mig):
@@ -365,7 +330,7 @@ def test_stages_stay_open_while_rows_remain_on_the_table(mig):
         "notes": "",
         "subtasks": [
             row("R12", "Lexile", [STAT]),
-            row("R13", "Scale score", [DDI], done=True),
+            row("R13", "Scale score", [DDI]),
             stage("S11", "cube: assessment_expectations_enrollment_scoped"),
         ],
     }
@@ -374,7 +339,7 @@ def test_stages_stay_open_while_rows_remain_on_the_table(mig):
     assert "T11" not in [a["task"] for a in ops(actions, "close")]
 
 
-def test_a_deferred_row_goes_to_the_deferred_holder(mig):
+def test_a_deferred_row_moves_under_its_dashboard(mig):
     deferred = row("R14", "MTSS enrollment", [LIT], tags=("dimension", "needs-data"))
     deferred["notes"] += "\nDeferred: no current-year MTSS data."
     table = {
@@ -384,18 +349,13 @@ def test_a_deferred_row_goes_to_the_deferred_holder(mig):
         "subtasks": [deferred],
     }
     actions = mig.plan(DASHES, [table], {d["gid"]: [] for d in DASHES}, None)
-    holder = [
-        c
-        for c in ops(actions, "create")
-        if c["parent"] == LIT and c["name"] == "Deferred"
-    ][0]
     assert {
         "op": "move",
         "task": "R14",
-        "parent": f"new:{holder['key']}",
+        "parent": LIT,
         "name": "MTSS enrollment",
     } in actions
-    assert not [c for c in ops(actions, "create") if c["name"].startswith("PR ")]
+    assert not ops(actions, "create")
 
 
 def test_an_open_row_prefers_the_cube_pr_when_both_name_the_table(mig):

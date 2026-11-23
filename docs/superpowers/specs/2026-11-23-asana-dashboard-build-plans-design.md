@@ -255,3 +255,24 @@ row's `Used by:` line keeps counting it for every dashboard. The sync no longer
 links table tasks to dashboards, and it no longer reports untagged subtasks: an
 untagged subtask with a `Used by:` line is tagged `dimension`, and any other is
 a work item.
+
+## Revision 2026-11-23: no holders, no Confirm items, no PR due dates
+
+The builder's inventory already checks everything a dashboard needs and whether
+Cube has it, so the holders and Confirm items repeat what it finds. They go:
+
+- A done row stays on its table task and closes with it.
+- A deferred row moves directly under the dashboard that owns it, keeping its
+  `Deferred:` line. The sync reads an untagged subtask of a dashboard with a
+  `Used by:` line as a dimension row.
+- A later dashboard gets nothing for a build an earlier one owns. The builder
+  finds that build through the rows whose `Used by:` line names the later
+  dashboard.
+- A PR task the migration creates has no due date: subtasks are to-do lists, and
+  only the dashboard task carries a date.
+- A table task closes once nothing open is left on it, even when no row moves
+  off it in that run. One with only open stages left is reported, since those
+  stages may be planned work with no rows yet.
+
+This replaces the Confirm items and holders in _Shape_ and _Rules_. The
+`Validate <dashboard> in Cube` task is blocked by the dashboard's PR tasks only.

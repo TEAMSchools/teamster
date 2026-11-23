@@ -18,17 +18,17 @@ developer console (app.asana.com/0/my-apps), then load it without echoing it or 
 
 Dashboards are the project's top-level tasks tagged `dashboard`. Rows are:
   - a dashboard task's measure subtasks (tagged `measure`, or notes carrying a `Status:` line);
+  - an untagged subtask of a dashboard task whose notes carry a `Used by:` line (a deferred row): a dimension;
   - rows tagged `measure` or `dimension` under a dashboard's PR tasks (`PR (dbt|Cube): <what> · <table>`, or a synced
-    `#NNNN | <type>(<scope>): ...` task) and its `Already in Cube` / `Deferred` holders. With no stage
-    blockers left, such a row's status comes from its parent: needs-data while the parent is an open dbt PR
-    or an open dbt PR blocks it, needs-cube otherwise, none under a holder. An untagged subtask there whose
-    notes carry a `Used by:` line is tagged `dimension`; any other untagged subtask there is a work item,
-    not a row;
+    `#NNNN | <type>(<scope>): ...` task). With no stage blockers left, such a row's status comes from its
+    parent: needs-data while the parent is an open dbt PR or an open dbt PR blocks it, needs-cube otherwise.
+    An untagged subtask there whose notes carry a `Used by:` line is tagged `dimension`; any other untagged
+    subtask there is a work item, not a row;
   - dimension rows: subtasks of table tasks, other than `mart:` / `cube:` / `view:` stages, whose notes carry
     a `Used by:` line of dashboard task links. One dimension row lives on the table its column comes from.
 Each run:
   1. Chains stages inside every table task: `mart:` blocks `cube:`, `cube:` blocks `view:` (adds only missing links).
-     It never links table tasks to dashboards: a dashboard is blocked by its own PR tasks and Confirm items.
+     It never links table tasks to dashboards: a dashboard is blocked by its own PR tasks.
   2. Ticks a row done when it is live in Cube: every Cube member its notes name is on a public view on main, and
      no blocker on the row is open. Validation does not gate done. A row blocks only on the stage or addition that
      builds its own member: a cut belongs on its dimension row, so the report lists rows whose members are on main
@@ -154,7 +154,6 @@ def want_status(*, live, stage_blockers, needs_line):
     return None
 
 
-HOLDERS = ("Already in Cube", "Deferred")
 PR_BRACKET = re.compile(r"\((dbt|cube)\)", re.I)
 SYNCED_SCOPE = re.compile(r"^#\d+\s*\|\s*\w+\(([^)]*)\)")
 
@@ -179,10 +178,10 @@ def rows_under(dashboard, children, grandchildren):
     """Rows under one dashboard task, each with its parent, and the untagged tasks that look like rows.
 
     A row is a task tagged `measure` or `dimension`: a direct subtask of the dashboard (parent None) or a
-    subtask of a PR task, holder or other work item under it (parent = that subtask). An untagged subtask
+    subtask of a PR task or other work item under it (parent = that subtask). An untagged subtask
     there whose notes carry a `Used by:` line is a row too, a dimension, as on a table task. Table tasks
-    under a dashboard keep their own path. Any other untagged subtask of a PR task or a holder is
-    reported: without its kind tag it drops off the status page.
+    under a dashboard keep their own path. Any other untagged subtask of a PR task is reported: without
+    its kind tag it drops off the status page.
     """
     rows, untagged = [], []
     for c in children:
@@ -195,18 +194,36 @@ def rows_under(dashboard, children, grandchildren):
         for g in kids:
             if row_kind(g) or USED_BY.search(g.get("notes") or ""):
                 rows.append((g, c))
-            elif pr_type(c["name"]) or c["name"] in HOLDERS:
+            elif pr_type(c["name"]):
                 untagged.append(g)
     return rows, untagged
 
 
+def direct_rows(children):
+    """A dashboard's own rows, each with its kind: tagged, a legacy measure with a `Status:` line, or an
+    untagged subtask with a `Used by:` line (a deferred row), which is a dimension. Table and PR tasks are not rows.
+    """
+    out = []
+    for r in children:
+        notes = r.get("notes") or ""
+        if TABLE.match(r["name"]) or pr_type(r["name"]):
+            continue
+        if kind := row_kind(r):
+            out.append((r, kind))
+        elif "Status:" in notes:
+            out.append((r, "measure"))
+        elif USED_BY.search(notes):
+            out.append((r, "dimension"))
+    return out
+
+
 def want_status_pr(*, live, parent, parent_blockers):
-    """The status tag for a row under a PR task or a holder.
+    """The status tag for a row under a PR task.
 
     needs-data while the parent is an open dbt PR or an open dbt PR blocks it; otherwise needs-cube, including
-    a merged parent whose members are not on a public view yet. Holders give none.
+    a merged parent whose members are not on a public view yet.
     """
-    if live or parent["name"] in HOLDERS:
+    if live:
         return None
     if pr_type(parent["name"]) == "dbt" and not parent.get("completed"):
         return "needs-data"
@@ -335,7 +352,7 @@ def ensure_tag(name):
 def sync_row(r, kind, parent=None, parent_blockers=()):
     """Steps 2-6 for one measure row or one dimension row.
 
-    A row under a PR task or a holder (parent given) takes its status from that parent while it has no
+    A row under a PR task (parent given) takes its status from that parent while it has no
     stage blockers left; a row still linked to table stages keeps the stage rule.
     """
     notes = r.get("notes") or ""
@@ -599,26 +616,20 @@ def main(argv):
         children = get_all(
             f"/tasks/{dash}/subtasks", {"opt_fields": ROWF + ",num_subtasks"}
         )
-        # rows under the dashboard's PR tasks and holders
+        # rows under the dashboard's PR tasks
         grandchildren = {
             c["gid"]: get_all(f"/tasks/{c['gid']}/subtasks", {"opt_fields": ROWF})
             for c in children
             if c.get("num_subtasks") and not TABLE.match(c["name"])
         }
         nested, _ = rows_under({"gid": dash}, children, grandchildren)
-        # an untagged row under a PR task or holder is there by its `Used by:` line: a dimension
+        # an untagged row under a PR task is there by its `Used by:` line: a dimension
         plan = [
             (r, row_kind(r) or "dimension", parent)
             for r, parent in nested
             if parent is not None
         ]
-        # direct rows: tagged, or the legacy measure rows with a `Status:` line
-        plan += [
-            (r, row_kind(r) or "measure", None)
-            for r in children
-            if not TABLE.match(r["name"])
-            and (row_kind(r) or "Status:" in (r.get("notes") or ""))
-        ]
+        plan += [(r, kind, None) for r, kind in direct_rows(children)]
         plans.append((dash, plan))
     only_dim_rows = [r for r in dim_rows if scope is None or scope & r["used_by"]]
     # with no verdict for any row, --apply would strip the whole dashboard's 'validated' tags

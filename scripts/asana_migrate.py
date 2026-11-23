@@ -1,7 +1,7 @@
 # /// script
 # dependencies = ["requests"]
 # ///
-"""Move "Data Marts + Semantic Layer" rows off table tasks onto each dashboard's PR tasks and holders.
+"""Move "Data Marts + Semantic Layer" rows off table tasks onto each dashboard's PR tasks.
 
   uv run --with requests python scripts/asana_migrate.py --section "1 · Assessments"           # preview
   uv run --with requests python scripts/asana_migrate.py --section "1 · Assessments" --apply   # make the changes
@@ -15,19 +15,19 @@ For each row on a table task (a subtask with a `Used by:` line of dashboard link
 `cube:` / `view:` stage):
   - its owner is the earliest-due dashboard its `Used by:` names; a dashboard with no due date sorts last,
     and a tie goes to the older dashboard task. A row whose owner is outside --section stays put.
-  - a done row moves under the owner's `Already in Cube` holder; an open row whose notes have a line
-    starting `Deferred:` moves under the owner's `Deferred` holder.
+  - a done row stays on its table and closes with it; an open row whose notes have a line starting
+    `Deferred:` moves directly under the owner dashboard.
   - an open row moves under the owner's PR task for that table: an open `PR (dbt|Cube): ...` subtask that
     names the table after its ` · ` (the Cube PR when both do), else a new
     `PR (dbt|Cube): open fields · <table>`, dbt when the table has an open `mart:` stage, its notes say
-    "New mart", or one of the rows carries needs-data. Its links to the table's stages are removed.
-  - each other dashboard that uses an open row gets `Confirm <table> shipped with <owner>`, due on the
-    owner's due date and blocked by the owner's PR task.
-Every dashboard in scope gets the 2 holders. A table the run moves no row off is left alone, unless it is
-in the run (the whole project, or --section's own tables) and nothing is open on it: then it closes, or is
-reported when an open stage is all that is left. On a table it
-does touch, an open subtask with no `Used by:` line stays put and is reported. Once nothing is left on a
-table, its open stages close (or are reported when no PR took its work) and the table task closes.
+    "New mart", or one of the rows carries needs-data. A new PR task has no due date. Its links to the
+    table's stages are removed.
+Another dashboard that uses the same row gets nothing: the builder's inventory finds shared work. A table
+the run moves no row off is left alone, unless it is in the run (the whole project, or --section's own
+tables) and nothing is open on it: then it closes, or is reported when an open stage is all that is left.
+On a table it does touch, an open subtask with no `Used by:` line stays put and is reported. Once nothing
+open is left on a table, its open stages close (or are reported when no PR took its work) and the table
+task closes.
 """
 
 import importlib.util
@@ -36,12 +36,6 @@ import re
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-HOLDERS = {
-    "Already in Cube": "Holds rows this dashboard uses first that are live in Cube with no PR to ship "
-    "them. Each row keeps its measure or dimension tag and its Used by: line.",
-    "Deferred": "Holds rows this dashboard uses first that are deferred. Each row keeps its measure or "
-    "dimension tag and its Used by: line.",
-}
 STAGE = re.compile(r"^(mart|cube|view):")
 DEFERRED = re.compile(r"^\s*Deferred:", re.M)
 GID = re.compile(r"\b(\d{16})\b")
@@ -99,40 +93,14 @@ def plan(dashboards, tables, children_of, scope, section=None):
 
     dashboards: [{gid, name, due_on}]; tables: [{gid, name, notes, subtasks}]; children_of: dashboard gid ->
     its subtasks [{gid, name}]; scope: a set of dashboard gids, or None for all. Returns dicts with an `op`
-    of create, block, move, unlink, close or report. A `new:<key>` reference names a task a create makes.
+    of create, move, unlink, close or report. A `new:<key>` reference names a task a create makes.
     """
     by_gid = {d["gid"]: d for d in dashboards}
 
     def in_scope(g):
         return scope is None or g in scope
 
-    creates, blocks, moves, unlinks, closes, reports = {}, [], [], [], [], []
-
-    def existing(dash, test):
-        return next((c for c in children_of.get(dash, []) if test(c["name"])), None)
-
-    def holder(dash, name):
-        found = existing(dash, lambda n: n == name)
-        if found:
-            return found["gid"]
-        key = f"holder:{dash}:{name}"
-        creates.setdefault(
-            key,
-            {
-                "op": "create",
-                "key": key,
-                "parent": dash,
-                "name": name,
-                "notes": HOLDERS[name],
-                "due_on": None,
-            },
-        )
-        return f"new:{key}"
-
-    for d in dashboards:
-        if in_scope(d["gid"]):
-            for name in HOLDERS:
-                holder(d["gid"], name)
+    creates, moves, unlinks, closes, reports = {}, [], [], [], []
 
     for t in tables:
         subs = t["subtasks"]
@@ -143,28 +111,21 @@ def plan(dashboards, tables, children_of, scope, section=None):
         touched = False  # the run moves at least 1 row off this table
         open_by_owner = {}
         for s in subs:
-            if s["gid"] in stage_gids:
-                continue
+            if s["gid"] in stage_gids or s.get("completed"):
+                continue  # a done row stays on its table and closes with it
             dashes = used_by(s) & by_gid.keys()
             if not dashes:
-                if not s.get("completed"):
-                    left.append(s["name"])
-                    unclaimed.append(s["name"])
+                left.append(s["name"])
+                unclaimed.append(s["name"])
                 continue
             owner = owner_of(dashes, by_gid)
             if not in_scope(owner):
                 left.append(s["name"])
                 continue
             touched = True
-            if s.get("completed") or DEFERRED.search(s.get("notes") or ""):
-                where = "Already in Cube" if s.get("completed") else "Deferred"
+            if DEFERRED.search(s.get("notes") or ""):
                 moves.append(
-                    {
-                        "op": "move",
-                        "task": s["gid"],
-                        "parent": holder(owner, where),
-                        "name": s["name"],
-                    }
+                    {"op": "move", "task": s["gid"], "parent": owner, "name": s["name"]}
                 )
             else:
                 open_by_owner.setdefault(owner, []).append(s)
@@ -207,7 +168,6 @@ def plan(dashboards, tables, children_of, scope, section=None):
                     "name": f"PR ({'dbt' if dbt else 'Cube'}): open fields · {t['name']}",
                     "notes": f"The open work on {t['name']} that {by_gid[owner]['name']} needs first. "
                     "The rows below are the fields it ships.",
-                    "due_on": by_gid[owner].get("due_on"),
                 }
                 ref = f"new:{key}"
             pr_refs.append(ref)
@@ -215,31 +175,10 @@ def plan(dashboards, tables, children_of, scope, section=None):
                 moves.append(
                     {"op": "move", "task": r["gid"], "parent": ref, "name": r["name"]}
                 )
-            for user in sorted(
-                {g for r in rows for g in used_by(r) & by_gid.keys()} - {owner}
-            ):
-                if not in_scope(user):
-                    continue
-                name = f"Confirm {t['name']} shipped with {by_gid[owner]['name']}"
-                if existing(user, lambda n, name=name: n == name):
-                    continue
-                key = f"confirm:{user}:{t['gid']}:{owner}"
-                if key in creates:
-                    continue
-                creates[key] = {
-                    "op": "create",
-                    "key": key,
-                    "parent": user,
-                    "name": name,
-                    "notes": f"{by_gid[owner]['name']} builds this first. Check its members cover what "
-                    f"{by_gid[user]['name']} needs.",
-                    "due_on": by_gid[owner].get("due_on"),
-                }
-                blocks.append({"op": "block", "task": f"new:{key}", "deps": [ref]})
 
         if not touched:
             # a table emptied by hand closes; one with open stages but no rows is reported
-            in_run = section is None or any(
+            in_run = scope is None or any(
                 (m.get("section") or {}).get("name") == section
                 for m in t.get("memberships") or []
             )
@@ -296,12 +235,12 @@ def plan(dashboards, tables, children_of, scope, section=None):
                     "op": "close",
                     "task": t["gid"],
                     "name": t["name"],
-                    "comment": "Closed by asana_migrate: every row now sits under the PR task or "
-                    "holder of the dashboard that needs it first.",
+                    "comment": "Closed by asana_migrate: every open row now sits under the PR task "
+                    "or the dashboard that needs it first.",
                 }
             )
 
-    return list(creates.values()) + blocks + moves + unlinks + closes + reports
+    return list(creates.values()) + moves + unlinks + closes + reports
 
 
 # ---------------------------------------------------------------- apply
@@ -318,8 +257,6 @@ def run(actions, apply):
             continue
         if op == "create":
             desc = f"create '{a['name']}' under {a['parent']}"
-        elif op == "block":
-            desc = f"{a['task']} blocked by {', '.join(a['deps'])}"
         elif op == "move":
             desc = f"move '{a['name']}' under {a['parent']}"
         elif op == "unlink":
@@ -331,17 +268,9 @@ def run(actions, apply):
             continue
         if op == "create":
             data = {"name": a["name"], "notes": a["notes"]}
-            if a.get("due_on"):
-                data["due_on"] = a["due_on"]
             made[a["key"]] = sync.call(
                 "POST", f"/tasks/{res(a['parent'])}/subtasks", data
             )["data"]["gid"]
-        elif op == "block":
-            sync.call(
-                "POST",
-                f"/tasks/{res(a['task'])}/addDependencies",
-                {"dependencies": [res(d) for d in a["deps"]]},
-            )
         elif op == "move":
             sync.call(
                 "POST", f"/tasks/{a['task']}/setParent", {"parent": res(a["parent"])}

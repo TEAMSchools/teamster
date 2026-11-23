@@ -28,8 +28,8 @@ holds the package. Keep the builder's working files in
 - Claude posts and edits only what the analyst approved: the build issue, Asana
   edits, pull requests.
 - Asana mirrors the approved build plan: the dashboard task holds the plan's PR
-  tasks, decisions, Confirm items, holders and Validate task (_Plan_ step 3).
-  Show each change in the build issue first; make it after the analyst approves.
+  tasks, decisions, deferred rows and Validate task (_Plan_ step 3). Show each
+  change in the build issue first; make it after the analyst approves.
 - GitHub text carries field and member names and counts, never a student's or
   staff member's name, number or row; counts under 10 read `<10`.
 - A new student-level column (a tier, a bucket, a flag) is PII: tag it
@@ -64,12 +64,13 @@ holds the package. Keep the builder's working files in
    analyst where it and the command disagree.
 
 6. Read the dashboard's task in the Asana project "Data Marts + Semantic Layer":
-   the rows tagged `measure` or `dimension` under its PR tasks and its
-   `Already in Cube` / `Deferred` holders; for a dashboard not laid out yet
-   (_Plan_ step 3), its blocked-by builds and their open field subtasks; and its
-   deferred and retired notes. Builds an earlier-due dashboard owns show as
-   `Confirm` subtasks. Write `asana.json` as `[{"field": ..., "status": ...}]`
-   with status `open` or `deferred`; leave retired items out.
+   the rows tagged `measure` or `dimension` under its PR tasks, the deferred
+   rows directly under it, and its retired notes; for a dashboard not laid out
+   yet (_Plan_ step 3), its blocked-by builds and their open field subtasks.
+   Rows an earlier-due dashboard's PR ships sit under that dashboard: find them
+   with `search_tasks` on this dashboard's gid, which their `Used by:` line
+   names. Write `asana.json` as `[{"field": ..., "status": ...}]` with status
+   `open` or `deferred`; leave retired items out.
 7. Find the catalog file holding the dashboard's section:
    `rg -l '<slug>' docs/superpowers/plans -g '2026-10-02-cube-gap-catalog-*.md'`
    (the glob skips the index file, which names every slug) (DDI Suite:
@@ -137,24 +138,21 @@ _Build_ step 4.
      dashboard whose build issue opened first. A build an earlier dashboard owns
      is not planned again.
    - Each PR is a subtask `PR (<dbt|Cube>): <what it builds> · <table>` with an
-     owner and a due date on or before the dashboard's. The tables after the `·`
+     owner. Only the dashboard task carries a due date. The tables after the `·`
      (comma-separated) are the table tasks its rows came from; the sync reads
-     the type and `scripts/asana_migrate.py` matches on the tables. A dbt PR is
-     due before the Cube PR that reads its columns and blocks it. Each decision
-     is a subtask with an owner and a due date.
-   - Each build another dashboard owns gets
-     `Confirm <build> shipped with <dashboard>`, due on that dashboard's due
-     date, blocked by the build's task, with the reused members in its notes.
-   - 2 holders, `Already in Cube` and `Deferred`, and a
-     `Validate <dashboard> in Cube` task blocked by every PR task and Confirm
-     item, never by rows (Asana caps a task at 30 dependencies plus dependents).
+     the type and `scripts/asana_migrate.py` matches on the tables. A dbt PR
+     blocks the Cube PR that reads its columns. Each decision is a subtask with
+     an owner.
+   - A `Validate <dashboard> in Cube` task blocked by every PR task, never by
+     rows (Asana caps a task at 30 dependencies plus dependents).
    - Move the hub issue's synced `#NNNN |` task under the dashboard.
    - Move each row to the PR that ships its Cube member (the Cube PR when a dbt
-     PR comes first), or to a holder when no PR ships it. Keep its `measure` or
-     `dimension` tag, its `Use:` and `Used by:` lines and its member names.
-     Remove its links to the table's `mart:`, `cube:` and `view:` stages. A
-     stage with work left becomes a PR task; a table task closes when it has no
-     rows and no open stages.
+     PR comes first). A deferred row moves directly under the dashboard; a row
+     already live in Cube stays on its table. Keep its `measure` or `dimension`
+     tag, its `Use:` and `Used by:` lines and its member names. Remove its links
+     to the table's `mart:`, `cube:` and `view:` stages. A stage with work left
+     becomes a PR task; a table task closes when it has no rows and no open
+     stages.
    - Ask the analyst to run
      `uv run --with requests python scripts/asana_sync.py --only <dashboard gid>`
      in their terminal (it needs their own `ASANA_PAT`), and fix every row in
@@ -240,5 +238,4 @@ is not under the dashboard yet. That covers PRs opened outside the builder.
 2. With the analyst's approval, record the validation result on the dashboard's
    task in the Asana project "Data Marts + Semantic Layer".
 3. When a dashboard's due date moves, re-check who owns its builds (_Plan_ step
-   3): a build moves to the dashboard that is now earliest, and its PR task and
-   Confirm item swap places.
+   3): a build's PR task moves to the dashboard that is now earliest.
