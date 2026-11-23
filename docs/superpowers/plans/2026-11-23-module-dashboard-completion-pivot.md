@@ -32,9 +32,9 @@ and are not repeated here.
   (`ZZ-REVIEW 2026-11-12 DDI Suite goal columns`). Never publish over it.
 - Never publish to the Production project. The production DDI Suite is luid
   `6d82b643-59a8-4106-b2f9-97ddf7f638e7`; no step here touches it.
-- Before the first publish, ask the user which non-production project the copies
-  land in. With no preference, use `GPA-monitor-temp`,
-  `c74d8e08-b856-4430-a759-ebacb061e376`.
+- Every copy is published to `GPA-monitor-temp`,
+  `c74d8e08-b856-4430-a759-ebacb061e376`, the project the user named. No other
+  project id appears in a publish call.
 - Every published name starts
   `ZZ-REVIEW <YYYY-MM-DD> DDI Suite module completion`. Probe copies append
   ` PROBE <variant>`.
@@ -430,9 +430,9 @@ the 2 heatmap worksheets stay visible so their data can be exported:
 | `min0`  | `build(completion_min=0.0, pooled_format="p0.00%")`  |
 | `min75` | `build(completion_min=0.75, pooled_format="p0.00%")` |
 
-- [ ] **Step 1: Ask the user for the non-production project,** then set the
-      publish gate in the test file: the literal project id, the `ZZ-REVIEW `
-      name prefix, and a raise after the call if `item.project_id` differs.
+- [ ] **Step 1: Set the publish gate in the test file** before any publish call:
+      the literal `GPA-monitor-temp` project id, the `ZZ-REVIEW ` name prefix,
+      and a raise after the call if `item.project_id` differs.
 
 - [ ] **Step 2: Publish the 3 probes and export.** For each probe and each of
       the 2 heatmap worksheets, export CSV with `CSVRequestOptions`, setting the

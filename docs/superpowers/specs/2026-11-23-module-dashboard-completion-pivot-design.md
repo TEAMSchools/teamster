@@ -275,9 +275,8 @@ extract lacks, such as Miami not-taken rows.
 ## Delivery
 
 - A new review copy, named `ZZ-REVIEW <date> DDI Suite module completion`, in
-  the non-production project the user names. The skill's default is
-  `GPA-monitor-temp` (`c74d8e08-b856-4430-a759-ebacb061e376`). The base copy is
-  never overwritten.
+  the non-production project the user named: `GPA-monitor-temp`
+  (`c74d8e08-b856-4430-a759-ebacb061e376`). The base copy is never overwritten.
 - The copy carries the base's packaged extract, so its data is as of the base's
   last refresh.
 - Throwaway probe copies used for verification are deleted when done.
