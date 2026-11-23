@@ -64,9 +64,12 @@ holds the package. Keep the builder's working files in
    analyst where it and the command disagree.
 
 6. Read the dashboard's task in the Asana project "Data Marts + Semantic Layer":
-   its blocked-by builds, their open field subtasks, and its deferred and
-   retired notes. Write `asana.json` as `[{"field": ..., "status": ...}]` with
-   status `open` or `deferred`; leave retired items out.
+   the rows tagged `measure` or `dimension` under its PR tasks and its
+   `Already in Cube` / `Deferred` holders; for a dashboard not laid out yet
+   (_Plan_ step 3), its blocked-by builds and their open field subtasks; and its
+   deferred and retired notes. Builds an earlier-due dashboard owns show as
+   `Confirm` subtasks. Write `asana.json` as `[{"field": ..., "status": ...}]`
+   with status `open` or `deferred`; leave retired items out.
 7. Find the catalog file holding the dashboard's section:
    `rg -l '<slug>' docs/superpowers/plans -g '2026-10-02-cube-gap-catalog-*.md'`
    (the glob skips the index file, which names every slug) (DDI Suite:
@@ -127,7 +130,7 @@ _Build_ step 4.
 2. Search open issues for "Build <dashboard> in Cube"; reuse one that exists.
    Otherwise draft it: the `inventory` table, each disagreement with the
    analyst's decision, each duplicate verdict, the plan by tier, and the Asana
-   misses to fix. Show the draft; post only after approval.
+   changes _Plan_ step 3 will make. Show the draft; post only after approval.
 3. Lay the approved plan out under the dashboard's Asana task (design:
    `docs/superpowers/specs/2026-11-23-asana-dashboard-build-plans-design.md`):
    - A build belongs to the earliest-due dashboard that needs it; on a tie, the
@@ -150,8 +153,10 @@ _Build_ step 4.
      Remove its links to the table's `mart:`, `cube:` and `view:` stages. A
      stage with work left becomes a PR task; a table task closes when it has no
      rows and no open stages.
-   - Run `scripts/asana_sync.py --only <dashboard gid>` and fix every row in its
-     "Rows with no kind tag" list.
+   - Ask the analyst to run
+     `uv run --with requests python scripts/asana_sync.py --only <dashboard gid>`
+     in their terminal (it needs their own `ASANA_PAT`), and fix every row in
+     its "Rows with no kind tag" list.
 
 ## Build
 

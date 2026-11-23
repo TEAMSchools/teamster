@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import sys
 from pathlib import Path
 from types import ModuleType
@@ -172,3 +173,93 @@ def test_live_row_and_holders_have_no_status(mod):
     for holder in ("Already in Cube", "Deferred"):
         h = {"name": holder, "completed": False}
         assert mod.want_status_pr(live=False, parent=h, parent_blockers=[]) is None
+
+
+# ---------------------------------------------------------------- main() with git and Asana stubbed
+D = "1213823922716082"
+PR = "9000000000000001"
+ROW = "9000000000000002"
+VIEW_YML = (
+    "views:\n  - name: v\n    cubes:\n"
+    "      - join_path: student_assessment_scores\n        includes:\n"
+    "          - pct_proficient\n"
+)
+CUBE_YML = (
+    "cubes:\n  - name: student_assessment_scores\n    measures:\n"
+    "      - name: pct_proficient\n"
+)
+
+
+def _stub_main(mod, monkeypatch, *, views=True, row_done=False):
+    writes = []
+
+    def git(*args):
+        if args[0] == "ls-tree":
+            if args[-1].endswith("views"):
+                return "src/cube/model/views/v.yml\n" if views else ""
+            return "src/cube/model/cubes/c.yml\n"
+        if args[0] == "show":
+            return VIEW_YML if args[1].endswith("v.yml") else CUBE_YML
+        return ""
+
+    row = {
+        "gid": ROW,
+        "name": "% Proficient",
+        "completed": row_done,
+        "notes": "Where it lives: pct_proficient",
+        "tags": [{"name": "measure", "gid": mod.MEASURE_TAG}],
+        "dependencies": [],
+    }
+    data = {
+        f"/workspaces/{mod.WORKSPACE}/tags": [
+            {"name": n, "gid": f"tag-{n}"}
+            for n in ("needs-data", "needs-cube", "validated", "dimension")
+        ],
+        f"/projects/{mod.PROJECT}/tasks": [
+            {"gid": D, "name": "Literacy Dashboard", "tags": [{"name": "dashboard"}]}
+        ],
+        f"/tasks/{D}/subtasks": [
+            {
+                "gid": PR,
+                "name": "PR L1 (Cube): percentile",
+                "completed": False,
+                "notes": "",
+                "tags": [],
+                "num_subtasks": 1,
+            }
+        ],
+        f"/tasks/{PR}/subtasks": [row],
+    }
+    monkeypatch.setattr(mod, "git", git)
+    monkeypatch.setattr(mod, "get_all", lambda path, params: data.get(path, []))
+    monkeypatch.setattr(mod, "write", lambda desc, *a: writes.append(desc))
+    monkeypatch.setenv("ASANA_PAT", "test-token")
+    return writes
+
+
+def _latest(tmp_path, rows):
+    d = tmp_path / "asana-sync" / "validation"
+    d.mkdir(parents=True)
+    (d / "latest.json").write_text(json.dumps({"rows": rows}))
+
+
+def test_only_apply_guard_sees_nested_rows(mod, monkeypatch, tmp_path):
+    _latest(tmp_path, {ROW: {"verdict": "pass"}})
+    writes = _stub_main(mod, monkeypatch)
+    assert mod.main(["--only", D, "--apply"]) == 0
+    assert any("validated" in w for w in writes)
+
+
+def test_only_apply_guard_stops_before_any_write(mod, monkeypatch, tmp_path):
+    _latest(tmp_path, {"someone-else": {"verdict": "pass"}})
+    writes = _stub_main(mod, monkeypatch)
+    with pytest.raises(SystemExit, match="no verdict"):
+        mod.main(["--only", D, "--apply"])
+    assert writes == []
+
+
+def test_empty_cube_read_stops_before_any_write(mod, monkeypatch):
+    writes = _stub_main(mod, monkeypatch, views=False, row_done=True)
+    with pytest.raises(SystemExit, match="no Cube view files"):
+        mod.main(["--only", D])
+    assert writes == []

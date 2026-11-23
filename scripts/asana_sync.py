@@ -467,6 +467,11 @@ def main(argv):
             for raw, name in view_includes(y):
                 shipped.update({raw, f"{vname}.{raw}", name, f"{vname}.{name}"})
                 exposed.add(name)
+    if not shipped:
+        # an empty read would untick every done row as "not on main"
+        sys.exit(
+            "Read no Cube view files on origin/main (src/cube/model/views): stopping before any change."
+        )
     print(
         f"Cube members on public views (origin/main): {len([x for x in shipped if '.' in x])}"
     )
@@ -556,46 +561,53 @@ def main(argv):
     # ------------------------------------------------------------ 2-6. measure and dimension rows
     print("\n2-6. Measure and dimension rows")
     report_odd_dash_blockers, report_untagged = [], []
+    # Gather every dashboard's rows before any write, so the --only guard below sees them all.
+    plans = []  # (dashboard gid, [(row, kind, parent or None)])
     for dash in dashboards:
         if ONLY and dash != ONLY:
             continue
-        rows = get_all(
+        children = get_all(
             f"/tasks/{dash}/subtasks", {"opt_fields": ROWF + ",num_subtasks"}
         )
         # rows under the dashboard's PR tasks and holders
         grandchildren = {
             c["gid"]: get_all(f"/tasks/{c['gid']}/subtasks", {"opt_fields": ROWF})
-            for c in rows
+            for c in children
             if c.get("num_subtasks") and not TABLE.match(c["name"])
         }
-        nested, untagged = rows_under({"gid": dash}, rows, grandchildren)
+        nested, untagged = rows_under({"gid": dash}, children, grandchildren)
         report_untagged += [f"{dash}: {u['name'][:70]} ({u['gid']})" for u in untagged]
+        plan = [(r, row_kind(r), parent) for r, parent in nested if parent is not None]
+        # direct rows: tagged, or the legacy measure rows with a `Status:` line
+        plan += [
+            (r, row_kind(r) or "measure", None)
+            for r in children
+            if not TABLE.match(r["name"])
+            and (row_kind(r) or "Status:" in (r.get("notes") or ""))
+        ]
+        plans.append((dash, plan))
+    only_dim_rows = [r for r in dim_rows if not ONLY or ONLY in r["used_by"]]
+    # with no verdict for any row, --apply would strip the whole dashboard's 'validated' tags
+    if ONLY and APPLY and validation is not None:
+        gids = {r["gid"] for _, plan in plans for r, _, _ in plan}
+        gids |= {r["gid"] for r in only_dim_rows}
+        if not gids & validation.keys():
+            sys.exit(
+                f"latest.json has no verdict for any row of {ONLY}: merge this run's verdicts first."
+            )
+
+    for dash, plan in plans:
         blockers_of = {}
-        for r, parent in nested:
+        for r, kind, parent in plan:
             if parent is None:
-                continue  # direct rows sync below, with the legacy `Status:` rows
+                sync_row(r, kind)
+                continue
             if parent["gid"] not in blockers_of:
                 blockers_of[parent["gid"]] = get_all(
                     f"/tasks/{parent['gid']}/dependencies",
                     {"opt_fields": "name,completed"},
                 )
-            sync_row(r, row_kind(r), parent, blockers_of[parent["gid"]])
-        # with no verdict for any row, --apply would strip the whole dashboard's 'validated' tags
-        if (
-            ONLY
-            and APPLY
-            and validation is not None
-            and not any(r["gid"] in validation for r in rows)
-        ):
-            sys.exit(
-                f"latest.json has no verdict for any row of {ONLY}: merge this run's verdicts first."
-            )
-        for r in rows:
-            if TABLE.match(r["name"]):
-                continue
-            if row_kind(r) or "Status:" in (r.get("notes") or ""):
-                sync_row(r, row_kind(r) or "measure")
-            # anything else (PR tasks, holders, checklist steps) is not a row
+            sync_row(r, kind, parent, blockers_of[parent["gid"]])
         # 1b. every table holding a dimension row this dashboard uses blocks the dashboard (adds only missing links)
         deps = get_all(f"/tasks/{dash}/dependencies", {"opt_fields": "name"})
         need = sorted(uses.get(dash, set()) - {d["gid"] for d in deps})
@@ -613,9 +625,8 @@ def main(argv):
                     f"{dash}: {d.get('name', d['gid'])[:70]}"
                 )
 
-    for r in dim_rows:
-        if not ONLY or ONLY in r["used_by"]:
-            sync_row(r, "dimension")
+    for r in only_dim_rows:
+        sync_row(r, "dimension")
     report_unknown_used_by = sorted(
         f"{r['name'][:60]} ({r['gid']}): {g}"
         for r in dim_rows

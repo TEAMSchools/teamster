@@ -36,10 +36,15 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
 
+      # A scheduled run writes only once the repo variable ASANA_SYNC_APPLY is
+      # 'true', which is set after reading a preview run's log; until then it
+      # previews.
       - name: Sync
         env:
           ASANA_PAT: ${{ secrets.ASANA_PAT }}
-          APPLY: ${{ github.event_name == 'schedule' || inputs.apply }}
+          APPLY:
+            ${{ (github.event_name == 'schedule' && vars.ASANA_SYNC_APPLY ==
+            'true') || inputs.apply }}
         run: |
           if [ "${APPLY}" = "true" ]; then
             uv run --no-project --with requests python scripts/asana_sync.py --apply
