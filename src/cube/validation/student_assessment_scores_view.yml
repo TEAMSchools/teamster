@@ -2788,3 +2788,13 @@ decisions:
       dashboard: 065d0590b16edbb677420cb3fd90b51ba0cc0392155576b02d3c5a980e9bfc08
       matched_only: "227"
     task: "#6415"
+  - id: ddi-106
+    comparison: count_students__score_distribution
+    all_groups: true
+    call: deliberate
+    reason:
+      Score Distribution is not on a published dashboard; the owner validates
+      published sheets only.
+    fingerprints:
+      cube: d1d1c186f5f12f58422b30b9a5efc97af56fc56a39cea0180a84112dd8a4a853
+      dashboard: 3a207d974ada3e787ff042a40597d7fa3537081a9da0b51204bf5c22c1537546
