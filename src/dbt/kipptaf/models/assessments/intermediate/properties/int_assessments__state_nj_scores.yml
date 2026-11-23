@@ -417,9 +417,9 @@ models:
       - name: student_growth_percentile
         data_type: int64
         description: >-
-          Student growth percentile, 1 to 99, from Cambium; see
-          stg_cambium__njsla for which tests carry one. NULL on every Pearson
-          row, because the Pearson files had no SGP.
+          Student growth percentile, 1 to 99, from Cambium; see the cambium
+          package's stg_cambium__njsla for which tests carry one. NULL on every
+          Pearson row, because the Pearson files had no SGP.
         config:
           meta:
             contains_pii: true
@@ -443,7 +443,7 @@ unit_tests:
             }
           - {
               student_test_uuid: c2,
-              student_number: null,
+              student_number: 999,
               student_growth_percentile: 12,
             }
       - input: ref('stg_google_sheets__pearson__student_crosswalk')
