@@ -276,3 +276,12 @@ Cube has it, so the holders and Confirm items repeat what it finds. They go:
 
 This replaces the Confirm items and holders in _Shape_ and _Rules_. The
 `Validate <dashboard> in Cube` task is blocked by the dashboard's PR tasks only.
+
+## Revision 2026-11-23: delete, do not close
+
+Holders, Confirm items, table tasks and stage subtasks are scaffolding from
+organizing the project, and a teammate browsing closed tasks should not have to
+sort through them. Where this design closes them, the migration and a one-time
+cleanup delete them instead, with the done rows beneath. GitHub records what
+shipped. A table task holding a synced `#NNNN |` task is never deleted; the
+migration reports it so the synced task can be moved off first.

@@ -151,8 +151,8 @@ _Build_ step 4.
      already live in Cube stays on its table. Keep its `measure` or `dimension`
      tag, its `Use:` and `Used by:` lines and its member names. Remove its links
      to the table's `mart:`, `cube:` and `view:` stages. A stage with work left
-     becomes a PR task; a table task closes when it has no rows and no open
-     stages.
+     becomes a PR task; a table task is deleted when it has no open rows and no
+     open stages.
    - Ask the analyst to run
      `uv run --with requests python scripts/asana_sync.py --only <dashboard gid>`
      in their terminal (it needs their own `ASANA_PAT`), and fix every row in

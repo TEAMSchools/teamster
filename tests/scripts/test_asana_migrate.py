@@ -77,7 +77,7 @@ def test_owner_is_the_earliest_due_and_undated_sorts_last(mig):
     assert mig.owner_of({"9999999999999999"}, by_gid) is None
 
 
-def test_a_done_row_stays_on_its_table_and_the_table_closes(mig):
+def test_a_done_row_goes_with_its_deleted_table(mig):
     table = {
         "gid": "T1",
         "name": "dim_regions",
@@ -87,7 +87,7 @@ def test_a_done_row_stays_on_its_table_and_the_table_closes(mig):
     actions = mig.plan(DASHES, [table], {d["gid"]: [] for d in DASHES}, None)
     assert not ops(actions, "create")
     assert not ops(actions, "move")
-    assert [a["task"] for a in ops(actions, "close")] == ["T1"]
+    assert [a["task"] for a in ops(actions, "delete")] == ["T1"]
 
 
 def test_open_row_goes_to_an_existing_pr_that_names_its_table(mig):
@@ -175,7 +175,7 @@ def test_shared_open_work_gets_no_confirm_item(mig):
     assert not ops(actions, "block")
 
 
-def test_stages_close_and_an_emptied_table_closes(mig):
+def test_stages_go_and_an_emptied_table_is_deleted(mig):
     table = {
         "gid": "T6",
         "name": "fct_sight_words",
@@ -187,9 +187,7 @@ def test_stages_close_and_an_emptied_table_closes(mig):
         ],
     }
     actions = mig.plan(DASHES, [table], {d["gid"]: [] for d in DASHES}, None)
-    closed = [a["task"] for a in ops(actions, "close")]
-    assert "S6" in closed and "S7" not in closed
-    assert "T6" in closed
+    assert [a["task"] for a in ops(actions, "delete")] == ["T6"]
 
 
 def test_a_table_with_a_work_item_left_stays_open(mig):
@@ -208,7 +206,7 @@ def test_a_table_with_a_work_item_left_stays_open(mig):
         "subtasks": [row("R7", "Scale score", [DDI]), item],
     }
     actions = mig.plan(DASHES, [table], {d["gid"]: [] for d in DASHES}, None)
-    assert "T7" not in [a["task"] for a in ops(actions, "close")]
+    assert "T7" not in [a["task"] for a in ops(actions, "delete")]
     assert any(
         "Document cube context issues" in a["text"] for a in ops(actions, "report")
     )
@@ -223,7 +221,7 @@ def test_scope_leaves_rows_owned_outside_it(mig):
     }
     actions = mig.plan(DASHES, [table], {d["gid"]: [] for d in DASHES}, {STAT})
     assert not ops(actions, "move")
-    assert "T8" not in [a["task"] for a in ops(actions, "close")]
+    assert "T8" not in [a["task"] for a in ops(actions, "delete")]
 
 
 def test_an_existing_pr_is_reused_and_nothing_is_created(mig):
@@ -272,7 +270,7 @@ def test_a_section_run_ignores_tables_it_does_not_touch(mig):
     }
     actions = mig.plan(DASHES, [table], {d["gid"]: [] for d in DASHES}, {STAT})
     assert not ops(actions, "report")
-    assert not ops(actions, "close")
+    assert not ops(actions, "delete")
 
 
 def empty_table(gid, name, section, subtasks=()):
@@ -285,7 +283,7 @@ def empty_table(gid, name, section, subtasks=()):
     }
 
 
-def test_an_empty_table_closes_when_no_row_moves_off_it(mig):
+def test_an_empty_table_is_deleted_when_no_row_moves_off_it(mig):
     table = empty_table(
         "T20",
         "fct_assessment_growth",
@@ -293,10 +291,10 @@ def test_an_empty_table_closes_when_no_row_moves_off_it(mig):
         [stage("S20", "cube: growth", done=True)],
     )
     actions = mig.plan(DASHES, [table], {d["gid"]: [] for d in DASHES}, None)
-    assert [a["task"] for a in ops(actions, "close")] == ["T20"]
+    assert [a["task"] for a in ops(actions, "delete")] == ["T20"]
 
 
-def test_an_empty_table_with_an_open_stage_is_reported_not_closed(mig):
+def test_an_empty_table_with_an_open_stage_is_reported_not_deleted(mig):
     table = empty_table(
         "T21",
         "dim_college_assessment_goals",
@@ -304,13 +302,13 @@ def test_an_empty_table_with_an_open_stage_is_reported_not_closed(mig):
         [stage("S21", "cube: college_assessment_goals")],
     )
     actions = mig.plan(DASHES, [table], {d["gid"]: [] for d in DASHES}, None)
-    assert not ops(actions, "close")
+    assert not ops(actions, "delete")
     assert any(
         "cube: college_assessment_goals" in a["text"] for a in ops(actions, "report")
     )
 
 
-def test_a_section_run_closes_only_its_own_empty_tables(mig):
+def test_a_section_run_deletes_only_its_own_empty_tables(mig):
     mine = empty_table("T22", "fct_assessment_growth", "1 · Assessments")
     other = empty_table("T23", "fct_behavior_points", "1 · Behavior")
     actions = mig.plan(
@@ -320,7 +318,7 @@ def test_a_section_run_closes_only_its_own_empty_tables(mig):
         {STAT},
         section="1 · Assessments",
     )
-    assert [a["task"] for a in ops(actions, "close")] == ["T22"]
+    assert [a["task"] for a in ops(actions, "delete")] == ["T22"]
 
 
 def test_stages_stay_open_while_rows_remain_on_the_table(mig):
@@ -335,8 +333,8 @@ def test_stages_stay_open_while_rows_remain_on_the_table(mig):
         ],
     }
     actions = mig.plan(DASHES, [table], {d["gid"]: [] for d in DASHES}, {STAT})
-    assert "S11" not in [a["task"] for a in ops(actions, "close")]
-    assert "T11" not in [a["task"] for a in ops(actions, "close")]
+    assert "S11" not in [a["task"] for a in ops(actions, "delete")]
+    assert "T11" not in [a["task"] for a in ops(actions, "delete")]
 
 
 def test_a_deferred_row_moves_under_its_dashboard(mig):
@@ -434,3 +432,11 @@ def test_a_completed_pr_is_never_a_match(mig):
         for c in ops(actions, "create")
         if c["name"] == "PR (Cube): open fields · dim_assessments"
     ]
+
+
+def test_a_table_holding_a_synced_task_is_reported_not_deleted(mig):
+    synced = row("W9", "#4176 | feat(dbt): head of school", [], done=True)
+    table = empty_table("T30", "dim_locations", "1 · Assessments", [synced])
+    actions = mig.plan(DASHES, [table], {d["gid"]: [] for d in DASHES}, None)
+    assert not ops(actions, "delete")
+    assert any("#4176" in a["text"] for a in ops(actions, "report"))

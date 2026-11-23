@@ -15,7 +15,7 @@ For each row on a table task (a subtask with a `Used by:` line of dashboard link
 `cube:` / `view:` stage):
   - its owner is the earliest-due dashboard its `Used by:` names; a dashboard with no due date sorts last,
     and a tie goes to the older dashboard task. A row whose owner is outside --section stays put.
-  - a done row stays on its table and closes with it; an open row whose notes have a line starting
+  - a done row stays on its table and is deleted with it; an open row whose notes have a line starting
     `Deferred:` moves directly under the owner dashboard.
   - an open row moves under the owner's PR task for that table: an open `PR (dbt|Cube): ...` subtask that
     names the table after its ` · ` (the Cube PR when both do), else a new
@@ -24,10 +24,11 @@ For each row on a table task (a subtask with a `Used by:` line of dashboard link
     table's stages are removed.
 Another dashboard that uses the same row gets nothing: the builder's inventory finds shared work. A table
 the run moves no row off is left alone, unless it is in the run (the whole project, or --section's own
-tables) and nothing is open on it: then it closes, or is reported when an open stage is all that is left.
+tables) and nothing is open on it: then it is deleted, or reported when an open stage is all that is left.
 On a table it does touch, an open subtask with no `Used by:` line stays put and is reported. Once nothing
-open is left on a table, its open stages close (or are reported when no PR took its work) and the table
-task closes.
+open is left on a table, the table task is deleted with its stages and done rows (kept and reported when
+an open stage has no PR to take its work). A table holding a synced `#NNNN |` task is never deleted: the
+report names the task to move off first. GitHub, not Asana, records what shipped.
 """
 
 import importlib.util
@@ -38,6 +39,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 STAGE = re.compile(r"^(mart|cube|view):")
 DEFERRED = re.compile(r"^\s*Deferred:", re.M)
+SYNCED = re.compile(r"^#\d+\s*\|")  # a TEAMster task Zapier syncs from GitHub
 GID = re.compile(r"\b(\d{16})\b")
 
 
@@ -93,14 +95,14 @@ def plan(dashboards, tables, children_of, scope, section=None):
 
     dashboards: [{gid, name, due_on}]; tables: [{gid, name, notes, subtasks}]; children_of: dashboard gid ->
     its subtasks [{gid, name}]; scope: a set of dashboard gids, or None for all. Returns dicts with an `op`
-    of create, move, unlink, close or report. A `new:<key>` reference names a task a create makes.
+    of create, move, unlink, delete or report. A `new:<key>` reference names a task a create makes.
     """
     by_gid = {d["gid"]: d for d in dashboards}
 
     def in_scope(g):
         return scope is None or g in scope
 
-    creates, moves, unlinks, closes, reports = {}, [], [], [], []
+    creates, moves, unlinks, deletes, reports = {}, [], [], [], []
 
     for t in tables:
         subs = t["subtasks"]
@@ -112,7 +114,7 @@ def plan(dashboards, tables, children_of, scope, section=None):
         open_by_owner = {}
         for s in subs:
             if s["gid"] in stage_gids or s.get("completed"):
-                continue  # a done row stays on its table and closes with it
+                continue  # a done row stays on its table and goes with it
             dashes = used_by(s) & by_gid.keys()
             if not dashes:
                 left.append(s["name"])
@@ -176,14 +178,37 @@ def plan(dashboards, tables, children_of, scope, section=None):
                     {"op": "move", "task": r["gid"], "parent": ref, "name": r["name"]}
                 )
 
+        moved_here = {m["task"] for m in moves}
+        synced = [
+            x["name"]
+            for x in subs
+            if SYNCED.match(x["name"]) and x["gid"] not in moved_here
+        ]
+
+        def drop(why):
+            """Delete the table with its stages and done rows, unless a synced task sits on it."""
+            if t.get("completed"):
+                return
+            if synced:
+                reports.append(
+                    {
+                        "op": "report",
+                        "text": f"{t['name']}: {why}, but it holds synced "
+                        + ", ".join(synced)
+                        + ": move that off, then rerun",
+                    }
+                )
+                return
+            deletes.append({"op": "delete", "task": t["gid"], "name": t["name"]})
+
+        open_stages = [x["name"] for x in stages if not x.get("completed")]
         if not touched:
-            # a table emptied by hand closes; one with open stages but no rows is reported
+            # a table emptied by hand goes; one with open stages but no rows is reported
             in_run = scope is None or any(
                 (m.get("section") or {}).get("name") == section
                 for m in t.get("memberships") or []
             )
-            open_stages = [s["name"] for s in stages if not s.get("completed")]
-            if in_run and not left and not t.get("completed"):
+            if in_run and not left:
                 if open_stages:
                     reports.append(
                         {
@@ -193,54 +218,26 @@ def plan(dashboards, tables, children_of, scope, section=None):
                         }
                     )
                 else:
-                    closes.append(
-                        {
-                            "op": "close",
-                            "task": t["gid"],
-                            "name": t["name"],
-                            "comment": "Closed by asana_migrate: nothing is left on this table.",
-                        }
-                    )
-            continue  # otherwise a table this run leaves alone gets no reports and no closes
+                    drop("nothing is left on it")
+            continue  # otherwise a table this run leaves alone gets no reports and no deletes
         reports += [
             {"op": "report", "text": f"{t['name']}: left on the table: {name}"}
             for name in unclaimed
         ]
         if left:
-            continue  # stages stay open while anything is left on the table
-        for s in stages:
-            if s.get("completed"):
-                continue
-            if pr_refs:
-                closes.append(
-                    {
-                        "op": "close",
-                        "task": s["gid"],
-                        "name": s["name"],
-                        "comment": f"Closed by asana_migrate: the open work on {t['name']} is "
-                        "now planned as its PR task under the dashboard that needs it first.",
-                    }
-                )
-            else:
-                left.append(s["name"])
-                reports.append(
-                    {
-                        "op": "report",
-                        "text": f"{t['name']}: open stage with no PR to take it: {s['name']}",
-                    }
-                )
-        if not left and not t.get("completed"):
-            closes.append(
+            continue  # the table stays while anything open is left on it
+        if open_stages and not pr_refs:
+            reports += [
                 {
-                    "op": "close",
-                    "task": t["gid"],
-                    "name": t["name"],
-                    "comment": "Closed by asana_migrate: every open row now sits under the PR task "
-                    "or the dashboard that needs it first.",
+                    "op": "report",
+                    "text": f"{t['name']}: open stage with no PR to take it: {name}",
                 }
-            )
+                for name in open_stages
+            ]
+            continue
+        drop("every open row moved")
 
-    return list(creates.values()) + moves + unlinks + closes + reports
+    return list(creates.values()) + moves + unlinks + deletes + reports
 
 
 # ---------------------------------------------------------------- apply
@@ -262,7 +259,7 @@ def run(actions, apply):
         elif op == "unlink":
             desc = f"{a['task']}: remove stage links {', '.join(a['deps'])}"
         else:
-            desc = f"close '{a['name']}'"
+            desc = f"delete '{a['name']}'"
         print(("  " if apply else "  would: ") + desc)
         if not apply:
             continue
@@ -281,9 +278,8 @@ def run(actions, apply):
                 f"/tasks/{a['task']}/removeDependencies",
                 {"dependencies": a["deps"]},
             )
-        elif op == "close":
-            sync.call("PUT", f"/tasks/{a['task']}", {"completed": True})
-            sync.call("POST", f"/tasks/{a['task']}/stories", {"text": a["comment"]})
+        elif op == "delete":
+            sync.call("DELETE", f"/tasks/{a['task']}")
 
 
 def main(argv):
