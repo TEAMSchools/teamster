@@ -263,3 +263,18 @@ def test_empty_cube_read_stops_before_any_write(mod, monkeypatch):
     with pytest.raises(SystemExit, match="no Cube view files"):
         mod.main(["--only", D])
     assert writes == []
+
+
+def test_main_asks_for_no_umbrella_task(mod, monkeypatch):
+    # table tasks are all top-level; a hard-coded parent task that is gone 404s the run
+    _stub_main(mod, monkeypatch)
+    seen = []
+    inner = mod.get_all
+
+    def get_all(path, params):
+        seen.append(path)
+        return inner(path, params)
+
+    monkeypatch.setattr(mod, "get_all", get_all)
+    assert mod.main(["--only", D]) == 0
+    assert not [p for p in seen if p.startswith("/tasks/1219235117880911")]

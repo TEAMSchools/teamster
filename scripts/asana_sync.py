@@ -75,9 +75,6 @@ OLD_TAGS = [
 ]
 LATEST = "~/asana-sync/validation/latest.json"
 TABLE = re.compile(r"^(dim|fct|bridge)_[a-z0-9_]+$")
-TABLE_UMBRELLAS = [
-    "1219235117880911"
-]  # NJ tier / 504 task: its subtasks are table tasks too
 FIELDS = "name,completed,notes,tags.name,tags.gid,dependencies.gid,parent.name"
 ROWF = "name,completed,notes,tags.name,tags.gid,dependencies"
 USED_BY = re.compile(r"^\s*Used by:\s*(.*)$", re.M)
@@ -514,12 +511,6 @@ def main(argv):
     # ------------------------------------------------------------ 1. chain stages inside table tasks
     print("\n1. Stage chains")
     table_tasks = [t for t in top if TABLE.match(t["name"])]
-    for u in TABLE_UMBRELLAS:
-        table_tasks += [
-            t
-            for t in get_all(f"/tasks/{u}/subtasks", {"opt_fields": "name"})
-            if TABLE.match(t["name"])
-        ]
     dim_rows = []  # table-task subtasks whose notes carry a `Used by:` line
     uses = {}  # dashboard gid -> gids of the table tasks its dimension rows sit on
     table_name = {t["gid"]: t["name"] for t in table_tasks}
