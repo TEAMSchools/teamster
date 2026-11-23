@@ -23,7 +23,9 @@ For each row on a table task (a subtask with a `Used by:` line of dashboard link
     "New mart", or one of the rows carries needs-data. Its links to the table's stages are removed.
   - each other dashboard that uses an open row gets `Confirm <table> shipped with <owner>`, due on the
     owner's due date and blocked by the owner's PR task.
-Every dashboard in scope gets the 2 holders. A table the run moves no row off is left alone. On a table it
+Every dashboard in scope gets the 2 holders. A table the run moves no row off is left alone, unless it is
+in the run (the whole project, or --section's own tables) and nothing is open on it: then it closes, or is
+reported when an open stage is all that is left. On a table it
 does touch, an open subtask with no `Used by:` line stays put and is reported. Once nothing is left on a
 table, its open stages close (or are reported when no PR took its work) and the table task closes.
 """
@@ -92,7 +94,7 @@ def owner_of(gids, by_gid):
     ]
 
 
-def plan(dashboards, tables, children_of, scope):
+def plan(dashboards, tables, children_of, scope, section=None):
     """The ordered actions that move every in-scope row off its table task.
 
     dashboards: [{gid, name, due_on}]; tables: [{gid, name, notes, subtasks}]; children_of: dashboard gid ->
@@ -236,7 +238,31 @@ def plan(dashboards, tables, children_of, scope):
                 blocks.append({"op": "block", "task": f"new:{key}", "deps": [ref]})
 
         if not touched:
-            continue  # a table this run leaves alone gets no reports and no closes
+            # a table emptied by hand closes; one with open stages but no rows is reported
+            in_run = section is None or any(
+                (m.get("section") or {}).get("name") == section
+                for m in t.get("memberships") or []
+            )
+            open_stages = [s["name"] for s in stages if not s.get("completed")]
+            if in_run and not left and not t.get("completed"):
+                if open_stages:
+                    reports.append(
+                        {
+                            "op": "report",
+                            "text": f"{t['name']}: no rows left; open stages: "
+                            + ", ".join(open_stages),
+                        }
+                    )
+                else:
+                    closes.append(
+                        {
+                            "op": "close",
+                            "task": t["gid"],
+                            "name": t["name"],
+                            "comment": "Closed by asana_migrate: nothing is left on this table.",
+                        }
+                    )
+            continue  # otherwise a table this run leaves alone gets no reports and no closes
         reports += [
             {"op": "report", "text": f"{t['name']}: left on the table: {name}"}
             for name in unclaimed
@@ -370,7 +396,7 @@ def main(argv):
         for d in dashboards
         if scope is None or d["gid"] in scope
     }
-    actions = plan(dashboards, tables, children_of, scope)
+    actions = plan(dashboards, tables, children_of, scope, section)
     counts = {}
     for a in actions:
         counts[a["op"]] = counts.get(a["op"], 0) + 1

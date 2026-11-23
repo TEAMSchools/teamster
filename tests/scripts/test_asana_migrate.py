@@ -310,6 +310,54 @@ def test_a_section_run_ignores_tables_it_does_not_touch(mig):
     assert not ops(actions, "close")
 
 
+def empty_table(gid, name, section, subtasks=()):
+    return {
+        "gid": gid,
+        "name": name,
+        "notes": "",
+        "memberships": [{"section": {"name": section}}],
+        "subtasks": list(subtasks),
+    }
+
+
+def test_an_empty_table_closes_when_no_row_moves_off_it(mig):
+    table = empty_table(
+        "T20",
+        "fct_assessment_growth",
+        "1 · Assessments",
+        [stage("S20", "cube: growth", done=True)],
+    )
+    actions = mig.plan(DASHES, [table], {d["gid"]: [] for d in DASHES}, None)
+    assert [a["task"] for a in ops(actions, "close")] == ["T20"]
+
+
+def test_an_empty_table_with_an_open_stage_is_reported_not_closed(mig):
+    table = empty_table(
+        "T21",
+        "dim_college_assessment_goals",
+        "1 · Assessments",
+        [stage("S21", "cube: college_assessment_goals")],
+    )
+    actions = mig.plan(DASHES, [table], {d["gid"]: [] for d in DASHES}, None)
+    assert not ops(actions, "close")
+    assert any(
+        "cube: college_assessment_goals" in a["text"] for a in ops(actions, "report")
+    )
+
+
+def test_a_section_run_closes_only_its_own_empty_tables(mig):
+    mine = empty_table("T22", "fct_assessment_growth", "1 · Assessments")
+    other = empty_table("T23", "fct_behavior_points", "1 · Behavior")
+    actions = mig.plan(
+        DASHES,
+        [mine, other],
+        {d["gid"]: [] for d in DASHES},
+        {STAT},
+        section="1 · Assessments",
+    )
+    assert [a["task"] for a in ops(actions, "close")] == ["T22"]
+
+
 def test_stages_stay_open_while_rows_remain_on_the_table(mig):
     table = {
         "gid": "T11",
