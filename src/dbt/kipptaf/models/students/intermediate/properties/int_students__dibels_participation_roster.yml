@@ -13,13 +13,15 @@ models:
       internal PM method,
       int_google_sheets__dibels__expected_assessments_by_levels for aimline,
       which also groups by cohort. Enrolled K-8 students (enroll_status 0, 2 or
-      3, ELA enrollments) are joined next, matching the gate's expected grade to
-      the enrolled grade and requiring the round window's start or end date to
-      fall inside the enrollment stint. int_amplify__all_assessments is joined
-      last for what was actually tested; it is at measure grain, so that join
-      repeats each round row once per scored measure. A row_number keeps one row
-      per grain key, preferring the latest-exiting stint, which collapses both
-      that repetition and a student with two stints in one window.
+      3) are joined next, each with their BOY and MOY composite level and
+      probe-eligible flag, No Test when the student has no composite that year.
+      The join matches the gate's expected grade to the enrolled grade and
+      requires the round window's start or end date to fall inside the
+      enrollment stint. int_amplify__all_assessments is joined last for what was
+      actually tested; it is at measure grain, so that join repeats each round
+      row once per scored measure. A row_number keeps one row per grain key,
+      preferring the latest-exiting stint, which collapses both that repetition
+      and a student with two stints in one window.
 
       The three models gate eligibility three different ways -- Benchmark gates
       nothing, the internal method wants probe-eligible students, aimline wants

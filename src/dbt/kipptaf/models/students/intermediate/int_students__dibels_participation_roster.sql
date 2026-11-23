@@ -67,22 +67,40 @@ with
             measure_standard_level
     ),
 
-    students as (
-        select
-            academic_year,
-            region,
+    -- grain projection, not dup-masking: the 4 columns are constant per student
+    -- and year on Composite rows
+    benchmark_composites as (
+        select distinct
             student_number,
-            enroll_status,
-            grade_level,
-            entrydate,
-            exitdate,
+            academic_year,
+            boy_composite,
+            moy_composite,
             boy_probe_eligible,
             moy_probe_eligible,
-            dibels_boy_composite,
-            dibels_moy_composite,
+        from {{ ref("int_amplify__benchmark_student_summary") }}
+        where measure_standard = 'Composite'
+    ),
 
-        from {{ ref("int_extracts__student_enrollments_subjects") }}
-        where discipline = 'ELA' and enroll_status in (0, 2, 3) and grade_level <= 8
+    students as (
+        select
+            e.academic_year,
+            e.region,
+            e.student_number,
+            e.enroll_status,
+            e.grade_level,
+            e.entrydate,
+            e.exitdate,
+
+            coalesce(b.boy_probe_eligible, 'No Test') as boy_probe_eligible,
+            coalesce(b.moy_probe_eligible, 'No Test') as moy_probe_eligible,
+            coalesce(b.boy_composite, 'No Test') as dibels_boy_composite,
+            coalesce(b.moy_composite, 'No Test') as dibels_moy_composite,
+        from {{ ref("int_students__student_enrollments") }} as e
+        left join
+            benchmark_composites as b
+            on e.student_number = b.student_number
+            and e.academic_year = b.academic_year
+        where e.enroll_status in (0, 2, 3) and e.grade_level <= 8
     ),
 
     -- the seven (season, method) combinations a student could owe testing for
