@@ -285,3 +285,14 @@ sort through them. Where this design closes them, the migration and a one-time
 cleanup delete them instead, with the done rows beneath. GitHub records what
 shipped. A table task holding a synced `#NNNN |` task is never deleted; the
 migration reports it so the synced task can be moved off first.
+
+## Revision 2026-11-23: done rows go to Already in Cube
+
+Asana holds only what each dashboard builds new, but the status page needs the
+fields already built to show how close a dashboard is. A done row therefore
+moves under an `Already in Cube` task on the earliest-due dashboard that uses
+it, made the first time that dashboard has one; the table task is then deleted.
+A later dashboard gets no copy: the page credits it through the row's `Used by:`
+line. This replaces "A done row stays on its table task" in the revision that
+dropped holders. A table still holding a done row owned outside a section run
+stays.

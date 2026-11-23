@@ -28,8 +28,9 @@ holds the package. Keep the builder's working files in
 - Claude posts and edits only what the analyst approved: the build issue, Asana
   edits, pull requests.
 - Asana mirrors the approved build plan: the dashboard task holds the plan's PR
-  tasks, deferred rows and Validate task (_Plan_ step 3). Show each change in
-  the build issue first; make it after the analyst approves.
+  tasks, its `Already in Cube` task, deferred rows and Validate task (_Plan_
+  step 3). Show each change in the build issue first; make it after the analyst
+  approves.
 - GitHub text carries field and member names and counts, never a student's or
   staff member's name, number or row; counts under 10 read `<10`.
 - A new student-level column (a tier, a bucket, a flag) is PII: tag it
@@ -64,13 +65,14 @@ holds the package. Keep the builder's working files in
    analyst where it and the command disagree.
 
 6. Read the dashboard's task in the Asana project "Data Marts + Semantic Layer":
-   the rows tagged `measure` or `dimension` under its PR tasks, the deferred
-   rows directly under it, and its retired notes; for a dashboard not laid out
-   yet (_Plan_ step 3), its blocked-by builds and their open field subtasks.
-   Rows an earlier-due dashboard's PR ships sit under that dashboard: find them
-   with `search_tasks` on this dashboard's gid, which their `Used by:` line
-   names. Write `asana.json` as `[{"field": ..., "status": ...}]` with status
-   `open` or `deferred`; leave retired items out.
+   the rows tagged `measure` or `dimension` under its PR tasks and its
+   `Already in Cube` task, the deferred rows directly under it, and its retired
+   notes; for a dashboard not laid out yet (_Plan_ step 3), its blocked-by
+   builds and their open field subtasks. Rows an earlier-due dashboard's PR
+   ships sit under that dashboard: find them with `search_tasks` on this
+   dashboard's gid, which their `Used by:` line names. Write `asana.json` as
+   `[{"field": ..., "status": ...}]` with status `open` or `deferred`; leave
+   retired items out.
 7. Find the catalog file holding the dashboard's section:
    `rg -l '<slug>' docs/superpowers/plans -g '2026-10-02-cube-gap-catalog-*.md'`
    (the glob skips the index file, which names every slug) (DDI Suite:
@@ -148,11 +150,11 @@ _Build_ step 4.
    - Move the hub issue's synced `#NNNN |` task under the dashboard.
    - Move each row to the PR that ships its Cube member (the Cube PR when a dbt
      PR comes first). A deferred row moves directly under the dashboard; a row
-     already live in Cube stays on its table. Keep its `measure` or `dimension`
-     tag, its `Use:` and `Used by:` lines and its member names. Remove its links
-     to the table's `mart:`, `cube:` and `view:` stages. A stage with work left
-     becomes a PR task; a table task is deleted when it has no open rows and no
-     open stages.
+     already live in Cube moves under the dashboard's `Already in Cube` task.
+     Keep its `measure` or `dimension` tag, its `Use:` and `Used by:` lines and
+     its member names. Remove its links to the table's `mart:`, `cube:` and
+     `view:` stages. A stage with work left becomes a PR task; a table task is
+     deleted when it has no open rows and no open stages.
    - Ask the analyst to run
      `uv run --with requests python scripts/asana_sync.py --only <dashboard gid>`
      in their terminal (it needs their own `ASANA_PAT`), and fix every row in
