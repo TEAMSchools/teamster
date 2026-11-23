@@ -449,6 +449,36 @@ def test_unsettled_items_are_not_in_the_questions_json():
     assert [q["id"] for q in questions] == ["Q1", "Q2"]
 
 
+def test_a_formula_question_reads_its_evidence_from_the_run():
+    # A `sort` after the formula decision holds lists no formula item: the
+    # decision quiets the cells, and `sort.json` holds open items only.
+    run = _owner_run([_cell(cube=25.0)])
+    items = [i for i in OWNER_SORTED["enrollment"]["items"] if i["kind"] != "formula"]
+    sorts = {"enrollment": {**OWNER_SORTED["enrollment"], "items": items}}
+
+    questions = _questions(run, sorts=sorts)
+
+    assert questions[1]["decisions"] == ["c1"]
+    assert questions[1]["evidence"] == [FORMULA_EVIDENCE]
+
+
+def test_a_formula_question_posts_each_origin_masked_and_no_cell():
+    run = _owner_run([_cell(cube=25.0)])
+    cells = Decision("c1", "enrollment", "domain_owner", "Codes differ?", formula=True)
+    diff = CellDiff("enrollment", {"differs": 3}, kind="formula", matched_only=2)
+    run.applied = dataclasses.replace(run.applied, quiet_cells=[(cells, diff)])
+    stale = {**OWNER_SORTED["enrollment"]["items"][2], "evidence": ["STALE"]}
+    sorts = {"enrollment": {"view": "enrollment", "items": [stale]}}
+
+    (_, q) = _questions(run, sorts=sorts)
+
+    assert q["evidence"] == [
+        FORMULA_EVIDENCE,
+        "<10 differing cells differ on matched rows: with their unmatched rows "
+        "left out, the 2 sides still differ",
+    ]
+
+
 def test_questions_json_matches_markdown_questions_one_to_one():
     run = _owner_run([_cell(cube=25.0)])
     questions = _questions(run)
@@ -469,7 +499,7 @@ def test_questions_json_matches_markdown_questions_one_to_one():
         "cube": ["`enrollment` in `enrollment`: codes T%"],
     }
     assert questions[0]["evidence"] == ["note on <redacted>, student <redacted>"]
-    # Only the formula item lends its evidence: no decision covers a cell set.
+    # The formula question's evidence comes from the run's quieted cells.
     assert questions[1]["evidence"] == [FORMULA_EVIDENCE]
     assert questions[0]["moment"] == {
         "start": START.isoformat(),
@@ -978,6 +1008,23 @@ def test_a_cause_decision_on_a_changed_explanation_is_re_approved():
         "dashboard": "d1",
         "explanation": "p1",
     }
+
+
+def test_an_answered_cause_decision_holds_on_an_edit_that_left_its_rows_alone():
+    # The edit added another cause; `explain` found this cause's rows unchanged.
+    same = {**_cause_entry(NO_SECTION), "unchanged": ["old"]}
+    items = [_cause_item("k2", same), _cause_item("k3", same)]
+    answered = _existing(explanation="old", answer="fix_dashboard")
+
+    assert (
+        approved_decisions(
+            [_ok("new", "k2"), _ok("again", "k3")],
+            {"items": items},
+            CAUSE_FPS,
+            existing=[answered],
+        )  # fmt: skip
+        == []
+    )
 
 
 def _d2_d4():
