@@ -305,3 +305,108 @@ def test_measure_row_on_a_table_keeps_its_measure_tag(mod, monkeypatch):
     monkeypatch.setattr(mod, "get_all", get_all)
     assert mod.main(["--only", D]) == 0
     assert not [w for w in writes if "% sight words mastered" in w and "dimension" in w]
+
+
+def test_dashboards_in_section(mod):
+    tasks = [
+        {
+            "gid": "1",
+            "tags": [{"name": "dashboard"}],
+            "memberships": [{"section": {"name": "1 · Assessments"}}],
+        },
+        {
+            "gid": "2",
+            "tags": [{"name": "dashboard"}],
+            "memberships": [{"section": {"name": "1 · Attendance"}}],
+        },
+        {
+            "gid": "3",
+            "tags": [],
+            "memberships": [{"section": {"name": "1 · Assessments"}}],
+        },
+    ]
+    assert mod.dashboards_in_section(tasks, "1 · Assessments") == ["1"]
+    assert mod.dashboards_in_section(tasks, None) == ["1", "2"]
+
+
+def test_untagged_row_with_used_by_under_pr_is_a_dimension(mod):
+    pr = {"gid": "P", "name": "PR SW2 (Cube): sight_words cube", "tags": []}
+    field = {
+        "gid": "f",
+        "name": "Quiz number",
+        "tags": [],
+        "notes": "Used by: https://app.asana.com/0/0/1213823922716082/f",
+    }
+    loose = {"gid": "x", "name": "check the sheet", "tags": [], "notes": ""}
+    rows, untagged = mod.rows_under({"gid": "D"}, [pr], {"P": [field, loose]})
+    assert rows == [(field, pr)]
+    assert untagged == [loose]
+
+
+def _with_table(mod, monkeypatch, writes_list):
+    table = "9000000000000005"
+    dim = {
+        "gid": "9000000000000006",
+        "name": "Region",
+        "completed": True,
+        "notes": f"Used by: https://app.asana.com/0/0/{D}/f\nWhere it lives: pct_proficient",
+        "tags": [{"name": "dimension", "gid": "tag-dimension"}],
+        "dependencies": [],
+    }
+    inner = mod.get_all
+
+    def get_all(path, params):
+        if path == f"/projects/{mod.PROJECT}/tasks":
+            return inner(path, params) + [
+                {"gid": table, "name": "dim_regions", "tags": []}
+            ]
+        if path == f"/tasks/{table}/subtasks":
+            return [dim]
+        return inner(path, params)
+
+    monkeypatch.setattr(mod, "get_all", get_all)
+    return table
+
+
+def test_no_dashboard_gets_table_blocker_links(mod, monkeypatch):
+    writes = _stub_main(mod, monkeypatch)
+    _with_table(mod, monkeypatch, writes)
+    inner = mod.get_all
+
+    def get_all(path, params):
+        if path == f"/tasks/{D}/subtasks":
+            return []  # a dashboard with no PR tasks
+        return inner(path, params)
+
+    monkeypatch.setattr(mod, "get_all", get_all)
+    assert mod.main(["--only", D]) == 0
+    assert not [w for w in writes if "block it" in w]
+
+
+def test_section_limits_the_run(mod, monkeypatch):
+    _stub_main(mod, monkeypatch)
+    inner = mod.get_all
+    other = "9000000000000009"
+
+    def get_all(path, params):
+        if path == f"/projects/{mod.PROJECT}/tasks":
+            return [
+                {
+                    "gid": D,
+                    "name": "Literacy Dashboard",
+                    "tags": [{"name": "dashboard"}],
+                    "memberships": [{"section": {"name": "1 · Assessments"}}],
+                },
+                {
+                    "gid": other,
+                    "name": "Attendance Dashboard",
+                    "tags": [{"name": "dashboard"}],
+                    "memberships": [{"section": {"name": "1 · Attendance"}}],
+                },
+            ]
+        if path == f"/tasks/{other}/subtasks":
+            raise AssertionError("read a dashboard outside the section")
+        return inner(path, params)
+
+    monkeypatch.setattr(mod, "get_all", get_all)
+    assert mod.main(["--section", "1 · Assessments"]) == 0

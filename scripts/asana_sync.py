@@ -5,10 +5,12 @@
 
   uv run --with requests python scripts/asana_sync.py --only <dashboard task gid>          # preview, changes nothing
   uv run --with requests python scripts/asana_sync.py --only <dashboard task gid> --apply  # make the changes
+  uv run --with requests python scripts/asana_sync.py --section "1 · Assessments"          # one project section
 
 --only limits the run to one dashboard task's measure and dimension rows and skips step 1, so a validation
-changes nothing else; without it the run covers every dashboard. Run it from a teamster checkout: it runs `git fetch` and reads
-src/cube/model on origin/main.
+changes nothing else; the cube builder uses it, one dashboard at a time. --section does the same for every
+dashboard in one project section. With neither, the run covers every dashboard. Run it from a teamster
+checkout: it runs `git fetch` and reads src/cube/model on origin/main.
 
 Needs ASANA_PAT, your own personal access token, in the environment for both modes. Create one in Asana's
 developer console (app.asana.com/0/my-apps), then load it without echoing it or saving it to history:
@@ -19,14 +21,14 @@ Dashboards are the project's top-level tasks tagged `dashboard`. Rows are:
   - rows tagged `measure` or `dimension` under a dashboard's PR tasks (`PR <id> (dbt|Cube): ...`, or a synced
     `#NNNN | <type>(<scope>): ...` task) and its `Already in Cube` / `Deferred` holders. With no stage
     blockers left, such a row's status comes from its parent: needs-data while the parent is an open dbt PR
-    or an open dbt PR blocks it, needs-cube otherwise, none under a holder. Untagged subtasks of a PR task or
-    a holder are reported, since the status page drops a row with no kind tag;
+    or an open dbt PR blocks it, needs-cube otherwise, none under a holder. An untagged subtask there whose
+    notes carry a `Used by:` line is tagged `dimension`; any other untagged subtask of a PR task or a holder
+    is reported, since the status page drops a row with no kind tag;
   - dimension rows: subtasks of table tasks, other than `mart:` / `cube:` / `view:` stages, whose notes carry
     a `Used by:` line of dashboard task links. One dimension row lives on the table its column comes from.
 Each run:
   1. Chains stages inside every table task: `mart:` blocks `cube:`, `cube:` blocks `view:` (adds only missing links).
-     1b. Makes each table task block every dashboard a dimension row on it names in `Used by:` (adds only missing
-     links). A table, not each column, blocks the dashboard: Asana caps a task at 30 dependencies plus dependents.
+     It never links table tasks to dashboards: a dashboard is blocked by its own PR tasks and Confirm items.
   2. Ticks a row done when it is live in Cube: every Cube member its notes name is on a public view on main, and
      no blocker on the row is open. Validation does not gate done. A row blocks only on the stage or addition that
      builds its own member: a cut belongs on its dimension row, so the report lists rows whose members are on main
@@ -113,6 +115,22 @@ def dashboard_gids(tasks):
     return [t["gid"] for t in tasks if DASHBOARD_TAG in _tag_names(t)]
 
 
+def dashboards_in_section(tasks, section):
+    """Gids of the dashboards in the named project section; every dashboard when section is None."""
+    return [
+        t["gid"]
+        for t in tasks
+        if DASHBOARD_TAG in _tag_names(t)
+        and (
+            section is None
+            or any(
+                (m.get("section") or {}).get("name") == section
+                for m in t.get("memberships") or []
+            )
+        )
+    ]
+
+
 def row_kind(task):
     """'measure' or 'dimension' from the task's tags, else None."""
     names = _tag_names(task)
@@ -161,9 +179,10 @@ def rows_under(dashboard, children, grandchildren):
     """Rows under one dashboard task, each with its parent, and the untagged tasks that look like rows.
 
     A row is a task tagged `measure` or `dimension`: a direct subtask of the dashboard (parent None) or a
-    subtask of a PR task, holder or other work item under it (parent = that subtask). Table tasks under a
-    dashboard keep their own path. An untagged subtask of a PR task or a holder is reported: without its
-    kind tag it drops off the status page.
+    subtask of a PR task, holder or other work item under it (parent = that subtask). An untagged subtask
+    there whose notes carry a `Used by:` line is a row too, a dimension, as on a table task. Table tasks
+    under a dashboard keep their own path. Any other untagged subtask of a PR task or a holder is
+    reported: without its kind tag it drops off the status page.
     """
     rows, untagged = [], []
     for c in children:
@@ -174,7 +193,7 @@ def rows_under(dashboard, children, grandchildren):
             continue
         kids = grandchildren.get(c["gid"], [])
         for g in kids:
-            if row_kind(g):
+            if row_kind(g) or USED_BY.search(g.get("notes") or ""):
                 rows.append((g, c))
             elif pr_type(c["name"]) or c["name"] in HOLDERS:
                 untagged.append(g)
@@ -438,6 +457,11 @@ def main(argv):
 
     APPLY = "--apply" in argv
     ONLY = argv[argv.index("--only") + 1] if "--only" in argv[:-1] else None
+    section_name = (
+        argv[argv.index("--section") + 1] if "--section" in argv[:-1] else None
+    )
+    if ONLY and section_name:
+        sys.exit("Pass --only or --section, not both.")
 
     validation = load_validation(LATEST)
     if validation is None:
@@ -503,17 +527,29 @@ def main(argv):
     old_gid.update({gid: name for name in OLD_TAGS for gid in tags.get(name, [])})
 
     # ------------------------------------------------------------ dashboards
-    top = get_all(f"/projects/{PROJECT}/tasks", {"opt_fields": "name,tags.name"})
+    top = get_all(
+        f"/projects/{PROJECT}/tasks",
+        {"opt_fields": "name,tags.name,memberships.section.name"},
+    )
     dashboards = dashboard_gids(top)
     if ONLY and ONLY not in dashboards:
         sys.exit(f"--only {ONLY} is not a task tagged '{DASHBOARD_TAG}'.")
+    # the dashboards this run covers: None means every dashboard
+    scope = (
+        {ONLY}
+        if ONLY
+        else set(dashboards_in_section(top, section_name))
+        if section_name
+        else None
+    )
+    if scope == set():
+        sys.exit(f"--section {section_name!r} holds no task tagged '{DASHBOARD_TAG}'.")
+    label = ONLY or section_name
 
     # ------------------------------------------------------------ 1. chain stages inside table tasks
     print("\n1. Stage chains")
     table_tasks = [t for t in top if TABLE.match(t["name"])]
     dim_rows = []  # table-task subtasks whose notes carry a `Used by:` line
-    uses = {}  # dashboard gid -> gids of the table tasks its dimension rows sit on
-    table_name = {t["gid"]: t["name"] for t in table_tasks}
     for t in table_tasks:
         subs = get_all(f"/tasks/{t['gid']}/subtasks", {"opt_fields": FIELDS})
         for x in subs:
@@ -531,8 +567,6 @@ def main(argv):
                 # the line holds Asana links to dashboards; a task link carries its gid
                 x["used_by"] = set(re.findall(r"\b(\d{16})\b", used_by.group(1)))
                 dim_rows.append(x)
-                for g in x["used_by"]:
-                    uses.setdefault(g, set()).add(t["gid"])
         stage = {
             k: [x for x in subs if x["name"].startswith(k + ":")]
             for k in ("mart", "cube", "view")
@@ -541,7 +575,7 @@ def main(argv):
             for d in stage[downstream]:
                 have = {x["gid"] for x in d.get("dependencies", [])}
                 need = [u["gid"] for u in stage[upstream] if u["gid"] not in have]
-                if need and not ONLY:
+                if need and scope is None:
                     write(
                         f"{t['name']}: '{upstream}' blocks '{d['name']}'",
                         "POST",
@@ -551,11 +585,11 @@ def main(argv):
 
     # ------------------------------------------------------------ 2-6. measure and dimension rows
     print("\n2-6. Measure and dimension rows")
-    report_odd_dash_blockers, report_untagged = [], []
+    report_untagged = []
     # Gather every dashboard's rows before any write, so the --only guard below sees them all.
     plans = []  # (dashboard gid, [(row, kind, parent or None)])
     for dash in dashboards:
-        if ONLY and dash != ONLY:
+        if scope is not None and dash not in scope:
             continue
         children = get_all(
             f"/tasks/{dash}/subtasks", {"opt_fields": ROWF + ",num_subtasks"}
@@ -577,17 +611,17 @@ def main(argv):
             and (row_kind(r) or "Status:" in (r.get("notes") or ""))
         ]
         plans.append((dash, plan))
-    only_dim_rows = [r for r in dim_rows if not ONLY or ONLY in r["used_by"]]
+    only_dim_rows = [r for r in dim_rows if scope is None or scope & r["used_by"]]
     # with no verdict for any row, --apply would strip the whole dashboard's 'validated' tags
-    if ONLY and APPLY and validation is not None:
+    if scope is not None and APPLY and validation is not None:
         gids = {r["gid"] for _, plan in plans for r, _, _ in plan}
         gids |= {r["gid"] for r in only_dim_rows}
         if not gids & validation.keys():
             sys.exit(
-                f"latest.json has no verdict for any row of {ONLY}: merge this run's verdicts first."
+                f"latest.json has no verdict for any row of {label}: merge this run's verdicts first."
             )
 
-    for dash, plan in plans:
+    for _, plan in plans:
         blockers_of = {}
         for r, kind, parent in plan:
             if parent is None:
@@ -599,22 +633,6 @@ def main(argv):
                     {"opt_fields": "name,completed"},
                 )
             sync_row(r, kind, parent, blockers_of[parent["gid"]])
-        # 1b. every table holding a dimension row this dashboard uses blocks the dashboard (adds only missing links)
-        deps = get_all(f"/tasks/{dash}/dependencies", {"opt_fields": "name"})
-        need = sorted(uses.get(dash, set()) - {d["gid"] for d in deps})
-        if need:
-            write(
-                f"dashboard {dash}: {', '.join(table_name[g] for g in need)} block it",
-                "POST",
-                f"/tasks/{dash}/addDependencies",
-                {"dependencies": need},
-            )
-        for d in deps:
-            if d["gid"] not in table_name:
-                # a dashboard blocks only on table tasks; anything else there is a misplaced link
-                report_odd_dash_blockers.append(
-                    f"{dash}: {d.get('name', d['gid'])[:70]}"
-                )
 
     for r in only_dim_rows:
         # a table-task row keeps its own kind tag; an untagged one is a dimension
@@ -640,11 +658,6 @@ def main(argv):
             "\nMembers on main but a blocker is open (a cut's blocker belongs on its dimension row; close a shipped stage):"
         )
         print("\n".join("  " + x for x in report_blocked_on_main))
-    if report_odd_dash_blockers:
-        print(
-            "\nDashboard blockers that are not table tasks (name the dashboard in a dimension row's `Used by:` instead):"
-        )
-        print("\n".join("  " + x for x in report_odd_dash_blockers))
     if report_unknown_used_by:
         print(f"\n`Used by:` names a task that is not tagged '{DASHBOARD_TAG}':")
         print("\n".join("  " + x for x in report_unknown_used_by))
