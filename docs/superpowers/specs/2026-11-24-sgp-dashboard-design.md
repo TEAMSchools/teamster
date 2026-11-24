@@ -291,8 +291,8 @@ Schools tab:
 - Comparison rows: all NJ schools; the selected region; all NJ elementary and
   all NJ middle at the top of each level group.
 - Schools grouped by level, sorted by median within the group, with region shown
-  beside the name. Placements outside ES and MS (for example KHS, 3 students) go
-  in an "Other placements" group at the bottom.
+  beside the name. Placements outside ES and MS (for example a handful of KHS
+  students) go in an "Other placements" group at the bottom.
 - ELA and math side by side. Clicking a school opens its grade rows below it.
 
 Teachers tab:

@@ -130,8 +130,11 @@ request 2_, _Tests_, _What the data holds_, _Appendix_).
   | `F1`           | `N`                            | `true`                          | `false`                         |
   | `F4`           | null                           | `true`                          | null                            |
   | null           | `Y`                            | `false`                         | `true`                          |
+  | `F5`           | `X`                            | `false`                         | null                            |
 
-  plus 1 Pearson row expecting null in all 4 columns.
+  plus 1 Pearson row expecting null in all 4 columns. The `F5` and `X` row is an
+  unknown code: it proves the derivation is the defense for the staging `warn`
+  tests (added 2026-11-24 from the PR #6483 review).
 
 - [ ] **Step 2: Run it and watch it fail.**
       `uv run dbt test --select test_int_assessments__state_nj_scores_state_student_groups --project-dir W2/src/dbt/kipptaf <dev flags> 2>&1 | tail -n 30`.
