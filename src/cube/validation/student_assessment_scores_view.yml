@@ -2766,6 +2766,7 @@ decisions:
         the dashboard drops assessments with no module type (r.module_type !=
         'WPP' is not true for a null)
     call: domain_owner
+    task: "#6415"
     reason:
       The dashboard's WPP filter (module_type != 'WPP') is never true for an
       assessment with no module type, so the dashboard drops those assessments
@@ -2782,6 +2783,7 @@ decisions:
         the dashboard drops assessments with no module type (r.module_type !=
         'WPP' is not true for a null)
     call: domain_owner
+    task: "#6415"
     reason:
       The dashboard's WPP filter (module_type != 'WPP') is never true for an
       assessment with no module type, so the dashboard drops those assessments
@@ -2798,6 +2800,7 @@ decisions:
         the dashboard drops assessments with no module type (r.module_type !=
         'WPP' is not true for a null)
     call: domain_owner
+    task: "#6415"
     reason:
       The dashboard's WPP filter (module_type != 'WPP') is never true for an
       assessment with no module type, so the dashboard drops those assessments
@@ -2814,6 +2817,7 @@ decisions:
         the dashboard drops assessments with no module type (r.module_type !=
         'WPP' is not true for a null)
     call: domain_owner
+    task: "#6415"
     reason:
       The dashboard's WPP filter (module_type != 'WPP') is never true for an
       assessment with no module type, so the dashboard drops those assessments
@@ -2830,6 +2834,7 @@ decisions:
         the dashboard drops assessments with no module type (r.module_type !=
         'WPP' is not true for a null)
     call: domain_owner
+    task: "#6415"
     reason:
       The dashboard's WPP filter (module_type != 'WPP') is never true for an
       assessment with no module type, so the dashboard drops those assessments
@@ -2846,6 +2851,7 @@ decisions:
         the dashboard drops assessments with no module type (r.module_type !=
         'WPP' is not true for a null)
     call: domain_owner
+    task: "#6415"
     reason:
       The dashboard's WPP filter (module_type != 'WPP') is never true for an
       assessment with no module type, so the dashboard drops those assessments
@@ -2862,6 +2868,7 @@ decisions:
         the dashboard drops assessments with no module type (r.module_type !=
         'WPP' is not true for a null)
     call: domain_owner
+    task: "#6415"
     reason:
       The dashboard's WPP filter (module_type != 'WPP') is never true for an
       assessment with no module type, so the dashboard drops those assessments
@@ -2891,6 +2898,7 @@ decisions:
     comparison: pct_students_at_level__dki_bars
     formula: true
     call: domain_owner
+    task: "#6415"
     reason:
       Where rows match, the 2 sides still compute the percent of students at
       each level differently. Which formula is right?
@@ -2903,6 +2911,7 @@ decisions:
     comparison: pct_students_at_level__dki_standards_bars
     formula: true
     call: domain_owner
+    task: "#6415"
     reason:
       Where rows match, the 2 sides still compute the percent of students at
       each level differently. Which formula is right?
@@ -2921,6 +2930,7 @@ decisions:
         dim_student_enrollments row), so Cube reaches no student or school and
         its school access filter drops the score
     call: domain_owner
+    task: "#6415"
     reason:
       Some scores belong to a section enrollment that is not linked to any
       school enrollment for that year. Cube can't place those scores in a
@@ -2941,6 +2951,7 @@ decisions:
         dim_student_enrollments row), so Cube reaches no student or school and
         its school access filter drops the score
     call: domain_owner
+    task: "#6415"
     reason:
       Some scores belong to a section enrollment that is not linked to any
       school enrollment for that year. Cube can't place those scores in a
@@ -2961,6 +2972,7 @@ decisions:
         dim_student_enrollments row), so Cube reaches no student or school and
         its school access filter drops the score
     call: domain_owner
+    task: "#6415"
     reason:
       Some scores belong to a section enrollment that is not linked to any
       school enrollment for that year. Cube can't place those scores in a
@@ -2981,6 +2993,7 @@ decisions:
         dim_student_enrollments row), so Cube reaches no student or school and
         its school access filter drops the score
     call: domain_owner
+    task: "#6415"
     reason:
       Some scores belong to a section enrollment that is not linked to any
       school enrollment for that year. Cube can't place those scores in a
@@ -3001,6 +3014,7 @@ decisions:
         dim_student_enrollments row), so Cube reaches no student or school and
         its school access filter drops the score
     call: domain_owner
+    task: "#6415"
     reason:
       Some scores belong to a section enrollment that is not linked to any
       school enrollment for that year. Cube can't place those scores in a
@@ -3021,6 +3035,7 @@ decisions:
         dim_student_enrollments row), so Cube reaches no student or school and
         its school access filter drops the score
     call: domain_owner
+    task: "#6415"
     reason:
       Some scores belong to a section enrollment that is not linked to any
       school enrollment for that year. Cube can't place those scores in a
@@ -3041,6 +3056,7 @@ decisions:
         dim_student_enrollments row), so Cube reaches no student or school and
         its school access filter drops the score
     call: domain_owner
+    task: "#6415"
     reason:
       Some scores belong to a section enrollment that is not linked to any
       school enrollment for that year. Cube can't place those scores in a
@@ -3061,6 +3077,7 @@ decisions:
         dim_student_enrollments row), so Cube reaches no student or school and
         its school access filter drops the score
     call: domain_owner
+    task: "#6415"
     reason:
       Some scores belong to a section enrollment that is not linked to any
       school enrollment for that year. Cube can't place those scores in a
@@ -3081,6 +3098,7 @@ decisions:
         attaches to, the dashboard from the stint that covers the assessment
         week
     call: domain_owner
+    task: "#6415"
     reason:
       When a student changes grade or school during the year, Cube reports the
       score under the grade and school its course enrollment started under,
@@ -3100,6 +3118,7 @@ decisions:
         attaches to, the dashboard from the stint that covers the assessment
         week
     call: domain_owner
+    task: "#6415"
     reason:
       When a student changes grade or school during the year, Cube reports the
       score under the grade and school its course enrollment started under,
@@ -3119,6 +3138,7 @@ decisions:
         attaches to, the dashboard from the stint that covers the assessment
         week
     call: domain_owner
+    task: "#6415"
     reason:
       When a student changes grade or school during the year, Cube reports the
       score under the grade and school its course enrollment started under,
@@ -3138,6 +3158,7 @@ decisions:
         attaches to, the dashboard from the stint that covers the assessment
         week
     call: domain_owner
+    task: "#6415"
     reason:
       When a student changes grade or school during the year, Cube reports the
       score under the grade and school its course enrollment started under,
@@ -3157,6 +3178,7 @@ decisions:
         attaches to, the dashboard from the stint that covers the assessment
         week
     call: domain_owner
+    task: "#6415"
     reason:
       When a student changes grade or school during the year, Cube reports the
       score under the grade and school its course enrollment started under,
@@ -3176,6 +3198,7 @@ decisions:
         attaches to, the dashboard from the stint that covers the assessment
         week
     call: domain_owner
+    task: "#6415"
     reason:
       When a student changes grade or school during the year, Cube reports the
       score under the grade and school its course enrollment started under,
@@ -3195,6 +3218,7 @@ decisions:
         attaches to, the dashboard from the stint that covers the assessment
         week
     call: domain_owner
+    task: "#6415"
     reason:
       When a student changes grade or school during the year, Cube reports the
       score under the grade and school its course enrollment started under,
