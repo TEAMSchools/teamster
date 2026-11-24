@@ -1395,10 +1395,111 @@ def test_a_posted_lead_shows_its_counts_only_beside_an_exact_count():
     assert "- `c1:gone`; lead: relaxing a step in main\n" in detail
 
 
-def test_still_with_the_analyst_lists_formulas_not_compared_masked():
-    lines = report.still_with_analyst(
-        [], {}, {"v": {"c1": {"no rows both sides hold": 3}}}
+def _explained(run, decided):
+    """`compare`'s open row group explained by a cause, as `sort` files it,
+    with or without a decision on that cause."""
+    loaded = _left_in_investigate(run, "lead: relaxing main: x = 1")
+    for item in loaded["items"]:
+        item.update(
+            suggestion="cause",
+            cause=[{"side": "cube", "label": "Cube keeps archived rows"}],
+            explanation={"kind": "query", "fingerprint": "f"},
+            decided=decided,
+        )
+    return loaded
+
+
+def test_an_explained_cause_with_no_decision_stays_with_the_analyst():
+    run = _run()
+
+    (left,) = sort.unsettled(run, _explained(run, decided=False))
+
+    # Neither a question nor an open item until it is decided: counted here.
+    assert left.explained and left.rows == 40
+    assert report.still_with_analyst([left], {}) == [
+        "`enrollment` in `enrollment_view` (value_differs, explained, not "
+        "decided): 1 listed item, 40 rows"
+    ]
+    assert "; explained, not decided yet\n" in report.unsettled_detail([left], "v")
+    assert sort.unsettled(run, _explained(run, decided=True)) == []
+
+
+@pytest.mark.parametrize("kind", ["formula", "gap"])
+def test_an_undecided_formula_or_gap_in_cause_stays_with_the_analyst(kind):
+    # Both stay open in the run until their decision; a cell set closes by
+    # coverage instead, so its groups already stand for it.
+    source = (
+        CellDiff("enrollment", {"differs": 12}, kind="formula")
+        if kind == "formula"
+        else Gap("filter", "Region", ("Sheet",), ("enrollment",))
     )
+    run = _run(
+        applied=Applied(
+            open_cells=[source] if kind == "formula" else [],
+            open_gaps=[source] if kind == "gap" else [],
+        )
+    )
+    loaded = {
+        "items": [
+            {
+                **dataclasses.asdict(item),
+                "suggestion": "cause",
+                "explanation": {"kind": kind if kind == "formula" else "workbook"},
+            }
+            for item in sort.open_items(run)
+        ]
+    }
+
+    (left,) = sort.unsettled(run, loaded)
+
+    assert left.explained
+
+
+def test_a_comparison_decided_whole_waits_only_while_its_decision_is_stale():
+    whole = Decision("w1", "c1", "deliberate", "old sheet", all_groups=True)
+    stale = dataclasses.replace(whole, id="w2", comparison="c2")
+    cfg = ViewConfig(view="v", fact="m.f", comparisons=[], decisions=[whole, stale])
+
+    assert sort.decided_whole(cfg, _run(applied=Applied(reconfirm=[stale]))) == {"c1"}
+
+
+def test_analyst_notes_name_total_rows_no_check_matched():
+    lines = report.analyst_notes(
+        {}, {"v": {"c1": 19_933, "c2": 3, "c3": None, "c4": 0}}
+    )
+
+    assert lines == [
+        "`c1` in `v`: total rows not checked: 19933 rows",
+        "`c2` in `v`: total rows not checked: <10 rows",
+        "`c3` in `v`: total rows not checked: unknown (its rebuild check "
+        "records no count)",
+    ]
+
+
+def test_notes_alone_say_nothing_is_left_to_explain():
+    body = render_review_issue("Registrar", [_run()], notes=["`c1` in `v`: x"])
+
+    assert "## Still with the analyst" not in body
+    assert "not explained yet" not in body
+    section = body.split("## Notes (nothing left to explain)\n\n", 1)[1]
+    assert section.startswith("Every difference is explained.")
+    assert "- `c1` in `v`: x\n" in section
+
+
+def test_open_items_and_notes_take_their_own_headings():
+    body = render_review_issue(
+        "Registrar", [_run()],
+        still=["`c1` in `v` (cube_only): 1 listed item, 40 rows"],
+        notes=["`c2` in `v`: x"],
+    )  # fmt: skip
+
+    still = body.split("## Still with the analyst\n", 1)[1].split("## Notes\n")[0]
+    assert "`c1`" in still and "`c2`" not in still
+    assert "- `c2` in `v`: x\n" in body.split("## Notes\n", 1)[1]
+
+
+def test_analyst_notes_list_formulas_not_compared_masked():
+    lines = report.analyst_notes({"v": {"c1": {"no rows both sides hold": 3}}})
 
     assert lines == [
         "`c1` in `v`: formulas not compared: no rows both sides hold; "
@@ -1406,10 +1507,8 @@ def test_still_with_the_analyst_lists_formulas_not_compared_masked():
     ]
 
 
-def test_still_with_the_analyst_sorts_formulas_not_compared():
-    lines = report.still_with_analyst(
-        [], {}, {"v": {"c2": {"b": 12, "a": 1}, "c1": {"z": 10}}}
-    )
+def test_analyst_notes_sort_formulas_not_compared():
+    lines = report.analyst_notes({"v": {"c2": {"b": 12, "a": 1}, "c1": {"z": 10}}})
 
     assert [line.split(":")[0] for line in lines] == ["`c1` in `v`"] + [
         "`c2` in `v`"
@@ -1431,9 +1530,9 @@ def test_formulas_not_compared_reads_the_key_or_nothing():
         assert sort.formulas_not_compared(held) == {"d": {"r": 2}}, n
 
 
-def test_still_with_the_analyst_redacts_a_long_digit_run_in_a_reason():
-    lines = report.still_with_analyst(
-        [], {}, {"v": {"c1": {"dry run failed for student 1234567": 12}}}
+def test_analyst_notes_redact_a_long_digit_run_in_a_reason():
+    lines = report.analyst_notes(
+        {"v": {"c1": {"dry run failed for student 1234567": 12}}}
     )
 
     assert lines == [
@@ -1462,7 +1561,7 @@ def test_review_posts_ready_questions_and_lists_unsettled_items():
     head, section = body.split("## Still with the analyst\n", 1)
     assert "Q1. " in head
     section = section.split("Also decided")[0]
-    assert "not explained yet" in section and "comment" in section
+    assert "not compared, explained or decided" in section and "comment" in section
     assert (
         "- `enrollment` in `enrollment_view` (value_differs): 1 listed item, 40 rows\n"
     ) in section

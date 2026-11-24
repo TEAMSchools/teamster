@@ -30,11 +30,12 @@ def ask_owner(
     Reads only the local cache: each run and its sort (see
     `sort.checked_sort`), matching sort items to decisions by their stubs,
     and to cause decisions by the causes the sort explained. What is ready is
-    asked; what is not settled yet (items still in `investigate`, and
-    comparisons missing, stale or skipped, `sort.comparisons_waiting`) is
-    counted under "Still with the analyst" and never asked; the items one by
-    one go to a file beside the questions JSON (`still_file`), linked the
-    same way.
+    asked; what is not settled yet (items still in `investigate` or explained
+    with no decision, and comparisons missing, stale or skipped,
+    `sort.comparisons_waiting`, less those decided whole) is counted under
+    "Still with the analyst" and never asked; the items one by one go to a
+    file beside the questions JSON (`still_file`), linked the same way. What
+    the run left unchecked (formulas, total rows) goes under "Notes".
     Nothing is posted; a question with no sort evidence, a decision waiting
     to be re-confirmed (asked again only once decided again), and a body near
     GitHub's cap are named on stderr.
@@ -74,10 +75,27 @@ def ask_owner(
     still = report.still_with_analyst(
         unsettled,
         {
-            run.view: sort.comparisons_waiting(cfg, run, sorts[run.view])
+            run.view: {
+                cid: why
+                for cid, why in sort.comparisons_waiting(
+                    cfg, run, sorts[run.view]
+                ).items()
+                if cid not in sort.decided_whole(cfg, run)
+            }
             for run, cfg in zip(runs, configs, strict=True)
         },
+    )
+    # What the run left unchecked: no difference, so never "with the analyst".
+    notes = report.analyst_notes(
         {run.view: sort.formulas_not_compared(sorts[run.view]) for run in runs},
+        {
+            cfg.view: {
+                c.id: c.rebuild_check.totals_skipped
+                for c in cfg.comparisons
+                if c.confirmed and c.rebuild_check
+            }
+            for cfg in configs
+        },
     )
     # One question per unanswered owner cause, over the groups it decides.
     causes = {
@@ -135,6 +153,7 @@ def ask_owner(
         still,
         unpublished,
         still_link[0] if still_link else None,
+        notes,
     )
     if len(body) > report.BODY_WARN_CHARS:
         # stderr, so the warning never lands in the issue body.

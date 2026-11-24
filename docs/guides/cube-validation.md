@@ -92,8 +92,7 @@ its options: `uv run python -m scripts.cube_validation <command> --help`.
 7. Explain: `explain` saves an explanation, a SQL query that names a cause for
    each unmatched row. You and Claude write it together, 1 cluster of rows at a
    time. Explanations are saved under `src/cube/validation/explanations/`. After
-   `explain` saves a new explanation, run `sort --no-trace` before the next
-   `decide`.
+   `explain` saves a new explanation, run `sort` before the next `decide`.
 8. Decide: `decide` writes the batch of decisions the analyst approved into the
    validation file. See [Decisions](#decisions).
 9. Ask the owner: `ask-owner` drafts the body of the review issue, "Validate
@@ -118,7 +117,7 @@ to the saved run again, with no new `compare`.
 
 The examples on this page are made up. Say the analyst validates `books_read` on
 an invented Reading Club dashboard. `compare` finds 30 rows that only Cube
-counts. `sort` traces them and prints a lead: relaxing the dashboard's
+counts. `sort --trace` traces them and prints a lead: relaxing the dashboard's
 `status != 'archived'` filter brings back 30 of 30 rows. The analyst writes an
 explanation that files those rows under 1 cause, "dashboard: the dashboard drops
 archived records". That cause is a question only the owner can answer, so the
@@ -176,17 +175,26 @@ right. Give the comparison `definitions:` so the owner sees both formulas.
 
 A cell reads `formulas not compared: <why>` when the formula check could not
 recompute it. The cell still closes when the row groups in it close. The owner
-sees that comparison under "Still with the analyst". A reason in the data or the
-configuration clears on the next `compare`. A cap or a BigQuery or Cube error
-needs a fix and another `sort`.
+sees that comparison under "Notes". A reason in the data or the configuration
+clears on the next `compare`. A cap or a BigQuery or Cube error needs a fix and
+another `sort`.
 
 ### "Still with the analyst"
 
-This section of the review issue counts what the analyst has not explained yet,
-per comparison. It also lists comparisons that were never compared, are stale,
-or were skipped. Its items are not questions, and the owner does not answer
-them. The owner can still say if one looks familiar. The items, one by one, are
-in `reviews/<view>-still-with-analyst.md`, which the section links.
+This section of the review issue counts what the analyst has not settled yet,
+per comparison: items not explained yet, and items explained but not decided
+yet. It also lists comparisons that were never compared, are stale, or were
+skipped, unless the analyst decided the whole comparison. Its items are not
+questions, and the owner does not answer them. The owner can still say if one
+looks familiar. The items, one by one, are in
+`reviews/<view>-still-with-analyst.md`, which the section links.
+
+### "Notes"
+
+This section of the review issue lists what the run did not check: formulas not
+compared, and total rows that the rebuild check skipped. A measure that reads
+"validated" covers its cells, not its total rows. When nothing else is open, the
+heading reads "Notes (nothing left to explain)".
 
 ## Decisions
 
@@ -290,7 +298,8 @@ the caps in 1 of 2 ways:
   query that would bill more than what is left under the caps. The trace prices
   its first level, then each deeper query before it runs. A cap or
   `--trace-max-minutes` stops only that trace bucket, which keeps what it found.
-  `--no-trace` skips the trace.
+  The trace runs only with `sort --trace`. On a real dashboard it can take most
+  of an hour, and explanations close items without it.
 
 Some work costs nothing:
 

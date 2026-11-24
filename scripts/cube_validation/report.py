@@ -746,7 +746,8 @@ SQL_BROKEN = "its SQL cannot be built today"
 
 @dataclass(frozen=True)
 class Unsettled:
-    """One open item still in the sort's `investigate` pile, as `ask-owner` lists it.
+    """One open item not settled yet, as `ask-owner` lists it: still in the
+    sort's `investigate` pile, or `explained` with no decision yet.
 
     `item` is its sort id, which masks values as the issue does. `what` is
     a row group's bucket, else the item's kind. `rows` and `cells` are exact
@@ -762,6 +763,7 @@ class Unsettled:
     cells: int | None = None
     lead: str = ""
     hidden: tuple[str, ...] = ()
+    explained: bool = False
 
 
 # A trace lead (`trace.ItemTrace.leads`): its step labels and counts. A label
@@ -838,7 +840,8 @@ class _Bucket:
 def _buckets(items: list[Unsettled]) -> list[_Bucket]:
     by: dict[tuple[str, str, str], list[Unsettled]] = {}
     for u in items:
-        by.setdefault((u.view, u.comparison, u.what), []).append(u)
+        what = f"{u.what}, explained, not decided" if u.explained else u.what
+        by.setdefault((u.view, u.comparison, what), []).append(u)
     out = []
     for (view, comparison, what), us in by.items():
         shown: dict[int, str] = {}
@@ -879,19 +882,20 @@ def unsettled_detail(items: list[Unsettled], name: str) -> str:
     with its sort id, its count as `still_with_analyst`'s total masks it,
     and the trace's lead (`_posted_lead`: its steps' scopes, and its counts
     only beside an exact count, since a lead's `of M rows` is the item's
-    count) or `no lead yet`. Items under `MASK_BELOW` rows or cells are
-    never listed; their number is stated only when it is `MASK_BELOW` or
-    more, and the issue says no more (`_Bucket.count`), so no count here and
-    there gives away a masked one. No stub value and no SQL.
+    count) or `no lead yet`; an explained item with no decision says so
+    instead. Items under `MASK_BELOW` rows or cells are never listed; their
+    number is stated only when it is `MASK_BELOW` or more, and the issue
+    says no more (`_Bucket.count`), so no count here and there gives away a
+    masked one. No stub value and no SQL.
 
     Args:
-        items: The items in `investigate` (`sort.unsettled`).
+        items: The items not settled yet (`sort.unsettled`).
         name: What the review covers (its view, or its domain across views).
     """
     out = [
         f"# Still with the analyst: `{_clean(name)}`",
         "",
-        "The open items behind the review issue's counts, not explained yet. "
+        "The open items behind the review issue's counts, not settled yet. "
         f"Row and cell counts under {MASK_BELOW} show as `{mask(0)}`, and a "
         "total beside a hidden count as a bound; an item under "
         f"{MASK_BELOW} rows or cells is not listed.",
@@ -902,11 +906,12 @@ def unsettled_detail(items: list[Unsettled], name: str) -> str:
             if _small(u):
                 continue
             exact = bool(count) and count.split(" ", 1)[0].isdigit()
-            lead = (
-                safe_reason(_posted_lead(u.lead, counts=exact), list(u.hidden))
-                if u.lead
-                else "no lead yet"
-            )
+            if u.explained:
+                lead = "explained, not decided yet"
+            elif u.lead:
+                lead = safe_reason(_posted_lead(u.lead, counts=exact), list(u.hidden))
+            else:
+                lead = "no lead yet"
             out.append(
                 "- "
                 + ", ".join([f"`{_clean(u.item)}`", *([count] if count else [])])
@@ -934,21 +939,17 @@ def nothing_unsettled(name: str) -> str:
 
 
 def still_with_analyst(
-    items: list[Unsettled],
-    waiting: dict[str, dict[str, str]],
-    unchecked: dict[str, dict[str, dict[str, int]]] | None = None,
+    items: list[Unsettled], waiting: dict[str, dict[str, str]]
 ) -> list[str]:
     """The review's lines for what is not settled yet, never asked as questions.
 
-    One line per comparison and bucket (or kind) of the items in
-    `investigate`: the items listed and left out, as the file says
-    (`_Bucket.count`), and their masked row and cell totals. The items one by one go to `unsettled_detail`'s file, since a
-    view can hold thousands. Then one line per comparison in `waiting` (per
-    view, id to why: missing, stale or skipped, `sort.comparisons_waiting`).
-    No stub value and no SQL. Then, given `unchecked` (per view, comparison
-    and reason, the cells the formula check left to coverage,
-    `sort.formulas_not_compared`), one masked line per comparison and
-    reason, sorted.
+    One line per comparison and bucket (or kind) of the `items`
+    (`sort.unsettled`): the items listed and left out, as the file says
+    (`_Bucket.count`), and their masked row and cell totals. The items one
+    by one go to `unsettled_detail`'s file, since a view can hold thousands.
+    Then one line per comparison in `waiting` (per view, id to why: missing,
+    stale or skipped, `sort.comparisons_waiting`). No stub value and no SQL.
+    What the run left unchecked is no difference to settle: `analyst_notes`.
     """
     out = [f"{b.head}: " + ", ".join([b.count, *b.totals]) for b in _buckets(items)]
     out += [
@@ -956,12 +957,39 @@ def still_with_analyst(
         for view, whys in waiting.items()
         for cid, why in whys.items()
     ]
-    out += [
+    return out
+
+
+def analyst_notes(
+    unchecked: dict[str, dict[str, dict[str, int]]],
+    totals: dict[str, dict[str, int | None]] | None = None,
+) -> list[str]:
+    """The review's notes on what the run did not check, sorted and masked.
+
+    Args:
+        unchecked: Per view, comparison and reason, the cells the formula
+            check left to coverage (`sort.formulas_not_compared`).
+        totals: Per view and comparison, the export's total rows its rebuild
+            check skipped (`totals_skipped`, None when it records no count).
+            A comparison that skipped none is left out.
+    """
+    out = [
         f"`{cid}` in `{view}`: formulas not compared: {safe_reason(reason, [])}; "
         f"{mask(cells)} cells closed by coverage only"
-        for view, comparisons in sorted((unchecked or {}).items())
+        for view, comparisons in sorted(unchecked.items())
         for cid, reasons in sorted(comparisons.items())
         for reason, cells in sorted(reasons.items())
+    ]
+    out += [
+        f"`{cid}` in `{view}`: total rows not checked: "
+        + (
+            "unknown (its rebuild check records no count)"
+            if skipped is None
+            else f"{mask(skipped)} rows"
+        )
+        for view, comparisons in sorted((totals or {}).items())
+        for cid, skipped in sorted(comparisons.items())
+        if skipped is None or skipped > 0
     ]
     return out
 
@@ -1351,6 +1379,7 @@ def render_review_issue(
     still: list[str] | None = None,
     unpublished: dict[str, set[str]] | None = None,
     still_link: str | None = None,
+    notes: list[str] | None = None,
 ) -> str:
     """Render the issue body asking a domain owner to judge open items.
 
@@ -1379,6 +1408,9 @@ def render_review_issue(
             published dashboard; a question naming one ends with a note.
         still_link: Where `unsettled_detail`'s file is committed; the "Still
             with the analyst" section links it.
+        notes: What the run did not check (`analyst_notes`), under its own
+            heading, which says nothing is left to explain when `still` is
+            empty.
 
     Returns:
         Markdown in the feature-request structure. Every count is masked and
@@ -1455,7 +1487,7 @@ def render_review_issue(
             domain, question_lines, definition_lines, check_lines,
             asked_ids, kinds, shown, also, moved=moved if blocks else 0,
             json_link=json_link, moment_lines=moment_lines, still=still,
-            still_link=still_link,
+            still_link=still_link, notes=notes,
         )  # fmt: skip
         return body, _comment_chunks(blocks, moved) if moved and blocks else []
 
@@ -1574,6 +1606,7 @@ def _review_body(
     moment_lines: list[str] | None = None,
     still: list[str] | None = None,
     still_link: str | None = None,
+    notes: list[str] | None = None,
 ) -> str:
     """The review body from its rendered parts; `moved` says the Reproduce
     blocks follow in comments (2: the hand checks too); `questions` is the
@@ -1603,11 +1636,28 @@ def _review_body(
             "",
             "## Still with the analyst",
             "",
-            "These differences are not explained yet, so they are not questions. "
-            "If one looks familiar, say so in a comment.",
+            "The analyst has not compared, explained or decided these yet, so "
+            "they are not questions. If one looks familiar, say so in a comment.",
             "",
             *link_lines,
         ] + _bullets(still)
+    if notes and still:
+        out += [
+            "",
+            "## Notes",
+            "",
+            "What the run did not check. Nothing here needs an answer.",
+            "",
+        ] + _bullets(notes)
+    elif notes:
+        out += [
+            "",
+            "## Notes (nothing left to explain)",
+            "",
+            "Every difference is explained. These are notes on what the run did "
+            "not check.",
+            "",
+        ] + _bullets(notes)
     if also:
         out += [
             "",

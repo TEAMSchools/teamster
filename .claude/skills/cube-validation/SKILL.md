@@ -308,12 +308,13 @@ refuses when the view's only run read another fact.
    records no count, and "Comparison <id>: its cells cannot be covered (<why>)"
    for one without `rows` or whose dims sit in the row grain. A skipped
    comparison keeps its totals line, since the result it keeps leaves the same
-   total rows unchecked, but gets no cells line. A validation is each
-   comparison's latest result, each at its own moment; `run.json` is composed
-   from them. To add a comparison, `rebuild-sheet` it, then
-   `compare --comparison <id>`: the others keep their results. Decisions are
-   re-applied offline, with no new `compare`. To check a mart change before it
-   merges, pass `--fact-dataset zz_<user>_kipptaf_marts` (see _Running a
+   total rows unchecked, but gets no cells line. A measure's "validated" covers
+   its cells only; `ask-owner` lists the unchecked total rows under "Notes". A
+   validation is each comparison's latest result, each at its own moment;
+   `run.json` is composed from them. To add a comparison, `rebuild-sheet` it,
+   then `compare --comparison <id>`: the others keep their results. Decisions
+   are re-applied offline, with no new `compare`. To check a mart change before
+   it merges, pass `--fact-dataset zz_<user>_kipptaf_marts` (see _Running a
    command_).
 
    `compare` saves each comparison's unmatched rows to a table in
@@ -381,9 +382,9 @@ refuses when the view's only run read another fact.
    cell. The check is priced with the explanations: the same dry run prints
    `Formula check: N queries, $X (dry run).`, under `--max-usd` and the daily
    cap. A cell it cannot check reads `formulas not compared: <why>`: the cell
-   closes by coverage as before, the owner sees the comparison under "Still with
-   the analyst", and `sort` and `ask-owner` still run. A check that ran is kept
-   and reused, unpriced, while its result stands, including one whose cells read
+   closes by coverage as before, the owner sees the comparison under "Notes",
+   and `sort` and `ask-owner` still run. A check that ran is kept and reused,
+   unpriced, while its result stands, including one whose cells read
    `no rows both sides hold` or
    `the rewrite does not reproduce the run's cells`: it runs again (and is
    priced again) only after the comparison is compared again (a new result) or
@@ -397,29 +398,30 @@ refuses when the view's only run read another fact.
    older rule (it lacks the current `posted_version`), or an older validator's
    `triage.json` with no `sort.json` beside it; `sort` again.
 
-   The trace leads. `sort` relaxes each step of the other side's SQL (WHERE and
-   HAVING conjuncts, INNER JOINs, required LEFT JOINs, down 5 dbt models) and
-   prints "lead: relaxing <step> brings back N of M rows" on each one-sided
-   group; a row in the tables that no single step brings back reads "lead: no
-   single step brings it back". A model whose SQL cannot run (a parse error, too
-   long, `resourcesExceeded`, invalid) is skipped with its reason, "not traced:
-   <model> skipped (<reason>)", and the trace goes on through the others. A
-   bucket that stops, or ends with rows it could not attribute, prints its model
-   chain: each model from the side's SQL down to where it stopped, with why. It
-   prices level 0 first and each later query before it runs, under `--max-usd`
-   and the daily cap; a cap, `--trace-max-minutes` (default 120) or a failed
-   level-0 dry run stops only that bucket, keeping what it found. `--no-trace`
-   skips it. It reads `src/dbt/kipptaf/target/prod/manifest.json` (`--manifest`
-   for another) and, when compiled SQL is missing, refuses with the
-   `dbt compile` command to run from the repository root. At 5 models deep, a
-   live `sort` can refuse until models 4 and 5 levels below the side's table
-   have compiled SQL: run the printed command, in a checkout whose dbt code
-   built the tables, once for every view you sort. A comparison whose SQL
-   changed since the run, or cannot be built today, waits: `sort` names it
-   (above) and leaves its row groups out of the trace; `compare` it, then sort
-   again. `sort` prints a progress line after each explanation and each trace
-   level. Counts are exact in the terminal and `sort.json`; `ask-owner` quotes
-   the masked copy (`evidence_posted`).
+   The trace leads, and runs only with `sort --trace`: on a real dashboard it
+   takes most of an hour, and explanations close items without it, so trace only
+   items no explanation has a lead for. It relaxes each step of the other side's
+   SQL (WHERE and HAVING conjuncts, INNER JOINs, required LEFT JOINs, down 5 dbt
+   models) and prints "lead: relaxing <step> brings back N of M rows" on each
+   one-sided group; a row in the tables that no single step brings back reads
+   "lead: no single step brings it back". A model whose SQL cannot run (a parse
+   error, too long, `resourcesExceeded`, invalid) is skipped with its reason,
+   "not traced: <model> skipped (<reason>)", and the trace goes on through the
+   others. A bucket that stops, or ends with rows it could not attribute, prints
+   its model chain: each model from the side's SQL down to where it stopped,
+   with why. It prices level 0 first and each later query before it runs, under
+   `--max-usd` and the daily cap; a cap, `--trace-max-minutes` (default 120) or
+   a failed level-0 dry run stops only that bucket, keeping what it found. It
+   reads `src/dbt/kipptaf/target/prod/manifest.json` (`--manifest` for another)
+   and, when compiled SQL is missing, refuses with the `dbt compile` command to
+   run from the repository root. At 5 models deep, a live `sort` can refuse
+   until models 4 and 5 levels below the side's table have compiled SQL: run the
+   printed command, in a checkout whose dbt code built the tables, once for
+   every view you sort. A comparison whose SQL changed since the run, or cannot
+   be built today, waits: `sort` names it (above) and leaves its row groups out
+   of the trace; `compare` it, then sort again. `sort` prints a progress line
+   after each explanation and each trace level. Counts are exact in the terminal
+   and `sort.json`; `ask-owner` quotes the masked copy (`evidence_posted`).
 
    Explain causes with the analyst, in short turns, not alone:
    1. Show the analyst the clusters before any SQL: the summary's buckets
@@ -531,7 +533,7 @@ refuses when the view's only run read another fact.
 
    8. Show the analyst the explanation file and the per-cause counts `explain`
       printed, and wait for an OK before the file is kept for commit. On a no,
-      delete the file and run `sort --no-trace` again.
+      delete the file and run `sort` again.
    9. Explained means 2 things: `UNEXPLAINED` is 0 for the item, and each
       bucket's rule is a literal model predicate, not a paraphrase of a doc. For
       the rows a predicate drops, a second aggregate shows the value (the date,
@@ -570,10 +572,9 @@ refuses when the view's only run read another fact.
    reuses them ("reused from sort-progress.json"); an edited explanation or a
    changed set of open items runs it again. `--comparison <id>` (repeatable)
    runs, traces and prints only those comparisons; `sort.json` still holds every
-   item. Re-sort a run whose leads are in hand with `--no-trace`; trace again
-   only when new items appeared. The explanation files are the durable record:
-   commit them with the decisions, in the validation-file commit. They hold SQL
-   only: no values, no names. A formatting-only edit to one re-opens nothing.
+   item. The explanation files are the durable record: commit them with the
+   decisions, in the validation-file commit. They hold SQL only: no values, no
+   names. A formatting-only edit to one re-opens nothing.
    - Investigate: no explained cause yet. It is never asked as a question:
      `ask-owner` counts it under "Still with the analyst" and lists it, with its
      masked count and the trace's lead, in the open items' file (step 8).
@@ -732,17 +733,21 @@ refuses when the view's only run read another fact.
    one. A cause decision and a `group` decision on one group with different
    calls refuse, in `decide`, `reapply` and `ask-owner`, even after the `group`
    decision closed the group. That check reads the closed groups the latest
-   `sort` classified, so run `sort --no-trace` after `explain` saves a new
-   explanation and before the next `decide`.
+   `sort` classified, so run `sort` after `explain` saves a new explanation and
+   before the next `decide`.
 
 8. `ask-owner <files> --domain <domain>` prints the validation issue's body: the
    numbered questions ready for the owner, each with the owner's hand checks,
    and a link to the questions JSON the owner's session reads. Items still in
-   `investigate` are counted under "Still with the analyst", one line per
+   `investigate`, and explained items with no decision yet ("explained, not
+   decided"), are counted under "Still with the analyst", one line per
    comparison and bucket (the items listed, those left out, and row and cell
    totals, exact only when every part is posted exact, else `10+`, or `<10`
-   under 10), and comparisons never compared, stale or skipped are listed there.
-   The items one by one, with the trace's lead (its scope, and its counts only
+   under 10), and comparisons never compared, stale or skipped are listed there,
+   except one a comparison decision still decides. What the run did not check
+   (formulas not compared, total rows the rebuild check skipped) goes under
+   "Notes", which reads "nothing left to explain" when nothing else is open. The
+   items one by one, with the trace's lead (its scope, and its counts only
    beside an exact count), go to `reviews/<view>-still-with-analyst.md` beside
    the JSON, which the section links; it is posted, so it is masked, and an item
    under 10 rows or cells is not listed. The file and the section give the

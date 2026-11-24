@@ -300,22 +300,30 @@ def _parser() -> argparse.ArgumentParser:
     fact_dataset(p)
     email(p)
     max_usd(p)
-    p.add_argument(
-        "--no-trace",
+    # Opt-in: on a real dashboard the trace takes most of an hour, and
+    # explanations close the items without it (#6437).
+    tracing = p.add_mutually_exclusive_group()
+    tracing.add_argument(
+        "--trace",
         action="store_true",
-        help="skip tracing unmatched rows to the step that drops them",
+        help="trace the rows no explanation explains to the step that drops "
+        "them (slow on a large view)",
     )
+    # The default; still taken, so a command written before the trace was
+    # opt-in runs unchanged.
+    tracing.add_argument("--no-trace", action="store_true", help=argparse.SUPPRESS)
     p.add_argument(
         "--manifest",
         type=Path,
         default=trace.MANIFEST,
-        help="dbt manifest with compiled SQL for the tables the trace descends into",
+        help="with --trace: dbt manifest with compiled SQL for the tables the "
+        "trace descends into",
     )
     p.add_argument(
         "--trace-max-minutes",
         type=float,
         default=trace.TRACE_MAX_MINUTES,
-        help="stop the trace after this long, keeping what it found",
+        help="with --trace: stop the trace after this long, keeping what it found",
     )
     p.add_argument(
         "--no-explanations",
@@ -506,7 +514,7 @@ def _dispatch(args: argparse.Namespace) -> int:
             cube=_cube(args),
             max_usd=args.max_usd,
             cache_root=cache_root(),
-            trace_rows=not args.no_trace,
+            trace_rows=args.trace,
             manifest=args.manifest,
             trace_max_minutes=args.trace_max_minutes,
             explanations=(
