@@ -557,6 +557,17 @@
   regions: [paterson]
   status: verified
 
+- id: student_persistence_dashboard
+  name: Student Persistence Dashboard (2026-27 Interim Pilot)
+  url: https://claude.ai/artifact/5kTFWZXkRCxEfYVqBbHYtF
+  description:
+    Shows how many students enrolled on October 1 are still with us, by region,
+    school, grade, and key demographics, and when and why students left.
+  audiences: [leaders, ops, region]
+  system: other
+  group: operations
+  status: needs-review
+
 - id: survey_dashboard
   name: Survey Dashboard
   url: https://tableau.kipp.org/t/KIPPNJ/views/SurveyDashboard_17078426466440/Home?:embed=y
