@@ -220,7 +220,7 @@ def render(content: dict, playbook: dict, capacity: dict) -> str:
         _table(
             "CAPACITY SUMMARY (computed by capacity.py; do not edit by hand)",
             ["Month", "Hours"],
-            [_cell(m) + _cell(f"{h:g}") for m, h in zip(MONTHS, hours)]
+            [_cell(m) + _cell(f"{h:g}") for m, h in zip(MONTHS, hours, strict=True)]
             + [_cell("Total", bold=True) + _cell(f"{capacity['hours_per_year']:g}")],
         )
     )
