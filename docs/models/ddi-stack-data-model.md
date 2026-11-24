@@ -283,8 +283,10 @@ the owner's walkthrough or a workbook download.
     distinctly per student and assessment, in a cell of academic year, school,
     subject area, module type, module number, replacement flag and heatmap
     column. An assessment not yet due has no counted assignments, so its
-    completion is null and its cell never appears, even with the completion
-    filter at 0.
+    completion is null. The `% Completion` filter is saved cleared (all values,
+    nulls included), so by default every cell with a score shows, including one
+    for an assessment not yet due. Once a user sets a range, the filter hides
+    cells below it and every cell whose completion is null.
   - The Module Dashboard reads the null-`response_type` rows only for
     completion. On the sheets that use the completion calcs, the `response_type`
     filter still shows only the `overall` rows, but as an ordinary filter rather
@@ -296,10 +298,11 @@ the owner's walkthrough or a workbook download.
     `administered_at` is never counted as due, so its completion is null. The
     Assessment Dashboard does not display completion.
   - Completion counts every assigned student in the cell, so it does not change
-    with the student-group filters. A pooled number covers only the cells the
-    completion filter lets through. Completion depends on the extract being
-    refreshed: an assessment that has come due counts against completion until
-    its scores are in the extract.
+    with the student-group filters. A pooled number covers the cells on screen:
+    every cell by default, or only the cells inside the range a user sets on the
+    completion filter. Completion depends on the extract being refreshed: an
+    assessment that has come due counts against completion until its scores are
+    in the extract.
   - The Module Dashboard's `Heatmap Columns` control puts either grade level or,
     for grades 9 to 12, the assessment's `subject_area` across the top of its
     two heatmaps; grades K to 8 keep their grade either way. The control is

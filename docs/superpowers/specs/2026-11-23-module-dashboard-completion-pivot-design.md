@@ -332,3 +332,9 @@ slider.
    all modules, so the filter removes cells inside marks rather than whole
    marks. The check that was run compares the mark set at 75% with the oracle's
    and requires cells to be hidden.
+4. Filter default (_Goal_, _Definitions_, _Known limits_): the `% Completion`
+   filter is saved cleared (all values, nulls included), at the owner's request
+   after review. By default every cell with a score shows, including one for an
+   assessment not yet due, and a pooled number covers every cell on screen. A
+   user sets a range to hide low-completion cells; any range also hides cells
+   whose completion is null.
