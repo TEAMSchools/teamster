@@ -333,6 +333,23 @@ Teachers tab:
 - Refresh cadence. Scores change only when a state file lands; rosters change
   daily but the window ends at test day.
 
+## Revision 2026-11-24, after PR 1 merged
+
+PR 1 staged `economic_disadvantage_status` and `nj_ml_status`. Its checks found
+that Paterson's Cambium file has no economic disadvantage status for any
+student, and leaves `nj_ml_status` blank for most students its own
+`multilingual_learner` flag marks Y. The requester compared the 3 candidate
+rules by region and decided:
+
+- **Multilingual learner** uses the state file's `multilingual_learner` flag
+  (`aligned_ml_status = 'ML'`), the same rule as STAT. This replaces
+  `is_multilingual_learner_njdoe` in _Pull request 2_: that column is not built,
+  and `nj_ml_status` stays staged but unused. The flag counts current learners
+  only.
+- **Economic disadvantage** stays `is_economically_disadvantaged`. A blank is
+  null and shows as `Not reported`, which covers all of Paterson. No PowerSchool
+  fill.
+
 ## Appendix: the mockup's teacher-matching query
 
 Ad hoc, against prod intermediates, for reconciling the build. It differs from

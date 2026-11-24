@@ -9,12 +9,13 @@
 one row per SGP score for the Schools tab, one row per score and matched teacher
 for the Teachers tab, and a username-to-school access table.
 
-**Architecture:** `int_assessments__state_nj_scores` gains the 2 state-file
-fields from PR 1 and 2 derived booleans. 3 new `rpt_tableau__sgp_dashboard_*`
-views read it (the A2 exception tracked in #6480) plus the enrollment, section,
-staff, location, and calendar marts. The teacher-matching rules (70% student,
-60% teacher, in-session school days) live inside the teachers model as a CTE
-chain with unit tests.
+**Architecture:** `int_assessments__state_nj_scores` gains the state file's
+economic disadvantage status from PR 1 and a derived boolean; multilingual
+learners come from its existing `aligned_ml_status`. 3 new
+`rpt_tableau__sgp_dashboard_*` views read it (the A2 exception tracked in #6480)
+plus the enrollment, section, staff, location, and calendar marts. The
+teacher-matching rules (70% student, 60% teacher, in-session school days) live
+inside the teachers model as a CTE chain with unit tests.
 
 **Tech Stack:** dbt (BigQuery), `dbt_utils`, dbt unit tests, kipptaf key macros
 (`student_key`).
@@ -27,8 +28,11 @@ request 2_, _Tests_, _What the data holds_, _Appendix_).
 - Start only after PR 1 merges and Dagster rebuilds
   `int_cambium__all_assessments` in Newark, Camden, and Paterson. Task 0 checks.
 - New branch from `origin/main`, created per the root CLAUDE.md _Branches_ flow
-  (ask worktree or branch switch first). Worktree root below is `W2`. No issue
-  link; PR body says `Refs #6279` and links #6480 for the A2 exception.
+  (ask worktree or branch switch first). Worktree root below is `W2` =
+  `/workspaces/teamster/.claude/worktrees/anthonygwalters/feat/claude-sgp-dashboard-models`
+  (branch `anthonygwalters/feat/claude-sgp-dashboard-models`); every path and
+  `--project-dir` is absolute under `W2`, every git call is `git -C W2`. No
+  issue link; PR body says `Refs #6279` and links #6480 for the A2 exception.
 - Model names exactly `rpt_tableau__sgp_dashboard_schools`,
   `rpt_tableau__sgp_dashboard_teachers`, `rpt_tableau__sgp_dashboard_access`;
   SQL in `W2/src/dbt/kipptaf/models/extracts/tableau/`, YAML in
@@ -46,12 +50,21 @@ request 2_, _Tests_, _What the data holds_, _Appendix_).
   subjects" needs at least 10 lead students in each subject at the school.
 - Race label: `aligned_aggregate_ethnicity`, with `Other` relabeled
   `Two or more races`.
+- Multilingual learner: `is_multilingual_learner` = `aligned_ml_status = 'ML'`,
+  the state file's `multilingual_learner` flag, the same rule STAT uses
+  (requester's decision, 2026-11-24). `nj_ml_status` is not used.
+- Economic disadvantage: `is_economically_disadvantaged`, null where the state
+  file has no status (all of Paterson); the workbook shows null as
+  `Not reported`. Never filled from PowerSchool (requester's decision).
 - No `student_number` or student names in any report model. Tag student-level
   content columns `contains_pii: true` per `.claude/rules/ferpa-pii.md` tiers 1
   to 3; teacher names too (staff policy).
 - Report-model tests set `config: severity: error`. Unit-test inputs that mock
   `int_assessments__state_nj_scores` use `format: sql` (columns added in this
-  PR; dict fixtures fail introspection in CI).
+  PR; dict fixtures fail introspection in CI). So does any input that mocks
+  `int_cambium__all_assessments` with `economic_disadvantage_status`: CI's
+  `zz_stg_kipptaf_cambium` copy is a `select *` view over prod whose stored
+  schema predates the column.
 - Every dbt command is `uv run dbt ...`. `<dev flags>` in the steps means
   `--target dev --defer --favor-state --state /workspaces/teamster/src/dbt/kipptaf/target/prod`.
   No `--target staging` write without the user's go-ahead in the turn before.
@@ -88,16 +101,16 @@ request 2_, _Tests_, _What the data holds_, _Appendix_).
 **Files:** none.
 
 - [ ] **Step 1:** With the BigQuery MCP, check that `INFORMATION_SCHEMA.COLUMNS`
-      lists `economic_disadvantage_status` and `nj_ml_status` on
+      lists `economic_disadvantage_status` on
       `<d>_cambium.int_cambium__all_assessments` for each of `kippnewark`,
-      `kippcamden`, `kipppaterson`, on
-      `kipptaf_cambium.int_cambium__all_assessments`, and on
-      `zz_stg_kipptaf_cambium.int_cambium__all_assessments`. Expected: present
-      in all 5.
-- [ ] **Step 2:** If the `zz_stg_` copy lacks them, stop and hand the user the
-      refresh command from `.claude/rules/dbt-models.md` (_kipptaf source
-      consumers of district columns_); it is a shared write. Do not continue
-      until it lists both columns.
+      `kippcamden`, `kipppaterson`, and on
+      `kipptaf_cambium.int_cambium__all_assessments`. Expected: present in all 4
+      (confirmed 2026-11-24).
+- [ ] **Step 2:** Confirm
+      `select countif(economic_disadvantage_status is not null) from zz_stg_kipptaf_cambium.int_cambium__all_assessments`
+      runs and returns more than 0. That copy is a `select *` view over prod, so
+      it returns the column although its stored schema lacks it; no staging
+      write is needed (confirmed 2026-11-24: 12,347 of 13,211 rows).
 
 ### Task 1: state-file student groups in `int_assessments__state_nj_scores`
 
@@ -107,48 +120,44 @@ request 2_, _Tests_, _What the data holds_, _Appendix_).
   `W2/src/dbt/kipptaf/models/assessments/intermediate/int_assessments__state_nj_scores.sql`
 - Modify:
   `W2/src/dbt/kipptaf/models/assessments/intermediate/properties/int_assessments__state_nj_scores.yml`
-  (4 column entries; extend
-  `test_int_assessments__state_nj_scores_student_growth_percentile` or add a
-  sibling unit test)
+  (2 column entries; add a sibling unit test)
 
 **Interfaces:**
 
-- Consumes: `int_cambium__all_assessments.economic_disadvantage_status`,
-  `.nj_ml_status` (PR 1).
+- Consumes: `int_cambium__all_assessments.economic_disadvantage_status` (PR 1).
 - Produces on `int_assessments__state_nj_scores`: `economic_disadvantage_status`
-  (STRING), `nj_ml_status` (STRING), `is_multilingual_learner_njdoe` (BOOL),
-  `is_economically_disadvantaged` (BOOL). All null on Pearson rows. Tasks 2 and
-  3 read them.
+  (STRING) and `is_economically_disadvantaged` (BOOL), both null on Pearson
+  rows. Tasks 2 and 3 read `is_economically_disadvantaged`, and
+  `aligned_ml_status` as it is today.
 
 - [ ] **Step 1: Write the failing unit test**
-      `test_int_assessments__state_nj_scores_state_student_groups`. Cambium
-      given rows and expected outputs:
+      `test_int_assessments__state_nj_scores_economic_status`. Mock
+      `int_cambium__all_assessments` with `format: sql` (Global Constraints).
+      Cambium given rows and expected outputs:
 
-  | `nj_ml_status` | `economic_disadvantage_status` | `is_multilingual_learner_njdoe` | `is_economically_disadvantaged` |
-  | -------------- | ------------------------------ | ------------------------------- | ------------------------------- |
-  | `Y`            | `Y`                            | `true`                          | `true`                          |
-  | `F1`           | `N`                            | `true`                          | `false`                         |
-  | `F4`           | null                           | `true`                          | null                            |
-  | null           | `Y`                            | `false`                         | `true`                          |
-  | `F5`           | `X`                            | `false`                         | null                            |
+  | `economic_disadvantage_status` | `is_economically_disadvantaged` |
+  | ------------------------------ | ------------------------------- |
+  | `Y`                            | `true`                          |
+  | `N`                            | `false`                         |
+  | null                           | null                            |
+  | `X`                            | null                            |
 
-  plus 1 Pearson row expecting null in all 4 columns. The `F5` and `X` row is an
-  unknown code: it proves the derivation is the defense for the staging `warn`
-  tests (added 2026-11-24 from the PR #6483 review).
+  plus 1 Pearson row expecting null in both columns. The `X` row is an unknown
+  code: it proves the derivation is the defense for the staging `warn` test
+  (added 2026-11-24 from the PR #6483 review).
 
 - [ ] **Step 2: Run it and watch it fail.**
-      `uv run dbt test --select test_int_assessments__state_nj_scores_state_student_groups --project-dir W2/src/dbt/kipptaf <dev flags> 2>&1 | tail -n 30`.
+      `uv run dbt test --select test_int_assessments__state_nj_scores_economic_status --project-dir W2/src/dbt/kipptaf <dev flags> 2>&1 | tail -n 30`.
       Expected: FAIL, the output lacks the columns.
 
-- [ ] **Step 3: Implement.** Pearson branch: `cast(null as string)` for both raw
-      columns and `cast(null as bool)` for both booleans, as the branch's last
-      columns (S17 positional order). Cambium branch, same positions: the 2 raw
-      columns, then
-      `coalesce(nj_ml_status in ('Y', 'F1', 'F2', 'F3', 'F4'), false) as is_multilingual_learner_njdoe`
-      and a `case` mapping `Y` to `true`, `N` to `false`, else null, for
-      `is_economically_disadvantaged`. Final select: pass all 4 through after
-      `u.student_growth_percentile`. Comment the code list as NJDOE's definition
-      (S20). yml entries with descriptions from the spec and
+- [ ] **Step 3: Implement.** Pearson branch: `cast(null as string)` for
+      `economic_disadvantage_status` and `cast(null as bool)` for
+      `is_economically_disadvantaged`, as the branch's last columns (S17
+      positional order). Cambium branch, same positions: the raw column, then a
+      `case` mapping `Y` to `true`, `N` to `false`, else null (S15: 2
+      conditions). Final select: pass both through after
+      `u.student_growth_percentile`. yml entries with descriptions (null means
+      the state file has no status, as for every Paterson row) and
       `contains_pii: true`.
 
 - [ ] **Step 4: Run the unit tests and the model build.**
@@ -157,14 +166,14 @@ request 2_, _Tests_, _What the data holds_, _Appendix_).
       `test_incorrect_student_number_pearson` warn may remain).
 
 - [ ] **Step 5: Reconcile** against prod with the BigQuery MCP: same row count;
-      for `academic_year = 2025`, `countif(is_multilingual_learner_njdoe)`
-      equals the count of `nj_ml_status` in `Y`, `F1`–`F4`, and STAT's
+      for `academic_year = 2025`, `countif(is_economically_disadvantaged)`
+      equals the count of `economic_disadvantage_status = 'Y'`, and STAT's
       `aligned_ml_status` values are unchanged row for row (`count(*)` where dev
       and prod differ on `student_test_uuid` join = 0).
 
 - [ ] **Step 6: Commit**
-      `feat(dbt): carry state-file ML and economic status into NJ state scores`
-      with `Refs #6279`.
+      `feat(dbt): carry state-file economic status into NJ state scores` with
+      `Refs #6279`.
 
 ### Task 2: `rpt_tableau__sgp_dashboard_schools`
 
@@ -186,8 +195,9 @@ request 2_, _Tests_, _What the data holds_, _Appendix_).
   (`grade_level_when_assessed`), `subject` (`discipline`), `test_code`,
   `student_growth_percentile`, `growth_level`, `is_proficient`,
   `race_ethnicity_group`, `disability_status` (`aligned_iep_status`),
-  `is_multilingual_learner_njdoe`, `is_economically_disadvantaged`. Task 3
-  repeats the score-to-school join with the same rule; Task 5 reconciles both.
+  `is_multilingual_learner` (`aligned_ml_status = 'ML'`),
+  `is_economically_disadvantaged` (nullable). Task 3 repeats the score-to-school
+  join with the same rule; Task 5 reconciles both.
 
 - [ ] **Step 1: Write the failing unit test**
       `test_rpt_tableau__sgp_dashboard_schools_rules`. Given 6 scores (one
@@ -196,7 +206,10 @@ request 2_, _Tests_, _What the data holds_, _Appendix_).
       `High`, `Typical`. The SGP 50 student has 2 enrollment stints, the first
       ending (`exit_date_key`) on the test date and the second starting on it;
       expect the second stint's `school`. One student has
-      `aligned_aggregate_ethnicity = 'Other'`; expect `Two or more races`.
+      `aligned_aggregate_ethnicity = 'Other'`; expect `Two or more races`. One
+      has `aligned_ml_status = 'ML'` and a null `is_economically_disadvantaged`;
+      expect `is_multilingual_learner` true and `is_economically_disadvantaged`
+      null.
 
 - [ ] **Step 2: Run it and watch it fail** (model does not exist).
 
@@ -395,3 +408,16 @@ request 2_, _Tests_, _What the data holds_, _Appendix_).
 After merge: write the workbook plan (`tableau-workbook-xml` skill) against the
 prod models, and add the workbook's `asset.metadata.id` to the exposure once it
 is published.
+
+## Revision 2026-11-24, after PR 1 merged
+
+- PR 1 found that Paterson's Cambium file has no economic disadvantage status
+  for any student and leaves `nj_ml_status` blank for most students its own
+  `multilingual_learner` flag marks Y. The requester compared the counts and
+  chose: multilingual learners from the flag (`aligned_ml_status`), the same
+  rule as STAT; economic disadvantage null where the file has none, shown as
+  `Not reported`. Task 1 now adds only the economic status; Task 2's interface
+  carries `is_multilingual_learner`.
+- Task 0 found that CI's `zz_stg_kipptaf_cambium.int_cambium__all_assessments`
+  is a `select *` view over prod, so it returns the new column and no staging
+  write is needed; mocks of that model use `format: sql`.
