@@ -186,6 +186,24 @@ models:
         config:
           meta:
             contains_pii: true
+      - name: economic_disadvantage_status
+        data_type: string
+        description: >-
+          Economic disadvantage status (Y or N) as reported by Cambium. Blank
+          where the file has none.
+        config:
+          meta:
+            contains_pii: true
+      - name: nj_ml_status
+        data_type: string
+        description: >-
+          NJDOE multilingual learner status (Y, or F1 to F4 for former learners)
+          as reported by Cambium. Blank where the file reports no status, which
+          does not always mean the student is not a learner; some files leave it
+          blank for students that multilingual_learner marks Y.
+        config:
+          meta:
+            contains_pii: true
 
       - name: first_name
         data_type: string

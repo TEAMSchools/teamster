@@ -50,6 +50,45 @@ models:
                 values: [Spring, Fall, FALL, FallBlock]
               config:
                 severity: error
+      - name: economic_disadvantage_status
+        data_type: string
+        description: >-
+          Economic disadvantage status from the NJGPA file, Y or N. Blank where
+          the file has none.
+        config:
+          meta:
+            contains_pii: true
+        data_tests:
+          - accepted_values:
+              description: >-
+                Cambium sent an economic disadvantage status other than Y or N.
+                Decide how kipptaf int_assessments__state_nj_scores should read
+                the new code before reporting on it.
+              arguments:
+                values: [Y, N]
+              config:
+                severity: warn
+      - name: nj_ml_status
+        data_type: string
+        description: >-
+          NJDOE multilingual learner status from the NJGPA file. Y is a current
+          learner; F1 to F4 is a former learner in the first to fourth year
+          after exit. Blank where the file reports no status, which does not
+          always mean the student is not a learner; some files leave it blank
+          for students that multilingual_learner marks Y.
+        config:
+          meta:
+            contains_pii: true
+        data_tests:
+          - accepted_values:
+              description: >-
+                Cambium sent an NJ multilingual learner status other than Y or
+                F1 to F4. Decide how kipptaf int_assessments__state_nj_scores
+                should read the new code before reporting on it.
+              arguments:
+                values: [Y, F1, F2, F3, F4]
+              config:
+                severity: warn
       - name: subject
         data_type: string
         quote: true
