@@ -1888,7 +1888,7 @@ def test_sort_neither_checks_nor_traces_a_skipped_comparison_s_groups(
     monkeypatch.setattr(trace, "check_ready", ready)
     monkeypatch.setattr(trace, "trace_run", traced)
 
-    assert cli.main(["sort", str(path), "--no-explanations"]) == 0
+    assert cli.main(["sort", str(path), "--no-explanations", "--trace"]) == 0
 
     keys = {
         cid: {trace.item_key(g) for g in run.applied.open if g.comparison_id == cid}
@@ -1917,7 +1917,7 @@ def test_sort_gives_the_explanations_and_the_trace_one_ticker(
     monkeypatch.setattr(explain, "run_stored", stored)
     monkeypatch.setattr(trace, "trace_run", traced)
 
-    assert cli.main(["sort", str(path)]) == 0
+    assert cli.main(["sort", str(path), "--trace"]) == 0
 
     assert len(seen) == 2 and seen[0] is seen[1]
     assert isinstance(seen[0], report.Ticker)
@@ -3395,8 +3395,11 @@ def test_a_sort_saved_as_triage_json_is_refused_until_sort_runs_again(
 def test_ask_owner_leaves_no_stale_open_items_file_when_nothing_is_open(
     fakes, tmp_path, capsys, stale
 ):
-    path = _file(tmp_path)
-    assert cli.main(["compare", str(path)]) == 0
+    assert cli.main(["compare", str(_file(tmp_path))]) == 0
+    # Decided, so nothing is open: an explained group with no decision is
+    # still with the analyst.
+    path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
+    assert cli.main(["compare", str(path), "--all"]) == 0
     _write_sorted_everywhere(tmp_path, [_sorted_item("e")])
     old = tmp_path / "reviews" / "v-still-with-analyst.md"
     if stale:
@@ -3414,6 +3417,20 @@ def test_ask_owner_leaves_no_stale_open_items_file_when_nothing_is_open(
         )
     else:
         assert not old.exists()
+
+
+def test_ask_owner_counts_an_explained_cause_with_no_decision(fakes, tmp_path, capsys):
+    path = _file(tmp_path)
+    assert cli.main(["compare", str(path)]) == 0
+    _write_sorted_everywhere(tmp_path, [_sorted_item("e")])
+    capsys.readouterr()
+
+    assert cli.main(["ask-owner", str(path), "--domain", "Registrar"]) == 0
+
+    body = capsys.readouterr().out
+    assert "Q1." not in body
+    section = body.split("## Still with the analyst", 1)[1]
+    assert "- `ada-region` in `v` (dashboard_only, explained, not decided): " in section
 
 
 def test_ask_owner_lists_items_in_investigate_still_with_the_analyst(
@@ -5289,7 +5306,7 @@ def test_sort_explains_first_and_traces_only_what_no_explanation_explains(
     monkeypatch.setattr(trace, "trace_run", traced)
     monkeypatch.setattr(trace, "check_ready", lambda *a, **k: order.append("ready"))
 
-    assert cli.main(["sort", str(path)]) == 0
+    assert cli.main(["sort", str(path), "--trace"]) == 0
 
     # The trace's own refusals come before any explanation spends.
     assert order == ["ready", "explanations", "trace"]
@@ -5467,7 +5484,19 @@ def test_sort_no_trace_skips_the_trace(fakes, tmp_path, capsys, monkeypatch):
     assert group["evidence"][0] == sort.NOT_TRACED
 
 
-def test_sort_traces_the_rows_by_default(fakes, tmp_path, capsys, monkeypatch):
+@pytest.mark.parametrize("flags", [[], ["--no-trace"]])
+def test_sort_traces_nothing_without_trace(fakes, tmp_path, monkeypatch, flags):
+    path = _file(tmp_path)
+    assert cli.main(["compare", str(path)]) == 0
+    monkeypatch.setattr(trace, "trace_run", lambda *a, **k: pytest.fail("traced"))
+    monkeypatch.setattr(
+        trace, "check_ready", lambda *a, **k: pytest.fail("read the manifest")
+    )
+
+    assert cli.main(["sort", str(path), *flags]) == 0
+
+
+def test_sort_traces_the_rows_with_trace(fakes, tmp_path, capsys, monkeypatch):
     path = _file(tmp_path)
     assert cli.main(["compare", str(path)]) == 0
     (saved,) = (tmp_path / "cache" / "v").glob("*/run.json")
@@ -5495,6 +5524,7 @@ def test_sort_traces_the_rows_by_default(fakes, tmp_path, capsys, monkeypatch):
         cli.main(
             [
                 "sort",
+                "--trace",
                 str(path),
                 "--manifest",
                 str(manifest),
@@ -5561,7 +5591,7 @@ def test_sort_writes_its_batch_when_the_trace_stops(
         lambda *a, **k: trace.TraceResult({trace.item_key(open_group): stopped}),
     )
 
-    assert cli.main(["sort", str(path)]) == 0
+    assert cli.main(["sort", str(path), "--trace"]) == 0
 
     items = json.loads((saved.parent / "sort.json").read_text())["items"]
     (group,) = [i for i in items if i["kind"] == "group"]
@@ -7170,7 +7200,7 @@ def test_a_trace_refusal_comes_before_any_explanation_runs(
         explain, "run_stored", lambda *a, **k: pytest.fail("an explanation ran first")
     )
 
-    assert cli.main(["sort", str(path)]) == 1
+    assert cli.main(["sort", str(path), "--trace"]) == 1
     assert "no dbt manifest" in capsys.readouterr().err
 
 

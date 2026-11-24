@@ -534,8 +534,10 @@ def checked_sort(
 
 
 def unsettled(run: RunResult, loaded: dict) -> list[Unsettled]:
-    """The sort's items still in `investigate` and open, as `ask-owner`
-    lists them; one a comparison decision closed since is decided.
+    """The sort's open items not settled yet, as `ask-owner` lists them: those
+    still in `investigate`, and those explained with no decision yet
+    (`_undecided`), which are no question until the analyst decides them.
+    One a comparison decision closed since is decided.
 
     Each is matched to the run's open item by its `open_key` for its bucket
     and counts; one the run no longer holds keeps its kind and no count. Read
@@ -546,15 +548,19 @@ def unsettled(run: RunResult, loaded: dict) -> list[Unsettled]:
     closed = {open_key(g) for _, g in run.applied.quiet}
     out = []
     for item in loaded.get("items", []):
-        if item.get("suggestion") != "investigate" or item.get("key") in closed:
-            continue
         source = sources.get(item.get("key", ""))
+        explained = _undecided(item, source)
+        if item.get("key") in closed or not (
+            explained or item.get("suggestion") == "investigate"
+        ):
+            continue
         lead = next((e for e in item.get("evidence", []) if e.startswith("lead: ")), "")
         common = {
             "view": run.view,
             "comparison": item.get("comparison", ""),
             "item": item["id"],
             "lead": lead,
+            "explained": explained,
         }
         if isinstance(source, Group):
             hidden = tuple(
@@ -572,6 +578,34 @@ def unsettled(run: RunResult, loaded: dict) -> list[Unsettled]:
         else:
             out.append(Unsettled(**common, what=item.get("kind", "item")))
     return out
+
+
+def _undecided(item: dict, source: Group | Gap | CellDiff | None) -> bool:
+    """A `cause` item no decision settles yet, while the run holds it open
+    (`source`).
+
+    An explained row group carries its cause decisions' mark
+    (`mark_decided`); a `group` or comparison decision takes it out of the
+    open items instead. A formula difference or a missing cut or filter
+    stays open in the run until its decision. A cell set closes by coverage,
+    so its row groups already stand for it.
+    """
+    if item.get("suggestion") != "cause" or source is None:
+        return False
+    if decidable(item):
+        return item.get("decided") is not True
+    return isinstance(source, Gap) or (
+        isinstance(source, CellDiff) and source.kind == "formula"
+    )
+
+
+def decided_whole(cfg: ViewConfig, run: RunResult) -> set[str]:
+    """The comparisons a comparison decision (`all_groups`) still decides on
+    `run`: the analyst called them not worth explaining, so a review leaves
+    them out while they wait to be compared again. One whose SQL changed
+    since (`applied.reconfirm`) is not."""
+    stale = {d.id for d in run.applied.reconfirm}
+    return {d.comparison for d in cfg.decisions if d.all_groups and d.id not in stale}
 
 
 def _closed(loaded: dict) -> list[dict]:
@@ -602,7 +636,7 @@ def check_closed(run: RunResult, run_json: Path, recorded: list[Decision]) -> No
         return
     print(
         "closed-group check skipped: no sort of this run; "
-        "run `sort --no-trace` to check decisions against closed groups",
+        "run `sort` to check decisions against closed groups",
         file=sys.stderr,
     )
 
@@ -911,7 +945,7 @@ def doc_leads(cfg: ViewConfig, docs_dir: Path = DOCS_DIR) -> dict[str, str]:
     return out
 
 
-NOT_TRACED = "not traced (`sort --no-trace`)"
+NOT_TRACED = "not traced (`sort --trace` traces it)"
 NO_FILTER = "no `dashboard_filters` entry names the filter that drops these rows"
 
 
