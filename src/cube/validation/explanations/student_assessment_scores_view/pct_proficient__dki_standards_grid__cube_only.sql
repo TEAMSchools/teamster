@@ -8,14 +8,23 @@
 -- cause D5 = dashboard: the dashboard drops WPP modules (r.module_type != 'WPP')
 -- cause D6 = dashboard: the dashboard keeps grades 0 to 12 only
 -- cause D7 = dashboard: the dashboard drops assessments with no module type (r.module_type != 'WPP' is not true for a null)
+-- cause D9 = dashboard: the dashboard's weekly enrollment rows mark the student not enrolled on the week's Sunday (co.is_enrolled_week_end is false in int_extracts__student_enrollments_weeks), though the student's enrollment dates cover that Sunday
 -- unchanged C2 since 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4
+-- unchanged C2 since 52acbccac9b3c2a0ac68952679ec03046e2965256713891eeef3f7d168b4d1bc
 -- unchanged D1 since 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4
+-- unchanged D1 since 52acbccac9b3c2a0ac68952679ec03046e2965256713891eeef3f7d168b4d1bc
 -- unchanged D2 since 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4
+-- unchanged D2 since 52acbccac9b3c2a0ac68952679ec03046e2965256713891eeef3f7d168b4d1bc
 -- unchanged D3 since 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4
+-- unchanged D3 since 52acbccac9b3c2a0ac68952679ec03046e2965256713891eeef3f7d168b4d1bc
 -- unchanged D4 since 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4
+-- unchanged D4 since 52acbccac9b3c2a0ac68952679ec03046e2965256713891eeef3f7d168b4d1bc
 -- unchanged D5 since 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4
+-- unchanged D5 since 52acbccac9b3c2a0ac68952679ec03046e2965256713891eeef3f7d168b4d1bc
 -- unchanged D6 since 1bcae561576d2242f4b5ab68cd2c4663ce8f65fb63320d7962e39cac8d5098c4
--- saved 52acbccac9b3c2a0ac68952679ec03046e2965256713891eeef3f7d168b4d1bc
+-- unchanged D6 since 52acbccac9b3c2a0ac68952679ec03046e2965256713891eeef3f7d168b4d1bc
+-- unchanged D7 since 52acbccac9b3c2a0ac68952679ec03046e2965256713891eeef3f7d168b4d1bc
+-- saved 6ef4c49f109f0e8953f7c21b5aa6544b2fd052455ac1e28553d2e14d4235d74f
 
 WITH rollup_rows AS (
   SELECT
@@ -68,6 +77,23 @@ weeks AS (
     AND cw.schoolid = co.schoolid
     AND r.administered_at BETWEEN cw.week_start_monday AND cw.week_end_sunday
   GROUP BY r.student, r.assessment
+),
+dash_weeks AS (
+  SELECT
+    r.student,
+    r.assessment,
+    LOGICAL_OR(
+      co.is_enrolled_week_end
+      AND co.enroll_status IN (0, 2, 3)
+      AND NOT co.is_out_of_district
+    ) AS dash_ok
+  FROM rollup_rows AS r
+  INNER JOIN `teamster-332318`.`kipptaf_extracts`.`int_extracts__student_enrollments_weeks` AS co
+    ON co.student_number = r.student_number
+    AND co.academic_year = r.academic_year
+    AND co.region = r.region
+    AND r.administered_at BETWEEN co.week_start_monday AND co.week_end_sunday
+  GROUP BY r.student, r.assessment
 )
 SELECT
   u.__row,
@@ -81,6 +107,7 @@ SELECT
     WHEN p.is_wpp THEN 'D5'
     WHEN p.is_untagged THEN 'D7'
     WHEN NOT w.grade_ok THEN 'D6'
+    WHEN NOT COALESCE(dw.dash_ok, FALSE) THEN 'D9'
     ELSE 'UNEXPLAINED'
   END AS cause
 FROM {unmatched} AS u
@@ -90,3 +117,6 @@ LEFT JOIN per_score AS p
 LEFT JOIN weeks AS w
   ON w.student = p.student
   AND w.assessment = p.assessment
+LEFT JOIN dash_weeks AS dw
+  ON dw.student = p.student
+  AND dw.assessment = p.assessment
