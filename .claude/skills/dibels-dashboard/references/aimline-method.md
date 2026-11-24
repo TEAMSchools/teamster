@@ -384,11 +384,15 @@ column. The published default is `Aimline and Benchmark`, which makes both read
 the same column. Do not move the default back without changing the BANs too.
 
 The ⏳ Round Incomplete tile alone does not read `BAN Category`. It counts
-`round_test_status = 'Round Incomplete'` with `measure_test_status = 'Tested'`,
-so a student still testing counts in ⏳ and in the tile for their verdict, and
-the tiles can add to more than 100% while a round is open. Academics chose that
-on 2026-11-24 to keep the still-testing count on the default view; do not
-repoint the tile at `BAN Category`.
+`round_test_status = 'Round Incomplete'` with `measure_test_status = 'Tested'`.
+At Measure Standard and Measure a student who has not finished the round counts
+in ⏳ and in the tile for their verdict, so the tiles can add to more than 100%,
+and on a closed round that lasts for every student who never finished it. At
+Round they do not overlap: the unfinished round reads `Round Incomplete` in
+`aimline_round_category`. Academics chose that on 2026-11-24 to keep the
+still-testing count on the default view; do not repoint the tile at
+`BAN Category`, and do not read a total over 100% at Measure Standard or Measure
+as a defect.
 
 **The Category Status Over Time line has its own window.** It needs every round
 in a season, so it cannot use the Admin Window filter. A Trend Window control

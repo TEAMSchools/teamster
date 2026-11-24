@@ -388,9 +388,12 @@ The Tableau workbook is the `literacy_dashboard` exposure in
     page.
   - The ⏳ Round Incomplete tile counts students who sat the measure in view and
     have not finished the round: `round_test_status = 'Round Incomplete'` and
-    `measure_test_status = 'Tested'`. Those students also count in the tile for
-    their verdict, so the tiles can add to more than 100% while a round is open,
-    by design.
+    `measure_test_status = 'Tested'`. At Measure Standard and Measure those
+    students also count in the tile for their verdict, so the tiles can add to
+    more than 100%, by design. That stays true after the round's window closes,
+    for every student who never finished it. At Round the tiles do not overlap,
+    because an unfinished round reads `Round Incomplete` in
+    `aimline_round_category`.
   - The Category Status Over Time line shows every round of one season, chosen
     by its own Trend Window control, not by the Admin Window filter.
   - The workbook filters `enroll_status = 0`, the student's status today, so a
