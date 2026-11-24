@@ -241,10 +241,19 @@ in the main checkout (gitignored, not committed: it holds small-cell
 aggregates). Its teacher rows came from the reference query in the appendix.
 
 Claude builds the workbook as `.twb` XML with the `tableau-workbook-xml` skill
-(requester's decision; the `tableau-build` skill is not installed). That skill
-edits an existing workbook, so the base is a fresh pull of the old "SGP
-Analysis" workbook (luid `7b52baa1-b8bb-46c2-ba0a-41a032752cd3`, project
-TEMP-Walters), repointed at the new report models and rebuilt to this spec.
+(requester's decision; the `tableau-build` skill is not installed). Every sheet,
+calculation, filter, and dashboard is built from scratch; nothing of the old
+"SGP Analysis" workbook's content carries over (requester: no need to reuse it).
+
+That skill edits a file Desktop wrote, so the build still needs a
+Desktop-written shell. My call: take a fresh pull of the old workbook (luid
+`7b52baa1-b8bb-46c2-ba0a-41a032752cd3`, project TEMP-Walters) for its XML
+skeleton and its working BigQuery connection only, repoint the connection at the
+3 report models, and delete every worksheet, dashboard, and calculation before
+building. If Desktop refuses the repointed connection, ask the requester to save
+a blank workbook in Desktop connected to the 3 report models and use that as the
+base instead.
+
 Follow the skill's loop: assertion before each edit, both checkers, repack,
 publish to a non-production project the requester names at that point, render
 and look. A render cannot show a hover or a click, and Server accepts files
