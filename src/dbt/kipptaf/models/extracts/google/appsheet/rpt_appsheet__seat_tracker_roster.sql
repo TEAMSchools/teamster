@@ -71,6 +71,8 @@ with
                         answer, 'interested in an opportunity at another school'
                     )
                 then 'Interested in Transfer'
+                when starts_with(answer, 'I am interested in exploring transferring')
+                then 'Interested in Transfer'
                 when starts_with(answer, 'I am not sure if I am returning')
                 then 'Not Sure'
                 else answer
