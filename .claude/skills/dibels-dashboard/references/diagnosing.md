@@ -159,6 +159,17 @@ After any publish, render the dashboard with no `viewFilters` and read the
 filter bar. Desktop saves the filter state at publish time; a Region filter left
 on one region shipped as the default once on 2026-09-28.
 
+- **Rendering the Aimline pages at Measure or Round needs a filter too.**
+  Setting `Aimline Granularity Parameter` through the render API leaves the
+  `Granularity Options` filter on its Measure Standard value, so every tile
+  renders blank, and two blank renders compare equal. Pass
+  `vf("Granularity Options", ...)` as well: a measure code such as `NWF` at
+  Measure, `Select from Admin Window (Current)` at Round.
+- **A REST API publish drops this workbook's embedded BigQuery credentials,**
+  and the extract refresh then fails until someone re-embeds them. Make a
+  calc-only change in web authoring on the production workbook instead, which
+  keeps them, and verify it afterwards by downloading and rendering.
+
 ## The dashboard's BANs against the extract: a QA baseline
 
 The Aimline BAN tiles follow the Granularity selector, whatever the Comparison

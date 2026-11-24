@@ -1064,9 +1064,14 @@ group by grade_level_int
 Tracked in the skill's `references/aimline-method.md`. Every PM view in the
 Literacy Dashboard must filter `model_type`, and the `PM - Met Goal Selector`
 calc should return the `*_status` strings, with its No Data alias moved from
-null to `Not Tested`. The Trajectory item left the workbook on 2026-09-28; its
-three columns are still in the extract. The workbook's datasource is embedded,
-so these checks need Tableau Desktop.
+null to `Not Tested`. Until it does, the Region Overview - PM tab counts a
+student who met one ORF standard and missed the other in both segments at the
+Measure grouping, so its bars add to more than 100%. Academics decided on
+2026-11-24 that meeting ORF at the Measure grouping means meeting both
+standards, which is what the measure-grain status columns already compute. The
+Trajectory item left the workbook on 2026-09-28; its three columns are still in
+the extract. The workbook's datasource is embedded, so these checks need Tableau
+Desktop.
 
 ## Yearly upkeep
 

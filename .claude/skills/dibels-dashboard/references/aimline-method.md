@@ -223,6 +223,12 @@ WHEN 'Met Benchmark Goal' THEN [Admin Benchmark Goal Status]
 END
 ```
 
+At the Measure grouping, academics decided on 2026-11-24 that a student meets
+ORF only when they met both Reading Fluency and Reading Accuracy. The
+measure-grain twins, `measure_name_code_benchmark_status` and
+`measure_name_code_goal_status`, already compute that, so the Measure option
+reads them; do not offer "met either standard" as a fix for bars over 100%.
+
 **Also outstanding, and more urgent: every PM view must now filter
 `model_type`.** The dashboard has a third branch for the aimline method, so both
 methods emit rows for the same student and any unfiltered PM view double-counts.
