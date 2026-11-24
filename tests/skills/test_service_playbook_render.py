@@ -113,6 +113,15 @@ def test_render_escapes_text_and_drops_non_https_links():
     assert "javascript:" not in html
 
 
+def test_render_adds_open_questions_only_when_there_are_some():
+    content = _content()
+    content["questions"] = ["Is Q1 <done>?"]
+    html = render.render(content, _playbook(), _capacity())
+    assert html.count("<table") == 13
+    assert html.index("OPEN QUESTIONS") > html.index("KNOWN FAILURE MODES")
+    assert "Is Q1 &lt;done&gt;?" in html
+
+
 def test_render_marks_hours_proposed_and_busiest_months():
     html = render.render(_content(), _playbook(), _capacity())
     assert (

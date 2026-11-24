@@ -159,14 +159,27 @@ uv run python .claude/skills/service-playbook/scripts/render_doc.py \
   --capacity <scratchpad>/capacity-<slug>.json --out <scratchpad>/playbook-<slug>.html
 ```
 
-Show the user the section 9 table and the `[proposed]` list, then create the doc
-with Drive `create_file`: `title` as above, `parentId` the
-`Playbook Drive folder`, `contentMimeType: text/html`, and `base64Content` as a
-file reference, `sha256:<sha256sum of the file>:<absolute path>`, so the HTML is
-not retyped into the call. Drive converts it to a Google Doc. Check the returned
-title and that the file's `mimeType` is `application/vnd.google-apps.document`;
-the reported `fileSize` of a converted doc is not its length, so read the doc
-back with `read_file_content` and count the twelve section titles.
+Show the user the section 9 table and the `[proposed]` list, then add the
+playbook as a new tab of the `Service Playbooks doc` (`ids.md`), titled with the
+workstream name. Drive's HTML import cannot make a tab, so build it with the
+Google Docs connector and `scripts/doc_tabs.py`:
+
+1. `update_doc` with
+   `[{"addDocumentTab":{"tabProperties":{"title":"<workstream>"}}}]`; the reply
+   carries the new `tabId`.
+2. `doc_tabs.py skeleton --html <playbook html> --tab-id <tabId>`, and send its
+   output as `requests`.
+3. `read_doc`. Its result spills to a file; `jq '.content'` it into
+   `<scratchpad>/doc.json`.
+4. `doc_tabs.py fill --html <playbook html> --doc <scratchpad>/doc.json --tab-id <tabId>`,
+   and send its output in chunks of 80 requests, in order, without reading the
+   doc between chunks.
+
+A fill runs to tens of kilobytes, so hand steps 2 to 4 to a subagent with the
+exact commands rather than pasting the requests through the main conversation.
+Check the tab afterwards: its tables count and its first cell reads
+`SERVICE SUMMARY`. The doc's own service account cannot do this, because the
+Google Docs API is turned off in the Data team's Cloud project.
 
 ## Stop message
 

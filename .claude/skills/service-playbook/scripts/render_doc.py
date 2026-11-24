@@ -255,6 +255,14 @@ def render(content: dict, playbook: dict, capacity: dict) -> str:
             ["".join(_cell(c) for c in row) for row in content["failure_modes"]],
         )
     )
+    if content.get("questions"):
+        body.append(
+            _table(
+                "OPEN QUESTIONS",
+                ["#", "Question"],
+                [_cell(i) + _cell(q) for i, q in enumerate(content["questions"], 1)],
+            )
+        )
     return (
         '<html><body style="font-family:Calibri, Verdana, sans-serif">'
         + "\n".join(body)
