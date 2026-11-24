@@ -367,7 +367,11 @@ granularity picks the row, comparison item the column:
 | ----------------- | ------------------------------- | ------------------------------------ | -------------------------------------------- | ------------------------------------- |
 | Measure standard  | `measure_standard_goal_status`  | `admin_benchmark_goal_status`        | `aimline_category`                           | `aimline_trajectory_category`         |
 | Measure name code | `measure_name_code_goal_status` | `measure_name_code_benchmark_status` | `measure_name_code_aimline_benchmark_status` | `measure_name_code_trajectory_status` |
-| Round             | `pm_round_status`               | `round_benchmark_status`             | `aimline_round_category`                     | `round_trajectory_status`             |
+| Round             | `aimline_round_category`        | `round_benchmark_status`             | `aimline_round_category`                     | `round_trajectory_status`             |
+
+At Round the workbook reads `aimline_round_category` for both aimline items.
+`pm_round_status` is the extract's own-goal column for that grain, but no sheet
+reads it.
 
 "Own goal" is the method's own target -- cumulative growth on Internal, the
 aimline on Aimline. The right two lenses are Aimline-only. The workbook dropped
@@ -390,8 +394,9 @@ At Measure Standard and Measure a student who has not finished the round counts
 in ⏳ and in the tile for their verdict, so the tiles can add to more than 100%,
 and on a closed round that lasts for every student who never finished it. At
 Round they do not overlap: the unfinished round reads `Round Incomplete` in
-`aimline_round_category`. Academics chose that on 2026-11-24 to keep the
-still-testing count on the default view; do not repoint the tile at
+`aimline_round_category`. Academics asked on 2026-11-24 to keep the Round
+Incomplete headline as is; the dashboard owner then chose this overlap, to keep
+the still-testing count on the default view. Do not repoint the tile at
 `BAN Category`, and do not read a total over 100% at Measure Standard or Measure
 as a defect. The tile's calc reads no aimline column, so it relies on its
 sheet's `model_type = 'Aimline'` filter; both ⏳ sheets carry one, and a copy
