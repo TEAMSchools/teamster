@@ -5,7 +5,7 @@ breaks tab come from `.claude/skills/project-charter/references/ids.md`. A row
 marked `UNSET` blocks the phase that uses it; ask the user for the value and
 write it here.
 
-| Name                  | Id      | Used in | Re-find                                                                    |
-| --------------------- | ------- | ------- | -------------------------------------------------------------------------- |
-| Playbook Drive folder | `UNSET` | 1       | Drive `search_files` for the folder the user names                         |
-| Capacity board        | `UNSET` | 2       | Artifact `list`, title "Capacity Board"; published from `board/index.html` |
+| Name                  | Id                                                  | Used in | Re-find                                                                        |
+| --------------------- | --------------------------------------------------- | ------- | ------------------------------------------------------------------------------ |
+| Playbook Drive folder | `UNSET`                                             | 1       | Drive `search_files` for the folder the user names                             |
+| Capacity board        | `https://claude.ai/artifact/3fN9eWTY3qPC75BJS11HsD` | 2       | Artifact `list`, title "Data Team Capacity"; published from `board/index.html` |
