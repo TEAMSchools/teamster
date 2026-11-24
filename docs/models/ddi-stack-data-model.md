@@ -4,9 +4,10 @@
 
 The DDI (data-driven instruction) stack turns internal Illuminate assessment
 results into the dashboards, report-card feeds and planning sheets KTAF's NJ
-regions run their assessment cycle on. Achievement directors enter assessments
-in Illuminate and tag them in an AppSheet app; teachers administer and score
-them; the stack fans the results out to:
+regions run their assessment cycle on; from SY26-27 on it also carries Miami's
+Focus Apex results. Achievement directors enter assessments in Illuminate and
+tag them in an AppSheet app; teachers administer and score them; the stack fans
+the results out to:
 
 - the **DDI Suite** Tableau workbook (two extracts: the assessment dashboard and
   the weekly DDI dashboard),
@@ -20,9 +21,11 @@ them; the stack fans the results out to:
   `student_assessment_scores_view`).
 
 "Internal assessment" here means an Illuminate assessment someone tagged in the
-AppSheet — the tag is literally what makes it internal (see Terms). The stack
-covers the three NJ regions. Miami's final year on it is SY25-26; Miami returns
-when Focus assessment data is ingested, and there is no interim exception.
+AppSheet — the tag is literally what makes it internal — or a Miami Focus Apex
+assessment, which is internal tagged or not (see Terms). The stack covers the
+three NJ regions through Illuminate. Miami's Illuminate data ends with SY25-26;
+from SY26-27 on, Miami's Focus Apex assessments enter the same internal branch
+(the scaffold and the response rollup), with rows only for students who tested.
 
 Owner: Anthony Walters, Director, Data. Marya Shukla owns assessment-tagging
 quality control in the AppSheet and the standard-domains lookup; achievement
@@ -103,14 +106,17 @@ A new score therefore reaches a consumer only after:
   surfaced as `is_normed_scope`): an Illuminate assessment with a row in the
   AppSheet Illuminate Assessments Extension. The flag is
   `if(iae.assessment_id is not null, ...)` in
-  `int_assessments__assessments_members`. Untagged assessments still flow
-  through the scaffold's non-internal branch into
+  `int_assessments__assessments_members`. Its Focus Apex branch (Miami, SY26-27
+  on) sets the flag true for every Apex assessment, tagged or not; the tag
+  supplies an Apex assessment's module fields. Untagged Illuminate assessments
+  still flow through the scaffold's non-internal branch into
   `rpt_tableau__assessment_dashboard`, so the Assessment Dashboard worksheet can
   analyze every Illuminate assessment — but the Module Dashboard and DKI
-  worksheets display only normed (tagged) assessments, and the canonical
-  grouping, the report-card feeds and the star's internal branch use only tagged
-  ones. An untagged assessment is otherwise invisible to every consumer below
-  except the raw Illuminate intermediates.
+  worksheets display only normed assessments: tagged Illuminate ones and every
+  Apex one. For Illuminate, the canonical grouping, the report-card feeds and
+  the star's internal branch use only tagged ones. An untagged Illuminate
+  assessment is otherwise invisible to every consumer below except the raw
+  Illuminate intermediates.
 - **Canonical assessment** (`canonical_assessment_id`): internal assessments are
   created as several Illuminate copies when one assessment is too big for one
   (multi-part assessments), so within each region tagged in `regions_assessed`,
@@ -196,6 +202,12 @@ A new score therefore reaches a consumer only after:
   443-472 are on the dlt schedules; the 16 enabled stubs below 443 never sync,
   so their data is frozen (known issue). Owned by the data team; assessment
   content is owned by the achievement directors who build it.
+- **Focus Apex** (Miami, SY26-27 on): `int_focus__apex_assessments` supplies the
+  assessment catalog to `int_assessments__assessments_members`, and
+  `int_focus__apex_results` tells the scaffold who tested and supplies the
+  scores and performance bands to the response rollup. The scaffold builds Apex
+  rows from the results alone, one per student who tested, so Apex has no
+  assigned-but-not-taken rows.
 - **The AppSheet Illuminate Assessments Extension**: the tagging app writes a
   BigQuery table read as
   `stg_google_appsheet__illuminate_assessments_extension`, keyed on `source`
@@ -243,9 +255,10 @@ the owner's walkthrough or a workbook download.
 ### rpt_tableau__assessment_dashboard
 
 - **What it shows**: Illuminate assessment response rows (overall, standard and
-  group level) joined to enrollment, course/teacher and student-subject context.
-  Carries every Illuminate assessment, tagged or not, with `is_normed_scope`
-  marking the tagged ones; drives the Assessment Dashboard worksheet (all
+  group level), plus Miami's Focus Apex rows from SY26-27 on, joined to
+  enrollment, course/teacher and student-subject context. Carries every
+  Illuminate assessment, tagged or not, with `is_normed_scope` marking the
+  tagged ones and every Apex row; drives the Assessment Dashboard worksheet (all
   assessments) and the Module Dashboard worksheet (normed only).
 - **Grain**: student x response record; the course join is pinned to one section
   per subject (`rn_student_year_illuminate_subject_desc = 1`), yet prod shows
@@ -257,11 +270,45 @@ the owner's walkthrough or a workbook download.
 - **Worth knowing**:
   - Population: `rn_year = 1`, `grade_level != 99`, current and prior academic
     year only.
-  - Miami holds **zero rows in prod** in every year (measured 2026-10-02): the
-    rollup still carries Miami AY2025 responses, but none survive this model's
-    enrollment join after the Focus cutover.
+  - Miami rows from SY26-27 on are Focus Apex assessments. Focus Apex holds a
+    row only for a student who tested, so Miami has no assigned-but-not-taken
+    rows and its Module Dashboard completion reads about 100%.
   - `power_standard_goal`, `is_power_standard`, `standard_domain` are hardcoded
     null — retired fields kept so the workbook's field list does not break.
+  - Module Dashboard completion is computed in the workbook. An assignment is
+    one student and one assessment: its `overall` row when taken, its
+    null-`response_type` row when not. An assignment is counted once its
+    `administered_at` is today or earlier, and taken when its `overall` row has
+    a `percent_correct`. Completion is taken over counted assignments, counted
+    distinctly per student and assessment, in a cell of academic year, school,
+    subject area, module type, module number, replacement flag and heatmap
+    column. An assessment not yet due has no counted assignments, so its
+    completion is null. The `% Completion` filter is saved cleared (all values,
+    nulls included), so by default every cell with a score shows, including one
+    for an assessment not yet due. Once a user sets a range, the filter hides
+    cells below it and every cell whose completion is null.
+  - The Module Dashboard reads the null-`response_type` rows only for
+    completion. On the sheets that use the completion calcs, the `response_type`
+    filter still shows only the `overall` rows, but as an ordinary filter rather
+    than a context filter, so the `FIXED` completion calcs see the not-taken
+    rows. Where a mark covers several cells (the summary row, the Assessments
+    Over Time tooltip), completion is pooled: taken over counted across those
+    cells. A cell where nobody has a score shows no mark and is left out of a
+    pooled number. An untagged assessment has no not-taken rows; one with no
+    `administered_at` is never counted as due, so its completion is null. The
+    Assessment Dashboard does not display completion.
+  - Completion counts every assigned student in the cell, so it does not change
+    with the student-group filters. A pooled number covers the cells on screen:
+    every cell by default, or only the cells inside the range a user sets on the
+    completion filter. Completion depends on the extract being refreshed: an
+    assessment that has come due counts against completion until its scores are
+    in the extract.
+  - The Module Dashboard's `Heatmap Columns` control puts either grade level or,
+    for grades 9 to 12, the assessment's `subject_area` across the top of its
+    two heatmaps; grades K to 8 keep their grade either way. The control is
+    workbook-wide, so in Course Subject mode a high school's completion cell is
+    one subject across all its grades on every sheet that shows completion or is
+    filtered by it.
 
 ### rpt_tableau__ddi_dashboard
 
@@ -513,9 +560,9 @@ state testing results, both, or eventually Focus Assessments.
 - **NJ state history is capped at 7 years in the fact; FL is not.**
 - **5x/day star, daily Cube pre-agg.** Intraday rebuilds serve Tableau; Cube
   users see daily data.
-- **Miami exit.** Miami's Illuminate feed ended with SY25-26. Its historical
-  rows stay; nothing new lands until Focus assessment data is ingested, at which
-  point the internal branch grows a Focus source (decided 2026-09-30).
+- **Miami exit.** Miami's Illuminate feed ended with SY25-26, and its historical
+  rows stay. From SY26-27 on, the internal branch reads Miami's Focus Apex
+  assessments instead (decided 2026-09-30).
 
 ## Support themes
 
@@ -602,9 +649,6 @@ Found during the documentation run, not yet tracked separately:
   `int_assessments__academic_goals` and are masked downstream by
   `dim_assessment_goals`' highest-school-goal-wins dedupe. Check: `group by` the
   5 goal keys `having count(*) > 1`.
-- `rpt_tableau__assessment_dashboard`'s description carries a stale Miami row
-  count and says Miami AY2026 rows have "not landed upstream yet"; prod holds
-  zero Miami rows in any year and none will land — Miami left the stack.
 - `dim_assessments` documentation points at
   `bridge_assessment_administration_members` as the member drill-down, but that
   bridge is disabled with zero consumers.

@@ -55,9 +55,12 @@ correctly).
 4. Only when the window feeds report cards: check one published feed row against
    the mod audit sheet's `computed_avg_pct_correct`
    ([report-cards.md](report-cards.md) has the scope caveats).
-5. Zero Miami rows anywhere current-year is correct; Miami rows APPEARING in a
-   current year means the Focus assessment source landed — the doc's Miami
-   condition then needs rewriting.
+5. Miami: current-year rows come from Focus Apex (`source = 'apex'`) and exist
+   only for students who tested, so Miami has no null-`response_type`
+   (not-taken) rows and its completion reads about 100%. Apex rows present with
+   no not-taken rows passes. Zero current-year Miami rows after Miami's first
+   assessment window fails: trace `int_focus__apex_results` into the scaffold's
+   Apex branch.
 
 ## Refactor parity
 
