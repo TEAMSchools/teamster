@@ -2911,3 +2911,450 @@ decisions:
       dashboard: 065d0590b16edbb677420cb3fd90b51ba0cc0392155576b02d3c5a980e9bfc08
       matched_only: "331"
       formula_cells: 3c0c2a5f62e465aa9c369874b57e764cf8a0e059cd7bfda27acaf3f4f8c69eb3
+  - id: ddi-117
+    comparison: pct_proficient__dki_grid
+    cause:
+      side: cube
+      label:
+        the score's section enrollment attaches to no school enrollment stint
+        (its student_enrollment_key is null or matches no
+        dim_student_enrollments row), so Cube reaches no student or school and
+        its school access filter drops the score
+    call: domain_owner
+    reason:
+      Some scores belong to a section enrollment that is not linked to any
+      school enrollment for that year. Cube can't place those scores in a
+      school, so its school access drops them, while the dashboard counts them
+      through the student's year enrollment. Should a score count when its
+      section enrollment has no matching school enrollment?
+    fingerprints:
+      cube: 7e37d48c7200c2ae9b2e874b0bef88ccb3a36439c77fc0a0f7c106ae7b7a671e
+      dashboard: 3a4c42f66acd6e9382b94e790766eab19dff496da3b5f981467407d0629ee2df
+      explanation: 44d713f124db4b75a97079f863455ac1cf0aa5743dfafb12e3dd36d430fe597f
+  - id: ddi-118
+    comparison: pct_proficient__dki_standards_grid
+    cause:
+      side: cube
+      label:
+        the score's section enrollment attaches to no school enrollment stint
+        (its student_enrollment_key is null or matches no
+        dim_student_enrollments row), so Cube reaches no student or school and
+        its school access filter drops the score
+    call: domain_owner
+    reason:
+      Some scores belong to a section enrollment that is not linked to any
+      school enrollment for that year. Cube can't place those scores in a
+      school, so its school access drops them, while the dashboard counts them
+      through the student's year enrollment. Should a score count when its
+      section enrollment has no matching school enrollment?
+    fingerprints:
+      cube: 8388048ba9c0d765791e878a5bea341b622138dbe107aa824bd841b1dccbd704
+      dashboard: 14adb3f5320b7a0553812c221db658b5493221f71eb649e1e78751580f82e5f4
+      explanation: 44d713f124db4b75a97079f863455ac1cf0aa5743dfafb12e3dd36d430fe597f
+  - id: ddi-119
+    comparison: grade_goal_distance__grid_grade
+    cause:
+      side: cube
+      label:
+        the score's section enrollment attaches to no school enrollment stint
+        (its student_enrollment_key is null or matches no
+        dim_student_enrollments row), so Cube reaches no student or school and
+        its school access filter drops the score
+    call: domain_owner
+    reason:
+      Some scores belong to a section enrollment that is not linked to any
+      school enrollment for that year. Cube can't place those scores in a
+      school, so its school access drops them, while the dashboard counts them
+      through the student's year enrollment. Should a score count when its
+      section enrollment has no matching school enrollment?
+    fingerprints:
+      cube: 4a525e3865590de20adc45f8a374c9cab5272da64c06258ea4cadc48304dca4e
+      dashboard: 46ea75ad0ab01f600573f2875e32aedb7d94f1fd88e2a0145958b1de24f892ce
+      explanation: 44d713f124db4b75a97079f863455ac1cf0aa5743dfafb12e3dd36d430fe597f
+  - id: ddi-120
+    comparison: school_goal_distance__lines_all
+    cause:
+      side: cube
+      label:
+        the score's section enrollment attaches to no school enrollment stint
+        (its student_enrollment_key is null or matches no
+        dim_student_enrollments row), so Cube reaches no student or school and
+        its school access filter drops the score
+    call: domain_owner
+    reason:
+      Some scores belong to a section enrollment that is not linked to any
+      school enrollment for that year. Cube can't place those scores in a
+      school, so its school access drops them, while the dashboard counts them
+      through the student's year enrollment. Should a score count when its
+      section enrollment has no matching school enrollment?
+    fingerprints:
+      cube: 62cc738d1616ebd052253643d0553fa906ae6c7f54d8ced699a60c1dc0864f94
+      dashboard: ae914d7ed85230c7c528c2cdfa266e5dddd65f6ad79df95c080f0a35b0285664
+      explanation: 44d713f124db4b75a97079f863455ac1cf0aa5743dfafb12e3dd36d430fe597f
+  - id: ddi-121
+    comparison: region_goal_distance__lines_all
+    cause:
+      side: cube
+      label:
+        the score's section enrollment attaches to no school enrollment stint
+        (its student_enrollment_key is null or matches no
+        dim_student_enrollments row), so Cube reaches no student or school and
+        its school access filter drops the score
+    call: domain_owner
+    reason:
+      Some scores belong to a section enrollment that is not linked to any
+      school enrollment for that year. Cube can't place those scores in a
+      school, so its school access drops them, while the dashboard counts them
+      through the student's year enrollment. Should a score count when its
+      section enrollment has no matching school enrollment?
+    fingerprints:
+      cube: ca01c96cc0614c1f5891af3a91373162b90a910fe1f98331db00908b96825fed
+      dashboard: 7f7454e8d2e84f1205c60a762c38c5fbc9b21ffe1e5e3ac5db035cccb78b2572
+      explanation: 44d713f124db4b75a97079f863455ac1cf0aa5743dfafb12e3dd36d430fe597f
+  - id: ddi-122
+    comparison: pct_taken__assessments_over_time
+    cause:
+      side: cube
+      label:
+        the score's section enrollment attaches to no school enrollment stint
+        (its student_enrollment_key is null or matches no
+        dim_student_enrollments row), so Cube reaches no student or school and
+        its school access filter drops the score
+    call: domain_owner
+    reason:
+      Some scores belong to a section enrollment that is not linked to any
+      school enrollment for that year. Cube can't place those scores in a
+      school, so its school access drops them, while the dashboard counts them
+      through the student's year enrollment. Should a score count when its
+      section enrollment has no matching school enrollment?
+    fingerprints:
+      cube: 11cc3cdd00795835a2b246a2befaf842b5c0b8bb8b6388d51706ef91396d3b5a
+      dashboard: 12892dfd5eb39545b7325e119050ce14daf905612c7e5456029b62ab45b148cd
+      explanation: 44d713f124db4b75a97079f863455ac1cf0aa5743dfafb12e3dd36d430fe597f
+  - id: ddi-123
+    comparison: pct_students_at_level__dki_bars
+    cause:
+      side: cube
+      label:
+        the score's section enrollment attaches to no school enrollment stint
+        (its student_enrollment_key is null or matches no
+        dim_student_enrollments row), so Cube reaches no student or school and
+        its school access filter drops the score
+    call: domain_owner
+    reason:
+      Some scores belong to a section enrollment that is not linked to any
+      school enrollment for that year. Cube can't place those scores in a
+      school, so its school access drops them, while the dashboard counts them
+      through the student's year enrollment. Should a score count when its
+      section enrollment has no matching school enrollment?
+    fingerprints:
+      cube: c67def6e5df305c30f2dc8475bbf92f68a810b2e7093e9d0c9863b54f59434a9
+      dashboard: 8e62ccde46f50f682ea9f420f20b251895600b2b47f819e0a7cb2d286ffb5da9
+      explanation: 44d713f124db4b75a97079f863455ac1cf0aa5743dfafb12e3dd36d430fe597f
+  - id: ddi-124
+    comparison: pct_students_at_level__dki_standards_bars
+    cause:
+      side: cube
+      label:
+        the score's section enrollment attaches to no school enrollment stint
+        (its student_enrollment_key is null or matches no
+        dim_student_enrollments row), so Cube reaches no student or school and
+        its school access filter drops the score
+    call: domain_owner
+    reason:
+      Some scores belong to a section enrollment that is not linked to any
+      school enrollment for that year. Cube can't place those scores in a
+      school, so its school access drops them, while the dashboard counts them
+      through the student's year enrollment. Should a score count when its
+      section enrollment has no matching school enrollment?
+    fingerprints:
+      cube: 7d360cc79f30d506f02012dc6bd7ea1ba0ee575d62961a0e03cc0c324b6b0a44
+      dashboard: 065d0590b16edbb677420cb3fd90b51ba0cc0392155576b02d3c5a980e9bfc08
+      explanation: 44d713f124db4b75a97079f863455ac1cf0aa5743dfafb12e3dd36d430fe597f
+  - id: ddi-125
+    comparison: pct_proficient__dki_grid
+    cause:
+      side: cube
+      label:
+        the student changed grade or school during the year; Cube takes grade
+        and school from the enrollment stint the score's section enrollment
+        attaches to, the dashboard from the stint that covers the assessment
+        week
+    call: domain_owner
+    reason:
+      When a student changes grade or school during the year, Cube reports the
+      score under the grade and school its course enrollment started under,
+      while the dashboard uses the grade and school on the test date. Which
+      grade and school should a score report under?
+    fingerprints:
+      cube: 7e37d48c7200c2ae9b2e874b0bef88ccb3a36439c77fc0a0f7c106ae7b7a671e
+      dashboard: 3a4c42f66acd6e9382b94e790766eab19dff496da3b5f981467407d0629ee2df
+      explanation: e6efa320ce822616336460562477fd4c3a6b8de07f78fc43ea60136351c462c6
+  - id: ddi-126
+    comparison: pct_proficient__dki_standards_grid
+    cause:
+      side: cube
+      label:
+        the student changed grade or school during the year; Cube takes grade
+        and school from the enrollment stint the score's section enrollment
+        attaches to, the dashboard from the stint that covers the assessment
+        week
+    call: domain_owner
+    reason:
+      When a student changes grade or school during the year, Cube reports the
+      score under the grade and school its course enrollment started under,
+      while the dashboard uses the grade and school on the test date. Which
+      grade and school should a score report under?
+    fingerprints:
+      cube: 8388048ba9c0d765791e878a5bea341b622138dbe107aa824bd841b1dccbd704
+      dashboard: 14adb3f5320b7a0553812c221db658b5493221f71eb649e1e78751580f82e5f4
+      explanation: e6efa320ce822616336460562477fd4c3a6b8de07f78fc43ea60136351c462c6
+  - id: ddi-127
+    comparison: grade_goal_distance__grid_grade
+    cause:
+      side: cube
+      label:
+        the student changed grade or school during the year; Cube takes grade
+        and school from the enrollment stint the score's section enrollment
+        attaches to, the dashboard from the stint that covers the assessment
+        week
+    call: domain_owner
+    reason:
+      When a student changes grade or school during the year, Cube reports the
+      score under the grade and school its course enrollment started under,
+      while the dashboard uses the grade and school on the test date. Which
+      grade and school should a score report under?
+    fingerprints:
+      cube: 4a525e3865590de20adc45f8a374c9cab5272da64c06258ea4cadc48304dca4e
+      dashboard: 46ea75ad0ab01f600573f2875e32aedb7d94f1fd88e2a0145958b1de24f892ce
+      explanation: e6efa320ce822616336460562477fd4c3a6b8de07f78fc43ea60136351c462c6
+  - id: ddi-128
+    comparison: school_goal_distance__lines_all
+    cause:
+      side: cube
+      label:
+        the student changed grade or school during the year; Cube takes grade
+        and school from the enrollment stint the score's section enrollment
+        attaches to, the dashboard from the stint that covers the assessment
+        week
+    call: domain_owner
+    reason:
+      When a student changes grade or school during the year, Cube reports the
+      score under the grade and school its course enrollment started under,
+      while the dashboard uses the grade and school on the test date. Which
+      grade and school should a score report under?
+    fingerprints:
+      cube: 62cc738d1616ebd052253643d0553fa906ae6c7f54d8ced699a60c1dc0864f94
+      dashboard: ae914d7ed85230c7c528c2cdfa266e5dddd65f6ad79df95c080f0a35b0285664
+      explanation: e6efa320ce822616336460562477fd4c3a6b8de07f78fc43ea60136351c462c6
+  - id: ddi-129
+    comparison: pct_taken__assessments_over_time
+    cause:
+      side: cube
+      label:
+        the student changed grade or school during the year; Cube takes grade
+        and school from the enrollment stint the score's section enrollment
+        attaches to, the dashboard from the stint that covers the assessment
+        week
+    call: domain_owner
+    reason:
+      When a student changes grade or school during the year, Cube reports the
+      score under the grade and school its course enrollment started under,
+      while the dashboard uses the grade and school on the test date. Which
+      grade and school should a score report under?
+    fingerprints:
+      cube: 11cc3cdd00795835a2b246a2befaf842b5c0b8bb8b6388d51706ef91396d3b5a
+      dashboard: 12892dfd5eb39545b7325e119050ce14daf905612c7e5456029b62ab45b148cd
+      explanation: e6efa320ce822616336460562477fd4c3a6b8de07f78fc43ea60136351c462c6
+  - id: ddi-130
+    comparison: pct_students_at_level__dki_bars
+    cause:
+      side: cube
+      label:
+        the student changed grade or school during the year; Cube takes grade
+        and school from the enrollment stint the score's section enrollment
+        attaches to, the dashboard from the stint that covers the assessment
+        week
+    call: domain_owner
+    reason:
+      When a student changes grade or school during the year, Cube reports the
+      score under the grade and school its course enrollment started under,
+      while the dashboard uses the grade and school on the test date. Which
+      grade and school should a score report under?
+    fingerprints:
+      cube: c67def6e5df305c30f2dc8475bbf92f68a810b2e7093e9d0c9863b54f59434a9
+      dashboard: 8e62ccde46f50f682ea9f420f20b251895600b2b47f819e0a7cb2d286ffb5da9
+      explanation: accb9a67d4c57ae57ac9c68f001f15a3fed52b52de49dad3e1429c4f934de744
+  - id: ddi-131
+    comparison: pct_students_at_level__dki_standards_bars
+    cause:
+      side: cube
+      label:
+        the student changed grade or school during the year; Cube takes grade
+        and school from the enrollment stint the score's section enrollment
+        attaches to, the dashboard from the stint that covers the assessment
+        week
+    call: domain_owner
+    reason:
+      When a student changes grade or school during the year, Cube reports the
+      score under the grade and school its course enrollment started under,
+      while the dashboard uses the grade and school on the test date. Which
+      grade and school should a score report under?
+    fingerprints:
+      cube: 7d360cc79f30d506f02012dc6bd7ea1ba0ee575d62961a0e03cc0c324b6b0a44
+      dashboard: 065d0590b16edbb677420cb3fd90b51ba0cc0392155576b02d3c5a980e9bfc08
+      explanation: accb9a67d4c57ae57ac9c68f001f15a3fed52b52de49dad3e1429c4f934de744
+  - id: ddi-132
+    comparison: pct_proficient__dki_grid
+    cause:
+      side: dashboard
+      label:
+        the dashboard's weekly enrollment rows mark the student not enrolled on
+        the week's Sunday (co.is_enrolled_week_end is false in
+        int_extracts__student_enrollments_weeks), though the student's
+        enrollment dates cover that Sunday
+    call: fix_dashboard
+    reason:
+      "The dashboard's weekly enrollment table marks these students not enrolled
+      on the week's Sunday, mostly students who changed schools mid-week; Cube
+      keeps the score through the section enrollment. Owner, answering the same
+      rule for the week-end enrollment cause: all internal assessment data
+      follows 'is enrolled in a relevant course as of test date', and the
+      dashboard needs the fix, tracked under DDI Suite Dashboard Fixes in Asana."
+    task: https://app.asana.com/0/0/1220348719767537
+    fingerprints:
+      cube: 7e37d48c7200c2ae9b2e874b0bef88ccb3a36439c77fc0a0f7c106ae7b7a671e
+      dashboard: 3a4c42f66acd6e9382b94e790766eab19dff496da3b5f981467407d0629ee2df
+      explanation: 6ef4c49f109f0e8953f7c21b5aa6544b2fd052455ac1e28553d2e14d4235d74f
+  - id: ddi-133
+    comparison: pct_proficient__dki_standards_grid
+    cause:
+      side: dashboard
+      label:
+        the dashboard's weekly enrollment rows mark the student not enrolled on
+        the week's Sunday (co.is_enrolled_week_end is false in
+        int_extracts__student_enrollments_weeks), though the student's
+        enrollment dates cover that Sunday
+    call: fix_dashboard
+    reason:
+      "The dashboard's weekly enrollment table marks these students not enrolled
+      on the week's Sunday, mostly students who changed schools mid-week; Cube
+      keeps the score through the section enrollment. Owner, answering the same
+      rule for the week-end enrollment cause: all internal assessment data
+      follows 'is enrolled in a relevant course as of test date', and the
+      dashboard needs the fix, tracked under DDI Suite Dashboard Fixes in Asana."
+    task: https://app.asana.com/0/0/1220348719767537
+    fingerprints:
+      cube: 8388048ba9c0d765791e878a5bea341b622138dbe107aa824bd841b1dccbd704
+      dashboard: 14adb3f5320b7a0553812c221db658b5493221f71eb649e1e78751580f82e5f4
+      explanation: 6ef4c49f109f0e8953f7c21b5aa6544b2fd052455ac1e28553d2e14d4235d74f
+  - id: ddi-134
+    comparison: grade_goal_distance__grid_grade
+    cause:
+      side: dashboard
+      label:
+        the dashboard's weekly enrollment rows mark the student not enrolled on
+        the week's Sunday (co.is_enrolled_week_end is false in
+        int_extracts__student_enrollments_weeks), though the student's
+        enrollment dates cover that Sunday
+    call: fix_dashboard
+    reason:
+      "The dashboard's weekly enrollment table marks these students not enrolled
+      on the week's Sunday, mostly students who changed schools mid-week; Cube
+      keeps the score through the section enrollment. Owner, answering the same
+      rule for the week-end enrollment cause: all internal assessment data
+      follows 'is enrolled in a relevant course as of test date', and the
+      dashboard needs the fix, tracked under DDI Suite Dashboard Fixes in Asana."
+    task: https://app.asana.com/0/0/1220348719767537
+    fingerprints:
+      cube: 4a525e3865590de20adc45f8a374c9cab5272da64c06258ea4cadc48304dca4e
+      dashboard: 46ea75ad0ab01f600573f2875e32aedb7d94f1fd88e2a0145958b1de24f892ce
+      explanation: 6ef4c49f109f0e8953f7c21b5aa6544b2fd052455ac1e28553d2e14d4235d74f
+  - id: ddi-135
+    comparison: school_goal_distance__lines_all
+    cause:
+      side: dashboard
+      label:
+        the dashboard's weekly enrollment rows mark the student not enrolled on
+        the week's Sunday (co.is_enrolled_week_end is false in
+        int_extracts__student_enrollments_weeks), though the student's
+        enrollment dates cover that Sunday
+    call: fix_dashboard
+    reason:
+      "The dashboard's weekly enrollment table marks these students not enrolled
+      on the week's Sunday, mostly students who changed schools mid-week; Cube
+      keeps the score through the section enrollment. Owner, answering the same
+      rule for the week-end enrollment cause: all internal assessment data
+      follows 'is enrolled in a relevant course as of test date', and the
+      dashboard needs the fix, tracked under DDI Suite Dashboard Fixes in Asana."
+    task: https://app.asana.com/0/0/1220348719767537
+    fingerprints:
+      cube: 62cc738d1616ebd052253643d0553fa906ae6c7f54d8ced699a60c1dc0864f94
+      dashboard: ae914d7ed85230c7c528c2cdfa266e5dddd65f6ad79df95c080f0a35b0285664
+      explanation: 6ef4c49f109f0e8953f7c21b5aa6544b2fd052455ac1e28553d2e14d4235d74f
+  - id: ddi-136
+    comparison: region_goal_distance__lines_all
+    cause:
+      side: dashboard
+      label:
+        the dashboard's weekly enrollment rows mark the student not enrolled on
+        the week's Sunday (co.is_enrolled_week_end is false in
+        int_extracts__student_enrollments_weeks), though the student's
+        enrollment dates cover that Sunday
+    call: fix_dashboard
+    reason:
+      "The dashboard's weekly enrollment table marks these students not enrolled
+      on the week's Sunday, mostly students who changed schools mid-week; Cube
+      keeps the score through the section enrollment. Owner, answering the same
+      rule for the week-end enrollment cause: all internal assessment data
+      follows 'is enrolled in a relevant course as of test date', and the
+      dashboard needs the fix, tracked under DDI Suite Dashboard Fixes in Asana."
+    task: https://app.asana.com/0/0/1220348719767537
+    fingerprints:
+      cube: ca01c96cc0614c1f5891af3a91373162b90a910fe1f98331db00908b96825fed
+      dashboard: 7f7454e8d2e84f1205c60a762c38c5fbc9b21ffe1e5e3ac5db035cccb78b2572
+      explanation: 6ef4c49f109f0e8953f7c21b5aa6544b2fd052455ac1e28553d2e14d4235d74f
+  - id: ddi-137
+    comparison: pct_students_at_level__dki_bars
+    cause:
+      side: dashboard
+      label:
+        the dashboard's weekly enrollment rows mark the student not enrolled on
+        the week's Sunday (co.is_enrolled_week_end is false in
+        int_extracts__student_enrollments_weeks), though the student's
+        enrollment dates cover that Sunday
+    call: fix_dashboard
+    reason:
+      "The dashboard's weekly enrollment table marks these students not enrolled
+      on the week's Sunday, mostly students who changed schools mid-week; Cube
+      keeps the score through the section enrollment. Owner, answering the same
+      rule for the week-end enrollment cause: all internal assessment data
+      follows 'is enrolled in a relevant course as of test date', and the
+      dashboard needs the fix, tracked under DDI Suite Dashboard Fixes in Asana."
+    task: https://app.asana.com/0/0/1220348719767537
+    fingerprints:
+      cube: c67def6e5df305c30f2dc8475bbf92f68a810b2e7093e9d0c9863b54f59434a9
+      dashboard: 8e62ccde46f50f682ea9f420f20b251895600b2b47f819e0a7cb2d286ffb5da9
+      explanation: 6ef4c49f109f0e8953f7c21b5aa6544b2fd052455ac1e28553d2e14d4235d74f
+  - id: ddi-138
+    comparison: pct_students_at_level__dki_standards_bars
+    cause:
+      side: dashboard
+      label:
+        the dashboard's weekly enrollment rows mark the student not enrolled on
+        the week's Sunday (co.is_enrolled_week_end is false in
+        int_extracts__student_enrollments_weeks), though the student's
+        enrollment dates cover that Sunday
+    call: fix_dashboard
+    reason:
+      "The dashboard's weekly enrollment table marks these students not enrolled
+      on the week's Sunday, mostly students who changed schools mid-week; Cube
+      keeps the score through the section enrollment. Owner, answering the same
+      rule for the week-end enrollment cause: all internal assessment data
+      follows 'is enrolled in a relevant course as of test date', and the
+      dashboard needs the fix, tracked under DDI Suite Dashboard Fixes in Asana."
+    task: https://app.asana.com/0/0/1220348719767537
+    fingerprints:
+      cube: 7d360cc79f30d506f02012dc6bd7ea1ba0ee575d62961a0e03cc0c324b6b0a44
+      dashboard: 065d0590b16edbb677420cb3fd90b51ba0cc0392155576b02d3c5a980e9bfc08
+      explanation: 6ef4c49f109f0e8953f7c21b5aa6544b2fd052455ac1e28553d2e14d4235d74f
