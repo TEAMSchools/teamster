@@ -133,6 +133,21 @@ def _shift(week: date, n: int, blocked: frozenset[date]) -> date:
     return week
 
 
+def offset_between(anchor_week: date, due: date, blocked: frozenset[date]) -> int:
+    """The ``offset_weeks`` that places a step in ``due``'s week: unblocked
+    weeks after the anchor up to the due week (negative before it). A due week
+    that is blocked does not count, so the step lands one week nearer the
+    anchor."""
+    anchor, target = _monday(anchor_week), _monday(due)
+    step = WEEK if target > anchor else -WEEK
+    count, week = 0, anchor
+    while week != target:
+        week += step
+        if week not in blocked:
+            count += 1
+    return count if step == WEEK else -count
+
+
 def step_weeks(step: Step, window: Window, blocked: frozenset[date]) -> list[date]:
     """Mondays the step occupies in one round."""
     week = window.open_week if step.anchor == "open" else window.close_week

@@ -113,6 +113,22 @@ def test_step_outside_school_year_raises():
         cap.monthly_hours([s], [w], [], frozenset(), 2026, YEAR_START, YEAR_END)
 
 
+def test_offset_between_counts_unblocked_weeks_and_round_trips():
+    blocked = frozenset({date(2026, 11, 23)})
+    w = cap.Window("r2", date(2026, 11, 16), date(2026, 12, 7))
+    # Due Nov 30 from an open week of Nov 16: Thanksgiving week does not count.
+    offset = cap.offset_between(w.open_week, date(2026, 11, 30), blocked)
+    assert offset == 1
+    s = cap.Step("Check refresh", "open", offset, 1, 1.0, "owner")
+    assert cap.step_weeks(s, w, blocked) == [date(2026, 11, 30)]
+
+
+def test_offset_between_due_in_blocked_week_before_anchor_is_zero():
+    blocked = frozenset({date(2026, 11, 23)})
+    assert cap.offset_between(date(2026, 11, 30), date(2026, 11, 25), blocked) == 0
+    assert cap.offset_between(date(2026, 11, 30), date(2026, 11, 18), blocked) == -1
+
+
 def test_unknown_round_raises():
     s = cap.Step("Publish", "close", 1, 1, 3.0, "owner", rounds=("r9",))
     with pytest.raises(ValueError, match="r9"):

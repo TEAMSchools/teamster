@@ -31,7 +31,22 @@ the board.
 ## Changing the page
 
 Edit `board/index.html`, then publish it with the Artifact tool to the
-`Capacity board` URL. A republish keeps the database.
+`Capacity board` URL. A republish keeps the database and, when `capabilities` is
+omitted, the stored capabilities.
+
+Publishing the page as a new artifact (the URL lost, or a rebuild) must pass
+these capabilities, or every Contributor can write the board through its
+database even though the page hides the controls:
+
+```json
+{
+  "db": { "rules": [{ "path": "", "read": "view", "write": "admin" }] },
+  "user": {}
+}
+```
+
+Only the share menu's Editor and Owner levels move cards; give a teammate Editor
+to let them plan.
 
 ## Stop message
 

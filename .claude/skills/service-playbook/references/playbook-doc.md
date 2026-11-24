@@ -57,8 +57,11 @@ section 9.
    _Read the breaks tab_ says, to `<scratchpad>/breaks-<year>.csv`.
 
 Subtask due dates against the confirmed windows give each step's anchor and
-offset: anchor `open` when the date is nearer the open week, else `close`; the
-offset is the number of weeks from that anchor week.
+offset: anchor `open` when the date is nearer the open week, else `close`. The
+offset counts unblocked weeks only, as the script places them: compute it with
+`offset_between(anchor_week, due, blocked)` in `capacity.py`, where `blocked` is
+`network_blocked` on the exported breaks. Counting calendar weeks instead moves
+a step past a break and its hours into the wrong month.
 
 ## Place and compute
 
