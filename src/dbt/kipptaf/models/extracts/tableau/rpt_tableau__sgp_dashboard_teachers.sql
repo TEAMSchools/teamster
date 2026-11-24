@@ -102,6 +102,7 @@ with
         inner join
             {{ ref("dim_course_sections") }} as cs
             on sse.course_section_key = cs.course_section_key
+            and s.location_key = cs.location_key
         inner join
             {{ ref("dim_courses") }} as c
             on cs.course_key = c.course_key
@@ -112,9 +113,9 @@ with
         select
             course_section_key,
             staff_key,
-            effective_start_date,
 
-            -- an assignment with no end date is open-ended
+            -- a missing start or end date leaves the assignment open on that side
+            coalesce(effective_start_date, '0001-01-01') as effective_start_date,
             coalesce(effective_end_date, '9999-12-31') as effective_end_date,
 
             `role` = 'Lead Teacher' as is_lead,

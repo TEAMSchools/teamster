@@ -4,20 +4,21 @@ models:
       One row per student growth percentile (SGP) score on a New Jersey state
       test and teacher the score counts for, feeding the Teachers tab of the SGP
       dashboard. Teachers are matched the way the state matches them for teacher
-      median SGP, as closely as the roster allows. The window is the in-session
-      days at the student's school from the start of the academic year through
-      the day before the test. The student's sections are the non-homeroom
-      sections whose course is in the tested subject, including sections the
-      student left mid-year. A Lead Teacher or Co-teacher counts for a section
-      when the assignment covers at least 60% of the window; Gradebook Access
-      and every other role never count. The score counts for a teacher when the
-      student was enrolled in any of that teacher's counting sections on at
-      least 70% of the window's days, so a move between 2 sections of the same
-      teacher still counts and a move between 2 teachers can count for neither.
-      A teacher who is lead on one of the student's sections and co-teacher on
-      another appears once, as Lead Teacher. Each score is placed at the school
-      the student was enrolled in on the test date, as on the Schools tab, and
-      student groups come from the state score file.
+      median SGP, as closely as the roster allows. Each score is placed at the
+      school the student was enrolled in on the test date, as on the Schools
+      tab. The window is the in-session days at that school from the start of
+      the academic year through the day before the test. The student's sections
+      are the non-homeroom sections at that school whose course is in the tested
+      subject, including sections the student left mid-year. A section at
+      another school never counts, so a school sees only its own teachers. A
+      Lead Teacher or Co-teacher counts for a section when the assignment covers
+      at least 60% of the window; Gradebook Access and every other role never
+      count. The score counts for a teacher when the student was enrolled in any
+      of that teacher's counting sections on at least 70% of the window's days,
+      so a move between 2 sections of the same teacher still counts and a move
+      between 2 teachers can count for neither. A teacher who is lead on one of
+      the student's sections and co-teacher on another appears once, as Lead
+      Teacher. Student groups come from the state score file.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -31,7 +32,8 @@ models:
         data_type: string
         description: >-
           Key of the school the student was enrolled in on the test date. The
-          window's school calendar is this school's.
+          window's school calendar is this school's, and only this school's
+          sections count.
       - name: student_test_uuid
         data_type: string
         description: >-
@@ -82,9 +84,9 @@ models:
         description: >-
           The highest share, among this teacher's counting sections for the
           student, of window days the teacher's assignment covers. An
-          assignment's end date is its last day, and an assignment with no end
-          date is open-ended. At least 0.60 on every row, the state's 60%
-          teacher rule.
+          assignment's end date is its last day, and an assignment with no start
+          or end date is open on that side. At least 0.60 on every row, the
+          state's 60% teacher rule.
       - name: teacher_shared_student_count
         data_type: int64
         description: >-
@@ -283,13 +285,46 @@ unit_tests:
       - &course_sections
         input: ref('dim_course_sections')
         rows:
-          - { course_section_key: sec_a, course_key: crs_ela }
-          - { course_section_key: sec_b, course_key: crs_ela }
-          - { course_section_key: sec_e, course_key: crs_ela }
-          - { course_section_key: sec_e2, course_key: crs_ela }
-          - { course_section_key: sec_m, course_key: crs_math }
-          - { course_section_key: sec_m2, course_key: crs_math }
-          - { course_section_key: sec_hr, course_key: crs_hr }
+          - {
+              course_section_key: sec_a,
+              course_key: crs_ela,
+              location_key: loc_a,
+            }
+          - {
+              course_section_key: sec_b,
+              course_key: crs_ela,
+              location_key: loc_a,
+            }
+          - {
+              course_section_key: sec_e,
+              course_key: crs_ela,
+              location_key: loc_a,
+            }
+          - {
+              course_section_key: sec_e2,
+              course_key: crs_ela,
+              location_key: loc_a,
+            }
+          - {
+              course_section_key: sec_m,
+              course_key: crs_math,
+              location_key: loc_a,
+            }
+          - {
+              course_section_key: sec_m2,
+              course_key: crs_math,
+              location_key: loc_a,
+            }
+          - {
+              course_section_key: sec_hr,
+              course_key: crs_hr,
+              location_key: loc_a,
+            }
+          - {
+              course_section_key: sec_x,
+              course_key: crs_ela,
+              location_key: loc_b,
+            }
       - &courses
         input: ref('dim_courses')
         rows:
@@ -793,6 +828,99 @@ unit_tests:
     expect:
       rows:
         - { student_test_uuid: u1, staff_key: t1, teacher_share: 1.0 }
+
+  - name: test_rpt_tableau__sgp_dashboard_teachers_open_start_teacher
+    description: >-
+      An assignment with no start date covers the window from its first day.
+    model: rpt_tableau__sgp_dashboard_teachers
+    given:
+      - *one_ela_score
+      - *enrollments
+      - *locations
+      - *regions
+      - *calendar
+      - *dates
+      - *course_sections
+      - *courses
+      - *staff
+      - input: ref('dim_student_section_enrollments')
+        rows:
+          - {
+              student_enrollment_key: se1,
+              course_section_key: sec_a,
+              entry_date: 2025-08-15,
+              exit_date: 2026-06-30,
+              is_homeroom: false,
+            }
+      - input: ref('bridge_course_section_teachers')
+        rows:
+          - {
+              course_section_key: sec_a,
+              staff_key: t1,
+              role: Lead Teacher,
+              effective_start_date: null,
+              effective_end_date: 2026-06-30,
+            }
+    expect:
+      rows:
+        - { student_test_uuid: u1, staff_key: t1, teacher_share: 1.0 }
+
+  - name: test_rpt_tableau__sgp_dashboard_teachers_other_school_section
+    description: >-
+      A section at a school other than the test-day school never counts, even
+      when the student's enrollment in it covers the whole window. A section at
+      the test-day school still counts.
+    model: rpt_tableau__sgp_dashboard_teachers
+    given:
+      - *one_ela_score
+      - *enrollments
+      - *locations
+      - *regions
+      - *calendar
+      - *dates
+      - *course_sections
+      - *courses
+      - *staff
+      - input: ref('dim_student_section_enrollments')
+        rows:
+          - {
+              student_enrollment_key: se1,
+              course_section_key: sec_a,
+              entry_date: 2025-08-15,
+              exit_date: 2026-06-30,
+              is_homeroom: false,
+            }
+          - {
+              student_enrollment_key: se1,
+              course_section_key: sec_x,
+              entry_date: 2025-08-15,
+              exit_date: 2026-06-30,
+              is_homeroom: false,
+            }
+      - input: ref('bridge_course_section_teachers')
+        rows:
+          - {
+              course_section_key: sec_a,
+              staff_key: t1,
+              role: Lead Teacher,
+              effective_start_date: 2025-08-15,
+              effective_end_date: 2026-06-30,
+            }
+          - {
+              course_section_key: sec_x,
+              staff_key: t2,
+              role: Lead Teacher,
+              effective_start_date: 2025-08-15,
+              effective_end_date: 2026-06-30,
+            }
+    expect:
+      rows:
+        - {
+            student_test_uuid: u1,
+            staff_key: t1,
+            location_key: loc_a,
+            school: SA,
+          }
 
   - name: test_rpt_tableau__sgp_dashboard_teachers_context_columns
     description: >-
