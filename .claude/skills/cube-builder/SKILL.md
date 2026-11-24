@@ -27,9 +27,10 @@ holds the package. Keep the builder's working files in
 
 - Claude posts and edits only what the analyst approved: the build issue, Asana
   edits, pull requests.
-- Asana changes only for a miss: a measure no field subtask names, or a
-  dependency the blocked-by list lacks. Show each in the build issue first; make
-  it after the analyst approves.
+- Asana mirrors the approved build plan: the dashboard task holds the plan's PR
+  tasks, its `Already in Cube` task, deferred rows and Validate task (_Plan_
+  step 3). Show each change in the build issue first; make it after the analyst
+  approves.
 - GitHub text carries field and member names and counts, never a student's or
   staff member's name, number or row; counts under 10 read `<10`.
 - A new student-level column (a tier, a bucket, a flag) is PII: tag it
@@ -64,9 +65,14 @@ holds the package. Keep the builder's working files in
    analyst where it and the command disagree.
 
 6. Read the dashboard's task in the Asana project "Data Marts + Semantic Layer":
-   its blocked-by builds, their open field subtasks, and its deferred and
-   retired notes. Write `asana.json` as `[{"field": ..., "status": ...}]` with
-   status `open` or `deferred`; leave retired items out.
+   the rows tagged `measure` or `dimension` under its PR tasks and its
+   `Already in Cube` task, the deferred rows directly under it, and its retired
+   notes; for a dashboard not laid out yet (_Plan_ step 3), its blocked-by
+   builds and their open field subtasks. Rows an earlier-due dashboard's PR
+   ships sit under that dashboard: find them with `search_tasks` on this
+   dashboard's gid, which their `Used by:` line names. Write `asana.json` as
+   `[{"field": ..., "status": ...}]` with status `open` or `deferred`; leave
+   retired items out.
 7. Find the catalog file holding the dashboard's section:
    `rg -l '<slug>' docs/superpowers/plans -g '2026-10-02-cube-gap-catalog-*.md'`
    (the glob skips the index file, which names every slug) (DDI Suite:
@@ -127,8 +133,32 @@ _Build_ step 4.
 2. Search open issues for "Build <dashboard> in Cube"; reuse one that exists.
    Otherwise draft it: the `inventory` table, each disagreement with the
    analyst's decision, each duplicate verdict, the plan by tier, and the Asana
-   misses to fix. Show the draft; post only after approval.
-3. Make the approved Asana edits.
+   changes _Plan_ step 3 will make. Show the draft; post only after approval.
+3. Lay the approved plan out under the dashboard's Asana task (design:
+   `docs/superpowers/specs/2026-11-23-asana-dashboard-build-plans-design.md`):
+   - A build belongs to the earliest-due dashboard that needs it; on a tie, the
+     dashboard whose build issue opened first. A build an earlier dashboard owns
+     is not planned again.
+   - Each PR is a subtask `PR (<dbt|Cube>): <what it builds> · <table>` with an
+     owner. Only the dashboard task carries a due date. The tables after the `·`
+     (comma-separated) are the table tasks its rows came from; the sync reads
+     the type and `scripts/asana_migrate.py` matches on the tables. A dbt PR
+     blocks the Cube PR that reads its columns. An open decision goes in the
+     notes of the PR task it blocks, or on the hub issue; never its own task.
+   - A `Validate <dashboard> in Cube` task blocked by every PR task, never by
+     rows (Asana caps a task at 30 dependencies plus dependents).
+   - Move the hub issue's synced `#NNNN |` task under the dashboard.
+   - Move each row to the PR that ships its Cube member (the Cube PR when a dbt
+     PR comes first). A deferred row moves directly under the dashboard; a row
+     already live in Cube moves under the dashboard's `Already in Cube` task.
+     Keep its `measure` or `dimension` tag, its `Use:` and `Used by:` lines and
+     its member names. Remove its links to the table's `mart:`, `cube:` and
+     `view:` stages. A stage with work left becomes a PR task; a table task is
+     deleted when it has no open rows and no open stages.
+   - Ask the analyst to run
+     `uv run --with requests python scripts/asana_sync.py --only <dashboard gid>`
+     in their terminal (it needs their own `ASANA_PAT`), and fix every row in
+     its "Rows with no kind tag" list.
 
 ## Build
 
@@ -151,6 +181,10 @@ runner's `PKG` is the `scripts/cube_validation` of that branch's checkout.
 | dbt     | New columns or a new mart                 | data engineer      |
 
 **A dbt PR merges before the Cube PR that reads its column.**
+
+Start each builder session for a dashboard with the sweep: find open PRs that
+ref its build issue, and promote (step 9) any whose synced `#NNNN |` Asana task
+is not under the dashboard yet. That covers PRs opened outside the builder.
 
 1. dbt PR: invoke `dbt-local-dev`, then
    `uv run dbt build --select <model>+ --project-dir src/dbt/kipptaf --target dev`
@@ -190,6 +224,13 @@ runner's `PKG` is the `scripts/cube_validation` of that branch's checkout.
 8. After a dbt PR merges and its production build lands, run
    `compare --comparison <id>` for the Cube PR without `--fact-dataset` and
    update its description.
+9. Promote the PR's Asana task once the PR is open. The Zapier sync creates a
+   top-level `#NNNN | <title>` task in TEAMster about a minute after the PR
+   opens; wait for it. Move it under the dashboard, give it the planned PR
+   task's due date and owner, move the planned task's rows and every blocked-by
+   link that pointed at it, then close the planned task with a comment linking
+   the synced one. Zapier completes the synced task at merge, and a task moved
+   by hand keeps its parent through later syncs.
 
 ## Finish
 
@@ -198,3 +239,5 @@ runner's `PKG` is the `scripts/cube_validation` of that branch's checkout.
    owner answers with the `cube-validation-answers` skill.
 2. With the analyst's approval, record the validation result on the dashboard's
    task in the Asana project "Data Marts + Semantic Layer".
+3. When a dashboard's due date moves, re-check who owns its builds (_Plan_ step
+   3): a build's PR task moves to the dashboard that is now earliest.
