@@ -46,11 +46,11 @@
       }
     ],
     "moment": {
-      "start": "2026-11-15T22:34:56.889000+00:00",
-      "end": "2026-11-15T22:35:11.750000+00:00",
-      "job_id": "593d9b74-5624-476c-b289-86c54fa9346b"
+      "start": "2026-11-23T15:34:48.039000+00:00",
+      "end": "2026-11-23T15:35:02.318000+00:00",
+      "job_id": "0131c656-3e86-4887-a034-0c09db18b672"
     },
-    "expires": "2026-11-22T22:34:56.889000+00:00",
+    "expires": "2026-11-30T15:34:48.039000+00:00",
     "expired": false,
     "reproduce": {
       "queries": [],
@@ -83,7 +83,7 @@
       ],
       "blob": "https://github.com/TEAMSchools/teamster/blob/cristinabaldor/test/claude-ddi-fresh-validation/src/cube/validation",
       "cube": [],
-      "expires": "2026-11-22T22:34:56.889000+00:00"
+      "expires": "2026-11-30T15:34:48.039000+00:00"
     }
   },
   {
@@ -149,11 +149,11 @@
       }
     ],
     "moment": {
-      "start": "2026-11-15T22:34:56.889000+00:00",
-      "end": "2026-11-15T22:35:11.750000+00:00",
-      "job_id": "593d9b74-5624-476c-b289-86c54fa9346b"
+      "start": "2026-11-23T15:34:48.039000+00:00",
+      "end": "2026-11-23T15:35:02.318000+00:00",
+      "job_id": "0131c656-3e86-4887-a034-0c09db18b672"
     },
-    "expires": "2026-11-22T22:34:56.889000+00:00",
+    "expires": "2026-11-30T15:34:48.039000+00:00",
     "expired": false,
     "reproduce": {
       "queries": [],
@@ -196,13 +196,126 @@
       ],
       "blob": "https://github.com/TEAMSchools/teamster/blob/cristinabaldor/test/claude-ddi-fresh-validation/src/cube/validation",
       "cube": [],
-      "expires": "2026-11-22T22:34:56.889000+00:00"
+      "expires": "2026-11-30T15:34:48.039000+00:00"
     }
   },
   {
     "id": "Q3",
+    "reason": "The dashboard's WPP filter (module_type != 'WPP') is never true for an assessment with no module type, so the dashboard drops those assessments while Cube keeps them. Should assessments with no module type count?",
+    "decisions": [
+      "ddi-107",
+      "ddi-108",
+      "ddi-109",
+      "ddi-110",
+      "ddi-111",
+      "ddi-112",
+      "ddi-113"
+    ],
+    "views": ["student_assessment_scores_view"],
+    "definitions": {
+      "dashboard": [
+        "`grade_goal_distance__grid_grade` in `student_assessment_scores_view`: MAX of the workbook's Grade Goal (Differentiated) calc (the raw grade_goal plus hard-coded ET, K-2 QA/CRQ, Math CRQ and TP rules) minus AVG(is_mastery_int)",
+        "`pct_proficient__dki_grid` in `student_assessment_scores_view`: AVG(is_mastery_int), 1 when is_mastery is true and 0 when false",
+        "`pct_proficient__dki_standards_grid` in `student_assessment_scores_view`: AVG(is_mastery_int) over standard rows",
+        "`pct_students_at_level__dki_bars` in `student_assessment_scores_view`: Percent of distinct students in each of 3 levels, grouped from fixed band numbers (ES/MS 1-2 Below, 3 Approaching, 4-5 At/Above; HS 1 Below, 2 Approaching, 3-5 At/Above)",
+        "`pct_students_at_level__dki_standards_bars` in `student_assessment_scores_view`: Percent of distinct students in each of 3 levels on standard rows, grouped from fixed band numbers (ES/MS 1-2 Below, 3 Approaching, 4-5 At/Above; HS 1 Below, 2 Approaching, 3-5 At/Above)",
+        "`region_goal_distance__lines_all` in `student_assessment_scores_view`: MAX of the workbook's Region Goal (Differentiated) calc (the raw region_goal plus hard-coded ET, K-2 QA/CRQ, Math CRQ and TP rules) minus AVG(is_mastery_int)",
+        "`school_goal_distance__lines_all` in `student_assessment_scores_view`: MAX of the workbook's School Goal (Differentiated) calc (the raw school_goal plus hard-coded ET, K-2 QA/CRQ, Math CRQ and TP rules) minus AVG(is_mastery_int)"
+      ],
+      "cube": [
+        "`grade_goal_distance__grid_grade` in `student_assessment_scores_view`: The highest grade_goal_differentiated (the dbt goal rules) minus pct_proficient",
+        "`pct_proficient__dki_grid` in `student_assessment_scores_view`: Proficient scores over scores carrying a verdict (count_scored)",
+        "`pct_proficient__dki_standards_grid` in `student_assessment_scores_view`: Proficient scores over scores carrying a verdict (count_scored), standard rows",
+        "`pct_students_at_level__dki_bars` in `student_assessment_scores_view`: Percent of distinct students at each mastery_level, set relative to each band set's mastery band",
+        "`pct_students_at_level__dki_standards_bars` in `student_assessment_scores_view`: Percent of distinct students at each mastery_level on standard rows, set relative to each band set's mastery band",
+        "`region_goal_distance__lines_all` in `student_assessment_scores_view`: The highest region_goal_differentiated (the dbt goal rules) minus pct_proficient",
+        "`school_goal_distance__lines_all` in `student_assessment_scores_view`: The highest school_goal_differentiated (the dbt goal rules) minus pct_proficient"
+      ]
+    },
+    "evidence": [
+      "cause (dashboard side): the dashboard drops assessments with no module type (r.module_type != 'WPP' is not true for a null)",
+      "lead: read docs/models/ddi-stack-data-model.md (mentions rpt_tableau__ddi_dashboard, fct_assessment_scores_enrollment_scoped), docs/models/dibels-dashboard-data-model.md (mentions fct_assessment_scores_enrollment_scoped)"
+    ],
+    "counts": [
+      "cause `the dashboard drops assessments with no module type (r.module_type != 'WPP' is not true for a null)` on the dashboard side",
+      "`pct_proficient__dki_grid` (cube_only): <10 row groups, 10+ rows",
+      "`pct_proficient__dki_standards_grid` (cube_only): 10+ row groups, 10+ rows",
+      "`pct_students_at_level__dki_bars` (cube_only): <10 row groups, 10+ rows",
+      "`pct_students_at_level__dki_standards_bars` (cube_only): 10+ row groups, 10+ rows",
+      "`grade_goal_distance__grid_grade` (cube_only): <10 row groups, 10+ rows",
+      "`school_goal_distance__lines_all` (cube_only): <10 row groups, 10+ rows",
+      "`region_goal_distance__lines_all` (cube_only): <10 row groups, 10+ rows"
+    ],
+    "hand_checks": [
+      {
+        "none": "no group cell with 10+ students differs; find an example under your own access",
+        "view": "student_assessment_scores_view",
+        "comparisons": [
+          "pct_proficient__dki_grid",
+          "pct_proficient__dki_standards_grid",
+          "pct_students_at_level__dki_bars",
+          "pct_students_at_level__dki_standards_bars",
+          "grade_goal_distance__grid_grade",
+          "school_goal_distance__lines_all",
+          "region_goal_distance__lines_all"
+        ]
+      }
+    ],
+    "moment": {
+      "start": "2026-11-23T15:34:48.039000+00:00",
+      "end": "2026-11-23T15:35:02.318000+00:00",
+      "job_id": "0131c656-3e86-4887-a034-0c09db18b672"
+    },
+    "expires": "2026-11-30T15:34:48.039000+00:00",
+    "expired": false,
+    "reproduce": {
+      "queries": [],
+      "explanations": [
+        {
+          "bucket": "D7",
+          "query": null,
+          "path": "explanations/student_assessment_scores_view/pct_proficient__dki_grid__cube_only.sql"
+        },
+        {
+          "bucket": "D7",
+          "query": null,
+          "path": "explanations/student_assessment_scores_view/pct_proficient__dki_standards_grid__cube_only.sql"
+        },
+        {
+          "bucket": "D7",
+          "query": null,
+          "path": "explanations/student_assessment_scores_view/pct_students_at_level__dki_bars__cube_only.sql"
+        },
+        {
+          "bucket": "D7",
+          "query": null,
+          "path": "explanations/student_assessment_scores_view/pct_students_at_level__dki_standards_bars__cube_only.sql"
+        },
+        {
+          "bucket": "D7",
+          "query": null,
+          "path": "explanations/student_assessment_scores_view/grade_goal_distance__grid_grade__cube_only.sql"
+        },
+        {
+          "bucket": "D7",
+          "query": null,
+          "path": "explanations/student_assessment_scores_view/school_goal_distance__lines_all__cube_only.sql"
+        },
+        {
+          "bucket": "D7",
+          "query": null,
+          "path": "explanations/student_assessment_scores_view/region_goal_distance__lines_all__cube_only.sql"
+        }
+      ],
+      "blob": "https://github.com/TEAMSchools/teamster/blob/cristinabaldor/test/claude-ddi-fresh-validation/src/cube/validation",
+      "cube": [],
+      "expires": "2026-11-30T15:34:48.039000+00:00"
+    }
+  },
+  {
+    "id": "Q4",
     "reason": "Where rows match, the 2 sides still compute the percent of students at each level differently. Which formula is right?",
-    "decisions": ["ddi-104", "ddi-105"],
+    "decisions": ["ddi-115", "ddi-116"],
     "views": ["student_assessment_scores_view"],
     "definitions": {
       "dashboard": [
@@ -215,10 +328,10 @@
       ]
     },
     "evidence": [
-      "79 differing cells hold no unmatched row: every row in them matched on both sides",
-      "10 differing cells differ on matched rows: with their unmatched rows left out, the 2 sides still differ",
-      "3437 differing cells hold no unmatched row: every row in them matched on both sides",
-      "227 differing cells differ on matched rows: with their unmatched rows left out, the 2 sides still differ"
+      "87 differing cells hold no unmatched row: every row in them matched on both sides",
+      "11 differing cells differ on matched rows: with their unmatched rows left out, the 2 sides still differ",
+      "4347 differing cells hold no unmatched row: every row in them matched on both sides",
+      "331 differing cells differ on matched rows: with their unmatched rows left out, the 2 sides still differ"
     ],
     "counts": [
       "`pct_students_at_level__dki_bars`, `pct_students_at_level__dki_standards_bars` in `student_assessment_scores_view`: 10+ cells differ while every row in them matches; which definition is right?"
@@ -234,11 +347,11 @@
       }
     ],
     "moment": {
-      "start": "2026-11-15T22:34:56.889000+00:00",
-      "end": "2026-11-15T22:35:11.750000+00:00",
-      "job_id": "593d9b74-5624-476c-b289-86c54fa9346b"
+      "start": "2026-11-23T15:34:48.039000+00:00",
+      "end": "2026-11-23T15:35:02.318000+00:00",
+      "job_id": "0131c656-3e86-4887-a034-0c09db18b672"
     },
-    "expires": "2026-11-22T22:34:56.889000+00:00",
+    "expires": "2026-11-30T15:34:48.039000+00:00",
     "expired": false
   }
 ]
