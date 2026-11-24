@@ -563,10 +563,12 @@
   description:
     Shows how many students enrolled on October 1 are still with us, by region,
     school, grade, and key demographics, and when and why students left.
+    Requires a KTAF Claude account.
   audiences: [leaders, ops, region]
   system: other
   group: operations
-  status: needs-review
+  access: limited
+  status: verified
 
 - id: survey_dashboard
   name: Survey Dashboard
