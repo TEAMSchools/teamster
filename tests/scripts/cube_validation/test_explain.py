@@ -712,6 +712,7 @@ def test_a_rows_check_that_cannot_run_refuses_and_leaves_the_stored_file(
     before, sorted_before = stored.read_bytes(), sort_json.read_text()
     wh = _RowsCheckRefused(duck, stage)
     _save(duck, wh, run, cfg)
+    wh.ran.clear()
     if stage == "unreadable":
         monkeypatch.setattr(explain, "read_explanation", _refuse)
     if stage == "sql":
@@ -729,7 +730,7 @@ def test_a_rows_check_that_cannot_run_refuses_and_leaves_the_stored_file(
     assert sort_json.read_text() == sorted_before
     assert f"delete {stored}" in str(refused.value)
     # The check runs first, so a refused one spends nothing on the explanation.
-    assert all("old_cause" in sql for sql, _ in wh.ran)
+    assert wh.ran == []
 
 
 @pytest.mark.parametrize(
