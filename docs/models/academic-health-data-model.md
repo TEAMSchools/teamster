@@ -336,9 +336,11 @@ the as-of-today values on the current year.
   school.
 - `is_last_completed_grade_11` and `is_grade_11_trend_class` drive the Trends
   pop-up's by-class chart. The first picks one row per student among the rows
-  this model already keeps, so a repeater counts at the later year and a current
-  11th grader not at all. The second's window follows `current_academic_year`,
-  so it moves forward each July with no workbook change.
+  this model already keeps, so a repeater counts at the later finished year, a
+  first-time 11th grader not until the year ends, and a student repeating 11th
+  grade now at the 11th-grade year they already finished. The second's window
+  follows `current_academic_year`, so it moves forward each July with no
+  workbook change.
 
 ### `rpt_tableau__gpa_goals`: school, region, and network against goal
 

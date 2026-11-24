@@ -339,9 +339,10 @@ models:
           True on the student's latest grade 11 row that is not the current
           year's projection, among the rows this model keeps (the student was
           enrolled at the end of that year). A student who repeated 11th grade
-          is true only on the later year; a student in 11th grade now is false
-          on every row. The Cumulative GPA Monitor's by-class chart counts each
-          student once on this row.
+          is true only on the later year. A first-time 11th grader is false on
+          every row until the year ends; a student repeating 11th grade now is
+          true on the 11th-grade year they already finished. The Cumulative GPA
+          Monitor's by-class chart counts each student once on this row.
         config:
           meta:
             contains_pii: true
@@ -361,9 +362,10 @@ unit_tests:
     description: >-
       A student is flagged on their latest completed 11th-grade year only: a
       repeater on the later year, a repeater who left during the repeat year on
-      the first, a current 11th grader on no row. The trend window covers the
-      current 12th graders' class and the 6 classes before it; a null graduation
-      year is outside it.
+      the first, a first-time current 11th grader on no row, and a student
+      repeating 11th grade now on the year they finished. The trend window
+      covers the current 12th graders' class and the 6 classes before it; a null
+      graduation year is outside it.
     model: rpt_tableau__gpa_cumulative_year
     overrides:
       vars:
@@ -482,6 +484,24 @@ unit_tests:
               _dbt_source_project: kippnewark,
               grade_level: 11,
               is_projected: false,
+              cumulative_y1_gpa_unweighted: 3.1,
+            }
+          - {
+              studentid: 9,
+              academic_year: 2025,
+              schoolid: 73252,
+              _dbt_source_project: kippnewark,
+              grade_level: 11,
+              is_projected: false,
+              cumulative_y1_gpa_unweighted: 3.1,
+            }
+          - {
+              studentid: 9,
+              academic_year: 2026,
+              schoolid: 73252,
+              _dbt_source_project: kippnewark,
+              grade_level: 11,
+              is_projected: true,
               cumulative_y1_gpa_unweighted: 3.1,
             }
       - input: ref('int_extracts__student_enrollments')
@@ -642,6 +662,32 @@ unit_tests:
               region: Newark,
               graduation_year: 2025,
             }
+          - {
+              studentid: 9,
+              student_number: 109,
+              academic_year: 2025,
+              schoolid: 73252,
+              _dbt_source_project: kippnewark,
+              rn_year: 1,
+              is_out_of_district: false,
+              enroll_status: 0,
+              is_enrolled_recent: true,
+              region: Newark,
+              graduation_year: 2027,
+            }
+          - {
+              studentid: 9,
+              student_number: 109,
+              academic_year: 2026,
+              schoolid: 73252,
+              _dbt_source_project: kippnewark,
+              rn_year: 1,
+              is_out_of_district: false,
+              enroll_status: 0,
+              is_enrolled_recent: true,
+              region: Newark,
+              graduation_year: 2027,
+            }
     expect:
       rows:
         - {
@@ -708,6 +754,18 @@ unit_tests:
             student_number: 108,
             academic_year: 2023,
             is_last_completed_grade_11: true,
+            is_grade_11_trend_class: true,
+          }
+        - {
+            student_number: 109,
+            academic_year: 2025,
+            is_last_completed_grade_11: true,
+            is_grade_11_trend_class: true,
+          }
+        - {
+            student_number: 109,
+            academic_year: 2026,
+            is_last_completed_grade_11: false,
             is_grade_11_trend_class: true,
           }
 
