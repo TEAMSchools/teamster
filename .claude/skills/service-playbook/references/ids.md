@@ -7,5 +7,5 @@ write it here.
 
 | Name                  | Id                                                  | Used in | Re-find                                                                        |
 | --------------------- | --------------------------------------------------- | ------- | ------------------------------------------------------------------------------ |
-| Playbook Drive folder | `UNSET`                                             | 1       | Drive `search_files` for the folder the user names                             |
+| Playbook Drive folder | `1zIqzaEZ5-B57Qq3l1Q5lUfzhNwLuFQMC`                 | 1       | Drive `search_files`, title "Service Playbooks", in the owner's My Drive       |
 | Capacity board        | `https://claude.ai/artifact/3fN9eWTY3qPC75BJS11HsD` | 2       | Artifact `list`, title "Data Team Capacity"; published from `board/index.html` |

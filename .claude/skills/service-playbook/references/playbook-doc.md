@@ -32,11 +32,13 @@ section 9.
 1. Asana `get_project` with `include_sections` and `notes`: the systems list and
    which section holds the rounds.
 2. Asana `get_tasks` on the round section with
-   `name,due_on,subtasks.name,subtasks.due_on,subtasks.assignee.name`. Use the
-   most recent complete school year of rounds. Each round task becomes a row in
-   section 6; its subtasks become steps in section 7. A subtask that repeats
-   across rounds under the same name is one step; one that appears in only some
-   rounds gets those round keys in `rounds`.
+   `name,due_on,subtasks.name,subtasks.due_on,subtasks.assignee.name`, with
+   `modified_since` about six months back so last year's completed rounds come
+   too. Model the steps on the current school year's round tasks, and use last
+   year's to fill steps a current round has not listed yet. Each round task
+   becomes a row in section 6; its subtasks become steps in section 7. A subtask
+   that repeats across rounds under the same name is one step; one that appears
+   in only some rounds gets those round keys in `rounds`.
 3. Asana `get_tasks` on the `Tickets + Breakfix` section: section 12. Rewrite
    each task as the failure it shows; drop every name.
 4. The calendar. The date source is per workstream:
@@ -96,6 +98,9 @@ uv run python .claude/skills/service-playbook/scripts/capacity.py \
   --school-year <YYYY> --first-week <first day of school> --last-week <last day of school>
 ```
 
+Redirect stdout only (`> <scratchpad>/capacity-<slug>.json`): `uv` can print a
+warning on stderr, and `2>&1` puts it in front of the JSON.
+
 The placement rules are in the script's docstring. The output is JSON: `steps`
 (round, step, weeks), `hours_by_month` (12 values, July first) and
 `hours_per_year`. Exit code 2 with a message on stderr names a step or round
@@ -114,9 +119,12 @@ Build the doc as one HTML file in the scratchpad: one `<table>` per section,
 title row bold and spanning the columns, `[proposed]` kept in the cell text.
 Show the user the section 9 table and the `[proposed]` list, then create the doc
 with Drive `create_file`: `title` as above, `parentId` the
-`Playbook Drive folder`, `contentMimeType: text/html`, `textContent` the HTML.
-Drive converts it to a Google Doc. Check the returned title and that the file's
-`mimeType` is `application/vnd.google-apps.document`.
+`Playbook Drive folder`, `contentMimeType: text/html`, and `base64Content` as a
+file reference, `sha256:<sha256sum of the file>:<absolute path>`, so the HTML is
+not retyped into the call. Drive converts it to a Google Doc. Check the returned
+title and that the file's `mimeType` is `application/vnd.google-apps.document`;
+the reported `fileSize` of a converted doc is not its length, so read the doc
+back with `read_file_content` and count the twelve section titles.
 
 ## Stop message
 
