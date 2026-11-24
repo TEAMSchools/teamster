@@ -1,8 +1,9 @@
 sources:
   - name: kippnewark_cambium
     schema:
-      "{%- if target.name == 'dev' -%}zz_{{ env_var('GITHUB_USER', 'dev') }}_{%-
-      elif target.name == 'staging' -%}zz_stg_{%- endif -%}kippnewark_cambium"
+      "{%- if target.name == 'dev' -%}zz_{{ env_var('GITHUB_USER', 'dev') |
+      replace('-', '_') }}_{%- elif target.name == 'staging' -%}zz_stg_{%- endif
+      -%}kippnewark_cambium"
     tables:
       - name: stg_cambium__njgpa
         config:
