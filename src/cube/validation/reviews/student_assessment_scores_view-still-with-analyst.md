@@ -55,13 +55,6 @@ item under 10 rows or cells is not listed.
 - `region_goal_distance__lines_all:school_week_start_date=<redacted>,region_name=Newark#18`,
   21 rows; a trace lead; ask the analyst
 
-## `pct_taken__assessments_over_time` in `student_assessment_scores_view` (cube_only)
-
-- `pct_taken__assessments_over_time:module_type=<redacted>,module_code=CRQ1,grade_level=0`,
-  40 rows; a trace lead; ask the analyst
-- `pct_taken__assessments_over_time:module_type=<redacted>,module_code=CRQ1,grade_level=1`,
-  1696 rows; a trace lead; ask the analyst
-
 ## `pct_taken__assessments_over_time` in `student_assessment_scores_view` (dims_differ)
 
 - `pct_taken__assessments_over_time:module_type=<redacted>,module_code=<redacted>,grade_level=<redacted>,d:module_type=<redacted>,d:module_code=<redacted>,d:grade_level=<redacted>#10`,
