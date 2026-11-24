@@ -58,6 +58,8 @@ select
     cy.is_on_cusp_3_0,
     cy.gpa_band_label,
     cy.gpa_band_as_of_today_label,
+    cy.is_last_completed_grade_11,
+    cy.is_grade_11_trend_class,
 
     gd.threshold as gpa_goal_threshold,
     gd.goal_proportion_org as gpa_goal_proportion_org,
