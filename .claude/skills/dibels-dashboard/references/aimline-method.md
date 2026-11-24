@@ -200,11 +200,14 @@ differently, on purpose:
 - **Internal**: `Round Incomplete` keys on `met_pm_round_criteria`, NOT on the
   overall flag -- under `AND` a measure the student sat and failed settles the
   round however much is missing.
-- **Aimline**: every round the student did not finish reads `Round Incomplete`,
-  checked first, whatever the measures sat so far show, below or meeting.
-  Academics' decision on 2026-09-24, so schools finish the testing before the
-  round is judged. Do not restore the settled-first order on either side to make
-  them match.
+- **Aimline**: at Round granularity every round the student did not finish reads
+  `Round Incomplete`, checked first from `completed_test_round`, whatever the
+  measures sat so far show, below or meeting (academics, 2026-09-24). Each
+  measure the student sat still carries its verdict at Measure Standard and
+  Measure on every comparison item (academics, 2026-11-24). Do not restore the
+  settled-first order at Round grain on either side to make them match, and do
+  not key the round check on a count of measure-grain `Round Incomplete` values:
+  there are none to count, so the round would silently score.
 
 **The workbook is the other half of this and is not done.** The Literacy
 Dashboard's `PM - Met Goal Selector` is a CASE returning one of the three
@@ -364,16 +367,22 @@ aimline on Aimline. The right two lenses are Aimline-only. The workbook dropped
 Trajectory from its Comparison Item list and from Category Status on 2026-09-28;
 the three trajectory columns are still in the extract.
 
-**The BAN tiles do not follow the Comparison Item.** On the two Aimline
-dashboards the BANs always count `aimline_category`. The bars and the Category
-Status Over Time line read Category Status, which follows the selector. Under
-`Aimline` at measure-standard grain that is `measure_standard_goal_status`,
-which has no Round Incomplete, so a student who has not finished the round lands
-in Below or Meeting and one page shows two below-aimline rates: AY2025 BOY->MOY
-R3, Decoding, grades 3-8, 57.1% on the BAN and 63.1% on the line, both correct
-for their own column. Since 2026-09-28 the published default is
-`Aimline and Benchmark`, which makes both read `aimline_category`. Do not move
-the default back without changing the BANs too.
+**The BAN tiles follow Granularity, not the Comparison Item.** On the two
+Aimline dashboards the workbook's `BAN Category` calc reads `aimline_category`,
+`measure_name_code_aimline_benchmark_status` or `aimline_round_category`, by
+Granularity. The bars and the Category Status Over Time line read Category
+Status, which follows both selectors. Under `Aimline` at measure-standard grain
+that is `measure_standard_goal_status`, which does not apply the benchmark-wins
+rule, so one page shows two below-aimline rates, both correct for their own
+column. The published default is `Aimline and Benchmark`, which makes both read
+the same column. Do not move the default back without changing the BANs too.
+
+The ⏳ Round Incomplete tile alone does not read `BAN Category`. It counts
+`round_test_status = 'Round Incomplete'` with `measure_test_status = 'Tested'`,
+so a student still testing counts in ⏳ and in the tile for their verdict, and
+the tiles can add to more than 100% while a round is open. Academics chose that
+on 2026-11-24 to keep the still-testing count on the default view; do not
+repoint the tile at `BAN Category`.
 
 **The Category Status Over Time line has its own window.** It needs every round
 in a season, so it cannot use the Admin Window filter. A Trend Window control
@@ -515,11 +524,12 @@ Before building on any of it:
   Academics knew and chose that on 2026-09-24. Do not move them.
 - Label renames break literal-string calcs in the workbook. Hand the user the
   old and new values when the extract changes.
-- Partial rounds differ by comparison item, on purpose. The Aimline item holds
-  them out at Round granularity only and scores each sat measure at Measure
-  Standard and Measure. Aimline and Benchmark holds them out as
-  `Round Incomplete` at every grain, because the percent-tested reporting asked
-  for by Alisha Fairfax needs incomplete as its own state. Do not align the two.
+- Partial rounds: every comparison item scores each sat measure at Measure
+  Standard and Measure, and holds an unfinished round out as `Round Incomplete`
+  only at Round granularity (academics, 2026-11-24, revising 2026-09-24). The
+  percent-tested reporting asked for by Alisha Fairfax keeps its three states in
+  `round_test_status`, and the ⏳ tile still counts the students who have not
+  finished.
 
 **Reading a roster row.** Grain is student x measure standard x season x round,
 one row per round -- "every score so far at round 3" is three stacked rows, not

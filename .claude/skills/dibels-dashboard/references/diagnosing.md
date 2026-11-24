@@ -161,9 +161,12 @@ on one region shipped as the default once on 2026-09-28.
 
 ## The dashboard's BANs against the extract: a QA baseline
 
-The Aimline BAN tiles count `aimline_category`, whatever the Comparison Item is
-set to (see `aimline-method.md` -> The switcher grid). To QA them, run the same
-filters as the Region Overview - Aimline sheets and compare with a render:
+The Aimline BAN tiles follow the Granularity selector, whatever the Comparison
+Item is set to (see `aimline-method.md` -> The switcher grid). At the default,
+Measure Standard, they count `aimline_category`, except the ⏳ tile, which
+counts students still testing from `round_test_status` and
+`measure_test_status`. To QA them at that granularity, run the same filters as
+the Region Overview - Aimline sheets and compare with a render:
 
 ```sql
 select
@@ -172,7 +175,7 @@ select
     count(distinct if(aimline_category = 'Below Aimline', student_number, null)) as ban2_below,
     count(distinct if(missed_aimline_consecutive = 1, student_number, null)) as ban3_missed_twice,
     count(distinct if(aimline_category = 'Meeting Aimline, Not Yet at Benchmark', student_number, null)) as ban4_hidden_risk,
-    count(distinct if(aimline_category = 'Round Incomplete', student_number, null)) as ban5_incomplete,
+    count(distinct if(round_test_status = 'Round Incomplete' and measure_test_status = 'Tested', student_number, null)) as ban5_incomplete,
     count(distinct if(aimline_category = 'Not Tested', student_number, null)) as ban7_not_tested,
 from `teamster-332318`.kipptaf_tableau.rpt_tableau__dibels_dashboard
 where
@@ -187,8 +190,9 @@ where
 Measured 2026-09-28, all regions: 336 students; 86, 192, 152, 60, 36 and 22. The
 render matched every tile. These counts drift without any code change, because
 `enroll_status` is the student's current status. #5607 also moved Miami's AY2025
-students to their current status, so re-measure before comparing with this
-baseline.
+students to their current status, and scoring the measures of partial rounds
+(#6493) moved students still testing into tiles 1, 2 and 4, so re-measure before
+comparing with this baseline.
 
 ## SY2026-2027 header rename: null ids are a column move, not missing data
 

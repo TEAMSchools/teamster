@@ -249,9 +249,11 @@ and results from both sit side by side in the dashboard.
 - Aimline categories: `Meeting Aimline, Meeting Benchmark`,
   `Meeting Aimline, Not Yet at Benchmark`, `Below Aimline`,
   `No Aimline Data, Meeting Benchmark`, `No Aimline Data, Not Yet at Benchmark`,
-  `Round Incomplete`, plus `Not Tested` on the dashboard. At or above benchmark
-  wins outright, so a student at benchmark but below their aimline still reads
-  `Meeting Aimline, Meeting Benchmark`.
+  plus `Not Tested` on the dashboard. Every measure a student sat carries its
+  category, whether or not they have finished the round. The round column,
+  `aimline_round_category`, adds `Round Incomplete` for a round the student has
+  not finished. At or above benchmark wins outright, so a student at benchmark
+  but below their aimline still reads `Meeting Aimline, Meeting Benchmark`.
 - Trajectory: a comparison item (`aimline_trajectory_category` and two round and
   code columns) that academics' rules made identical to Aimline and Benchmark.
   It is being dropped.
@@ -375,12 +377,20 @@ The Tableau workbook is the `literacy_dashboard` exposure in
   - Round numbers are not unique across regions: Miami runs a different number
     of rounds per season, so filter on `expected_round_label`, not the bare
     round number.
-  - On the Aimline dashboards the BAN tiles always count `aimline_category`,
-    while the bars and the Category Status Over Time line follow the Comparison
-    Item. The default is `Aimline and Benchmark`, which reads the same column as
-    the BANs. Under `Aimline` the bars read `measure_standard_goal_status`,
-    which has no Round Incomplete, so they show a higher below-aimline rate than
-    the BAN on the same page.
+  - On the Aimline dashboards the BAN tiles follow the Granularity selector, not
+    the Comparison Item. Through the workbook's `BAN Category` calc they read
+    `aimline_category`, `measure_name_code_aimline_benchmark_status` or
+    `aimline_round_category`. The bars and the Category Status Over Time line
+    follow the Comparison Item. The default is `Aimline and Benchmark`, which
+    reads the same columns as the BANs. Under `Aimline` the bars read
+    `measure_standard_goal_status`, which does not apply the benchmark-wins
+    rule, so they show a higher below-aimline rate than the BAN on the same
+    page.
+  - The ⏳ Round Incomplete tile counts students who sat the measure in view and
+    have not finished the round: `round_test_status = 'Round Incomplete'` and
+    `measure_test_status = 'Tested'`. Those students also count in the tile for
+    their verdict, so the tiles can add to more than 100% while a round is open,
+    by design.
   - The Category Status Over Time line shows every round of one season, chosen
     by its own Trend Window control, not by the Admin Window filter.
   - The workbook filters `enroll_status = 0`, the student's status today, so a
@@ -772,10 +782,12 @@ edits; adding a new year's rows can be an append.
   overstate what it checks.
 - Below Aimline outranks No Aimline Data at the round and code grains. Academics
   confirmed on 2026-09-22.
-- On the aimline method any unfinished round reads `Round Incomplete`, even if a
-  measure the student sat was below, so schools finish testing first (academics,
-  2026-09-24). The internal method still settles a round when the missing
-  measures could not change the answer.
+- On the aimline method an unfinished round reads `Round Incomplete` at Round
+  granularity, even if a measure the student sat was below, so a round is judged
+  only once testing is finished (academics, 2026-09-24). Each measure the
+  student sat still shows its verdict at Measure Standard and Measure
+  (academics, 2026-11-24). The internal method still settles a round when the
+  missing measures could not change the answer.
 - The status column names are inconsistent (`<grain>_<lens>_status` on the newer
   five). Aligning all nine was deferred because three are shared with the
   internal tabs.
@@ -792,8 +804,8 @@ today's label.
 | Aimline and Benchmark labels            | `Meeting Aimline, On-Track` becomes `Meeting Aimline, Meeting Benchmark`; `Meeting Aimline, Off-Track` becomes `Meeting Aimline, Not Yet at Benchmark`; the two `No Aimline Data` labels change the same way; `Below Aimline` and `Round Incomplete` unchanged | Built at all three grains                                                                                                                                                                                  |
 | Trajectory comparison item              | Dropped by the dashboard owner, to be confirmed with academics. Under academics' rules it sorts every student exactly as Aimline and Benchmark does, and without the aimline a round-to-round rule could not judge about half of below-benchmark rows          | Removal from the workbook pending. `aimline_trajectory_category`, `measure_name_code_trajectory_status` and `round_trajectory_status` stay in the extract until the workbook stops using them, then retire |
 | Students below aimline but at benchmark | Leave as is                                                                                                                                                                                                                                                    | Built. Several hundred students read `Meeting Aimline, Meeting Benchmark`, which is false for them; academics chose that knowingly                                                                         |
-| Partial rounds                          | Hold them out as `Round Incomplete` at Round granularity on every comparison item. At Measure Standard and Measure, keep scoring each measure the student sat, except on Aimline and Benchmark, which keeps `Round Incomplete` at every grain                  | Built on the aimline method. `round_trajectory_status` still scores them and goes with Trajectory. Internal round columns unchanged                                                                        |
-| Uncoloured No Aimline Data categories   | Existing grey                                                                                                                                                                                                                                                  | Workbook                                                                                                                                                                                                   |
+| Partial rounds                          | Revised 2026-11-24. At Measure Standard and Measure, score each measure the student sat on every comparison item. Hold the round out as `Round Incomplete` at Round granularity, and keep the ⏳ Round Incomplete tile counting students who have not finished | Built on the aimline method. `round_trajectory_status` still scores them and goes with Trajectory. Internal round columns unchanged                                                                        |
+| Uncoloured No Aimline Data categories   | `No Aimline Data, Meeting Benchmark` takes the Meeting Aimline, Meeting Benchmark blue (`#1170aa`); `No Aimline Data, Not Yet at Benchmark` takes a lighter orange (`#ffbc79`)                                                                                 | Built in the workbook                                                                                                                                                                                      |
 | Aimline comparison item labels          | No change                                                                                                                                                                                                                                                      | Keep all four, plus `Round Incomplete` at Round granularity                                                                                                                                                |
 | What "Meeting Aimline" measures         | Keep Amplify's definition: judged against the aimline value by date (the round target), not the student's season goal                                                                                                                                          | Decided                                                                                                                                                                                                    |
 | Roster                                  | Season Verdicts renamed Aimline History; Benchmark Goal and Benchmark Gap added                                                                                                                                                                                | Built; `benchmark_goal_gap` supplies Benchmark Gap                                                                                                                                                         |
