@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
+import sqlglot
 
 # trunk-ignore(pyright/reportAttributeAccessIssue): conftest.py registers cube_validation
 from cube_validation import (
@@ -46,6 +47,7 @@ from cube_validation.report import RunResult
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.timetravel import AsOf, TableInfo, utc_literal
 from google.api_core.exceptions import BadRequest
+from sqlglot import exp
 
 BUILD = Build(
     datetime(2026, 10, 28, 21, 34, tzinfo=timezone.utc),
@@ -583,13 +585,13 @@ def _labels(item):
     return {c["label"] for c in item.get("cause") or []}
 
 
-def _explain_edit(tmp_path, duck, run, cfg, causes, body):
+def _explain_edit(tmp_path, duck, run, cfg, causes, body, wh=None):
     draft = tmp_path / "draft.sql"
     draft.write_text(explain.compose(causes, body))
     explain.explain(
         cfg,
         tmp_path / "validation" / "v.yml",
-        wh=_saved_wh(duck, run, cfg),
+        wh=wh or _saved_wh(duck, run, cfg),
         cube=None,
         max_usd=1.0,
         cache_root=tmp_path,
@@ -650,6 +652,84 @@ def test_a_cause_that_takes_another_causes_rows_re_opens_only_that_cause(
         "decision d0: the explanation changed since the decision; re-approve"
         in item["evidence"]
     )
+
+
+def test_the_rows_check_gives_no_table_an_output_column_s_name(duck, tmp_path, offline):
+    # BigQuery reads a GROUP BY name as an output column before a table alias
+    # (DuckDB the other way round), so a clash refuses the check in BigQuery only.
+    _tables(duck)
+    wh = Wh(duck)
+    run = _run([_group(3)])
+    _save(duck, wh, run)
+    old = explain.Explanation(
+        tmp_path / "mastery__cube_only.sql", "mastery", "cube_only",
+        CAUSES, EXPLANATION, {},
+    )  # fmt: skip
+
+    sql = explain.same_rows_sql(
+        wh, COMPARISON, SIDES, old, old, [("G1", _group(3))], BUILD,
+        table=explain.require_saved(wh, CFG, run, COMPARISON), moved={},
+    )  # fmt: skip
+
+    outer = sqlglot.parse_one(sql, read="bigquery")
+    assert isinstance(outer, exp.Select)
+    outputs = {s.alias_or_name for s in outer.selects}
+    tables = {
+        t.alias_or_name for t in outer.find_all(exp.Table) if t.parent_select is outer
+    }
+    assert outputs == {"old_cause", "new_cause", "n"}
+    assert tables and not outputs & tables
+
+
+class _RowsCheckRefused(Wh):
+    """A warehouse whose BigQuery refuses the rows check (`same_rows_sql`, the
+    only query naming `old_cause`) at its dry run or its run."""
+
+    def __init__(self, duck, stage):
+        super().__init__(duck)
+        self.stage = stage
+
+    def estimate(self, sql):
+        if self.stage == "dry run" and "old_cause" in sql:
+            raise BadRequest("refused")
+        return super().estimate(sql)
+
+    def rows(self, sql, timeout_s=None):
+        if self.stage == "run" and "old_cause" in sql:
+            raise BadRequest("refused")
+        return super().rows(sql, timeout_s)
+
+
+def _refuse(*args, **kwargs):
+    raise pipeline.Refusal("is refused")
+
+
+@pytest.mark.parametrize("stage", ["unreadable", "sql", "dry run", "run"])
+def test_a_rows_check_that_cannot_run_refuses_and_leaves_the_stored_file(
+    duck, tmp_path, monkeypatch, offline, stage
+):
+    run, cfg, sort_json, stored, _ = _decided_on_old(tmp_path, monkeypatch, duck)
+    before, sorted_before = stored.read_bytes(), sort_json.read_text()
+    wh = _RowsCheckRefused(duck, stage)
+    _save(duck, wh, run, cfg)
+    if stage == "unreadable":
+        monkeypatch.setattr(explain, "read_explanation", _refuse)
+    if stage == "sql":
+        monkeypatch.setattr(explain, "same_rows_sql", _refuse)
+    causes = {**CAUSES, "C3": ("cube", "the dashboard's table lacks the row")}
+    body = EXPLANATION.replace(
+        "WHEN f.student IS NULL THEN 'UNEXPLAINED'", "WHEN f.student IS NULL THEN 'C3'"
+    )
+
+    with pytest.raises(pipeline.Refusal, match="cannot run") as refused:
+        _explain_edit(tmp_path, duck, run, cfg, causes, body, wh=wh)
+
+    # Saving would ask every decision on the file again, the owner's answer too.
+    assert stored.read_bytes() == before
+    assert sort_json.read_text() == sorted_before
+    assert f"delete {stored}" in str(refused.value)
+    # The check runs first, so a refused one spends nothing on the explanation.
+    assert all("old_cause" in sql for sql, _ in wh.ran)
 
 
 @pytest.mark.parametrize(

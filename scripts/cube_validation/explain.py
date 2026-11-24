@@ -1337,30 +1337,32 @@ def same_rows_sql(
     new_body, _ = _pinned(wh, comparison, sides, new, build, moved)
     ctes, select = unmatched_sql(comparison, new.bucket, items, table)
     head = f"{ctes},\n" if ctes else "WITH "
+    # No table alias may share an output column's name: BigQuery reads a
+    # GROUP BY name as the output column first, and refuses grouping by `n`.
     return (
         # trunk-ignore(bandit/B608): both explanations are the analyst's read-only SQL, vetted by check_sql; no values are interpolated
         f"{head}__u AS (\n{select}\n),\n"
         f"__o AS (\n{old_body.replace(PLACEHOLDER, '__u')}\n),\n"
         f"__n AS (\n{new_body.replace(PLACEHOLDER, '__u')}\n)\n"
-        "SELECT o.cause AS old_cause, n.cause AS new_cause, COUNT(*) AS n\n"
+        "SELECT o.cause AS old_cause, nw.cause AS new_cause, COUNT(*) AS n\n"
         "FROM __u AS u LEFT JOIN __o AS o ON o.__row = u.__row "
-        "LEFT JOIN __n AS n ON n.__row = u.__row\n"
-        "GROUP BY o.cause, n.cause"
+        "LEFT JOIN __n AS nw ON nw.__row = u.__row\n"
+        "GROUP BY o.cause, nw.cause"
     )
 
 
-_NO_ROWS_CHECK = (
-    "Rows check skipped, so every decision on this explanation is asked again"
-)
+def _no_rows_check(stored: Path, why: str) -> pipeline.Refusal:
+    """The refusal when the rows check against the stored version cannot run.
 
-
-def _stored_version(path: Path) -> Explanation | None:
-    """The explanation stored at `path` before an edit, or None when there is
-    none or it cannot be read."""
-    try:
-        return read_explanation(path) if path.is_file() else None
-    except (OSError, pipeline.Refusal):
-        return None
+    Saving without it would ask every decision on the file again, an owner's
+    answer included, which is never re-approved. Deleting the stored file is
+    the explicit way to accept that.
+    """
+    return pipeline.Refusal(
+        f"Rows check against the stored {stored.name} cannot run: {why}. Nothing "
+        f"was saved. To save the draft without it, delete {stored} and run "
+        "`explain` again: every decision on it is then asked again"
+    )
 
 
 def unchanged_causes(
@@ -2254,7 +2256,14 @@ def explain(
     # An edit keeps the decisions on each cause whose rows it leaves alone: both
     # versions run on the same rows (`unchanged_causes`), so the stored file
     # must still be the version `explain` saved.
-    old = _stored_version(stored)
+    old = None
+    if stored.is_file():
+        try:
+            old = read_explanation(stored)
+        except (OSError, pipeline.Refusal) as exc:
+            raise _no_rows_check(
+                stored, f"the stored version cannot be read ({exc})"
+            ) from exc
     if old is not None and old.saved not in (None, old.fingerprint):
         raise pipeline.Refusal(
             f"{stored.name} was edited since `explain` saved it, so the version "
@@ -2264,8 +2273,6 @@ def explain(
             "Or delete its `-- saved` line to run it anyway: every decision on "
             "it is then asked again"
         )
-    if old is None and stored.is_file():
-        print(f"{_NO_ROWS_CHECK}: the stored version cannot be read")
     for b, query in reproduce.items():
         if b not in block:
             raise pipeline.Refusal(
@@ -2314,7 +2321,7 @@ def explain(
                     table=table, moved=prepared.moved_at(moment),
                 )  # fmt: skip
             except pipeline.Refusal as exc:
-                print(f"{_NO_ROWS_CHECK}: the stored version {exc}")
+                raise _no_rows_check(stored, f"the stored version {exc}") from exc
         # The comparisons on the same model and grain with no explanation of
         # their own run every sibling's, this one included. A refusal there
         # keeps this explanation.
@@ -2330,11 +2337,10 @@ def explain(
         print(f"Explanation {explanation.path.name}: ${price:.2f} (dry run).")
         same_price = prices.pop() if same else 0.0
         if isinstance(same_price, GoogleAPIError):
-            print(
-                f"{_NO_ROWS_CHECK}: BigQuery refused it ({bigquery_said(same_price)})"
-            )
-            same, same_price = None, 0.0
-        elif same:
+            raise _no_rows_check(
+                stored, f"BigQuery refused it ({bigquery_said(same_price)})"
+            ) from same_price
+        if same:
             print(
                 f"Rows check against the stored version: ${same_price:.2f} (dry run)."
             )
@@ -2345,15 +2351,18 @@ def explain(
                 f"${also:.2f} (dry run)."
             )
         wh.refuse_past_caps(price + also + same_price)
-        found, students = _counted(
-            wh, query, explanation, bucket_items, literals, target
-        )
+        # First, so a refused check spends nothing on the explanation.
         same_rows = None
         if same:
             try:
                 same_rows = wh.rows(same, timeout_s=TIMEOUT_S)
             except GoogleAPIError as exc:
-                print(f"{_NO_ROWS_CHECK}: BigQuery refused it ({bigquery_said(exc)})")
+                raise _no_rows_check(
+                    stored, f"BigQuery refused it ({bigquery_said(exc)})"
+                ) from exc
+        found, students = _counted(
+            wh, query, explanation, bucket_items, literals, target
+        )
         for job in ready:
             _run_job(wh, *job)
         for ran in shared:

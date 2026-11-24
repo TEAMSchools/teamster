@@ -723,13 +723,15 @@ refuses when the view's only run read another fact.
    such cause. Never write or edit those lines, or the `-- saved` line, by hand.
    Never edit the stored file itself: `explain` refuses a stored file that
    differs from its `-- saved` line, since the version its decisions were made
-   on is gone. A rows check that is skipped (it says why) re-opens every
-   decision on the file. `decide` writes these; do not hand-write one. A cause
-   decision and a `group` decision on one group with different calls refuse, in
-   `decide`, `reapply` and `ask-owner`, even after the `group` decision closed
-   the group. That check reads the closed groups the latest `sort` classified,
-   so run `sort --no-trace` after `explain` saves a new explanation and before
-   the next `decide`.
+   on is gone. When the rows check cannot run (it says why), `explain` refuses
+   and saves nothing. Deleting the stored file saves the draft without the
+   check, and re-opens every decision on it: the analyst's call, since an
+   owner's answer is then asked again. `decide` writes these; do not hand-write
+   one. A cause decision and a `group` decision on one group with different
+   calls refuse, in `decide`, `reapply` and `ask-owner`, even after the `group`
+   decision closed the group. That check reads the closed groups the latest
+   `sort` classified, so run `sort --no-trace` after `explain` saves a new
+   explanation and before the next `decide`.
 
 8. `ask-owner <files> --domain <domain>` prints the validation issue's body: the
    numbered questions ready for the owner, each with the owner's hand checks,
