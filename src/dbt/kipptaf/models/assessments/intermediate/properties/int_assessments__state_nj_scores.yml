@@ -423,6 +423,34 @@ models:
         config:
           meta:
             contains_pii: true
+      - name: economic_disadvantage_status
+        data_type: string
+        description: >-
+          Economic disadvantage code from the state score file, Y or N. NULL
+          where the state file has no status, and on every Pearson row.
+        config:
+          meta:
+            contains_pii: true
+      - name: is_economically_disadvantaged
+        data_type: boolean
+        description: >-
+          Whether economic_disadvantage_status is Y. False for N. NULL when the
+          state file has no status or sends an unrecognized code, and on every
+          Pearson row.
+        config:
+          meta:
+            contains_pii: true
+      - name: is_student_with_disabilities
+        data_type: boolean
+        description: >-
+          Whether the state score file marks the student with a disability. True
+          when student_with_disabilities is IEP or B (IEP and 504), false when
+          it is N or 504. NULL when the state file leaves it blank or sends an
+          unrecognized code, and on every Pearson row. Unlike
+          aligned_iep_status, a blank is not read as without disabilities.
+        config:
+          meta:
+            contains_pii: true
 
 unit_tests:
   - name: test_int_assessments__state_nj_scores_student_growth_percentile
@@ -435,17 +463,78 @@ unit_tests:
         rows:
           - { studenttestuuid: p1, localstudentidentifier: 100 }
       - input: ref('int_cambium__all_assessments')
-        rows:
-          - {
-              student_test_uuid: c1,
-              student_number: 200,
-              student_growth_percentile: 57,
-            }
-          - {
-              student_test_uuid: c2,
-              student_number: 999,
-              student_growth_percentile: 12,
-            }
+        format: sql
+        rows: |
+          select
+            cast(null as string) as _dbt_source_relation,
+            cast(null as int64) as academic_year,
+            cast(null as string) as administration_round,
+            cast(null as string) as administration_period,
+            cast(null as string) as aligned_iep_status,
+            cast(null as string) as aligned_ml_status,
+            cast(null as string) as aligned_performance_band_group,
+            cast(null as string) as aligned_subject,
+            cast(null as string) as aligned_test_code,
+            cast(null as string) as american_indian_or_alaska_native,
+            cast(null as string) as asian,
+            cast(null as string) as assessment_name,
+            cast(null as string) as assessment_type,
+            cast(null as string) as assessment_version,
+            cast(null as string) as assessment_grade,
+            cast(null as string) as assessment_year,
+            cast(null as string) as black_or_african_american,
+            cast(null as string) as discipline,
+            cast(null as string) as district_state,
+            cast(null as string) as multilingual_learner,
+            cast(null as string) as first_name,
+            cast(null as int64) as grade_level_when_assessed,
+            cast(null as string) as hispanic_or_latino_ethnicity,
+            cast(null as string) as iep_status,
+            cast(null as bool) as is_504,
+            cast(null as int64) as is_approaching_int,
+            cast(null as int64) as is_below_int,
+            cast(null as bool) as is_bl_fb,
+            cast(null as bool) as is_proficient,
+            cast(null as int64) as is_proficient_int,
+            cast(null as string) as last_or_surname,
+            cast(null as bool) as lep_status,
+            cast(null as string) as module_code,
+            cast(null as string) as native_hawaiian_or_other_pacific_islander,
+            cast(null as string) as aggregated_proficiency,
+            cast(null as string) as performance_band_group_label,
+            cast(null as string) as `period`,
+            cast(null as string) as race_ethnicity,
+            cast(null as string) as results_type,
+            cast(null as int64) as state_student_id,
+            cast(null as string) as student_with_disabilities,
+            cast(null as string) as raw_subject,
+            cast(null as string) as subject_area,
+            cast(null as date) as test_date,
+            cast(null as int64) as test_grade,
+            cast(null as string) as test_code,
+            cast(null as int64) as performance_level,
+            cast(null as string) as performance_level_label,
+            cast(null as numeric) as scale_score,
+            cast(null as numeric) as test_score_complete,
+            cast(null as string) as two_or_more_races,
+            cast(null as string) as white,
+            cast(null as string) as aligned_aggregate_ethnicity,
+            cast(null as string) as _dbt_source_project,
+            cast(null as string) as economic_disadvantage_status,
+            t.student_test_uuid,
+            t.student_number,
+            t.student_growth_percentile,
+          from
+              unnest(
+                  [
+                      struct(
+                          'c1' as student_test_uuid,
+                          200 as student_number,
+                          57 as student_growth_percentile
+                      ),
+                      struct('c2', 999, 12)
+                  ]
+              ) as t
       - input: ref('stg_google_sheets__pearson__student_crosswalk')
         rows:
           - { student_test_uuid: c2, student_number: 300 }
@@ -465,4 +554,245 @@ unit_tests:
             student_test_uuid: c2,
             student_number: 300,
             student_growth_percentile: 12,
+          }
+
+  - name: test_int_assessments__state_nj_scores_economic_status
+    description: >-
+      The state file's economic disadvantage status passes through the union as
+      is, and is_economically_disadvantaged is true for Y, false for N and null
+      for a missing or unknown code; Pearson rows carry null in both columns.
+    model: int_assessments__state_nj_scores
+    given:
+      - input: ref('int_pearson__all_assessments')
+        rows:
+          - { studenttestuuid: p1, localstudentidentifier: 100 }
+      - input: ref('int_cambium__all_assessments')
+        format: sql
+        rows: |
+          select
+            cast(null as string) as _dbt_source_relation,
+            cast(null as int64) as academic_year,
+            cast(null as string) as administration_round,
+            cast(null as string) as administration_period,
+            cast(null as string) as aligned_iep_status,
+            cast(null as string) as aligned_ml_status,
+            cast(null as string) as aligned_performance_band_group,
+            cast(null as string) as aligned_subject,
+            cast(null as string) as aligned_test_code,
+            cast(null as string) as american_indian_or_alaska_native,
+            cast(null as string) as asian,
+            cast(null as string) as assessment_name,
+            cast(null as string) as assessment_type,
+            cast(null as string) as assessment_version,
+            cast(null as string) as assessment_grade,
+            cast(null as string) as assessment_year,
+            cast(null as string) as black_or_african_american,
+            cast(null as string) as discipline,
+            cast(null as string) as district_state,
+            cast(null as string) as multilingual_learner,
+            cast(null as string) as first_name,
+            cast(null as int64) as grade_level_when_assessed,
+            cast(null as string) as hispanic_or_latino_ethnicity,
+            cast(null as string) as iep_status,
+            cast(null as bool) as is_504,
+            cast(null as int64) as is_approaching_int,
+            cast(null as int64) as is_below_int,
+            cast(null as bool) as is_bl_fb,
+            cast(null as bool) as is_proficient,
+            cast(null as int64) as is_proficient_int,
+            cast(null as string) as last_or_surname,
+            cast(null as bool) as lep_status,
+            cast(null as int64) as student_number,
+            cast(null as string) as module_code,
+            cast(null as string) as native_hawaiian_or_other_pacific_islander,
+            cast(null as string) as aggregated_proficiency,
+            cast(null as string) as performance_band_group_label,
+            cast(null as string) as `period`,
+            cast(null as string) as race_ethnicity,
+            cast(null as string) as results_type,
+            cast(null as int64) as state_student_id,
+            cast(null as string) as student_with_disabilities,
+            cast(null as string) as raw_subject,
+            cast(null as string) as subject_area,
+            cast(null as date) as test_date,
+            cast(null as int64) as test_grade,
+            cast(null as string) as test_code,
+            cast(null as int64) as performance_level,
+            cast(null as string) as performance_level_label,
+            cast(null as numeric) as scale_score,
+            cast(null as numeric) as test_score_complete,
+            cast(null as string) as two_or_more_races,
+            cast(null as string) as white,
+            cast(null as string) as aligned_aggregate_ethnicity,
+            cast(null as string) as _dbt_source_project,
+            cast(null as int64) as student_growth_percentile,
+            t.student_test_uuid,
+            t.economic_disadvantage_status,
+          from
+              unnest(
+                  [
+                      struct(
+                          'c1' as student_test_uuid,
+                          'Y' as economic_disadvantage_status
+                      ),
+                      struct('c2', 'N'),
+                      struct('c3', cast(null as string)),
+                      struct('c4', 'X')
+                  ]
+              ) as t
+      - input: ref('stg_google_sheets__pearson__student_crosswalk')
+        rows:
+          - { student_test_uuid: c9, student_number: 900 }
+    expect:
+      rows:
+        - {
+            student_test_uuid: p1,
+            economic_disadvantage_status: null,
+            is_economically_disadvantaged: null,
+          }
+        - {
+            student_test_uuid: c1,
+            economic_disadvantage_status: Y,
+            is_economically_disadvantaged: true,
+          }
+        - {
+            student_test_uuid: c2,
+            economic_disadvantage_status: N,
+            is_economically_disadvantaged: false,
+          }
+        - {
+            student_test_uuid: c3,
+            economic_disadvantage_status: null,
+            is_economically_disadvantaged: null,
+          }
+        - {
+            student_test_uuid: c4,
+            economic_disadvantage_status: X,
+            is_economically_disadvantaged: null,
+          }
+
+  - name: test_int_assessments__state_nj_scores_disability_status
+    description: >-
+      is_student_with_disabilities is true for IEP and B, false for N and 504,
+      and null for a blank or unknown code; Pearson rows carry null.
+    model: int_assessments__state_nj_scores
+    given:
+      - input: ref('int_pearson__all_assessments')
+        rows:
+          - { studenttestuuid: p1, localstudentidentifier: 100 }
+      - input: ref('int_cambium__all_assessments')
+        format: sql
+        rows: |
+          select
+            cast(null as string) as _dbt_source_relation,
+            cast(null as int64) as academic_year,
+            cast(null as string) as administration_round,
+            cast(null as string) as administration_period,
+            cast(null as string) as aligned_iep_status,
+            cast(null as string) as aligned_ml_status,
+            cast(null as string) as aligned_performance_band_group,
+            cast(null as string) as aligned_subject,
+            cast(null as string) as aligned_test_code,
+            cast(null as string) as american_indian_or_alaska_native,
+            cast(null as string) as asian,
+            cast(null as string) as assessment_name,
+            cast(null as string) as assessment_type,
+            cast(null as string) as assessment_version,
+            cast(null as string) as assessment_grade,
+            cast(null as string) as assessment_year,
+            cast(null as string) as black_or_african_american,
+            cast(null as string) as discipline,
+            cast(null as string) as district_state,
+            cast(null as string) as multilingual_learner,
+            cast(null as string) as first_name,
+            cast(null as int64) as grade_level_when_assessed,
+            cast(null as string) as hispanic_or_latino_ethnicity,
+            cast(null as string) as iep_status,
+            cast(null as bool) as is_504,
+            cast(null as int64) as is_approaching_int,
+            cast(null as int64) as is_below_int,
+            cast(null as bool) as is_bl_fb,
+            cast(null as bool) as is_proficient,
+            cast(null as int64) as is_proficient_int,
+            cast(null as string) as last_or_surname,
+            cast(null as bool) as lep_status,
+            cast(null as int64) as student_number,
+            cast(null as string) as module_code,
+            cast(null as string) as native_hawaiian_or_other_pacific_islander,
+            cast(null as string) as aggregated_proficiency,
+            cast(null as string) as performance_band_group_label,
+            cast(null as string) as `period`,
+            cast(null as string) as race_ethnicity,
+            cast(null as string) as results_type,
+            cast(null as int64) as state_student_id,
+            cast(null as string) as raw_subject,
+            cast(null as string) as subject_area,
+            cast(null as date) as test_date,
+            cast(null as int64) as test_grade,
+            cast(null as string) as test_code,
+            cast(null as int64) as performance_level,
+            cast(null as string) as performance_level_label,
+            cast(null as numeric) as scale_score,
+            cast(null as numeric) as test_score_complete,
+            cast(null as string) as two_or_more_races,
+            cast(null as string) as white,
+            cast(null as string) as aligned_aggregate_ethnicity,
+            cast(null as string) as _dbt_source_project,
+            cast(null as int64) as student_growth_percentile,
+            cast(null as string) as economic_disadvantage_status,
+            t.student_test_uuid,
+            t.student_with_disabilities,
+          from
+              unnest(
+                  [
+                      struct(
+                          'c1' as student_test_uuid,
+                          'IEP' as student_with_disabilities
+                      ),
+                      struct('c2', 'B'),
+                      struct('c3', 'N'),
+                      struct('c4', '504'),
+                      struct('c5', cast(null as string)),
+                      struct('c6', 'X')
+                  ]
+              ) as t
+      - input: ref('stg_google_sheets__pearson__student_crosswalk')
+        rows:
+          - { student_test_uuid: c9, student_number: 900 }
+    expect:
+      rows:
+        - {
+            student_test_uuid: p1,
+            student_with_disabilities: null,
+            is_student_with_disabilities: null,
+          }
+        - {
+            student_test_uuid: c1,
+            student_with_disabilities: IEP,
+            is_student_with_disabilities: true,
+          }
+        - {
+            student_test_uuid: c2,
+            student_with_disabilities: B,
+            is_student_with_disabilities: true,
+          }
+        - {
+            student_test_uuid: c3,
+            student_with_disabilities: N,
+            is_student_with_disabilities: false,
+          }
+        - {
+            student_test_uuid: c4,
+            student_with_disabilities: "504",
+            is_student_with_disabilities: false,
+          }
+        - {
+            student_test_uuid: c5,
+            student_with_disabilities: null,
+            is_student_with_disabilities: null,
+          }
+        - {
+            student_test_uuid: c6,
+            student_with_disabilities: X,
+            is_student_with_disabilities: null,
           }

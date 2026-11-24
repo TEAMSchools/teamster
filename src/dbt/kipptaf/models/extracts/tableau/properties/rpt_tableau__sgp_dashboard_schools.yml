@@ -1,0 +1,290 @@
+models:
+  - name: rpt_tableau__sgp_dashboard_schools
+    description: >-
+      One row per student growth percentile (SGP) score on a New Jersey state
+      test, feeding the Schools tab of the SGP dashboard. Every state score with
+      a growth percentile is a row; scores without one are left out. Each score
+      is placed at the school the student was enrolled in on the test date. A
+      stint that ends on the test date does not count, and the one that starts
+      on it does. Student groups come from the state score file and are never
+      filled from another system, so economic disadvantage and disability status
+      are null, and race is Blank, where the state file reports none.
+    columns:
+      - name: student_test_uuid
+        data_type: string
+        description:
+          Identifier for the student's test-taking event. One per row.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: location_key
+        data_type: string
+        description: >-
+          Key of the school the student was enrolled in on the test date. Every
+          score must have one; the not_null test fails the build when no
+          enrollment stint covers a test date.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: student_key
+        data_type: string
+        description:
+          Student surrogate key, matching the student enrollments mart.
+      - name: academic_year
+        data_type: int64
+        description: Academic year of the test, as the starting calendar year.
+      - name: test_date
+        data_type: date
+        description: Date the student took the test.
+        config:
+          meta:
+            contains_pii: true
+      - name: region
+        data_type: string
+        description: Region of the school, such as Newark or Camden.
+      - name: school
+        data_type: string
+        description: Short school name.
+      - name: school_name
+        data_type: string
+        description: Full school name.
+      - name: grade_band
+        data_type: string
+        description: School grade band, ES, MS, or HS.
+      - name: grade_level_tested
+        data_type: int64
+        description: Grade the student was in when tested.
+        config:
+          meta:
+            contains_pii: true
+      - name: subject
+        data_type: string
+        description: Tested subject, ELA or Math.
+      - name: test_code
+        data_type: string
+        description: State test code for the subject and grade or course.
+      - name: student_growth_percentile
+        data_type: int64
+        description: >-
+          Student growth percentile from the state score file, 1 to 99. Never
+          null in this model.
+        config:
+          meta:
+            contains_pii: true
+      - name: growth_level
+        data_type: string
+        description: >-
+          Low for a growth percentile below 35, Typical for 35 through 65, High
+          for above 65.
+        config:
+          meta:
+            contains_pii: true
+      - name: is_proficient
+        data_type: boolean
+        description: >-
+          True where the student met the state's proficiency level on the test.
+        config:
+          meta:
+            contains_pii: true
+      - name: race_ethnicity_group
+        data_type: string
+        description: >-
+          Race and ethnicity group from the state score file. One of African
+          American, American Indian, Asian, Hispanic, Native Hawaiian, White,
+          Two or more races (the file's Other), or Blank where the state file
+          has no race. The workbook shows Blank as Not reported.
+        config:
+          meta:
+            contains_pii: true
+      - name: is_student_with_disabilities
+        data_type: boolean
+        description: >-
+          True where the state score file marks the student with an
+          individualized education program (IEP), false where it marks a 504
+          plan only or no disability. Null where the state file has no status,
+          and never filled from another system. The workbook shows null as Not
+          reported.
+        config:
+          meta:
+            contains_pii: true
+      - name: is_multilingual_learner
+        data_type: boolean
+        description: >-
+          True where the state score file's multilingual learner flag marks the
+          student as a current multilingual learner. Former learners who have
+          exited are not included.
+        config:
+          meta:
+            contains_pii: true
+      - name: is_economically_disadvantaged
+        data_type: boolean
+        description: >-
+          True where the state score file marks the student as economically
+          disadvantaged. Null where the state file reports nothing, and never
+          filled from another system.
+        config:
+          meta:
+            contains_pii: true
+
+unit_tests:
+  - name: test_rpt_tableau__sgp_dashboard_schools_rules
+    description: >-
+      Scores without a growth percentile drop out. Growth level is Low below 35,
+      Typical from 35 to 65, High above 65. A student whose first stint ends on
+      the test date and whose second starts on it gets the second school. Other
+      becomes Two or more races and Blank stays Blank. A multilingual learner
+      with no economic status keeps a null status, and a null disability status
+      stays null.
+    model: rpt_tableau__sgp_dashboard_schools
+    given:
+      - input: ref('int_assessments__state_nj_scores')
+        format: sql
+        rows: |
+          select
+              s.student_test_uuid,
+              s.student_number,
+              2025 as academic_year,
+              date '2026-05-01' as test_date,
+              6 as grade_level_when_assessed,
+              'ELA' as discipline,
+              'ELA06' as test_code,
+              s.student_growth_percentile,
+              true as is_proficient,
+              s.aligned_aggregate_ethnicity,
+              s.is_student_with_disabilities,
+              s.aligned_ml_status,
+              s.is_economically_disadvantaged
+          from
+              unnest(
+                  [
+                      struct(
+                          'u1' as student_test_uuid,
+                          1 as student_number,
+                          34 as student_growth_percentile,
+                          'Hispanic' as aligned_aggregate_ethnicity,
+                          true as is_student_with_disabilities,
+                          'Not ML' as aligned_ml_status,
+                          true as is_economically_disadvantaged
+                      ),
+                      ('u2', 2, 35, 'Hispanic', false, 'Not ML', false),
+                      ('u3', 3, 65, 'Other', cast(null as bool), 'Not ML', true),
+                      ('u4', 4, 66, 'Blank', true, 'ML', cast(null as bool)),
+                      (
+                          'u5',
+                          5,
+                          cast(null as int64),
+                          'Hispanic',
+                          false,
+                          'Not ML',
+                          true
+                      ),
+                      ('u6', 6, 50, 'Hispanic', false, 'Not ML', true)
+                  ]
+              ) as s
+      - input: ref('dim_student_enrollments')
+        format: sql
+        rows: |
+          select
+              to_hex(
+                  md5(
+                      cast(
+                          coalesce(
+                              cast(e.student_number as string),
+                              '_dbt_utils_surrogate_key_null_'
+                          ) as string
+                      )
+                  )
+              ) as student_key,
+              e.location_key,
+              e.entry_date_key,
+              e.exit_date_key,
+              2025 as academic_year,
+              6 as grade_level
+          from
+              unnest(
+                  [
+                      struct(
+                          1 as student_number,
+                          'loc_a' as location_key,
+                          date '2025-08-01' as entry_date_key,
+                          date '2026-06-30' as exit_date_key
+                      ),
+                      (2, 'loc_a', date '2025-08-01', date '2026-06-30'),
+                      (3, 'loc_a', date '2025-08-01', date '2026-06-30'),
+                      (4, 'loc_a', date '2025-08-01', date '2026-06-30'),
+                      (5, 'loc_a', date '2025-08-01', date '2026-06-30'),
+                      (6, 'loc_a', date '2025-08-01', date '2026-05-01'),
+                      (6, 'loc_b', date '2026-05-01', date '2026-06-30')
+                  ]
+              ) as e
+      - input: ref('dim_locations')
+        rows:
+          - {
+              location_key: loc_a,
+              name: School A Full,
+              abbreviation: SA,
+              grade_band: MS,
+              region_key: r1,
+            }
+          - {
+              location_key: loc_b,
+              name: School B Full,
+              abbreviation: SB,
+              grade_band: MS,
+              region_key: r1,
+            }
+      - input: ref('dim_regions')
+        rows:
+          - { region_key: r1, name: Newark }
+    expect:
+      rows:
+        - {
+            student_test_uuid: u1,
+            growth_level: Low,
+            school: SA,
+            race_ethnicity_group: Hispanic,
+            is_student_with_disabilities: true,
+            is_multilingual_learner: false,
+            is_economically_disadvantaged: true,
+          }
+        - {
+            student_test_uuid: u2,
+            growth_level: Typical,
+            school: SA,
+            race_ethnicity_group: Hispanic,
+            is_student_with_disabilities: false,
+            is_multilingual_learner: false,
+            is_economically_disadvantaged: false,
+          }
+        - {
+            student_test_uuid: u3,
+            growth_level: Typical,
+            school: SA,
+            race_ethnicity_group: Two or more races,
+            is_student_with_disabilities: null,
+            is_multilingual_learner: false,
+            is_economically_disadvantaged: true,
+          }
+        - {
+            student_test_uuid: u4,
+            growth_level: High,
+            school: SA,
+            race_ethnicity_group: Blank,
+            is_student_with_disabilities: true,
+            is_multilingual_learner: true,
+            is_economically_disadvantaged: null,
+          }
+        - {
+            student_test_uuid: u6,
+            growth_level: Typical,
+            school: SB,
+            race_ethnicity_group: Hispanic,
+            is_student_with_disabilities: false,
+            is_multilingual_learner: false,
+            is_economically_disadvantaged: true,
+          }

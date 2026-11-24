@@ -60,6 +60,9 @@ with
             _dbt_source_project,
 
             cast(null as int64) as student_growth_percentile,
+            cast(null as string) as economic_disadvantage_status,
+            cast(null as bool) as is_economically_disadvantaged,
+            cast(null as bool) as is_student_with_disabilities,
         from {{ ref("int_pearson__all_assessments") }}
 
         union all
@@ -122,6 +125,19 @@ with
             aligned_aggregate_ethnicity,
             _dbt_source_project,
             student_growth_percentile,
+            economic_disadvantage_status,
+
+            case
+                economic_disadvantage_status when 'Y' then true when 'N' then false
+            end as is_economically_disadvantaged,
+
+            -- state codes: IEP, B (IEP and 504), 504, N (neither)
+            case
+                when student_with_disabilities in ('IEP', 'B')
+                then true
+                when student_with_disabilities in ('N', '504')
+                then false
+            end as is_student_with_disabilities,
         from {{ ref("int_cambium__all_assessments") }}
     )
 
@@ -181,6 +197,9 @@ select
     u.aligned_aggregate_ethnicity,
     u._dbt_source_project,
     u.student_growth_percentile,
+    u.economic_disadvantage_status,
+    u.is_economically_disadvantaged,
+    u.is_student_with_disabilities,
 
     cast(u.state_student_id as string) as state_student_id,
 

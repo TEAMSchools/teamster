@@ -737,6 +737,20 @@ exposures:
           asset:
             metadata:
               id: 31b6a4a9-e0ca-479b-8f44-0daaa52e109b
+  - name: sgp_dashboard
+    label: SGP Dashboard
+    type: dashboard
+    owner:
+      name: Data Team
+    depends_on:
+      - ref("rpt_tableau__sgp_dashboard_access")
+      - ref("rpt_tableau__sgp_dashboard_schools")
+      - ref("rpt_tableau__sgp_dashboard_teachers")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
   - name: renewal_approval_tool
     label: Renewal Approval Tool
     type: dashboard

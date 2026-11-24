@@ -1,0 +1,127 @@
+models:
+  - name: rpt_tableau__sgp_dashboard_access
+    description: >-
+      Which schools each Tableau username can see in the SGP dashboard, for
+      row-level security. One row per username and school. A school leader gets
+      their own school. A head of school gets every school in the regions where
+      they head a school. Only the one school leader on the school record
+      counts, not the wider leadership team. Staff with no Tableau username get
+      no rows. Central office access is handled in Tableau by group membership,
+      not here.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - tableau_username
+              - location_key
+          config:
+            severity: error
+    columns:
+      - name: location_key
+        data_type: string
+        description: Key of the school the username can see. Never null.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: tableau_username
+        data_type: string
+        description: >-
+          Tableau username of the staff member, their Active Directory account
+          name. Never null; staff with no username are left out.
+        config:
+          meta:
+            contains_pii: true
+      - name: is_school_leader_access
+        data_type: boolean
+        description: >-
+          True where the username is the school leader of this school on the
+          school record.
+      - name: is_head_of_school_access
+        data_type: boolean
+        description: >-
+          True where the username is a head of school for a school in the same
+          region as this school.
+
+unit_tests:
+  - name: test_rpt_tableau__sgp_dashboard_access_paths
+    description: >-
+      A school leader reaches their own school. A head of school reaches every
+      school in the region. A person who is both a school leader and a head of
+      school appears once per school with both flags set where both apply. A
+      staff member with no username gets no rows.
+    model: rpt_tableau__sgp_dashboard_access
+    given:
+      - input: ref('dim_locations')
+        format: sql
+        rows: |
+          select l.location_key, l.region_key, l.school_leader_staff_key, l.head_of_school_staff_key,
+          from
+              unnest(
+                  [
+                      struct(
+                          'loc_a' as location_key,
+                          'r1' as region_key,
+                          's' as school_leader_staff_key,
+                          'h' as head_of_school_staff_key
+                      ),
+                      ('loc_b', 'r1', 'p', 'p'),
+                      ('loc_c', 'r2', 't', cast(null as string)),
+                      ('loc_c2', 'r2', 'n', cast(null as string))
+                  ]
+              ) as l
+      - input: ref('dim_staff')
+        format: sql
+        rows: |
+          select s.staff_key, s.active_directory_username,
+          from
+              unnest(
+                  [
+                      struct(
+                          's' as staff_key,
+                          'user_s' as active_directory_username
+                      ),
+                      ('h', 'user_h'),
+                      ('p', 'user_p'),
+                      ('t', 'user_t'),
+                      ('n', cast(null as string))
+                  ]
+              ) as s
+    expect:
+      rows:
+        - {
+            tableau_username: user_s,
+            location_key: loc_a,
+            is_school_leader_access: true,
+            is_head_of_school_access: false,
+          }
+        - {
+            tableau_username: user_h,
+            location_key: loc_a,
+            is_school_leader_access: false,
+            is_head_of_school_access: true,
+          }
+        - {
+            tableau_username: user_h,
+            location_key: loc_b,
+            is_school_leader_access: false,
+            is_head_of_school_access: true,
+          }
+        - {
+            tableau_username: user_t,
+            location_key: loc_c,
+            is_school_leader_access: true,
+            is_head_of_school_access: false,
+          }
+        - {
+            tableau_username: user_p,
+            location_key: loc_a,
+            is_school_leader_access: false,
+            is_head_of_school_access: true,
+          }
+        - {
+            tableau_username: user_p,
+            location_key: loc_b,
+            is_school_leader_access: true,
+            is_head_of_school_access: true,
+          }
