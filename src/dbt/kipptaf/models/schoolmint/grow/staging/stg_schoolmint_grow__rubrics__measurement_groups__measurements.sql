@@ -23,6 +23,14 @@ select
     timestamp(r.archivedat) as archived_at,
     timestamp(r.created) as created,
     timestamp(r.lastmodified) as last_modified,
+
+    row_number() over (
+        partition by r._id order by mg_offset asc, m_offset asc
+    ) as measurement_form_position,
 from {{ source("schoolmint_grow", "src_schoolmint_grow__rubrics") }} as r
 left join unnest(r.measurementgroups) as mg
+with
+offset as mg_offset
 left join unnest(mg.measurements) as m
+with
+offset as m_offset
