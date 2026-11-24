@@ -7,8 +7,8 @@ models:
       is placed at the school the student was enrolled in on the test date. A
       stint that ends on the test date does not count, and the one that starts
       on it does. Student groups come from the state score file and are never
-      filled from another system, so economic disadvantage is null where the
-      state file reports none.
+      filled from another system, so economic disadvantage and disability status
+      are null, and race is Blank, where the state file reports none.
     columns:
       - name: student_test_uuid
         data_type: string
@@ -90,16 +90,21 @@ models:
       - name: race_ethnicity_group
         data_type: string
         description: >-
-          Race and ethnicity group from the state score file, with Other shown
-          as Two or more races.
+          Race and ethnicity group from the state score file. One of African
+          American, American Indian, Asian, Hispanic, Native Hawaiian, White,
+          Two or more races (the file's Other), or Blank where the state file
+          has no race. The workbook shows Blank as Not reported.
         config:
           meta:
             contains_pii: true
-      - name: disability_status
-        data_type: string
+      - name: is_student_with_disabilities
+        data_type: boolean
         description: >-
-          Whether the student has an individualized education program, from the
-          state score file.
+          True where the state score file marks the student with an
+          individualized education program (IEP), false where it marks a 504
+          plan only or no disability. Null where the state file has no status,
+          and never filled from another system. The workbook shows null as Not
+          reported.
         config:
           meta:
             contains_pii: true
@@ -127,8 +132,9 @@ unit_tests:
       Scores without a growth percentile drop out. Growth level is Low below 35,
       Typical from 35 to 65, High above 65. A student whose first stint ends on
       the test date and whose second starts on it gets the second school. Other
-      becomes Two or more races. A multilingual learner with no economic status
-      keeps a null status.
+      becomes Two or more races and Blank stays Blank. A multilingual learner
+      with no economic status keeps a null status, and a null disability status
+      stays null.
     model: rpt_tableau__sgp_dashboard_schools
     given:
       - input: ref('int_assessments__state_nj_scores')
@@ -145,7 +151,7 @@ unit_tests:
               s.student_growth_percentile,
               true as is_proficient,
               s.aligned_aggregate_ethnicity,
-              'No IEP' as aligned_iep_status,
+              s.is_student_with_disabilities,
               s.aligned_ml_status,
               s.is_economically_disadvantaged
           from
@@ -156,14 +162,23 @@ unit_tests:
                           1 as student_number,
                           34 as student_growth_percentile,
                           'Hispanic' as aligned_aggregate_ethnicity,
+                          true as is_student_with_disabilities,
                           'Not ML' as aligned_ml_status,
                           true as is_economically_disadvantaged
                       ),
-                      ('u2', 2, 35, 'Hispanic', 'Not ML', false),
-                      ('u3', 3, 65, 'Other', 'Not ML', true),
-                      ('u4', 4, 66, 'Hispanic', 'ML', cast(null as bool)),
-                      ('u5', 5, cast(null as int64), 'Hispanic', 'Not ML', true),
-                      ('u6', 6, 50, 'Hispanic', 'Not ML', true)
+                      ('u2', 2, 35, 'Hispanic', false, 'Not ML', false),
+                      ('u3', 3, 65, 'Other', cast(null as bool), 'Not ML', true),
+                      ('u4', 4, 66, 'Blank', true, 'ML', cast(null as bool)),
+                      (
+                          'u5',
+                          5,
+                          cast(null as int64),
+                          'Hispanic',
+                          false,
+                          'Not ML',
+                          true
+                      ),
+                      ('u6', 6, 50, 'Hispanic', false, 'Not ML', true)
                   ]
               ) as s
       - input: ref('dim_student_enrollments')
@@ -228,6 +243,7 @@ unit_tests:
             growth_level: Low,
             school: SA,
             race_ethnicity_group: Hispanic,
+            is_student_with_disabilities: true,
             is_multilingual_learner: false,
             is_economically_disadvantaged: true,
           }
@@ -236,6 +252,7 @@ unit_tests:
             growth_level: Typical,
             school: SA,
             race_ethnicity_group: Hispanic,
+            is_student_with_disabilities: false,
             is_multilingual_learner: false,
             is_economically_disadvantaged: false,
           }
@@ -244,6 +261,7 @@ unit_tests:
             growth_level: Typical,
             school: SA,
             race_ethnicity_group: Two or more races,
+            is_student_with_disabilities: null,
             is_multilingual_learner: false,
             is_economically_disadvantaged: true,
           }
@@ -251,7 +269,8 @@ unit_tests:
             student_test_uuid: u4,
             growth_level: High,
             school: SA,
-            race_ethnicity_group: Hispanic,
+            race_ethnicity_group: Blank,
+            is_student_with_disabilities: true,
             is_multilingual_learner: true,
             is_economically_disadvantaged: null,
           }
@@ -260,6 +279,7 @@ unit_tests:
             growth_level: Typical,
             school: SB,
             race_ethnicity_group: Hispanic,
+            is_student_with_disabilities: false,
             is_multilingual_learner: false,
             is_economically_disadvantaged: true,
           }

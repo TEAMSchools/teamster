@@ -10,7 +10,7 @@ with
             student_growth_percentile,
             is_proficient,
             aligned_aggregate_ethnicity,
-            aligned_iep_status,
+            is_student_with_disabilities,
             aligned_ml_status,
             is_economically_disadvantaged,
 
@@ -30,7 +30,7 @@ with
             ns.test_code,
             ns.student_growth_percentile,
             ns.is_proficient,
-            ns.aligned_iep_status as disability_status,
+            ns.is_student_with_disabilities,
             ns.is_economically_disadvantaged,
 
             l.location_key,
@@ -252,7 +252,7 @@ select
     s.growth_level,
     s.is_proficient,
     s.race_ethnicity_group,
-    s.disability_status,
+    s.is_student_with_disabilities,
     s.is_multilingual_learner,
     s.is_economically_disadvantaged,
 

@@ -10,7 +10,7 @@ with
             student_growth_percentile,
             is_proficient,
             aligned_aggregate_ethnicity,
-            aligned_iep_status,
+            is_student_with_disabilities,
             aligned_ml_status,
             is_economically_disadvantaged,
 
@@ -37,7 +37,7 @@ select
     s.test_code,
     s.student_growth_percentile,
     s.is_proficient,
-    s.aligned_iep_status as disability_status,
+    s.is_student_with_disabilities,
     s.is_economically_disadvantaged,
 
     if(

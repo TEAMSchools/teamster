@@ -18,7 +18,8 @@ models:
       so a move between 2 sections of the same teacher still counts and a move
       between 2 teachers can count for neither. A teacher who is lead on one of
       the student's sections and co-teacher on another appears once, as Lead
-      Teacher. Student groups come from the state score file.
+      Teacher. Student groups come from the state score file and are never
+      filled from another system, as on the Schools tab.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -163,16 +164,21 @@ models:
       - name: race_ethnicity_group
         data_type: string
         description: >-
-          Race and ethnicity group from the state score file, with Other shown
-          as Two or more races.
+          Race and ethnicity group from the state score file. One of African
+          American, American Indian, Asian, Hispanic, Native Hawaiian, White,
+          Two or more races (the file's Other), or Blank where the state file
+          has no race. The workbook shows Blank as Not reported.
         config:
           meta:
             contains_pii: true
-      - name: disability_status
-        data_type: string
+      - name: is_student_with_disabilities
+        data_type: boolean
         description: >-
-          Whether the student has an individualized education program, from the
-          state score file.
+          True where the state score file marks the student with an
+          individualized education program (IEP), false where it marks a 504
+          plan only or no disability. Null where the state file has no status,
+          and never filled from another system. The workbook shows null as Not
+          reported.
         config:
           meta:
             contains_pii: true
@@ -200,8 +206,9 @@ models:
 unit_tests:
   - name: test_rpt_tableau__sgp_dashboard_teachers_student_at_70_percent
     description: >-
-      A student in the section 7 of 10 window days counts for its lead teacher.
-      A math section does not count toward an ELA score.
+      A student in the section 7 of 10 window days counts for its lead teacher,
+      carrying the score's school and student groups. A math section does not
+      count toward an ELA score.
     model: rpt_tableau__sgp_dashboard_teachers
     given:
       - &one_ela_score
@@ -219,7 +226,7 @@ unit_tests:
               50 as student_growth_percentile,
               true as is_proficient,
               'Hispanic' as aligned_aggregate_ethnicity,
-              'No IEP' as aligned_iep_status,
+              true as is_student_with_disabilities,
               'Not ML' as aligned_ml_status,
               true as is_economically_disadvantaged
       - &enrollments
@@ -384,6 +391,7 @@ unit_tests:
             student_day_count: 7,
             student_share: 0.7,
             teacher_share: 1.0,
+            is_student_with_disabilities: true,
           }
 
   - name: test_rpt_tableau__sgp_dashboard_teachers_student_below_70_percent
@@ -944,7 +952,7 @@ unit_tests:
               50 as student_growth_percentile,
               true as is_proficient,
               'Hispanic' as aligned_aggregate_ethnicity,
-              'No IEP' as aligned_iep_status,
+              false as is_student_with_disabilities,
               'Not ML' as aligned_ml_status,
               true as is_economically_disadvantaged
           from
