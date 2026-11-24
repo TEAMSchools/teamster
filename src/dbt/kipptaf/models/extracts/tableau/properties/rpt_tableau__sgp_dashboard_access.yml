@@ -17,18 +17,6 @@ models:
           config:
             severity: error
     columns:
-      - name: tableau_username
-        data_type: string
-        description: >-
-          Tableau username of the staff member, their Active Directory account
-          name. Never null.
-        config:
-          meta:
-            contains_pii: true
-        data_tests:
-          - not_null:
-              config:
-                severity: error
       - name: location_key
         data_type: string
         description: Key of the school the username can see. Never null.
@@ -36,6 +24,14 @@ models:
           - not_null:
               config:
                 severity: error
+      - name: tableau_username
+        data_type: string
+        description: >-
+          Tableau username of the staff member, their Active Directory account
+          name. Never null; staff with no username are left out.
+        config:
+          meta:
+            contains_pii: true
       - name: is_school_leader_access
         data_type: boolean
         description: >-

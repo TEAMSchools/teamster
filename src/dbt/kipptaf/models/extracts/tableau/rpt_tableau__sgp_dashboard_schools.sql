@@ -24,14 +24,6 @@ select
     s.student_key,
     s.academic_year,
     s.test_date,
-
-    r.name as region,
-
-    l.location_key,
-    l.abbreviation as school,
-    l.name as school_name,
-    l.grade_band,
-
     s.grade_level_when_assessed as grade_level_tested,
     s.discipline as subject,
     s.test_code,
@@ -39,6 +31,13 @@ select
     s.is_proficient,
     s.is_student_with_disabilities,
     s.is_economically_disadvantaged,
+
+    l.location_key,
+    l.abbreviation as school,
+    l.name as school_name,
+    l.grade_band,
+
+    r.name as region,
 
     if(
         s.aligned_aggregate_ethnicity = 'Other',
@@ -48,6 +47,7 @@ select
 
     s.aligned_ml_status = 'ML' as is_multilingual_learner,
 
+    -- NJDOE's growth bands: below 35, 35 through 65, above 65
     case
         when s.student_growth_percentile < 35
         then 'Low'

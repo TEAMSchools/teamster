@@ -21,8 +21,9 @@ models:
       - name: location_key
         data_type: string
         description: >-
-          Key of the school the student was enrolled in on the test date. Null
-          when no enrollment stint covers that date.
+          Key of the school the student was enrolled in on the test date. Every
+          score must have one; the not_null test fails the build when no
+          enrollment stint covers a test date.
         data_tests:
           - not_null:
               config:
@@ -111,8 +112,9 @@ models:
       - name: is_multilingual_learner
         data_type: boolean
         description: >-
-          True where the state score file marks the student as a current or
-          recently exited multilingual learner.
+          True where the state score file's multilingual learner flag marks the
+          student as a current multilingual learner. Former learners who have
+          exited are not included.
         config:
           meta:
             contains_pii: true

@@ -349,6 +349,15 @@ rules by region and decided:
 - **Economic disadvantage** stays `is_economically_disadvantaged`. A blank is
   null and shows as `Not reported`, which covers all of Paterson. No PowerSchool
   fill.
+- **Cross-school sections** (controller ruling from the final review; the
+  requester has not decided it yet): a score counts only sections at the
+  student's test-day school, so a school never sees another school's teacher.
+- **Disability and race blanks** (controller ruling from the final review; the
+  requester has not decided it yet): disability is
+  `is_student_with_disabilities` (IEP or B true, N or 504 false), and a blank is
+  null and shows as `Not reported`, as for economic disadvantage, not as without
+  disabilities. Race stays `aligned_aggregate_ethnicity`, whose `Blank` shows as
+  `Not reported`.
 
 ## Appendix: the mockup's teacher-matching query
 

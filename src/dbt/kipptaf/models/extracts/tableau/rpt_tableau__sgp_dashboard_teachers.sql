@@ -89,7 +89,12 @@ with
 
     sections as (
         select
-            s.student_test_uuid, sse.course_section_key, sse.entry_date, sse.exit_date,
+            s.student_test_uuid,
+
+            -- sections the student left stay in; their dates bound the days
+            sse.course_section_key,
+            sse.entry_date,
+            sse.exit_date,
         from scores as s
         inner join
             {{ ref("dim_student_enrollments") }} as e

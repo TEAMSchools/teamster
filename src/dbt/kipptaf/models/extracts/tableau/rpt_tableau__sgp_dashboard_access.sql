@@ -36,13 +36,15 @@ with
     )
 
 select
-    s.active_directory_username as tableau_username,
-
     a.location_key,
+
+    s.active_directory_username as tableau_username,
 
     logical_or(a.is_school_leader_access) as is_school_leader_access,
     logical_or(a.is_head_of_school_access) as is_head_of_school_access,
 from access as a
-inner join {{ ref("dim_staff") }} as s on a.staff_key = s.staff_key
-where s.active_directory_username is not null
-group by s.active_directory_username, a.location_key
+inner join
+    {{ ref("dim_staff") }} as s
+    on a.staff_key = s.staff_key
+    and s.active_directory_username is not null
+group by a.location_key, s.active_directory_username

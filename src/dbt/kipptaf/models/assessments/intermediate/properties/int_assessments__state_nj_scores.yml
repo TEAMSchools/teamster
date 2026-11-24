@@ -427,8 +427,7 @@ models:
         data_type: string
         description: >-
           Economic disadvantage code from the state score file, Y or N. NULL
-          when the state file has no status, as on every Pearson row and every
-          Paterson row.
+          where the state file has no status, and on every Pearson row.
         config:
           meta:
             contains_pii: true
