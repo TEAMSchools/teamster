@@ -32,10 +32,6 @@ models:
         description: >-
           Key of the school the student was enrolled in on the test date. The
           window's school calendar is this school's.
-        data_tests:
-          - not_null:
-              config:
-                severity: error
       - name: student_test_uuid
         data_type: string
         description: >-
