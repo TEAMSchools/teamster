@@ -3,8 +3,8 @@ revision = 5
 requires-python = ">=3.13, <3.15"
 resolution-markers = [
     "python_full_version >= '3.14' and platform_python_implementation != 'PyPy' and sys_platform != 'emscripten'",
-    "python_full_version < '3.14' and platform_python_implementation != 'PyPy' and sys_platform != 'emscripten'",
     "(python_full_version >= '3.14' and platform_python_implementation == 'PyPy') or (python_full_version >= '3.14' and sys_platform == 'emscripten')",
+    "python_full_version < '3.14' and platform_python_implementation != 'PyPy' and sys_platform != 'emscripten'",
     "(python_full_version < '3.14' and platform_python_implementation == 'PyPy') or (python_full_version < '3.14' and sys_platform == 'emscripten')",
 ]
 
@@ -566,14 +566,15 @@ wheels = [
 
 [[package]]
 name = "cron-descriptor"
-version = "2.2.1"
+version = "2.3.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
+    { name = "babel" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/41/6b/9ebac1857c0e90d5ba487090f4f9b23e8bf9adead62922550621de21cbf2/cron_descriptor-2.2.1.tar.gz", hash = "sha256:6759056f43b3cabca274b5df182bb63571f2f383bdd4d9d3ff4662c527430a65", size = 53562, upload-time = "2026-10-13T12:39:33.386Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b9/89/f8910574c6153a808bb70ca4975c8d5c9f5e3d9782a93d0bfef1053763c5/cron_descriptor-2.3.5.tar.gz", hash = "sha256:63fe96544d8a7fe6d6e655b87abc3cbac9e76fd404fb9834c3fc2696d2e665fd", size = 62698, upload-time = "2026-11-21T11:14:23.334Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/87/f8/c9c61b0fd465aaa2b2ac2f51c77dfe49e09dc6c907a8d476c4870b738f2a/cron_descriptor-2.2.1-py3-none-any.whl", hash = "sha256:23b42aca983841333aaf28095024e0457f005621d03e658edbd7316a5f2bbd42", size = 76628, upload-time = "2026-10-13T12:39:31.663Z" },
+    { url = "https://files.pythonhosted.org/packages/a6/63/dd8c6c06654619598883b589919828ab049bdc7f2e7a507de28b27c0c83f/cron_descriptor-2.3.5-py3-none-any.whl", hash = "sha256:e2170f9364319d8ea6f7c2a9351a55d2aee612269e5c402181819ac7a7cfce8a", size = 80051, upload-time = "2026-11-21T11:14:22.152Z" },
 ]
 
 [[package]]
