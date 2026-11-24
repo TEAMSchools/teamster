@@ -167,7 +167,7 @@ unit_tests:
           union all
           select
               307,
-              'I am committed to KIPP NJ | KIPP South Florida, but interested in an opportunity at another school and/or in a different role. I will speak to my manager about my interests.',
+              'I am interested in exploring transferring to a different team/school. ',
               2026, timestamp '2026-12-01 12:00:00', 'LITR', 'litr_plans'
           union all
           select
