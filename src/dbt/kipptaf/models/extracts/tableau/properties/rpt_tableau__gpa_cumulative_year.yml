@@ -23,6 +23,19 @@ models:
               - student_number
               - academic_year
     columns:
+      - name: student_number
+        data_type: int64
+        description: District student number (Tableau relationship key).
+        data_tests:
+          - not_null
+        config:
+          meta:
+            contains_pii: true
+      - name: academic_year
+        data_type: int64
+        description: Academic year, start-year convention (2025 = SY25-26).
+        data_tests:
+          - not_null
       - name: gpa_band_label
         data_type: string
         description:
@@ -66,9 +79,6 @@ models:
         data_type: int64
         description:
           The internal number and ID of the associated Students record.
-      - name: academic_year
-        data_type: int64
-        description: Academic year, start-year convention (2025 = SY25-26).
       - name: schoolid
         data_type: int64
         description: School_Number of the year's primary enrollment school.
@@ -110,12 +120,6 @@ models:
           `cumulative_y1_gpa_projected_unweighted` in the course-grain extract,
           so it is the correct basis for goal comparison. Use
           `cumulative_y1_gpa_unweighted_as_of_today` for the running value.
-        config:
-          meta:
-            contains_pii: true
-      - name: student_number
-        data_type: int64
-        description: District student number (Tableau relationship key).
         config:
           meta:
             contains_pii: true
