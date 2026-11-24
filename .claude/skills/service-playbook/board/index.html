@@ -1,193 +1,275 @@
 <title>Data Team Capacity</title>
 <meta name="claude:viewport-fit-sides" content="cover" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Carlito:wght@400;700&display=swap"
+/>
 <style>
-  /* Layout: one wrapping grid of columns, Unassigned first, then one column per analyst; each column is a drop target holding workstream chips. */
+  /* Layout: indigo brand band, then a grey page with one white panel per analyst (Unassigned first), each a drop target holding workstream chips. Matches the DTI Capacity Map look. */
   :root {
-    --bg: #f3f5f9;
+    --brand: #2b2a6f;
+    --brand-ink: #ffffff;
+    --brand-sub: #f6921e;
+    --bg: #f3f4f6;
     --surface: #ffffff;
-    --ink: #17202d;
-    --muted: #5a6577;
-    --line: #d9dee7;
-    --accent: #2b4c9b;
-    --accent-soft: #e6ecf8;
-    --bar: #7d93c9;
-    --warn: #a14a00;
-    --warn-soft: #fdeedd;
-    --ok: #0f6d5f;
-    --focus: #2b4c9b;
-    --font: Whitney, "Whitney SSm", Calibri, Verdana, system-ui, sans-serif;
+    --sunk: #eceef2;
+    --fg: #1d1f2b;
+    --muted: #5f6474;
+    --faint: #a3a8b5;
+    --line: #dcdfe6;
+    --accent: #2b2a6f;
+    --accent-soft: #e6e6f4;
+    --accent-fg: #ffffff;
+    --field: #fff4e3;
+    --field-line: #f0d9b5;
+    --warn: #8a5300;
+    --warn-soft: #fbefd9;
+    --over: #a43a2c;
+    --over-soft: #f8e3df;
+    --ok: #2e7d4f;
+    --font: "Calibri", "Carlito", "Verdana", system-ui, sans-serif;
+    --r: 8px;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #10141b;
-      --surface: #19202a;
-      --ink: #e6e9ef;
-      --muted: #9aa4b3;
-      --line: #2c3441;
-      --accent: #93a9ea;
-      --accent-soft: #212b45;
-      --bar: #6f86c4;
-      --warn: #f0b066;
-      --warn-soft: #3a2a15;
-      --ok: #5fc2b1;
-      --focus: #93a9ea;
+      --brand: #26255f;
+      --brand-ink: #ffffff;
+      --brand-sub: #f8a54a;
+      --bg: #15161c;
+      --surface: #1d1f27;
+      --sunk: #262833;
+      --fg: #e8e9ee;
+      --muted: #a2a6b4;
+      --faint: #6c7080;
+      --line: #333644;
+      --accent: #a9a8f0;
+      --accent-soft: #2c2b55;
+      --accent-fg: #15161c;
+      --field: #2e2718;
+      --field-line: #4a3d22;
+      --warn: #e3a44a;
+      --warn-soft: #3a2c14;
+      --over: #ec8a7b;
+      --over-soft: #3d1f1a;
+      --ok: #6fcf97;
       color-scheme: dark;
     }
   }
   :root[data-theme="dark"] {
-    --bg: #10141b;
-    --surface: #19202a;
-    --ink: #e6e9ef;
-    --muted: #9aa4b3;
-    --line: #2c3441;
-    --accent: #93a9ea;
-    --accent-soft: #212b45;
-    --bar: #6f86c4;
-    --warn: #f0b066;
-    --warn-soft: #3a2a15;
-    --ok: #5fc2b1;
-    --focus: #93a9ea;
+    --brand: #26255f;
+    --brand-ink: #ffffff;
+    --brand-sub: #f8a54a;
+    --bg: #15161c;
+    --surface: #1d1f27;
+    --sunk: #262833;
+    --fg: #e8e9ee;
+    --muted: #a2a6b4;
+    --faint: #6c7080;
+    --line: #333644;
+    --accent: #a9a8f0;
+    --accent-soft: #2c2b55;
+    --accent-fg: #15161c;
+    --field: #2e2718;
+    --field-line: #4a3d22;
+    --warn: #e3a44a;
+    --warn-soft: #3a2c14;
+    --over: #ec8a7b;
+    --over-soft: #3d1f1a;
+    --ok: #6fcf97;
     color-scheme: dark;
   }
-
   * {
     box-sizing: border-box;
   }
   body {
     background: var(--bg);
-    color: var(--ink);
+    color: var(--fg);
     font-family: var(--font);
     font-size: 15px;
     line-height: 1.45;
   }
-  .wrap {
+  .in {
     max-width: 1280px;
     margin: 0 auto;
-    display: grid;
-    gap: 18px;
     padding-left: max(16px, env(safe-area-inset-left, 0px));
     padding-right: max(16px, env(safe-area-inset-right, 0px));
-    padding-block: 24px 48px;
   }
-  h1 {
-    font-size: 1.7rem;
+  .brand {
+    background: var(--brand);
+    color: var(--brand-ink);
+  }
+  .brand .in {
+    padding-block: 18px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 16px;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+  .brand h1 {
     margin: 0;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--brand-ink);
     letter-spacing: -0.01em;
+  }
+  .brand .sub {
+    color: var(--brand-sub);
+    font-weight: 700;
+    font-size: 14px;
     text-wrap: balance;
   }
+  .brand .me {
+    font-size: 14px;
+    color: var(--brand-ink);
+    opacity: 0.9;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  main.in {
+    padding-block: 18px 48px;
+    display: grid;
+    gap: 16px;
+  }
   h2 {
-    font-size: 1rem;
+    font-size: 17px;
     margin: 0;
+    text-wrap: balance;
+    overflow-wrap: anywhere;
   }
   p {
     margin: 0;
   }
-  .lede {
+  .muted {
     color: var(--muted);
-    max-width: 70ch;
   }
-  .statusline {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px 14px;
-    align-items: center;
-    color: var(--muted);
-    font-size: 0.9rem;
+  .num {
+    font-variant-numeric: tabular-nums;
   }
-  .pill {
-    display: inline-flex;
-    padding: 2px 10px;
-    border-radius: 999px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    background: var(--accent-soft);
-    color: var(--accent);
+  button,
+  select,
+  input {
+    font: inherit;
+    color: inherit;
   }
-  .pill.ro {
-    background: var(--line);
-    color: var(--ink);
+  button {
+    cursor: pointer;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    border-radius: 6px;
+    padding: 7px 12px;
   }
-  .label {
-    font-size: 0.72rem;
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    color: var(--muted);
+  button:hover {
+    border-color: var(--accent);
+  }
+  button.primary {
+    background: var(--brand);
+    color: #ffffff;
+    border-color: var(--brand);
     font-weight: 700;
+  }
+  button.primary:hover {
+    filter: brightness(1.15);
+  }
+  button.link {
+    border: none;
+    background: none;
+    padding: 0;
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  button.danger {
+    color: var(--over);
+    border-color: var(--over);
+  }
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  select {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 5px 8px;
+    max-width: 100%;
+  }
+  input {
+    background: var(--field);
+    border: 1px solid var(--field-line);
+    border-radius: 6px;
+    padding: 7px 8px;
+    min-width: 0;
+  }
+  input::placeholder {
+    color: var(--faint);
+    font-style: italic;
+  }
+  .pillstat {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 9px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.16);
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .notice {
+    background: var(--accent-soft);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 14px;
+  }
+  .notice.warn {
+    background: var(--warn-soft);
+    color: var(--warn);
   }
   .toolbar {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 10px 16px;
     align-items: center;
+    justify-content: space-between;
   }
-  input,
-  select,
-  button {
-    font: inherit;
-    color: var(--ink);
-  }
-  input[type="search"],
-  input[type="text"],
-  input[type="number"] {
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    padding: 6px 9px;
-    min-width: 0;
-  }
-  input[type="search"] {
-    width: 260px;
+  .toolbar input {
+    width: 280px;
     max-width: 100%;
-  }
-  :focus-visible {
-    outline: 2px solid var(--focus);
-    outline-offset: 2px;
-  }
-  .btn {
-    border: 1px solid var(--line);
-    background: var(--surface);
-    border-radius: 6px;
-    padding: 6px 12px;
-    cursor: pointer;
-  }
-  .btn.primary {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: var(--surface);
-    font-weight: 600;
-  }
-  .btn.danger {
-    color: var(--warn);
-    border-color: var(--warn);
   }
   .cols {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
-    gap: 14px;
+    grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
+    gap: 16px;
     align-items: start;
   }
-  .col {
+  .panel {
     background: var(--surface);
     border: 1px solid var(--line);
-    border-radius: 10px;
-    padding: 12px;
+    border-radius: var(--r);
+    padding: 16px;
     display: grid;
-    gap: 10px;
+    gap: 12px;
     min-width: 0;
     transition:
       border-color 0.12s,
       background 0.12s;
   }
+  .col.unassigned {
+    border-style: dashed;
+    background: transparent;
+  }
   .col.over {
     border-color: var(--accent);
     background: var(--accent-soft);
   }
-  .col.unassigned {
-    border-style: dashed;
-  }
   .colhead {
     display: grid;
-    gap: 6px;
+    gap: 8px;
   }
   .colhead .row {
     display: flex;
@@ -196,23 +278,67 @@
     gap: 8px;
     flex-wrap: wrap;
   }
-  .total {
-    font-variant-numeric: tabular-nums;
+  .chipstat {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 9px;
+    border-radius: 999px;
+    background: var(--sunk);
+    font-size: 13px;
     font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
   }
-  .total.warn {
-    color: var(--warn);
+  .chipstat.ok {
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+  .chipstat.over {
+    background: var(--over-soft);
+    color: var(--over);
+  }
+  .bar {
+    position: relative;
+    height: 8px;
+    background: var(--sunk);
+    border-radius: 4px;
+  }
+  .bar .a {
+    position: absolute;
+    left: 0;
+    top: 2px;
+    bottom: 2px;
+    background: var(--accent);
+    border-radius: 3px;
+    max-width: 100%;
+  }
+  .bar .a.over {
+    background: var(--over);
+  }
+  .bar .f {
+    position: absolute;
+    top: -3px;
+    bottom: -3px;
+    width: 2px;
+    background: var(--muted);
   }
   .capline {
     display: flex;
     align-items: center;
     gap: 6px;
     color: var(--muted);
-    font-size: 0.85rem;
+    font-size: 14px;
     flex-wrap: wrap;
   }
   .capline input {
     width: 72px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .overnote {
+    font-size: 13px;
+    color: var(--over);
+    font-weight: 700;
   }
   .chips {
     display: grid;
@@ -222,11 +348,11 @@
   }
   .chip {
     border: 1px solid var(--line);
-    border-radius: 8px;
-    padding: 8px 10px;
+    border-radius: 6px;
+    padding: 9px 10px;
     display: grid;
     gap: 6px;
-    background: var(--bg);
+    background: var(--sunk);
     min-width: 0;
   }
   .editing .chip {
@@ -241,15 +367,15 @@
     gap: 8px;
     align-items: baseline;
   }
-  .chip .name {
-    font-weight: 600;
+  .chip .nm {
+    font-weight: 700;
     min-width: 0;
     overflow-wrap: anywhere;
   }
   .chip .hrs {
     font-variant-numeric: tabular-nums;
     color: var(--muted);
-    font-size: 0.85rem;
+    font-size: 13px;
     white-space: nowrap;
   }
   .chip .meta {
@@ -257,99 +383,102 @@
     flex-wrap: wrap;
     gap: 6px 10px;
     align-items: center;
-    font-size: 0.8rem;
-  }
-  .badge {
-    font-size: 0.7rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--warn);
-    background: var(--warn-soft);
-    border-radius: 4px;
-    padding: 1px 6px;
+    font-size: 13px;
   }
   .chip a {
     color: var(--accent);
   }
   .chip select {
-    font-size: 0.8rem;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 5px;
+    font-size: 13px;
     padding: 2px 4px;
-    max-width: 100%;
+  }
+  .chip button {
+    font-size: 13px;
+    padding: 2px 8px;
+  }
+  .tag {
+    font-size: 12px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: var(--warn-soft);
+    color: var(--warn);
+    font-weight: 700;
   }
   .strip {
     display: grid;
     grid-template-columns: repeat(12, 1fr);
     gap: 2px;
     align-items: end;
-    height: 28px;
+    height: 26px;
   }
   .strip.big {
     height: 40px;
   }
   .strip i {
     display: block;
-    background: var(--bar);
+    background: var(--accent);
+    opacity: 0.75;
     border-radius: 2px 2px 0 0;
     min-height: 1px;
   }
-  .strip i.warn {
-    background: var(--warn);
+  .strip i.over {
+    background: var(--over);
+    opacity: 1;
   }
   .months {
     display: grid;
     grid-template-columns: repeat(12, 1fr);
     gap: 2px;
-    font-size: 0.62rem;
-    color: var(--muted);
+    font-size: 11px;
+    color: var(--faint);
     text-align: center;
   }
   .empty {
     color: var(--muted);
-    font-size: 0.88rem;
+    font-size: 14px;
+    padding: 4px 0;
   }
-  .panel {
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    padding: 14px;
+  .grid2 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
+    gap: 16px;
+    align-items: start;
+  }
+  .add {
     display: grid;
     gap: 10px;
-  }
-  .forms {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
-    gap: 14px;
-  }
-  .form {
-    display: grid;
-    gap: 8px;
+    border: 1px dashed var(--line);
+    border-radius: 6px;
+    padding: 12px;
     align-content: start;
   }
-  .form .row {
+  .add .row {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
+    align-items: center;
   }
-  .form .row > * {
-    flex: 1 1 120px;
+  .add .row > input {
+    flex: 1 1 140px;
   }
-  .note {
+  .label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
     color: var(--muted);
-    font-size: 0.82rem;
+    font-weight: 700;
   }
-  .flag {
-    background: var(--warn-soft);
-    color: var(--warn);
-    border-radius: 8px;
-    padding: 8px 12px;
-    font-size: 0.9rem;
+  .err {
+    color: var(--over);
+    font-size: 14px;
   }
   .readonly .editonly {
     display: none !important;
+  }
+  @media (max-width: 640px) {
+    .brand h1 {
+      font-size: 22px;
+    }
   }
   @media (prefers-reduced-motion: reduce) {
     * {
@@ -358,24 +487,27 @@
   }
 </style>
 
-<div class="wrap" id="app">
-  <header style="display: grid; gap: 8px">
-    <div class="label">Data team · annual planning</div>
-    <h1>Data Team Capacity</h1>
-    <p class="lede">
-      Each column is one analyst's recurring workstreams. Each card is one
-      workstream with its hours for the school year, July to June. Drag a card,
-      or use its menu, to hand it to someone. A column turns orange when its
-      hours pass that analyst's capacity for the year or for any month.
-    </p>
-    <div class="statusline">
-      <span class="pill ro" id="mode">Loading</span
+<header class="brand">
+  <div class="in">
+    <div>
+      <h1>Data Team Capacity</h1>
+      <div class="sub">Recurring workstreams by analyst | Data</div>
+    </div>
+    <div class="me">
+      <span class="pillstat" id="mode">Loading</span
       ><span id="status">Connecting to the board…</span>
     </div>
-  </header>
+  </div>
+</header>
 
-  <div class="flag" id="loadflag" hidden></div>
-
+<main class="in" id="app">
+  <div class="notice warn" id="loadflag" hidden></div>
+  <p class="muted" style="max-width: 72ch">
+    Each panel is one analyst's recurring workstreams, with hours for the school
+    year, July to June. Drag a card, or use its menu, to hand it to someone. A
+    panel turns red when its hours pass that analyst's capacity for the year or
+    for any month.
+  </p>
   <div class="toolbar">
     <input
       type="search"
@@ -383,15 +515,14 @@
       placeholder="Find a workstream"
       aria-label="Find a workstream"
     />
-    <span class="note" id="counts"></span>
+    <span class="muted num" id="counts"></span>
   </div>
-
   <div class="cols" id="cols"></div>
 
   <section class="panel editonly" aria-labelledby="h-add">
     <h2 id="h-add">Add to the board</h2>
-    <div class="forms">
-      <form class="form" id="f-analyst">
+    <div class="grid2">
+      <form class="add" id="f-analyst">
         <span class="label">Analyst</span>
         <div class="row">
           <input
@@ -410,16 +541,17 @@
             step="1"
           />
         </div>
-        <p class="note">
+        <p class="muted" style="font-size: 13px">
           Hours per month is the time this person has for recurring workstreams,
           not their whole week.
         </p>
-        <div>
-          <button class="btn primary" type="submit">Add analyst</button>
-        </div>
+        <div><button class="primary" type="submit">Add analyst</button></div>
+        <p class="err" id="a-err" role="alert"></p>
       </form>
-      <form class="form" id="f-card">
-        <span class="label">Workstream without a playbook yet</span>
+      <form class="add" id="f-card">
+        <span class="label" id="c-title"
+          >Workstream without a playbook yet</span
+        >
         <div class="row">
           <input
             type="text"
@@ -443,18 +575,21 @@
           placeholder="Or 12 monthly hours, July to June: 0,10,20,…"
           aria-label="Monthly hours, July to June, comma separated"
         />
-        <p class="note">
+        <p class="muted" style="font-size: 13px">
           A yearly figure is spread evenly over 12 months. Cards made by a
           playbook carry their own monthly hours.
         </p>
-        <div>
-          <button class="btn primary" type="submit">Add workstream</button>
+        <div class="row">
+          <button class="primary" type="submit" id="c-submit">
+            Add workstream
+          </button>
+          <button type="button" id="c-cancel" hidden>Cancel</button>
         </div>
-        <p class="note" id="c-err" role="alert"></p>
+        <p class="err" id="c-err" role="alert"></p>
       </form>
     </div>
   </section>
-</div>
+</main>
 
 <script>
   (() => {
@@ -478,8 +613,11 @@
       analysts: new Map(),
       assignments: new Map(),
       loaded: { ws: false, an: false, as: false },
+      ready: false,
       editor: false,
       query: "",
+      editingCard: null,
+      stale: false,
     };
     let db = null;
     const $ = (id) => document.getElementById(id);
@@ -502,16 +640,15 @@
       typeof ws.hours_per_year === "number"
         ? ws.hours_per_year
         : months(ws).reduce((a, b) => a + b, 0);
-
-    function setStatus(text) {
+    const setStatus = (text) => {
       $("status").textContent = text;
-    }
+    };
 
     function strip(values, cap, big) {
       const s = el("div", "strip" + (big ? " big" : ""));
       const max = Math.max(1, ...values, cap > 0 ? cap : 0);
       values.forEach((v, i) => {
-        const b = el("i", cap > 0 && v > cap ? "warn" : "");
+        const b = el("i", cap > 0 && v > cap ? "over" : "");
         b.style.height = (v / max) * 100 + "%";
         b.title =
           MONTH_NAMES[i] +
@@ -529,58 +666,8 @@
       return m;
     }
 
-    function chip(id, ws) {
-      const c = el("div", "chip");
-      c.dataset.id = id;
-      c.draggable = state.editor;
-      const top = el("div", "top");
-      top.appendChild(el("span", "name", ws.name || id));
-      top.appendChild(el("span", "hrs", fmt(yearHours(ws)) + " h/yr"));
-      c.appendChild(top);
-      c.appendChild(strip(months(ws), 0, false));
-      const meta = el("div", "meta");
-      if (ws.proposed) meta.appendChild(el("span", "badge", "Hours proposed"));
-      if (
-        typeof ws.playbook_url === "string" &&
-        ws.playbook_url.startsWith("https://")
-      ) {
-        const a = el("a", "", "Playbook");
-        a.href = ws.playbook_url;
-        a.target = "_blank";
-        a.rel = "noopener";
-        meta.appendChild(a);
-      } else if (ws.source === "manual")
-        meta.appendChild(el("span", "note", "No playbook yet"));
-      if (state.editor) {
-        const sel = el("select");
-        sel.setAttribute("aria-label", "Move " + (ws.name || id) + " to");
-        const cur = state.assignments.get(id) || "";
-        const opt = (v, t) => {
-          const o = el("option", "", t);
-          o.value = v;
-          if (v === cur) o.selected = true;
-          sel.appendChild(o);
-        };
-        opt("", "Unassigned");
-        sortedAnalysts().forEach(([aid, a]) => opt(aid, a.name || "Unnamed"));
-        sel.addEventListener("change", () => move(id, sel.value || null));
-        meta.appendChild(sel);
-        if (ws.source === "manual")
-          meta.appendChild(confirmButton("Remove", () => removeCard(id)));
-      }
-      c.appendChild(meta);
-      c.addEventListener("dragstart", (e) => {
-        if (!state.editor) return;
-        e.dataTransfer.setData("text/plain", id);
-        e.dataTransfer.effectAllowed = "move";
-        c.classList.add("dragging");
-      });
-      c.addEventListener("dragend", () => c.classList.remove("dragging"));
-      return c;
-    }
-
     function confirmButton(label, action) {
-      const b = el("button", "btn danger", label);
+      const b = el("button", "danger", label);
       b.type = "button";
       let armed = false,
         t = null;
@@ -600,15 +687,68 @@
       return b;
     }
 
-    function sortedAnalysts() {
-      return [...state.analysts.entries()].sort((a, b) =>
+    const sortedAnalysts = () =>
+      [...state.analysts.entries()].sort((a, b) =>
         String(a[1].name || "").localeCompare(String(b[1].name || "")),
       );
+
+    function chip(id, ws) {
+      const c = el("div", "chip");
+      c.dataset.id = id;
+      c.draggable = state.editor;
+      const top = el("div", "top");
+      top.appendChild(el("span", "nm", ws.name || id));
+      top.appendChild(el("span", "hrs", fmt(yearHours(ws)) + " h/yr"));
+      c.appendChild(top);
+      c.appendChild(strip(months(ws), 0, false));
+      const meta = el("div", "meta");
+      if (ws.proposed) meta.appendChild(el("span", "tag", "Hours proposed"));
+      if (
+        typeof ws.playbook_url === "string" &&
+        ws.playbook_url.startsWith("https://")
+      ) {
+        const a = el("a", "", "Playbook");
+        a.href = ws.playbook_url;
+        a.target = "_blank";
+        a.rel = "noopener";
+        meta.appendChild(a);
+      } else if (ws.source === "manual")
+        meta.appendChild(el("span", "muted", "No playbook yet"));
+      if (state.editor) {
+        const sel = el("select");
+        sel.setAttribute("aria-label", "Move " + (ws.name || id) + " to");
+        const cur = state.assignments.get(id) || "";
+        const opt = (v, t) => {
+          const o = el("option", "", t);
+          o.value = v;
+          if (v === cur) o.selected = true;
+          sel.appendChild(o);
+        };
+        opt("", "Unassigned");
+        sortedAnalysts().forEach(([aid, a]) => opt(aid, a.name || "Unnamed"));
+        sel.addEventListener("change", () => move(id, sel.value || null));
+        meta.appendChild(sel);
+        if (ws.source === "manual") {
+          const edit = el("button", "", "Edit hours");
+          edit.type = "button";
+          edit.addEventListener("click", () => startEdit(id));
+          meta.appendChild(edit);
+          meta.appendChild(confirmButton("Remove", () => removeCard(id)));
+        }
+      }
+      c.appendChild(meta);
+      c.addEventListener("dragstart", (e) => {
+        if (!state.editor) return;
+        e.dataTransfer.setData("text/plain", id);
+        e.dataTransfer.effectAllowed = "move";
+        c.classList.add("dragging");
+      });
+      c.addEventListener("dragend", () => c.classList.remove("dragging"));
+      return c;
     }
 
     function column(aid, analyst, ids) {
-      const col = el("section", "col" + (aid ? "" : " unassigned"));
-      col.dataset.analyst = aid || "";
+      const col = el("section", "panel col" + (aid ? "" : " unassigned"));
       const head = el("div", "colhead");
       const row = el("div", "row");
       row.appendChild(
@@ -622,28 +762,41 @@
         total += yearHours(ws);
       });
       const cap = aid ? num(analyst.capacity_hours_per_month) : 0;
-      const overYear = cap > 0 && total > cap * 12;
+      const capYear = cap * 12;
+      const overYear = cap > 0 && total > capYear;
       const overMonths =
         cap > 0
           ? load
               .map((v, i) => (v > cap ? MONTH_NAMES[i] : null))
               .filter(Boolean)
           : [];
-      const tot = el(
+      const over = overYear || overMonths.length > 0;
+      const stat = el(
         "span",
-        "total" + (overYear || overMonths.length ? " warn" : ""),
+        "chipstat" + (cap > 0 ? (over ? " over" : " ok") : ""),
       );
-      tot.textContent =
+      stat.textContent =
         cap > 0
           ? fmt(total) +
             " of " +
-            fmt(cap * 12) +
-            " h (" +
-            Math.round((total / (cap * 12)) * 100) +
-            "%)"
+            fmt(capYear) +
+            " h · " +
+            Math.round((total / capYear) * 100) +
+            "%"
           : fmt(total) + " h";
-      row.appendChild(tot);
+      row.appendChild(stat);
       head.appendChild(row);
+      if (aid && cap > 0) {
+        const bar = el("div", "bar");
+        bar.setAttribute("aria-hidden", "true");
+        const scale = Math.max(total, capYear);
+        const a = el("div", "a" + (overYear ? " over" : ""));
+        a.style.width = (total / scale) * 100 + "%";
+        const f = el("div", "f");
+        f.style.left = "calc(" + (capYear / scale) * 100 + "% - 1px)";
+        bar.append(a, f);
+        head.appendChild(bar);
+      }
       if (aid) {
         const capline = el("div", "capline");
         if (state.editor) {
@@ -654,7 +807,7 @@
           inp.step = "1";
           inp.id = "cap-" + aid;
           inp.value = cap > 0 ? String(cap) : "";
-          inp.placeholder = "h/month";
+          inp.placeholder = "h/mo";
           lab.htmlFor = inp.id;
           inp.addEventListener("change", () => saveCapacity(aid, inp.value));
           capline.append(lab, inp, el("span", "", "h per month"));
@@ -670,7 +823,7 @@
         head.appendChild(capline);
         if (overMonths.length)
           head.appendChild(
-            el("span", "note", "Over in " + overMonths.join(", ")),
+            el("span", "overnote", "Over in " + overMonths.join(", ")),
           );
       }
       head.appendChild(strip(load, cap, true));
@@ -725,7 +878,24 @@
       return col;
     }
 
+    const allLoaded = () =>
+      state.loaded.ws && state.loaded.an && state.loaded.as;
+    const editingInBoard = () => {
+      const a = document.activeElement;
+      return !!(
+        a &&
+        $("cols").contains(a) &&
+        (a.tagName === "INPUT" || a.tagName === "SELECT")
+      );
+    };
+
     function render() {
+      // A live update must not wipe a capacity number being typed or an open move menu.
+      if (editingInBoard()) {
+        state.stale = true;
+        return;
+      }
+      state.stale = false;
       const cols = $("cols");
       cols.replaceChildren();
       const byAnalyst = new Map([["", []]]);
@@ -740,7 +910,7 @@
         p.appendChild(
           el(
             "p",
-            "note",
+            "muted",
             state.editor
               ? "Add analysts and workstreams with the forms below. The service-playbook skill adds a workstream card when its playbook is done."
               : "Workstreams and analysts appear here once an editor adds them.",
@@ -766,15 +936,18 @@
       document.body.classList.toggle("readonly", !state.editor);
       document.body.classList.toggle("editing", state.editor);
     }
-
-    const allLoaded = () =>
-      state.loaded.ws && state.loaded.an && state.loaded.as;
+    $("cols").addEventListener("focusout", () =>
+      setTimeout(() => {
+        if (state.stale && !editingInBoard()) render();
+      }, 0),
+    );
 
     async function write(fn, done) {
       setStatus("Saving…");
       try {
         await fn();
         setStatus(done || "Saved");
+        return true;
       } catch (e) {
         if (e && e.code === "invalid_argument" && !state.editor)
           setStatus("This view is read-only.");
@@ -783,10 +956,11 @@
             "The board is full. Remove a workstream before adding more.",
           );
         else setStatus("Could not save. Check your connection and try again.");
+        return false;
       }
     }
-    function move(id, aid) {
-      return write(
+    const move = (id, aid) =>
+      write(
         () =>
           aid
             ? db
@@ -795,7 +969,6 @@
             : db.doc("assignments/" + id).delete(),
         aid ? "Moved" : "Moved to Unassigned",
       );
-    }
     function saveCapacity(aid, raw) {
       const v = raw === "" ? 0 : Number(raw);
       if (!isFinite(v) || v < 0) {
@@ -807,52 +980,86 @@
         "Capacity saved",
       );
     }
-    async function removeAnalyst(aid) {
-      await write(async () => {
+    const removeAnalyst = (aid) =>
+      write(async () => {
         for (const [wid, a] of [...state.assignments.entries()])
           if (a === aid) await db.doc("assignments/" + wid).delete();
         await db.doc("analysts/" + aid).delete();
       }, "Analyst removed; their workstreams are unassigned");
-    }
-    async function removeCard(id) {
-      await write(async () => {
+    const removeCard = (id) =>
+      write(async () => {
         await db.doc("assignments/" + id).delete();
         await db.doc("workstreams/" + id).delete();
       }, "Workstream removed");
-    }
+
     const slug = (s) =>
       s
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-+|-+$/g, "")
         .slice(0, 60) || "item";
-    function uniqueId(base, map) {
+    function uniqueId(base, taken) {
       let id = base,
         n = 2;
-      while (map.has(id)) id = base + "-" + n++;
+      while (taken.has(id)) id = base + "-" + n++;
       return id;
     }
 
-    $("f-analyst").addEventListener("submit", (e) => {
+    $("f-analyst").addEventListener("submit", async (e) => {
       e.preventDefault();
+      $("a-err").textContent = "";
       const name = $("a-name").value.trim();
       if (!name) return;
       const cap = Number($("a-cap").value || 0);
-      const id = uniqueId(slug(name), state.analysts);
-      write(
-        () =>
-          db.doc("analysts/" + id).set({
-            id,
-            name,
-            capacity_hours_per_month: isFinite(cap) && cap > 0 ? cap : 0,
-          }),
-        "Analyst added",
-      ).then(() => {
+      if (!isFinite(cap) || cap < 0) {
+        $("a-err").textContent = "Hours per month must be 0 or more.";
+        return;
+      }
+      // Leftover assignments from a half-finished removal must not reattach to a new analyst.
+      const taken = new Set([
+        ...state.analysts.keys(),
+        ...state.assignments.values(),
+      ]);
+      const id = uniqueId(slug(name), taken);
+      if (
+        await write(
+          () =>
+            db
+              .doc("analysts/" + id)
+              .set({ id, name, capacity_hours_per_month: cap }),
+          "Analyst added",
+        )
+      ) {
         $("a-name").value = "";
         $("a-cap").value = "";
-      });
+      }
     });
-    $("f-card").addEventListener("submit", (e) => {
+
+    function resetCardForm() {
+      state.editingCard = null;
+      $("c-name").value = "";
+      $("c-year").value = "";
+      $("c-months").value = "";
+      $("c-err").textContent = "";
+      $("c-title").textContent = "Workstream without a playbook yet";
+      $("c-submit").textContent = "Add workstream";
+      $("c-cancel").hidden = true;
+    }
+    function startEdit(id) {
+      const ws = state.workstreams.get(id);
+      if (!ws) return;
+      state.editingCard = id;
+      $("c-name").value = ws.name || "";
+      $("c-year").value = "";
+      $("c-months").value = months(ws).join(",");
+      $("c-title").textContent = "Edit " + (ws.name || id);
+      $("c-submit").textContent = "Save changes";
+      $("c-cancel").hidden = false;
+      $("c-name").focus();
+      $("f-card").scrollIntoView({ block: "nearest" });
+    }
+    $("c-cancel").addEventListener("click", resetCardForm);
+    $("f-card").addEventListener("submit", async (e) => {
       e.preventDefault();
       $("c-err").textContent = "";
       const name = $("c-name").value.trim();
@@ -877,25 +1084,26 @@
         }
         m = Array(12).fill(Math.round((y / 12) * 100) / 100);
       }
-      const id = uniqueId(slug(name), state.workstreams);
+      const editing = state.editingCard;
+      const id =
+        editing || uniqueId(slug(name), new Set(state.workstreams.keys()));
       const year = Math.round(m.reduce((a, b) => a + b, 0) * 100) / 100;
-      write(
-        () =>
-          db.doc("workstreams/" + id).set({
-            id,
-            name,
-            hours_by_month: m,
-            hours_per_year: year,
-            proposed: true,
-            playbook_url: "",
-            source: "manual",
-          }),
-        "Workstream added",
-      ).then(() => {
-        $("c-name").value = "";
-        $("c-year").value = "";
-        $("c-months").value = "";
-      });
+      const body = {
+        id,
+        name,
+        hours_by_month: m,
+        hours_per_year: year,
+        proposed: true,
+        playbook_url: "",
+        source: "manual",
+      };
+      if (
+        await write(
+          () => db.doc("workstreams/" + id).set(body),
+          editing ? "Workstream updated" : "Workstream added",
+        )
+      )
+        resetCardForm();
     });
     $("search").addEventListener("input", (e) => {
       state.query = e.target.value.trim().toLowerCase();
@@ -916,10 +1124,8 @@
         setStatus("Sign in to claude.ai to see the board.");
         return;
       }
-      const canEdit = user ? await user.canEdit() : false;
-      state.editor = !!canEdit;
+      state.editor = user ? !!(await user.canEdit()) : false;
       $("mode").textContent = state.editor ? "Editing" : "Read-only";
-      $("mode").className = "pill" + (state.editor ? "" : " ro");
       setStatus("Loading the board…");
       const timer = setTimeout(() => {
         $("loadflag").hidden = false;
@@ -928,7 +1134,9 @@
       }, 10000);
       const settle = (key, snap) => {
         state.loaded[key] = true;
-        if (!snap.metadata.fromCache && allLoaded()) {
+        // The ready message shows once, so a later save error stays on screen.
+        if (!state.ready && !snap.metadata.fromCache && allLoaded()) {
+          state.ready = true;
           clearTimeout(timer);
           $("loadflag").hidden = true;
           setStatus(

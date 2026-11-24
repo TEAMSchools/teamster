@@ -197,6 +197,12 @@ def monthly_hours(
 ) -> list[float]:
     """Hours per month, July first, 12 values."""
     year_first, year_last = _school_year(school_year_start)
+    for flag, value in (("first-week", first_week), ("last-week", last_week)):
+        if not year_first <= value <= year_last:
+            raise ValueError(
+                f"--{flag} {value} is outside the {school_year_start}-"
+                f"{school_year_start + 1} school year"
+            )
     hours = [0.0] * 12
     for step, window, weeks in placed_steps(steps, windows, blocked):
         for week in weeks:
@@ -246,7 +252,14 @@ def main(argv: Sequence[str] | None = None) -> int:
             for w in spec.get("windows", [])
         ]
         steps = [
-            Step(**{**s, "rounds": tuple(s["rounds"]) if s.get("rounds") else None})
+            Step(
+                **{
+                    **s,
+                    "rounds": tuple(s["rounds"])
+                    if s.get("rounds") is not None
+                    else None,
+                }
+            )
             for s in spec.get("steps", [])
         ]
         standing = [Standing(**s) for s in spec.get("standing", [])]

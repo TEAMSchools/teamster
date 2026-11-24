@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import sys
 from datetime import date
 from pathlib import Path
@@ -127,6 +128,110 @@ def test_offset_between_due_in_blocked_week_before_anchor_is_zero():
     blocked = frozenset({date(2026, 11, 23)})
     assert cap.offset_between(date(2026, 11, 30), date(2026, 11, 25), blocked) == 0
     assert cap.offset_between(date(2026, 11, 30), date(2026, 11, 18), blocked) == -1
+
+
+def test_step_after_june_raises():
+    w = cap.Window("r4", date(2027, 6, 21), date(2027, 6, 28))
+    s = cap.Step("Publish", "close", 1, 1, 1.0, "owner")
+    with pytest.raises(ValueError, match="Publish.*r4"):
+        cap.monthly_hours([s], [w], [], frozenset(), 2026, YEAR_START, YEAR_END)
+
+
+def test_standing_all_counts_every_monday_including_blocked():
+    hours = cap.monthly_hours(
+        [],
+        [],
+        [cap.Standing("On call", 1.0, "all")],
+        frozenset({date(2026, 11, 23)}),
+        2026,
+        YEAR_START,
+        YEAR_END,
+    )
+    assert hours[0] == 4.0  # July 2026 Mondays: 6, 13, 20, 27
+    assert hours[4] == 5.0  # November: 2, 9, 16, 23, 30, blocked week included
+    assert sum(hours) == 52.0
+
+
+def test_standing_weeks_outside_school_year_raise():
+    with pytest.raises(ValueError, match="first-week"):
+        cap.monthly_hours(
+            [],
+            [],
+            [cap.Standing("Tickets", 1.0, "school_year")],
+            frozenset(),
+            2026,
+            date(2026, 6, 22),
+            YEAR_END,
+        )
+
+
+def _write(
+    tmp_path, spec, breaks="Month,Date,Day,Holiday/Event,Newark,Camden,Miami,Paterson\n"
+):
+    sp, bp = tmp_path / "spec.json", tmp_path / "breaks.csv"
+    sp.write_text(json.dumps(spec))
+    bp.write_text(breaks)
+    return [
+        "--spec",
+        str(sp),
+        "--breaks",
+        str(bp),
+        "--school-year",
+        "2026",
+        "--first-week",
+        "2026-08-17",
+        "--last-week",
+        "2027-06-14",
+    ]
+
+
+def test_main_empty_rounds_places_step_nowhere(tmp_path, capsys):
+    spec = {
+        "windows": [
+            {"round_key": "r1", "open_week": "2026-10-19", "close_week": "2026-11-02"}
+        ],
+        "steps": [
+            {
+                "name": "Never",
+                "anchor": "open",
+                "offset_weeks": 0,
+                "duration_weeks": 1,
+                "hours_per_week": 5,
+                "role": "owner",
+                "rounds": [],
+            },
+            {
+                "name": "Always",
+                "anchor": "open",
+                "offset_weeks": 0,
+                "duration_weeks": 1,
+                "hours_per_week": 1,
+                "role": "owner",
+                "rounds": None,
+            },
+        ],
+    }
+    assert cap.main(_write(tmp_path, spec)) == 0
+    out = json.loads(capsys.readouterr().out)
+    assert [s["step"] for s in out["steps"]] == ["Always"]
+    assert out["hours_per_year"] == 1.0
+
+
+def test_main_bad_spec_exits_2(tmp_path, capsys):
+    spec = {
+        "steps": [
+            {
+                "name": "x",
+                "anchor": "middle",
+                "offset_weeks": 0,
+                "duration_weeks": 1,
+                "hours_per_week": 1,
+                "role": "o",
+            }
+        ]
+    }
+    assert cap.main(_write(tmp_path, spec)) == 2
+    assert "anchor must be open or close" in capsys.readouterr().err
 
 
 def test_unknown_round_raises():
