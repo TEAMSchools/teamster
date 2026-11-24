@@ -1,0 +1,2668 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>Validator: close every known gap, then validate DDI and Attendance fresh - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.57a0d79d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#validator-close-every-known-gap-then-validate-ddi-and-attendance-fresh" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Validator: close every known gap, then validate DDI and Attendance fresh
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/launch-page-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Launch Page
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube-validation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube Validation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube-access-individual-exceptions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube Access - Individual Exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/tableau-permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tableau Permissions (People Data)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/csgf-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSGF Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/crdc-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CRDC Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ddi-stack-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDI Stack Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/hs-early-warning-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HS Early Warning Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/dibels-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIBELS Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/stat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/njdoe-universal-screener-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NJDOE Universal Screener Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/athletic-eligibility-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Athletic Eligibility Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/academic-health-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic Health Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/grad-plan-tracking-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Grad Plan Tracking Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ignite-r2i-extract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IGNITE R2I Extract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#intent-and-why" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Intent and why
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#non-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Non-goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/specs/2026-11-14-validator-coverage-and-gaps-design.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="validator-close-every-known-gap-then-validate-ddi-and-attendance-fresh">Validator: close every known gap, then validate DDI and Attendance fresh</h1>
+<p>Issues: #6410 (main), #6346, #6343, #6181 (items 1, 7, 8, 12, 14), #6411
+(superseded). Branch:
+<code>cristinabaldor/fix/claude-validator-second-fact-time-dims</code>, PR #6402. Closed as
+not planned while scoping: #6212, #6224, #6230.</p>
+<p>This builds on <code>2026-11-13-validator-saved-rows-resume-design.md</code> (saved rows,
+resume) in the same PR, and replaces Task 13 of its plan: the live check becomes
+the fresh DDI validation below.</p>
+<h2 id="intent-and-why">Intent and why</h2>
+<p>The owner wants a validator, at the end of this work, that covers every gap
+found so far, and then a fresh, timed validation of the DDI Suite on production,
+with nothing carried over from earlier validations. Attendance gets the same
+fresh start after.</p>
+<p>Two things shape the work:</p>
+<ul>
+<li><strong>Cells cannot keep up with dashboard math.</strong> <code>triage confirm --cells</code> closes
+  a differing cell only when it can rebuild the cell's number from its rows.
+  Each new calculation shape (a share at a level, a % of total across bars, a
+  distance to a goal, a day-weighted rate) needs a new rebuild rule, and no
+  validation file has ever recorded a cell-set decision. The rule changes to
+  coverage: a cell closes when every unmatched row in it is proven, and a cell
+  that differs while every row matches is a formula difference for the owner.</li>
+<li><strong>The validator carries steps nobody uses.</strong> Anchors and identities (1
+  identity block, ever), <code>check-api</code> (pre-aggregations are out of scope), and a
+  separate <code>prove --check</code> step that a run can do itself.</li>
+</ul>
+<h2 id="goals">Goals</h2>
+<ol>
+<li>Every differing cell either closes by coverage, or reaches the owner as a
+   formula difference, or stays in <code>investigate</code> because a row in it is
+   unproven. No cell needs a rebuild rule.</li>
+<li><code>run</code> refuses before spending: on a workbook changed since its proof, and on
+   a priced total over <code>--max-usd</code> or the daily cap.</li>
+<li><code>run --comparison</code> runs a chosen subset, and the rest of the validator reads
+   the result.</li>
+<li>Long steps show progress while they run, with elapsed time and spend.</li>
+<li>A sheet filter with no Cube mapping says whether Cube offers the field, lacks
+   it, or it is workbook-only, even when it filters no rows.</li>
+<li>The trace gets past a model it cannot read, and says where it stopped.</li>
+<li>A comparison whose dashboard stores daily rows, where Cube stores one row per
+   period, can have rows.</li>
+<li>The validator, its skills and its messages are smaller and say "validation
+   file".</li>
+</ol>
+<h2 id="non-goals">Non-goals</h2>
+<ul>
+<li>Pre-aggregations. <code>check-api</code> goes; whether Cube's API serves a rollup that
+  matches the raw SQL is not checked.</li>
+<li>Row-level access (#6224, closed). The validator stays one network-wide caller.</li>
+<li>Comparing Cube with a source system. If needed later, it becomes its own
+  skill.</li>
+<li>A weekly schedule (#5842) and a CI check (#6158).</li>
+<li>
+<h1 id="6181-item-10-2-sessions-on-one-validation-file-the-owner-will-not-run-2">6181 item 10 (2 sessions on one validation file): the owner will not run 2</h1>
+  sessions on one file.</li>
+<li>
+<h1 id="6181-items-9-running-against-a-local-cube-is-undocumented-in-this-skill-and">6181 items 9 (running against a local Cube is undocumented in this skill) and</h1>
+  13 (<code>_MEASURE_PILL</code> edge shapes, no known case): not scoped in this round.</li>
+</ul>
+<h2 id="anti-goals-a-failure-even-if-it-works">Anti-goals (a failure even if it works)</h2>
+<ul>
+<li>A cell closes because nobody could tell why it differs. Coverage closes a cell
+  only on proven rows; a cell with an unproven row stays in <code>investigate</code>.</li>
+<li>A formula difference closes as <code>deliberate</code> without the owner seeing it.</li>
+<li>A student or staff value reaches GitHub through the new outcome, a progress
+  line, or the trace's model chain.</li>
+<li>A check, guard or refusal is cut to make a step faster.</li>
+</ul>
+<h2 id="constraints">Constraints</h2>
+<ul>
+<li>One PR, #6402. Offline tests under DuckDB:
+  <code>uv run --with duckdb pytest tests/scripts/cube_validation/ -q</code>.</li>
+<li>No parallel workers in <code>run</code> or <code>triage</code> (2026-11-13 spec, <em>Revision</em>).</li>
+<li>Live commands run through the <code>cube-validation</code> skill's runner; the owner
+  approves each spend.</li>
+</ul>
+<h2 id="approaches">Approaches</h2>
+<ul>
+<li><strong>Remove first, then change, then add (chosen).</strong> Cutting <code>check-api</code>, anchors
+  and identities, cell sizing and the standalone <code>prove --check</code> first means the
+  new code is written against what stays.</li>
+<li><strong>Add first, remove after.</strong> Rejected: new code would be written, tested and
+  then partly undone against parts already slated to go.</li>
+<li><strong>Split into several PRs.</strong> Rejected: the owner keeps validator work in one
+  PR, and the fresh validations need all of it.</li>
+</ul>
+<h2 id="design">Design</h2>
+<h3 id="1-removals">1. Removals</h3>
+<ul>
+<li><strong><code>check-api</code>:</strong> the command, <code>pipeline.check_api</code>, <code>_api_checks</code>, their
+  constants and tests, and the runbook step in both skills.</li>
+<li><strong>Anchors and identities:</strong> <code>checks.py</code>'s anchor and identity code, the
+  <code>anchors:</code> and <code>identities:</code> keys in <code>config.py</code>, and their report text
+  ("judge the anchor", "consistent only"). A measure's verdict is "validated"
+  (every cell passes, nothing open), or "differs", with its open items. A
+  validation file that still has either key is refused, naming the key and
+  saying to delete the block.</li>
+<li><strong>Cell sizing:</strong> <code>_SIGN</code>, <code>_counts_rows</code>, <code>_sizable</code>, <code>_rebuilt</code>,
+  <code>_students_rebuilt</code>, <code>_reproduces</code>, the per-cell sums <code>run</code> keeps for them
+  (<code>RunResult.cell_rows</code>, <code>cell_students</code>) except the per-cut row counts
+  coverage needs (section 2), and <code>rows.cell</code> in <code>config.py</code>. A file with
+  <code>rows.cell</code> is refused like the keys above. The per-cause student counts
+  <code>review</code> uses to pick example cells (<code>cause_students</code>) are a separate thing
+  and stay.</li>
+<li><strong><code>prove --check</code> as a step:</strong> its workbook check moves into <code>run</code> (section
+  3). Its dry runs of stored cause proofs go if <code>triage</code>'s up-front pricing
+  (#6410) already dry-runs every proof before spending; otherwise they move into
+  <code>triage</code>. The builder confirms which from the code.</li>
+<li><strong>The skill's "Worked example (DDI)" table and its dead ends:</strong> removed. Its
+  lessons stay as generic guidance with no DDI names (test each flag of a
+  <code>where</code> alone; a label like "week join" can hide 2 causes; an anchor year can
+  be null).</li>
+</ul>
+<h3 id="2-cells-close-by-coverage">2. Cells close by coverage</h3>
+<p>For each differing cell of a comparison with <code>rows</code>, <code>link_cells</code> finds the row
+groups whose unmatched rows sit in that cell under that cut. Groups closed by a
+decision count as well as open ones: a decided group's rows are explained. Then:</p>
+<ul>
+<li><strong>Every such group is in <code>cause</code> or decided:</strong> the cell is covered. No size
+  check.</li>
+<li><strong>Some such group is neither:</strong> the cell stays open, as today.</li>
+<li><strong>No group has a row in the cell:</strong> every row in it matched on both sides, so
+  the difference comes from how each side computes the number. The cell is a
+  <strong>formula difference</strong>.</li>
+</ul>
+<p>Placing a group's rows in a cell must be exact, or coverage would close a cell
+with no proven row in it:</p>
+<ul>
+<li><strong>Cuts.</strong> <code>run</code> keeps, per group and cut, the count of its rows on each side
+  (the <code>k{j}</code> cut flags the reconcile already computes). The sums <code>cell_rows</code>
+  kept for sizing go; the row counts stay. A group with 0 rows under a cell's
+  cut has no row in that cell.</li>
+<li><strong>Dims.</strong> A cell's every dim must be a column the groups split by. When one is
+  not (a dim that is part of the row grain), the cell cannot be placed, stays
+  open, and its item says why. <code>preflight</code> and <code>run</code> name such comparisons
+  before any spend.</li>
+<li>A comparison without <code>rows</code> cannot be covered either: same treatment.</li>
+</ul>
+<p>Covered cells need no decision of their own. The comparison's cell-set item is
+decided once every cell in it is covered by decided groups, the way a cause item
+is decided once each of its causes is.</p>
+<p>A formula difference is its own item and its own decision, never the
+comparison's cell-set item:</p>
+<ul>
+<li>One item per comparison, <code>&lt;id&gt;:formula</code>, holding only its formula-difference
+  cells. It reaches <code>cause</code> on the run's own evidence, like a dashboard-filtered
+  row: "N differing cells hold no unmatched row". No proof file is needed, since
+  the matching rows are the proof.</li>
+<li>Its decision claims <code>formula: true</code> for that comparison, not <code>cells: true</code>. It
+  holds while the comparison's SQL fingerprints hold, and it covers only cells
+  with no unmatched row in each new run: a cell that later gains an unproven row
+  leaves the formula claim and is judged by coverage.</li>
+<li>Its call is usually <code>domain_owner</code>. The owner question shows both sides'
+  definitions (<code>definitions:</code> on the comparison) and asks which formula is
+  right.</li>
+<li>Its counts are masked on GitHub, like every other item's.</li>
+<li><code>cells: true</code> decisions go with sizing: coverage needs none, and an old one is
+  refused like <code>rows.cell</code>.</li>
+</ul>
+<p>Known limit: a cell that holds both a proven row cause and a formula difference
+closes by coverage. The formula difference still shows on every cell without a
+row cause, and a fixed row cause leaves the cell differing with matched rows on
+the next run, which flags it.</p>
+<h3 id="3-run">3. <code>run</code></h3>
+<ul>
+<li><strong>Workbook check, before any spend.</strong> For each confirmed comparison, compare
+  the workbook with its proof the way <code>prove --check</code> does today (sheet formulas
+  and filters, datasource connection and filters), and refuse, naming the
+  comparisons to re-prove. <code>run</code> now signs in to Tableau; the runner already
+  loads those credentials.</li>
+<li><strong>Up-front price.</strong> Before the first query that bills, dry-run every query the
+  run will send, print the total, and refuse when it passes <code>--max-usd</code> or what
+  is left of the daily cap. The per-query cap stays as a backstop. Whether a dry
+  run prices the multi-statement save script as a whole is unverified: if not,
+  price its statements one by one.</li>
+<li><strong><code>--comparison &lt;id&gt;</code>, repeatable.</strong> Runs only those comparisons, at the
+  newest build or <code>--moment</code>. Each one's result replaces that comparison's
+  latest result (section 3a).</li>
+<li><strong>Progress lines.</strong> After each comparison, print one line and flush it: clock
+  time, elapsed time, step, comparison, and spend so far. No row values.</li>
+</ul>
+<h3 id="3a-each-comparison-keeps-its-own-latest-result">3a. Each comparison keeps its own latest result</h3>
+<p>A validation is the latest result of each confirmed comparison, each at its own
+moment, not one run at one moment. Time travel reaches back 7 days, so without
+this, adding one comparison weeks later means comparing every comparison again.</p>
+<ul>
+<li><strong>Adding a comparison:</strong> <code>rebuild-sheet</code> it, then <code>compare --comparison &lt;id&gt;</code>
+  at the newest build. Every other comparison keeps its result.</li>
+<li><strong>Stale results.</strong> Before any spend, <code>compare</code> checks each comparison's latest
+  result against today's code and lists it as stale when any of these changed
+  since it ran: Cube's SQL for its query, the dashboard side's SQL (the sheet
+  query and the dbt models it reads), or its <code>rebuild_check</code>. A plain <code>compare</code>
+  runs the stale and the never-run comparisons only; <code>--all</code> runs every one.
+  Changed data alone does not make a result stale: the validation checks
+  definitions.</li>
+<li><strong><code>sort</code>, <code>decide</code>, <code>ask-owner</code></strong> read the latest result of every comparison.
+  A comparison with no result, or a stale one, is named and blocks <code>ask-owner</code>,
+  as an open item does today. Each comparison's moment shows in the owner's
+  issue.</li>
+<li><strong>Explanations and decisions</strong> stay tied to their comparison and its
+  fingerprints, as now. An explanation runs against the saved rows of its
+  comparison's own result.</li>
+<li><strong>Storage:</strong> where each comparison's latest result and saved rows live, and
+  how a run folder maps to them, is left to the builder, within the 2026-11-13
+  spec's saved-rows and checkpoint design.</li>
+</ul>
+<h3 id="4-triage">4. <code>triage</code></h3>
+<ul>
+<li><strong>Filters Cube might not offer (#6346).</strong> For every sheet filter with no Cube
+  mapping, whatever pile it lands in, look up candidate members in
+  <code>members.json</code> (<code>triage._candidates</code>) and label the item:</li>
+<li>"Cube offers it as <code>&lt;member&gt;</code>, unmapped": map it under <code>filters:</code>.</li>
+<li>"Cube has no member: a gap": default call <code>fix_cube</code>, not <code>deliberate</code>.</li>
+<li>"Workbook-only field": the proof's <code>missing_columns</code> shows no datasource
+    column behind it, and no candidate member matches. Default call
+    <code>deliberate</code>.</li>
+<li>When a candidate matches, that label wins, even for a workbook calc. A name
+    match is a lead, so the label says "check before mapping".</li>
+<li><strong>Trace (#6181 item 1).</strong></li>
+<li>When a model's SQL fails (parse error, too long, <code>resourcesExceeded</code>,
+    invalid), skip that model, note why, and keep descending the others.</li>
+<li>When a bucket stops, print its model chain: each model from the side's table
+    down to where it stopped, with why it stopped.</li>
+<li>Raise <code>MAX_LEVELS</code> from 3 to 5, under the trace's existing spend cap and
+    <code>--trace-max-minutes</code>.</li>
+<li>Progress lines, as in <code>run</code>.</li>
+</ul>
+<h3 id="5-rows-for-daily-dashboard-data-6343">5. Rows for daily dashboard data (#6343)</h3>
+<p>A comparison's <code>rows</code> can reduce the dashboard side to one row per key before
+the reconcile, by a named rule, never SQL in the YAML. The one rule now:
+<code>latest</code>, which keeps each key's row with the latest value of a named date
+column. For chronic absenteeism: key student and period, latest calendar date,
+which is the row the workbook's <code>Is Chronic Absentee</code> reads. After the reduce,
+the reconcile and coverage work as for any comparison. Truancy's day weighting,
+if the sides differ on it, shows as a formula difference.</p>
+<h3 id="5a-plainer-names">5a. Plainer names</h3>
+<p>The tool's job reads as one sentence: rebuild the sheet in SQL, compare it with
+Cube, explain each difference, ask the owner. Names follow it. Sections above
+use the old names where they point at today's code.</p>
+<table>
+<thead>
+<tr>
+<th>Today</th>
+<th>New</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>discover</code></td>
+<td><code>find-field</code></td>
+</tr>
+<tr>
+<td><code>preflight</code></td>
+<td><code>read-sheet</code></td>
+</tr>
+<tr>
+<td><code>prove</code></td>
+<td><code>rebuild-sheet</code></td>
+</tr>
+<tr>
+<td><code>run</code></td>
+<td><code>compare</code></td>
+</tr>
+<tr>
+<td><code>triage</code></td>
+<td><code>sort</code></td>
+</tr>
+<tr>
+<td><code>triage confirm</code></td>
+<td><code>explain</code></td>
+</tr>
+<tr>
+<td><code>add-decisions</code></td>
+<td><code>decide</code></td>
+</tr>
+<tr>
+<td><code>review</code></td>
+<td><code>ask-owner</code></td>
+</tr>
+<tr>
+<td><code>probe</code> / <code>probe_sql</code></td>
+<td><code>sheet_query</code></td>
+</tr>
+<tr>
+<td><code>proof:</code></td>
+<td><code>rebuild_check:</code></td>
+</tr>
+<tr>
+<td><code>proven_at</code></td>
+<td><code>matched_at</code></td>
+</tr>
+<tr>
+<td><code>probe_fingerprint</code></td>
+<td><code>sheet_query_fingerprint</code></td>
+</tr>
+<tr>
+<td>cause proof, <code>proofs/</code> folder</td>
+<td>explanation, <code>explanations/</code> folder</td>
+</tr>
+</tbody>
+</table>
+<p><code>record-answers</code>, <code>describe</code>, comparison and decision keep their names. Old
+names are refused with the new name, not aliased: no validation file in use
+needs them.</p>
+<h3 id="6-cleanup">6. Cleanup</h3>
+<ul>
+<li><strong>#6181 item 12.</strong> <code>tableau._nested_under</code> nests an added dimension into the
+  last dimension item for any shelf whose ops are all <code>*</code>, not only exactly one.
+  A shape it cannot reshape is refused, not written.</li>
+<li><strong>#6181 item 14.</strong> One export-date helper in <code>tableau.py</code>, called by
+  <code>tableau._key_text</code> and <code>pipeline._key</code>.</li>
+<li><strong>"Validation file"</strong> replaces "view file" in both skills, CLI help, refusal
+  messages and docstrings. File names stay <code>&lt;view&gt;.yml</code>: the name tells the
+  validator which Cube view to check.</li>
+<li><strong>Skills:</strong> the <code>cube-validation</code> runbook loses <code>check-api</code> and
+  <code>prove --check</code>, gains <code>run</code>'s built-in checks, replaces cell sizing with
+  coverage and the formula-difference outcome, and rewrites "Filters nothing".
+  <code>cube-builder</code> drops its <code>check-api</code> and <code>prove --check</code> steps.</li>
+</ul>
+<h2 id="fresh-validations-after-the-build">Fresh validations (after the build)</h2>
+<ol>
+<li><strong>Cleanup batch, confirmed by the owner before anything is deleted:</strong></li>
+<li>The validation branches <code>cristinabaldor/test/claude-ddi-cube-validation</code>
+     and <code>cristinabaldor/test/claude-attendance-cube-validation</code>, and their
+     worktrees.</li>
+<li>The #6212 code branch
+     <code>cristinabaldor/feat/claude-validator-code-group-cells</code>: 8 code commits
+     exist only locally; the remote holds its spec and plan. Deleting a remote
+     branch is the owner's step.</li>
+<li>The local cache runs for both Attendance views.</li>
+<li>Issues #6211 and #6341: closed or marked superseded by the fresh runs.</li>
+<li><strong>DDI in a new Claude session</strong> that has never seen an earlier validation:</li>
+<li>New validation branch, based on #6402's branch, with an empty validation
+     file. Production only: the deployed Cube, the prod marts, no
+     <code>--fact-dataset</code>.</li>
+<li>Off limits: the old validation branches, and old validation issues (#6211,
+     #6341, and the DDI comments on #6181, #6410, #6411).</li>
+<li>Allowed: domain docs (<code>docs/models/ddi-stack-data-model.md</code>, the
+     <code>ddi-stack</code> skill) and the model SQL, as any analyst would read them.</li>
+<li>Timed: every step's compute time, and one wall-clock total from the first
+     <code>discover</code> to the drafted review issue. No timing code is built: the runner
+     times each command with <code>time.monotonic()</code>, the progress lines give elapsed
+     time inside <code>run</code> and <code>triage</code>, and the clean session keeps a timing table.
+     It reports the table to the owner, and on #6410 once the owner approves the
+     comment.</li>
+<li>No forced stop-and-resume inside the timed run; a natural cap stop is the
+     live test of resume.</li>
+<li><strong>Attendance</strong> the same way, in its own clean session.</li>
+</ol>
+<h2 id="decided-by-the-owner">Decided by the owner</h2>
+<ul>
+<li>Fold the DDI cell-sizing gap into #6410; no new issue.</li>
+<li>Coverage instead of sizing for every cell (Option A), with a
+  formula-difference outcome for cells whose rows all match.</li>
+<li>Cut <code>check-api</code>, anchors and identities, and <code>rows.cell</code>; #6411 is superseded.</li>
+<li><code>prove --check</code> folds into <code>run</code>; <code>run</code> prices up front.</li>
+<li>Build <code>run --comparison</code>, progress lines, #6346, the trace changes, the
+  daily-rows reduce rule, #6181 items 12 and 14.</li>
+<li>Decline #6181 item 10. Close #6212, #6224 and #6230.</li>
+<li>Fresh DDI and Attendance validations in clean sessions; domain docs allowed;
+  the worked example deleted.</li>
+<li>Each comparison keeps its own latest result, with a stale list, so a new
+  comparison runs alone.</li>
+<li>The renames in section 5a, <code>rebuild_check:</code> included.</li>
+</ul>
+<h2 id="calls-made-in-the-design-owner-to-check">Calls made in the design (owner to check)</h2>
+<ul>
+<li>An old validation file with <code>anchors:</code>, <code>identities:</code> or <code>rows.cell</code> is
+  refused with a message to delete the block, not silently ignored.</li>
+<li>A formula difference reaches <code>cause</code> without a proof file; the matching rows
+  are its evidence.</li>
+<li><code>run --comparison</code> replaces each named comparison's latest result (section
+  3a); <code>review</code> refuses while a comparison has no result or a stale one.</li>
+<li>The reduce rule is named <code>latest</code>; more rules are added only when a dashboard
+  needs one.</li>
+<li>Trace depth 5.</li>
+<li>Coverage places rows exactly: <code>run</code> keeps per-group, per-cut row counts, and a
+  cell whose dims the groups do not split by stays open.</li>
+<li>Groups closed by a decision count toward coverage.</li>
+<li>Covered cells need no decision; a formula difference has its own item and
+  <code>formula: true</code> decision; <code>cells: true</code> decisions are retired.</li>
+<li>A candidate member beats "workbook-only" for an unmapped sheet filter.</li>
+<li>A plain <code>compare</code> runs only stale and never-run comparisons; <code>--all</code> runs
+  every one.</li>
+<li>Old command and key names are refused with the new name, not kept as aliases.</li>
+<li>Timing is kept by the runner and the clean session, not built into the
+  validator.</li>
+</ul>
+<h2 id="runs-saved-before-this-change">Runs saved before this change</h2>
+<p>The fresh validations start new runs, so older <code>run.json</code> files need no
+migration. A reader that meets an old run's per-cell sums ignores them.</p>
+<h2 id="after-merge">After merge</h2>
+<ul>
+<li>Close #6411 as superseded by coverage, with a comment.</li>
+<li>Comment on #6181: items 1, 7, 8, 12, 14 done; 10 declined; 9 and 13 left open.</li>
+<li>
+<h1 id="6346-6343-and-6410-close-with-the-pr">6346, #6343 and #6410 close with the PR.</h1>
+</li>
+</ul>
+<h2 id="left-to-the-builder">Left to the builder</h2>
+<ul>
+<li>Exact YAML keys for the reduce rule.</li>
+<li>Whether <code>prove --check</code>'s proof dry runs are already covered by <code>triage</code>'s
+  up-front pricing.</li>
+<li>How a dry run prices the multi-statement save script.</li>
+<li>The progress line's exact format.</li>
+<li>Which tests to delete with the removed code, and which to rewrite for
+  coverage.</li>
+</ul>
+<h2 id="revision-2026-11-14-skip-dont-stop">Revision 2026-11-14: skip, don't stop</h2>
+<p>Decided by the owner while reviewing the plan. The validator was stopping a
+whole run over one comparison's problem; problems now stay with the analyst
+while the rest of the work goes on.</p>
+<ul>
+<li><strong><code>compare</code> skips a comparison instead of refusing the run</strong> when it has no
+  <code>rebuild_check</code>, its sheet query changed since it, it maps a member Cube
+  lacks, or its workbook changed since it. A changed <code>also_facts</code> table skips
+  only the comparisons whose Cube SQL reads it. Skips print before any spend
+  with their reasons, and a skipped comparison keeps its previous result. The
+  run refuses only when every comparison is skipped.</li>
+<li><strong>Still stops:</strong> spend caps, and anything that would put a student or staff
+  value where it should not go.</li>
+<li><strong><code>ask-owner</code> posts what is ready.</strong> Questions with a proven cause go to the
+  owner as before. Items still in <code>investigate</code>, and comparisons that are
+  missing, stale or skipped, are listed in a "Still with the analyst" section
+  with masked counts and the trace's lead, so the owner can say if one looks
+  familiar. They are not questions: <code>record-answers</code> never reads them. The issue
+  body is rendered again as more items settle.</li>
+<li>This replaces the anti-goal "a formula difference closes as <code>deliberate</code>
+  without the owner seeing it" only in wording: unsettled items are now shown to
+  the owner, never decided for them.</li>
+</ul>
+<h2 id="revision-2026-11-18-after-the-fresh-ddi-run">Revision 2026-11-18: after the fresh DDI run</h2>
+<p>The first live run of the reshaped validator, a fresh DDI Suite validation
+(#6415), posted 13 comments on PR #6402 holding 15 findings. 12 are confirmed in
+the code. The owner chose to fix the bugs and add 3 of the proposals in this PR,
+with the core fix done properly rather than disclosed. The faster trace is</p>
+<h1 id="6437-out-of-scope-here">6437, out of scope here.</h1>
+<h3 id="intent-and-why_1">Intent and why</h3>
+<p>The validator promised that a differing cell closes only on proven rows. On the
+3 goal comparisons, the dashboard and Cube compute the goal differently. That
+difference creates no unmatched row; it only moves the cell's number. Every
+differing cell also held unmatched rows from other causes, so no cell was ever
+filed as a formula difference, and once those row causes were decided, every
+cell closed. Both safety nets in <em>Design</em> section 2 failed: no cell was free of
+row causes, and decided causes come back every run. It surfaced only because the
+owner already knew the goals were wrong. A validator that can close a wrong cell
+this way cannot be trusted, so the fix comes before merge.</p>
+<h3 id="goals_1">Goals</h3>
+<ol>
+<li>A cell whose number still differs once every unmatched row is left out is a
+   formula difference, whether or not it also holds row causes.</li>
+<li>When that cannot be checked, the cell says so, and the owner sees it.</li>
+<li>The 9 confirmed bugs are fixed as verified below, each with a test.</li>
+<li>Only worksheets people can open are validated, unless a comparison opts in.</li>
+<li>Filter values that cannot identify a person are shown.</li>
+<li>An explanation is written once per dashboard model and cause, not once per
+   comparison.</li>
+</ol>
+<h3 id="anti-goals">Anti-goals</h3>
+<ul>
+<li>A cell closes, or is called a formula difference, on a guess.</li>
+<li>A student or staff value reaches GitHub through any new line.</li>
+<li>The formula check spends without being priced and capped first.</li>
+</ul>
+<h3 id="approaches-the-formula-check">Approaches (the formula check)</h3>
+<ul>
+<li><strong>Recompute each differing cell on matched rows only (chosen).</strong> Both sides'
+  numbers are recomputed with every unmatched row left out. A remaining gap is
+  the formula. Exact for any measure, additive or not, because both sides see
+  the same rows.</li>
+<li><strong>Disclose only.</strong> Label cells closed by coverage alone as "formulas not
+  compared" and always ask the formula question when <code>definitions:</code> differ.
+  Rejected as the fix: it discloses the gap but never detects it. It survives as
+  the fallback below.</li>
+<li><strong>Put the formula's per-row part in <code>rows.values</code>.</strong> For the goal, pair the
+  dashboard's goal column with Cube's, so a goal difference shows as
+  <code>value_differs</code> rows. Rejected as the fix: it depends on the analyst thinking
+  of it for every formula. It stays available as ordinary configuration.</li>
+</ul>
+<h3 id="design_1">Design</h3>
+<h4 id="1-the-formula-check-in-sort">1. The formula check (in <code>sort</code>)</h4>
+<ul>
+<li><strong>Which cells:</strong> every differing cell of a comparison with <code>rows</code> that
+  coverage can place (not unplaceable) and that has at least one group in it. A
+  cell with no group is already a formula difference.</li>
+<li><strong>Dashboard side:</strong> the comparison's sheet query over its <code>{rows}</code> with every
+  unmatched grain key left out (an anti-join against the comparison's saved
+  unmatched rows in <code>cube_validation_scratch</code>, both sides' unmatched rows, every
+  bucket), grouped by the comparison's dims and cut, at the comparison's own
+  moment.</li>
+<li><strong>Cube side:</strong> Cube's compiled SQL for the cell query, with the fact reference
+  rewritten to the fact minus the same unmatched grain keys, read as of the
+  comparison's moment. This works only when each grain column maps to a column
+  on the fact.</li>
+<li><strong>Verdict per cell:</strong> if the two recomputed values still differ at the
+  comparison's <code>decimals</code>, the cell joins the comparison's <code>&lt;id&gt;:formula</code> item,
+  with its row groups still listed. If they agree, coverage decides the cell as
+  today.</li>
+<li><strong>When the Cube side cannot be rewritten</strong> (a grain column is an expression,
+  not a fact column, or the rewrite is refused), the cell closes by coverage as
+  today but is labeled "formulas not compared: <why>". <code>ask-owner</code> lists it
+  under "Still with the analyst". Never silent.</li>
+<li><strong>Where and when:</strong> in <code>sort</code>, after stored explanations re-run, because the
+  saved rows exist then. Its queries are priced in <code>sort</code>'s up-front total and
+  capped. One query per side per affected comparison, not per cell.</li>
+<li><strong>Results:</strong> the formula item's evidence names the cells, masked like every
+  other count. The formula decision (<code>formula: true</code>) covers these cells too.</li>
+<li><strong>Runbook:</strong> explain that a formula difference can sit under row causes, and
+  that "formulas not compared" means the check could not run.</li>
+</ul>
+<p><strong>Precise rules (from the builder check):</strong></p>
+<ul>
+<li><strong>Matched rows means the rows the reconcile matched, not "everything minus the
+  unmatched".</strong> Both sides keep only grain keys that the reconcile saw on both
+  sides with equal values: a semi-join on the reconcile's own row sets (the
+  dashboard's after <code>rows.dashboard_scope</code>, <code>rows.reduce</code> and cuts; Cube's after
+  <code>scope</code>), minus the saved unmatched keys. Rows the reconcile never saw, such
+  as out-of-scope or non-latest daily rows, are never in either side, so they
+  can never be read as a formula difference. It rebuilds the reconcile's row
+  sets inside the query at the comparison's moment rather than storing matched
+  keys.</li>
+<li><strong>Self-check first.</strong> Each side's rewritten query is also run with nothing
+  removed. If it does not reproduce the run's own value for the cell at
+  <code>decimals</code>, the cell is "formulas not compared: the rewrite does not reproduce
+  the run's cells". This catches a missed fact reference or a wrongly wrapped
+  sheet query. It doubles the queries; they are priced like the rest.</li>
+<li><strong>Which tables the Cube side filters:</strong> every table Cube's SQL reads (the
+  view's <code>fact</code> and any <code>also_facts</code>) that carries every grain column. A table
+  without the grain columns, such as a goals table at school and grade grain, is
+  a lookup and is left as is. If no table Cube reads carries the grain columns,
+  the cells are "formulas not compared".</li>
+<li><strong>Empty sides:</strong> a cell with no matched rows on either side is "formulas not
+  compared: no rows both sides hold". Matched rows exist on both sides by
+  definition otherwise.</li>
+<li><strong>Every other failure is the same fallback, with its reason and next step:</strong>
+  saved rows gone or past time travel ("compare it again"), a BigQuery or Cube
+  error (job id and reason code only), a Cube side that cannot be rewritten.
+  None refuses <code>sort</code>, makes the comparison stale, or blocks <code>ask-owner</code>.</li>
+<li><strong>What "formulas not compared" means for the result:</strong> the cell set closes by
+  coverage as before. A measure with differing cells is never "validated" in any
+  case, so the verdict does not change. The label is a disclosure, listed under
+  "Still with the analyst"; no decision clears it, and re-running <code>sort</code> after
+  its cause is fixed replaces it.</li>
+<li><strong>Pricing and scope:</strong> the formula check's queries join the explanations'
+  up-front batch in <code>sort</code>, so one refusal comes before anything runs. Under
+  <code>sort --comparison</code>, it runs only for the comparisons named.</li>
+</ul>
+<h4 id="2-bugs-each-with-a-test">2. Bugs (each with a test)</h4>
+<ul>
+<li><strong><code>read-sheet</code> and the COUNTD caption:</strong> add <code>distinct count</code> to
+  <code>read_sheet._AGG_PREFIX</code>, so <code>sheet_field: Distinct count of &lt;field&gt;</code> is
+  found.</li>
+<li><strong>A comparison opening with a YAML merge key:</strong> <code>config.write_rebuild_check</code>
+  (and the decision writer) find a comparison by an <code>id:</code> line anywhere in its
+  list item, allowing a trailing comment. <code>rebuild-sheet</code> finds the item before
+  the export, so an unwritable file refuses before any spend.</li>
+<li><strong>Text measures:</strong> <code>read-sheet</code> and <code>rebuild-sheet</code> refuse a text measure up
+  front: "text measures are not compared; compare the numeric measure it is
+  built from". The number-format message no longer fires on letters. Full text
+  comparison is not built (<em>Calls</em> below).</li>
+<li><strong>Blank cells:</strong> <code>tableau.match_export</code> skips an export-only cell whose value
+  is blank and a sheet-query-only cell whose value is NULL, and prints how many
+  it skipped. A blank on one side with a value on the other still fails.</li>
+<li><strong><code>*</code> total rows:</strong> <code>rebuild._export_cells</code> treats <code>*</code> like <code>All</code> in the
+  total-row check, with the same guard (only when the sheet query has no real
+  <code>*</code> member), only for dims on rows or columns, and counts them in
+  <code>totals_skipped</code>.</li>
+<li><strong>Dual-axis sheets:</strong> <code>rebuild._export_cells</code> drops a repeated export row when
+  it matches another on every column except table calcs and other measure
+  columns. Two marks that differ in any other column still fail as "more than 1
+  export row", so the <code>split_rows</code> signal survives.</li>
+<li><strong>Non-null filters:</strong> <code>find_field.restricts</code> treats a quantitative filter with
+  <code>included-values</code> of <code>non-null</code> or <code>null</code> as restricting and says "non-null
+  values only". <code>read-sheet</code> points at <code>dashboard_filters</code> with <code>operator: set</code>.
+  A rebuild check written before the fix may list the field outside
+  <code>restricting_filters</code>; the runbook says to re-run <code>rebuild-sheet</code> for it.</li>
+<li><strong>A <code>dims_differ</code> explanation:</strong> <code>explain.unmatched_sql</code> carries <code>__moved</code> and
+  <code>__d_&lt;col&gt;</code> per dim. The runbook and docstring say <code>__d_&lt;col&gt;</code> is NULL unless
+  that column differs, so an explanation reads <code>COALESCE(u.__d_x, u.x)</code> for the
+  dashboard's value.</li>
+<li><strong>Pre-aggregation refusal:</strong> the refusal names the remedy (a Cube-only <code>scope</code>
+  on a never-null member the rollup does not carry, such as the fact's primary
+  key, <code>operator: set</code>), and no skip line ends in a doubled period. The runbook
+  says the same.</li>
+</ul>
+<h4 id="3-published-worksheets-only">3. Published worksheets only</h4>
+<ul>
+<li>A worksheet is published when it sits on a dashboard in the workbook's layout
+  (a dashboard zone) or Tableau Server lists it as its own view.</li>
+<li><code>find-field</code> and <code>read-sheet</code> mark any other worksheet "not on a published
+  dashboard". <code>rebuild-sheet</code> refuses it. <code>compare</code> skips it with that reason.</li>
+<li>A comparison opts in with <code>unpublished: true</code>. Its owner question then says
+  the sheet is on no published dashboard.</li>
+</ul>
+<h4 id="4-safe-filter-values">4. Safe filter values</h4>
+<ul>
+<li>The explicit allowlist (<code>find_field.SHOWN_FILTER_FIELDS</code>) stays the rule;
+  anything not on it stays hidden. It gains <code>response_type</code>, <code>module_type</code> and
+  <code>is_normed_scope</code>.</li>
+<li>For an allowlisted field, <code>find-field</code> and <code>read-sheet</code> show the chosen
+  values, a quantitative filter's bounds, and its include or exclude mode.</li>
+<li>A calculated-field filter is shown only when every column it reads is
+  allowlisted.</li>
+</ul>
+<h4 id="5-shared-explanations-and-the-cause-first-method">5. Shared explanations and the cause-first method</h4>
+<ul>
+<li>An explanation is shared across every comparison on the same <code>dashboard_view</code>
+  whose <code>rows</code> grain and values match, whatever their <code>filters</code>, <code>defaults</code>,
+  <code>dashboard_columns</code>, <code>scope</code> and <code>cuts</code>.</li>
+<li>Each comparison runs it on its own unmatched rows, with its own check that
+  every row gets exactly one label. A row it does not cover is <code>UNEXPLAINED</code>.</li>
+<li><code>explain</code> prints "Also <comparison>" for each it ran on; the explanation file
+  does not list them.</li>
+<li>Runbook: find a cause once, on the comparison that shows it most clearly, then
+  let it run on every comparison of that model; work comparison by comparison
+  only for what is left.</li>
+</ul>
+<h3 id="proving-it-live-owners-decision">Proving it live (owner's decision)</h3>
+<p>No live spend is part of this build. After it lands, the #6415 session merges
+the updated #6402 branch into its validation branch and re-runs <code>sort</code>; the 3
+goal comparisons should come out as formula differences. That spend is approved
+there.</p>
+<h3 id="calls-made-in-this-revision-owner-to-check">Calls made in this revision (owner to check)</h3>
+<ul>
+<li>Text measures are refused, not compared. The DDI text measure is validated
+  through the numeric measure it is built from.</li>
+<li>The pre-aggregation remedy is named, not applied: <code>compare</code> does not add the
+  scope by itself.</li>
+<li>The formula check runs in <code>sort</code>, not <code>compare</code>.</li>
+<li>The formula check's precise rules above: the semi-join on the reconcile's own
+  row sets, the self-check, which tables Cube's side filters, empty sides, one
+  fallback for every failure, no change to the verdict, and pricing in the
+  explanations' batch.</li>
+<li>A calculated-field filter's values show only when every column it reads is
+  allowlisted.</li>
+</ul>
+<h3 id="left-to-the-builder_1">Left to the builder</h3>
+<ul>
+<li>How the Cube-side rewrite finds and replaces the fact reference in compiled
+  SQL, and how it detects a grain column that is not a fact column.</li>
+<li>The exact wording of the new labels and refusals.</li>
+<li>Whether "published" reads Tableau Server's views list at <code>find-field</code> time or
+  only at <code>rebuild-sheet</code> time.</li>
+</ul>
+<h2 id="revision-2026-11-19-after-the-ddi-re-run">Revision 2026-11-19: after the DDI re-run</h2>
+<p>The DDI re-run (#6415) on the fixed validator found the formula check ran on no
+comparison, plus 7 smaller gaps. The owner decided each in conversation.</p>
+<h3 id="decisions">Decisions</h3>
+<ol>
+<li><strong>The formula check follows Cube's joins.</strong> A grain member that sits on a
+   joined dimension (DDI's student and assessment-administration members sit 3
+   and 1 <code>LEFT JOIN</code>s from the scores fact) no longer refuses. Cube's side
+   replaces the fact reference with a subquery that joins the fact to every
+   table on the path to each grain member, using Cube's own join conditions
+   copied from the compiled SQL, and keeps the fact rows whose grain key is
+   matched. The self-check runs the same subquery with <code>TRUE</code>, so a join that
+   repeats fact rows fails the self-check. A path that is not a chain of
+   equality joins from the fact refuses, with its reason.</li>
+<li><strong>A sibling runs every sibling's explanation.</strong> When several comparisons on
+   one dashboard model and grain have their own explanation for a bucket, a
+   comparison without its own runs all of them, and a row group counts as
+   explained when any one of them explains all its rows. An explanation that
+   reads a column a comparison lacks is skipped there, with one line saying so,
+   not run to a BigQuery error.</li>
+<li><strong>A whole comparison can be decided.</strong> A comparison-level <code>deliberate</code>
+   decision, with a reason, closes every open row group of its comparison while
+   its SQL fingerprints hold. It is written by <code>decide</code>, never by hand, and the
+   owner's review lists it.</li>
+</ol>
+<h3 id="bugs-fixed-with-them">Bugs fixed with them</h3>
+<ul>
+<li>"Published" reads the workbook's published views from Tableau Server: a sheet
+  is published when it is a view, or a zone on a dashboard that is a view. The
+  <code>.twb</code> alone cannot say which sheets were published.</li>
+<li><code>read-sheet</code> accepts a <code>dashboard_filters</code> <code>set</code> entry on any column a
+  non-null calc filter reads.</li>
+<li><code>decide</code> writes decisions as block items, and the line writers find an inline
+  (flow-style) item too.</li>
+<li><code>ask-owner</code> shows "Still with the analyst" as counts per comparison and
+  bucket; the per-group list moves to a file beside the review JSON, and masked
+  groups are counted, not listed.</li>
+<li>A formula decision records which cells it covered (a digest of their refs,
+  salted with its SQL fingerprints) and is asked again when that set changes,
+  not only when more are filed.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,3558 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>Validator: DDI Run Fixes Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.57a0d79d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#validator-ddi-run-fixes-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Validator: DDI Run Fixes Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/launch-page-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Launch Page
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube-validation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube Validation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube-access-individual-exceptions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube Access - Individual Exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/tableau-permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tableau Permissions (People Data)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/csgf-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSGF Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/crdc-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CRDC Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ddi-stack-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDI Stack Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/hs-early-warning-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HS Early Warning Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/dibels-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIBELS Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/stat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/njdoe-universal-screener-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NJDOE Universal Screener Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/athletic-eligibility-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Athletic Eligibility Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/academic-health-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic Health Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/grad-plan-tracking-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Grad Plan Tracking Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ignite-r2i-extract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IGNITE R2I Extract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#global-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global Constraints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#review-focus" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Review Focus
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decisions-the-spec-left-to-the-builder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decisions the spec left to the builder
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Decisions the spec left to the builder">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-1-read-sheet-and-find-field-countd-captions-and-non-null-filters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: read-sheet and find-field: COUNTD captions and non-null filters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-2-text-measures-refused-up-front" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: Text measures refused up front
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-3-find-a-comparison-item-by-any-id-line" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: Find a comparison item by any id: line
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-4-export-matching-blanks-totals-dual-axis-repeats" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: Export matching: blanks, * totals, dual-axis repeats
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-5-unmatched-carries-the-dashboards-cell" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 5: {unmatched} carries the dashboard's cell
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-6-pre-aggregation-refusal-names-the-remedy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 6: Pre-aggregation refusal names the remedy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-7-published-worksheets-read-mark-refuse-record" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 7: Published worksheets: read, mark, refuse, record
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-8-compare-skips-unpublished-sheets-the-owner-sees-the-opt-in" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 8: compare skips unpublished sheets; the owner sees the opt-in
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-9-safe-filter-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 9: Safe filter values
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-10-share-an-explanation-across-a-dashboard-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 10: Share an explanation across a dashboard model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-11-formula-check-part-1-matched-keys" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 11: Formula check, part 1: matched keys
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-12-formula-check-part-2-the-dashboard-side-and-its-self-check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 12: Formula check, part 2: the dashboard side and its self-check
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-13-formula-check-part-3-the-cube-side-its-tables-and-self-check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 13: Formula check, part 3: the Cube side, its tables and self-check
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-14-formula-check-part-4-verdicts-and-filing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 14: Formula check, part 4: verdicts and filing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-15-formula-check-part-5-run-it-in-sort" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 15: Formula check, part 5: run it in sort
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-16-ask-owner-lists-formulas-not-compared" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 16: ask-owner lists "formulas not compared"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-17-runbook" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 17: Runbook
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-11-18-validator-ddi-run-fixes.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="validator-ddi-run-fixes-implementation-plan">Validator: DDI Run Fixes Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Fix the 9 bugs the fresh DDI run found, show only published worksheets
+and safe filter values, share explanations across a dashboard model, and add the
+formula check: a differing cell that still differs once every unmatched row is
+left out is a formula difference, whatever row causes it also holds.</p>
+<p><strong>Architecture:</strong> Small fixes first, grouped by module. Then published sheets
+(read from the workbook XML), safe filter values and shared explanations. The
+formula check lives in a new <code>formula.py</code>: it builds, for each comparison, a
+dashboard-side and a Cube-side query over matched rows only (a rebuilt reconcile
+minus the saved unmatched keys), plus a self-check of each with nothing removed.
+<code>sort</code> prices them in the explanations' batch, runs them after the stored
+explanations, stores each comparison's result in its latest result, and
+recomposes <code>run.json</code>, so a checked cell is filed in <code>&lt;id&gt;:formula</code> by the same
+code that files cells with no group. Every failure leaves the cell closing by
+coverage, labelled "formulas not compared: <why>", and <code>ask-owner</code> lists it.</p>
+<p><strong>Tech Stack:</strong> Python 3.13 via <code>uv run</code>, sqlglot, <code>google-cloud-bigquery</code>,
+pytest with DuckDB (<code>--with duckdb</code>).</p>
+<p><strong>Spec:</strong>
+<code>docs/superpowers/specs/2026-11-14-validator-coverage-and-gaps-design.md</code>,
+section "Revision 2026-11-18: after the fresh DDI run" (the authority; read the
+rest for context). Background with file:line evidence:
+<code>/tmp/claude-1000/-workspaces-teamster/b7c4309a-7aab-4478-98dc-5c70545c92ff/scratchpad/ddi-run-findings-triage.md</code>
+(the spec wins where they differ). Issues #6410, #6415. PR #6402.</p>
+<p>Worktree <code>W</code> =
+<code>/workspaces/teamster/.claude/worktrees/cristinabaldor/fix/claude-validator-second-fact-time-dims</code>.
+Package <code>P</code> = <code>W/scripts/cube_validation/</code>. Tests <code>T</code> =
+<code>W/tests/scripts/cube_validation/</code>. Run every test from <code>W</code>:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>--with<span class="w"> </span>duckdb<span class="w"> </span>pytest<span class="w"> </span>tests/scripts/cube_validation/&lt;file&gt;::&lt;test&gt;<span class="w"> </span>-q
+</code></pre></div>
+<p>(<code>/home/vscode/.local/bin/uv</code> if <code>uv</code> is not on PATH.) Baseline before Task 1:
+<code>uv run --with duckdb pytest tests/scripts/cube_validation/ -q</code> → <strong>1358
+passed</strong>. Every task ends with the whole suite green. IDE Pyright errors on
+worktree files are false positives.</p>
+<h2 id="global-constraints">Global Constraints</h2>
+<ul>
+<li>One PR, #6402. No live warehouse, Cube or Tableau command in any task; every
+  test is offline (DuckDB fakes, <code>FakeBigQuery</code>, <code>FakeCube</code>, <code>FakeTableau</code>).</li>
+<li>No student or staff value in any output that can reach GitHub: the formula
+  item's <code>evidence_posted</code>, the "formulas not compared" lines, the unpublished
+  note, filter values. Counts under 10 are masked with <code>report.mask</code> wherever
+  text is posted. A cell's dims and values appear only in local <code>evidence</code> and
+  the terminal.</li>
+<li>A cell closes, or is called a formula difference, only on a computed result;
+  never on a guess. Every formula-check failure falls back to coverage with a
+  "formulas not compared: <why>" label; none refuses <code>sort</code>, makes a comparison
+  stale, or blocks <code>ask-owner</code>.</li>
+<li>The formula check never spends unpriced: its queries are dry-run with the
+  stored explanations before anything runs, and one cap refusal covers both.</li>
+<li>A validation file with none of this plan's new keys (<code>unpublished</code>,
+  <code>rebuild_check.published</code>) keeps every entry and checkpoint fingerprint it has
+  today, or every saved result and saved-rows table goes stale at merge and the
+  #6415 re-run cannot happen (Task 7).</li>
+<li>Tests that touch the cache use the suite's fixtures: <code>test_cli.py</code>'s autouse
+  <code>_cache_in_tmp</code>, or a copy of it in a new test module. Never star-import
+  <code>test_cli</code> (it skips the autouse fixture and writes the real
+  <code>~/.cache/cube-validation/spend.json</code>). Import named helpers only.</li>
+<li>Docstrings follow <code>W/src/teamster/CLAUDE.md</code>; comments follow
+  <code>.claude/rules/comments.md</code> (the why, no measurements, no history).</li>
+<li>Commits: stage each file by name (never <code>-A</code>, <code>-u</code> or <code>.</code>), conventional
+  commit subject, body <code>Refs #6410</code> and <code>Refs #6415</code> on separate lines, last
+  line <code>Co-Authored-By: Claude Opus 5.5 &lt;noreply@anthropic.com&gt;</code>. If a hook
+  blocks <code>-m</code>, write the message to <code>&lt;session scratchpad&gt;/commit-msg-&lt;slug&gt;.txt</code>
+  and <code>git commit -F</code> it.</li>
+<li>Markdown (Task 17) is linted with
+  <code>/workspaces/teamster/.trunk/tools/trunk check --force --no-fix &lt;files&gt; &lt;/dev/null</code>
+  from <code>W</code>.</li>
+</ul>
+<h2 id="review-focus">Review Focus</h2>
+<ol>
+<li>A date grain: the dashboard view stores a DATE, the fact a TIMESTAMP. Keys
+   must match or every cell reads "no rows both sides hold". Pinned in Task 12
+   (<code>test_key_sql_reads_a_timestamp_and_its_date_alike</code>) and Task 13
+   (<code>test_cube_side_keys_a_timestamp_grain_as_a_date</code>).</li>
+<li>A daily dashboard with <code>rows.reduce</code>: non-latest rows were never reconciled,
+   so they must not enter the dashboard's matched rows. Pinned in Task 12
+   (<code>test_dashboard_side_keeps_only_the_latest_row_under_reduce</code>).</li>
+<li>Rows a <code>dashboard_filters</code> entry drops while Cube keeps them: not matched, so
+   they leave both sides, never read as a formula difference. Pinned in Task 12
+   (<code>test_matched_keys_leave_out_rows_a_dashboard_filter_drops</code>).</li>
+<li>A comparison with several cuts: each differing cell is recomputed under its
+   own cut, never another's. Pinned in Task 12
+   (<code>test_dashboard_side_tags_each_cut</code>) and Task 14
+   (<code>test_verdicts_match_cells_by_cut_and_dims</code>).</li>
+<li>An existing validation file after merge: entry and checkpoint fingerprints
+   unchanged, so results and saved rows stay current. Pinned in Task 7
+   (<code>test_new_keys_left_unset_keep_every_fingerprint</code>).</li>
+</ol>
+<h2 id="decisions-the-spec-left-to-the-builder">Decisions the spec left to the builder</h2>
+<ul>
+<li><strong>Published</strong> (spec §3) is read from the workbook XML everywhere: a worksheet
+  named by a <code>&lt;zone&gt;</code> of any <code>&lt;dashboard&gt;</code>, or whose
+  <code>&lt;window class='worksheet'&gt;</code> is not <code>hidden='true'</code>. The second is exactly the
+  set Tableau Server lists as views (<code>tableau.expose_sheet</code>'s docstring: a
+  hidden window publishes no view), so no command reads the Server views list,
+  and <code>read-sheet</code> stays offline. <code>rebuild-sheet</code> records the result as
+  <code>rebuild_check.published</code>; <code>compare</code> downloads the workbook only when that is
+  not <code>true</code> or the workbook was republished since.</li>
+<li><strong>Grain column detection</strong> (Cube side): parse Cube's compiled row SQL with
+  sqlglot; each grain member's projection (<code>`&lt;view&gt;__&lt;member&gt;`</code>) must be a
+  bare column qualified by the alias of a <code>FROM</code>/<code>JOIN</code> table, all on one table.
+  Which tables carry those columns comes from <code>Warehouse.columns</code> (table schema,
+  a free metadata call, no query).</li>
+<li><strong>Fact reference rewrite</strong>: on the as-of-expanded Cube SQL, each
+  <code>`teamster-332318.&lt;ds&gt;.&lt;t&gt;` [AS `a`] FOR SYSTEM_TIME AS OF TIMESTAMP '…'</code>
+  of a table to filter becomes
+  <code>(SELECT * FROM `teamster-332318.&lt;ds&gt;.&lt;t&gt;` FOR SYSTEM_TIME AS OF TIMESTAMP '…' WHERE &lt;key&gt; IN (SELECT __key FROM __matched)) AS `a`</code>.
+  No alias, or no reference found, is "formulas not compared".</li>
+<li><strong>Matched keys</strong>: the reconcile's own <code>joined</code> CTE rebuilt in the query
+  (<code>reconcile._joined</code>), keys of rows it files <code>match</code> with both sides present,
+  minus the key of every other <code>joined</code> row, minus every saved unmatched key. A
+  key is <code>TO_JSON_STRING(STRUCT(...))</code> of <code>reconcile._grain_keys</code>; a NULL
+  student is never matched; a time-dimension grain column is cast to DATE before
+  keying on raw tables.</li>
+<li><strong>Self-check</strong>: the same rewritten query with the key predicate replaced by
+  <code>TRUE</code> and, on the dashboard side, the original <code>{rows}</code> (no scope, reduce or
+  cut restriction). It checks the wrapping reproduces the run's cell; it does
+  not reference <code>__matched</code>. So 4 queries per comparison: each side matched and
+  self-check, each one <code>UNION ALL</code> over the cuts holding checked cells, tagged
+  <code>__cut</code>.</li>
+<li><strong>Where results live</strong>: a comparison's completed check goes in its latest
+  result (<code>data["formula_check"]</code>, with that result's fingerprint) and is
+  honored by every later compose; <code>sort</code> recomposes <code>run.json</code> through
+  <code>compose_run</code>, only when the run is still composed from the latest results. A
+  stored check is reused while its fingerprint holds (no spend). A failure that
+  stops the whole comparison is not stored, so the next <code>sort</code> retries it.</li>
+<li><strong>Formula item text</strong>: <code>CellDiff.matched_only</code> counts the cells the check
+  filed. Local evidence names each such cell (cut, dims, both recomputed
+  values); posted evidence carries masked counts only. Its row groups stay their
+  own items ("still listed").</li>
+<li><strong>Labels</strong>: constants in <code>formula.py</code> (Task 12) and the refusals named in each
+  task are the wording.</li>
+<li><strong>Stale or skipped comparisons</strong> get no formula check and no label: they are
+  already listed as waiting.</li>
+<li><strong>Shared explanations</strong> key on <code>dashboard_view</code>, <code>rows.grain</code> and
+  <code>rows.values</code> only; <code>rows.dashboard_scope</code> and <code>rows.reduce</code> may differ too,
+  since <code>{unmatched}</code>'s columns do not depend on them.</li>
+<li><strong>Text measures</strong> are detected as a value field on a <code>string</code> column whose
+  derivation is not a count; <code>tableau._number</code> says "text" only for a value with
+  no digit, so <code>12K</code> still reads as a number format.</li>
+<li><strong><code>*</code> total rows</strong> skip only for dims on the rows or columns shelf; <code>All</code>
+  keeps today's rule for every dim.</li>
+</ul>
+<hr />
+<h3 id="task-1-read-sheet-and-find-field-countd-captions-and-non-null-filters">Task 1: <code>read-sheet</code> and <code>find-field</code>: COUNTD captions and non-null filters</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>P/read_sheet.py</code> (<code>_AGG_PREFIX</code>, <code>SheetFilter</code>, <code>_filter_lines</code>,
+  <code>_sheet_lines</code>)</li>
+<li>Modify: <code>P/find_field.py</code> (<code>restricts</code>, new <code>null_mode</code>, <code>sheet_shape</code>)</li>
+<li>Test: <code>T/test_read_sheet.py</code>, <code>T/test_find_field_shape.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>
+<p>Produces: <code>find_field.null_mode(filter_el: ET.Element) -&gt; str | None</code>
+  (<code>"non-null"</code>, <code>"null"</code> or None); <code>SheetFilter.null_mode: str | None = None</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing tests</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="c1"># test_read_sheet.py</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_export_name_reads_a_countd_caption</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="n">read_sheet</span><span class="o">.</span><span class="n">_export_name</span><span class="p">(</span><span class="s2">"Distinct count of Student Number"</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"student number"</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_measure_line_finds_a_countd_sheet_field</span><span class="p">():</span>
+    <span class="n">facts</span> <span class="o">=</span> <span class="n">read_sheet</span><span class="o">.</span><span class="n">Sheet</span><span class="p">([],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">{</span><span class="s2">"COUNTD(Student Number)"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"student number"</span><span class="p">}})</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">read_sheet</span><span class="o">.</span><span class="n">_Checklist</span><span class="p">([],</span> <span class="p">[])</span>
+    <span class="n">read_sheet</span><span class="o">.</span><span class="n">_measure_line</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">_comparison</span><span class="p">(</span><span class="n">sheet_field</span><span class="o">=</span><span class="s2">"Distinct count of Student Number"</span><span class="p">),</span> <span class="n">facts</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">out</span><span class="o">.</span><span class="n">before</span> <span class="o">==</span> <span class="p">[]</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_read_sheet_points_a_non_null_filter_at_dashboard_filters_set</span><span class="p">():</span>
+    <span class="c1"># TWB with `&lt;filter class='quantitative' column='[federated.0pf].[none:score:qk]'</span>
+    <span class="c1"># included-values='non-null'/&gt;` inserted before _ANCHOR, as _with_relative does</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">before</span> <span class="o">=</span> <span class="n">read_sheet</span><span class="o">.</span><span class="n">check</span><span class="p">(</span><span class="s2">"v"</span><span class="p">,</span> <span class="n">twb</span><span class="p">,</span> <span class="n">SHEET</span><span class="p">,</span> <span class="n">_comparison</span><span class="p">(),</span> <span class="n">MEMBERS</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">any</span><span class="p">(</span><span class="s2">"non-null values only"</span> <span class="ow">in</span> <span class="n">b</span> <span class="ow">and</span> <span class="s2">"operator: set"</span> <span class="ow">in</span> <span class="n">b</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">before</span><span class="p">)</span>
+
+<span class="c1"># test_find_field_shape.py</span>
+<span class="n">NON_NULL</span> <span class="o">=</span> <span class="s2">"&lt;filter class='quantitative' column='[ds].[none:score:qk]' included-values='non-null'/&gt;"</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_a_non_null_quantitative_filter_restricts</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="n">finder</span><span class="o">.</span><span class="n">restricts</span><span class="p">(</span><span class="n">ET</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span><span class="n">NON_NULL</span><span class="p">))</span>
+    <span class="k">assert</span> <span class="n">finder</span><span class="o">.</span><span class="n">null_mode</span><span class="p">(</span><span class="n">ET</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span><span class="n">NON_NULL</span><span class="p">))</span> <span class="o">==</span> <span class="s2">"non-null"</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">finder</span><span class="o">.</span><span class="n">restricts</span><span class="p">(</span><span class="n">ET</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span>
+        <span class="s2">"&lt;filter class='quantitative' column='[ds].[none:score:qk]' included-values='all'/&gt;"</span><span class="p">))</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_sheet_shape_says_non_null_values_only</span><span class="p">():</span>
+    <span class="n">shape</span> <span class="o">=</span> <span class="n">finder</span><span class="o">.</span><span class="n">sheet_shape</span><span class="p">(</span><span class="n">_one_filter_twb</span><span class="p">(</span><span class="n">NON_NULL</span><span class="p">),</span> <span class="s2">"S"</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">shape</span><span class="o">.</span><span class="n">filters</span> <span class="o">==</span> <span class="p">[</span><span class="s2">"score: non-null values only (narrows the sheet)"</span><span class="p">]</span>
+</code></pre></div>
+<p><code>_one_filter_twb(filter_xml)</code> is a test helper returning
+<code>&lt;workbook&gt;&lt;worksheets&gt;&lt;worksheet name='S'&gt;&lt;table&gt;&lt;view&gt;{filter_xml}&lt;/view&gt;&lt;rows/&gt;&lt;cols/&gt;&lt;/table&gt;&lt;/worksheet&gt;&lt;/worksheets&gt;&lt;/workbook&gt;</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run them to verify they fail</strong></li>
+</ul>
+<p>Run:
+<code>uv run --with duckdb pytest tests/scripts/cube_validation/test_read_sheet.py tests/scripts/cube_validation/test_find_field_shape.py -q -k "countd or non_null"</code>
+Expected: FAIL (no <code>distinct count</code> alternative, <code>null_mode</code> undefined, the
+filter reads "keeps all").</p>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Implement</strong></p>
+</li>
+<li>
+<p><code>read_sheet._AGG_PREFIX</code>: add <code>distinct\s+count</code> to the alternation, before
+  <code>count</code>.</p>
+</li>
+<li><code>find_field.null_mode</code>: the <code>included-values</code> attribute of a quantitative
+  filter when it is <code>non-null</code> or <code>null</code>, else None. <code>restricts</code> returns True
+  for a quantitative filter with a <code>min</code>/<code>max</code> child or a <code>null_mode</code>.</li>
+<li><code>sheet_shape</code>: a quantitative filter with a <code>null_mode</code> reads
+  <code>"&lt;name&gt;: non-null values only (narrows the sheet)"</code> (or <code>null values only</code>);
+  one with bounds keeps "a range" until Task 10.</li>
+<li>
+<p><code>read_sheet</code>: set <code>SheetFilter.null_mode</code>; <code>_sheet_lines</code> shows
+  <code>non-null values only</code> in place of <code>restricting</code> for it; <code>_filter_lines</code>'s
+  final branch, for a filter with a <code>null_mode</code>, blocks with
+  <code>"&lt;caption&gt;: keeps non-null values only; add dashboard_filters with operator: set on its column"</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run the tests, then the whole suite</strong></p>
+</li>
+</ul>
+<p>Run the Step 2 command, then
+<code>uv run --with duckdb pytest tests/scripts/cube_validation/ -q</code>. Expected: PASS;
+no failures.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>scripts/cube_validation/read_sheet.py<span class="w"> </span>scripts/cube_validation/find_field.py<span class="w"> </span>tests/scripts/cube_validation/test_read_sheet.py<span class="w"> </span>tests/scripts/cube_validation/test_find_field_shape.py
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"fix(cube-validation): read COUNTD captions and non-null filters"</span><span class="w"> </span>-m<span class="w"> </span><span class="s2">"Refs #6410</span>
+<span class="s2">Refs #6415"</span><span class="w"> </span>-m<span class="w"> </span><span class="s2">"Co-Authored-By: Claude Opus 5.5 &lt;noreply@anthropic.com&gt;"</span>
+</code></pre></div>
+<hr />
+<h3 id="task-2-text-measures-refused-up-front">Task 2: Text measures refused up front</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>P/tableau.py</code> (<code>TEXT_MEASURE</code>, <code>_number</code>)</li>
+<li>Modify: <code>P/find_field.py</code> (new <code>text_values</code>)</li>
+<li>Modify: <code>P/read_sheet.py</code> (<code>Sheet.text_values</code>, new <code>text_measure</code>,
+  <code>_measure_line</code>)</li>
+<li>Modify: <code>P/rebuild.py</code> (<code>_capture</code>)</li>
+<li>Test: <code>T/test_tableau.py</code>, <code>T/test_find_field_shape.py</code>,
+  <code>T/test_read_sheet.py</code>, <code>T/test_cli.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>
+<p>Produces:
+  <code>tableau.TEXT_MEASURE = "text measures are not compared; compare the numeric measure it is built from"</code>;
+  <code>find_field.text_values(twb_xml: str, sheet: str) -&gt; set[str]</code> (export names,
+  lowercase, of value fields that are text);
+  <code>read_sheet.text_measure(facts: Sheet, sheet_field: str | None) -&gt; str | None</code>
+  (the blocking line or None).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing tests</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="c1"># test_tableau.py</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_export_number_calls_a_word_a_text_measure</span><span class="p">():</span>
+    <span class="k">with</span> <span class="n">pytest</span><span class="o">.</span><span class="n">raises</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="n">match</span><span class="o">=</span><span class="s2">"text measures are not compared"</span><span class="p">):</span>
+        <span class="n">tableau</span><span class="o">.</span><span class="n">_number</span><span class="p">(</span><span class="s2">"met"</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_export_number_still_calls_a_digit_format_a_number_format</span><span class="p">():</span>
+    <span class="k">with</span> <span class="n">pytest</span><span class="o">.</span><span class="n">raises</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="n">match</span><span class="o">=</span><span class="s2">"still carries a number format"</span><span class="p">):</span>
+        <span class="n">tableau</span><span class="o">.</span><span class="n">_number</span><span class="p">(</span><span class="s2">"12K"</span><span class="p">)</span>
+
+<span class="c1"># test_find_field_shape.py</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_text_values_names_a_string_attr_but_not_its_countd</span><span class="p">():</span>
+    <span class="c1"># rows hold [attr:status:nk] and [ctd:status:qk]; &lt;column name='[status]' datatype='string'/&gt;</span>
+    <span class="k">assert</span> <span class="n">finder</span><span class="o">.</span><span class="n">text_values</span><span class="p">(</span><span class="n">twb</span><span class="p">,</span> <span class="s2">"S"</span><span class="p">)</span> <span class="o">==</span> <span class="p">{</span><span class="s2">"status"</span><span class="p">}</span>
+
+<span class="c1"># test_read_sheet.py</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_read_sheet_refuses_a_text_sheet_field</span><span class="p">():</span>
+    <span class="n">facts</span> <span class="o">=</span> <span class="n">replace</span><span class="p">(</span><span class="n">_facts</span><span class="p">(),</span> <span class="n">text_values</span><span class="o">=</span><span class="nb">frozenset</span><span class="p">({</span><span class="s2">"status"</span><span class="p">}))</span>
+    <span class="k">assert</span> <span class="n">read_sheet</span><span class="o">.</span><span class="n">text_measure</span><span class="p">(</span><span class="n">facts</span><span class="p">,</span> <span class="s2">"Status"</span><span class="p">)</span> <span class="o">==</span> <span class="sa">f</span><span class="s2">"sheet_field 'Status': </span><span class="si">{</span><span class="n">tableau</span><span class="o">.</span><span class="n">TEXT_MEASURE</span><span class="si">}</span><span class="s2">"</span>
+
+<span class="c1"># test_cli.py</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_rebuild_sheet_refuses_a_text_measure_before_any_export</span><span class="p">(</span><span class="n">fakes</span><span class="p">,</span> <span class="n">tmp_path</span><span class="p">,</span> <span class="n">capsys</span><span class="p">):</span>
+    <span class="c1"># comparison whose sheet_field names a string ATTR on the fake workbook</span>
+    <span class="k">assert</span> <span class="n">main</span><span class="p">([</span><span class="o">...</span><span class="n">rebuild</span><span class="o">-</span><span class="n">sheet</span><span class="o">...</span><span class="p">])</span> <span class="o">==</span> <span class="mi">1</span>
+    <span class="k">assert</span> <span class="s2">"text measures are not compared"</span> <span class="ow">in</span> <span class="n">capsys</span><span class="o">.</span><span class="n">readouterr</span><span class="p">()</span><span class="o">.</span><span class="n">err</span>
+    <span class="c1"># FakeTableau recorded no capture (read its attributes in test_cli.py)</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run them to verify they fail</strong></li>
+</ul>
+<p>Run:
+<code>uv run --with duckdb pytest tests/scripts/cube_validation/ -q -k "text_measure or text_values or calls_a_word or digit_format"</code>
+Expected: FAIL.</p>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Implement</strong></p>
+</li>
+<li>
+<p><code>tableau._number</code>: before the number-format error, raise
+  <code>ValueError(f"export value {text!r} is text; {TEXT_MEASURE}")</code> when the body
+  holds no digit.</p>
+</li>
+<li><code>find_field.text_values</code>: value refs on rows, columns and encodings
+  (<code>is_value</code>) whose derivation is not <code>cnt</code>, <code>ctd</code> or <code>cntd</code> and whose workbook
+  <code>&lt;column&gt;</code> (by bare name) has <code>datatype='string'</code>; the name is the caption
+  lowercased, as <code>read_sheet._value_names</code> gives it.</li>
+<li><code>read_sheet.read_sheet</code> fills
+  <code>Sheet.text_values: frozenset[str] = frozenset()</code>. <code>text_measure</code> returns
+  <code>f"sheet_field {sheet_field!r}: {TEXT_MEASURE}"</code> when
+  <code>_export_name(sheet_field)</code> is in <code>text_values</code>, or, with no <code>sheet_field</code>,
+  <code>f"the sheet's measure: {TEXT_MEASURE}"</code> when every value field is text.
+  <code>_measure_line</code> adds it as a blocking item.</li>
+<li>
+<p><code>rebuild._capture</code>: after <code>set_shelves</code>, before <code>tbl.capture</code>, raise
+  <code>Refusal(f"comparison {comparison.id!r}: {why}")</code> when
+  <code>read_sheet.text_measure(read_sheet.read_sheet(shaped, sheet), comparison.sheet_field)</code>
+  returns a line.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run the tests, then the whole suite</strong> (as Task 1). Expected:
+      PASS.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong> the eight files by name:
+      <code>fix(cube-validation): refuse text measures before the export</code>.</p>
+</li>
+</ul>
+<hr />
+<h3 id="task-3-find-a-comparison-item-by-any-id-line">Task 3: Find a comparison item by any <code>id:</code> line</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>P/config.py</code> (<code>write_rebuild_check</code>, <code>write_decision</code>, new
+  <code>_list_item</code>, <code>comparison_item</code>, <code>find_comparison</code>)</li>
+<li>Modify: <code>P/rebuild.py</code> (<code>rebuild_sheet</code>)</li>
+<li>Test: <code>T/test_config.py</code>, <code>T/test_cli.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>
+<p>Produces:
+  <code>config._list_item(lines: list[str], head: int, end: int, item_id: str) -&gt; tuple[int, int, int] | None</code>
+  (start, end exclusive, key indent) over one block's list items;
+  <code>config.comparison_item(lines: list[str], comparison_id: str) -&gt; tuple[int, int, int] | None</code>
+  (scoped to the top-level <code>comparisons:</code> block);
+  <code>config.find_comparison(path: Path, comparison_id: str) -&gt; None</code> (raises
+  <code>ConfigError</code> with today's "no comparison with id" message).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing tests</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="c1"># test_config.py</span>
+<span class="n">MERGED</span> <span class="o">=</span> <span class="s2">"""</span><span class="se">\</span>
+<span class="s2">shared:</span>
+<span class="s2">  roster: &amp;roster</span>
+<span class="s2">    workbook: wb</span>
+<span class="s2">comparisons:</span>
+<span class="s2">  - &lt;&lt;: *roster</span>
+<span class="s2">    id: goal  # the goal sheet</span>
+<span class="s2">    measure: m</span>
+<span class="s2">decisions:</span>
+<span class="s2">  - id: goal</span>
+<span class="s2">    comparison: goal</span>
+<span class="s2">    call: deliberate</span>
+<span class="s2">    reason: r</span>
+<span class="s2">    formula: true</span>
+<span class="s2">"""</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_write_rebuild_check_finds_a_comparison_that_opens_with_a_merge_key</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">):</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">_write</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">,</span> <span class="n">MERGED</span><span class="p">)</span>
+    <span class="n">config</span><span class="o">.</span><span class="n">write_rebuild_check</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">"goal"</span><span class="p">,</span> <span class="p">{</span><span class="s2">"fingerprint"</span><span class="p">:</span> <span class="s2">"f"</span><span class="p">,</span> <span class="s2">"cells"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">"matched_at"</span><span class="p">:</span> <span class="s2">"t"</span><span class="p">})</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="n">load_view_config</span><span class="p">(</span><span class="n">path</span><span class="p">)</span><span class="o">.</span><span class="n">comparisons</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">assert</span> <span class="n">c</span><span class="o">.</span><span class="n">rebuild_check</span><span class="o">.</span><span class="n">fingerprint</span> <span class="o">==</span> <span class="s2">"f"</span> <span class="ow">and</span> <span class="n">c</span><span class="o">.</span><span class="n">workbook</span> <span class="o">==</span> <span class="s2">"wb"</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_comparison_item_ignores_a_decision_with_the_same_id</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">):</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_write_decision_replaces_a_decision_whose_id_is_not_its_first_key</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">):</span> <span class="o">...</span>
+
+<span class="c1"># test_cli.py</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_rebuild_sheet_refuses_an_unwritable_comparison_before_any_export</span><span class="p">(</span><span class="n">fakes</span><span class="p">,</span> <span class="n">tmp_path</span><span class="p">,</span> <span class="n">capsys</span><span class="p">):</span>
+    <span class="c1"># `comparisons:` as a flow list: it loads, but no line edit can find the item</span>
+    <span class="k">assert</span> <span class="n">main</span><span class="p">([</span><span class="o">...</span><span class="n">rebuild</span><span class="o">-</span><span class="n">sheet</span><span class="o">...</span><span class="p">])</span> <span class="o">==</span> <span class="mi">1</span>
+    <span class="c1"># FakeTableau recorded no capture</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run them to verify they fail.</strong> Expected: FAIL ("no comparison
+      with id 'goal'").</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Implement</strong></p>
+</li>
+</ul>
+<p><code>_list_item</code> walks the block's items (a line at the block's item indent starting
+<code>-</code>); an item matches when its first line is <code>- id: &lt;id&gt;</code> or a line at its key
+indent (item indent + 2) is <code>id: &lt;id&gt;</code>, each allowing quotes and a trailing
+<code># comment</code>. Both writers use it in place of their <code>- id:</code> scans; the decision
+writer keeps its "edit it by hand" refusal only for a decision the loader reads
+but no item matches (a flow list). <code>rebuild_sheet</code> calls
+<code>find_comparison(path, comparison.id)</code> right after <code>_require</code>, before
+<code>_capture</code>, re-raising <code>ConfigError</code> as <code>Refusal</code>.</p>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run the tests, then the whole suite.</strong> Expected: PASS.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong> the four files:
+      <code>fix(cube-validation): find a comparison item by any id line</code>.</p>
+</li>
+</ul>
+<hr />
+<h3 id="task-4-export-matching-blanks-totals-dual-axis-repeats">Task 4: Export matching: blanks, <code>*</code> totals, dual-axis repeats</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>P/tableau.py</code> (<code>match_export</code>, <code>RebuildResult.blanks_skipped</code>)</li>
+<li>Modify: <code>P/rebuild.py</code> (<code>TOTAL_LABELS</code>, <code>_export_cells</code>, new <code>_shelf_dims</code>,
+  <code>_ignored_headers</code>, <code>rebuild_sheet</code>)</li>
+<li>Test: <code>T/test_tableau.py</code> (import <code>rebuild</code> there)</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>
+<p>Produces: <code>RebuildResult.blanks_skipped: int = 0</code>;
+  <code>rebuild._export_cells(comparison, rows, mapping, value, columns, probe_rows, *, shelf_dims: set[str], ignored: set[str]) -&gt; tuple[list[dict], int, int]</code>;
+  <code>rebuild._shelf_dims(comparison: Comparison, shaped: str, sheet: str, columns: list[ET.Element]) -&gt; set[str]</code>;
+  <code>rebuild._ignored_headers(headers: list[str], mapping: dict[str, str], value: str, columns: list[ET.Element], calcs: list[tableau.TableCalc]) -&gt; set[str]</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing tests</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_match_export_skips_export_only_blanks_and_query_only_nulls</span><span class="p">():</span>
+    <span class="n">exports</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">"school"</span><span class="p">:</span> <span class="s2">"A"</span><span class="p">,</span> <span class="s2">"value"</span><span class="p">:</span> <span class="s2">"0.5"</span><span class="p">},</span> <span class="p">{</span><span class="s2">"school"</span><span class="p">:</span> <span class="s2">"B"</span><span class="p">,</span> <span class="s2">"value"</span><span class="p">:</span> <span class="s2">""</span><span class="p">}]</span>
+    <span class="n">query</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">"school"</span><span class="p">:</span> <span class="s2">"A"</span><span class="p">,</span> <span class="s2">"value"</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">},</span> <span class="p">{</span><span class="s2">"school"</span><span class="p">:</span> <span class="s2">"C"</span><span class="p">,</span> <span class="s2">"value"</span><span class="p">:</span> <span class="kc">None</span><span class="p">}]</span>
+    <span class="n">proof</span> <span class="o">=</span> <span class="n">tableau</span><span class="o">.</span><span class="n">match_export</span><span class="p">(</span><span class="n">_comparison</span><span class="p">(),</span> <span class="n">exports</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="n">twb_xml</span><span class="o">=</span><span class="n">TWB</span><span class="p">,</span> <span class="n">now</span><span class="o">=</span><span class="n">NOW</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">proof</span><span class="o">.</span><span class="n">matched</span> <span class="ow">and</span> <span class="n">proof</span><span class="o">.</span><span class="n">cells</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">proof</span><span class="o">.</span><span class="n">blanks_skipped</span> <span class="o">==</span> <span class="mi">2</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_match_export_still_fails_a_blank_against_a_value</span><span class="p">():</span>
+    <span class="c1"># export "" vs query 0.5 on the same key -&gt; one failure (cube_only verdict)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_export_cells_skips_a_star_total_row_on_a_shelf_dim</span><span class="p">():</span>
+    <span class="n">cells</span><span class="p">,</span> <span class="n">totals</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">rebuild</span><span class="o">.</span><span class="n">_export_cells</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="p">[{</span><span class="s2">"School"</span><span class="p">:</span> <span class="s2">"*"</span><span class="p">,</span> <span class="s2">"v"</span><span class="p">:</span> <span class="s2">"9"</span><span class="p">},</span> <span class="p">{</span><span class="s2">"School"</span><span class="p">:</span> <span class="s2">"A"</span><span class="p">,</span> <span class="s2">"v"</span><span class="p">:</span> <span class="s2">"1"</span><span class="p">}],</span>
+        <span class="p">{</span><span class="s2">"School"</span><span class="p">:</span> <span class="s2">"school"</span><span class="p">},</span> <span class="s2">"v"</span><span class="p">,</span> <span class="p">[],</span> <span class="p">[{</span><span class="s2">"school"</span><span class="p">:</span> <span class="s2">"A"</span><span class="p">}],</span> <span class="n">shelf_dims</span><span class="o">=</span><span class="p">{</span><span class="s2">"school"</span><span class="p">},</span> <span class="n">ignored</span><span class="o">=</span><span class="nb">set</span><span class="p">())</span>
+    <span class="k">assert</span> <span class="n">totals</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="s2">"school"</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">cells</span><span class="p">]</span> <span class="o">==</span> <span class="p">[</span><span class="s2">"A"</span><span class="p">]</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_export_cells_keeps_a_star_row_on_a_detail_dim</span><span class="p">():</span> <span class="o">...</span>          <span class="c1"># shelf_dims=set() -&gt; kept</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_export_cells_keeps_a_star_row_when_the_sheet_query_has_a_real_star</span><span class="p">():</span> <span class="o">...</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_export_cells_drops_a_dual_axis_repeat_that_differs_only_in_a_table_calc</span><span class="p">():</span>
+    <span class="n">rows</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">"School"</span><span class="p">:</span> <span class="s2">"A"</span><span class="p">,</span> <span class="s2">"v"</span><span class="p">:</span> <span class="s2">"1"</span><span class="p">,</span> <span class="s2">"Rank"</span><span class="p">:</span> <span class="s2">"1"</span><span class="p">},</span> <span class="p">{</span><span class="s2">"School"</span><span class="p">:</span> <span class="s2">"A"</span><span class="p">,</span> <span class="s2">"v"</span><span class="p">:</span> <span class="s2">"1"</span><span class="p">,</span> <span class="s2">"Rank"</span><span class="p">:</span> <span class="s2">"2"</span><span class="p">}]</span>
+    <span class="n">cells</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">rebuild</span><span class="o">.</span><span class="n">_export_cells</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">rows</span><span class="p">,</span> <span class="p">{</span><span class="s2">"School"</span><span class="p">:</span> <span class="s2">"school"</span><span class="p">},</span> <span class="s2">"v"</span><span class="p">,</span> <span class="p">[],</span> <span class="p">[],</span>
+                                        <span class="n">shelf_dims</span><span class="o">=</span><span class="p">{</span><span class="s2">"school"</span><span class="p">},</span> <span class="n">ignored</span><span class="o">=</span><span class="p">{</span><span class="s2">"Rank"</span><span class="p">})</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">cells</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_export_cells_keeps_two_marks_that_differ_in_another_column</span><span class="p">():</span>
+    <span class="c1"># rows differ in "Teacher" (not ignored) -&gt; both kept, so match_export later</span>
+    <span class="c1"># fails "more than 1 export row"</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run them to verify they fail.</strong> Expected: FAIL (no
+      <code>blanks_skipped</code>, unexpected keyword <code>shelf_dims</code>).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Implement</strong></p>
+</li>
+<li>
+<p><code>match_export</code>: an export-only key whose <code>_number</code> value is None, and a
+  sheet-query-only key whose value is None, are skipped and counted in
+  <code>blanks_skipped</code>, not in <code>cells</code>. Docstring says so.</p>
+</li>
+<li><code>rebuild.TOTAL_LABELS = ("All", "*")</code>. <code>_export_cells</code> skips a row whose dim
+  reads <code>All</code> (any dim) or <code>*</code> (a dim in <code>shelf_dims</code> only), unless the probe
+  has a real member with that label for that dim; both count in <code>totals</code>. The
+  dedupe key is every column but <code>ignored</code>, so a repeat that differs only in an
+  ignored column is dropped (not with <code>split_rows: sum</code>, as today). Update the
+  docstring.</li>
+<li><code>_shelf_dims</code>: the dims whose dashboard name, column caption or <code>filters</code>
+  caption appears in <code>finder.sheet_shape(shaped, sheet).rows + .cols</code>.</li>
+<li><code>_ignored_headers</code>: headers other than the mapped dims and <code>value</code> whose
+  <code>read_sheet._export_name</code> equals a <code>role='measure'</code> column's caption or bare
+  name, or a table calc's caption, lowercased.</li>
+<li>
+<p><code>rebuild_sheet</code>: compute both per cut (calcs via <code>tableau.table_calcs</code> on the
+  shaped worksheet) and print
+  <code>"Skipped {n} blank cells (blank in the export, NULL in the sheet query)"</code>
+  when <code>proof.blanks_skipped</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run the tests, then the whole suite.</strong> Expected: PASS.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong> the three files:
+      <code>fix(cube-validation): skip blank cells, star totals and dual-axis repeats</code>.</p>
+</li>
+</ul>
+<hr />
+<h3 id="task-5-unmatched-carries-the-dashboards-cell">Task 5: <code>{unmatched}</code> carries the dashboard's cell</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>P/explain.py</code> (<code>unmatched_sql</code>, module docstring, <code>unmatched_sql</code>
+  docstring)</li>
+<li>Test: <code>T/test_explain.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>
+<p>Produces: <code>unmatched_sql</code>'s SELECT adds <code>__moved</code> and <code>__d_&lt;column&gt;</code> per
+  group-by column when the comparison has group-by dims.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing test</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_unmatched_carries_moved_and_the_dashboard_cell</span><span class="p">(</span><span class="n">duck</span><span class="p">,</span> <span class="n">tmp_path</span><span class="p">,</span> <span class="n">offline</span><span class="p">):</span>
+    <span class="n">_tables</span><span class="p">(</span><span class="n">duck</span><span class="p">)</span>
+    <span class="n">run</span> <span class="o">=</span> <span class="n">_run</span><span class="p">([</span><span class="n">_group</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">bucket</span><span class="o">=</span><span class="s2">"dims_differ"</span><span class="p">)])</span>
+    <span class="n">wh</span> <span class="o">=</span> <span class="n">_saved_wh</span><span class="p">(</span><span class="n">duck</span><span class="p">,</span> <span class="n">run</span><span class="p">)</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="n">explain</span><span class="o">.</span><span class="n">require_saved</span><span class="p">(</span><span class="n">wh</span><span class="p">,</span> <span class="n">CFG</span><span class="p">,</span> <span class="n">run</span><span class="p">,</span> <span class="n">COMPARISON</span><span class="p">)</span>
+    <span class="n">ctes</span><span class="p">,</span> <span class="n">select</span> <span class="o">=</span> <span class="n">explain</span><span class="o">.</span><span class="n">unmatched_sql</span><span class="p">(</span><span class="n">COMPARISON</span><span class="p">,</span> <span class="s2">"dims_differ"</span><span class="p">,</span> <span class="p">[],</span> <span class="n">table</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="s2">"__moved"</span> <span class="ow">in</span> <span class="n">select</span> <span class="ow">and</span> <span class="s2">"__d_abbreviation"</span> <span class="ow">in</span> <span class="n">select</span>
+    <span class="n">rows</span> <span class="o">=</span> <span class="n">duck</span><span class="o">.</span><span class="n">rows</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">ctes</span><span class="si">}</span><span class="se">\n</span><span class="s2">SELECT COALESCE(u.__d_abbreviation, u.abbreviation) AS d FROM (</span><span class="si">{</span><span class="n">select</span><span class="si">}</span><span class="s2">) AS u"</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run it to verify it fails.</strong> Expected: FAIL (<code>__moved</code> not in
+      the SELECT).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Implement.</strong> Add the columns after the group-by columns. Both
+      docstrings say <code>__d_&lt;column&gt;</code> is NULL unless that column differs between
+      the sides, so an explanation reads <code>COALESCE(u.__d_x, u.x)</code> for the
+      dashboard's value. Check <code>explanation_query</code> and <code>_with_students</code> select
+      no column of the same name.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run it, then the whole suite.</strong> Expected: PASS.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong> both files:
+      <code>fix(cube-validation): give an explanation the dashboard's cell</code>.</p>
+</li>
+</ul>
+<hr />
+<h3 id="task-6-pre-aggregation-refusal-names-the-remedy">Task 6: Pre-aggregation refusal names the remedy</h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>Modify: <code>P/cube_client.py</code> (<code>refuse_unless_safe</code>)</li>
+<li>Modify: <code>P/compare.py</code> (<code>_say_skips</code>)</li>
+<li>
+<p>Test: <code>T/test_cube_client.py</code>, <code>T/test_cli.py</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing tests</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_pre_aggregation_refusal_names_the_scope_remedy</span><span class="p">():</span>
+    <span class="k">with</span> <span class="n">pytest</span><span class="o">.</span><span class="n">raises</span><span class="p">(</span><span class="n">CubeRefusal</span><span class="p">)</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="n">refuse_unless_safe</span><span class="p">(</span><span class="n">_compiled</span><span class="p">(</span><span class="n">pre_aggregations</span><span class="o">=</span><span class="p">[{</span><span class="s2">"id"</span><span class="p">:</span> <span class="s2">"r"</span><span class="p">}]),</span> <span class="n">view_fact</span><span class="o">=</span><span class="s2">"m.fct"</span><span class="p">,</span> <span class="n">network_schools</span><span class="o">=</span><span class="nb">set</span><span class="p">())</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="s2">"scope"</span> <span class="ow">in</span> <span class="n">text</span> <span class="ow">and</span> <span class="s2">"operator: set"</span> <span class="ow">in</span> <span class="n">text</span> <span class="ow">and</span> <span class="s2">"primary key"</span> <span class="ow">in</span> <span class="n">text</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">text</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">"."</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_skip_lines_never_end_in_a_doubled_period</span><span class="p">(</span><span class="n">capsys</span><span class="p">):</span>
+    <span class="n">compare</span><span class="o">.</span><span class="n">_say_skips</span><span class="p">([</span><span class="n">Skip</span><span class="p">(</span><span class="s2">"a"</span><span class="p">,</span> <span class="s2">"why."</span><span class="p">)])</span>
+    <span class="k">assert</span> <span class="n">capsys</span><span class="o">.</span><span class="n">readouterr</span><span class="p">()</span><span class="o">.</span><span class="n">out</span> <span class="o">==</span> <span class="s2">"Skipping a: why.</span><span class="se">\n</span><span class="s2">"</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run them to verify they fail.</strong></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Implement.</strong> Refusal text:
+      <code>"Cube served this from a pre-aggregation, stored data rather than the fact the view reads; add a Cube-only</code>scope<code>on a never-null member the rollup does not carry, such as the fact's primary key, with</code>operator:
+      set<code>"</code>. <code>_say_skips</code> prints <code>s.why.rstrip(".")</code> + <code>"."</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run them, then the whole suite.</strong> Expected: PASS.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong> the four files:
+      <code>fix(cube-validation): name the pre-aggregation remedy</code>.</p>
+</li>
+</ul>
+<hr />
+<h3 id="task-7-published-worksheets-read-mark-refuse-record">Task 7: Published worksheets: read, mark, refuse, record</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>P/tableau.py</code> (new <code>published_sheets</code>, <code>NOT_PUBLISHED</code>)</li>
+<li>Modify: <code>P/config.py</code> (<code>Comparison.unpublished</code>, <code>RebuildCheck.published</code>, new
+  <code>fingerprint_data</code>)</li>
+<li>Modify: <code>P/latest.py</code> (<code>entry_fingerprint</code>), <code>P/pipeline.py</code>
+  (<code>checkpoint_fingerprint</code>, <code>_print_sheets</code>)</li>
+<li>Modify: <code>P/read_sheet.py</code> (<code>Sheet.published</code>, <code>_sheet_lines</code>, <code>check</code>)</li>
+<li>Modify: <code>P/rebuild.py</code> (<code>_capture</code>, <code>rebuild_sheet</code>)</li>
+<li>Test: <code>T/test_tableau.py</code>, <code>T/test_config.py</code>, <code>T/test_read_sheet.py</code>,
+  <code>T/test_cli.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>
+<p>Produces: <code>tableau.published_sheets(twb_xml: str) -&gt; set[str]</code>;
+  <code>tableau.NOT_PUBLISHED = "not on a published dashboard"</code>;
+  <code>Comparison.unpublished: bool = False</code>;
+  <code>RebuildCheck.published: bool | None = None</code> (None: the check predates it);
+  <code>config.fingerprint_data(comparison: Comparison) -&gt; dict</code> (what both
+  fingerprints hash).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Capture today's fingerprints.</strong> Before any edit, run the current
+      code on a fixture comparison with a rebuild check and every field set as
+      an existing DDI file sets it, and paste the two hex digests
+      (<code>latest.entry_fingerprint(c)</code>,
+      <code>pipeline.checkpoint_fingerprint(c, {"cube": "x", "dashboard": "y"})</code>)
+      into the test below as golden values.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Write the failing tests</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="c1"># test_config.py</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_new_keys_left_unset_keep_every_fingerprint</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="n">latest</span><span class="o">.</span><span class="n">entry_fingerprint</span><span class="p">(</span><span class="n">FIXTURE</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"&lt;golden 1&gt;"</span>
+    <span class="k">assert</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">checkpoint_fingerprint</span><span class="p">(</span><span class="n">FIXTURE</span><span class="p">,</span> <span class="p">{</span><span class="s2">"cube"</span><span class="p">:</span> <span class="s2">"x"</span><span class="p">,</span> <span class="s2">"dashboard"</span><span class="p">:</span> <span class="s2">"y"</span><span class="p">})</span> <span class="o">==</span> <span class="s2">"&lt;golden 2&gt;"</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_unpublished_and_published_load</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">):</span>
+    <span class="c1"># `unpublished: true` and `rebuild_check.published: false` read back; a</span>
+    <span class="c1"># non-boolean is refused</span>
+
+<span class="c1"># test_tableau.py</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_published_sheets_reads_dashboard_zones_and_visible_windows</span><span class="p">():</span>
+    <span class="c1"># zone name='A' in a dashboard; window class='worksheet' name='B' (no hidden);</span>
+    <span class="c1"># window name='C' hidden='true' and in no zone</span>
+    <span class="k">assert</span> <span class="n">tableau</span><span class="o">.</span><span class="n">published_sheets</span><span class="p">(</span><span class="n">xml</span><span class="p">)</span> <span class="o">==</span> <span class="p">{</span><span class="s2">"A"</span><span class="p">,</span> <span class="s2">"B"</span><span class="p">}</span>
+
+<span class="c1"># test_read_sheet.py</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_read_sheet_marks_and_blocks_an_unpublished_sheet</span><span class="p">():</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_read_sheet_lets_an_opted_in_unpublished_sheet_through</span><span class="p">():</span> <span class="o">...</span>
+
+<span class="c1"># test_cli.py</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_rebuild_sheet_refuses_an_unpublished_sheet_before_any_export</span><span class="p">(</span><span class="n">fakes</span><span class="p">,</span> <span class="n">tmp_path</span><span class="p">,</span> <span class="n">capsys</span><span class="p">):</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_rebuild_sheet_records_published</span><span class="p">(</span><span class="n">fakes</span><span class="p">,</span> <span class="n">tmp_path</span><span class="p">):</span> <span class="o">...</span>  <span class="c1"># rebuild_check.published is True</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_find_field_marks_an_unpublished_sheet</span><span class="p">(</span><span class="n">fakes</span><span class="p">,</span> <span class="n">tmp_path</span><span class="p">,</span> <span class="n">capsys</span><span class="p">):</span> <span class="o">...</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Run them to verify they fail</strong> (except the golden test, which
+      passes now and must keep passing).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Implement</strong></p>
+</li>
+<li>
+<p><code>published_sheets</code>: names in any <code>&lt;dashboard&gt;</code>'s <code>&lt;zone name=…&gt;</code> (zones nest;
+  take every one) plus every <code>&lt;window class='worksheet' name=…&gt;</code> without
+  <code>hidden='true'</code>. Docstring gives the reason (a hidden window publishes no
+  view).</p>
+</li>
+<li><code>config.fingerprint_data</code>: <code>asdict</code> of the comparison with <code>definitions</code>
+  emptied, then <code>unpublished</code> dropped when False and <code>rebuild_check.published</code>
+  dropped when None. <code>latest.entry_fingerprint</code> and
+  <code>pipeline.checkpoint_fingerprint</code> hash it in place of their own <code>asdict</code>.</li>
+<li>Read <code>unpublished</code> with <code>reader.get("unpublished", bool, default=False)</code> and
+  <code>published</code> with <code>check_reader.get("published", bool)</code>; add <code>unpublished</code>
+  wherever the loader lists comparison keys.</li>
+<li><code>read_sheet.read_sheet</code> sets <code>Sheet.published: bool = True</code> from
+  <code>published_sheets</code>. <code>_sheet_lines</code>'s header adds
+  <code>; not on a published dashboard</code>. <code>check</code> adds the blocking item
+  <code>"sheet: not on a published dashboard; set unpublished: true to compare it anyway"</code>
+  for a comparison without <code>unpublished</code>.</li>
+<li><code>pipeline._print_sheets</code> prints <code>"    not on a published dashboard"</code> for such
+  a sheet.</li>
+<li>
+<p><code>rebuild._capture</code>, after downloading: refuse
+  <code>f"comparison {id!r}: sheet {sheet!r} is {NOT_PUBLISHED}; set unpublished: true to compare it anyway"</code>
+  unless <code>comparison.unpublished</code>. <code>rebuild_sheet</code> writes
+  <code>"published": sheet in published_sheets(twb)</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Run the tests, then the whole suite.</strong> Expected: PASS, golden
+      digests unchanged.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Commit</strong> the ten files:
+      <code>feat(cube-validation): validate only published worksheets</code>.</p>
+</li>
+</ul>
+<hr />
+<h3 id="task-8-compare-skips-unpublished-sheets-the-owner-sees-the-opt-in">Task 8: <code>compare</code> skips unpublished sheets; the owner sees the opt-in</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>P/rebuild.py</code> (new <code>unpublished_sheets</code>)</li>
+<li>Modify: <code>P/compare.py</code> (<code>_early_skips</code>)</li>
+<li>Modify: <code>P/report.py</code> (<code>render_review_issue</code>), <code>P/review.py</code> (<code>ask_owner</code>)</li>
+<li>Test: <code>T/test_cli.py</code>, <code>T/test_report.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: Task 7's <code>published_sheets</code>, <code>RebuildCheck.published</code>,
+  <code>Comparison.unpublished</code>.</li>
+<li>
+<p>Produces:
+  <code>rebuild.unpublished_sheets(comparisons: list[Comparison], *, tbl: tableau.Tableau) -&gt; dict[str, str]</code>
+  (comparison id to skip reason);
+  <code>render_review_issue(..., unpublished: dict[str, set[str]] | None = None)</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing tests</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_compare_skips_a_sheet_on_no_published_dashboard</span><span class="p">(</span><span class="n">fakes</span><span class="p">,</span> <span class="n">tmp_path</span><span class="p">,</span> <span class="n">capsys</span><span class="p">):</span>
+    <span class="c1"># rebuild_check without `published`; the fake workbook hides the sheet</span>
+    <span class="k">assert</span> <span class="s2">"Skipping c1: not on a published dashboard; set unpublished: true"</span> <span class="ow">in</span> <span class="n">capsys</span><span class="o">.</span><span class="n">readouterr</span><span class="p">()</span><span class="o">.</span><span class="n">out</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_compare_downloads_no_workbook_for_a_check_that_recorded_published</span><span class="p">(</span><span class="n">fakes</span><span class="p">,</span> <span class="n">tmp_path</span><span class="p">):</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_compare_checks_again_after_a_republish</span><span class="p">(</span><span class="n">fakes</span><span class="p">,</span> <span class="n">tmp_path</span><span class="p">):</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_compare_runs_an_opted_in_unpublished_sheet</span><span class="p">(</span><span class="n">fakes</span><span class="p">,</span> <span class="n">tmp_path</span><span class="p">):</span> <span class="o">...</span>
+
+<span class="c1"># test_report.py</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_review_question_says_its_sheet_is_on_no_published_dashboard</span><span class="p">():</span>
+    <span class="n">body</span> <span class="o">=</span> <span class="n">report</span><span class="o">.</span><span class="n">render_review_issue</span><span class="p">(</span><span class="s2">"Registrar"</span><span class="p">,</span> <span class="n">runs</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="n">unpublished</span><span class="o">=</span><span class="p">{</span><span class="s2">"v"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"c1"</span><span class="p">}})</span>
+    <span class="k">assert</span> <span class="s2">"`c1`'s sheet is on no published dashboard"</span> <span class="ow">in</span> <span class="n">body</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run them to verify they fail.</strong></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Implement</strong></p>
+</li>
+</ul>
+<p><code>unpublished_sheets</code> skips opted-in comparisons; downloads each workbook once
+(per luid) when one of its comparisons has <code>published</code> not True or
+<code>tbl.workbook_updated(luid)</code> is after its check's <code>workbook_updated_at</code>; returns
+<code>"not on a published dashboard; set unpublished: true to compare it anyway"</code> for
+a sheet outside <code>published_sheets</code>, and
+<code>f"the workbook could not be checked: {TABLEAU_ANSWERED} {code} {summary}"</code> on
+<code>TSC.ServerResponseError</code>. <code>_early_skips</code> runs it on what is left after
+<code>workbook_check</code>. <code>render_review_issue</code> ends each question line naming an
+<code>unpublished</code> comparison (per <code>defined_comparisons([q], view)</code>) with
+<code>Note: `&lt;id&gt;`'s sheet is on no published dashboard.</code>; <code>ask_owner</code> passes
+<code>{cfg.view: {c.id for c in cfg.comparisons if c.unpublished}}</code>.</p>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run the tests, then the whole suite.</strong> Expected: PASS.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong> the six files:
+      <code>feat(cube-validation): skip unpublished sheets in compare</code>.</p>
+</li>
+</ul>
+<hr />
+<h3 id="task-9-safe-filter-values">Task 9: Safe filter values</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>P/find_field.py</code> (<code>SHOWN_FILTER_FIELDS</code>, new <code>columns_read</code>,
+  <code>shown_values</code>, <code>sheet_shape</code>)</li>
+<li>Modify: <code>P/read_sheet.py</code> (filter <code>columns</code> via <code>columns_read</code>,
+  <code>SheetFilter.shown</code>, <code>_sheet_lines</code>, module docstring)</li>
+<li>Test: <code>T/test_find_field_shape.py</code>, <code>T/test_read_sheet.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>
+<p>Produces:
+  <code>find_field.columns_read(name: str, formulas: dict[str, str]) -&gt; tuple[str, ...]</code>
+  (the datasource columns <code>name</code> reads through calculations, parameters left
+  out; <code>name</code> itself when it is no calc);
+  <code>find_field.shown_values(filter_el: ET.Element, field_name: str, formulas: dict[str, str]) -&gt; str | None</code>
+  (None when hidden); <code>SheetFilter.shown: str = ""</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing tests</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_shown_values_lists_chosen_members_of_an_allowlisted_field</span><span class="p">():</span>
+    <span class="c1"># categorical union on response_type -&gt; "Overall, Growth"; except -&gt; "all except Overall"</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_shown_values_gives_a_quantitative_filter_s_bounds_and_mode</span><span class="p">():</span>
+    <span class="c1"># is_normed_scope min 1 max 1 -&gt; "from 1 to 1"; non-null -&gt; "non-null values only"</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_shown_values_hides_a_field_off_the_allowlist</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="n">finder</span><span class="o">.</span><span class="n">shown_values</span><span class="p">(</span><span class="n">el_on_student_number</span><span class="p">,</span> <span class="s2">"student_number"</span><span class="p">,</span> <span class="p">{})</span> <span class="ow">is</span> <span class="kc">None</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_a_calc_filter_shows_only_when_every_column_it_reads_is_allowlisted</span><span class="p">():</span>
+    <span class="n">formulas</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"Calculation_1"</span><span class="p">:</span> <span class="s2">"[module_type] = 'WPP' AND [region] = 'Newark'"</span><span class="p">,</span>
+                <span class="s2">"Calculation_2"</span><span class="p">:</span> <span class="s2">"[student_number] &gt; 0"</span><span class="p">}</span>
+    <span class="k">assert</span> <span class="n">finder</span><span class="o">.</span><span class="n">shown_values</span><span class="p">(</span><span class="n">el_calc1</span><span class="p">,</span> <span class="s2">"Calculation_1"</span><span class="p">,</span> <span class="n">formulas</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="k">assert</span> <span class="n">finder</span><span class="o">.</span><span class="n">shown_values</span><span class="p">(</span><span class="n">el_calc2</span><span class="p">,</span> <span class="s2">"Calculation_2"</span><span class="p">,</span> <span class="n">formulas</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_read_sheet_shows_an_allowlisted_filter_s_values</span><span class="p">():</span> <span class="o">...</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run them to verify they fail.</strong></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Implement</strong></p>
+</li>
+</ul>
+<p>Add <code>response_type</code>, <code>module_type</code> and <code>is_normed_scope</code> to
+<code>SHOWN_FILTER_FIELDS</code>. <code>columns_read</code> is <code>read_sheet.read_sheet</code>'s <code>reads</code>
+closure moved out (recursion through calcs, bracketed names that are no calc and
+not <code>Parameters</code>); <code>read_sheet</code> uses it for <code>SheetFilter.columns</code>.
+<code>shown_values</code> returns None unless <code>field_name</code> is allowlisted, or is a calc
+whose <code>columns_read</code> are all allowlisted; categorical members as today
+(<code>all except …</code> for <code>function='except'</code>); quantitative <code>from &lt;min&gt; to &lt;max&gt;</code>,
+<code>from &lt;min&gt;</code>, <code>up to &lt;max&gt;</code>, or the <code>null_mode</code> words. <code>sheet_shape</code> builds
+<code>formulas</code> as <code>read_sheet</code> does and prints
+<code>"&lt;name&gt;: &lt;shown&gt; (narrows the sheet)"</code>, keeping the hidden wording otherwise.
+<code>read_sheet._sheet_lines</code> appends <code>; shows &lt;shown&gt;</code> for a restricting filter.
+Both docstrings say values print only for allowlisted fields.</p>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run the tests, then the whole suite.</strong> Expected: PASS.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong> the four files:
+      <code>feat(cube-validation): show filter values that cannot identify a person</code>.</p>
+</li>
+</ul>
+<hr />
+<h3 id="task-10-share-an-explanation-across-a-dashboard-model">Task 10: Share an explanation across a dashboard model</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>P/config.py</code> (<code>row_population</code> and <code>_POPULATION</code> become
+  <code>explanation_key</code>)</li>
+<li>Modify: <code>P/explain.py</code> (import, <code>siblings</code> docstring, the <code>explain</code> "Also"
+  line)</li>
+<li>Test: <code>T/test_explain.py</code>, <code>T/test_cli.py</code> (rewrite
+  <code>test_dashboard_columns_change_the_row_population</code>)</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>
+<p>Produces: <code>config.explanation_key(comparison: Comparison) -&gt; str | None</code> (None
+  without <code>rows</code>): JSON of <code>dashboard_view</code>, <code>rows.grain</code>, <code>rows.values</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing tests</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_comparisons_on_one_model_and_grain_share_an_explanation</span><span class="p">():</span>
+    <span class="n">other</span> <span class="o">=</span> <span class="n">replace</span><span class="p">(</span><span class="n">COMPARISON</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="s2">"b"</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="p">{</span><span class="o">...</span><span class="p">},</span> <span class="n">defaults</span><span class="o">=</span><span class="p">{</span><span class="o">...</span><span class="p">},</span> <span class="n">scope</span><span class="o">=</span><span class="p">[</span><span class="o">...</span><span class="p">],</span>
+                    <span class="n">cuts</span><span class="o">=</span><span class="p">[{}],</span> <span class="n">dashboard_columns</span><span class="o">=</span><span class="p">{</span><span class="s2">"x"</span><span class="p">:</span> <span class="s2">"1"</span><span class="p">})</span>
+    <span class="k">assert</span> <span class="n">explain</span><span class="o">.</span><span class="n">siblings</span><span class="p">(</span><span class="n">ViewConfig</span><span class="p">(</span><span class="s2">"v"</span><span class="p">,</span> <span class="s2">"m.fct"</span><span class="p">,</span> <span class="p">[</span><span class="n">COMPARISON</span><span class="p">,</span> <span class="n">other</span><span class="p">]),</span> <span class="n">COMPARISON</span><span class="p">)</span> <span class="o">==</span> <span class="p">[</span><span class="n">other</span><span class="p">]</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_another_grain_or_model_does_not_share</span><span class="p">():</span>
+    <span class="c1"># rows.values differ -&gt; no; dashboard_view differs -&gt; no; rows None -&gt; key None</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_a_shared_explanation_runs_on_each_comparison_s_own_rows</span><span class="p">(</span><span class="n">duck</span><span class="p">,</span> <span class="n">tmp_path</span><span class="p">,</span> <span class="n">offline</span><span class="p">):</span>
+    <span class="c1"># sibling with different `filters`: the outcome counts its own saved rows;</span>
+    <span class="c1"># a row it lacks the explanation covers falls to UNEXPLAINED</span>
+</code></pre></div>
+<p>In <code>test_cli.py</code>, replace the dashboard-columns test with
+<code>test_dashboard_columns_do_not_change_the_explanation_key</code> and update any
+<code>"(same rows)"</code> assertion to the new <code>explain</code> line.</p>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run them to verify they fail.</strong></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Implement.</strong> <code>explain</code> prints
+      <code>f"Also {sibling}: {n} of {len(r.found)} items explained."</code> and
+      <code>f"Also {sibling}: not run; see above."</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run the tests, then the whole suite.</strong> Expected: PASS.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong> the four files:
+      <code>feat(cube-validation): share explanations across a dashboard model</code>.</p>
+</li>
+</ul>
+<hr />
+<h3 id="task-11-formula-check-part-1-matched-keys">Task 11: Formula check, part 1: matched keys</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>P/formula.py</code></li>
+<li>Test: Create <code>T/test_formula.py</code> (with its own autouse <code>_cache_in_tmp</code>, copied
+  from <code>test_cli.py</code>; import named helpers from <code>test_explain.py</code> only)</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>pipeline.reconcile_args</code>, <code>reconcile._joined</code>,
+  <code>reconcile._grain_keys</code>, <code>pipeline.RowSides</code>.</li>
+<li>Produces in <code>formula.py</code>:</li>
+<li><code>NOT_COMPARED = "formulas not compared"</code>; <code>class NotCompared(Exception)</code>
+    (its text is a fixed reason); reasons
+    <code>REWRITE_DIFFERS = "the rewrite does not reproduce the run's cells"</code>,
+    <code>NO_ROWS = "no rows both sides hold"</code>,
+    <code>SAVED_GONE = "its saved rows are gone or of another run; compare it again"</code>,
+    <code>SQL_MOVED = "its SQL changed since the run; compare it again"</code>,
+    <code>CUBE_REFUSED = "Cube refused its SQL; sort again"</code>,
+    <code>NOT_COMPOSED = "the run is not composed from the latest results; compare it again"</code>,
+    <code>OUTSIDE = "not run: outside --comparison; sort it"</code>.</li>
+<li><code>key_sql(columns: list[str], dates: list[bool]) -&gt; str</code>: the key of one row;
+    NULL when the first column's key is NULL.</li>
+<li>
+<p><code>matched_ctes(cfg: ViewConfig, comparison: Comparison, sides: pipeline.RowSides, saved_table: str) -&gt; str</code>:
+    a <code>WITH</code> prefix ending in <code>__matched AS (SELECT __key …)</code>, no final SELECT.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing tests</strong> (DuckDB; toy tables and a <code>RowSides</code>
+      like <code>test_explain.SIDES</code>, saved rows via <code>compare.save_script</code>)</p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_matched_keys_leave_out_every_unmatched_and_one_sided_key</span><span class="p">(</span><span class="n">duck</span><span class="p">):</span> <span class="o">...</span>
+    <span class="c1"># 4 students: 1 match, 1 cube_only, 1 value_differs, 1 duplicate on one side</span>
+    <span class="c1"># -&gt; __matched holds only the match</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_matched_keys_leave_out_a_key_with_any_unmatched_duplicate</span><span class="p">(</span><span class="n">duck</span><span class="p">):</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_matched_keys_never_hold_a_null_student</span><span class="p">(</span><span class="n">duck</span><span class="p">):</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_matched_keys_leave_out_rows_a_dashboard_filter_drops</span><span class="p">(</span><span class="n">duck</span><span class="p">):</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_matched_keys_leave_out_a_saved_unmatched_key_the_rebuild_misses</span><span class="p">(</span><span class="n">duck</span><span class="p">):</span> <span class="o">...</span>
+    <span class="c1"># saved table holds a key the rebuilt join files `match` -&gt; left out</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_key_sql_reads_a_timestamp_and_its_date_alike</span><span class="p">(</span><span class="n">duck</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="n">duck</span><span class="o">.</span><span class="n">rows</span><span class="p">(</span><span class="sa">f</span><span class="s2">"SELECT </span><span class="si">{</span><span class="n">formula</span><span class="o">.</span><span class="n">key_sql</span><span class="p">([</span><span class="s1">'t'</span><span class="p">],</span><span class="w"> </span><span class="p">[</span><span class="kc">True</span><span class="p">])</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="n">formula</span><span class="o">.</span><span class="n">key_sql</span><span class="p">([</span><span class="s1">'d'</span><span class="p">],</span><span class="w"> </span><span class="p">[</span><span class="kc">False</span><span class="p">])</span><span class="si">}</span><span class="s2"> AS same "</span>
+                     <span class="s2">"FROM (SELECT TIMESTAMP '2026-01-05 00:00:00' AS t, DATE '2026-01-05' AS d)"</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="s2">"same"</span><span class="p">]</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run them to verify they fail.</strong> Expected: FAIL (no module
+      <code>formula</code>).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Implement</strong></p>
+</li>
+</ul>
+<p><code>key_sql</code> wraps each date column in <code>DATE()</code>, applies <code>reconcile._grain_keys</code>,
+and returns <code>IF(&lt;k0&gt; IS NULL, NULL, TO_JSON_STRING(STRUCT(&lt;k0&gt; AS k0, …)))</code>.
+<code>matched_ctes</code> builds
+<code>reconcile._joined(*args, keys=True, moved=True, **kwargs)</code> from
+<code>pipeline.reconcile_args</code>, then:</p>
+<div class="highlight"><pre><span></span><code><span class="n">__match</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="p">(</span><span class="k">SELECT</span><span class="w"> </span><span class="o">&lt;</span><span class="k">key</span><span class="w"> </span><span class="n">over</span><span class="w"> </span><span class="n">__k</span><span class="o">*&gt;</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">__key</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">joined</span>
+<span class="w">            </span><span class="k">WHERE</span><span class="w"> </span><span class="n">bucket</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'match'</span><span class="w"> </span><span class="k">AND</span><span class="w"> </span><span class="n">__cin</span><span class="w"> </span><span class="k">IS</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="w"> </span><span class="k">AND</span><span class="w"> </span><span class="n">__din</span><span class="w"> </span><span class="k">IS</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">),</span>
+<span class="n">__other</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="p">(</span><span class="k">SELECT</span><span class="w"> </span><span class="o">&lt;</span><span class="k">key</span><span class="w"> </span><span class="n">over</span><span class="w"> </span><span class="n">__k</span><span class="o">*&gt;</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">joined</span>
+<span class="w">            </span><span class="k">WHERE</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="p">(</span><span class="n">bucket</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'match'</span><span class="w"> </span><span class="k">AND</span><span class="w"> </span><span class="n">__cin</span><span class="w"> </span><span class="k">IS</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="w"> </span><span class="k">AND</span><span class="w"> </span><span class="n">__din</span><span class="w"> </span><span class="k">IS</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">)),</span>
+<span class="n">__saved</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="p">(</span><span class="k">SELECT</span><span class="w"> </span><span class="o">&lt;</span><span class="k">key</span><span class="w"> </span><span class="n">over</span><span class="w"> </span><span class="n">__gd</span><span class="o">*&gt;</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="o">&lt;</span><span class="n">saved</span><span class="o">&gt;</span><span class="w"> </span><span class="k">WHERE</span><span class="w"> </span><span class="n">bucket</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="s1">'cube_only'</span>
+<span class="w">            </span><span class="k">UNION</span><span class="w"> </span><span class="k">DISTINCT</span>
+<span class="w">            </span><span class="k">SELECT</span><span class="w"> </span><span class="o">&lt;</span><span class="k">key</span><span class="w"> </span><span class="n">over</span><span class="w"> </span><span class="n">__gc</span><span class="o">*&gt;</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="o">&lt;</span><span class="n">saved</span><span class="o">&gt;</span><span class="w"> </span><span class="k">WHERE</span><span class="w"> </span><span class="n">bucket</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="s1">'dashboard_only'</span><span class="p">),</span>
+<span class="n">__matched</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="p">(</span><span class="k">SELECT</span><span class="w"> </span><span class="n">__key</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">__match</span><span class="w"> </span><span class="k">WHERE</span><span class="w"> </span><span class="n">__key</span><span class="w"> </span><span class="k">IS</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span>
+<span class="w">              </span><span class="k">EXCEPT</span><span class="w"> </span><span class="k">DISTINCT</span><span class="w"> </span><span class="k">SELECT</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">__other</span>
+<span class="w">              </span><span class="k">EXCEPT</span><span class="w"> </span><span class="k">DISTINCT</span><span class="w"> </span><span class="k">SELECT</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">__saved</span><span class="p">)</span>
+</code></pre></div>
+<p>The <code>__k*</code> columns are already keys: key them with <code>TO_JSON_STRING(STRUCT(…))</code>
+directly, not <code>key_sql</code> again. The module docstring states the rule (matched =
+rows the reconcile matched, minus every saved unmatched key).</p>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run them, then the whole suite.</strong> Expected: PASS.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong> both files:
+      <code>feat(cube-validation): build the formula check's matched keys</code>.</p>
+</li>
+</ul>
+<hr />
+<h3 id="task-12-formula-check-part-2-the-dashboard-side-and-its-self-check">Task 12: Formula check, part 2: the dashboard side and its self-check</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>P/pipeline.py</code> (<code>sheet_query</code> gains <code>rows</code>; new
+  <code>dashboard_scoped_rows_sql</code>; <code>dashboard_rows_sql</code> shares its WHERE and
+  ranking)</li>
+<li>Modify: <code>P/formula.py</code></li>
+<li>Test: <code>T/test_formula.py</code>, <code>T/test_pipeline_slices.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Produces:</li>
+<li><code>pipeline.sheet_query(cfg, comparison, cut, with_filters=True, rows: str | None = None) -&gt; str</code>
+    (<code>rows</code> replaces <code>SELECT * FROM &lt;dashboard_ref&gt;</code>; unchanged when None, so
+    <code>sheet_query_fingerprint</code> does not move).</li>
+<li><code>pipeline.dashboard_scoped_rows_sql(cfg: ViewConfig, comparison: Comparison) -&gt; str</code>:
+    every column of the dashboard rows the reconcile reads (any cut without
+    <code>dashboard_filters</code>, <code>rows.dashboard_scope</code>, <code>rows.reduce</code>).</li>
+<li>
+<p><code>formula.dashboard_side_sql(cfg, comparison, cuts: list[dict], build: Build, wh, *, keep: bool) -&gt; str</code>:
+    <code>UNION ALL</code> over <code>cuts</code> of
+    <code>SELECT &lt;lit(cut_label)&gt; AS __cut, * FROM (&lt;sheet query as of build.start&gt;)</code>.
+    <code>keep=True</code> reads <code>{rows}</code> as
+    <code>SELECT * FROM (&lt;dashboard_scoped_rows_sql&gt;) WHERE &lt;key_sql(dash grain, dates)&gt; IN (SELECT __key FROM __matched)</code>;
+    <code>keep=False</code> as <code>SELECT * FROM (SELECT * FROM &lt;dashboard_ref&gt;) WHERE TRUE</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing tests</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_sheet_query_takes_other_rows_and_keeps_its_fingerprint</span><span class="p">():</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_dashboard_side_recomputes_a_cell_on_matched_rows_only</span><span class="p">(</span><span class="n">duck</span><span class="p">):</span>
+    <span class="c1"># school X: 2 matched students (0.5, 1.0) + 1 cube_only; AVG on matched = 0.75</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_dashboard_side_keeps_only_the_latest_row_under_reduce</span><span class="p">(</span><span class="n">duck</span><span class="p">):</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_dashboard_side_leaves_out_rows_outside_dashboard_scope</span><span class="p">(</span><span class="n">duck</span><span class="p">):</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_dashboard_side_tags_each_cut</span><span class="p">(</span><span class="n">duck</span><span class="p">):</span>
+    <span class="c1"># cuts [{}, {"Region": "Miami"}] -&gt; rows carry both __cut labels, each with its own value</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_dashboard_self_check_reproduces_the_sheet_query</span><span class="p">(</span><span class="n">duck</span><span class="p">):</span>
+    <span class="c1"># keep=False equals running sheet_query per cut</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run them to verify they fail.</strong></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Implement.</strong> <code>dashboard_scoped_rows_sql</code> is
+      <code>SELECT * FROM &lt;dashboard_ref&gt; WHERE &lt;any cut, no filters&gt; AND &lt;dashboard_scope&gt;</code>,
+      with <code>rows.reduce</code> as <code>dashboard_rows_sql</code> ranks it; its kept-first order
+      reads the filters inline (<code>COALESCE(&lt;filter sql&gt;, FALSE) AND …</code>) since the
+      <code>__df</code> flags are not columns here. The keep variant is wrapped by the
+      caller (Task 15) as <code>f"{matched_ctes}\nSELECT * FROM (\n{body}\n)"</code>; the
+      self-check runs bare.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run them, then the whole suite.</strong> Expected: PASS.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong> the four files:
+      <code>feat(cube-validation): recompute the dashboard's cells on matched rows</code>.</p>
+</li>
+</ul>
+<hr />
+<h3 id="task-13-formula-check-part-3-the-cube-side-its-tables-and-self-check">Task 13: Formula check, part 3: the Cube side, its tables and self-check</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>P/bq.py</code> (<code>Warehouse.columns</code>)</li>
+<li>Modify: <code>P/formula.py</code></li>
+<li>Test: <code>T/test_bq.py</code>, <code>T/test_formula.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Produces:</li>
+<li><code>Warehouse.columns(dataset: str, name: str) -&gt; set[str]</code>: the table's schema
+    field names (<code>_get_table(...).schema</code>; no query).</li>
+<li><code>formula.fact_grain(compiled_rows_sql: str, view: str, grain: list[str]) -&gt; tuple[str, list[str]]</code>:
+    the <code>dataset.table</code> the grain sits on and its column per grain member;
+    raises
+    <code>NotCompared(f"grain column {m} is an expression, not a fact column")</code> or
+    <code>NotCompared("the grain columns sit on more than one table")</code>.</li>
+<li><code>formula.filtered_tables(read: list[str], columns: list[str], columns_of: Callable[[str], set[str]]) -&gt; list[str]</code>:
+    the tables of <code>read</code> carrying every grain column; raises
+    <code>NotCompared("no table Cube reads carries the grain columns")</code> when none.</li>
+<li><code>formula.rewrite_cube_sql(sql: str, tables: list[str], columns: list[str], dates: list[bool], *, keep: bool) -&gt; str</code>;
+    raises <code>NotCompared(f"Cube's SQL reads {t} with no alias")</code> or
+    <code>NotCompared(f"Cube's SQL does not read {t}")</code>.</li>
+<li>
+<p><code>formula.cube_side_sql(cfg, comparison, cuts, build, *, ex: pipeline.Expand, sides: pipeline.RowSides, tables: list[str], columns: list[str], keep: bool) -&gt; str</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing tests</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_columns_reads_the_schema_without_a_query</span><span class="p">():</span> <span class="o">...</span>  <span class="c1"># fake client with schema; no query() call</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_fact_grain_maps_each_member_to_its_fact_column</span><span class="p">():</span>
+    <span class="n">sql</span> <span class="o">=</span> <span class="s2">"SELECT `f`.student_number `v__student`, `f`.item_id `v__item` FROM kipptaf_marts.fct_x AS `f`"</span>
+    <span class="k">assert</span> <span class="n">formula</span><span class="o">.</span><span class="n">fact_grain</span><span class="p">(</span><span class="n">sql</span><span class="p">,</span> <span class="s2">"v"</span><span class="p">,</span> <span class="p">[</span><span class="s2">"student"</span><span class="p">,</span> <span class="s2">"item"</span><span class="p">])</span> <span class="o">==</span> <span class="p">(</span><span class="s2">"kipptaf_marts.fct_x"</span><span class="p">,</span> <span class="p">[</span><span class="s2">"student_number"</span><span class="p">,</span> <span class="s2">"item_id"</span><span class="p">])</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_fact_grain_refuses_an_expression</span><span class="p">():</span> <span class="o">...</span>       <span class="c1"># CAST(`f`.a AS STRING) `v__student`</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_fact_grain_refuses_a_subquery_alias</span><span class="p">():</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_filtered_tables_skips_a_goals_lookup</span><span class="p">():</span>
+    <span class="n">cols</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"m.fct"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"student_number"</span><span class="p">,</span> <span class="s2">"item_id"</span><span class="p">},</span> <span class="s2">"m.fct_goals"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"school"</span><span class="p">,</span> <span class="s2">"grade"</span><span class="p">}}</span>
+    <span class="k">assert</span> <span class="n">formula</span><span class="o">.</span><span class="n">filtered_tables</span><span class="p">([</span><span class="s2">"m.fct"</span><span class="p">,</span> <span class="s2">"m.fct_goals"</span><span class="p">],</span> <span class="p">[</span><span class="s2">"student_number"</span><span class="p">,</span> <span class="s2">"item_id"</span><span class="p">],</span> <span class="n">cols</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">)</span> <span class="o">==</span> <span class="p">[</span><span class="s2">"m.fct"</span><span class="p">]</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_rewrite_wraps_every_reference_of_each_table</span><span class="p">():</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_rewrite_refuses_a_reference_with_no_alias</span><span class="p">():</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_cube_side_recomputes_on_matched_rows_and_self_checks</span><span class="p">(</span><span class="n">duck</span><span class="p">):</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_cube_side_keys_a_timestamp_grain_as_a_date</span><span class="p">(</span><span class="n">duck</span><span class="p">):</span> <span class="o">...</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run them to verify they fail.</strong></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Implement.</strong> <code>fact_grain</code> parses with
+      <code>sqlglot.parse_one(sql, read="bigquery")</code>, reads the outermost SELECT's
+      projections and its <code>FROM</code>/<code>JOIN</code> aliases. <code>rewrite_cube_sql</code> matches, per
+      table,
+      <code>re.escape(f"`{PROJECT}.{t}`") + r"(?P&lt;alias&gt;\s+AS\s+`?\w+`?)?\s+FOR SYSTEM_TIME AS OF TIMESTAMP '(?P&lt;at&gt;[^']+)'"</code>
+      and writes the filtered subquery with the alias after it (predicate <code>TRUE</code>
+      when <code>keep</code> is False). <code>cube_side_sql</code>, per cut:
+      <code>ex.at(ex.cube_sql(cell_query(view, comparison, cut)), build.end)</code>,
+      <code>timetravel.repin</code> of its tables shared with <code>sides.dashboard.tables</code> to
+      <code>build.start</code> (one query reads each table at one moment), the rewrite,
+      <code>pipeline.wrap_cube(..., comparison.measure)</code>, then the <code>__cut</code> tag and
+      <code>UNION ALL</code>. Tables <code>read</code> are <code>cfg.fact</code> and each <code>cfg.also_facts</code> entry
+      that <code>cube_client._FACT_REF</code> finds in Cube's compiled cell SQL.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run them, then the whole suite.</strong> Expected: PASS.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong> the four files:
+      <code>feat(cube-validation): recompute Cube's cells on matched rows</code>.</p>
+</li>
+</ul>
+<hr />
+<h3 id="task-14-formula-check-part-4-verdicts-and-filing">Task 14: Formula check, part 4: verdicts and filing</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>P/formula.py</code> (<code>Check</code>, <code>verdicts</code>)</li>
+<li>Modify: <code>P/reconcile.py</code> (<code>CellDiff.matched_only</code>)</li>
+<li>Modify: <code>P/results.py</code> (<code>_cell_diffs</code>, <code>compose_run</code>, new <code>recompose</code>)</li>
+<li>Modify: <code>P/latest.py</code> (new <code>add_formula_check</code>)</li>
+<li>Modify: <code>P/sort.py</code> (<code>suggest</code>'s formula evidence, new <code>MATCHED_LABEL</code>)</li>
+<li>Test: <code>T/test_formula.py</code>, <code>T/test_sort.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Produces:</li>
+<li><code>formula.Check</code> (dataclass): <code>comparison: str</code>, <code>fingerprint: str</code>,
+    <code>formula: list[tuple[str, str]]</code>, <code>coverage: list[tuple[str, str]]</code> (cells
+    as <code>(cut, key)</code> from <code>run.diff_cells</code>),
+    <code>not_compared: dict[str, list[tuple[str, str]]]</code> (reason to cells),
+    <code>lines: list[str]</code> (local only); <code>to_json() -&gt; dict</code>,
+    <code>from_json(data: dict) -&gt; Check</code>.</li>
+<li><code>formula.verdicts(comparison: Comparison, fingerprint: str, cells: list[dict], dash: list[dict], cube: list[dict], dash_self: list[dict], cube_self: list[dict]) -&gt; Check</code>
+    (pure).</li>
+<li><code>CellDiff.matched_only: int = 0</code>.</li>
+<li><code>latest.add_formula_check(results: Path, comparison_id: str, check: dict) -&gt; None</code>
+    (sets <code>data["formula_check"]</code>, writes the whole file).</li>
+<li><code>results.recompose(cfg: ViewConfig, cache_root: Path, run: RunResult, run_json: Path, *, cube: Cube) -&gt; RunResult</code>;
+    <code>compose_run(..., echo: bool = True)</code>.</li>
+<li>
+<p><code>sort.MATCHED_LABEL = "differing cells differ on matched rows"</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing tests</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_verdicts_file_a_cell_that_still_differs_as_formula</span><span class="p">():</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_verdicts_leave_an_agreeing_cell_to_coverage</span><span class="p">():</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_verdicts_match_cells_by_cut_and_dims</span><span class="p">():</span> <span class="o">...</span>       <span class="c1"># same dims, 2 cuts, opposite outcomes</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_verdicts_say_the_rewrite_differs_when_a_self_check_misses</span><span class="p">():</span>
+    <span class="c1"># dash_self 0.5 vs cell dashboard 0.6 at decimals 2 -&gt; not_compared[REWRITE_DIFFERS]</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_verdicts_say_no_rows_when_both_sides_are_empty</span><span class="p">():</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_compose_files_checked_cells_as_formula</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">):</span>
+    <span class="c1"># a latest result with a cell holding a group and data["formula_check"]</span>
+    <span class="c1"># naming it -&gt; run.json: kind "formula", CellDiff(kind="formula", matched_only=1)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_compose_ignores_a_check_of_another_result</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">):</span> <span class="o">...</span>  <span class="c1"># fingerprint differs</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_recompose_refuses_when_the_latest_results_moved_on</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">):</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_formula_evidence_counts_matched_row_cells_masked</span><span class="p">():</span>   <span class="c1"># test_sort.py</span>
+    <span class="c1"># matched_only=3 -&gt; evidence "3 differing cells differ on matched rows: …",</span>
+    <span class="c1"># evidence_posted "&lt;10 …"; a cell's dims only in local evidence</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run them to verify they fail.</strong></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Implement</strong></p>
+</li>
+<li>
+<p><code>verdicts</code> keys rows by <code>(__cut, tuple(value_key(row[d]) …))</code> (dashboard names
+  on the dashboard rows, Cube names on Cube's), as <code>compare._cells</code> does, and
+  decides each cell in this order: either self-check value fails
+  <code>cell_verdict(self, cell[side], decimals) == "pass"</code> → <code>REWRITE_DIFFERS</code>; both
+  matched values None → <code>NO_ROWS</code>; <code>cell_verdict(dash, cube, decimals)</code> <code>pass</code> →
+  coverage; else formula, with a local line naming the cut, dims and both
+  values.</p>
+</li>
+<li><code>_cell_diffs</code> takes <code>checks: dict[str, set[tuple[str, str]]]</code> (default empty):
+  a differing cell with groups whose <code>(cut, key)</code> is in its comparison's set
+  joins the formula diff. The formula diff's first causes are
+  <code>f"{n} differing cells hold no unmatched row"</code> (as today, when any) and
+  <code>f"{m} {MATCHED_LABEL} only"</code> (when any); <code>matched_only=m</code>. <code>compose_run</code>
+  builds <code>checks</code> from each result's <code>data["formula_check"]</code> whose <code>fingerprint</code>
+  equals that result's <code>fingerprint</code>, and prints the report only when <code>echo</code>.</li>
+<li><code>recompose</code>: <code>Refusal("the run is not composed from the latest results")</code> (its
+  own words: <code>results</code> must not import <code>formula</code>, which imports <code>explain</code>, which
+  imports <code>results</code>) unless
+  <code>composed_from(json.loads(run_json.read_text()), confirmed, latest.read_all(...))</code>;
+  else <code>compose_run</code> with the saved run's <code>cube_host</code>, <code>totals</code>, <code>moment</code>,
+  folder <code>run_json.parent</code>, <code>cost_usd</code>, <code>skipped</code> (as <code>Skip</code>s), <code>compared=()</code>,
+  <code>echo=False</code>.</li>
+<li>
+<p><code>suggest</code> (formula item): one evidence line per origin, local exact, posted
+  masked; for <code>matched_only</code>, a local line per formula cell (cut and dims from
+  <code>run.diff_cells</code>); the cause label is <code>MATCHED_LABEL</code> when <code>matched_only</code> &gt; 0,
+  else <code>FORMULA_LABEL</code> (unchanged output for today's runs).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run them, then the whole suite.</strong> Expected: PASS.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong> the seven files:
+      <code>feat(cube-validation): file cells that differ on matched rows as formula</code>.</p>
+</li>
+</ul>
+<hr />
+<h3 id="task-15-formula-check-part-5-run-it-in-sort">Task 15: Formula check, part 5: run it in <code>sort</code></h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>P/formula.py</code> (<code>Job</code>, <code>checkable_cells</code>, <code>plan</code>, <code>run_job</code>, <code>label</code>)</li>
+<li>Modify: <code>P/explain.py</code> (<code>run_stored</code> gains <code>also_usd</code>)</li>
+<li>Modify: <code>P/sort.py</code> (<code>sort_run</code>)</li>
+<li>Test: <code>T/test_formula.py</code>, <code>T/test_cli.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: Tasks 11-14; <code>explain.require_saved</code>, <code>explain._CANNOT_RUN</code>,
+  <code>trace._dry_runs</code>, <code>trace.Prepared</code>, <code>bq.job_failure</code>.</li>
+<li>Produces:</li>
+<li><code>formula.Job</code> (dataclass): <code>comparison: str</code>, <code>fingerprint: str</code>,
+    <code>cells: list[dict]</code>, <code>sql: dict[str, str]</code> (keys <code>dashboard</code>, <code>cube</code>,
+    <code>dashboard_self</code>, <code>cube_self</code>).</li>
+<li><code>formula.checkable_cells(run: RunResult, comparison: Comparison) -&gt; list[dict]</code>:
+    the comparison's <code>kind: cells</code> entries of <code>run.diff_cells</code> that
+    <code>coverage.placed</code> places (not None) with at least one group, over
+    <code>run.applied.open</code> plus the groups in <code>run.applied.quiet</code>.</li>
+<li><code>formula.plan(cfg, run, comparison, *, fingerprint: str, wh, cube, prepared: trace.Prepared) -&gt; Job | Check | None</code>
+    (None: no checkable cell; a <code>Check</code> with every cell not compared on any
+    failure, mapped to the fixed reasons of Task 11, a BigQuery error as
+    <code>f"BigQuery refused it ({job_failure(exc)}); sort again"</code>).</li>
+<li><code>formula.run_job(job: Job, comparison: Comparison, wh) -&gt; Check</code> (any
+    <code>GoogleAPIError</code> or <code>CostCapError</code> → every cell not compared, the second as
+    <code>"a cap stopped it; sort again with a higher --max-usd"</code>).</li>
+<li><code>formula.label(items: list[dict], checks: dict[str, Check]) -&gt; dict[str, dict[str, int]]</code>:
+    prepends to each <code>&lt;id&gt;:cells</code> item
+    <code>f"{NOT_COMPARED}: {why} ({n} cells closed by coverage only)"</code> (posted with
+    <code>mask(n)</code>); returns <code>{comparison: {why: n}}</code> for <code>triage.json</code>.</li>
+<li>
+<p><code>explain.run_stored(..., also_usd: float = 0.0)</code>: refuses past the caps on
+    its explanations plus <code>also_usd</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing tests</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_plan_builds_four_priced_queries</span><span class="p">(</span><span class="n">duck</span><span class="p">,</span> <span class="n">offline</span><span class="p">):</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_plan_says_compare_again_when_the_saved_rows_are_gone</span><span class="p">(</span><span class="n">duck</span><span class="p">,</span> <span class="n">offline</span><span class="p">):</span>
+    <span class="c1"># labels missing -&gt; Check.not_compared == {SAVED_GONE: [all cells]}</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_plan_falls_back_when_the_grain_is_an_expression</span><span class="p">(</span><span class="n">duck</span><span class="p">,</span> <span class="n">offline</span><span class="p">):</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_run_job_falls_back_on_a_bigquery_error_with_its_job_only</span><span class="p">():</span> <span class="o">...</span>  <span class="c1"># no message text</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_label_discloses_unchecked_cells_masked</span><span class="p">():</span> <span class="o">...</span>
+<span class="c1"># test_cli.py</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_sort_prices_the_formula_check_with_the_explanations</span><span class="p">(</span><span class="n">fakes</span><span class="p">,</span> <span class="n">tmp_path</span><span class="p">,</span> <span class="n">capsys</span><span class="p">):</span>
+    <span class="c1"># "Formula check: 4 queries, $… (dry run)." printed; a cap below the</span>
+    <span class="c1"># explanations + formula total refuses before any query runs</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_sort_files_a_decided_cell_whose_formulas_differ_as_formula</span><span class="p">(</span><span class="n">fakes</span><span class="p">,</span> <span class="n">tmp_path</span><span class="p">):</span>
+    <span class="c1"># the DDI goal shape: a cell holding a decided row group, recomputed values</span>
+    <span class="c1"># still differ -&gt; triage item `&lt;id&gt;:formula`, cells item no longer holds it</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_sort_reuses_a_stored_check_without_spending</span><span class="p">(</span><span class="n">fakes</span><span class="p">,</span> <span class="n">tmp_path</span><span class="p">):</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_sort_comparison_checks_only_the_comparisons_named</span><span class="p">(</span><span class="n">fakes</span><span class="p">,</span> <span class="n">tmp_path</span><span class="p">):</span> <span class="o">...</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_a_failed_check_neither_refuses_sort_nor_makes_the_comparison_stale</span><span class="p">(</span><span class="n">fakes</span><span class="p">,</span> <span class="n">tmp_path</span><span class="p">):</span> <span class="o">...</span>
+</code></pre></div>
+<p><code>FakeBigQuery.get_table</code> needs a <code>schema</code> for <code>Warehouse.columns</code>, and canned
+answers for the 4 formula queries (match on <code>__cut</code> and <code>__matched</code>); extend the
+fake, not the code.</p>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run them to verify they fail.</strong></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Implement</strong></p>
+</li>
+</ul>
+<p>In <code>sort_run</code>, import <code>formula</code> inside the function as <code>explain</code> is. After
+<code>stale</code> and <code>trace.check_ready</code>, before <code>explain.run_stored</code>:</p>
+<ol>
+<li>When <code>results.composed_from</code> fails for the run, every checkable confirmed
+   comparison gets a <code>Check</code> with <code>NOT_COMPOSED</code>; no queries.</li>
+<li>Otherwise, for each confirmed comparison with <code>rows</code>, not in <code>stale</code>: a
+   stored check whose fingerprint equals its latest result's is reused; outside
+   <code>--comparison</code> without one, <code>OUTSIDE</code>; else <code>formula.plan</code>.</li>
+<li>Dry-run every job's 4 SQL with <code>trace._dry_runs</code>; a failed dry run turns that
+   job into a not-compared <code>Check</code>. Print
+   <code>f"Formula check: {n} queries, ${usd:.2f} (dry run)."</code> and pass
+   <code>also_usd=usd</code> to <code>run_stored</code> (with explanations off,
+   <code>wh.refuse_past_caps(usd)</code>).</li>
+</ol>
+<p>After <code>run_stored</code>, run each job (<code>formula.run_job</code>, then
+<code>ticker.say("sort formula", comparison_id, wh.spent)</code>), store each check that
+ran its queries with <code>latest.add_formula_check</code>, and, when any stored check
+names a formula cell, <code>run = results.recompose(...)</code> before <code>suggest</code>; a
+<code>Refusal</code> there keeps the old run and turns every just-run check into
+<code>NOT_COMPOSED</code> labels (stored checks stay for the next compose). After
+<code>explain.apply_runs</code> and before <code>mark_decided</code>, <code>formula.label(items, checks)</code>;
+write its result to <code>triage.json</code> as <code>"formulas_not_compared"</code>. The <code>sort_run</code>
+docstring adds the check, its pricing and its fallback.</p>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run them, then the whole suite.</strong> Expected: PASS.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong> the five files:
+      <code>feat(cube-validation): run the formula check in sort</code>.</p>
+</li>
+</ul>
+<hr />
+<h3 id="task-16-ask-owner-lists-formulas-not-compared">Task 16: <code>ask-owner</code> lists "formulas not compared"</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>P/sort.py</code> (new <code>formulas_not_compared</code>)</li>
+<li>Modify: <code>P/report.py</code> (<code>still_with_analyst</code>), <code>P/review.py</code> (<code>ask_owner</code>)</li>
+<li>Test: <code>T/test_report.py</code>, <code>T/test_cli.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>triage.json</code>'s <code>"formulas_not_compared"</code> (Task 15).</li>
+<li>
+<p>Produces:
+  <code>sort.formulas_not_compared(loaded: dict) -&gt; dict[str, dict[str, int]]</code>;
+  <code>report.still_with_analyst(items, waiting, unchecked: dict[str, dict[str, dict[str, int]]] | None = None) -&gt; list[str]</code>
+  (per view, comparison, reason to cells).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing tests</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_still_with_the_analyst_lists_formulas_not_compared_masked</span><span class="p">():</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="n">report</span><span class="o">.</span><span class="n">still_with_analyst</span><span class="p">([],</span> <span class="p">{},</span> <span class="p">{</span><span class="s2">"v"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"c1"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"no rows both sides hold"</span><span class="p">:</span> <span class="mi">3</span><span class="p">}}})</span>
+    <span class="k">assert</span> <span class="n">lines</span> <span class="o">==</span> <span class="p">[</span><span class="s2">"`c1` in `v`: formulas not compared: no rows both sides hold; &lt;10 cells closed by coverage only"</span><span class="p">]</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_ask_owner_lists_formulas_not_compared_and_record_answers_ignores_them</span><span class="p">(</span><span class="n">fakes</span><span class="p">,</span> <span class="n">tmp_path</span><span class="p">):</span> <span class="o">...</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run them to verify they fail.</strong></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Implement.</strong> Each line runs the reason through <code>_safe_reason</code>;
+      <code>ask_owner</code> passes
+      <code>{run.view: sort.formulas_not_compared(proven[run.view])}</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run them, then the whole suite.</strong> Expected: PASS.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong> the five files:
+      <code>feat(cube-validation): show the owner which formulas were not compared</code>.</p>
+</li>
+</ul>
+<hr />
+<h3 id="task-17-runbook">Task 17: Runbook</h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>Modify: <code>W/.claude/skills/cube-validation/SKILL.md</code> (open with Read)</li>
+<li>
+<p>Check: <code>W/.claude/skills/cube-builder/SKILL.md</code>,
+  <code>W/.claude/skills/cube-validation-answers/</code> (<code>rg</code> each changed term; update
+  restatements)</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Edit, as plain behavior (no history, no counts):</strong></p>
+</li>
+<li>
+<p>Comparison keys (step 3): <code>unpublished: true</code>; a merge-key item may open with
+  <code>&lt;&lt;:</code> (the writers find its <code>id:</code>).</p>
+</li>
+<li><code>read-sheet</code> / <code>rebuild-sheet</code> (steps 2 and 4): text measures are refused
+  (compare the numeric measure it is built from); a sheet on no published
+  dashboard is marked and refused unless opted in; allowlisted filter values
+  show; a non-null filter needs <code>dashboard_filters</code> with <code>operator: set</code>, and a
+  rebuild check written before this needs <code>rebuild-sheet</code> again; blank cells,
+  <code>*</code> total rows and dual-axis repeats are skipped and counted.</li>
+<li><code>compare</code> (step 5): the unpublished skip; the pre-aggregation refusal and its
+  remedy.</li>
+<li><code>sort</code> (step 6): a formula difference can sit under row causes; the check
+  recomputes each differing cell on matched rows, is priced with the
+  explanations ("Formula check: N queries"), and "formulas not compared: <why>"
+  means it could not run (the cell closes by coverage, the owner sees it under
+  "Still with the analyst"; fix the cause and sort again).</li>
+<li><code>explain</code> (step 6.6): <code>{unmatched}</code> also holds <code>__moved</code> and <code>__d_&lt;col&gt;</code>, NULL
+  unless that column differs; read the dashboard's value as
+  <code>COALESCE(u.__d_x, u.x)</code>.</li>
+<li>
+<p>Shared explanations (the paragraph after step 6.9): shared on one
+  <code>dashboard_view</code> with the same <code>rows</code> grain and values; each comparison runs
+  it on its own rows; "Also <comparison>". Cause-first: find a cause once on the
+  comparison that shows it most clearly, let it run on every comparison of that
+  model, then work comparison by comparison on what is left. A shared
+  explanation reads only <code>__row</code>, <code>side</code> and the grain: a group-by column one
+  sibling lacks fails there.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Lint</strong></p>
+</li>
+</ul>
+<p>Run:
+<code>/workspaces/teamster/.trunk/tools/trunk check --force --no-fix .claude/skills/cube-validation/SKILL.md &lt;/dev/null</code>
+Expected: no findings.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Commit</strong> each edited skill file by name:
+      <code>docs(cube-validation): runbook for the DDI run fixes</code>.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+    
+  </body>
+</html>
