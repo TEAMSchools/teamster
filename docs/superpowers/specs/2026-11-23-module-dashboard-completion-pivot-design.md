@@ -317,3 +317,18 @@ slider.
 - Miami not-taken rows.
 - Reconciling the dashboard's completion with Cube's `pct_taken`, which has no
   administered-date rule.
+
+## Revision 2026-11-24: after the build
+
+1. Control placement (_Design: pivot_, _Control_): the `Heatmap Columns` control
+   is a dropdown in the top filter bar above the heatmaps, not beside
+   `Dashboard View` in the left rail. The rail has no spare height at 900
+   pixels, so it is unchanged from the base.
+2. _Known limits_, last bullet, is wrong. The Assessment Dashboard does not
+   display completion. An untagged assessment with no `administered_at` is never
+   counted as due, so its completion is null, not 100%.
+3. Verification: the plan's check C expected the 75% filter to leave fewer marks
+   on each heatmap. On Network Comparison a mark is one school and grade across
+   all modules, so the filter removes cells inside marks rather than whole
+   marks. The check that was run compares the mark set at 75% with the oracle's
+   and requires cells to be hidden.
