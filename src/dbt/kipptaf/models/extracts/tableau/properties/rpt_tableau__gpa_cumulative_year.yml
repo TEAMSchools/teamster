@@ -333,3 +333,447 @@ models:
           rather than to the maximum academic year, because the current year
           carries loaded schedules with no grades for the first months and would
           open on an empty view.
+      - name: is_last_completed_grade_11
+        data_type: boolean
+        description:
+          True on the student's latest grade 11 row that is not the current
+          year's projection, among the rows this model keeps (the student was
+          enrolled at the end of that year). A student who repeated 11th grade
+          is true only on the later year; a student in 11th grade now is false
+          on every row. The Cumulative GPA Monitor's by-class chart counts each
+          student once on this row.
+        config:
+          meta:
+            contains_pii: true
+      - name: is_grade_11_trend_class
+        data_type: boolean
+        description:
+          True when `graduation_year` is the current 12th graders' class
+          (`current_academic_year` + 1) or one of the 6 classes before it. Moves
+          forward each July with the `current_academic_year` variable. False
+          when `graduation_year` is null.
+        config:
+          meta:
+            contains_pii: true
+
+unit_tests:
+  - name: rpt_tableau__gpa_cumulative_year__grade_11_flags
+    description: >-
+      A student is flagged on their latest completed 11th-grade year only: a
+      repeater on the later year, a repeater who left during the repeat year on
+      the first, a current 11th grader on no row. The trend window covers the
+      current 12th graders' class and the 6 classes before it; a null graduation
+      year is outside it.
+    model: rpt_tableau__gpa_cumulative_year
+    overrides:
+      vars:
+        current_academic_year: 2026
+    given:
+      - input: ref('int_powerschool__gpa_term')
+        rows:
+          - { yearid: 35, gpa_y1: 3.0, _dbt_source_project: kippnewark }
+      - input: ref('int_powerschool__gpa_cumulative')
+        rows: []
+      - input: ref('int_powerschool__gpa_cumulative_year')
+        rows:
+          - {
+              studentid: 1,
+              academic_year: 2022,
+              schoolid: 73252,
+              _dbt_source_project: kippnewark,
+              grade_level: 10,
+              is_projected: false,
+              cumulative_y1_gpa_unweighted: 3.1,
+            }
+          - {
+              studentid: 1,
+              academic_year: 2023,
+              schoolid: 73252,
+              _dbt_source_project: kippnewark,
+              grade_level: 11,
+              is_projected: false,
+              cumulative_y1_gpa_unweighted: 3.1,
+            }
+          - {
+              studentid: 2,
+              academic_year: 2023,
+              schoolid: 73252,
+              _dbt_source_project: kippnewark,
+              grade_level: 11,
+              is_projected: false,
+              cumulative_y1_gpa_unweighted: 3.1,
+            }
+          - {
+              studentid: 2,
+              academic_year: 2024,
+              schoolid: 73252,
+              _dbt_source_project: kippnewark,
+              grade_level: 11,
+              is_projected: false,
+              cumulative_y1_gpa_unweighted: 3.1,
+            }
+          - {
+              studentid: 3,
+              academic_year: 2025,
+              schoolid: 73252,
+              _dbt_source_project: kippnewark,
+              grade_level: 10,
+              is_projected: false,
+              cumulative_y1_gpa_unweighted: 3.1,
+            }
+          - {
+              studentid: 3,
+              academic_year: 2026,
+              schoolid: 73252,
+              _dbt_source_project: kippnewark,
+              grade_level: 11,
+              is_projected: true,
+              cumulative_y1_gpa_unweighted: 3.1,
+            }
+          - {
+              studentid: 4,
+              academic_year: 2018,
+              schoolid: 73252,
+              _dbt_source_project: kippnewark,
+              grade_level: 11,
+              is_projected: false,
+              cumulative_y1_gpa_unweighted: 3.1,
+            }
+          - {
+              studentid: 5,
+              academic_year: 2026,
+              schoolid: 73252,
+              _dbt_source_project: kippnewark,
+              grade_level: 10,
+              is_projected: true,
+              cumulative_y1_gpa_unweighted: 3.1,
+            }
+          - {
+              studentid: 6,
+              academic_year: 2023,
+              schoolid: 73252,
+              _dbt_source_project: kippnewark,
+              grade_level: 11,
+              is_projected: false,
+              cumulative_y1_gpa_unweighted: 3.1,
+            }
+          - {
+              studentid: 7,
+              academic_year: 2019,
+              schoolid: 73252,
+              _dbt_source_project: kippnewark,
+              grade_level: 11,
+              is_projected: false,
+              cumulative_y1_gpa_unweighted: 3.1,
+            }
+          - {
+              studentid: 8,
+              academic_year: 2023,
+              schoolid: 73252,
+              _dbt_source_project: kippnewark,
+              grade_level: 11,
+              is_projected: false,
+              cumulative_y1_gpa_unweighted: 3.1,
+            }
+          - {
+              studentid: 8,
+              academic_year: 2024,
+              schoolid: 73252,
+              _dbt_source_project: kippnewark,
+              grade_level: 11,
+              is_projected: false,
+              cumulative_y1_gpa_unweighted: 3.1,
+            }
+      - input: ref('int_extracts__student_enrollments')
+        rows:
+          - {
+              studentid: 1,
+              student_number: 101,
+              academic_year: 2022,
+              schoolid: 73252,
+              _dbt_source_project: kippnewark,
+              rn_year: 1,
+              is_out_of_district: false,
+              enroll_status: 0,
+              is_enrolled_recent: true,
+              region: Newark,
+              graduation_year: 2025,
+            }
+          - {
+              studentid: 1,
+              student_number: 101,
+              academic_year: 2023,
+              schoolid: 73252,
+              _dbt_source_project: kippnewark,
+              rn_year: 1,
+              is_out_of_district: false,
+              enroll_status: 0,
+              is_enrolled_recent: true,
+              region: Newark,
+              graduation_year: 2025,
+            }
+          - {
+              studentid: 2,
+              student_number: 102,
+              academic_year: 2023,
+              schoolid: 73252,
+              _dbt_source_project: kippnewark,
+              rn_year: 1,
+              is_out_of_district: false,
+              enroll_status: 0,
+              is_enrolled_recent: true,
+              region: Newark,
+              graduation_year: 2026,
+            }
+          - {
+              studentid: 2,
+              student_number: 102,
+              academic_year: 2024,
+              schoolid: 73252,
+              _dbt_source_project: kippnewark,
+              rn_year: 1,
+              is_out_of_district: false,
+              enroll_status: 0,
+              is_enrolled_recent: true,
+              region: Newark,
+              graduation_year: 2026,
+            }
+          - {
+              studentid: 3,
+              student_number: 103,
+              academic_year: 2025,
+              schoolid: 73252,
+              _dbt_source_project: kippnewark,
+              rn_year: 1,
+              is_out_of_district: false,
+              enroll_status: 0,
+              is_enrolled_recent: true,
+              region: Newark,
+              graduation_year: 2027,
+            }
+          - {
+              studentid: 3,
+              student_number: 103,
+              academic_year: 2026,
+              schoolid: 73252,
+              _dbt_source_project: kippnewark,
+              rn_year: 1,
+              is_out_of_district: false,
+              enroll_status: 0,
+              is_enrolled_recent: true,
+              region: Newark,
+              graduation_year: 2027,
+            }
+          - {
+              studentid: 4,
+              student_number: 104,
+              academic_year: 2018,
+              schoolid: 73252,
+              _dbt_source_project: kippnewark,
+              rn_year: 1,
+              is_out_of_district: false,
+              enroll_status: 0,
+              is_enrolled_recent: true,
+              region: Newark,
+              graduation_year: 2020,
+            }
+          - {
+              studentid: 5,
+              student_number: 105,
+              academic_year: 2026,
+              schoolid: 73252,
+              _dbt_source_project: kippnewark,
+              rn_year: 1,
+              is_out_of_district: false,
+              enroll_status: 0,
+              is_enrolled_recent: true,
+              region: Newark,
+              graduation_year: 2028,
+            }
+          - {
+              studentid: 6,
+              student_number: 106,
+              academic_year: 2023,
+              schoolid: 73252,
+              _dbt_source_project: kippnewark,
+              rn_year: 1,
+              is_out_of_district: false,
+              enroll_status: 0,
+              is_enrolled_recent: true,
+              region: Newark,
+              graduation_year: null,
+            }
+          - {
+              studentid: 7,
+              student_number: 107,
+              academic_year: 2019,
+              schoolid: 73252,
+              _dbt_source_project: kippnewark,
+              rn_year: 1,
+              is_out_of_district: false,
+              enroll_status: 0,
+              is_enrolled_recent: true,
+              region: Newark,
+              graduation_year: 2021,
+            }
+          - {
+              studentid: 8,
+              student_number: 108,
+              academic_year: 2023,
+              schoolid: 73252,
+              _dbt_source_project: kippnewark,
+              rn_year: 1,
+              is_out_of_district: false,
+              enroll_status: 0,
+              is_enrolled_recent: true,
+              region: Newark,
+              graduation_year: 2025,
+            }
+          - {
+              studentid: 8,
+              student_number: 108,
+              academic_year: 2024,
+              schoolid: 73252,
+              _dbt_source_project: kippnewark,
+              rn_year: 1,
+              is_out_of_district: false,
+              enroll_status: 0,
+              is_enrolled_recent: false,
+              region: Newark,
+              graduation_year: 2025,
+            }
+    expect:
+      rows:
+        - {
+            student_number: 101,
+            academic_year: 2022,
+            is_last_completed_grade_11: false,
+            is_grade_11_trend_class: true,
+          }
+        - {
+            student_number: 101,
+            academic_year: 2023,
+            is_last_completed_grade_11: true,
+            is_grade_11_trend_class: true,
+          }
+        - {
+            student_number: 102,
+            academic_year: 2023,
+            is_last_completed_grade_11: false,
+            is_grade_11_trend_class: true,
+          }
+        - {
+            student_number: 102,
+            academic_year: 2024,
+            is_last_completed_grade_11: true,
+            is_grade_11_trend_class: true,
+          }
+        - {
+            student_number: 103,
+            academic_year: 2025,
+            is_last_completed_grade_11: false,
+            is_grade_11_trend_class: true,
+          }
+        - {
+            student_number: 103,
+            academic_year: 2026,
+            is_last_completed_grade_11: false,
+            is_grade_11_trend_class: true,
+          }
+        - {
+            student_number: 104,
+            academic_year: 2018,
+            is_last_completed_grade_11: true,
+            is_grade_11_trend_class: false,
+          }
+        - {
+            student_number: 105,
+            academic_year: 2026,
+            is_last_completed_grade_11: false,
+            is_grade_11_trend_class: false,
+          }
+        - {
+            student_number: 106,
+            academic_year: 2023,
+            is_last_completed_grade_11: true,
+            is_grade_11_trend_class: false,
+          }
+        - {
+            student_number: 107,
+            academic_year: 2019,
+            is_last_completed_grade_11: true,
+            is_grade_11_trend_class: true,
+          }
+        - {
+            student_number: 108,
+            academic_year: 2023,
+            is_last_completed_grade_11: true,
+            is_grade_11_trend_class: true,
+          }
+
+  - name: rpt_tableau__gpa_cumulative_year__trend_window_rolls
+    description: >-
+      The trend window moves with current_academic_year and nothing else: a year
+      later, the class of 2028 enters and the class of 2021 leaves.
+    model: rpt_tableau__gpa_cumulative_year
+    overrides:
+      vars:
+        current_academic_year: 2027
+    given:
+      - input: ref('int_powerschool__gpa_term')
+        rows:
+          - { yearid: 35, gpa_y1: 3.0, _dbt_source_project: kippnewark }
+      - input: ref('int_powerschool__gpa_cumulative')
+        rows: []
+      - input: ref('int_powerschool__gpa_cumulative_year')
+        rows:
+          - {
+              studentid: 5,
+              academic_year: 2026,
+              schoolid: 73252,
+              _dbt_source_project: kippnewark,
+              grade_level: 10,
+              is_projected: false,
+              cumulative_y1_gpa_unweighted: 3.1,
+            }
+          - {
+              studentid: 7,
+              academic_year: 2019,
+              schoolid: 73252,
+              _dbt_source_project: kippnewark,
+              grade_level: 11,
+              is_projected: false,
+              cumulative_y1_gpa_unweighted: 3.1,
+            }
+      - input: ref('int_extracts__student_enrollments')
+        rows:
+          - {
+              studentid: 5,
+              student_number: 105,
+              academic_year: 2026,
+              schoolid: 73252,
+              _dbt_source_project: kippnewark,
+              rn_year: 1,
+              is_out_of_district: false,
+              enroll_status: 0,
+              is_enrolled_recent: true,
+              region: Newark,
+              graduation_year: 2028,
+            }
+          - {
+              studentid: 7,
+              student_number: 107,
+              academic_year: 2019,
+              schoolid: 73252,
+              _dbt_source_project: kippnewark,
+              rn_year: 1,
+              is_out_of_district: false,
+              enroll_status: 0,
+              is_enrolled_recent: true,
+              region: Newark,
+              graduation_year: 2021,
+            }
+    expect:
+      rows:
+        - { student_number: 105, is_grade_11_trend_class: true }
+        - { student_number: 107, is_grade_11_trend_class: false }
