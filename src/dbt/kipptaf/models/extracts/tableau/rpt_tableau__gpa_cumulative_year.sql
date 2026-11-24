@@ -65,6 +65,15 @@ select
     gcc.is_cumulative_3_0_attainable,
     gcc.potential_gpa_credits_current_year,
 
+    -- current 12th graders (current_academic_year + 1) and the 6 classes before them
+    coalesce(
+        e.graduation_year
+        between {{ var("current_academic_year") }}
+        - 5 and {{ var("current_academic_year") }}
+        + 1,
+        false
+    ) as is_grade_11_trend_class,
+
     gcy.academic_year = lgy.latest_graded_academic_year as is_latest_graded_year,
 
     gcy.cumulative_y1_gpa_unweighted >= 2.75
@@ -95,6 +104,12 @@ select
         when gcc.cumulative_y1_gpa_unweighted < 2.00
         then 'below 2.0'
     end as gpa_band_as_of_today_label,
+
+    gcy.grade_level = 11
+    and not gcy.is_projected
+    and gcy.academic_year = max(
+        if(gcy.grade_level = 11 and not gcy.is_projected, gcy.academic_year, null)
+    ) over (partition by e.student_number) as is_last_completed_grade_11,
 
 from {{ ref("int_powerschool__gpa_cumulative_year") }} as gcy
 /* the inner join on the year's rn_year = 1 enrollment (including schoolid)

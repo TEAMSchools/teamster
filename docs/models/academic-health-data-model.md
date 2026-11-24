@@ -160,6 +160,8 @@ Every goal and band on the dashboard uses **unweighted** GPA except the
 | `is_on_cusp_3_0`                               | Cumulative unweighted GPA at least 2.75 and below 3.00                                                                   |
 | `gpa_needed_for_cumulative_3_0`                | The unweighted Y1 GPA a student must average this year to finish at exactly 3.00; negative means already safe            |
 | `is_gpa_band_slide`                            | Projected band at least one band below last year's band                                                                  |
+| `is_last_completed_grade_11`                   | The student's latest finished 11th-grade year, so each student counts once when graduating classes are compared          |
+| `is_grade_11_trend_class`                      | The graduation year is the current 12th graders' class or one of the 6 classes before it                                 |
 | `F*`                                           | Not a PowerSchool grade: a live gradebook grade below 50% is floored to 50% and labelled `F*`. Failure counts match `F%` |
 | `need_60` to `need_90`, `need_83`, `need_next` | The percent needed in the current term for the year-to-date course grade to reach a target                               |
 | Lookbacks                                      | `gpa_y1_1_week_prior` and siblings: the Y1 GPA in effect at the end of the day 1, 2, or 4 weeks ago                      |
@@ -275,7 +277,9 @@ that have not started yet are left out. Reads
 
 **What it shows:** the Cumulative GPA Monitor: cumulative unweighted GPA bands
 by grade and school, students on the cusp of 3.0, whether 3.0 is still
-reachable, and each grade and school against its goal.
+reachable, each grade and school against its goal, and, in the Trends pop-up,
+the share of each graduating class in each band at the end of 11th grade, by
+high school.
 
 **Grain:** one row per student and academic year, guarded by an error-level
 uniqueness test. Reads `rpt_tableau__gpa_cumulative_year` and left joins
@@ -330,6 +334,13 @@ the as-of-today values on the current year.
 - `gpa_needed_for_cumulative_3_0` and `is_cumulative_3_0_attainable` are
   current-year only. They compute for any grade but mean something only in high
   school.
+- `is_last_completed_grade_11` and `is_grade_11_trend_class` drive the Trends
+  pop-up's by-class chart. The first picks one row per student among the rows
+  this model already keeps, so a repeater counts at the later finished year, a
+  first-time 11th grader not until the year ends, and a student repeating 11th
+  grade now at the 11th-grade year they already finished. The second's window
+  follows `current_academic_year`, so it moves forward each July with no
+  workbook change.
 
 ### `rpt_tableau__gpa_goals`: school, region, and network against goal
 
@@ -740,6 +751,11 @@ Each school year:
 3. **Rollover.** In July `current_academic_year` moves forward, and the course
    extract's two-year window, the projection, and the lookbacks move with it.
    The dashboard keeps opening on the last graded year until new grades post.
+   The Trends pop-up's by-class window (`is_grade_11_trend_class`) takes the
+   variable when the view is created, so after rollover check that
+   `INFORMATION_SCHEMA.VIEWS.view_definition` for
+   `rpt_tableau__gpa_cumulative_year` shows the new window years, and rebuild
+   the view if it does not.
 4. **Grade scales.** A new weighted scale in PowerSchool needs its unweighted
    twin mapped in both `stg_powerschool__storedgrades` (by name) and
    `base_powerschool__sections` (by id), or its unweighted GPA equals the

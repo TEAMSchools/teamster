@@ -326,6 +326,20 @@ models:
         config:
           meta:
             contains_pii: true
+      - name: is_last_completed_grade_11
+        data_type: boolean
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+        config:
+          meta:
+            contains_pii: true
+      - name: is_grade_11_trend_class
+        data_type: boolean
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+        config:
+          meta:
+            contains_pii: true
       - name: gpa_goal_threshold
         data_type: numeric
         description: >-
