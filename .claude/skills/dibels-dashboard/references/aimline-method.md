@@ -223,16 +223,17 @@ WHEN 'Met Benchmark Goal' THEN [Admin Benchmark Goal Status]
 END
 ```
 
-At the Measure grouping, academics decided on 2026-11-24 that a student meets
-ORF only when they met both Reading Fluency and Reading Accuracy. The
-measure-grain twins, `measure_name_code_benchmark_status` and
-`measure_name_code_goal_status`, already compute that, so the Measure option
-reads them; do not offer "met either standard" as a fix for bars over 100%.
+The Measure option should read the measure-grain twins,
+`measure_name_code_benchmark_status` and `measure_name_code_goal_status`, which
+already count ORF as met only when both standards are; academics' decision is in
+the reference doc's _Outside the warehouse: the workbook_. Do not offer "met
+either standard" as a fix for bars over 100%.
 
 **Also outstanding, and more urgent: every PM view must now filter
 `model_type`.** The dashboard has a third branch for the aimline method, so both
 methods emit rows for the same student and any unfiltered PM view double-counts.
-Nothing in the workbook filters it yet.
+Every PM sheet in the published workbook that reads this extract now filters it;
+a new or copied PM sheet must too.
 
 Two things to watch on the selector itself. The existing No Data alias is on the
 NULL member, and PM rows are no longer null -- repoint it to `Not Tested`. And
@@ -392,7 +393,9 @@ Round they do not overlap: the unfinished round reads `Round Incomplete` in
 `aimline_round_category`. Academics chose that on 2026-11-24 to keep the
 still-testing count on the default view; do not repoint the tile at
 `BAN Category`, and do not read a total over 100% at Measure Standard or Measure
-as a defect.
+as a defect. The tile's calc reads no aimline column, so it relies on its
+sheet's `model_type = 'Aimline'` filter; both ⏳ sheets carry one, and a copy
+onto an unfiltered sheet would count Internal rows too.
 
 **The Category Status Over Time line has its own window.** It needs every round
 in a season, so it cannot use the Admin Window filter. A Trend Window control

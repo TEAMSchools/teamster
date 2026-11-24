@@ -131,12 +131,12 @@ models:
           not the benchmark. Below Aimline is below the aimline and not at the
           benchmark.
 
-          The two No Aimline Data values cover what T&L's four do not — the
-          probe was sat and Amplify published no verdict, so Below Aimline is
-          not true of it. Academics chose to show the score and flag the missing
-          target rather than hide the row. They split by benchmark the same way
-          the Meeting values do, because a missing aimline verdict says nothing
-          about whether the student is on pace: No Aimline Data, Meeting
+          The two No Aimline Data values cover what T&L's categories do not —
+          the probe was sat and Amplify published no verdict, so Below Aimline
+          is not true of it. Academics chose to show the score and flag the
+          missing target rather than hide the row. They split by benchmark the
+          same way the Meeting values do, because a missing aimline verdict says
+          nothing about whether the student is on pace: No Aimline Data, Meeting
           Benchmark met the benchmark; No Aimline Data, Not Yet at Benchmark did
           not.
 

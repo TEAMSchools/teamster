@@ -931,8 +931,8 @@ models:
         data_type: string
         description: >-
           T&L's combined reporting category rolled up to the measure name code
-          -- Below Aimline, No Aimline Data, Meeting Aimline, Not Yet at
-          Benchmark, Meeting Aimline, Meeting Benchmark, or Not Tested -- the
+          -- Below Aimline; No Aimline Data; Meeting Aimline, Not Yet at
+          Benchmark; Meeting Aimline, Meeting Benchmark; or Not Tested -- the
           worst state the student holds on any standard under the code. Like
           aimline_category, it scores a code the student sat whether or not the
           round is finished.

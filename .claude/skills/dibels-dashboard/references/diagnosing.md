@@ -165,10 +165,11 @@ on one region shipped as the default once on 2026-09-28.
   renders blank, and two blank renders compare equal. Pass
   `vf("Granularity Options", ...)` as well: a measure code such as `NWF` at
   Measure, `Select from Admin Window (Current)` at Round.
-- **A REST API publish drops this workbook's embedded BigQuery credentials,**
-  and the extract refresh then fails until someone re-embeds them. Make a
-  calc-only change in web authoring on the production workbook instead, which
-  keeps them, and verify it afterwards by downloading and rendering.
+- **Make a calc-only change in web authoring on the production workbook,** not a
+  REST API publish. An API publish drops embedded credentials (the
+  `tableau-workbook-xml` skill, `references/build-workflow.md`), and this
+  workbook's three BigQuery connections carry them, so its extract refresh would
+  fail. Verify a web-authoring change afterwards by downloading and rendering.
 
 ## The dashboard's BANs against the extract: a QA baseline
 
