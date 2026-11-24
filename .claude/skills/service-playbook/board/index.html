@@ -1,0 +1,1176 @@
+<title>Data Team Capacity</title>
+<meta name="claude:viewport-fit-sides" content="cover" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Carlito:wght@400;700&display=swap"
+/>
+<style>
+  /* Layout: indigo brand band, then a grey page with one white panel per analyst (Unassigned first), each a drop target holding workstream chips. Matches the DTI Capacity Map look. */
+  :root {
+    --brand: #2b2a6f;
+    --brand-ink: #ffffff;
+    --brand-sub: #f6921e;
+    --bg: #f3f4f6;
+    --surface: #ffffff;
+    --sunk: #eceef2;
+    --fg: #1d1f2b;
+    --muted: #5f6474;
+    --faint: #a3a8b5;
+    --line: #dcdfe6;
+    --accent: #2b2a6f;
+    --accent-soft: #e6e6f4;
+    --accent-fg: #ffffff;
+    --field: #fff4e3;
+    --field-line: #f0d9b5;
+    --warn: #8a5300;
+    --warn-soft: #fbefd9;
+    --over: #a43a2c;
+    --over-soft: #f8e3df;
+    --ok: #2e7d4f;
+    --font: "Calibri", "Carlito", "Verdana", system-ui, sans-serif;
+    --r: 8px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --brand: #26255f;
+      --brand-ink: #ffffff;
+      --brand-sub: #f8a54a;
+      --bg: #15161c;
+      --surface: #1d1f27;
+      --sunk: #262833;
+      --fg: #e8e9ee;
+      --muted: #a2a6b4;
+      --faint: #6c7080;
+      --line: #333644;
+      --accent: #a9a8f0;
+      --accent-soft: #2c2b55;
+      --accent-fg: #15161c;
+      --field: #2e2718;
+      --field-line: #4a3d22;
+      --warn: #e3a44a;
+      --warn-soft: #3a2c14;
+      --over: #ec8a7b;
+      --over-soft: #3d1f1a;
+      --ok: #6fcf97;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --brand: #26255f;
+    --brand-ink: #ffffff;
+    --brand-sub: #f8a54a;
+    --bg: #15161c;
+    --surface: #1d1f27;
+    --sunk: #262833;
+    --fg: #e8e9ee;
+    --muted: #a2a6b4;
+    --faint: #6c7080;
+    --line: #333644;
+    --accent: #a9a8f0;
+    --accent-soft: #2c2b55;
+    --accent-fg: #15161c;
+    --field: #2e2718;
+    --field-line: #4a3d22;
+    --warn: #e3a44a;
+    --warn-soft: #3a2c14;
+    --over: #ec8a7b;
+    --over-soft: #3d1f1a;
+    --ok: #6fcf97;
+    color-scheme: dark;
+  }
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font);
+    font-size: 15px;
+    line-height: 1.45;
+  }
+  .in {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  .brand {
+    background: var(--brand);
+    color: var(--brand-ink);
+  }
+  .brand .in {
+    padding-block: 18px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 16px;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+  .brand h1 {
+    margin: 0;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--brand-ink);
+    letter-spacing: -0.01em;
+  }
+  .brand .sub {
+    color: var(--brand-sub);
+    font-weight: 700;
+    font-size: 14px;
+    text-wrap: balance;
+  }
+  .brand .me {
+    font-size: 14px;
+    color: var(--brand-ink);
+    opacity: 0.9;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  main.in {
+    padding-block: 18px 48px;
+    display: grid;
+    gap: 16px;
+  }
+  h2 {
+    font-size: 17px;
+    margin: 0;
+    text-wrap: balance;
+    overflow-wrap: anywhere;
+  }
+  p {
+    margin: 0;
+  }
+  .muted {
+    color: var(--muted);
+  }
+  .num {
+    font-variant-numeric: tabular-nums;
+  }
+  button,
+  select,
+  input {
+    font: inherit;
+    color: inherit;
+  }
+  button {
+    cursor: pointer;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    border-radius: 6px;
+    padding: 7px 12px;
+  }
+  button:hover {
+    border-color: var(--accent);
+  }
+  button.primary {
+    background: var(--brand);
+    color: #ffffff;
+    border-color: var(--brand);
+    font-weight: 700;
+  }
+  button.primary:hover {
+    filter: brightness(1.15);
+  }
+  button.link {
+    border: none;
+    background: none;
+    padding: 0;
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  button.danger {
+    color: var(--over);
+    border-color: var(--over);
+  }
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  select {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 5px 8px;
+    max-width: 100%;
+  }
+  input {
+    background: var(--field);
+    border: 1px solid var(--field-line);
+    border-radius: 6px;
+    padding: 7px 8px;
+    min-width: 0;
+  }
+  input::placeholder {
+    color: var(--faint);
+    font-style: italic;
+  }
+  .pillstat {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 9px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.16);
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .notice {
+    background: var(--accent-soft);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 14px;
+  }
+  .notice.warn {
+    background: var(--warn-soft);
+    color: var(--warn);
+  }
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 16px;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .toolbar input {
+    width: 280px;
+    max-width: 100%;
+  }
+  .cols {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
+    gap: 16px;
+    align-items: start;
+  }
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+    padding: 16px;
+    display: grid;
+    gap: 12px;
+    min-width: 0;
+    transition:
+      border-color 0.12s,
+      background 0.12s;
+  }
+  .col.unassigned {
+    border-style: dashed;
+    background: transparent;
+  }
+  .col.over {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+  .colhead {
+    display: grid;
+    gap: 8px;
+  }
+  .colhead .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .chipstat {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 9px;
+    border-radius: 999px;
+    background: var(--sunk);
+    font-size: 13px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .chipstat.ok {
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+  .chipstat.over {
+    background: var(--over-soft);
+    color: var(--over);
+  }
+  .bar {
+    position: relative;
+    height: 8px;
+    background: var(--sunk);
+    border-radius: 4px;
+  }
+  .bar .a {
+    position: absolute;
+    left: 0;
+    top: 2px;
+    bottom: 2px;
+    background: var(--accent);
+    border-radius: 3px;
+    max-width: 100%;
+  }
+  .bar .a.over {
+    background: var(--over);
+  }
+  .bar .f {
+    position: absolute;
+    top: -3px;
+    bottom: -3px;
+    width: 2px;
+    background: var(--muted);
+  }
+  .capline {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--muted);
+    font-size: 14px;
+    flex-wrap: wrap;
+  }
+  .capline input {
+    width: 72px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .overnote {
+    font-size: 13px;
+    color: var(--over);
+    font-weight: 700;
+  }
+  .chips {
+    display: grid;
+    gap: 8px;
+    min-height: 44px;
+    align-content: start;
+  }
+  .chip {
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 9px 10px;
+    display: grid;
+    gap: 6px;
+    background: var(--sunk);
+    min-width: 0;
+  }
+  .editing .chip {
+    cursor: grab;
+  }
+  .chip.dragging {
+    opacity: 0.45;
+  }
+  .chip .top {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    align-items: baseline;
+  }
+  .chip .nm {
+    font-weight: 700;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .chip .hrs {
+    font-variant-numeric: tabular-nums;
+    color: var(--muted);
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  .chip .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    align-items: center;
+    font-size: 13px;
+  }
+  .chip a {
+    color: var(--accent);
+  }
+  .chip select {
+    font-size: 13px;
+    padding: 2px 4px;
+  }
+  .chip button {
+    font-size: 13px;
+    padding: 2px 8px;
+  }
+  .tag {
+    font-size: 12px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: var(--warn-soft);
+    color: var(--warn);
+    font-weight: 700;
+  }
+  .strip {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 2px;
+    align-items: end;
+    height: 26px;
+  }
+  .strip.big {
+    height: 40px;
+  }
+  .strip i {
+    display: block;
+    background: var(--accent);
+    opacity: 0.75;
+    border-radius: 2px 2px 0 0;
+    min-height: 1px;
+  }
+  .strip i.over {
+    background: var(--over);
+    opacity: 1;
+  }
+  .months {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 2px;
+    font-size: 11px;
+    color: var(--faint);
+    text-align: center;
+  }
+  .empty {
+    color: var(--muted);
+    font-size: 14px;
+    padding: 4px 0;
+  }
+  .grid2 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
+    gap: 16px;
+    align-items: start;
+  }
+  .add {
+    display: grid;
+    gap: 10px;
+    border: 1px dashed var(--line);
+    border-radius: 6px;
+    padding: 12px;
+    align-content: start;
+  }
+  .add .row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+  .add .row > input {
+    flex: 1 1 140px;
+  }
+  .label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    font-weight: 700;
+  }
+  .err {
+    color: var(--over);
+    font-size: 14px;
+  }
+  .readonly .editonly {
+    display: none !important;
+  }
+  @media (max-width: 640px) {
+    .brand h1 {
+      font-size: 22px;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      transition: none !important;
+    }
+  }
+</style>
+
+<header class="brand">
+  <div class="in">
+    <div>
+      <h1>Data Team Capacity</h1>
+      <div class="sub">Recurring workstreams by analyst | Data</div>
+    </div>
+    <div class="me">
+      <span class="pillstat" id="mode">Loading</span
+      ><span id="status">Connecting to the board…</span>
+    </div>
+  </div>
+</header>
+
+<main class="in" id="app">
+  <div class="notice warn" id="loadflag" hidden></div>
+  <p class="muted" style="max-width: 72ch">
+    Each panel is one analyst's recurring workstreams, with hours for the school
+    year, July to June. Drag a card, or use its menu, to hand it to someone. A
+    panel turns red when its hours pass that analyst's capacity for the year or
+    for any month.
+  </p>
+  <div class="toolbar">
+    <input
+      type="search"
+      id="search"
+      placeholder="Find a workstream"
+      aria-label="Find a workstream"
+    />
+    <span class="muted num" id="counts"></span>
+  </div>
+  <div class="cols" id="cols"></div>
+
+  <section class="panel editonly" aria-labelledby="h-add">
+    <h2 id="h-add">Add to the board</h2>
+    <div class="grid2">
+      <form class="add" id="f-analyst">
+        <span class="label">Analyst</span>
+        <div class="row">
+          <input
+            type="text"
+            id="a-name"
+            placeholder="Name"
+            aria-label="Analyst name"
+            required
+          />
+          <input
+            type="number"
+            id="a-cap"
+            placeholder="Hours per month"
+            aria-label="Hours per month for recurring work"
+            min="0"
+            step="1"
+          />
+        </div>
+        <p class="muted" style="font-size: 13px">
+          Hours per month is the time this person has for recurring workstreams,
+          not their whole week.
+        </p>
+        <div><button class="primary" type="submit">Add analyst</button></div>
+        <p class="err" id="a-err" role="alert"></p>
+      </form>
+      <form class="add" id="f-card">
+        <span class="label" id="c-title"
+          >Workstream without a playbook yet</span
+        >
+        <div class="row">
+          <input
+            type="text"
+            id="c-name"
+            placeholder="Workstream name"
+            aria-label="Workstream name"
+            required
+          />
+          <input
+            type="number"
+            id="c-year"
+            placeholder="Hours per year"
+            aria-label="Hours per year"
+            min="0"
+            step="1"
+          />
+        </div>
+        <input
+          type="text"
+          id="c-months"
+          placeholder="Or 12 monthly hours, July to June: 0,10,20,…"
+          aria-label="Monthly hours, July to June, comma separated"
+        />
+        <p class="muted" style="font-size: 13px">
+          A yearly figure is spread evenly over 12 months. Cards made by a
+          playbook carry their own monthly hours.
+        </p>
+        <div class="row">
+          <button class="primary" type="submit" id="c-submit">
+            Add workstream
+          </button>
+          <button type="button" id="c-cancel" hidden>Cancel</button>
+        </div>
+        <p class="err" id="c-err" role="alert"></p>
+      </form>
+    </div>
+  </section>
+</main>
+
+<script>
+  (() => {
+    const MONTHS = ["J", "A", "S", "O", "N", "D", "J", "F", "M", "A", "M", "J"];
+    const MONTH_NAMES = [
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+    ];
+    const state = {
+      workstreams: new Map(),
+      analysts: new Map(),
+      assignments: new Map(),
+      loaded: { ws: false, an: false, as: false },
+      ready: false,
+      editor: false,
+      query: "",
+      editingCard: null,
+      stale: false,
+    };
+    let db = null;
+    const $ = (id) => document.getElementById(id);
+    const el = (tag, cls, text) => {
+      const n = document.createElement(tag);
+      if (cls) n.className = cls;
+      if (text != null) n.textContent = text;
+      return n;
+    };
+    const num = (v) => (typeof v === "number" && isFinite(v) ? v : 0);
+    const fmt = (v) => (Math.round(v * 10) / 10).toLocaleString();
+    const months = (ws) => {
+      const m = Array.isArray(ws.hours_by_month)
+        ? ws.hours_by_month.map(num)
+        : [];
+      while (m.length < 12) m.push(0);
+      return m.slice(0, 12);
+    };
+    const yearHours = (ws) =>
+      typeof ws.hours_per_year === "number"
+        ? ws.hours_per_year
+        : months(ws).reduce((a, b) => a + b, 0);
+    const setStatus = (text) => {
+      $("status").textContent = text;
+    };
+
+    function strip(values, cap, big) {
+      const s = el("div", "strip" + (big ? " big" : ""));
+      const max = Math.max(1, ...values, cap > 0 ? cap : 0);
+      values.forEach((v, i) => {
+        const b = el("i", cap > 0 && v > cap ? "over" : "");
+        b.style.height = (v / max) * 100 + "%";
+        b.title =
+          MONTH_NAMES[i] +
+          ": " +
+          fmt(v) +
+          " h" +
+          (cap > 0 ? " of " + fmt(cap) : "");
+        s.appendChild(b);
+      });
+      return s;
+    }
+    function monthLabels() {
+      const m = el("div", "months");
+      MONTHS.forEach((x) => m.appendChild(el("span", "", x)));
+      return m;
+    }
+
+    function confirmButton(label, action) {
+      const b = el("button", "danger", label);
+      b.type = "button";
+      let armed = false,
+        t = null;
+      b.addEventListener("click", () => {
+        if (!armed) {
+          armed = true;
+          b.textContent = "Click again to " + label.toLowerCase();
+          t = setTimeout(() => {
+            armed = false;
+            b.textContent = label;
+          }, 4000);
+          return;
+        }
+        clearTimeout(t);
+        action();
+      });
+      return b;
+    }
+
+    const sortedAnalysts = () =>
+      [...state.analysts.entries()].sort((a, b) =>
+        String(a[1].name || "").localeCompare(String(b[1].name || "")),
+      );
+
+    function chip(id, ws) {
+      const c = el("div", "chip");
+      c.dataset.id = id;
+      c.draggable = state.editor;
+      const top = el("div", "top");
+      top.appendChild(el("span", "nm", ws.name || id));
+      top.appendChild(el("span", "hrs", fmt(yearHours(ws)) + " h/yr"));
+      c.appendChild(top);
+      c.appendChild(strip(months(ws), 0, false));
+      const meta = el("div", "meta");
+      if (ws.proposed) meta.appendChild(el("span", "tag", "Hours proposed"));
+      if (
+        typeof ws.playbook_url === "string" &&
+        ws.playbook_url.startsWith("https://")
+      ) {
+        const a = el("a", "", "Playbook");
+        a.href = ws.playbook_url;
+        a.target = "_blank";
+        a.rel = "noopener";
+        meta.appendChild(a);
+      } else if (ws.source === "manual")
+        meta.appendChild(el("span", "muted", "No playbook yet"));
+      if (state.editor) {
+        const sel = el("select");
+        sel.setAttribute("aria-label", "Move " + (ws.name || id) + " to");
+        const cur = state.assignments.get(id) || "";
+        const opt = (v, t) => {
+          const o = el("option", "", t);
+          o.value = v;
+          if (v === cur) o.selected = true;
+          sel.appendChild(o);
+        };
+        opt("", "Unassigned");
+        sortedAnalysts().forEach(([aid, a]) => opt(aid, a.name || "Unnamed"));
+        sel.addEventListener("change", () => move(id, sel.value || null));
+        meta.appendChild(sel);
+        if (ws.source === "manual") {
+          const edit = el("button", "", "Edit hours");
+          edit.type = "button";
+          edit.addEventListener("click", () => startEdit(id));
+          meta.appendChild(edit);
+          meta.appendChild(confirmButton("Remove", () => removeCard(id)));
+        }
+      }
+      c.appendChild(meta);
+      c.addEventListener("dragstart", (e) => {
+        if (!state.editor) return;
+        e.dataTransfer.setData("text/plain", id);
+        e.dataTransfer.effectAllowed = "move";
+        c.classList.add("dragging");
+      });
+      c.addEventListener("dragend", () => c.classList.remove("dragging"));
+      return c;
+    }
+
+    function column(aid, analyst, ids) {
+      const col = el("section", "panel col" + (aid ? "" : " unassigned"));
+      const head = el("div", "colhead");
+      const row = el("div", "row");
+      row.appendChild(
+        el("h2", "", aid ? analyst.name || "Unnamed" : "Unassigned"),
+      );
+      const load = Array(12).fill(0);
+      let total = 0;
+      ids.forEach((id) => {
+        const ws = state.workstreams.get(id);
+        months(ws).forEach((v, i) => (load[i] += v));
+        total += yearHours(ws);
+      });
+      const cap = aid ? num(analyst.capacity_hours_per_month) : 0;
+      const capYear = cap * 12;
+      const overYear = cap > 0 && total > capYear;
+      const overMonths =
+        cap > 0
+          ? load
+              .map((v, i) => (v > cap ? MONTH_NAMES[i] : null))
+              .filter(Boolean)
+          : [];
+      const over = overYear || overMonths.length > 0;
+      const stat = el(
+        "span",
+        "chipstat" + (cap > 0 ? (over ? " over" : " ok") : ""),
+      );
+      stat.textContent =
+        cap > 0
+          ? fmt(total) +
+            " of " +
+            fmt(capYear) +
+            " h · " +
+            Math.round((total / capYear) * 100) +
+            "%"
+          : fmt(total) + " h";
+      row.appendChild(stat);
+      head.appendChild(row);
+      if (aid && cap > 0) {
+        const bar = el("div", "bar");
+        bar.setAttribute("aria-hidden", "true");
+        const scale = Math.max(total, capYear);
+        const a = el("div", "a" + (overYear ? " over" : ""));
+        a.style.width = (total / scale) * 100 + "%";
+        const f = el("div", "f");
+        f.style.left = "calc(" + (capYear / scale) * 100 + "% - 1px)";
+        bar.append(a, f);
+        head.appendChild(bar);
+      }
+      if (aid) {
+        const capline = el("div", "capline");
+        if (state.editor) {
+          const lab = el("label", "", "Capacity");
+          const inp = el("input");
+          inp.type = "number";
+          inp.min = "0";
+          inp.step = "1";
+          inp.id = "cap-" + aid;
+          inp.value = cap > 0 ? String(cap) : "";
+          inp.placeholder = "h/mo";
+          lab.htmlFor = inp.id;
+          inp.addEventListener("change", () => saveCapacity(aid, inp.value));
+          capline.append(lab, inp, el("span", "", "h per month"));
+          capline.appendChild(
+            confirmButton("Remove", () => removeAnalyst(aid)),
+          );
+        } else {
+          capline.textContent =
+            cap > 0
+              ? "Capacity " + fmt(cap) + " h per month"
+              : "No capacity set";
+        }
+        head.appendChild(capline);
+        if (overMonths.length)
+          head.appendChild(
+            el("span", "overnote", "Over in " + overMonths.join(", ")),
+          );
+      }
+      head.appendChild(strip(load, cap, true));
+      head.appendChild(monthLabels());
+      col.appendChild(head);
+      const chips = el("div", "chips");
+      const q = state.query;
+      const shown = ids.filter(
+        (id) =>
+          !q ||
+          String(state.workstreams.get(id).name || id)
+            .toLowerCase()
+            .includes(q),
+      );
+      shown
+        .sort(
+          (a, b) =>
+            yearHours(state.workstreams.get(b)) -
+            yearHours(state.workstreams.get(a)),
+        )
+        .forEach((id) =>
+          chips.appendChild(chip(id, state.workstreams.get(id))),
+        );
+      if (!shown.length)
+        chips.appendChild(
+          el(
+            "p",
+            "empty",
+            q
+              ? "No match here."
+              : aid
+                ? "Nothing assigned yet."
+                : "Every workstream is assigned.",
+          ),
+        );
+      col.appendChild(chips);
+      col.addEventListener("dragover", (e) => {
+        if (!state.editor) return;
+        e.preventDefault();
+        col.classList.add("over");
+      });
+      col.addEventListener("dragleave", (e) => {
+        if (!col.contains(e.relatedTarget)) col.classList.remove("over");
+      });
+      col.addEventListener("drop", (e) => {
+        if (!state.editor) return;
+        e.preventDefault();
+        col.classList.remove("over");
+        const id = e.dataTransfer.getData("text/plain");
+        if (id && state.workstreams.has(id)) move(id, aid || null);
+      });
+      return col;
+    }
+
+    const allLoaded = () =>
+      state.loaded.ws && state.loaded.an && state.loaded.as;
+    const editingInBoard = () => {
+      const a = document.activeElement;
+      return !!(
+        a &&
+        $("cols").contains(a) &&
+        (a.tagName === "INPUT" || a.tagName === "SELECT")
+      );
+    };
+
+    function render() {
+      // A live update must not wipe a capacity number being typed or an open move menu.
+      if (editingInBoard()) {
+        state.stale = true;
+        return;
+      }
+      state.stale = false;
+      const cols = $("cols");
+      cols.replaceChildren();
+      const byAnalyst = new Map([["", []]]);
+      state.analysts.forEach((_, aid) => byAnalyst.set(aid, []));
+      state.workstreams.forEach((_, id) => {
+        const a = state.assignments.get(id);
+        (byAnalyst.has(a) ? byAnalyst.get(a) : byAnalyst.get("")).push(id);
+      });
+      if (!state.workstreams.size && !state.analysts.size && allLoaded()) {
+        const p = el("div", "panel");
+        p.appendChild(el("h2", "", "The board is empty"));
+        p.appendChild(
+          el(
+            "p",
+            "muted",
+            state.editor
+              ? "Add analysts and workstreams with the forms below. The service-playbook skill adds a workstream card when its playbook is done."
+              : "Workstreams and analysts appear here once an editor adds them.",
+          ),
+        );
+        cols.appendChild(p);
+      }
+      cols.appendChild(column(null, null, byAnalyst.get("")));
+      sortedAnalysts().forEach(([aid, a]) =>
+        cols.appendChild(column(aid, a, byAnalyst.get(aid))),
+      );
+      const total = [...state.workstreams.values()].reduce(
+        (s, w) => s + yearHours(w),
+        0,
+      );
+      $("counts").textContent =
+        state.workstreams.size +
+        " workstreams · " +
+        state.analysts.size +
+        " analysts · " +
+        fmt(total) +
+        " h per year in all";
+      document.body.classList.toggle("readonly", !state.editor);
+      document.body.classList.toggle("editing", state.editor);
+    }
+    $("cols").addEventListener("focusout", () =>
+      setTimeout(() => {
+        if (state.stale && !editingInBoard()) render();
+      }, 0),
+    );
+
+    async function write(fn, done) {
+      setStatus("Saving…");
+      try {
+        await fn();
+        setStatus(done || "Saved");
+        return true;
+      } catch (e) {
+        if (e && e.code === "invalid_argument" && !state.editor)
+          setStatus("This view is read-only.");
+        else if (e && e.code === "quota_exceeded")
+          setStatus(
+            "The board is full. Remove a workstream before adding more.",
+          );
+        else setStatus("Could not save. Check your connection and try again.");
+        return false;
+      }
+    }
+    const move = (id, aid) =>
+      write(
+        () =>
+          aid
+            ? db
+                .doc("assignments/" + id)
+                .set({ workstream_id: id, analyst_id: aid })
+            : db.doc("assignments/" + id).delete(),
+        aid ? "Moved" : "Moved to Unassigned",
+      );
+    function saveCapacity(aid, raw) {
+      const v = raw === "" ? 0 : Number(raw);
+      if (!isFinite(v) || v < 0) {
+        setStatus("Capacity must be 0 or more hours.");
+        return;
+      }
+      return write(
+        () => db.doc("analysts/" + aid).update({ capacity_hours_per_month: v }),
+        "Capacity saved",
+      );
+    }
+    const removeAnalyst = (aid) =>
+      write(async () => {
+        for (const [wid, a] of [...state.assignments.entries()])
+          if (a === aid) await db.doc("assignments/" + wid).delete();
+        await db.doc("analysts/" + aid).delete();
+      }, "Analyst removed; their workstreams are unassigned");
+    const removeCard = (id) =>
+      write(async () => {
+        await db.doc("assignments/" + id).delete();
+        await db.doc("workstreams/" + id).delete();
+      }, "Workstream removed");
+
+    const slug = (s) =>
+      s
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 60) || "item";
+    function uniqueId(base, taken) {
+      let id = base,
+        n = 2;
+      while (taken.has(id)) id = base + "-" + n++;
+      return id;
+    }
+
+    $("f-analyst").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      $("a-err").textContent = "";
+      const name = $("a-name").value.trim();
+      if (!name) return;
+      const cap = Number($("a-cap").value || 0);
+      if (!isFinite(cap) || cap < 0) {
+        $("a-err").textContent = "Hours per month must be 0 or more.";
+        return;
+      }
+      // Leftover assignments from a half-finished removal must not reattach to a new analyst.
+      const taken = new Set([
+        ...state.analysts.keys(),
+        ...state.assignments.values(),
+      ]);
+      const id = uniqueId(slug(name), taken);
+      if (
+        await write(
+          () =>
+            db
+              .doc("analysts/" + id)
+              .set({ id, name, capacity_hours_per_month: cap }),
+          "Analyst added",
+        )
+      ) {
+        $("a-name").value = "";
+        $("a-cap").value = "";
+      }
+    });
+
+    function resetCardForm() {
+      state.editingCard = null;
+      $("c-name").value = "";
+      $("c-year").value = "";
+      $("c-months").value = "";
+      $("c-err").textContent = "";
+      $("c-title").textContent = "Workstream without a playbook yet";
+      $("c-submit").textContent = "Add workstream";
+      $("c-cancel").hidden = true;
+    }
+    function startEdit(id) {
+      const ws = state.workstreams.get(id);
+      if (!ws) return;
+      state.editingCard = id;
+      $("c-name").value = ws.name || "";
+      $("c-year").value = "";
+      $("c-months").value = months(ws).join(",");
+      $("c-title").textContent = "Edit " + (ws.name || id);
+      $("c-submit").textContent = "Save changes";
+      $("c-cancel").hidden = false;
+      $("c-name").focus();
+      $("f-card").scrollIntoView({ block: "nearest" });
+    }
+    $("c-cancel").addEventListener("click", resetCardForm);
+    $("f-card").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      $("c-err").textContent = "";
+      const name = $("c-name").value.trim();
+      if (!name) return;
+      let m;
+      const raw = $("c-months").value.trim();
+      if (raw) {
+        m = raw
+          .split(/[,\s]+/)
+          .filter(Boolean)
+          .map(Number);
+        if (m.length !== 12 || m.some((v) => !isFinite(v) || v < 0)) {
+          $("c-err").textContent =
+            "Monthly hours need 12 numbers, July to June, each 0 or more.";
+          return;
+        }
+      } else {
+        const y = Number($("c-year").value);
+        if (!isFinite(y) || y <= 0) {
+          $("c-err").textContent = "Enter hours per year, or 12 monthly hours.";
+          return;
+        }
+        m = Array(12).fill(Math.round((y / 12) * 100) / 100);
+      }
+      const editing = state.editingCard;
+      const id =
+        editing || uniqueId(slug(name), new Set(state.workstreams.keys()));
+      const year = Math.round(m.reduce((a, b) => a + b, 0) * 100) / 100;
+      const body = {
+        id,
+        name,
+        hours_by_month: m,
+        hours_per_year: year,
+        proposed: true,
+        playbook_url: "",
+        source: "manual",
+      };
+      if (
+        await write(
+          () => db.doc("workstreams/" + id).set(body),
+          editing ? "Workstream updated" : "Workstream added",
+        )
+      )
+        resetCardForm();
+    });
+    $("search").addEventListener("input", (e) => {
+      state.query = e.target.value.trim().toLowerCase();
+      render();
+    });
+
+    render();
+
+    (async () => {
+      const use = (n) =>
+        window.claude && window.claude.use
+          ? window.claude.use(n)
+          : Promise.resolve(null);
+      const [dbNs, user] = await Promise.all([use("db"), use("user")]);
+      db = dbNs;
+      if (!db) {
+        $("mode").textContent = "Offline";
+        setStatus("Sign in to claude.ai to see the board.");
+        return;
+      }
+      state.editor = user ? !!(await user.canEdit()) : false;
+      $("mode").textContent = state.editor ? "Editing" : "Read-only";
+      setStatus("Loading the board…");
+      const timer = setTimeout(() => {
+        $("loadflag").hidden = false;
+        $("loadflag").textContent =
+          "The board has not answered yet. What you see may be out of date.";
+      }, 10000);
+      const settle = (key, snap) => {
+        state.loaded[key] = true;
+        // The ready message shows once, so a later save error stays on screen.
+        if (!state.ready && !snap.metadata.fromCache && allLoaded()) {
+          state.ready = true;
+          clearTimeout(timer);
+          $("loadflag").hidden = true;
+          setStatus(
+            state.editor
+              ? "Changes save as you make them."
+              : "You can look but not change this board.",
+          );
+        }
+        render();
+      };
+      const fail = (e) => {
+        clearTimeout(timer);
+        $("loadflag").hidden = false;
+        $("loadflag").textContent =
+          e && e.code === "revoked"
+            ? "This board is no longer available to you."
+            : "The board stopped updating. Reload the page to reconnect.";
+      };
+      const load = (path, key, apply) =>
+        db.collection(path).onSnapshot((snap) => {
+          apply(snap.docs);
+          settle(key, snap);
+        }, fail);
+      load("workstreams", "ws", (docs) => {
+        state.workstreams = new Map(docs.map((d) => [d.id, d.data() || {}]));
+      });
+      load("analysts", "an", (docs) => {
+        state.analysts = new Map(docs.map((d) => [d.id, d.data() || {}]));
+      });
+      load("assignments", "as", (docs) => {
+        state.assignments = new Map(
+          docs.map((d) => [d.id, String((d.data() || {}).analyst_id || "")]),
+        );
+      });
+    })();
+  })();
+</script>
