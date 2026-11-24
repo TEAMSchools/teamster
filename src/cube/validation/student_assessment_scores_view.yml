@@ -3358,3 +3358,23 @@ decisions:
       cube: 7d360cc79f30d506f02012dc6bd7ea1ba0ee575d62961a0e03cc0c324b6b0a44
       dashboard: 065d0590b16edbb677420cb3fd90b51ba0cc0392155576b02d3c5a980e9bfc08
       explanation: 6ef4c49f109f0e8953f7c21b5aa6544b2fd052455ac1e28553d2e14d4235d74f
+  - id: ddi-139
+    comparison: pct_taken__assessments_over_time
+    cause:
+      side: dashboard
+      label:
+        the assessment's administered date falls in a later academic year than
+        its own academic_year, so Cube files the score under the administered
+        date's year while the dashboard keeps the assessment's year and the
+        sheet's year filter drops it
+    call: fix_source
+    reason:
+      One Illuminate assessment's administered date reads a year after its own
+      academic year and the dates students took it, so Cube files its scores
+      under the later year while the dashboard keeps the assessment's year. The
+      administered date needs correcting in Illuminate.
+    task: "#6487"
+    fingerprints:
+      cube: 11cc3cdd00795835a2b246a2befaf842b5c0b8bb8b6388d51706ef91396d3b5a
+      dashboard: 12892dfd5eb39545b7325e119050ce14daf905612c7e5456029b62ab45b148cd
+      explanation: 4b10ebd5fc370fa4ee7a92f8c0edd7234ea2f16760df8d21b22d5cd040f84a04
