@@ -118,8 +118,47 @@ marker; the rest keep it.
 
 ## Write
 
-Build the doc as one HTML file in the scratchpad: one `<table>` per section,
-title row bold and spanning the columns, `[proposed]` kept in the cell text.
+Write the prose sections to `<scratchpad>/content-<slug>.json`:
+
+```json
+{
+  "slug": "surveys",
+  "workstream": "Surveys",
+  "owner": "<name>",
+  "backup": "[proposed] ...",
+  "partner_team": "...",
+  "asana_url": "https://app.asana.com/...",
+  "date_source": "...",
+  "rounds": [
+    {
+      "key": "r1",
+      "name": "Round 1",
+      "includes": "...",
+      "open_week": "2026-10-19",
+      "close_week": "2026-11-02"
+    }
+  ],
+  "what": "...",
+  "why": "...",
+  "supports": "...",
+  "partner_owns": "...",
+  "stakeholders": [["group", "H", "H", "Supportive", "concerns", "Decide"]],
+  "roles": { "M": "...", "O": "...", "C": "...", "H": "...", "A": "..." },
+  "systems": [["name", "what it does", "https://..."]],
+  "rapid": [["decision", "R", "A", "P", "I", "D"]],
+  "failure_modes": [["failure", "what it looks like", "fix"]],
+  "questions": []
+}
+```
+
+Round `key`s match the `round_key`s in the playbook JSON. Then build the HTML:
+
+```bash
+uv run python .claude/skills/service-playbook/scripts/render_doc.py \
+  --content <scratchpad>/content-<slug>.json --playbook <scratchpad>/playbook-<slug>.json \
+  --capacity <scratchpad>/capacity-<slug>.json --out <scratchpad>/playbook-<slug>.html
+```
+
 Show the user the section 9 table and the `[proposed]` list, then create the doc
 with Drive `create_file`: `title` as above, `parentId` the
 `Playbook Drive folder`, `contentMimeType: text/html`, and `base64Content` as a
