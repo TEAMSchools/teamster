@@ -241,8 +241,6 @@ with
             *,
 
             case
-                when not completed_test_round
-                then 'Round Incomplete'
                 when
                     met_admin_benchmark_goal = 1
                     and met_measure_standard_goal is not null
@@ -273,10 +271,6 @@ with
         select
             *,
 
-            countif(aimline_category = 'Round Incomplete') over (
-                partition by academic_year, admin_season, round_number, student_number
-            ) as n_round_incomplete,
-
             countif(aimline_category = 'Below Aimline') over (
                 partition by academic_year, admin_season, round_number, student_number
             ) as n_round_below,
@@ -288,15 +282,6 @@ with
             countif(aimline_category = 'Meeting Aimline, Not Yet at Benchmark') over (
                 partition by academic_year, admin_season, round_number, student_number
             ) as n_round_off_track,
-
-            countif(aimline_category = 'Round Incomplete') over (
-                partition by
-                    academic_year,
-                    admin_season,
-                    round_number,
-                    measure_name_code,
-                    student_number
-            ) as n_code_incomplete,
 
             countif(aimline_category = 'Below Aimline') over (
                 partition by
@@ -453,8 +438,6 @@ select
     end as round_benchmark_status,
 
     case
-        when n_code_incomplete > 0
-        then 'Round Incomplete'
         when n_code_below > 0
         then 'Below Aimline'
         when n_code_no_aimline > 0
@@ -485,7 +468,7 @@ select
     end as round_trajectory_status,
 
     case
-        when n_round_incomplete > 0
+        when not completed_test_round
         then 'Round Incomplete'
         when n_round_below > 0
         then 'Below Aimline'

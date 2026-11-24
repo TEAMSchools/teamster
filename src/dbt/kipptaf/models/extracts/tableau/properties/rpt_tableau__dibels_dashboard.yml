@@ -755,7 +755,9 @@ models:
           aimline_category when the view is scoped to a single measure standard.
           The two disagree by design: a student below the aimline on any one
           measure reads Below Aimline for the round, so the round-level share
-          below is the higher of the two.
+          below is the higher of the two, and a student still testing reads
+          Round Incomplete here while aimline_category scores each measure they
+          sat.
         config:
           meta:
             contains_pii: true
@@ -764,14 +766,17 @@ models:
         description: >-
           T&L's reporting category -- Meeting Aimline, Meeting Benchmark;
           Meeting Aimline, Not Yet at Benchmark; Below Aimline; No Aimline Data,
-          Meeting Benchmark; No Aimline Data, Not Yet at Benchmark; or Round
-          Incomplete. Aimline rows only, and Not Tested here where the student
-          has no row in the aimline model at all.
+          Meeting Benchmark; or No Aimline Data, Not Yet at Benchmark. Aimline
+          rows only, and Not Tested here where the student did not sit the
+          measure.
 
-          Round Incomplete and Not Tested are different states: Round Incomplete
-          means the student sat some of the round's measures but not all, Not
-          Tested means no row exists because they sat nothing. Do not collapse
-          them.
+          Every measure the student sat carries its verdict, whether or not they
+          have finished the round. The round question lives in round_test_status
+          and aimline_round_category, where a student who sat some of the
+          round's measures but not all reads Round Incomplete. A view that
+          counts the students still testing on the measure in view reads
+          round_test_status = Round Incomplete together with measure_test_status
+          = Tested.
         config:
           meta:
             contains_pii: true
@@ -926,9 +931,11 @@ models:
         data_type: string
         description: >-
           T&L's combined reporting category rolled up to the measure name code
-          -- the same seven values aimline_category carries at measure-standard
-          grain, applied to the worst state the student holds on any standard
-          under the code.
+          -- Below Aimline; No Aimline Data; Meeting Aimline, Not Yet at
+          Benchmark; Meeting Aimline, Meeting Benchmark; or Not Tested -- the
+          worst state the student holds on any standard under the code. Like
+          aimline_category, it scores a code the student sat whether or not the
+          round is finished.
 
           Aimline rows only; the lens has no meaning without an aimline.
         config:
@@ -941,10 +948,10 @@ models:
           Aimline, On Aimline Below Benchmark, On Track to Benchmark, No Aimline
           Data, or Not Tested.
 
-          Differs from measure_name_code_aimline_benchmark_status by ignoring
-          round completion, which is the same distinction
-          aimline_trajectory_category has from aimline_category one grain down.
-          Aimline rows only.
+          Differs from measure_name_code_aimline_benchmark_status the way
+          aimline_trajectory_category differs from aimline_category one grain
+          down -- it reads the aimline verdict directly rather than applying
+          T&L's benchmark-wins rule. Aimline rows only.
         config:
           meta:
             contains_pii: true
@@ -1017,12 +1024,9 @@ models:
           below-aimline row as meeting one. For the intervention-targeting views
           these buckets feed, the verdict is what academics mean.
 
-          It also ignores round completeness, where `aimline_category` puts
-          Round Incomplete first and overrides everything. Academics' legend has
-          no Round Incomplete slice, so a row here classifies on its own verdict
-          whatever the round's state. The two columns therefore disagree on
-          Round Incomplete rows by design — do not union or compare them.
-          `round_test_status` still carries the round question separately.
+          Like `aimline_category`, a row here classifies on its own verdict
+          whatever the round's state; academics' legend has no Round Incomplete
+          slice. `round_test_status` carries the round question separately.
       - name: mtss_enrollment
         data_type: string
         description: MTSS programme the student is enrolled in, if any.
