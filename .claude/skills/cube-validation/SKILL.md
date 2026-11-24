@@ -461,7 +461,9 @@ refuses when the view's only run read another fact.
       `explain` warns of a table named with no project and dataset. Tables are
       read as of the run's moment: the build start, or the build end for a table
       only the Cube side reads, which is refused if it changed during the build.
-      An explanation may open with its own `WITH`.
+      On that refusal, read the dbt model the table is built from instead: it is
+      read at the build start, the data the build itself read. An explanation
+      may open with its own `WITH`.
 
       ```sql
       SELECT u.__row,
