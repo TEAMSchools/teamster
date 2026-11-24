@@ -18,6 +18,9 @@ models:
           - unique:
               config:
                 severity: error
+          - not_null:
+              config:
+                severity: error
       - name: location_key
         data_type: string
         description: >-

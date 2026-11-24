@@ -6,20 +6,23 @@ models:
       dashboard. Teachers are matched the way the state matches them for teacher
       median SGP, as closely as the roster allows. Each score is placed at the
       school the student was enrolled in on the test date, as on the Schools
-      tab. The window is the in-session days at that school from the start of
-      the academic year through the day before the test. The student's sections
-      are the non-homeroom sections at that school whose course is in the tested
-      subject, including sections the student left mid-year. A section at
-      another school never counts, so a school sees only its own teachers. A
-      Lead Teacher or Co-teacher counts for a section when the assignment covers
-      at least 60% of the window; Gradebook Access and every other role never
-      count. The score counts for a teacher when the student was enrolled in any
-      of that teacher's counting sections on at least 70% of the window's days,
-      so a move between 2 sections of the same teacher still counts and a move
-      between 2 teachers can count for neither. A teacher who is lead on one of
-      the student's sections and co-teacher on another appears once, as Lead
-      Teacher. Student groups come from the state score file and are never
-      filled from another system, as on the Schools tab.
+      tab. A score that no enrollment stint places at a school has no window, so
+      it counts for no teacher and is left out here; the Schools tab keeps it
+      and its location test reports it. The window is the in-session days at
+      that school from the start of the academic year through the day before the
+      test. The student's sections are the non-homeroom sections at that school
+      whose course is in the tested subject, including sections the student left
+      mid-year. A section at another school never counts, so a school sees only
+      its own teachers. A Lead Teacher or Co-teacher counts for a section when
+      the assignment covers at least 60% of the window; Gradebook Access and
+      every other role never count. The score counts for a teacher when the
+      student was enrolled in any of that teacher's counting sections on at
+      least 70% of the window's days, so a move between 2 sections of the same
+      teacher still counts and a move between 2 teachers can count for neither.
+      A teacher who is lead on one of the student's sections and co-teacher on
+      another appears once, as Lead Teacher. Student groups come from the state
+      score file and are never filled from another system, as on the Schools
+      tab.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

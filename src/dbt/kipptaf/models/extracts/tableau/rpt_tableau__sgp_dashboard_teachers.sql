@@ -76,6 +76,7 @@ with
                 partition by s.student_test_uuid
             ) as window_day_count,
         from scores as s
+        -- deliberately drops unplaced scores (null location_key)
         inner join
             {{ ref("dim_school_calendars") }} as sc
             on s.location_key = sc.location_key
