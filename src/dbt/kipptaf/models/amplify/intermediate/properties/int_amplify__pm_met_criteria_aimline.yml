@@ -108,19 +108,16 @@ models:
         description: >-
           T&L's reporting category for the row, per measure standard — Meeting
           Aimline, Meeting Benchmark; Meeting Aimline, Not Yet at Benchmark;
-          Below Aimline; No Aimline Data, Meeting Benchmark; No Aimline Data,
-          Not Yet at Benchmark; or Round Incomplete. Definitions in the order
-          the case tests them.
+          Below Aimline; No Aimline Data, Meeting Benchmark; or No Aimline Data,
+          Not Yet at Benchmark. Definitions in the order the case tests them.
 
-          Round Incomplete comes first and overrides everything else, because
-          T&L define it at the round rather than the row — a student not tested
-          on one or more of the measures the round expected is incomplete for
-          that round, including on the measures they did sit. It is the same
-          completed_test_round gate the internal method applies, surfaced as a
-          category instead of a separate status. A student who sat nothing in
-          the round has no row here at all, and the reporting extract names
-          those Not Tested, which is the distinction between the two words: no
-          row means never sat, Round Incomplete means sat some but not all.
+          Every row here is a measure the student sat, and it carries its
+          verdict whether or not the student has finished the round. Academics
+          chose to score the measures of a partial round so schools see those
+          results while testing continues. The round grain is where an
+          unfinished round is held out, as Round Incomplete in
+          aimline_round_category. A student who sat nothing in the round has no
+          row here at all, and the reporting extract names those Not Tested.
 
           Meeting Aimline, Meeting Benchmark is at or above both the aimline and
           the benchmark. T&L add that a student meeting benchmark but not
@@ -135,13 +132,13 @@ models:
           benchmark.
 
           The two No Aimline Data values cover what T&L's four do not — the
-          probe was sat and Amplify published no verdict, so neither Below
-          Aimline nor Round Incomplete is true of it. Academics chose to show
-          the score and flag the missing target rather than hide the row. They
-          split by benchmark the same way the Meeting values do, because a
-          missing aimline verdict says nothing about whether the student is on
-          pace: No Aimline Data, Meeting Benchmark met the benchmark; No Aimline
-          Data, Not Yet at Benchmark did not.
+          probe was sat and Amplify published no verdict, so Below Aimline is
+          not true of it. Academics chose to show the score and flag the missing
+          target rather than hide the row. They split by benchmark the same way
+          the Meeting values do, because a missing aimline verdict says nothing
+          about whether the student is on pace: No Aimline Data, Meeting
+          Benchmark met the benchmark; No Aimline Data, Not Yet at Benchmark did
+          not.
 
           Missing data is deliberately NOT folded into T&L's benchmark-wins rule
           above. That rule is about a student who missed a known aimline, and
@@ -180,11 +177,13 @@ models:
           when a view reads across every measure the round expected; use
           aimline_category when a view is scoped to one measure standard.
 
-          Precedence is the row-level one, applied to the worst state the
-          student holds on any of that round's rows. Round Incomplete comes
-          first for the same reason it does per measure — it is already a
-          round-level judgment, and no student carries a partly-untested round
-          without it. Below Aimline then outranks No Aimline Data, on the
+          Round Incomplete comes first, read from completed_test_round. A
+          student who has not sat every measure the round expected is held out
+          of the round verdict, although each measure they did sit carries its
+          own verdict in aimline_category. Academics' decision, so a round is
+          judged only once its testing is finished. After that, precedence is
+          the row-level one, applied to the worst state the student holds on any
+          of the round's rows. Below Aimline outranks No Aimline Data, on the
           reading that a real negative verdict is worth more than a missing one;
           that ordering is the only part of the cascade the row-level precedence
           does not already decide, and academics have confirmed it. Then Meeting
@@ -273,16 +272,17 @@ models:
         data_type: string
         description: >-
           The aimline verdict and the benchmark verdict answered together at
-          measure name code grain — Round Incomplete, Below Aimline, No Aimline
-          Data, Meeting Aimline, Not Yet at Benchmark, or Meeting Aimline,
-          Meeting Benchmark. It exists because meeting the aimline and being on
-          course for the benchmark are different questions, and a leader looking
-          at one code wants both at once.
+          measure name code grain — Below Aimline, No Aimline Data, Meeting
+          Aimline, Not Yet at Benchmark, or Meeting Aimline, Meeting Benchmark.
+          It exists because meeting the aimline and being on course for the
+          benchmark are different questions, and a leader looking at one code
+          wants both at once.
 
-          Precedence runs incomplete, then below, then unpublished, then not yet
-          at benchmark. A student short on any standard under the code takes the
-          worse label, so the column never reports better than its worst
-          component.
+          Precedence runs below, then unpublished, then not yet at benchmark. A
+          student short on any standard under the code takes the worse label, so
+          the column never reports better than its worst component. Like
+          aimline_category, it scores a code the student sat whether or not the
+          round is finished.
         config:
           meta:
             contains_pii: true
@@ -426,10 +426,10 @@ models:
           does not: Amplify published no verdict for a probe that was sat. It is
           not a miss and must not colour as one.
 
-          Independent of the round gate. A Round Incomplete row still carries
-          the real verdict for the measures the student DID sit, so a row can
-          read Round Incomplete and Meeting Aimline together without
-          contradiction — the round is unfinished, that measure passed.
+          Independent of the round gate, like every measure-grain column here. A
+          student whose round is unfinished still carries the real verdict for
+          each measure they sat; only the round-grain columns read Round
+          Incomplete.
         config:
           meta:
             contains_pii: true
@@ -553,3 +553,128 @@ models:
           An unpublished verdict in either round gives no streak, which makes
           this a floor on the real figure rather than an estimate of it. T&L
           dropped the three-in-a-row variant.
+unit_tests:
+  - name: int_amplify__pm_met_criteria_aimline__partial_round_scores_sat_measures
+    description: >-
+      A measure the student sat carries its verdict even when the round is
+      unfinished, and only the round grain holds the student out. 1001 sat both
+      ORF standards but not Maze, below on one and meeting on the other. 1002
+      sat only Maze, which has no published aimline verdict. 1003 finished the
+      round.
+    model: int_amplify__pm_met_criteria_aimline
+    given:
+      - input: ref("int_google_sheets__dibels__expected_assessments_by_levels")
+        rows:
+          - &expected
+            academic_year: 2026
+            region: Newark
+            grade: 3
+            admin_season: BOY->MOY
+            round_number: 2
+            measure_standard_level: Below Benchmark
+            expected_measure_standard: Reading Fluency (ORF)
+            benchmark_goal: 70
+            pm_goal_criteria: AND
+            assessment_include: null
+            pm_goal_include: null
+            start_date: 2026-10-19
+            end_date: 2026-10-26
+          - <<: *expected
+            expected_measure_standard: Reading Accuracy (ORF-Accu)
+            benchmark_goal: 95
+          - <<: *expected
+            expected_measure_standard: Maze
+            benchmark_goal: 10
+      - input: ref("int_amplify__all_assessments")
+        rows:
+          - &score
+            academic_year: 2026
+            region: Newark
+            assessment_grade: 3
+            assessment_grade_int: 3
+            period: BOY->MOY
+            round_number: 2
+            overall_probe_eligible: Below Benchmark
+            assessment_type: PM
+            model_type: Aimline
+            student_number: 1001
+            measure_standard: Reading Fluency (ORF)
+            measure_name_code: ORF
+            measure_standard_score: 40
+            met_measure_standard_goal: 0
+          - <<: *score
+            measure_standard: Reading Accuracy (ORF-Accu)
+            measure_standard_score: 96
+            met_measure_standard_goal: 1
+          - <<: *score
+            student_number: 1002
+            measure_standard: Maze
+            measure_name_code: Comprehension
+            measure_standard_score: 12
+            met_measure_standard_goal: null
+          - <<: *score
+            student_number: 1003
+            measure_standard_score: 75
+            met_measure_standard_goal: 1
+          - <<: *score
+            student_number: 1003
+            measure_standard: Reading Accuracy (ORF-Accu)
+            measure_standard_score: 90
+            met_measure_standard_goal: 1
+          - <<: *score
+            student_number: 1003
+            measure_standard: Maze
+            measure_name_code: Comprehension
+            measure_standard_score: 5
+            met_measure_standard_goal: 0
+      - input: ref("int_students__dibels_participation_roster")
+        rows:
+          - &roster
+            academic_year: 2026
+            region: Newark
+            grade_level: 3
+            admin_season: BOY->MOY
+            round_number: 2
+            model_type: Aimline
+            student_number: 1001
+            completed_test_round: false
+            completed_test_round_int: 0
+          - { <<: *roster, student_number: 1002 }
+          - <<: *roster
+            student_number: 1003
+            completed_test_round: true
+            completed_test_round_int: 1
+    expect:
+      rows:
+        - student_number: 1001
+          measure_standard: Reading Fluency (ORF)
+          aimline_category: Below Aimline
+          measure_name_code_aimline_benchmark_status: Below Aimline
+          aimline_round_category: Round Incomplete
+        - student_number: 1001
+          measure_standard: Reading Accuracy (ORF-Accu)
+          aimline_category: Meeting Aimline, Meeting Benchmark
+          measure_name_code_aimline_benchmark_status: Below Aimline
+          aimline_round_category: Round Incomplete
+        - student_number: 1002
+          measure_standard: Maze
+          aimline_category: No Aimline Data, Meeting Benchmark
+          measure_name_code_aimline_benchmark_status: No Aimline Data
+          aimline_round_category: Round Incomplete
+        - student_number: 1003
+          measure_standard: Reading Fluency (ORF)
+          aimline_category: Meeting Aimline, Meeting Benchmark
+          measure_name_code_aimline_benchmark_status:
+            Meeting Aimline, Not Yet at Benchmark
+          aimline_round_category: Below Aimline
+        - student_number: 1003
+          measure_standard: Reading Accuracy (ORF-Accu)
+          aimline_category: Meeting Aimline, Not Yet at Benchmark
+          measure_name_code_aimline_benchmark_status:
+            Meeting Aimline, Not Yet at Benchmark
+          aimline_round_category: Below Aimline
+        - student_number: 1003
+          measure_standard: Maze
+          aimline_category: Below Aimline
+          measure_name_code_aimline_benchmark_status: Below Aimline
+          aimline_round_category: Below Aimline
