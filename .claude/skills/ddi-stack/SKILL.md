@@ -31,10 +31,11 @@ prerequisite.
 
 ## Rules for every task
 
-- **Tag first.** An assessment is in the DDI stack only if it has a row in the
-  AppSheet extension (`is_internal_assessment`; "normed" in the workbook).
-  Anything not rolling up is untagged or mistagged until proven otherwise —
-  check the tag before reading SQL ([triage](references/triage.md)).
+- **Tag first.** An Illuminate assessment is in the DDI stack only if it has a
+  row in the AppSheet extension (`is_internal_assessment`; "normed" in the
+  workbook). A Focus Apex assessment is in it tagged or not. Anything not
+  rolling up is untagged or mistagged until proven otherwise — check the tag
+  before reading SQL ([triage](references/triage.md)).
 - **Illuminate dates a school year by its spring**; the warehouse by its fall. A
   count shifted by exactly one year is a convention mismatch, not missing data.
   One assessment whose own `academic_year` disagrees with the Illuminate screen
@@ -43,8 +44,9 @@ prerequisite.
 - Worksheet names users bring to tickets — DKI View, Module Dashboard, Mastery
   by Classroom — are tabs of the DDI Suite workbook; "the DKI dashboard" means
   the DDI Suite. Tiers are "buckets."
-- Miami left the stack after SY25-26 and returns when Focus assessment data is
-  ingested; do not "fix" missing Miami rows.
+- Miami's rows from SY26-27 on come from Focus Apex and exist only for students
+  who tested, so Miami has no assigned-but-not-taken rows and its completion
+  reads about 100%. That is accepted, not a defect to fix.
 - Student-level rows stay in the terminal and the session scratchpad; outbound
   surfaces get aggregates without small cells.
 - If `dbt:answering-natural-language-questions-with-dbt` auto-loads, do not
