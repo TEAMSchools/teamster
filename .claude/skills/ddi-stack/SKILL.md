@@ -33,9 +33,10 @@ prerequisite.
 
 - **Tag first.** An Illuminate assessment is in the DDI stack only if it has a
   row in the AppSheet extension (`is_internal_assessment`; "normed" in the
-  workbook). A Focus Apex assessment is in it tagged or not. Anything not
-  rolling up is untagged or mistagged until proven otherwise — check the tag
-  before reading SQL ([triage](references/triage.md)).
+  workbook). A Focus Apex assessment is in it tagged or not, but takes its
+  module type and number from the tag. Anything not rolling up is untagged or
+  mistagged until proven otherwise — check the tag before reading SQL
+  ([triage](references/triage.md)).
 - **Illuminate dates a school year by its spring**; the warehouse by its fall. A
   count shifted by exactly one year is a convention mismatch, not missing data.
   One assessment whose own `academic_year` disagrees with the Illuminate screen

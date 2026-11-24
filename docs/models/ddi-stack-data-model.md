@@ -112,10 +112,11 @@ A new score therefore reaches a consumer only after:
   still flow through the scaffold's non-internal branch into
   `rpt_tableau__assessment_dashboard`, so the Assessment Dashboard worksheet can
   analyze every Illuminate assessment — but the Module Dashboard and DKI
-  worksheets display only normed (tagged) assessments, and the canonical
-  grouping, the report-card feeds and the star's internal branch use only tagged
-  ones. An untagged assessment is otherwise invisible to every consumer below
-  except the raw Illuminate intermediates.
+  worksheets display only normed assessments: tagged Illuminate ones and every
+  Apex one. For Illuminate, the canonical grouping, the report-card feeds and
+  the star's internal branch use only tagged ones. An untagged Illuminate
+  assessment is otherwise invisible to every consumer below except the raw
+  Illuminate intermediates.
 - **Canonical assessment** (`canonical_assessment_id`): internal assessments are
   created as several Illuminate copies when one assessment is too big for one
   (multi-part assessments), so within each region tagged in `regions_assessed`,
@@ -203,9 +204,9 @@ A new score therefore reaches a consumer only after:
   content is owned by the achievement directors who build it.
 - **Focus Apex** (Miami, SY26-27 on): `int_focus__apex_assessments` supplies the
   assessment catalog to `int_assessments__assessments_members`, and
-  `int_focus__apex_results` supplies the scores and performance bands to the
-  scaffold and the response rollup. The scaffold builds Apex rows from the
-  results alone, one per student who tested, so Apex has no
+  `int_focus__apex_results` tells the scaffold who tested and supplies the
+  scores and performance bands to the response rollup. The scaffold builds Apex
+  rows from the results alone, one per student who tested, so Apex has no
   assigned-but-not-taken rows.
 - **The AppSheet Illuminate Assessments Extension**: the tagging app writes a
   BigQuery table read as
@@ -303,7 +304,8 @@ the owner's walkthrough or a workbook download.
     for grades 9 to 12, the assessment's `subject_area` across the top of its
     two heatmaps; grades K to 8 keep their grade either way. The control is
     workbook-wide, so in Course Subject mode a high school's completion cell is
-    one subject across all its grades on every sheet that shows completion.
+    one subject across all its grades on every sheet that shows completion or is
+    filtered by it.
 
 ### rpt_tableau__ddi_dashboard
 
