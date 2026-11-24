@@ -58,6 +58,8 @@ with
             white,
             aligned_aggregate_ethnicity,
             _dbt_source_project,
+
+            cast(null as int64) as student_growth_percentile,
         from {{ ref("int_pearson__all_assessments") }}
 
         union all
@@ -119,6 +121,7 @@ with
             white,
             aligned_aggregate_ethnicity,
             _dbt_source_project,
+            student_growth_percentile,
         from {{ ref("int_cambium__all_assessments") }}
     )
 
@@ -177,6 +180,7 @@ select
     u.white,
     u.aligned_aggregate_ethnicity,
     u._dbt_source_project,
+    u.student_growth_percentile,
 
     cast(u.state_student_id as string) as state_student_id,
 

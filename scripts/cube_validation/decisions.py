@@ -165,7 +165,12 @@ def formula_cells_hash(
     return hashlib.sha256(json.dumps([salt, refs]).encode()).hexdigest()
 
 
-def cause_state(d: Decision, explanation: str, current: dict[str, str]) -> str:
+def cause_state(
+    d: Decision,
+    explanation: str,
+    current: dict[str, str],
+    unchanged: Iterable[str] = (),
+) -> str:
     """Whether a cause decision still holds for an item explained by `explanation`.
 
     Args:
@@ -173,20 +178,22 @@ def cause_state(d: Decision, explanation: str, current: dict[str, str]) -> str:
         explanation: The fingerprint of the stored explanation the item's cause
             rests on.
         current: The comparison's current `{cube, dashboard}` fingerprints.
+        unchanged: The earlier explanation fingerprints under which the cause
+            gave the same rows (the cause's `unchanged` in the sort): a
+            decision made on one still holds.
 
     Returns:
         `holds`, `sql` (either side's SQL changed since the decision) or
-        `explanation` (the explanation file changed since the decision).
+        `explanation` (the explanation changed the cause's rows since the
+        decision).
     """
     if any(
         not d.fingerprints.get(side) or d.fingerprints[side] != current.get(side)
         for side in ("cube", "dashboard")
     ):
         return "sql"
-    if (
-        not d.fingerprints.get("explanation")
-        or d.fingerprints["explanation"] != explanation
-    ):
+    made_on = d.fingerprints.get("explanation")
+    if not made_on or (made_on != explanation and made_on not in set(unchanged)):
         return "explanation"
     return "holds"
 

@@ -658,6 +658,23 @@ def questions_json(
             and _covers(d, item.get("stub") or {})
         ]
 
+    def evidence_of(view: str, d: Decision) -> list[str]:
+        """A decision's posted evidence lines.
+
+        A holding `formula` decision quiets its cells, so a `sort` after it
+        lists no item for them: their evidence comes from the run itself.
+        """
+        if not d.formula:
+            return [
+                line for item in covered(view, [d]) for line in item.get("evidence", [])
+            ]
+        return [
+            line
+            for quieted, diff in by_run[view].applied.quiet_cells
+            if quieted is d
+            for line in sort.formula_evidence(by_run[view], diff)[2]
+        ]
+
     out = []
     for n, q in enumerate(owner_questions(runs, causes), start=1):
         views = list(dict.fromkeys(view for view, _ in q["decisions"]))
@@ -672,10 +689,11 @@ def questions_json(
                             f"`{cid}` in `{view}`: {definition_text(sides[side])}"
                         )
 
-        items = [item for view, d in q["decisions"] for item in covered(view, [d])]
-        lines = [line for item in items for line in item.get("evidence", [])]
-        if "asks" in q:
-            lines = _cause_evidence(q["asks"])
+        lines = (
+            _cause_evidence(q["asks"])
+            if "asks" in q
+            else [line for view, d in q["decisions"] for line in evidence_of(view, d)]
+        )
         evidence = list(dict.fromkeys(safe_reason(line, q["hidden"]) for line in lines))
 
         # A cause question's example holds that cause's rows.
@@ -1302,6 +1320,9 @@ def approved_decisions(
                 raise AnswerError(
                     f"{where}: item {item_id!r} has a cause with no words"
                 )
+            # A decision made on an earlier version that gave this cause the
+            # same rows still holds (`explain.unchanged_causes`).
+            same = tuple(c.get("unchanged") or ())
             key = (comparison, side, label)
             if len(explanations.get(key, ())) > 1:
                 raise AnswerError(
@@ -1313,7 +1334,7 @@ def approved_decisions(
                 found = sort.cause_decision(existing, comparison, side, label)
                 if found is not None:
                     target = decided[key] = _file_cause(found)
-                    state = cause_state(found, explanation, fp)
+                    state = cause_state(found, explanation, fp, same)
                     if state != "holds":
                         if found.answer:
                             raise AnswerError(
@@ -1350,7 +1371,7 @@ def approved_decisions(
                     f"{where}: the {side} cause {label!r} is decided "
                     f"{target['call']} in {target['id']!r}, not {call}"
                 )
-            elif target["fingerprints"].get("explanation") != explanation:
+            elif target["fingerprints"].get("explanation") not in (explanation, *same):
                 raise AnswerError(
                     f"{where}: {target['id']!r} was approved on another version of "
                     "the explanation; re-run `sort`"

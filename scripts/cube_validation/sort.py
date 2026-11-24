@@ -714,7 +714,11 @@ def mark_decided(
         for c in item["cause"]:
             key = cause_key(c["side"], c["label"])
             d = cause_decision(recorded, item["comparison"], c["side"], c["label"])
-            state = decisions.cause_state(d, explanation, current) if d else ""
+            state = (
+                decisions.cause_state(d, explanation, current, c.get("unchanged") or ())
+                if d
+                else ""
+            )
             found[key] = d.id if d and state == "holds" else None
             if d and state == "holds":
                 held.append(d)
@@ -982,7 +986,7 @@ _FORMULA_CAUSE = {
 }
 
 
-def _formula_evidence(
+def formula_evidence(
     run: RunResult, diff: CellDiff
 ) -> tuple[list[dict], tuple[str, ...], tuple[str, ...]]:
     """A formula difference's cause, local evidence and posted evidence.
@@ -1200,7 +1204,7 @@ def suggest(
                     "cause",
                     _formula_explanation(run, source.comparison_id),
                 )
-                cause, evidence, posted = _formula_evidence(run, source)
+                cause, evidence, posted = formula_evidence(run, source)
 
         if not call:
             call = "investigate"

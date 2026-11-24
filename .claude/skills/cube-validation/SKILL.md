@@ -48,8 +48,10 @@ these files never reach the semantic layer.
 Tableau and `CUBE_API_SECRET` come only from the pytest secrets fixture, and
 only the MAIN checkout's devcontainer template holds the Cube secret. So
 `find-field`, `rebuild-sheet`, `compare`, `sort`, `explain` and `members` go
-through a throwaway `tests/test_zz_cube_validation.py` in
-`/workspaces/teamster`, never a worktree copy:
+through a throwaway `tests/test_zz_cube_validation_<view>.py` in
+`/workspaces/teamster`, never a worktree copy. Name it for the view: sessions
+validating other views share that folder, and one session's runner must not
+replace another's between commands.
 
 1. Write the runner, filling in the worktree path, the URL (the Cube Cloud REST
    base ending `/cubejs-api/v1`; never commit it) and the arguments:
@@ -78,7 +80,7 @@ through a throwaway `tests/test_zz_cube_validation.py` in
 
 2. Run it from `/workspaces/teamster`, where the secrets load, with the
    validator worktree's environment, so the branch's sqlglot is used:
-   `uv run --project <worktree> pytest tests/test_zz_cube_validation.py -s --tb=short`.
+   `uv run --project <worktree> pytest tests/test_zz_cube_validation_<view>.py -s --tb=short`.
    Then delete the file.
 
 `ask-owner`, `decide`, `reapply`, `record-answers`, `read-sheet` and `describe`
@@ -494,7 +496,9 @@ refuses when the view's only run read another fact.
       rest stay, with "explanation <file> leaves N rows unexplained". It then
       links the comparison's cells again and prints each cell left open, with
       why; those lines are unmasked: keep them out of GitHub. `--items <ids>`
-      narrows the printout only. After an edit, run it again without `--sql`. An
+      narrows the printout only. To edit a saved explanation, copy it to a
+      draft, edit the draft and pass `--sql <draft>`; never edit the stored file
+      (step 7 says why). Run it without `--sql` only to re-run it unchanged. An
       explanation reads its comparison's unmatched rows from the table `compare`
       saved, so it never rebuilds both sides. A missing table, or one whose
       labels name another run or SQL, refuses and names the next step:
@@ -708,15 +712,24 @@ refuses when the view's only run read another fact.
    words with each ID-shaped number written `<n>`, and `fingerprints` adds
    `explanation`, the explanation's. It names no group: each `sort` re-runs the
    explanations and marks an item `decided` when every one of its causes has a
-   decision that still holds, so a run never closes one. A decision whose SQL or
-   explanation changed decides nothing until re-approved through `decide`, never
-   by pasting new fingerprints; one the owner answered (`answer:`) is never
-   re-approved: delete it to ask again. `decide` writes these; do not hand-write
-   one. A cause decision and a `group` decision on one group with different
-   calls refuse, in `decide`, `reapply` and `ask-owner`, even after the `group`
-   decision closed the group. That check reads the closed groups the latest
-   `sort` classified, so run `sort --no-trace` after `explain` saves a new
-   explanation and before the next `decide`.
+   decision that still holds, so a run never closes one. A decision whose SQL
+   changed, or whose cause's rows an explanation edit moved, decides nothing
+   until re-approved through `decide`, never by pasting new fingerprints; one
+   the owner answered (`answer:`) is never re-approved: delete it to ask again.
+   An edit passed to `explain` as `--sql <draft>` keeps the decisions on each
+   cause whose rows it left alone: `explain` runs the stored and the draft
+   version on the same rows and writes
+   `-- unchanged <bucket> since <fingerprint>` under the cause block for each
+   such cause. Never write or edit those lines, or the `-- saved` line, by hand.
+   Never edit the stored file itself: `explain` refuses a stored file that
+   differs from its `-- saved` line, since the version its decisions were made
+   on is gone. A rows check that is skipped (it says why) re-opens every
+   decision on the file. `decide` writes these; do not hand-write one. A cause
+   decision and a `group` decision on one group with different calls refuse, in
+   `decide`, `reapply` and `ask-owner`, even after the `group` decision closed
+   the group. That check reads the closed groups the latest `sort` classified,
+   so run `sort --no-trace` after `explain` saves a new explanation and before
+   the next `decide`.
 
 8. `ask-owner <files> --domain <domain>` prints the validation issue's body: the
    numbered questions ready for the owner, each with the owner's hand checks,
