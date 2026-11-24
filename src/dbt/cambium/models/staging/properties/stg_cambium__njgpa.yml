@@ -73,7 +73,9 @@ models:
         description: >-
           NJDOE multilingual learner status from the NJGPA file. Y is a current
           learner; F1 to F4 is a former learner in the first to fourth year
-          after exit. Blank for every other student.
+          after exit. Blank where the file reports no status, which does not
+          always mean the student is not a learner; some files leave it blank
+          for students that multilingual_learner marks Y.
         config:
           meta:
             contains_pii: true
