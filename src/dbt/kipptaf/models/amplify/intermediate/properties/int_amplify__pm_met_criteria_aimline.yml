@@ -71,6 +71,8 @@ models:
               - admin_season
               - round_number
               - measure_standard
+          config:
+            severity: error
     columns:
       - name: benchmark_goal
         data_type: numeric

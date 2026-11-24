@@ -202,9 +202,9 @@ where
 Measured 2026-09-28, all regions: 336 students; 86, 192, 152, 60, 36 and 22. The
 render matched every tile. These counts drift without any code change, because
 `enroll_status` is the student's current status. #5607 also moved Miami's AY2025
-students to their current status, and scoring the measures of partial rounds
-(#6493) moved students still testing into tiles 1, 2 and 4, so re-measure before
-comparing with this baseline.
+students to their current status, and the baseline predates scoring the measures
+of partial rounds, which moves students still testing into tiles 1, 2 and 4.
+Re-measure before comparing with this baseline.
 
 ## SY2026-2027 header rename: null ids are a column move, not missing data
 
