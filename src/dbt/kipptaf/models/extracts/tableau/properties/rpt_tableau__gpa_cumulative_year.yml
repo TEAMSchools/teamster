@@ -397,6 +397,15 @@ unit_tests:
               cumulative_y1_gpa_unweighted: 3.1,
             }
           - {
+              studentid: 1,
+              academic_year: 2024,
+              schoolid: 73252,
+              _dbt_source_project: kippnewark,
+              grade_level: 12,
+              is_projected: false,
+              cumulative_y1_gpa_unweighted: 3.1,
+            }
+          - {
               studentid: 2,
               academic_year: 2023,
               schoolid: 73252,
@@ -523,6 +532,19 @@ unit_tests:
               studentid: 1,
               student_number: 101,
               academic_year: 2023,
+              schoolid: 73252,
+              _dbt_source_project: kippnewark,
+              rn_year: 1,
+              is_out_of_district: false,
+              enroll_status: 0,
+              is_enrolled_recent: true,
+              region: Newark,
+              graduation_year: 2025,
+            }
+          - {
+              studentid: 1,
+              student_number: 101,
+              academic_year: 2024,
               schoolid: 73252,
               _dbt_source_project: kippnewark,
               rn_year: 1,
@@ -700,6 +722,12 @@ unit_tests:
             student_number: 101,
             academic_year: 2023,
             is_last_completed_grade_11: true,
+            is_grade_11_trend_class: true,
+          }
+        - {
+            student_number: 101,
+            academic_year: 2024,
+            is_last_completed_grade_11: false,
             is_grade_11_trend_class: true,
           }
         - {

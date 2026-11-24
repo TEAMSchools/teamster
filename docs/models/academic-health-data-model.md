@@ -751,6 +751,11 @@ Each school year:
 3. **Rollover.** In July `current_academic_year` moves forward, and the course
    extract's two-year window, the projection, and the lookbacks move with it.
    The dashboard keeps opening on the last graded year until new grades post.
+   The Trends pop-up's by-class window (`is_grade_11_trend_class`) takes the
+   variable when the view is created, so after rollover check that
+   `INFORMATION_SCHEMA.VIEWS.view_definition` for
+   `rpt_tableau__gpa_cumulative_year` shows the new window years, and rebuild
+   the view if it does not.
 4. **Grade scales.** A new weighted scale in PowerSchool needs its unweighted
    twin mapped in both `stg_powerschool__storedgrades` (by name) and
    `base_powerschool__sections` (by id), or its unweighted GPA equals the
