@@ -75,13 +75,33 @@ with
             and y1.yearid < {{ var("current_academic_year") - 1990 }}
     ),
 
+    school_credits as (
+        select
+            studentid,
+            yearid,
+            schoolid,
+
+            row_number() over (
+                partition by studentid, yearid
+                order by sum(potential_credit_hours_default) desc, schoolid desc
+            ) as rn_credits,
+        from grade_detail
+        group by studentid, yearid, schoolid
+    ),
+
+    current_school as (
+        select studentid, yearid, schoolid,
+        from {{ ref("base_powerschool__student_enrollments") }}
+        where rn_year = 1
+    ),
+
     grade_rollup as (
         select
             studentid,
-            schoolid,
             yearid,
             storecode,
-            is_current,
+
+            logical_or(is_current) as is_current,
 
             case
                 when storecode in ('Q1', 'Q2')
@@ -111,14 +131,16 @@ with
 
             sum(if(y1_letter_grade like 'F%', 1, 0)) as n_failing_y1,
         from grade_detail
-        group by studentid, yearid, storecode, is_current, schoolid
+        group by studentid, yearid, storecode
     ),
 
     gpa_calcs as (
         select
-            *,
+            gr.*,
 
-            yearid + 1990 as academic_year,
+            gr.yearid + 1990 as academic_year,
+
+            coalesce(cs.schoolid, sc.schoolid) as schoolid,
 
             round(
                 safe_divide(weighted_gpa_points_term, total_credit_hours_term), 2
@@ -131,7 +153,16 @@ with
             round(
                 safe_divide(weighted_gpa_points_y1_unweighted, total_credit_hours_y1), 2
             ) as gpa_y1_unweighted,
-        from grade_rollup
+        from grade_rollup as gr
+        inner join
+            school_credits as sc
+            on gr.studentid = sc.studentid
+            and gr.yearid = sc.yearid
+            and sc.rn_credits = 1
+        left join
+            current_school as cs
+            on gr.studentid = cs.studentid
+            and gr.yearid = cs.yearid
     )
 
 select

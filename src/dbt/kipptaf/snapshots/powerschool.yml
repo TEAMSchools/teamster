@@ -52,6 +52,11 @@ snapshots:
         - gpa_y1
         - gpa_y1_unweighted
         - n_failing_y1
+      # closes a row once its key leaves the source, so a school label change
+      # does not leave the old label current. A run that reads a district's
+      # source empty closes that district's rows; the next good run reopens
+      # them as new versions.
+      hard_deletes: invalidate
       dbt_valid_to_current: "'9999-12-31'"
       meta:
         dagster:
