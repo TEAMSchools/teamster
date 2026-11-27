@@ -75,9 +75,11 @@ Verified in #5230 across 13 publishes on REST API 3.25 with
 - **Revision number.** Every Overwrite on this site created a revision (131 to
   132, 107 to 108, 45 to 46, 100 to 101). Call `populate_revisions` on the
   target before publishing and record the current number in the hand-over so the
-  owner has a restore point they apply themselves from the Server UI. That is
-  the owner's action, not yours: a restore on production is a production change
-  and needs the same two confirmations as a publish.
+  owner has a restore point they apply themselves from the Server UI.
+  `revision_number` comes back as a string, so `max()` picks `"9"` over `"24"`;
+  cast to `int` first (Verified). That is the owner's action, not yours: a
+  restore on production is a production change and needs the same two
+  confirmations as a publish.
 - **Refresh schedules and permissions.** Not established. A refresh was already
   queued after several Overwrites, which suggests the schedule survived, but
   nobody listed tasks before and after; the probe in
@@ -129,7 +131,16 @@ for label, pat in (("worksheets", r"<worksheet name='([^']*)'"),
 
 A pure extract refresh changes only `<datasources>`; worksheets and dashboards
 stay byte-identical. Anything else is a design change to understand before
-building on it.
+building on it. Before reusing a layout map from an earlier pull, diff the
+target dashboard's `<zones>` byte for byte: a promoted review copy changed
+sheets, a logo asset, `<devicelayouts>` ids, a window's `hidden` flag and
+`<repository-location>` between two pulls a day apart, and left `<zones>`
+intact.
+
+Pass the fresh base, not the older pull, as `--ref` to `check_twb.py`. Against
+an older pull, Tableau's own new elements (`preference`, `refresh`,
+`refresh-event`) are reported as absent from the reference, which is noise. The
+older pull as `--ref` answers one question only: what the owner changed.
 
 ## Write the assertion before the edit
 
@@ -148,6 +159,11 @@ line endings enough to break a regex-based assertion on an _unmutated_ file.
 Resolve field references by caption at runtime rather than hard-coding instance
 strings, so a transcription slip fails loudly instead of rendering a literal
 token.
+
+For a worksheet edit, give the assertion the input file as a second argument and
+require every worksheet you did not name to be byte-identical, and the bytes
+before `<worksheets>` and after `</worksheets>` unchanged. It caught a mutant
+that touched a different sheet.
 
 ## Reading exit codes
 
@@ -219,6 +235,10 @@ uv run pytest tests/test_zz_tableau.py -s
 rm tests/test_zz_tableau.py
 ```
 
+Copy the template with `cp` or the Write tool. A Bash heredoc that writes the
+template's lines is denied by the PreToolUse hook: its credential lines match
+the hook's patterns (Verified, one denied call).
+
 ## Sessions and jobs
 
 Observed in #5230 on REST API 3.25 with `tableauserverclient` 0.41; library
@@ -268,6 +288,10 @@ direction:
   overwrote the other parameter's value.
 - **A worksheet used only as a viz-in-tooltip was deleted** while both
   references to it were kept, breaking the tooltips that depended on it.
+- **Deleted actions left their stored target states behind.** 24 of the 40
+  `user:ui-action-filter` states in the merged file name actions absent from
+  `<actions>`, and 10 of those are the `empty-level` form that excludes every
+  row ([failure-catalog.md](failure-catalog.md), "Data reads wrong").
 
 After any merge, diff the worksheet list **and** the parameter list against both
 sources before publishing. In this corpus Tableau renamed on some collisions and
