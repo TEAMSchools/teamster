@@ -37,18 +37,27 @@ so step 2 is only for iterating.
 
 ## The gate is red on arrival — this is expected
 
-As of the 2026-07-29 extract, two check groups fail and are expected to keep
+As of the 2026-08-02 extract, two check groups fail and are expected to keep
 failing until someone acts on the source data:
 
-- `check_in_scope_rows_have_grades` reports **108** in-scope rows with no letter
-  grade (Newark HS 20, Newark MS 55, Camden HS 30, Camden MS 3).
-- `check_credits_earned` reports **`missing = 50`** — HS rows with no
-  `CreditsEarned`.
+- `check_in_scope_rows_have_grades` reports **47** in-scope rows with no letter
+  grade (Newark HS 12, Newark MS 35).
+- `check_credits_earned` reports **`missing = 12`** — HS rows with no
+  `CreditsEarned`, the same 12 rows.
+
+Both figures are down from the 2026-07-29 extract (108 ungraded across both
+regions, `missing = 50`), partly because 54 sections were deliberately excluded
+from the pull and partly because Camden is no longer in scope — see _Region
+scope_ below.
 
 Both describe the same underlying gap: for these rows, PowerSchool holds no
 usable `Y1` stored grade and no usable live final grade either, so this tool has
 nothing to fill in from. It is not a query bug, and there is no flag or override
 that makes it go away — the gate has no bypass, on purpose.
+
+These are now the gate's only failures — everything else passes. A fourth
+failure appearing means something genuinely changed, not more of the same
+backlog.
 
 **Required action:** someone with PowerSchool access must post the missing
 grades for those students and sections, or exclude the affected sections from
@@ -77,32 +86,38 @@ thing it exists to fix would be circular.
 
 Each row carries `reason` (why the row has no grade) and `section_shape`
 (whether the whole section is affected or just this student). As of the
-2026-07-29 extract the 108 rows break down like this:
+2026-08-02 extract the 47 rows break down like this:
 
-| Reason                                       | Section shape                    | Rows |
-| -------------------------------------------- | -------------------------------- | ---: |
-| no grade in either source                    | whole section ungraded           |   41 |
-| no grade in either source                    | partial — classmates were graded |   34 |
-| conflicting grades                           | partial                          |   31 |
-| grade exists but outside the handbook domain | partial                          |    2 |
+| Reason                    | Section shape                    | Rows |
+| ------------------------- | -------------------------------- | ---: |
+| no grade in either source | partial — classmates were graded |   27 |
+| conflicting grades        | partial — classmates were graded |   20 |
 
-What each combination implies:
+The whole-section-ungraded category is now empty. On 2026-07-29 it held 41 of
+the 108 rows; those were the sections excluded from the pull, so what remains is
+entirely per-student rather than per-section. That changes the fix: no section
+needs a scheduling or School Setup change, only individual grades.
 
-- **Whole section ungraded (41 rows):** the section appears never to have been
-  graded. If it genuinely should not be reported, the fix is PowerSchool's
-  "Exclude from Course Roster Reports" checkbox on the section's Course
-  Submission Information panel (see the audit runbook). Then re-pull and re-load
-  the extract.
-- **Partial, classmates were graded (34 rows):** the section was graded and
-  these individual students were missed. Excluding the section would wrongly
-  drop the students who do have grades — post the missing grades instead.
-- **Conflicting grades (31 rows):** a grade exists, but sources or reporting
-  terms disagree, so the query refuses to pick one. Reconcile in PowerSchool.
-  These are the cheapest to clear.
-- **Grade exists but outside the handbook domain (2 rows):** the only available
-  grade was `F*`, a warehouse-internal marker that is not a legal
-  `AlphaGradeEarned` value. Determine the real grade and correct it in
-  PowerSchool.
+What each combination implies. Both live categories are partial sections, so
+neither is fixed by excluding a section — that would drop classmates who do have
+grades:
+
+- **No grade in either source, partial (27 rows):** the section was graded and
+  these individual students were missed. Post the missing grades in PowerSchool.
+- **Conflicting grades, partial (20 rows):** a grade exists, but sources or
+  reporting terms disagree, so the query refuses to pick one. Reconcile in
+  PowerSchool. These are the cheapest to clear.
+
+Two further categories are empty on this extract but can reappear:
+
+- **Whole section ungraded:** the section appears never to have been graded. If
+  it genuinely should not be reported, the fix is PowerSchool's "Exclude from
+  Course Roster Reports" checkbox on the section's Course Submission Information
+  panel (see the audit runbook), then re-pull and re-load. This held 41 rows on
+  2026-07-29; the 54-section exclusion cleared all of them.
+- **Grade exists but outside the handbook domain:** the only available grade was
+  `F*`, a warehouse-internal marker that is not a legal `AlphaGradeEarned`
+  value. Determine the real grade and correct it in PowerSchool.
 
 The worklist CSV is PII-bearing (local student and section IDs) — same handling
 as the submission CSV: write it to `.claude/scratch/` (gitignored), never commit
@@ -111,6 +126,25 @@ it, never paste row-level values anywhere external.
 After fixing a source record, the extract must be re-pulled and re-loaded before
 the gate reflects the fix — re-running the gate against the old extract will
 still show the same failures.
+
+## Region scope
+
+`REGIONS_IN_SCOPE` in `submission_query.py` is the single source of truth for
+which regions this tool still processes. It is currently `("newark",)`.
+
+Camden's 2026-07-31 submission was accepted, error-free, and certified, so its
+extract is final — reprocessing it can only produce a difference from what the
+state already holds. Its rows were also holding the gate red, which blocked
+Newark from exporting for work nobody intended to redo.
+
+The constant feeds the gate's base-table iteration, `build_submission.py`, and
+`export_worklist.py`, and filters `SUBMISSION_SQL` itself. `SUBMISSION_SQL`
+still builds both regions' branches and filters at the end, so restoring a
+region is a one-tuple edit plus a re-baseline, not SQL reconstruction.
+
+Both baseline dicts keep their Camden entries at the certified values. They are
+skipped at evaluation while Camden is out of scope, and are there so the numbers
+survive for the record.
 
 ## Re-baselining per cycle
 
