@@ -74,3 +74,4 @@ illuminate_extract_asset_job = define_asset_job(
     selection=illuminate_extract_assets,
     executor_def=in_process_executor,
 )
+
