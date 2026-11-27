@@ -24,13 +24,16 @@ has one of each, and they never match. Each has its own crosswalk tab and its
 own match query. Never look up an SAT or PSAT ID in the AP crosswalk, or the
 reverse.
 
-| Test      | Crosswalk tab                        | Staging model                                       | Runbook                                          |
-| --------- | ------------------------------------ | --------------------------------------------------- | ------------------------------------------------ |
-| AP        | `src_collegeboard__ap_id_crosswalk`  | `stg_google_sheets__collegeboard__ap_id_crosswalk`  | [references/ap.md](references/ap.md)             |
-| SAT, PSAT | `src_collegeboard__sat_id_crosswalk` | `stg_google_sheets__collegeboard__sat_id_crosswalk` | [references/sat-psat.md](references/sat-psat.md) |
+| Test      | Crosswalk tab         | Named range dbt reads                | Staging model                                       | Runbook                                          |
+| --------- | --------------------- | ------------------------------------ | --------------------------------------------------- | ------------------------------------------------ |
+| AP        | `CB AP ID Crosswalk`  | `src_collegeboard__ap_id_crosswalk`  | `stg_google_sheets__collegeboard__ap_id_crosswalk`  | [references/ap.md](references/ap.md)             |
+| SAT, PSAT | `CB SAT ID Crosswalk` | `src_collegeboard__sat_id_crosswalk` | `stg_google_sheets__collegeboard__sat_id_crosswalk` | [references/sat-psat.md](references/sat-psat.md) |
 
 Both tabs are in one workbook, with the AP codes and course-crosswalk tabs:
 <https://docs.google.com/spreadsheets/d/1dmPEB3lVBwNhcGANh1H8_D42nK3zIrFFE0rBFZQBuxE>.
+Name the tab, not the named range, when handing rows to the user; the range
+names appear nowhere in the sheet's tab bar. Each range spans whole columns A:B,
+so a row pasted below the last filled one is read without a range edit.
 
 ## PII — read this before running anything
 
