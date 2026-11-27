@@ -471,3 +471,281 @@ unit_tests:
             is_employee: false,
             student_location_scope: none,
           }
+
+  - name: test_dim_staff_cube_access_inverted_exception_window_grants_nothing
+    description:
+      Backs the staging test that expiry_date is on or after grant_date in
+      stg_google_sheets__people__cube_access_individual_exceptions. Feeds two
+      current staff with the same active staff_pii_scope exception, one whose
+      expiry_date falls before its grant_date and one with a valid window.
+      Asserts the inverted row grants nothing, so its holder stays at none,
+      while the valid row grants its scope.
+    model: dim_staff_cube_access
+    given:
+      - input: ref('dim_staff_work_assignments')
+        format: sql
+        rows: |
+          select 's1' as staff_key, 'wa1' as work_assignment_key, true as is_current
+          union all select 's2', 'wa2', true
+      - input: ref('dim_work_assignment_primary')
+        format: sql
+        rows: |
+          select 'wa1' as work_assignment_key, true as is_current, true as is_primary_position
+          union all select 'wa2', true, true
+      - input: ref('dim_staff')
+        format: sql
+        rows: |
+          select 's1' as staff_key, 'a@example.org' as google_email
+          union all select 's2', 'b@example.org'
+      - input: ref('dim_work_assignment_organizational_units')
+        format: sql
+        rows: |
+          select
+            'wa1' as work_assignment_key,
+            true as is_current,
+            'home' as assignment_type,
+            'Dept' as department_name,
+            'REGION_BU' as business_unit_code
+          union all select 'wa2', true, 'home', 'Dept', 'REGION_BU'
+      - input: ref('dim_regions')
+        format: sql
+        rows: |
+          select 'r2' as region_key, 'REGION_BU' as business_unit_code, 'Region One' as legal_entity
+      - input: ref('dim_work_assignment_jobs')
+        format: sql
+        rows: |
+          select
+            cast(null as string) as work_assignment_key,
+            cast(null as bool) as is_current,
+            cast(null as string) as job_function_code
+          from unnest([1]) where false
+      - input: ref('dim_work_assignment_locations')
+        format: sql
+        rows: |
+          select
+            cast(null as string) as work_assignment_key,
+            cast(null as bool) as is_current,
+            cast(null as string) as location_key
+          from unnest([1]) where false
+      - input: ref('dim_locations')
+        format: sql
+        rows: |
+          select
+            cast(null as string) as location_key,
+            cast(null as string) as abbreviation,
+            cast(null as string) as `name`
+          from unnest([1]) where false
+      - input: ref('stg_google_sheets__people__cube_access_department_rollup')
+        format: sql
+        rows: |
+          select
+            cast(null as string) as department_name,
+            cast(null as string) as department_group
+          from unnest([1]) where false
+      - input: ref('stg_google_sheets__people__cube_access_role')
+        format: sql
+        rows: |
+          select
+            cast(null as string) as job_function_code,
+            cast(null as string) as entity,
+            cast(null as int64) as job_function_level,
+            cast(null as string) as student_location_scope,
+            cast(null as string) as staff_location_scope,
+            cast(null as string) as staff_department_scope,
+            cast(null as string) as staff_pii_scope,
+            cast(null as string) as staff_compensation_scope,
+            cast(null as string) as staff_observations_scope,
+            cast(null as string) as staff_benefits_scope
+          from unnest([1]) where false
+      - input: ref('stg_google_sheets__people__cube_access_individual_exceptions')
+        format: sql
+        rows: |
+          select
+            'a@example.org' as google_email,
+            'active' as status,
+            date '2000-01-02' as grant_date,
+            date '2000-01-01' as expiry_date,
+            'none' as additional_location_name,
+            cast(null as string) as additional_location_scope,
+            'none' as additional_student_location_scope,
+            'none' as additional_staff_location_scope,
+            'inherit' as staff_department_scope,
+            'all_in_scope' as staff_pii_scope,
+            'inherit' as staff_compensation_scope,
+            'inherit' as staff_observations_scope,
+            'inherit' as staff_benefits_scope
+          union all
+          select
+            'b@example.org', 'active', date '2000-01-01', date '2999-12-31',
+            'none', cast(null as string), 'none', 'none',
+            'inherit', 'all_in_scope', 'inherit', 'inherit', 'inherit'
+      - input: ref('stg_google_directory__users')
+        format: sql
+        rows: |
+          select
+            cast(null as string) as primary_email,
+            cast(null as bool) as suspended,
+            cast(null as bool) as archived
+          from unnest([1]) where false
+      - input: ref('stg_google_sheets__people__cube_access_department_override')
+        format: sql
+        rows: |
+          select
+            cast(null as string) as department,
+            cast(null as string) as student_location_scope,
+            cast(null as string) as staff_location_scope,
+            cast(null as string) as staff_department_scope,
+            cast(null as string) as staff_pii_scope,
+            cast(null as string) as staff_compensation_scope,
+            cast(null as string) as staff_observations_scope,
+            cast(null as string) as staff_benefits_scope
+          from unnest([1]) where false
+    expect:
+      rows:
+        - { google_email: a@example.org, staff_pii_scope: none }
+        - { google_email: b@example.org, staff_pii_scope: all_in_scope }
+
+  - name: test_dim_staff_cube_access_grant_without_live_account_reaches_no_viewer
+    description:
+      Backs test_cube_access_individual_exceptions_grant_reaches_a_viewer on
+      stg_google_sheets__people__cube_access_individual_exceptions. Feeds four
+      live grants for people with no work assignment, whose Google accounts are
+      active, suspended, archived, and missing. Asserts only the active account
+      becomes a viewer, so a grant whose account is suspended, archived, or
+      missing reaches no one and grants nothing.
+    model: dim_staff_cube_access
+    given:
+      - input: ref('dim_staff_work_assignments')
+        format: sql
+        rows: |
+          select
+            cast(null as string) as staff_key,
+            cast(null as string) as work_assignment_key,
+            cast(null as bool) as is_current
+          from unnest([1]) where false
+      - input: ref('dim_work_assignment_primary')
+        format: sql
+        rows: |
+          select
+            cast(null as string) as work_assignment_key,
+            cast(null as bool) as is_current,
+            cast(null as bool) as is_primary_position
+          from unnest([1]) where false
+      - input: ref('dim_staff')
+        format: sql
+        rows: |
+          select
+            cast(null as string) as staff_key,
+            cast(null as string) as google_email
+          from unnest([1]) where false
+      - input: ref('dim_work_assignment_organizational_units')
+        format: sql
+        rows: |
+          select
+            cast(null as string) as work_assignment_key,
+            cast(null as bool) as is_current,
+            cast(null as string) as assignment_type,
+            cast(null as string) as department_name,
+            cast(null as string) as business_unit_code
+          from unnest([1]) where false
+      - input: ref('dim_regions')
+        format: sql
+        rows: |
+          select
+            cast(null as string) as region_key,
+            cast(null as string) as business_unit_code,
+            cast(null as string) as legal_entity
+          from unnest([1]) where false
+      - input: ref('dim_work_assignment_jobs')
+        format: sql
+        rows: |
+          select
+            cast(null as string) as work_assignment_key,
+            cast(null as bool) as is_current,
+            cast(null as string) as job_function_code
+          from unnest([1]) where false
+      - input: ref('dim_work_assignment_locations')
+        format: sql
+        rows: |
+          select
+            cast(null as string) as work_assignment_key,
+            cast(null as bool) as is_current,
+            cast(null as string) as location_key
+          from unnest([1]) where false
+      - input: ref('dim_locations')
+        format: sql
+        rows: |
+          select
+            cast(null as string) as location_key,
+            cast(null as string) as abbreviation,
+            cast(null as string) as `name`
+          from unnest([1]) where false
+      - input: ref('stg_google_sheets__people__cube_access_department_rollup')
+        format: sql
+        rows: |
+          select
+            cast(null as string) as department_name,
+            cast(null as string) as department_group
+          from unnest([1]) where false
+      - input: ref('stg_google_sheets__people__cube_access_role')
+        format: sql
+        rows: |
+          select
+            cast(null as string) as job_function_code,
+            cast(null as string) as entity,
+            cast(null as int64) as job_function_level,
+            cast(null as string) as student_location_scope,
+            cast(null as string) as staff_location_scope,
+            cast(null as string) as staff_department_scope,
+            cast(null as string) as staff_pii_scope,
+            cast(null as string) as staff_compensation_scope,
+            cast(null as string) as staff_observations_scope,
+            cast(null as string) as staff_benefits_scope
+          from unnest([1]) where false
+      - input: ref('stg_google_sheets__people__cube_access_individual_exceptions')
+        format: sql
+        rows: |
+          select
+            google_email,
+            'active' as status,
+            date '2000-01-01' as grant_date,
+            date '2999-12-31' as expiry_date,
+            'none' as additional_location_name,
+            cast(null as string) as additional_location_scope,
+            'none' as additional_student_location_scope,
+            'none' as additional_staff_location_scope,
+            'inherit' as staff_department_scope,
+            'all_in_scope' as staff_pii_scope,
+            'inherit' as staff_compensation_scope,
+            'inherit' as staff_observations_scope,
+            'inherit' as staff_benefits_scope
+          from
+            unnest(
+              ['a@example.org', 'b@example.org', 'c@example.org', 'd@example.org']
+            ) as google_email
+      - input: ref('stg_google_directory__users')
+        format: sql
+        rows: |
+          select 'a@example.org' as primary_email, false as suspended, false as archived
+          union all select 'b@example.org', true, false
+          union all select 'c@example.org', false, true
+      - input: ref('stg_google_sheets__people__cube_access_department_override')
+        format: sql
+        rows: |
+          select
+            cast(null as string) as department,
+            cast(null as string) as student_location_scope,
+            cast(null as string) as staff_location_scope,
+            cast(null as string) as staff_department_scope,
+            cast(null as string) as staff_pii_scope,
+            cast(null as string) as staff_compensation_scope,
+            cast(null as string) as staff_observations_scope,
+            cast(null as string) as staff_benefits_scope
+          from unnest([1]) where false
+    expect:
+      rows:
+        - {
+            google_email: a@example.org,
+            is_employee: false,
+            staff_pii_scope: all_in_scope,
+          }

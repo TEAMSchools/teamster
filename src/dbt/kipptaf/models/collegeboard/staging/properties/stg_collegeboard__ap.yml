@@ -12,13 +12,19 @@ models:
       - name: ap_number_ap_id
         data_type: string
         data_tests:
+          # TODO(#5558): runbook
           - relationships:
               arguments:
                 to: ref("stg_google_sheets__collegeboard__ap_id_crosswalk")
                 field: college_board_id
-              # TODO(#6294): decide whether a crosswalk gap gates the build.
               config:
                 severity: warn
+                description:
+                  A College Board AP id has no row in the AP id crosswalk sheet,
+                  so its scores cannot be matched to a student. Add the id and
+                  its PowerSchool student number to the crosswalk sheet.
+                  int_collegeboard__ap_unpivot drops these scores until the id
+                  is added.
       - name: enrollment_school_year
         data_type: int64
       - name: student_identifier

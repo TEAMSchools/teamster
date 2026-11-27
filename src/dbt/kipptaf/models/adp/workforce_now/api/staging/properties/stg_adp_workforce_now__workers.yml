@@ -13,11 +13,15 @@ models:
       primary or secondary legal address; other_personal_addresses contains
       non-legal addresses. There is no SCD2 tombstone for disappearance. A
       worker hard-deleted or merged in ADP vanishes from the daily snapshots
-      without a terminated status row, so its final record stays open at
-      9999-12-31 with is_current_record true indefinitely. That ghost flows
-      downstream into stg_people__employee_numbers, int_people__staff_roster,
-      and the rpt_idauto__staff_roster login feed. The
-      stg_adp_workforce_now__workers__ghost_open_records test flags them.
+      without a terminated status row. This model drops every associate whose
+      last partition is older than one day before the newest partition, so a
+      ghost never reaches stg_people__employee_numbers,
+      int_people__staff_roster, or the rpt_idauto__staff_roster login feed. When
+      more than 25 associates would drop at once, it drops none: the nightly
+      re-pull rewrites the whole partition window, so a burst means a short
+      pull, not real deletions. The
+      stg_adp_workforce_now__workers__ghost_open_records test lists them from
+      the raw source either way.
     config:
       meta:
         dagster:
@@ -533,3 +537,88 @@ models:
       - name: work_assignments
         data_type: |
           ARRAY<STRUCT<actualStartDate STRING, fullTimeEquivalenceRatio FLOAT64, hireDate STRING, itemID STRING, jobTitle STRING, managementPositionIndicator BOOL, payrollFileNumber STRING, payrollGroupCode STRING, payrollScheduleGroupID STRING, positionID STRING, primaryIndicator BOOL, rehireEligibleIndicator BOOL, seniorityDate STRING, terminationDate STRING, voluntaryIndicator BOOL, assignmentStatus STRUCT<effectiveDate STRING, statusCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, reasonCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>, baseRemuneration STRUCT<effectiveDate STRING, annualRateAmount STRUCT<amountValue FLOAT64, currencyCode STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>, payPeriodRateAmount STRUCT<amountValue FLOAT64, currencyCode STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>, hourlyRateAmount STRUCT<amountValue FLOAT64, currencyCode STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>, dailyRateAmount STRUCT<amountValue FLOAT64, currencyCode STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>, customFieldGroup STRUCT<amountFields ARRAY<STRUCT<itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, amountValue FLOAT64, currencyCode STRING>>, codeFields ARRAY<STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING, itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>, dateFields ARRAY<STRUCT<itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, dateValue STRING>>, indicatorFields ARRAY<STRUCT<itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, indicatorValue BOOL>>, multiCodeFields ARRAY<STRUCT<itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, codes ARRAY<STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>>, numberFields ARRAY<STRUCT<itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, numberValue FLOAT64>>, percentFields ARRAY<STRUCT<itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, percentValue FLOAT64>>, stringFields ARRAY<STRUCT<itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, stringValue STRING>>, telephoneFields ARRAY<STRUCT<itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, formattedNumber STRING>>>, homeWorkLocation STRUCT<address STRUCT<cityName STRING, countryCode STRING, itemID STRING, lineOne STRING, lineTwo STRING, lineThree STRING, postalCode STRING, deliveryPoint STRING, countrySubdivisionLevel1 STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING, subdivisionType STRING>, countrySubdivisionLevel2 STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING, subdivisionType STRING>, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, typeCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>, jobCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, jobFunctionCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, laborUnion STRUCT<laborUnionCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>, payCycleCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, payGradeCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, payGradePayRange STRUCT<minimumRate STRUCT<amountValue FLOAT64>, medianRate STRUCT<amountValue FLOAT64>, maximumRate STRUCT<amountValue FLOAT64>>, payrollProcessingStatusCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, standardHours STRUCT<hoursQuantity FLOAT64, unitCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>, standardPayPeriodHours STRUCT<hoursQuantity FLOAT64>, wageLawCoverage STRUCT<coverageCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, wageLawNameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>, workShiftCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, workerTimeProfile STRUCT<badgeID STRING, timeAndAttendanceIndicator BOOL, timeZoneCode STRING, timeServiceSupervisor STRUCT<associateOID STRING, positionID STRING, workerID STRUCT<idValue STRING, schemeCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>, reportsToWorkerName STRUCT<formattedName STRING, familyName1 STRING, givenName STRING, middleName STRING, nickName STRING, generationAffixCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, qualificationAffixCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, preferredSalutations ARRAY<STRUCT<salutationCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>>>>, workerTypeCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, customCountryInputs ARRAY<STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>, additionalRemunerations ARRAY<STRUCT<itemID STRING, effectiveDate STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, rate STRUCT<amountValue FLOAT64, currencyCode STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>>, assignedOrganizationalUnits ARRAY<STRUCT<nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, typeCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>, assignedWorkLocations ARRAY<STRUCT<address STRUCT<cityName STRING, countryCode STRING, itemID STRING, lineOne STRING, lineTwo STRING, lineThree STRING, postalCode STRING, deliveryPoint STRING, countrySubdivisionLevel1 STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING, subdivisionType STRING>, countrySubdivisionLevel2 STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING, subdivisionType STRING>, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, typeCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>, homeOrganizationalUnits ARRAY<STRUCT<nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, typeCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>, occupationalClassifications ARRAY<STRUCT<nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, classificationCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>, reportsTo ARRAY<STRUCT<associateOID STRING, positionID STRING, reportsToWorkerName STRUCT<formattedName STRING, familyName1 STRING, givenName STRING, middleName STRING, nickName STRING, generationAffixCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, qualificationAffixCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, preferredSalutations ARRAY<STRUCT<salutationCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>>, workerID STRUCT<idValue STRING, schemeCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>>, workerGroups ARRAY<STRUCT<groupCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>>>
+
+unit_tests:
+  - name: unit_workers_drops_associates_missing_from_newest_partitions
+    description: >-
+      An associate last seen in the newest or second-newest partition stays; one
+      last seen earlier is a ghost and is dropped.
+    model: stg_adp_workforce_now__workers
+    given:
+      - input: source('adp_workforce_now', 'src_adp_workforce_now__workers')
+        rows:
+          - { associateoid: A, _dagster_partition_date: 2026-11-01 }
+          - { associateoid: A, _dagster_partition_date: 2026-11-02 }
+          - { associateoid: A, _dagster_partition_date: 2026-11-03 }
+          - { associateoid: B, _dagster_partition_date: 2026-11-01 }
+          - { associateoid: B, _dagster_partition_date: 2026-11-02 }
+          - { associateoid: C, _dagster_partition_date: 2026-11-01 }
+    expect:
+      rows:
+        - { associate_oid: A, last_seen_partition_date: 2026-11-03 }
+        - { associate_oid: B, last_seen_partition_date: 2026-11-02 }
+
+  - name: unit_workers_keeps_everyone_when_too_many_would_drop
+    description: >-
+      When more than 25 associates fall out of the newest partitions at once,
+      the pull was short, so no one is dropped.
+    model: stg_adp_workforce_now__workers
+    given:
+      - input: source('adp_workforce_now', 'src_adp_workforce_now__workers')
+        rows:
+          - { associateoid: A, _dagster_partition_date: 2026-11-03 }
+          - { associateoid: G00, _dagster_partition_date: 2026-11-01 }
+          - { associateoid: G01, _dagster_partition_date: 2026-11-01 }
+          - { associateoid: G02, _dagster_partition_date: 2026-11-01 }
+          - { associateoid: G03, _dagster_partition_date: 2026-11-01 }
+          - { associateoid: G04, _dagster_partition_date: 2026-11-01 }
+          - { associateoid: G05, _dagster_partition_date: 2026-11-01 }
+          - { associateoid: G06, _dagster_partition_date: 2026-11-01 }
+          - { associateoid: G07, _dagster_partition_date: 2026-11-01 }
+          - { associateoid: G08, _dagster_partition_date: 2026-11-01 }
+          - { associateoid: G09, _dagster_partition_date: 2026-11-01 }
+          - { associateoid: G10, _dagster_partition_date: 2026-11-01 }
+          - { associateoid: G11, _dagster_partition_date: 2026-11-01 }
+          - { associateoid: G12, _dagster_partition_date: 2026-11-01 }
+          - { associateoid: G13, _dagster_partition_date: 2026-11-01 }
+          - { associateoid: G14, _dagster_partition_date: 2026-11-01 }
+          - { associateoid: G15, _dagster_partition_date: 2026-11-01 }
+          - { associateoid: G16, _dagster_partition_date: 2026-11-01 }
+          - { associateoid: G17, _dagster_partition_date: 2026-11-01 }
+          - { associateoid: G18, _dagster_partition_date: 2026-11-01 }
+          - { associateoid: G19, _dagster_partition_date: 2026-11-01 }
+          - { associateoid: G20, _dagster_partition_date: 2026-11-01 }
+          - { associateoid: G21, _dagster_partition_date: 2026-11-01 }
+          - { associateoid: G22, _dagster_partition_date: 2026-11-01 }
+          - { associateoid: G23, _dagster_partition_date: 2026-11-01 }
+          - { associateoid: G24, _dagster_partition_date: 2026-11-01 }
+          - { associateoid: G25, _dagster_partition_date: 2026-11-01 }
+    expect:
+      rows:
+        - { associate_oid: A }
+        - { associate_oid: G00 }
+        - { associate_oid: G01 }
+        - { associate_oid: G02 }
+        - { associate_oid: G03 }
+        - { associate_oid: G04 }
+        - { associate_oid: G05 }
+        - { associate_oid: G06 }
+        - { associate_oid: G07 }
+        - { associate_oid: G08 }
+        - { associate_oid: G09 }
+        - { associate_oid: G10 }
+        - { associate_oid: G11 }
+        - { associate_oid: G12 }
+        - { associate_oid: G13 }
+        - { associate_oid: G14 }
+        - { associate_oid: G15 }
+        - { associate_oid: G16 }
+        - { associate_oid: G17 }
+        - { associate_oid: G18 }
+        - { associate_oid: G19 }
+        - { associate_oid: G20 }
+        - { associate_oid: G21 }
+        - { associate_oid: G22 }
+        - { associate_oid: G23 }
+        - { associate_oid: G24 }
+        - { associate_oid: G25 }

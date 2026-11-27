@@ -3,9 +3,12 @@ with
     ps_xw as (
         select a.*, x.powerschool_student_number,
         from {{ ref("stg_collegeboard__ap") }} as a
-        left join
+        -- drops ids missing from the crosswalk on purpose; the warn test on
+        -- stg_collegeboard__ap.ap_number_ap_id lists them for Ops
+        inner join
             {{ ref("stg_google_sheets__collegeboard__ap_id_crosswalk") }} as x
             on a.ap_number_ap_id = x.college_board_id
+            and x.powerschool_student_number is not null
     ),
 
     deduplicate as (

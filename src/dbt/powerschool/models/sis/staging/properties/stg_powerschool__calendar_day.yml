@@ -6,7 +6,8 @@ models:
       are in-session withindifferent tracks or overall. This used to be named
       DailySchedules. One row per `(schoolid, date_value)`. Date-range joins
       such as int_powerschool__ps_membership_reg rely on that grain to stay at
-      one row per student-day.
+      one row per student-day. Rows dated before 2000 are dropped; they are
+      PowerSchool phantom rows, not school days.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -15,19 +16,6 @@ models:
               - date_value
           config:
             severity: error
-      # TODO(#5558): runbook
-      - dbt_utils.expression_is_true:
-          name: stg_powerschool__calendar_day__date_value_after_2000
-          description:
-            A PowerSchool calendar day is dated before 2000. These are phantom
-            rows, usually 1900-01-01, not real school days. A PowerSchool admin
-            deletes them from the calendar of the school in schoolid. The
-            kipptaf stg_powerschool__calendar_day nulls these dates until they
-            are deleted.
-          arguments:
-            expression: date_value >= '2000-01-01'
-          config:
-            severity: warn
     columns:
       - name: id
         data_type: int64
@@ -149,3 +137,19 @@ models:
         data_type: date
       - name: week_end_date
         data_type: date
+unit_tests:
+  - name: unit_calendar_day_drops_pre_2000_rows
+    description: >-
+      Proves the defense behind
+      test_stg_powerschool__calendar_day__date_value_after_2000. A phantom
+      1900-01-01 row is dropped and a real school day is kept, so no date join
+      downstream sees the phantom row.
+    model: stg_powerschool__calendar_day
+    given:
+      - input: source('powerschool_dlt', 'calendar_day')
+        rows:
+          - { dcid: 1, id: 1, schoolid: 10, date_value: 1900-01-01 }
+          - { dcid: 2, id: 2, schoolid: 10, date_value: 2024-09-03 }
+    expect:
+      rows:
+        - { dcid: 2, schoolid: 10, date_value: 2024-09-03 }

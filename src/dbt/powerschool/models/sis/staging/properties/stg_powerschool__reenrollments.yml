@@ -4,6 +4,7 @@ models:
       This table stores all enrollments, except the current one, for a student
       such as the ones for end-of-year (EOY) processing or in-term transfers.
     data_tests:
+      # TODO(#5558): runbook
       - dbt_utils.expression_is_true:
           arguments:
             expression: entrydate <= exitdate

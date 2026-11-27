@@ -5,16 +5,16 @@ models:
       no source system records, such as distance education (`DSED-2`), athletics
       (`ATHL-3`), and arrests (`ARRS-1` through `ARRS-6`). One row per student
       per tagged section. `rpt_tableau__crdc_roster` joins it on
-      `student_number`.
+      `student_number`. A row repeated on the sheet is kept once, so it cannot
+      fan out the roster.
     data_tests:
-      # TODO: raise to error once the duplicate row is removed from the sheet
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
               - student_number
               - crdc_question_section
           config:
-            severity: warn
+            severity: error
     columns:
       - name: crdc_question_section
         data_type: string
@@ -30,3 +30,21 @@ models:
         config:
           meta:
             contains_pii: true
+
+unit_tests:
+  - name: unit_crdc_student_numbers_keeps_a_repeated_row_once
+    description: >-
+      A student tagged twice to the same section on the sheet comes through
+      once.
+    model: stg_google_sheets__crdc__student_numbers
+    given:
+      - input:
+          source('google_sheets', 'src_google_sheets__crdc__student_numbers')
+        rows:
+          - { student_number: 101, crdc_question_section: DSED-2 }
+          - { student_number: 101, crdc_question_section: DSED-2 }
+          - { student_number: 101, crdc_question_section: ATHL-3 }
+    expect:
+      rows:
+        - { student_number: 101, crdc_question_section: DSED-2 }
+        - { student_number: 101, crdc_question_section: ATHL-3 }

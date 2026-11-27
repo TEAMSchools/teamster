@@ -105,3 +105,38 @@ models:
           Surrogate key of the parent submission, selected through from
           int_surveys__survey_submissions so facts can join
           fct_survey_submissions without re-joining the submissions model.
+
+unit_tests:
+  - name: unit_survey_responses_unmapped_question_keeps_null_department
+    description: >-
+      A question missing from the department crosswalk keeps its response with a
+      null department, which the Survey Dashboard gate shows only to all-access
+      viewers; a mapped question takes its department.
+    model: int_surveys__survey_responses
+    given:
+      - input: ref('int_google_forms__form_responses')
+        rows:
+          - {
+              form_id: F1,
+              response_id: R1,
+              question_id: Q1,
+              item_abbreviation_lower: mapped,
+            }
+          - {
+              form_id: F1,
+              response_id: R1,
+              question_id: Q2,
+              item_abbreviation_lower: unmapped,
+            }
+      - input: ref('int_surveys__survey_submissions')
+        rows:
+          - { survey_id: F1, survey_response_id: R1 }
+      - input: source('surveys', 'int_surveys__alchemer_responses')
+        rows: []
+      - input: ref('stg_google_sheets__google_forms__question_department_crosswalk')
+        rows:
+          - { abbreviation: mapped, rated_department_code: OPS }
+    expect:
+      rows:
+        - { survey_question_id: Q1, rated_department_code: OPS }
+        - { survey_question_id: Q2, rated_department_code: null }

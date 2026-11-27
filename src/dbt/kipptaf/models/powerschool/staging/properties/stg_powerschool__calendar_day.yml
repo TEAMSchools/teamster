@@ -1,10 +1,6 @@
 models:
   - name: stg_powerschool__calendar_day
-    description:
-      Union of the district stg_powerschool__calendar_day models. Sets
-      date_value to NULL for dates before 2000, which are PowerSchool phantom
-      rows, so they cannot break date joins. The package model flags them for
-      deletion in PowerSchool.
+    description: Union of the district stg_powerschool__calendar_day models.
     columns:
       - name: _dbt_source_project
         data_type: string

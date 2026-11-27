@@ -80,6 +80,21 @@ data_tests:
             package: powerschool
 
   # TODO(#5558): runbook
+  - name: test_stg_powerschool__calendar_day__date_value_after_2000
+    description: >-
+      A PowerSchool calendar day is dated before 2000. These are phantom rows,
+      usually 1900-01-01, not real school days. A PowerSchool admin deletes them
+      from the calendar of the school in schoolid. stg_powerschool__calendar_day
+      drops them until they are deleted.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: stg_powerschool__calendar_day
+            package: powerschool
+
+  # TODO(#5558): runbook
   - name: test_int_powerschool__ps_attendance_daily__at_enrolled_school
     description: >-
       A PowerSchool daily attendance record is at a school other than the one
