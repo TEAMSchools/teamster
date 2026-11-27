@@ -13,10 +13,10 @@ models:
     columns:
       - name: powerschool_student_number
         data_type: int64
-        data_tests:
-          - not_null:
-              config:
-                severity: warn
+        description: >-
+          Student number from the College Board ID crosswalk. Scores whose
+          College Board ID has no crosswalk row with a student number are left
+          out.
       - name: ai_code
         data_type: string
       - name: ai_name
@@ -196,3 +196,34 @@ models:
       - name: test_type
         data_type: string
         description: Computed expression.
+
+unit_tests:
+  - name: unit_int_collegeboard__sat_unpivot_drops_unmatched
+    description: >-
+      College Board ID 1 matches a crosswalk row with a student number and is
+      kept. ID 2 matches a crosswalk row with no student number, and ID 3 has no
+      crosswalk row; both are left out instead of piling up under a blank
+      student number.
+    model: int_collegeboard__sat_unpivot
+    given:
+      - input: ref("stg_collegeboard__sat")
+        rows:
+          - cb_id: 1
+            report_date: 2025-11-01
+            admin1_sat_total: 1100
+          - cb_id: 2
+            report_date: 2025-11-01
+            admin1_sat_total: 1000
+          - cb_id: 3
+            report_date: 2025-11-01
+            admin1_sat_total: 900
+      - input: ref("stg_google_sheets__collegeboard__sat_id_crosswalk")
+        rows:
+          - college_board_id: 1
+            powerschool_student_number: 101
+          - college_board_id: 2
+            powerschool_student_number: null
+    expect:
+      rows:
+        - cb_id: 1
+          powerschool_student_number: 101

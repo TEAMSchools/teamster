@@ -9,8 +9,11 @@ models:
       Practice rows on academic year, scope, and score type, not grade, so a
       score type with no row here is excluded from practice reporting for every
       grade that year. Cut scores are null where they do not apply, such as the
-      benchmark thresholds on growth rows. See
-      docs/models/carat-dashboard-data-model.md.
+      benchmark thresholds on growth rows. A sheet row with a blank or unlisted
+      value is dropped, and when a key appears on more than one row, the copy
+      with the higher college_ready_min_score, then hs_grad_ready_min_score, is
+      kept. test_kippfwd_scaffold_sheet_rows lists both kinds of row from the
+      raw sheet. See docs/models/carat-dashboard-data-model.md.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -28,23 +31,14 @@ models:
         description: >-
           Start year of the school year the row applies to. SY26-27 is 2026,
           matching academic_year_clean rather than Illuminate's raw spring year.
-        data_tests:
-          - not_null
       - name: expected_aligned_test_type
         data_type: string
         description: >-
           Test types this row applies to when Official and Practice share a
           value. `All` means it applies to both.
-        data_tests:
-          - not_null
       - name: expected_test_type
         data_type: string
         description: Official or Practice.
-        data_tests:
-          - not_null
-          - accepted_values:
-              arguments:
-                values: [Official, Practice]
       - name: expected_grade_level
         data_type: string
         description: >-
@@ -52,29 +46,17 @@ models:
           more than one ("11,12"). String rather than int64 for that reason.
           Split with cross join unnest(split(expected_grade_level, ',')) when a
           per-grade grain is needed.
-        data_tests:
-          - not_null
       - name: expected_scope
         data_type: string
         description:
           The assessment as administered - SAT, ACT, PSAT 8/9, PSAT10, PSAT
           NMSQT.
-        data_tests:
-          - not_null
-          - accepted_values:
-              arguments:
-                values: [SAT, ACT, PSAT 8/9, PSAT10, PSAT NMSQT]
       - name: expected_aligned_scope
         data_type: string
         description: >-
           Scope collapsed for cross-test comparison. ACT and SAT fold into
           ACT/SAT; PSAT10 and PSAT NMSQT fold into PSAT10/NMSQT because they
           share a scale and a threshold set. PSAT 8/9 stands alone.
-        data_tests:
-          - not_null
-          - accepted_values:
-              arguments:
-                values: [ACT/SAT, PSAT10/NMSQT, PSAT 8/9]
       - name: expected_practice_test_subject
         data_type: string
         description: >-
@@ -88,8 +70,6 @@ models:
           The subject as the source reports it - EBRW, Math, Reading, English,
           Science, Combined (digital SAT and PSAT totals, and SAT growth), or
           Composite (ACT totals).
-        data_tests:
-          - not_null
       - name: expected_course_discipline
         data_type: string
         description: ENG, MATH, SCI, or NA, matching PowerSchool credit types.
@@ -99,57 +79,21 @@ models:
           Subject collapsed so totals compare across tests - Combined and
           Composite both become Total, and ACT Reading joins EBRW under
           EBRW/Reading.
-        data_tests:
-          - not_null
-          - accepted_values:
-              arguments:
-                values:
-                  [
-                    Total,
-                    Math,
-                    EBRW/Reading,
-                    Reading,
-                    Writing,
-                    English,
-                    Science,
-                  ]
       - name: expected_grouping
         data_type: string
         description: >-
           The reporting bucket. Unlike expected_aligned_subject_area it keeps
           ACT Reading separate from EBRW, and separates Growth from Total.
-        data_tests:
-          - not_null
-          - accepted_values:
-              arguments:
-                values:
-                  [
-                    Total,
-                    Math,
-                    EBRW,
-                    Reading,
-                    Writing,
-                    English,
-                    Science,
-                    Growth,
-                  ]
       - name: expected_score_category
         data_type: string
         description: >-
           Whether the measure is a level or a change - Scale Score for every
           score type except growth, which is Score Change.
-        data_tests:
-          - not_null
-          - accepted_values:
-              arguments:
-                values: [Scale Score, Score Change]
       - name: expected_score_type
         data_type: string
         description: >-
           The score identifier, matching score_type in
           int_assessments__college_assessment.
-        data_tests:
-          - not_null
       - name: a1_attempt_min_score
         data_type: int64
         description: >-
@@ -174,3 +118,123 @@ models:
           Minimum scale score meeting the College-Ready bar. Null on growth
           score types, which measure a change, and on score types with no
           benchmark by design.
+
+unit_tests:
+  - name: unit_stg_google_sheets__kippfwd__scaffold_drops_bad_rows
+    description: >-
+      Row 1 is valid and kept. Row 2 has a misspelled test type, row 3 has a
+      blank score type, and row 4 has an unlisted grouping; all 3 are dropped.
+    model: stg_google_sheets__kippfwd__scaffold
+    given:
+      - input: source("google_sheets", "src_google_sheets__kippfwd__scaffold")
+        rows:
+          - academic_year: 2026
+            expected_test_type: Official
+            expected_scope: SAT
+            expected_grade_level: "11"
+            expected_aligned_scope: ACT/SAT
+            expected_subject_area: Math
+            expected_aligned_subject_area: Math
+            expected_grouping: Math
+            expected_score_category: Scale Score
+            expected_score_type: sat_math
+          - academic_year: 2026
+            expected_test_type: Oficial
+            expected_scope: SAT
+            expected_grade_level: "11"
+            expected_aligned_scope: ACT/SAT
+            expected_subject_area: EBRW
+            expected_aligned_subject_area: EBRW/Reading
+            expected_grouping: EBRW
+            expected_score_category: Scale Score
+            expected_score_type: sat_ebrw
+          - academic_year: 2026
+            expected_test_type: Official
+            expected_scope: SAT
+            expected_grade_level: "11"
+            expected_aligned_scope: ACT/SAT
+            expected_subject_area: Combined
+            expected_aligned_subject_area: Total
+            expected_grouping: Total
+            expected_score_category: Scale Score
+            expected_score_type: null
+          - academic_year: 2026
+            expected_test_type: Official
+            expected_scope: SAT
+            expected_grade_level: "12"
+            expected_aligned_scope: ACT/SAT
+            expected_subject_area: Math
+            expected_aligned_subject_area: Math
+            expected_grouping: Maths
+            expected_score_category: Scale Score
+            expected_score_type: sat_math
+    expect:
+      rows:
+        - expected_score_type: sat_math
+          expected_grade_level: "11"
+
+  - name: unit_stg_google_sheets__kippfwd__scaffold_duplicate_key
+    description: >-
+      Two rows share a key. The row with the higher college-ready cut score is
+      kept. A second pair ties on that score, so the higher HS grad-ready cut
+      score decides.
+    model: stg_google_sheets__kippfwd__scaffold
+    given:
+      - input: source("google_sheets", "src_google_sheets__kippfwd__scaffold")
+        rows:
+          - academic_year: 2026
+            expected_test_type: Official
+            expected_scope: SAT
+            expected_grade_level: "11"
+            expected_aligned_scope: ACT/SAT
+            expected_subject_area: Math
+            expected_aligned_subject_area: Math
+            expected_grouping: Math
+            expected_score_category: Scale Score
+            expected_score_type: sat_math
+            hs_grad_ready_min_score: 450
+            college_ready_min_score: 530
+          - academic_year: 2026
+            expected_test_type: Official
+            expected_scope: SAT
+            expected_grade_level: "11"
+            expected_aligned_scope: ACT/SAT
+            expected_subject_area: Math
+            expected_aligned_subject_area: Math
+            expected_grouping: Math
+            expected_score_category: Scale Score
+            expected_score_type: sat_math
+            hs_grad_ready_min_score: 460
+            college_ready_min_score: 510
+          - academic_year: 2026
+            expected_test_type: Official
+            expected_scope: SAT
+            expected_grade_level: "11"
+            expected_aligned_scope: ACT/SAT
+            expected_subject_area: EBRW
+            expected_aligned_subject_area: EBRW/Reading
+            expected_grouping: EBRW
+            expected_score_category: Scale Score
+            expected_score_type: sat_ebrw
+            hs_grad_ready_min_score: 430
+            college_ready_min_score: 480
+          - academic_year: 2026
+            expected_test_type: Official
+            expected_scope: SAT
+            expected_grade_level: "11"
+            expected_aligned_scope: ACT/SAT
+            expected_subject_area: EBRW
+            expected_aligned_subject_area: EBRW/Reading
+            expected_grouping: EBRW
+            expected_score_category: Scale Score
+            expected_score_type: sat_ebrw
+            hs_grad_ready_min_score: 440
+            college_ready_min_score: 480
+    expect:
+      rows:
+        - expected_score_type: sat_math
+          hs_grad_ready_min_score: 450
+          college_ready_min_score: 530
+        - expected_score_type: sat_ebrw
+          hs_grad_ready_min_score: 440
+          college_ready_min_score: 480

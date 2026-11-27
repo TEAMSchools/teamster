@@ -24,3 +24,5 @@ from
             "src_google_appsheet__kfwd_career_conversations__assessments",
         )
     }}
+-- an assessment with no contact cannot be scored for anyone
+where contact_id is not null

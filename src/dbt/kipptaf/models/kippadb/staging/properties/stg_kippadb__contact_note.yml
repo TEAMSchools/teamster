@@ -1,71 +1,201 @@
 models:
   - name: stg_kippadb__contact_note
+    description: >-
+      One row per Salesforce Contact Note. When notes repeat the same contact,
+      subject, comments, next steps, date, status, and type (ignoring extra
+      whitespace), only the copy with the lowest note name is kept. Notes with
+      blank comments are never treated as copies. test_sf_contact_note_duplicate
+      lists the dropped copies from raw Salesforce data.
     columns:
       - name: id
         data_type: string
+        description: Salesforce id of the record.
+        data_tests:
+          - unique:
+              config:
+                severity: error
       - name: name
         data_type: string
+        description: >-
+          Salesforce record name (auto-number or label) of the record.
       - name: academic_color
         data_type: string
+        description: Value of the Salesforce field Academic_Color__c.
       - name: advisor_activity
         data_type: boolean
+        description: Value of the Salesforce field Advisor_Activity__c.
       - name: category
         data_type: string
+        description: Value of the Salesforce field Category__c.
       - name: college_connection_event_type
         data_type: string
+        description: >-
+          Value of the Salesforce field College_Connection_Event_Type__c.
       - name: college_connections_contact
         data_type: boolean
+        description: >-
+          Value of the Salesforce field College_Connections_Contact__c.
       - name: comments
         data_type: string
+        description: Free-text comments the staff member entered on the note.
+        config:
+          meta:
+            contains_pii: true
       - name: contact
         data_type: string
+        description: Salesforce id of the student's Contact record.
       - name: contact_note_count
         data_type: numeric
+        description: Value of the Salesforce field Contact_Note_Count__c.
       - name: created_by_id
         data_type: string
+        description: Salesforce id of the user who created the record.
       - name: created_date
         data_type: timestamp
+        description: Timestamp when the record was created in Salesforce.
       - name: current_category_ranking
         data_type: numeric
+        description: Value of the Salesforce field Current_Category_Ranking__c.
       - name: date
         data_type: date
+        description: Date of the contact the note describes.
       - name: financial_color
         data_type: string
+        description: Value of the Salesforce field Financial_Color__c.
       - name: initiated_by_student
         data_type: boolean
+        description: Value of the Salesforce field Initiated_by_Student__c.
       - name: kipp_sf_user_id
         data_type: string
+        description: Value of the Salesforce field KIPP_SF_User_ID__c.
       - name: last_activity_date
         data_type: date
+        description: >-
+          Date of the most recent activity logged on the record in Salesforce.
       - name: last_modified_by_id
         data_type: string
+        description: Salesforce id of the user who last modified the record.
       - name: last_modified_date
         data_type: timestamp
+        description: Timestamp when the record was last modified in Salesforce.
       - name: last_referenced_date
         data_type: timestamp
+        description: >-
+          Timestamp when the record was last referenced in Salesforce.
       - name: last_viewed_date
         data_type: timestamp
+        description: Timestamp when the record was last viewed in Salesforce.
       - name: meaningful_contact
         data_type: boolean
+        description: Value of the Salesforce field Meaningful_Contact__c.
       - name: next_steps
         data_type: string
+        description: >-
+          Free-text follow-up steps the staff member entered on the note.
+        config:
+          meta:
+            contains_pii: true
       - name: note_count
         data_type: numeric
+        description: Value of the Salesforce field Note_Count__c.
       - name: overall_benchmark_color
         data_type: string
+        description: Value of the Salesforce field Overall_Benchmark_Color__c.
       - name: passion_purpose_plan_color
         data_type: string
+        description: >-
+          Value of the Salesforce field Passion_Purpose_Plan_Color__c.
       - name: related_college_benchmark
         data_type: string
+        description: Value of the Salesforce field Related_College_Benchmark__c.
       - name: socio_emotional_color
         data_type: string
+        description: Value of the Salesforce field Socio_Emotional_Color__c.
       - name: status
         data_type: string
+        description: Status of the note as entered in Salesforce.
       - name: subject
         data_type: string
+        description: Free-text subject line of the note.
+        config:
+          meta:
+            contains_pii: true
       - name: system_modstamp
         data_type: timestamp
+        description: >-
+          Timestamp of the last change to the record, including system changes,
+          in Salesforce.
       - name: type
         data_type: string
+        description: Type of contact the note records, as entered in Salesforce.
       - name: academic_year
         data_type: int64
+        description: >-
+          Academic year (July-June) that the note date falls in, expressed as
+          the start year.
+
+unit_tests:
+  - name: unit_stg_kippadb__contact_note_dedup
+    description: >-
+      Notes n1 and n2 match except for extra spaces in the comments, so only n1,
+      the lower note name, is kept. Notes n3 and n4 both have blank comments, so
+      both are kept as separate calls. Deleted note n5 is dropped.
+    model: stg_kippadb__contact_note
+    given:
+      - input: source("kippadb", "contact_note")
+        rows:
+          - id: n1
+            name: CN-001
+            contact__c: c1
+            subject__c: Call
+            comments__c: talked about FAFSA
+            next_steps__c: follow up
+            date__c: 2025-10-01
+            status__c: Completed
+            type__c: Phone
+            isdeleted: false
+          - id: n2
+            name: CN-002
+            contact__c: c1
+            subject__c: Call
+            comments__c: " talked  about FAFSA "
+            next_steps__c: follow up
+            date__c: 2025-10-01
+            status__c: Completed
+            type__c: Phone
+            isdeleted: false
+          - id: n3
+            name: CN-003
+            contact__c: c1
+            subject__c: Call
+            comments__c: ""
+            next_steps__c: ""
+            date__c: 2025-10-02
+            status__c: Completed
+            type__c: Phone
+            isdeleted: false
+          - id: n4
+            name: CN-004
+            contact__c: c1
+            subject__c: Call
+            comments__c: ""
+            next_steps__c: ""
+            date__c: 2025-10-02
+            status__c: Completed
+            type__c: Phone
+            isdeleted: false
+          - id: n5
+            name: CN-005
+            contact__c: c1
+            subject__c: Call
+            comments__c: other
+            next_steps__c: ""
+            date__c: 2025-10-03
+            status__c: Completed
+            type__c: Phone
+            isdeleted: true
+    expect:
+      rows:
+        - id: n1
+        - id: n3
+        - id: n4

@@ -6,7 +6,7 @@ models:
       from 1 to 4 for each of four indicators. Points, the launch score, and the
       stage come from the Career Launch rubric sheet in
       int_surveys__kfwd_career_launch_assessments, so a rubric change reaches
-      every past assessment.
+      every past assessment. Assessments with no contact id are left out.
     columns:
       - name: assessment_id
         data_type: string
@@ -22,13 +22,12 @@ models:
         data_type: string
         description: >-
           Salesforce contact id of the alumnus assessed, saved by the app's Ref
-          to the roster. A blank or unmatched id drops the assessment from the
+          to the roster. Assessments with a blank id are left out;
+          test_appsheet_kfwd_career_conversation_no_contact lists them from the
+          raw AppSheet table. An unmatched id drops the assessment from the
           dashboard. In the AppSheet app, make contact_id required and key the
           roster table on contact_id, not _RowNumber.
         data_tests:
-          - not_null:
-              config:
-                severity: warn
           - relationships:
               arguments:
                 to: ref("stg_kippadb__contact")
@@ -203,3 +202,22 @@ models:
         config:
           meta:
             contains_pii: true
+
+unit_tests:
+  - name: unit_stg_google_appsheet__kfwd_career_conversations__assessments_no_contact
+    description: >-
+      Assessment s1 has a contact id and is kept. Assessment s2 has none, so it
+      cannot be scored for anyone and is left out.
+    model: stg_google_appsheet__kfwd_career_conversations__assessments
+    given:
+      - input:
+          source("google_appsheet",
+          "src_google_appsheet__kfwd_career_conversations__assessments")
+        rows:
+          - assessment_id: s1
+            contact_id: c1
+          - assessment_id: s2
+            contact_id: null
+    expect:
+      rows:
+        - assessment_id: s1

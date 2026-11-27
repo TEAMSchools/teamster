@@ -14,7 +14,6 @@ with
             systemmodstamp as system_modstamp,
 
             account_type__c as account_type,
-            actual_end_date__c as actual_end_date,
             anticipated_graduation__c as anticipated_graduation,
             apex_updated__c as apex_updated,
             attending_status__c as attending_status,
@@ -62,6 +61,14 @@ with
             terms__c as terms,
             transfer_reason__c as transfer_reason,
             type__c as `type`,
+
+            -- a graduation cannot end in the future; the date is a typo
+            if(
+                status__c = 'Graduated'
+                and actual_end_date__c > current_date('{{ var("local_timezone") }}'),
+                null,
+                actual_end_date__c
+            ) as actual_end_date,
         from {{ source("kippadb", "enrollment") }}
         where not isdeleted
     )

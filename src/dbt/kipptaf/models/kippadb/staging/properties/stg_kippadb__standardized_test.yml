@@ -2,15 +2,12 @@ models:
   - name: stg_kippadb__standardized_test
     description: >-
       One row per Standardized Test record in Salesforce (KIPP Forward), with
-      ACT, SAT, PSAT and AP scores held as wide columns.
+      ACT, SAT, PSAT and AP scores held as wide columns. When a contact has more
+      than one record for the same test, date and subject, only the most
+      recently edited record is kept. test_sf_standardized_test_duplicate lists
+      the extra copies from raw Salesforce data.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
-          name: standardized_test_one_record_per_contact_test_date_subject
-          description: >-
-            Duplicate Salesforce Standardized Test records for the same contact,
-            test, date and subject. Each copy becomes its own score row in
-            int_kippadb__standardized_test_unpivot. KIPP Forward deletes the
-            duplicate record in Salesforce.
           arguments:
             combination_of_columns:
               - contact
@@ -18,7 +15,7 @@ models:
               - date
               - subject
           config:
-            severity: warn
+            severity: error
     columns:
       - name: id
         data_type: string
@@ -26,6 +23,11 @@ models:
         data_type: string
       - name: contact
         data_type: string
+      - name: last_modified_date
+        data_type: timestamp
+        description: >-
+          Timestamp when the record was last modified in Salesforce. Breaks ties
+          between duplicate records.
       - name: date
         data_type: date
       - name: test_type
@@ -122,3 +124,52 @@ models:
         data_type: boolean
       - name: total_qualified_military_branches
         data_type: numeric
+
+unit_tests:
+  - name: unit_stg_kippadb__standardized_test_dedup
+    description: >-
+      Records t1 and t2 are the same SAT for the same student on the same date,
+      so only t2, the more recently edited copy, is kept. Record t3 is a
+      different date and is kept. Deleted record t4 is dropped.
+    model: stg_kippadb__standardized_test
+    given:
+      - input: source("kippadb", "standardized_test")
+        rows:
+          - id: t1
+            contact__c: c1
+            test_type__c: SAT
+            date__c: 2025-10-04
+            subject__c: Total
+            sat_total_score__c: 1000
+            lastmodifieddate: 2025-10-10T00:00:00
+            isdeleted: false
+          - id: t2
+            contact__c: c1
+            test_type__c: SAT
+            date__c: 2025-10-04
+            subject__c: Total
+            sat_total_score__c: 1050
+            lastmodifieddate: 2025-11-01T00:00:00
+            isdeleted: false
+          - id: t3
+            contact__c: c1
+            test_type__c: SAT
+            date__c: 2026-03-07
+            subject__c: Total
+            sat_total_score__c: 1100
+            lastmodifieddate: 2026-03-20T00:00:00
+            isdeleted: false
+          - id: t4
+            contact__c: c1
+            test_type__c: SAT
+            date__c: 2026-03-07
+            subject__c: Math
+            sat_total_score__c: 1200
+            lastmodifieddate: 2026-03-21T00:00:00
+            isdeleted: true
+    expect:
+      rows:
+        - id: t2
+          sat_total_score: 1050
+        - id: t3
+          sat_total_score: 1100

@@ -3,6 +3,7 @@ with
         select
             id,
             contact,
+            last_modified_date,
             school_specific_id,
             academic_year,
             administration_round,
@@ -101,16 +102,46 @@ with
         where
             test_type in ('ACT', 'Advanced Placement', 'PSAT', 'SAT')
             and not scoring_irregularity
+    ),
+
+    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
+    with_course as (
+        select u.*, acc.ap_course_name, acc.ps_ap_course_subject_code,
+        from unpivoted as u
+        left join
+            {{ ref("stg_google_sheets__collegeboard__ap_course_crosswalk") }} as acc
+            on u.test_subject = acc.test_name
+            and acc.data_source = 'ADB'
+    ),
+
+    /* an AP exam entered twice under 2 subject spellings keeps its latest edit */
+    deduplicate as (
+        {{
+            dbt_utils.deduplicate(
+                relation="with_course",
+                partition_by="contact, test_type, score_type, ap_course_name, `date`",
+                order_by="last_modified_date desc, id desc",
+            )
+        }}
     )
 
 select
-    u.*,
-
-    acc.ap_course_name,
-    acc.ps_ap_course_subject_code,
+    id,
+    contact,
+    school_specific_id,
+    academic_year,
+    administration_round,
+    test_type,
+    score_type,
+    score,
+    `date`,
+    course_discipline,
+    test_subject,
+    ap_course_name,
+    ps_ap_course_subject_code,
 
     case
-        u.score_type
+        score_type
         when 'sat_total_score'
         then 'Combined'
         when 'psat_total_score'
@@ -119,16 +150,11 @@ select
         then 'Reading Test'
         when 'sat_math_test_score'
         then 'Math Test'
-        else u.test_subject
+        else test_subject
     end as subject_area,
 
     row_number() over (
-        partition by u.contact, u.test_type, u.score_type, acc.ap_course_name
-        order by u.score desc, u.`date` desc, u.id asc
+        partition by contact, test_type, score_type, ap_course_name
+        order by score desc, `date` desc, id asc
     ) as rn_highest,
-
-from unpivoted as u
-left join
-    {{ ref("stg_google_sheets__collegeboard__ap_course_crosswalk") }} as acc
-    on u.test_subject = acc.test_name
-    and acc.data_source = 'ADB'
+from deduplicate
