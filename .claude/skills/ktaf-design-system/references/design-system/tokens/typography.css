@@ -1,0 +1,133 @@
+/* ============================================================
+   TYPOGRAPHY — KIPP NJ | Miami
+   ------------------------------------------------------------
+   CONSERVATIVE / CROSS-PLATFORM RULES (2026 revision)
+
+   The brand face is Whitney (Hoefler&Co), a humanist sans with
+   a tall x-height and open apertures. Whitney is licensed and
+   cannot be redistributed, and school-network proxies routinely
+   block fonts.googleapis.com — so this system NO LONGER assumes
+   any webfont loads. The default families below are the closest
+   humanist sans on each platform, all pre-installed:
+
+     Apple      -apple-system / SF Pro
+     Windows    Segoe UI      <- humanist, tall x-height, the
+                                 nearest system match to Whitney
+     Android    Roboto           (Chromebooks — heavily used in
+                                 KIPP classrooms)
+     Fallback   Arial
+
+   Opt into the Hanken Grotesk webfont by adding ONE @import to
+   styles.css — see tokens/fonts.css. Everything upgrades and
+   nothing breaks if it fails to load.
+
+   Brand rule (2025 guide): headings use the brand sans in
+   SEMIBOLD, ALL CAPS. Body copy is sentence case, book weight.
+   Headlines/titles in COPY are written sentence case — the
+   all-caps is a typographic treatment applied via .kf-* utilities,
+   not a reason to shout in the actual words.
+   ============================================================ */
+
+:root {
+  /* ---- Families -------------------------------------------
+     Apple names come first because they only ever resolve on
+     Apple platforms. 'Segoe UI' must NOT lead: Microsoft Office
+     installs it on macOS, which would override SF Pro there.
+     Never place 'Helvetica Neue'/'Helvetica' ahead of a Windows
+     font — neither exists on Windows and the substitution is
+     unpredictable.                                            */
+  --font-brand: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-sans:  var(--font-brand);
+  /* Consolas ships with Windows; Menlo/SF Mono with macOS. */
+  --font-mono:  ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+
+  /* ---- Weights --------------------------------------------
+     ONLY 400 / 600 / 700 render natively everywhere. Segoe UI
+     ships Regular, Semibold and Bold but has no 500 and nothing
+     above 700; asking for 800 makes the browser FAUX-BOLD the
+     600 or 700 face, which is the smeared, over-inked heading
+     seen on Windows.
+
+     All six token names are kept so nothing breaks, but they
+     collapse onto the three safe stops. Do not reintroduce
+     300, 500 or 800.                                          */
+  --weight-light:    400;  /* was 300 — light renders thin and fuzzy on Windows */
+  --weight-regular:  400;
+  --weight-medium:   600;  /* was 500 — no 500 on Segoe UI; rounded inconsistently */
+  --weight-semibold: 600;  /* the brand heading weight */
+  --weight-bold:     700;
+  --weight-extra:    700;  /* was 800 — anything >700 is faux-bolded */
+
+  /* Type scale (1.25 major-third-ish, tuned) */
+  --text-display-2xl: 76px;
+  --text-display-xl:  60px;
+  --text-display-lg:  48px;
+  --text-h1: 38px;
+  --text-h2: 30px;
+  --text-h3: 24px;
+  --text-h4: 20px;
+  --text-body-lg: 18px;
+  --text-body:    16px;
+  --text-body-sm: 14px;
+  --text-caption: 13px;
+  --text-overline:12px;
+
+  /* Line heights */
+  --leading-tight:   1.08;  /* display — was 1.05; system faces have taller ascenders */
+  --leading-snug:    1.2;   /* headings */
+  --leading-normal:  1.5;   /* body */
+  --leading-relaxed: 1.65;  /* long-form */
+
+  /* ---- Letter spacing -------------------------------------
+     Softened from the webfont-era values. Segoe UI and Arial are
+     wider than Hanken Grotesk, so tight negative tracking that
+     looked crisp in Hanken reads cramped and collides on Windows. */
+  --tracking-display: -0.01em;  /* was -0.02em */
+  --tracking-tight:   -0.005em; /* was -0.01em */
+  --tracking-normal:  0;
+  --tracking-caps:    0.04em;   /* all-caps headings */
+  --tracking-overline:0.1em;    /* overlines / eyebrows — was .12em */
+}
+
+/* ---- Heading utilities: the brand all-caps semibold treatment ---- */
+.kf-display, .kf-h1, .kf-h2, .kf-h3, .kf-h4 {
+  font-family: var(--font-brand);
+  color: var(--text-strong);
+  text-wrap: balance;
+}
+.kf-display {
+  font-size: var(--text-display-xl);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-display);
+}
+.kf-h1 { font-size: var(--text-h1); font-weight: var(--weight-bold);     line-height: var(--leading-snug); letter-spacing: var(--tracking-tight); }
+.kf-h2 { font-size: var(--text-h2); font-weight: var(--weight-bold);     line-height: var(--leading-snug); }
+.kf-h3 { font-size: var(--text-h3); font-weight: var(--weight-semibold); line-height: var(--leading-snug); }
+.kf-h4 { font-size: var(--text-h4); font-weight: var(--weight-semibold); line-height: var(--leading-snug); }
+
+/* The signature brand heading: semibold ALL CAPS with tracking */
+.kf-eyebrow {
+  font-family: var(--font-brand);
+  font-size: var(--text-overline);
+  font-weight: var(--weight-bold);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-overline);
+  color: var(--brand-accent);
+}
+.kf-caps {
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-caps);
+  font-weight: var(--weight-semibold);
+}
+
+/* Body */
+.kf-body    { font-family: var(--font-sans); font-size: var(--text-body);    line-height: var(--leading-normal); color: var(--text-body); }
+.kf-body-lg { font-family: var(--font-sans); font-size: var(--text-body-lg); line-height: var(--leading-relaxed); color: var(--text-body); }
+.kf-body-sm { font-family: var(--font-sans); font-size: var(--text-body-sm); line-height: var(--leading-normal); color: var(--text-body); }
+.kf-caption { font-family: var(--font-sans); font-size: var(--text-caption); line-height: var(--leading-normal); color: var(--text-muted); }
+
+/* Tabular figures for data/metrics.
+   font-variant-numeric works in Segoe UI, SF and Roboto alike. */
+.kf-mono, .kf-tnum { font-variant-numeric: tabular-nums; }
+.kf-mono { font-family: var(--font-mono); }

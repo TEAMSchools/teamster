@@ -1,0 +1,24 @@
+<!-- @dsCard group="Colors" viewport="700x150" name="Status colors" subtitle="Brand palette doubles as semantic status — green/orange/red/blue" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../styles.css">
+<style>
+  body { margin: 0; padding: 20px; background: var(--surface-card); }
+  .row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .s { border-radius: var(--radius-md); padding: 12px 14px; border: 1px solid var(--border-subtle); }
+  .dot { width: 14px; height: 14px; border-radius: var(--radius-pill); display:inline-block; vertical-align:middle; }
+  .name { font-family: var(--font-brand); font-weight: 700; font-size: 13px; color: var(--text-strong); display:inline-block; vertical-align:middle; margin-left:8px; text-transform: uppercase; letter-spacing:.03em; }
+  .hex { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); margin-top: 8px; }
+</style>
+</head>
+<body>
+  <div class="row">
+    <div class="s" style="background:var(--status-success-surface)"><span class="dot" style="background:var(--status-success)"></span><span class="name">Success</span><div class="hex">green-600</div></div>
+    <div class="s" style="background:var(--status-warning-surface)"><span class="dot" style="background:var(--status-warning)"></span><span class="name">Warning</span><div class="hex">orange-500</div></div>
+    <div class="s" style="background:var(--status-danger-surface)"><span class="dot" style="background:var(--status-danger)"></span><span class="name">Danger</span><div class="hex">red-500</div></div>
+    <div class="s" style="background:var(--status-info-surface)"><span class="dot" style="background:var(--status-info)"></span><span class="name">Info</span><div class="hex">blue-500</div></div>
+  </div>
+</body>
+</html>

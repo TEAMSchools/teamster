@@ -45,6 +45,20 @@ specifics live there.
 - Before brainstorming a fix for a GitHub issue, re-run its diagnostic (row
   counts, reproduce queries, named files). Issue bodies drift.
 
+## Output people will view
+
+- Before making an artifact page, chart image, slide deck, Office file, local
+  HTML report, or app UI, ask with `AskUserQuestion`: "KTAF design system
+  (Recommended)" or "Claude defaults". Skip the ask when the request already
+  names one. The answer holds for that piece and its revisions; a new piece asks
+  again.
+- On KTAF, invoke `ktaf-design-system` before writing the piece. On Claude
+  defaults for a Slides or Design artifact, decline the organization default
+  design system (`design_systems: false`), because that default is the KTAF
+  system.
+- Out of scope: code, SQL, PR and issue text, Tableau workbooks, and Zendesk
+  articles (`zendesk-help-articles` owns those).
+
 ## Branches
 
 - Naming: [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/)

@@ -1,0 +1,29 @@
+<!-- @dsCard group="Colors" viewport="700x150" name="Indigo ramp" subtitle="Strong Indigo extended into surfaces, borders and cool neutrals" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../styles.css">
+<style>
+  body { margin: 0; padding: 20px; background: var(--surface-card); }
+  .ramp { display: grid; grid-template-columns: repeat(9, 1fr); }
+  .ramp > div { height: 64px; display: flex; align-items: flex-end; padding: 6px; }
+  .lbl { font-family: var(--font-mono); font-size: 10px; }
+  .ramp > div:first-child { border-radius: var(--radius-md) 0 0 var(--radius-md); }
+  .ramp > div:last-child { border-radius: 0 var(--radius-md) var(--radius-md) 0; }
+</style>
+</head>
+<body>
+  <div class="ramp">
+    <div style="background:var(--indigo-900)"><span class="lbl" style="color:#fff">900</span></div>
+    <div style="background:var(--indigo-800)"><span class="lbl" style="color:#fff">800</span></div>
+    <div style="background:var(--indigo-700)"><span class="lbl" style="color:#fff">700</span></div>
+    <div style="background:var(--indigo-600)"><span class="lbl" style="color:#fff">600</span></div>
+    <div style="background:var(--indigo-500)"><span class="lbl" style="color:#fff">500</span></div>
+    <div style="background:var(--indigo-300)"><span class="lbl" style="color:var(--kipp-indigo)">300</span></div>
+    <div style="background:var(--indigo-200)"><span class="lbl" style="color:var(--kipp-indigo)">200</span></div>
+    <div style="background:var(--indigo-100)"><span class="lbl" style="color:var(--kipp-indigo)">100</span></div>
+    <div style="background:var(--indigo-50)"><span class="lbl" style="color:var(--kipp-indigo)">50</span></div>
+  </div>
+</body>
+</html>
