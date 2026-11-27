@@ -1,8 +1,9 @@
 # Dashboard layout, zones and text fitting
 
 Dashboard layout is a tree of `<zone>` elements inside `<dashboard><zones>`.
-Everything here concerns that tree and how text behaves inside it. All claims
-are **Verified** (observed in a render or by measurement) unless marked.
+Everything here concerns that tree, how text fits inside it, and how a table
+worksheet fills its cells and headers. All claims are **Verified** (observed in
+a render or by measurement) unless marked.
 
 Every pixel figure in this file was measured on dashboards with
 `sizing-mode='fixed'` at 1366x900, rendered through the REST image API at
@@ -56,6 +57,34 @@ what `docs/tableau-xml/scripts/check_geometry.py --baseline` does. Without
 `--baseline` it falls back to the absolute bound for every zone, which is far
 weaker; it prints which mode it ran in.
 
+## Pop-outs are hidden, and the geometry check skips hidden zones
+
+**Verified.** A show/hide button opens a container whose zones all carry
+`hidden-by-user='true'`: Tableau marks every zone in the subtree, not only the
+container. `check_geometry.py` skips hidden zones, so a plain pass says nothing
+about a pop-out. An overlap planted inside one passed the plain run and failed
+with `--show`.
+
+Every pop-out in the source workbook, 8 across 3 dashboards, is a floating zone
+at the top level of `<zones>`, beside the full-canvas tiled root. A floating
+zone overlaps the root by design, and so does any visible floating object: the
+untouched base fails `Academic Health Schools` with
+`overlap at top-level: zone 4 and zone 812` when run without a baseline. With
+`--baseline`, an overlap the baseline also has prints as `also in baseline` and
+does not count.
+
+For each pop-out that contains an edited zone, run the checker again with
+`--show` naming the pop-out's top-level container, the id in the button's
+`<toggle-action>` (`zone-ids=[220]`):
+
+```bash
+uv run python docs/tableau-xml/scripts/check_geometry.py out.twb "Dashboard" --baseline base.twb --show 220
+```
+
+`--show` un-hides that zone and its subtree in both files. A pop-out the
+baseline lacks has no baseline overlap to match, so its one overlap with the
+root fails; confirm that is the only failure line.
+
 ## `fixed-size` is the size along the parent's flow axis
 
 **Verified by measurement across 62 zones.** For a child of a `param='horz'`
@@ -106,6 +135,52 @@ Two related fitting failures, both render-only:
 is the constraint. Shortening the label text was cheaper than fighting the
 header sizing; the labels are constant-string calculated fields, so it is a
 one-string edit.
+
+## Table headers truncate with `..`
+
+**Verified by render.** In a table with every field on Rows, the field labels
+across the top rendered `Cumulative ..`, `Projected cu..` and `Student Sli..`.
+None wrapped at `height-header` 34, and the workbook has no wrap format to copy.
+Budget about 6.7 px per character at 1x for the default header font, then set
+each field's `<format attr='width' field='…' value='…' />` to fit the label, or
+shorten the label.
+
+With `fit-width` zoom (`<viewpoint name='<sheet>'><zoom type='fit-width' />`
+under the dashboard's `<window>`), keep the sum of the header widths within the
+zone's width in pixels. When the sum exceeds it, every column narrows and more
+labels truncate.
+
+## Filling a table cell with colour
+
+**Verified by render.** In a table with discrete rows and discrete columns,
+`Square` marks stay square. At the default size, `size` 2 and `size` 5 they drew
+smaller than the cell; with `marks-scaling-off`, `size` 60 and 300 overlapped
+the rows above and below.
+
+What fills a cell is a `Bar` on a fixed, hidden axis, the idiom in
+`Your sections grid`:
+
+- Columns: a constant header calc times a calc returning `0.5`, as
+  `([ds].[none:<header calc>:nk] * [ds].[min:<half calc>:qk])`.
+- `<mark class='Bar' />` with
+  `<mark-sizing mark-sizing-setting='marks-scaling-off' />`.
+- The axis fixed and hidden:
+
+  ```xml
+  <style-rule element='axis'>
+    <encoding attr='space' class='0' field='[ds].[min:<half calc>:qk]' field-type='quantitative' max='0.55' min='-0.05' range-type='fixed' scope='cols' type='space' />
+    <format attr='display' class='0' field='[ds].[min:<half calc>:qk]' scope='cols' value='false' />
+  </style-rule>
+  ```
+
+- Zeroline, column gridlines and column `table-div` off (`stroke-size` 0,
+  `line-visibility` off).
+- `<format attr='display-field-labels' scope='cols' value='false' />` under
+  `<style-rule element='worksheet'>`, which hides the header calc's field label.
+
+The Bar's `size` sets its thickness against the row. `1.6` drew a pill about 70%
+of the row height and shipped; `2.5` and `4` filled the whole cell, and 3 of the
+4 label text colours disappeared.
 
 ## A `<lod>` on Detail changes the mark grain
 

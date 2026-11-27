@@ -117,6 +117,23 @@ This is how every big number on the dashboard renders.
 
 `<run>Æ&#10;</run>` is the paragraph break; see [formatting.md](formatting.md).
 
+## Verified: one label colour per category
+
+One `<customized-label>` can colour its text by status. Write one calc per
+status that is NULL unless the row has that status
+(`IF [pace_status] = 'on_pace' THEN 'On pace' END`), put every one of those
+calcs on its own `<text>` encoding, and give each token its own run:
+
+```xml
+<run bold='true' fontcolor='#5f6a0d' fontsize='9'><![CDATA[<[ds].[none:Calculation_9600000000000000015:nk]>]]></run>
+<run bold='true' fontcolor='#8a4f00' fontsize='9'><![CDATA[<[ds].[none:Calculation_9600000000000000016:nk]>]]></run>
+```
+
+The NULL tokens render nothing, so each mark shows its own status in its own
+colour. Five field calcs on `<text>` encodings left this label intact, unlike
+the parameter-routed calc above whose label vanished; what separates the two
+cases is not established.
+
 ## UNRESOLVED: the two tooltip encodings
 
 This is the one genuinely open question. Settle it with a probe that renders, or
@@ -150,9 +167,10 @@ boundaries.**
 A / B / C:  <]]></run>
 ```
 
-Present on `Y1 Schools - Teacher Grade Distro`. Tableau wrote this itself; it
-carries `:qk` suffixes and `pcto:` derivations. Line breaks are `&#10;` inside
-the text runs: the tooltips in this corpus did not use the `Æ` sentinel.
+Present on `Y1 Schools - Teacher Grade Distro`, and on `GPA - Student roster`,
+whose hover is also unconfirmed. Tableau wrote this itself; it carries `:qk`
+suffixes and `pcto:` derivations. Line breaks are `&#10;` inside the text runs:
+the tooltips in this corpus did not use the `Æ` sentinel.
 
 **The contradiction.** A hand-built tooltip in form A, structurally
 indistinguishable from the example above, rendered its instance strings
