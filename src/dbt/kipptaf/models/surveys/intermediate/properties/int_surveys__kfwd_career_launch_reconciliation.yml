@@ -4,8 +4,9 @@ models:
       Career Launch survey reconciliation sourced from a Google Form. Maps a
       Career Launch survey response to a Salesforce contact and records whether
       the response should be reconciled (retained) or excluded from Career
-      Launch reporting. One row per survey response, keeping the most recent
-      submission.
+      Launch reporting. One row per survey response ID; when the form was
+      submitted more than once for the same response, the most recently created
+      submission wins (an edit to an older submission does not move it ahead).
     config:
       materialized: table
     columns:
@@ -15,7 +16,9 @@ models:
           response ID on the Career Launch survey.
         data_type: string
         data_tests:
-          - unique
+          - unique:
+              config:
+                severity: error
       - name: reconcile_or_exclude
         description: >-
           Disposition selected in the reconciliation form. Exclude removes the

@@ -17,6 +17,37 @@ models:
           - unique:
               config:
                 severity: error
+      - name: launch_score
+        data_type: int64
+        description: >-
+          Sum of the four indicator points and GPA points, out of 100. A missing
+          indicator counts as 0. The 100 maximum comes from the Rubric and GPA
+          Bands tabs, so a score above it means a tab's points add up past 100;
+          fix the points there.
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 100
+              config:
+                severity: warn
+        config:
+          meta:
+            contains_pii: true
+      - name: launch_stage
+        data_type: string
+        description: >-
+          Stage whose score range holds the launch score, from the Stages tab.
+          Null when the score is below the lowest stage's min_score, which drops
+          the assessment from every stage count; keep the lowest stage at 0 on
+          the Stages tab.
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+        config:
+          meta:
+            contains_pii: true
       - name: contact_id
         data_type: string
         description: Salesforce contact id of the alumnus assessed.
@@ -114,24 +145,9 @@ models:
         config:
           meta:
             contains_pii: true
-      - name: launch_score
-        data_type: int64
-        description: >-
-          Sum of the four indicator points and GPA points, out of 100. A missing
-          indicator counts as 0.
-        config:
-          meta:
-            contains_pii: true
       - name: has_all_levels
         data_type: boolean
         description: True when all four indicator levels are entered.
-        config:
-          meta:
-            contains_pii: true
-      - name: launch_stage
-        data_type: string
-        description: >-
-          Stage whose score range holds the launch score, from the Stages tab.
         config:
           meta:
             contains_pii: true

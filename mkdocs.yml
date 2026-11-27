@@ -89,6 +89,8 @@ nav:
       - Academic Health Data Model: models/academic-health-data-model.md
       - Grad Plan Tracking Data Model: models/grad-plan-tracking-data-model.md
       - IGNITE R2I Extract: models/ignite-r2i-extract.md
+      - KIPP Forward Career Launch Data Model:
+          models/kfwd-career-launch-data-model.md
   - Automations: reference/automations.md
 
 markdown_extensions:

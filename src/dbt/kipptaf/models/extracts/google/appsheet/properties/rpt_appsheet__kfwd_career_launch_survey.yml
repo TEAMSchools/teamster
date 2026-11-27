@@ -11,8 +11,8 @@ models:
       matches their primary or secondary Salesforce email, when its respondent
       Salesforce id is their contact id (Alchemer responses carrying an id, and
       every row on the career launch bulk-add sheet), or when the career launch
-      reconciliation sheet maps it to their contact. These are the same matches
-      the Tableau career launch extract uses. Responses the reconciliation sheet
+      reconciliation form maps it to their contact. These are the same matches
+      the Tableau career launch extract uses. Responses the reconciliation form
       marks Exclude never count.
     config:
       contract:
@@ -40,6 +40,9 @@ models:
       - name: ktc_cohort
         data_type: int64
         description: KIPP Through College cohort (high school graduation year).
+        config:
+          meta:
+            contains_pii: true
       - name: primary_email
         data_type: string
         description: Salesforce primary email, lowercased.
@@ -70,7 +73,7 @@ models:
         description: >-
           Source__c of the Salesforce GPA record behind the current college GPA,
           such as Unofficial Transcript or Student Portal. Null when there is no
-          current college GPA.
+          current college GPA or no matching GPA record.
         config:
           meta:
             contains_pii: true
@@ -115,14 +118,16 @@ models:
       - name: pursuing_degree_type
         data_type: string
         description:
-          Degree type of the alumnus's most recent postsecondary enrollment.
+          Degree type of the alumnus's most recent postsecondary enrollment by
+          start date, whatever its status.
         config:
           meta:
             contains_pii: true
       - name: major
         data_type: string
         description:
-          Major of the alumnus's most recent postsecondary enrollment.
+          Major of the alumnus's most recent postsecondary enrollment by start
+          date, whatever its status.
         config:
           meta:
             contains_pii: true
@@ -141,6 +146,9 @@ models:
       - name: advising_provider
         data_type: string
         description: Organization advising the alumnus, per Salesforce.
+        config:
+          meta:
+            contains_pii: true
       - name: expected_college_grad_date
         data_type: date
         description: Expected college graduation date from Salesforce.
@@ -152,22 +160,30 @@ models:
         description:
           Number of distinct career launch survey responses matched to the
           alumnus, not counting responses marked Exclude; 0 when none.
+        config:
+          meta:
+            contains_pii: true
       - name: latest_survey_date
         data_type: timestamp
         description:
           Submission time of the alumnus's most recent matched response,
           ignoring responses marked Exclude. Null when none matched, or when the
           only matches are bulk-add rows.
+        config:
+          meta:
+            contains_pii: true
       - name: contact_owner
         data_type: string
         description: Name of the Salesforce contact owner for the alumnus.
       - name: postsec_advisor
         data_type: string
         description:
-          Postsecondary advisor assigned to the alumnus on their Salesforce
-          contact record.
+          Salesforce Contact ID of the postsecondary advisor assigned to the
+          alumnus on their Salesforce contact record.
       - name: advisor
         data_type: string
         description:
           Effective advisor for the alumnus — 'Collab' when the advising
-          provider is KIPP NYC, otherwise the Salesforce contact owner.
+          provider is KIPP NYC, otherwise the name of the Salesforce
+          postsecondary advisor. Matches advisor on
+          rpt_tableau__kfwd_career_launch_survey.
