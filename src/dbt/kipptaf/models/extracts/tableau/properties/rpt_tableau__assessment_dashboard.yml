@@ -15,10 +15,30 @@ models:
 
       The model applies no region filter. Miami rows from SY26-27 on are Focus
       Apex assessments, whose course and teacher columns come from the section
-      the assessment scaffold matched.
+      the assessment scaffold matched. Focus courses carry no credit type, so
+      Apex rows in ELA or Math subjects (English 100, Algebra I and Geometry
+      Honors included) match the subject columns on the student's ELA or Math
+      row, at every grade.
     config:
       meta:
         contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          description: >-
+            One row per `int_assessments__response_rollup` row, whose grain this
+            repeats. The enrollment, course, and subject joins each match at
+            most one row, so a duplicate here means a new join fan-out.
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+              - source
+              - assessment_id
+              - response_type
+              - response_type_id
+              - is_replacement
+          config:
+            severity: error
     columns:
       - name: student_number
         data_type: int64
@@ -64,6 +84,11 @@ models:
         data_type: string
       - name: school_level
         data_type: string
+      - name: source
+        data_type: string
+        description: >-
+          System the assessment comes from, `illuminate` or `apex`. Part of the
+          grain, because the two systems' assessment ids can collide.
       - name: assessment_id
         data_type: int64
       - name: title
@@ -86,6 +111,12 @@ models:
         data_type: string
       - name: response_type
         data_type: string
+      - name: response_type_id
+        data_type: int64
+        description: >-
+          Standard or reporting group id for the response, `-1` for overall.
+          Part of the grain, because reporting groups and some standards share a
+          `standard_code`.
       - name: standard_code
         data_type: string
       - name: standard_description
@@ -131,6 +162,10 @@ models:
         description: Always null. Retired field kept for the Tableau workbook.
       - name: nj_student_tier
         data_type: string
+        description: >-
+          The student's bucket for the assessment's ELA or Math subject, Bucket
+          1 to 4, with Bucket 4 covering students who have no bucket. Null for
+          other subjects.
       - name: tutoring_nj
         data_type: boolean
       - name: territory
